@@ -29,6 +29,7 @@ BUGFIX:
 * class VulnerabilityProfile | fix for visibility/bestpractice
 * class Tag.php | bugfix to validate if an object is also type TAG, use get_class
 * type=zone-protection-profile actions=scan.alert-only-set | extend validation
+* type=securityprofile securityprofiletype=wildfire-analysis | actions=exporttohtml:wf_sp.html,visibility - correct mica-engine
 
 GENERAL:
 * Device App-ID update to version: 9128-10169

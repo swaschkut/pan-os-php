@@ -665,43 +665,80 @@ class SecurityProfile2
                 $string_mica_engine[] = "mica-engine-wildfire-rules: " . $enabled;
 
 
-            foreach( $this->additional['mica-engine-wildfire-rules'] as $rulename => $rule )
+            foreach( $this->additional['mica-engine-wildfire-rules'] as $type => $rule )
             {
 
-                $tmp_string = "'".$rulename."' | - application:'".implode(",", $rule['application'])."' - fileType:'".implode(",", $rule['file-type'])."' - direction:'".$rule['direction']."'  - action:'".$rule['action']."'";;
+                $tmp_string = "'".$type."' | - application:'".implode(",", $rule['application'])."' - fileType:'".implode(",", $rule['file-type'])."' - direction:'".$rule['direction']."'  - action:'".$rule['action']."'";;
 
-                /*
-                             "visibility": {
-                "inline-policy-action": [
-                    {
-                        "type": [
-                            "any"
-                        ],
-                        "action": [
-                            "!allow"
-                        ]
-                    }
-                ]
-            }
-                 */
                 if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
-                {
-                    if( $bestPractice )
-                        $tmp_string .= $bp_NOT_sign;
-                    if( $visibility )
-                        $tmp_string .= $visible_NOT_sign;
-
-                    $string_mica_engine[] = $tmp_string;
-                }
+                    $add_to_array = true;
                 else
-                {
-                    //Todo: validation must be done against BP setting file!!!!
-                    #if( !in_array( "any", $rule['application']) || !in_array( "any", $rule['file-type']) ||  $rule['direction'] !== "both" )
-                        //not working correct
-                        $string_mica_engine[] = $tmp_string;
-                }
-            }
+                    $add_to_array = false;
 
+
+                if( $bestPractice )
+                {
+                    if( isset(PH::$shadow_bp_jsonfile['wildfire']['cloud-inline']['bp']) )
+                    {
+                        $check_array = PH::$shadow_bp_jsonfile['wildfire']['cloud-inline']['bp'];
+                        if( isset($check_array['inline-policy-action']) )
+                        {
+                            $bp_set = TRUE;
+                            foreach( $check_array['inline-policy-action'] as $detailed_check )
+                            {
+                                if ($detailed_check['type'][0] == "any")
+                                {
+                                    if ($detailed_check['action'][0] !== $this->additional['mica-engine-wildfire-rules'][$type]['action'])
+                                        $bp_set = FALSE;
+                                }
+                            }
+
+                            if($bp_set == FALSE)
+                            {
+                                if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                                    $tmp_string .= $bp_NOT_sign;
+                                else
+                                    $add_to_array = true;
+                            }
+                        }
+                    }
+                }
+
+                if( $visibility )
+                {
+                    if( isset(PH::$shadow_bp_jsonfile['wildfire']['cloud-inline']['visibility']) )
+                    {
+                        $check_array = PH::$shadow_bp_jsonfile['wildfire']['cloud-inline']['visibility'];
+                        if( isset($check_array['inline-policy-action']) )
+                        {
+                            $bp_set = TRUE;
+                            foreach( $check_array['inline-policy-action'] as $detailed_check )
+                            {
+                                if ($detailed_check['type'][0] == "any")
+                                {
+                                    $validate = $detailed_check['action'][0];
+                                    $negate_string = "";
+                                    if (strpos($validate, "!") !== FALSE)
+                                        $negate_string = "!";
+                                    if ($validate === $negate_string . $this->additional['mica-engine-wildfire-rules'][$type]['action'])
+                                        $bp_set = FALSE;
+                                }
+                            }
+
+                            if($bp_set == FALSE)
+                            {
+                                if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                                    $tmp_string .= $visible_NOT_sign;
+                                else
+                                    $add_to_array = true;
+                            }
+                        }
+                    }
+                }
+
+                if( $add_to_array )
+                    $string_mica_engine[] = $tmp_string;
+            }
         }
     }
 

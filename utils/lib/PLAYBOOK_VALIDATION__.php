@@ -949,7 +949,7 @@ class PLAYBOOK_VALIDATION__
 
     public function usageMessage()
     {
-        $string = PH::boldText("USAGE: ") . "php " . $this->PHP_FILE . " beta/dev "
+        $string = PH::boldText("USAGE: ") . "php " . $this->PHP_FILE . " beta/dev/latest "
             . "[generate-sp/generate-stats/generate-sp-only/generate-stats-only]"
             . "[compare-dev-beta/compare-stats-dev-beta/compare-latest-dev/compare-stats-latest-dev]"
             . "[tool=docker-outside/docker/local]"
