@@ -11,6 +11,7 @@ UTIL:
 * type=securityprofilegroup | introduce 'filter=(refobject rule.is.enabled)'
 * type=rule/zone actions=exporttoexcel:test.html | extend from-location/lfp-location
 * type=rule-compare | extend to validate zone FROM / TO
+* type=zone actions=exporttohtml:zone.html | lfp-location not implemented for Panorama Template reference to DeviceGroup
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working

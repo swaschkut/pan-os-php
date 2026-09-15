@@ -811,15 +811,15 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                             $tmpLogprof = "";
                         else
                         {
-                            /** @var LogProfile $tmp_logprof */
-                            $tmp_logprof =  $object->owner->owner->LogProfileStore->find( $object->logsetting );
-                            if( is_object( $tmp_logprof ) )
+                            if( isset( $object->logsetting_Obj ) && $object->logsetting_Obj !== null )
                             {
-                                if( get_class( $tmp_logprof->owner->owner ) == "PanoramaConf" )
-                                    $tmpLogprof = "shared";
-                                else
-                                    $tmpLogprof = $tmp_logprof->owner->owner->name();
+                                /** @var LogProfile $tmp_logprof */
+                                $tmp_logprof = $object->logsetting_Obj;
+
+                                $tmpLogprof = $tmp_logprof->owner->owner->name();
                             }
+                            else
+                                $tmpLogprof = "--not found--";
                         }
                         $lines .= $context->encloseFunction( $tmpLogprof );
 
