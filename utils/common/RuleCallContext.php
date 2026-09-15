@@ -443,17 +443,21 @@ class RuleCallContext extends CallContext
                             if( get_class($zones_to_check->owner->owner->owner->owner) === "Template"
                                 || get_class($zones_to_check->owner->owner->owner->owner) === "TemplateStack")
                             {
-                                $vsys_name = $zones_to_check->owner->owner->owner->name();
+                                $vsys_name = $zones_to_check->owner->owner->name();
                                 if( empty($vsys_name) )
                                     $vsys_name = "vsys1";
                                 $zpp_array[] = $zones_to_check->owner->owner->owner->owner->name()."/".$vsys_name;
                             }
-
                         }
                         elseif( isset($zones_to_check->owner->owner->owner) )
                         {
                             if( get_class($zones_to_check->owner->owner->owner) === "Template" || get_class($zones_to_check->owner->owner->owner) === "TemplateStack")
-                                $zpp_array[] = $zones_to_check->owner->owner->owner->name();
+                            {
+                                $vsys_name = $zones_to_check->owner->name();
+                                if( empty($vsys_name) )
+                                    $vsys_name = "vsys1";
+                                $zpp_array[] = $zones_to_check->owner->owner->owner->name()."/".$vsys_name;
+                            }
                         }
 
                     }
