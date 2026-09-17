@@ -436,7 +436,14 @@ class RuleCallContext extends CallContext
                 foreach($rule->from->getAll() as $zones_to_check)
                 {
                     /* @var Zone $zones_to_check */
-                    if( $rule->owner->owner->owner->isPanorama() )
+
+                    if( isset($rule->owner->owner) && $rule->owner->owner->isPanorama() )
+                    {
+                        $zpp_array[] = "shared";
+                        continue;
+                    }
+
+                    if( isset($rule->owner->owner->owner) && $rule->owner->owner->owner->isPanorama()  )
                     {
                         if( isset($zones_to_check->owner->owner->owner->owner) )
                         {
@@ -461,7 +468,7 @@ class RuleCallContext extends CallContext
                         }
 
                     }
-                    elseif( $rule->owner->owner->owner->isFirewall() )
+                    elseif( isset($rule->owner->owner->owner) && $rule->owner->owner->owner->isFirewall() )
                     {
                         if( get_class( $rule->owner->owner ) == "VirtualSystem" )
                             $zpp_array[] = $zones_to_check->owner->owner->name();
