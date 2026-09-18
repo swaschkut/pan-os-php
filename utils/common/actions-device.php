@@ -91,7 +91,20 @@ DeviceCallContext::$supportedActions['display'] = array(
                 #PH::print_stdout( $context->padding."- ".$key );
                 $managedFirewall = $object->owner->managedFirewallsStore->find($key);
                 if( $managedFirewall !== null )
+                {
                     PH::print_stdout( $context->padding." - serial: ".$key." - Template-Stack: ".$managedFirewall->template_stack);
+                    $template_stack_obj = $object->owner->findTemplateStack($managedFirewall->template_stack);
+                    if( $template_stack_obj !== null )
+                    {
+                        $templates_array = $template_stack_obj->templates;
+                        $template_name_array = array();
+                        foreach( $templates_array as $template )
+                        {
+                            $template_name_array[] = $template->name();
+                        }
+                        PH::print_stdout( $context->padding."  - Templates: ".implode( ", ", $template_name_array ) );
+                    }
+                }
 
 
                 if( isset($device['vsyslist']) && !empty($device['vsyslist']) )

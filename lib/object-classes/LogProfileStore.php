@@ -33,6 +33,7 @@ class LogProfileStore extends ObjStore
 
     public static $childn = 'LogProfile';
 
+    public static $predefinedLogProfStore = null;
 
     public function __construct($owner)
     {
@@ -419,6 +420,65 @@ class LogProfileStore extends ObjStore
     public function storeName()
     {
         return "LogProfileStore";
+    }
+
+    public static function getLogProfPredefinedStore( $owner )
+    {
+        if( self::$predefinedLogProfStore !== null )
+            return self::$predefinedLogProfStore;
+
+
+        self::$predefinedLogProfStore = new LogProfileStore( $owner);
+        self::$predefinedLogProfStore->setName('predefined LogProfile');
+        self::$predefinedLogProfStore->load_logprof_from_predefinedfile();
+
+        return self::$predefinedLogProfStore;
+    }
+
+    public function load_logprof_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/log-settings/profiles', $xmlDoc);
+
+        $this->load_predefined_logprofile_from_domxml( $cursor );
+    }
+
+    public function load_predefined_logprofile_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined LogProfile name not found\n");
+
+
+            $app = new LogProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+
+            $this->nameIndex[$app->name()] = $app;
+            #$this->fastNameToIndex[$app->name()] = $app;
+
+            $this->add($app);
+        }
+
+        sort($this->o);
     }
 
     public function createXmlRoot()

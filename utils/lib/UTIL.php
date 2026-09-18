@@ -1959,7 +1959,12 @@ class UTIL
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getAll());
                     elseif( $this->utilType == 'log-profile' )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfilePredefinedStore, 'objects' => $this->pan->LogProfilePredefinedStore->getAll());
+
                         $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getAll());
+                    }
+
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -2080,7 +2085,12 @@ class UTIL
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
                     elseif( $this->utilType == 'log-profile' )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfilePredefinedStore, 'objects' => $this->pan->LogProfilePredefinedStore->getAll());
+
                         $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getall());
+                    }
+
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
