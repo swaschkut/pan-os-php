@@ -1640,6 +1640,63 @@ class PanoramaConf
         //
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: Template Zone already loaded with LogProfile as String
+        //all DeviceGroups with LogProfile objects are loaded
+        //Todo: correct place to now go through all Templates -> zone -> try to find for LogProfile Name the correct DG back via:
+
+        // zone which is used in Template
+        // Template can be used in one or more TemplateStack
+        // a TemplateStack is references by one or more ManagedDevice -> Serial
+        // This ManagedDevice has exactly one DeviceGroup attached
+        // LogProfile Name can be found in this DG or via the hierarchy in the upper/parent DGs
+
+        foreach( $this->templates as $template )
+        {
+            /* @VAR Template $template */
+            foreach( $template->deviceConfiguration->virtualSystems as $virtualSystem )
+            {
+                /* @VAR VirtualSystem $virtualSystem */
+                $zones = $virtualSystem->zoneStore->getAll();
+
+                foreach( $zones as $zone )
+                {
+                    /* @VAR Zone $zone */
+                    $logProfName = $zone->logsetting;
+                    if( !empty( $logProfName ) )
+                    {
+                        print "search LogProf: ".$logProfName." from Zone: ".$zone->name()."\n";
+
+                        foreach( $template->getReferences() as $templateStack )
+                        {
+                            /* @Var TemplateStack $templateStack */
+
+                            if( !empty($templateStack->FirewallsSerials) )
+                            {
+                                foreach($templateStack->FirewallsSerials as $serial)
+                                {
+                                    /* @VAR ManagedDevice $serial */
+                                    $deviceGroupName = $serial->getDeviceGroup();
+                                    $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
+                                    print "DG: ".$deviceGroupOjb->name()."\n";
+                                    $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
+                                    if( $logProfObj !== null )
+                                    {
+                                        if( $logProfName == $logProfObj->name() )
+                                        {
+                                            print "logProfobj Name: ".$logProfObj->name()."\n";
+                                            $zone->logsetting_Obj = $logProfObj;
+                                            $logProfObj->addReference($zone);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Todo: keep this part as it is - DONE
         if( $debugLoadTime )

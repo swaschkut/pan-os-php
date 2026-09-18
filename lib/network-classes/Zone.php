@@ -265,21 +265,7 @@ class Zone
                     {
                         if( isset($this->owner->owner->owner->owner) && get_class($this->owner->owner->owner->owner) == "Template" )
                         {
-                            //Todo: swaschkut 20260915 - Panorama config and Template!!!!
-                            //implementation needed
-
-                            //Template-Stack -> Device Serial -> DeviceGroup [parentDeviceGroup]
-                            //Todo: can a zone be configured in TemplateStack?????
-
-                            $template = $this->owner->owner->owner->owner;
-                            foreach( $template->getReferences() as $ref )
-                            {
-                                //not working at this stage, as template is loaded before DG
-                                #$print get_class($ref) . "\n";
-                                #print $ref->name() . "\n";
-                            }
-
-                            mwarning("Log-profile: '".$this->logsetting."'  found in Zone: '".$this->name()."' | Template: '".$this->owner->owner->owner->owner->name()."' - VSYS: '".$this->owner->owner->name()."' | References for class: 'DeviceGroup' not yet implemented", null, false);
+                            //this is done via Panorama class - after reading DeviceGroup
                         }
                         else
                         {

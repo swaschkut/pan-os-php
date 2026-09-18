@@ -817,6 +817,8 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                                 $tmp_logprof = $object->logsetting_Obj;
 
                                 $tmpLogprof = $tmp_logprof->owner->owner->name();
+                                if( empty($tmpLogprof) )
+                                    $tmpLogprof = "shared";
                             }
                             else
                                 $tmpLogprof = "--not found--";
