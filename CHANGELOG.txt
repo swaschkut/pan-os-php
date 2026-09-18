@@ -13,6 +13,7 @@ UTIL:
 * type=rule-compare | extend to validate zone FROM / TO
 * type=zone actions=exporttohtml:zone.html | lfp-location not implemented for Panorama Template reference to DeviceGroup
 * type=log-prof | implement predefinedLogProfStore - for all Device classes
+* type=log-prof | introduce 'filter=(object is.predefined)'
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
