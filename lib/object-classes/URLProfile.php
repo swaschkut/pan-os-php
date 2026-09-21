@@ -580,11 +580,15 @@ class URLProfile extends SecurityProfile2
         if( !in_array( $type, $this->tmp_url_prof_array ) )
             return false;
 
-        if( in_array($newMember, $this->$type, TRUE) )
+        $type_custom = $type."_custom";
+        if( in_array($newMember, $this->$type, TRUE) || in_array($newMember, $this->$type_custom, TRUE) )
         {
             $key = array_search($newMember, $this->$type);
             unset($this->$type[$key]);
-            unset($this->_all[$key]);
+            if( isset($this->_all[$key]) )
+                unset($this->_all[$key]);
+            if( isset($this->_all_custom[$key]) )
+                unset($this->_all_custom[$key]);
 
             if( $rewriteXml && $this->owner !== null )
             {
@@ -694,31 +698,41 @@ class URLProfile extends SecurityProfile2
         if( $old === null )
             derr("\$old cannot be null");
 
-        if( isset( $this->_all[$old->name()] ) )
-        {
-            $old_type = $this->_all[$old->name()];
+        if( is_object( $old) )
+            $oldname = $old->name();
+        else
+            $oldname = $old;
 
-            if( $new === null || $new->name() == $old->name() )
+
+        $tmp_array = array();
+        if( isset( $this->_all[$oldname] ) )
+            $tmp_array = $this->_all;
+        elseif( isset( $this->_all_custom[$oldname] ) )
+            $tmp_array = $this->_all_custom;
+
+
+        if( !empty( $tmp_array ) )
+        {
+            $old_type = $tmp_array[$oldname];
+
+            if( $new === null || $new->name() == $oldname )
                 return False;
 
-            #if( $new !== null && !$this->has( $new->name() ) )
-            if( $new !== null && !isset( $this->_all[$new->name()] ) )
+            if( $new !== null && !isset( $tmp_array[$new->name()] ) )
             {
-                $this->deleteMember($old->name(), $old_type);
+                $this->deleteMember($oldname, $old_type);
                 $this->addMember( $new->name(), $old_type );
                 $new->addReference($this);
             }
             else
             {
-                $this->deleteMember($old->name(), $old_type);
-                if( isset($this->_all[$new->name()]) )
-                    $this->deleteMember($new->name(), $this->_all[$new->name()]);
+                $this->deleteMember($oldname, $old_type);
+                if( isset($tmp_array[$new->name()]) )
+                    $this->deleteMember($new->name(), $tmp_array[$new->name()]);
                 $this->addMember( $new->name(), $old_type );
             }
-            $old->removeReference($this);
-
-            #if( $new === null || $new->name() != $old->name() )
-            #    $this->rewriteXML();
+            if( is_object( $old) )
+                $old->removeReference($this);
 
             return TRUE;
         }
@@ -1382,6 +1396,18 @@ class URLProfile extends SecurityProfile2
     {
         return TRUE;
     }
+
+    /**
+     * @param SecurityProfile $h
+     * ** This is for internal use only **
+     *
+     * @ignore
+     */
+    public function referencedObjectRenamed($new_obj, $oldname)
+    {
+        $this->replaceReferencedObject($oldname, $new_obj );
+    }
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
 }

@@ -1,6 +1,49 @@
 CHANGELOG
 
-2.1.58 [develop]
+2.1.59 [beta]
+UTIL:
+* pan-os-php changelog[=2.1.56] | introduction of argument changelog
+* playbook | best-practice-set.json | add url and wf
+* type=securityprofile securityprofiletype=wildifre-analysis | extend WF Inline validation with application and direction for visibility and bp
+* type=zone-protection-profile | introduce 'filter=(object is.visibility)'
+* type=zone-protection-profile | introduce 'actions=scan.alert-only-set'
+* type=zone-protection-profile | introduce 'actions=alert-only-set'
+* type=securityprofilegroup | introduce 'filter=(refobject rule.is.enabled)'
+* type=rule/zone actions=exporttoexcel:test.html | extend from-location/lfp-location
+* type=rule-compare | extend to validate zone FROM / TO
+* type=zone actions=exporttohtml:zone.html | implement correct lfp-location for Panorama
+* type=log-prof | implement predefinedLogProfStore - for all Device classes
+* type=log-prof | introduce 'filter=(object is.predefined)'
+
+BUGFIX:
+* type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
+* class ObjRuleContainer | bugfix for adjusted Zone part - type=rule actions=from-remove not working
+* class URLProfile | bugfix to get custom_url-category object name-addprefix running
+* type=securityprofile securityprofiletype=file-blocking | bugfix to display correct best-practice based on application check
+* type=device | bugfix if empty array
+* different classes API method sendSetRequest | optimisation string vulnerability to escaping
+* util actions classes actions-device/-rule | serial# validation | API tool.php - input validation
+* type=service-merger | bug wrong validation for array key
+* type=address actions=name-tolowercase | bugfix for Region object
+* class ZoneProtection | extend validation | class DH correct return value
+* type=securityprofile securityprofiletype=wildfire-analysis actions=exporttoexcel:wf.html,visibility|bestpractice | add info per rule if visbile/bp
+* type=address | for region object with 'filter=(name regex /$$ipv4$$/ ) and !(value is.included-in.name)'
+* type=securityprofile securityprofiletype=spyware |actions=exporttohtml:spy.html,visibility|bestpractice" | fix for early loop exit
+* class VulnerabilityProfile | fix for visibility/bestpractice
+* class Tag.php | bugfix to validate if an object is also type TAG, use get_class
+* type=zone-protection-profile actions=scan.alert-only-set | extend validation
+* type=securityprofile securityprofiletype=wildfire-analysis | actions=exporttohtml:wf_sp.html,visibility - correct mica-engine
+
+GENERAL:
+* Device App-ID update to version: 9128-10169
+* update actions / filters json
+* pan-os-php.sh | autocompletion - support changelog
+* Device App-ID update to version: 9133-10186
+* all class with usage of htmlspecialchars migrated to PH::panosphp_htmlspecialchars
+* Device App-ID update to version: 9137-10202
+
+
+2.1.58 (20260803)
 UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it

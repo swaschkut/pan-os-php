@@ -33,7 +33,7 @@ function encloseFunction( $value, $nowrap = TRUE )
     if( $value == NULL )
         $output = "---";
     elseif( is_string($value) )
-        $output = htmlspecialchars($value);
+        $output = PH::panosphp_htmlspecialchars($value);
     elseif( is_array($value) )
     {
         $output = '';
@@ -48,16 +48,16 @@ function encloseFunction( $value, $nowrap = TRUE )
                 $first = FALSE;
 
             if( is_string($subValue) || is_numeric($subValue) )
-                $output .= htmlspecialchars($subValue);
+                $output .= PH::panosphp_htmlspecialchars($subValue);
             elseif( is_object($subValue) )
-                $output .= htmlspecialchars($subValue->name());
+                $output .= PH::panosphp_htmlspecialchars($subValue->name());
             else
                 $output .= "";
         }
     }
     elseif( is_object($value) )
     {
-        $output = htmlspecialchars( $value->name() );
+        $output = PH::panosphp_htmlspecialchars( $value->name() );
     }
     else
         derr('TYPE: '.gettype($value).' unsupported', null, false);

@@ -108,6 +108,9 @@ class PANConf
     public $UrlFilteringPredefinedStore;
 
 
+    public $LogProfilePredefinedStore;
+
+
     protected $securityProfilebaseroot;
 
     /** @var SecurityProfileStore */
@@ -312,6 +315,8 @@ class PANConf
             $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
             $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
             $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+
+            $this->LogProfilePredefinedStore = LogProfileStore::getLogProfPredefinedStore( $this );
         }
     }
 

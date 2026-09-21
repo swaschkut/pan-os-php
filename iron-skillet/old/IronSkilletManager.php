@@ -159,10 +159,10 @@ class IronSkilletManager {
                     // Create XML nodes dynamically depending on your pan-os-php structure requirements
                     // Example adds an entry tag under a list/member block if applicable
                     if (isset($xml->member)) {
-                        $xml->addChild('member', htmlspecialchars($category));
+                        $xml->addChild('member', PH::panosphp_htmlspecialchars($category));
                     } else {
                         $entry = $xml->addChild('entry');
-                        $entry->addAttribute('name', htmlspecialchars($category));
+                        $entry->addAttribute('name', PH::panosphp_htmlspecialchars($category));
                     }
                 }
                 // Save updated file back to disk

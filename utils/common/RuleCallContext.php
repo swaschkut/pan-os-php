@@ -254,7 +254,7 @@ class RuleCallContext extends CallContext
         $output = '';
 
         if( is_string($value) )
-            $output = htmlspecialchars($value);
+            $output = PH::panosphp_htmlspecialchars($value);
         elseif( is_array($value) )
         {
             $output = '';
@@ -269,15 +269,15 @@ class RuleCallContext extends CallContext
                     $first = FALSE;
 
                 if( is_string($subValue) || is_numeric($subValue) )
-                    $output .= htmlspecialchars($subValue);
+                    $output .= PH::panosphp_htmlspecialchars($subValue);
                 elseif( is_object($subValue) )
-                    $output .= htmlspecialchars($subValue->name());
+                    $output .= PH::panosphp_htmlspecialchars($subValue->name());
                 else
                     $output .= "";
             }
         }
         elseif( is_numeric($value) )
-            $output = htmlspecialchars(strval($value));
+            $output = PH::panosphp_htmlspecialchars(strval($value));
         else
         {
             var_dump($value);
@@ -419,6 +419,60 @@ class RuleCallContext extends CallContext
                             $zpp_array[] = "**NOT visible**";
                     }
 
+                }
+                return self::enclose($zpp_array, $wrap);
+            }
+            else
+                return self::enclose("", $wrap);
+        }
+
+        if( $fieldName == 'from-zone-location' )
+        {
+            if( method_exists($rule->from, 'isAny'))
+            {
+                if( $rule->from->isAny() )
+                    return self::enclose('---');
+                $zpp_array = array();
+                foreach($rule->from->getAll() as $zones_to_check)
+                {
+                    /* @var Zone $zones_to_check */
+
+                    if( isset($rule->owner->owner) && $rule->owner->owner->isPanorama() )
+                    {
+                        $zpp_array[] = "shared";
+                        continue;
+                    }
+
+                    if( isset($rule->owner->owner->owner) && $rule->owner->owner->owner->isPanorama()  )
+                    {
+                        if( isset($zones_to_check->owner->owner->owner->owner) )
+                        {
+                            if( get_class($zones_to_check->owner->owner->owner->owner) === "Template"
+                                || get_class($zones_to_check->owner->owner->owner->owner) === "TemplateStack")
+                            {
+                                $vsys_name = $zones_to_check->owner->owner->name();
+                                if( empty($vsys_name) )
+                                    $vsys_name = "vsys1";
+                                $zpp_array[] = $zones_to_check->owner->owner->owner->owner->name()."/".$vsys_name;
+                            }
+                        }
+                        elseif( isset($zones_to_check->owner->owner->owner) )
+                        {
+                            if( get_class($zones_to_check->owner->owner->owner) === "Template" || get_class($zones_to_check->owner->owner->owner) === "TemplateStack")
+                            {
+                                $vsys_name = $zones_to_check->owner->name();
+                                if( empty($vsys_name) )
+                                    $vsys_name = "vsys1";
+                                $zpp_array[] = $zones_to_check->owner->owner->owner->name()."/".$vsys_name;
+                            }
+                        }
+
+                    }
+                    elseif( isset($rule->owner->owner->owner) && $rule->owner->owner->owner->isFirewall() )
+                    {
+                        if( get_class( $rule->owner->owner ) == "VirtualSystem" )
+                            $zpp_array[] = $zones_to_check->owner->owner->name();
+                    }
                 }
                 return self::enclose($zpp_array, $wrap);
             }
@@ -1280,6 +1334,26 @@ class RuleCallContext extends CallContext
                 return self::enclose( '');
 
             return self::enclose($rule->logSetting());
+        }
+
+        if( $fieldName == 'log_profile_location' )
+        {
+            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
+                return self::enclose('');
+
+            if( $rule->logSetting() === FALSE )
+                return self::enclose( '');
+
+            $logProfObj = $rule->logSettingObj();
+            if( $logProfObj !== null )
+            {
+                if( get_class($logProfObj->owner->owner) == "PanoramaConf" )
+                    return self::enclose( "shared" );
+                else
+                    return self::enclose( $logProfObj->owner->owner->name() );
+            }
+            else
+                return self::enclose( '');
         }
 
         if( $fieldName == 'snat_type' )

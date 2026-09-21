@@ -78,8 +78,8 @@ class ThreatPolicySpyware extends ThreatPolicy
                     }
                     else
                     {
-                        #$action_bp = FALSE;
-                        return FALSE;
+                        $action_bp = FALSE;
+                        #return FALSE;
                     }
 
                 }

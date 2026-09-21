@@ -534,7 +534,6 @@ class SecurityRule extends RuleWithUserID
                         {
                             //todo: not an object - default object not yet created
                             mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' StoreName: '".$tmp_store_name."' not found.", null, false );
-                            #$this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
 
                             if( $tmp_store_name == 'AntiVirusProfileStore')
                                 $profile = $sub->AntiVirusPredefinedStore->createSPTmp( $firstE->textContent, $this );
@@ -550,6 +549,19 @@ class SecurityRule extends RuleWithUserID
                                 $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
                             elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                                 $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $firstE->textContent, $this );
+
+
+
+                            if( $profile !== null )
+                            {
+                                $this->secprofProfiles_obj[$prof->nodeName] = $profile;
+                                $profile->addReference( $this );
+                            }
+                            else
+                            {
+                                //this can happen for DataFilteringProfileStore / DLP Plugin
+                                $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                            }
                         }
                     }
                 }
@@ -1039,7 +1051,7 @@ class SecurityRule extends RuleWithUserID
         $connector = findConnectorOrDie($this);
 
         if( $connector->isAPI() )
-            $connector->sendSetRequest($this->getXPath(), '<action>'.$domNode->textContent.'</action>');
+            $connector->sendSetRequest($this->getXPath(), '<action>'.PH::panosphp_htmlspecialchars($domNode->textContent).'</action>');
     }
 
 

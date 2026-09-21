@@ -121,6 +121,9 @@ class FawkesConf
     public $UrlFilteringPredefinedStore;
 
 
+    public $LogProfilePredefinedStore;
+
+
     /** @var ThreatPolicyStore */
     public $ThreatPolicyStore = null;
 
@@ -182,7 +185,7 @@ class FawkesConf
         $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
         $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
 
-
+        $this->LogProfilePredefinedStore = LogProfileStore::getLogProfPredefinedStore( $this );
     }
 
 

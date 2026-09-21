@@ -294,7 +294,7 @@ class CallContext
             $output = "---";
         elseif( is_string($value) )
             // Convert newlines to <br /> for proper HTML display of multi-line values
-            $output = nl2br(htmlspecialchars($value));
+            $output = nl2br(PH::panosphp_htmlspecialchars($value));
         elseif( is_array($value) )
         {
             $output = '';
@@ -309,16 +309,16 @@ class CallContext
                     $first = FALSE;
 
                 if( is_string($subValue) || is_numeric($subValue) )
-                    $output .= htmlspecialchars($subValue);
+                    $output .= PH::panosphp_htmlspecialchars($subValue);
                 elseif( is_object($subValue) )
-                    $output .= htmlspecialchars($subValue->name());
+                    $output .= PH::panosphp_htmlspecialchars($subValue->name());
                 else
                     $output .= "";
             }
         }
         elseif( is_object($value) )
         {
-            $output = htmlspecialchars( $value->name() );
+            $output = PH::panosphp_htmlspecialchars( $value->name() );
         }
         else
             derr('TYPE: '.gettype($value).' unsupported', null, false);

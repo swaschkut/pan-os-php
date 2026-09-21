@@ -254,9 +254,9 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
+    private static $library_version_bugfix = 59;
+    private static $library_version_release = "develop";
 
-    private static $library_version_bugfix = 58;
-    private static $library_version_release = "";
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -290,9 +290,12 @@ class PH
         return array($ciphertext_2, $calcmac);
     }
 
-    static public function frameworkVersion()
+    static public function frameworkVersion( $format = "all")
     {
-        return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix. '.' . self::$library_version_release;
+        if( $format == "all" )
+            return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix. '.' . self::$library_version_release;
+        else
+            return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix;
     }
 
     static public function frameworkInstalledOS()
@@ -1517,5 +1520,10 @@ class PH
 
         if( count( array_keys($data) ) == 3)
             $data = array();
+    }
+
+    public static function panosphp_htmlspecialchars( $string )
+    {
+        return htmlspecialchars( $string, ENT_QUOTES|ENT_XML1, 'UTF-8' );
     }
 }

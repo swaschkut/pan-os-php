@@ -163,7 +163,7 @@ class TagRuleContainer extends ObjRuleContainer
         {
             $con = findConnectorOrDie($this);
 
-            $con->sendSetRequest($this->getXPath(), '<member>' . $Obj->name() . '</member>');
+            $con->sendSetRequest($this->getXPath(), '<member>'.PH::panosphp_htmlspecialchars($Obj->name() ). '</member>');
 
             return TRUE;
         }

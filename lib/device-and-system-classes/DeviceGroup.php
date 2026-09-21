@@ -38,6 +38,9 @@ class DeviceGroup
     /** @var DOMElement */
     public $devicesRoot;
 
+    /** @var DOMElement */
+    public $referenceTemplateRoot;
+
     public $userGroupSourceRoot;
 
     /** @var AddressStore */
@@ -193,6 +196,9 @@ class DeviceGroup
 
     /** @var Array */
     private $devices = array();
+
+    /** @var Array */
+    private $templates = array();
 
     /** @var NetworkPropertiesContainer */
     public $_fakeNetworkProperties;
@@ -467,6 +473,24 @@ class DeviceGroup
                     }
 
                 }
+            }
+        }
+
+        //reference-templates
+        $this->referenceTemplateRoot = DH::findFirstElement('reference-templates', $xml);
+        if ($this->referenceTemplateRoot !== FALSE) {
+            foreach ($this->referenceTemplateRoot->childNodes as $templateNode)
+            {
+                if ($templateNode->nodeType != 1)
+                    continue;
+
+                $template = $this->owner->findTemplate( $templateNode->textContent );
+                if( $template !== null )
+                {
+                    $template->addReference($this);
+                    #print "ref DG ".$this->name()." added - ".$template->name()."\n";
+                }
+
             }
         }
     }

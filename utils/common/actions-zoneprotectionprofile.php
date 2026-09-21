@@ -351,3 +351,37 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
     )
 );
 ZoneProtectionProfileCallContext::$supportedActions[] = array_merge(ZoneProtectionProfileCallContext::$supportedActions[array_key_last(ZoneProtectionProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
+
+ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set'] = array(
+    'name' => 'scan.alert-only-set',
+    'MainFunction' => function (ZoneProtectionProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "ZoneProtectionProfile" )
+            return null;
+
+        foreach ($object->disabled_scans as $key => $scan)
+        {
+            $object->scan_set_add_alert( $key, $object->scan_alert[$key]);
+        }
+        foreach ($object->scan as $key => $scan)
+        {
+            if( !isset($scan['action']) || $scan['action'] == "allow" )
+                $object->scan_set_add_alert( $key, $object->scan_alert[$key]);
+        }
+
+        if( $context->isAPI )
+            $object->API_sync();
+    }
+);
+
+ZoneProtectionProfileCallContext::$supportedActions['alert-only-set'] = array(
+    'name' => 'alert-only-set',
+    'MainFunction' => function (ZoneProtectionProfileCallContext $context) {
+
+        ///////////////////////////////////////////////////////////////
+        $f = ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set']['MainFunction'];
+        $f($context);
+
+    }
+);

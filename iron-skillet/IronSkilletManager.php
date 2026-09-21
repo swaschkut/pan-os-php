@@ -148,7 +148,7 @@ class IronSkilletManager {
 
             // 4. Re-inject sorted entries sequentially
             foreach ($allAlertMembers as $sortedMember) {
-                $entry->alert->addChild('member', htmlspecialchars($sortedMember));
+                $entry->alert->addChild('member', PH::panosphp_htmlspecialchars($sortedMember));
             }
             // ------------------------------------
 
