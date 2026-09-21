@@ -624,12 +624,16 @@ class PLAYBOOK_VALIDATION__
                     $file2 = $compare_stats_file["file2"];
 
                     // 1. Check if both files exist and are readable
-                    if (!file_exists($file1) || !is_readable($file1)) {
-                        die("Error: File 1 does not exist or is not readable: " . $file1);
+                    if (!file_exists($file1) || !is_readable($file1))
+                    {
+                        mwarning("Error: File 1 does not exist or is not readable: " . $file1, null, false);
+                        continue;
                     }
 
-                    if (!file_exists($file2) || !is_readable($file2)) {
-                        die("Error: File 2 does not exist or is not readable: " . $file2);
+                    if (!file_exists($file2) || !is_readable($file2))
+                    {
+                        mwarning("Error: File 2 does not exist or is not readable: " . $file2, null, false);
+                        continue;
                     }
 
                     // 2. Safely read and decode the files
