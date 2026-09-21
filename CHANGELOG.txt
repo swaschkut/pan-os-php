@@ -14,6 +14,7 @@ UTIL:
 * type=zone actions=exporttohtml:zone.html | implement correct lfp-location for Panorama
 * type=log-prof | implement predefinedLogProfStore - for all Device classes
 * type=log-prof | introduce 'filter=(object is.predefined)'
+* type=vendor-migration vendor=stonesoft | update to bring in action_type 'block_list'
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
