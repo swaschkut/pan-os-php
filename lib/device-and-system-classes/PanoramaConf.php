@@ -1664,8 +1664,6 @@ class PanoramaConf
                     $logProfName = $zone->logsetting;
                     if( !empty( $logProfName ) )
                     {
-                        print "search LogProf: ".$logProfName." from Zone: ".$zone->name()."\n";
-
                         foreach( $template->getReferences() as $templateStack )
                         {
                             /* @Var TemplateStack $templateStack */
@@ -1677,13 +1675,13 @@ class PanoramaConf
                                     /* @VAR ManagedDevice $serial */
                                     $deviceGroupName = $serial->getDeviceGroup();
                                     $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
-                                    print "DG: ".$deviceGroupOjb->name()."\n";
+
                                     $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
                                     if( $logProfObj !== null )
                                     {
                                         if( $logProfName == $logProfObj->name() )
                                         {
-                                            print "logProfobj Name: ".$logProfObj->name()."\n";
+
                                             $zone->logsetting_Obj = $logProfObj;
                                             $logProfObj->addReference($zone);
                                         }
