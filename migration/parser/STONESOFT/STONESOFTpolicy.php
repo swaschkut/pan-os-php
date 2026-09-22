@@ -192,6 +192,7 @@ trait STONESOFTpolicy
                 && $action_type != "blacklist"
                 && $action_type != "jump"
                 && $action_type != "refuse"
+                && $action_type != "block_list"
             )
             {
                 print "ACTION: ".$action_type."\n";
@@ -297,7 +298,7 @@ trait STONESOFTpolicy
                 print "     - set rule action: DENY\n";
                 $tmprule->setAction( "deny" );
             }
-            elseif( $action_type == "blacklist" )
+            elseif( $action_type == "blacklist" || $action_type == "block_list" )
             {
                 print "     - set rule action: DENY\n";
                 $tmprule->setAction( "deny" );

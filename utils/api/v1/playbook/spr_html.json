@@ -1,0 +1,101 @@
+{
+  "stagename": "working-files/spr-",
+  "header-comment": "*****************************************************************************************************************************************************\n*                                                                                                                                                   *\n*  W11.7-wizard playbook — produces the pan-os-php working files consumed by spr_html_runner.py to render spr_helper.html.                          *\n*                                                                                                                                                   *\n*  Command inventory (15 total; +2 for 0sct WS-2 coverage tables 2026-09-10: type=zone 2a-v_All_Zones.html [Zone Protection] + type=rule ruletype=decryption 2a-vi_AllDecrypt_rules.html [Log Forwarding Decryption]; +1 type=device manageddevice Managed-Devices export added 2026-07-30 for the Device Info 'MANAGED DEVICES' cell — Dual approach per Option A pivot-back 2026-07-01 session 5;                                                        *\n*  type=stats is a SEPARATE standalone pan-os-php invocation run by app.py wizard block BEFORE this playbook;                                       *\n*  Option A-recombined attempted + reverted after empirical evidence of pan-os-php shadow-bpjsonfile propagation-with-quotes bug for playbook       *\n*  sub-commands — see .claude/plans/glistening-meandering-puppy.md § W-4-Bug-Post-Mortem):                                                          *\n*    1) 6× type=securityprofile — SP-list files (1a-i AV / AS / VP / URL / FB / WF-SPs.html)                                                        *\n*    2) 1× type=rule — 3a-i_All_sec_rules.html (matched-rule join for main + Disabled sub-tables)                                                   *\n*    3) 1× type=rule ruletype=defaultsecurity — 3a-ii_All-Default_sec_rules.html (Default Rule sub-tables — action=allow filtered by runner)        *\n*    4) 1× type=securityprofilegroup — 1a-vii_SPG.html (Profile Inventory chip 'SPGs')                                                              *\n*    5) 1× type=zone-protection-profile — 8c-vi_All_ZPP.html (Profile Inventory chip 'Zone Protection')                                             *\n*    6) 1× type=log-profile — 8c-vii_All_LFP.html (Profile Inventory chip 'Log Forward')                                                            *\n*    7) 1× type=html-merger — spr_helper.xlsx (Excel/CSV merge of all previous export HTMLs; consumer-facing companion to spr_helper.html)          *\n*                                                                                                                                                   *\n*  Not user-selectable: hidden from wizard dropdowns via assessmentExclude (templates/index.html) + PLAYBOOK_DESCRIPTIONS empty desc (visibility.json convention). *\n*                                                                                                                                                   *\n*****************************************************************************************************************************************************",
+  "footer-comment": "*****************************************************************************************************************************************************\n*   SPR working files ready — spr_html_runner.py consumes via find_one_by_suffix (playbook-prefix-agnostic)                                         *\n*****************************************************************************************************************************************************",
+  "command": [
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=vulnerability,predefined-vulnerability",
+      "actions": "actions=exportToExcel:1a-i_All_VP-SPs.html,UsedInLocation|WhereUsed|TotalUse|bestpractice|visibility",
+      "filter": "filter=!(object is.unused) and !(object is.unused.recursive)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=spyware,predefined-spyware",
+      "actions": "actions=exportToExcel:1a-ii_All_AS-SPs.html,UsedInLocation|WhereUsed|TotalUse|bestpractice|visibility",
+      "filter": "filter=!(object is.unused) and !(object is.unused.recursive)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=virus,predefined-virus",
+      "actions": "actions=exportToExcel:1a-iii_All_AV-SPs.html,UsedInLocation|WhereUsed|TotalUse|bestpractice|visibility",
+      "filter": "filter=!(object is.unused) and !(object is.unused.recursive)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=url-filtering,predefined-url-filtering",
+      "actions": "actions=exportToExcel:1a-iv_All_URL-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
+      "filter": "filter=!(object is.unused) and !(object is.unused.recursive)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=file-blocking,predefined-file-blocking",
+      "actions": "actions=exportToExcel:1a-v_All_FB-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
+      "filter": "filter=!(object is.unused) and !(object is.unused.recursive)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=wildfire-analysis,predefined-wildfire-analysis",
+      "actions": "actions=exportToExcel:1a-vi_All_WF-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
+      "filter": "filter=!(object is.unused) and !(object is.unused.recursive)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofilegroup",
+      "actions": "actions=exportToExcel:1a-vii_SPG.html,UsedInLocation|TotalUse|bestpractice|visibility",
+      "filter": "filter=!(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "rule",
+      "actions": "actions=exportToExcel:2a-i_All_sec_rules.html,visibility|bestpractice",
+      "location": "location=any"
+    },
+    {
+      "type": "rule",
+      "ruletype": "ruletype=defaultsecurity",
+      "actions": "actions=exportToExcel:2a-ii_All-Default_sec_rules.html,visibility|bestpractice",
+      "location": "location=any"
+    },
+    {
+      "type": "zone-protection-profile",
+      "actions": "actions=exportToExcel:2a-iii_All_ZPP.html,WhereUsed|UsedInLocation|TotalUse",
+      "filter": "filter=!(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "log-profile",
+      "actions": "actions=exportToExcel:2a-iv_All_LFP.html,UsedInLocation|TotalUse",
+      "filter": "filter=!(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "zone",
+      "actions": "actions=exportToExcel:2a-v_All_Zones.html,WhereUsed|UsedInLocation",
+      "location": "location=any"
+    },
+    {
+      "type": "rule",
+      "ruletype": "ruletype=decryption",
+      "actions": "actions=exportToExcel:2a-vi_AllDecrypt_rules.html",
+      "location": "location=any"
+    },
+    {
+      "type": "device",
+      "devicetype": "devicetype=manageddevice",
+      "actions": "actions=exportToExcel:3a_Managed-Devices.html,UsedInLocation|WhereUsed",
+      "location": "location=any"
+    },      
+    {
+      "comment": "merge all previously created html files into one Excel sheet",
+      "type": "html-merger",
+      "adddefaulthtml": "adddefaulthtml",
+      "exportCSV": "exportCSV=spr_helper.xlsx"
+    }         
+  ]
+}

@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.59 [beta]
+2.1.60
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.59 (20260922)
 UTIL:
 * pan-os-php changelog[=2.1.56] | introduction of argument changelog
 * playbook | best-practice-set.json | add url and wf
@@ -14,6 +22,7 @@ UTIL:
 * type=zone actions=exporttohtml:zone.html | implement correct lfp-location for Panorama
 * type=log-prof | implement predefinedLogProfStore - for all Device classes
 * type=log-prof | introduce 'filter=(object is.predefined)'
+* type=vendor-migration vendor=stonesoft | update to bring in action_type 'block_list'
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
@@ -41,6 +50,7 @@ GENERAL:
 * Device App-ID update to version: 9133-10186
 * all class with usage of htmlspecialchars migrated to PH::panosphp_htmlspecialchars
 * Device App-ID update to version: 9137-10202
+* Device App-ID update to version: 9149-10248
 
 
 2.1.58 (20260803)
