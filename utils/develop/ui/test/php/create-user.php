@@ -9,7 +9,7 @@ if ( !$demo && isset($_POST['username']) && isset($_POST['password']) && isset($
 	function test_input($data) {
 	  $data = trim($data);
 	  $data = stripslashes($data);
-	  $data = htmlspecialchars($data);
+	  $data = PH::panosphp_htmlspecialchars($data);
 	  return $data;
 	}
 

@@ -706,3 +706,154 @@ SecurityProfileGroupCallContext::$supportedActions['create'] = array(
     },
     'args' => array('spg-name' => array('type' => 'string', 'default' => '*nodefault*') )
 );
+
+SecurityProfileGroupCallContext::$supportedActions['name-addprefix'] = array(
+    'name' => 'name-addPrefix',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+        $newName = $context->arguments['prefix'] . $object->name();
+
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        if( strlen($newName) > 127 )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    },
+    'args' => array('prefix' => array('type' => 'string', 'default' => '*nodefault*')
+    ),
+);
+SecurityProfileGroupCallContext::$supportedActions['name-addsuffix'] = array(
+    'name' => 'name-addSuffix',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+        $newName = $object->name() . $context->arguments['suffix'];
+
+
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        if( strlen($newName) > 127 )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+            $object->setName($newName);
+    },
+    'args' => array('suffix' => array('type' => 'string', 'default' => '*nodefault*')
+    ),
+);
+SecurityProfileGroupCallContext::$supportedActions['name-removeprefix'] = array(
+    'name' => 'name-removePrefix',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+        $prefix = $context->arguments['prefix'];
+
+
+
+        if( strpos($object->name(), $prefix) !== 0 )
+        {
+            $string = "prefix not found";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $newName = substr($object->name(), strlen($prefix));
+
+        if( !preg_match("/^[a-zA-Z0-9]/", $newName[0]) )
+        {
+            $string = "object name contains not allowed character at the beginning";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+            $object->setName($newName);
+    },
+    'args' => array('prefix' => array('type' => 'string', 'default' => '*nodefault*')
+    ),
+);
+SecurityProfileGroupCallContext::$supportedActions['name-removesuffix'] = array(
+    'name' => 'name-removeSuffix',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+        $suffix = $context->arguments['suffix'];
+        $suffixStartIndex = strlen($object->name()) - strlen($suffix);
+
+
+
+        if( substr($object->name(), $suffixStartIndex, strlen($object->name())) != $suffix )
+        {
+            $string = "suffix not found";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+
+            return;
+        }
+        $newName = substr($object->name(), 0, $suffixStartIndex);
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+            $object->setName($newName);
+    },
+    'args' => array('suffix' => array('type' => 'string', 'default' => '*nodefault*')
+    ),
+);

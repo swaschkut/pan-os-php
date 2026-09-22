@@ -397,6 +397,31 @@ RQuery::$defaultFilters['securityprofilegroup']['reftype']['operators']['is'] = 
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofilegroup']['refobject']['operators']['rule.is.enabled'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $object = $context->object;
+
+        $reference_array = $object->getReferences();
+
+        foreach( $reference_array as $refobject )
+        {
+            if( get_class( $refobject ) == "SecurityRule" )
+            {
+                /** @var SecurityRule $refobject */
+                if( $refobject->isEnabled() )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if refobject is SecurityRule and disabled',
+    'ci' => array(
+        'fString' => '(%PROP% shared )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 
 #private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering');
 

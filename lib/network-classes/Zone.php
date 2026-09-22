@@ -43,6 +43,7 @@ class Zone
     public $zoneProtectionProfile = null;
     public $packetBufferProtection = FALSE;
     public $logsetting = null;
+    public $logsetting_Obj = null;
 
     public $userID = FALSE;
 
@@ -262,9 +263,19 @@ class Zone
 
                     if( get_class($this->owner->owner) == "VirtualSystem" || get_class($this->owner->owner) == "DeviceCloud" )
                     {
-                        $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logsetting );
-                        if( is_object( $tmp_logprof ) )
-                            $tmp_logprof->addReference( $this );
+                        if( isset($this->owner->owner->owner->owner) && get_class($this->owner->owner->owner->owner) == "Template" )
+                        {
+                            //this is done via Panorama class - after reading DeviceGroup
+                        }
+                        else
+                        {
+                            $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logsetting );
+                            if( is_object( $tmp_logprof ) )
+                            {
+                                $tmp_logprof->addReference( $this );
+                                $this->logsetting_Obj = $tmp_logprof;
+                            }
+                        }
                     }
                     else
                         mwarning("Log-profile: '".$this->logsetting."'  found in Zone: '".$this->name()."'. References for class: '".get_class($this->owner->owner)." not yet implemented", null, false);

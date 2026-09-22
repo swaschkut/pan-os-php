@@ -55,6 +55,7 @@ trait ReferenceableObject
             return;
 
         $serial = spl_object_hash($ref);
+        #$pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
 
         if( isset($this->refrules[$serial]) )
             return;
@@ -69,6 +70,7 @@ trait ReferenceableObject
             return;
 
         $serial = spl_object_hash($ref);
+        #$pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
 
         if( isset($this->refrules[$serial]) )
         {

@@ -148,10 +148,10 @@ trait RuleWithGroupTag
             if( !is_object( $newGroupTag )  )
                 if( $con->isAPI() )
                     #$con->sendDeleteRequest($xpath);
-                    $con->sendSetRequest($this->getXPath(), '<group-tag>' . htmlspecialchars($newGroupTag) . '</group-tag>');
+                    $con->sendSetRequest($this->getXPath(), '<group-tag>' . PH::panosphp_htmlspecialchars($newGroupTag) . '</group-tag>');
             else
                 if( $con->isAPI() )
-                    $con->sendSetRequest($this->getXPath(), '<group-tag>' . htmlspecialchars($this->grouptag->name()) . '</group-tag>');
+                    $con->sendSetRequest($this->getXPath(), '<group-tag>' . PH::panosphp_htmlspecialchars($this->grouptag->name()) . '</group-tag>');
         }
 
         return $ret;

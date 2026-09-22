@@ -250,6 +250,41 @@ RQuery::$defaultFilters['device']['devicegroup']['operators']['has.vsys'] = arra
     )
 );
 
+RQuery::$defaultFilters['device']['devicegroup']['operators']['has.template-name-reference'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var DeviceGroup $object */
+        $object = $context->object;
+
+        $class = get_class( $object );
+        if( $class !== "DeviceGroup" )
+            return null;
+
+        $DGdevices = $object->getDevicesInGroup();
+        foreach( $DGdevices as $key => $device )
+        {
+            $managedFirewall = $object->owner->managedFirewallsStore->find($key);
+            if( $managedFirewall !== null )
+            {
+                $template_stack_obj = $object->owner->findTemplateStack($managedFirewall->template_stack);
+                if( $template_stack_obj !== null )
+                {
+                    $templates_array = $template_stack_obj->templates;
+                    foreach( $templates_array as $template )
+                        if( $template->name() === $context->value)
+                            return TRUE;
+                }
+            }
+        }
+
+        return null;
+    },
+    'arg' => True,
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['device']['devicegroup']['operators']['with-no-serial'] = array(
     'Function' => function (DeviceRQueryContext $context) {
         /** @var DeviceGroup $object */

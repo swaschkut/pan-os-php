@@ -91,10 +91,23 @@ DeviceCallContext::$supportedActions['display'] = array(
                 #PH::print_stdout( $context->padding."- ".$key );
                 $managedFirewall = $object->owner->managedFirewallsStore->find($key);
                 if( $managedFirewall !== null )
+                {
                     PH::print_stdout( $context->padding." - serial: ".$key." - Template-Stack: ".$managedFirewall->template_stack);
+                    $template_stack_obj = $object->owner->findTemplateStack($managedFirewall->template_stack);
+                    if( $template_stack_obj !== null )
+                    {
+                        $templates_array = $template_stack_obj->templates;
+                        $template_name_array = array();
+                        foreach( $templates_array as $template )
+                        {
+                            $template_name_array[] = $template->name();
+                        }
+                        PH::print_stdout( $context->padding."  - Templates: ".implode( ", ", $template_name_array ) );
+                    }
+                }
 
 
-                if( isset($device['vsyslist']) )
+                if( isset($device['vsyslist']) && !empty($device['vsyslist']) )
                 {
                     PH::print_stdout($context->padding."  - virtualsystem: '".array_keys($device['vsyslist'])[0]."'");
                     $context->objectList['serial'][$key] = array( 'serial' => $key, 'dg' => $managedFirewall->devicegroup, 'template-stack' => $managedFirewall->template_stack, 'vsys' => array_keys($device['vsyslist'])[0] );
@@ -469,6 +482,9 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
 
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
+
         $pan = $context->subSystem;
 
         if( !$pan->isPanorama() )
@@ -494,7 +510,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
                 #$con->sendDeleteRequest($xpath);
                 $xpath = DH::elementToPanXPath($tmp_dg->xmlroot);
                 $xpath .= '/devices';
-                $con->sendSetRequest($xpath, "<entry name='{$serial}'/>");
+                $con->sendSetRequest($xpath, "<entry name='".PH::panosphp_htmlspecialchars( $serial)."'/>");
             }
             else
                 $tmp_dg->addDevice( $serial );
@@ -514,6 +530,9 @@ DeviceCallContext::$supportedActions['DeviceGroup-removeSerial'] = array(
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
+
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
 
         $pan = $context->subSystem;
 
@@ -932,6 +951,9 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
 
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
+
         $pan = $context->subSystem;
 
         if( !$pan->isPanorama() )
@@ -957,7 +979,7 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
                 #$con->sendDeleteRequest($xpath);
                 $xpath = DH::elementToPanXPath($tmp_dg->xmlroot);
                 $xpath .= '/devices';
-                $con->sendSetRequest($xpath, "<entry name='{$serial}'/>");
+                $con->sendSetRequest($xpath, "<entry name='".PH::panosphp_htmlspecialchars( $serial)."'/>");
             }
             else
                 $tmp_dg->addDevice( $serial );
@@ -984,6 +1006,9 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
 
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
+
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
 
         $pan = $context->subSystem;
 
@@ -1178,6 +1203,9 @@ DeviceCallContext::$supportedActions['ManagedDevice-create'] = array(
 
         $serialName = $context->arguments['serial'];
 
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serialName) )
+            derr("Invalid serial number format.");
+
         $pan = $context->subSystem->owner;
 
         if( !$pan->isPanorama() )
@@ -1197,7 +1225,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-create'] = array(
                 $con = findConnectorOrDie($dg);
 
                 $xpath = '/config/mgt-config/devices';
-                $con->sendSetRequest($xpath, "<entry name='{$serialName}'/>");
+                $con->sendSetRequest($xpath, "<entry name='".PH::panosphp_htmlspecialchars( $serialName)."'/>");
             }
         }
         else
@@ -1224,6 +1252,10 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete'] = array(
         }
 
         $serial_tosearch = $context->arguments['serial'];
+
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial_tosearch) )
+            derr("Invalid serial number format.");
+
         $force = $context->arguments['force'];
 
         /** @var ManagedDevice $object */

@@ -98,6 +98,11 @@ class AddressStore
         return $path;
     }
 
+    public function &getRegionStoreXPath()
+    {
+        $path = $this->getBaseXPath() . '/region';
+        return $path;
+    }
 
     /**
      * For developer use only
@@ -1260,6 +1265,11 @@ class AddressStore
         {
             unset($this->_addressGroups[$oldName]);
             $this->_addressGroups[$newName] = $h;
+        }
+        elseif( $class == 'Region' )
+        {
+            unset($this->_regionObjects[$oldName]);
+            $this->_regionObjects[$newName] = $h;
         }
         else
             derr('unsupported class');

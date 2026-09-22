@@ -294,7 +294,16 @@ class ObjRuleContainer
         if( isset($this->fasthashcomp) )
             unset($this->fasthashcomp);
 
-        $pos = array_search($Obj, $this->o, TRUE);
+        $pos = FALSE;
+        if( get_class($Obj) == "Zone" )
+        {
+            foreach( $this->o as $pos => $o )
+                if( $Obj->name() == $o->name() )
+                    break;
+        }
+        else
+            $pos = array_search($Obj, $this->o, TRUE);
+
         if( $pos !== FALSE )
         {
             unset($this->o[$pos]);
@@ -303,7 +312,6 @@ class ObjRuleContainer
 
             return TRUE;
         }
-
         return FALSE;
     }
 

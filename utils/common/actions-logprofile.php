@@ -136,7 +136,11 @@ LogProfileCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction(PH::getLocationString($object));
 
-                $lines .= $context->encloseFunction($object->name());
+                if( str_contains($object->owner->name(), "predefined") )
+                    $lines .= $context->encloseFunction($object->name()." [predefined]" );
+                else
+                    $lines .= $context->encloseFunction($object->name());
+
 
                 if( !empty( $object->type() ) )
                 {

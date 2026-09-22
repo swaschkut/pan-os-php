@@ -187,8 +187,25 @@ class RULE_COMPARE extends UTIL
                     $diff_srv = $this->array_diff_recursive($srv1, $srv2);
                 }
 
+                $diff_from = array();
+                $field = 'from';
+                if( isset($rule[$field]) && isset($rule2[$field]) )
+                {
+                    $from1 = $rule[$field];
+                    $from2 = $rule2[$field];
+                    $diff_from = $this->array_diff_recursive($from1, $from2);
+                }
 
-                if( !empty($diff_src) || !empty($diff_dst) || !empty($diff_srv) )
+                $diff_to = array();
+                $field = 'to';
+                if( isset($rule[$field]) && isset($rule2[$field]) )
+                {
+                    $to1 = $rule[$field];
+                    $to2 = $rule2[$field];
+                    $diff_to = $this->array_diff_recursive($to1, $to2);
+                }
+
+                if( !empty($diff_src) || !empty($diff_dst) || !empty($diff_srv) || !empty($diff_from) || !empty($diff_to) )
                 {
                     $ruleDiff = TRUE;
 
@@ -223,6 +240,24 @@ class RULE_COMPARE extends UTIL
                         $finalArray[$subName][$key][$keyword] = $compareArray;
                     }
 
+                    if( !empty($diff_from) )
+                    {
+                        $keyword = "zone from";
+                        $compareArray = array();
+                        PH::print_stdout( PH::boldText("  ".$keyword) );
+                        $this->printArray($from1, $from2, $compareArray);
+                        $finalArray[$subName][$key][$keyword] = $compareArray;
+                    }
+
+                    if( !empty($diff_to) )
+                    {
+                        $keyword = "zone to";
+                        $compareArray = array();
+                        PH::print_stdout( PH::boldText("  ".$keyword) );
+                        $this->printArray($to1, $to2, $compareArray);
+                        $finalArray[$subName][$key][$keyword] = $compareArray;
+                    }
+
                     if( $generateRuleHTMLfile )
                     {
                         PH::print_stdout( "create HTML file");
@@ -236,7 +271,7 @@ class RULE_COMPARE extends UTIL
         {
             PH::print_stdout();
             PH::print_stdout();
-            $text = "NO Rule diff for SOURCE / DESTINATION / SERVICE";
+            $text = "NO Rule diff for SOURCE / DESTINATION / SERVICE / zone FROM / zone TO";
             PH::print_stdout( PH::boldText($text) );
             $finalArray['info'] = $text;
             PH::print_stdout();
@@ -255,10 +290,10 @@ class RULE_COMPARE extends UTIL
             PH::$JSON_OUT['rule-compare'] = $finalArray;
 
         //cleanup
-        if( !$keepjsonfile1 )
-            unlink($json_file1_name);
+        #if( !$keepjsonfile1 )
+        #    unlink($json_file1_name);
 
-        unlink($json_file2_name);
+        #unlink($json_file2_name);
         unset($file1);
         unset($file2);
         unset($array1);
@@ -297,6 +332,34 @@ class RULE_COMPARE extends UTIL
             }
         }
 
+        foreach( $arr2 as $key => $value )
+        {
+            //if the key exists in the second array, recursively call this function
+            //if it is an array, otherwise check if the value is in arr2
+            if( array_key_exists($key, $arr1) )
+            {
+                if( is_array($value) )
+                {
+                    $recursiveDiff = array_diff_recursive($value, $arr1[$key]);
+
+                    if( count($recursiveDiff) )
+                    {
+                        $outputDiff[$key] = $recursiveDiff;
+                    }
+                }
+                else if( !in_array($value, $arr1) )
+                {
+                    $outputDiff[$key] = $value;
+                }
+            }
+            //if the key is not in the second array, check if the value is in
+            //the second array (this is a quirk of how array_diff works)
+            else if( !in_array($value, $arr1) )
+            {
+                $outputDiff[$key] = $value;
+            }
+        }
+
         return $outputDiff;
 
     }
@@ -319,7 +382,7 @@ class RULE_COMPARE extends UTIL
 
         if( !empty($tmp1) || !empty($tmp2))
         {
-            PH::print_stdout("  * file1");
+            PH::print_stdout("   * file1");
             #print_r($tmp1);
             foreach( $tmp1 as $entry )
             {

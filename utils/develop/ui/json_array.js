@@ -2633,6 +2633,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "has.template-name-reference": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "with-no-serial": {
                         "Function": {},
                         "arg": false,
@@ -4917,6 +4925,10 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },
@@ -5999,6 +6011,18 @@ var subjectObject =
                     }
                 }
             },
+            "from-remove-objects-matching-filter": {
+                "name": "from-Remove-Objects-Matching-Filter",
+                "MainFunction": {},
+                "args": {
+                    "SubqueryFilterName": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=from-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(interface is.set)\""
+                    }
+                },
+                "help": "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
+            },
             "from-replace": {
                 "name": "from-Replace",
                 "section": "zone",
@@ -6915,6 +6939,18 @@ var subjectObject =
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "to-remove-objects-matching-filter": {
+                "name": "to-Remove-Objects-Matching-Filter",
+                "MainFunction": {},
+                "args": {
+                    "SubqueryFilterName": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=to-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(interface is.set)\""
+                    }
+                },
+                "help": "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
             },
             "to-replace": {
                 "name": "to-Replace",
@@ -10555,6 +10591,46 @@ var subjectObject =
                     }
                 }
             },
+            "name-addprefix": {
+                "name": "name-addPrefix",
+                "MainFunction": {},
+                "args": {
+                    "prefix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-addsuffix": {
+                "name": "name-addSuffix",
+                "MainFunction": {},
+                "args": {
+                    "suffix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-removeprefix": {
+                "name": "name-removePrefix",
+                "MainFunction": {},
+                "args": {
+                    "prefix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-removesuffix": {
+                "name": "name-removeSuffix",
+                "MainFunction": {},
+                "args": {
+                    "suffix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "securityprofile-remove": {
                 "name": "securityProfile-Remove",
                 "MainFunction": {},
@@ -10765,6 +10841,19 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refobject": {
+                "operators": {
+                    "rule.is.enabled": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if refobject is SecurityRule and disabled",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13713,6 +13802,10 @@ var subjectObject =
     "zone-protection-profile": {
         "name": "zone-protection-profile",
         "action": {
+            "alert-only-set": {
+                "name": "alert-only-set",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -13766,6 +13859,10 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
                     }
                 }
+            },
+            "scan.alert-only-set": {
+                "name": "scan.alert-only-set",
+                "MainFunction": {}
             }
         },
         "filter": {
@@ -13864,6 +13961,10 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },

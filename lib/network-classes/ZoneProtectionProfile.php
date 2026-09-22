@@ -109,6 +109,7 @@ class ZoneProtectionProfile
 
     public $disabled_scans = array();
 
+    public $scan_alert = array();
 
     /**
      * ZoneProtectionProfile constructor.
@@ -126,6 +127,20 @@ class ZoneProtectionProfile
 
         if( $this->owner->owner->version >= 111 )
             $this->disabled_scans['8006'] = 'yes';
+
+
+        $this->scan_alert['8001']['interval'] = 2;
+        $this->scan_alert['8001']['threshold'] = 100;
+
+        $this->scan_alert['8002']['interval'] = 10;
+        $this->scan_alert['8002']['threshold'] = 100;
+
+        $this->scan_alert['8003']['interval'] = 2;
+        $this->scan_alert['8003']['threshold'] = 100;
+
+        $this->scan_alert['8006']['interval'] = 2;
+        $this->scan_alert['8006']['threshold'] = 4;
+
     }
 
     /**
@@ -560,6 +575,70 @@ class ZoneProtectionProfile
 
 
         return $newProfile;
+    }
+
+    public function is_visibility(): bool
+    {
+        foreach($this->scan as $scan)
+        {
+            if( !isset($scan['action']) || $scan['action'] == "allow" )
+                return false;
+        }
+        if( empty($this->disabled_scans) )
+            return true;
+
+
+        return false;
+    }
+
+    public function scan_set_add_alert( $key, $array )
+    {
+        $xmlString = '    <entry name="dummy">
+      <action>
+        <alert/>
+      </action>
+      <interval>2</interval>
+      <threshold>4</threshold>
+    </entry>';
+
+        $tmp_decoder = DH::findFirstElement('scan', $this->xmlroot);
+        if( $tmp_decoder === False)
+            $tmp_decoder = DH::findFirstElementorCreate('scan', $this->xmlroot);
+
+
+        $tmp_name = DH::findFirstElementByNameAttr( 'entry', $key, $tmp_decoder);
+        if( $tmp_name === False || $tmp_name === null )
+        {
+            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+            $xmlElement->setAttribute('name', $key);
+
+            $tmp_interval = DH::findFirstElementOrCreate( 'interval', $xmlElement );
+            $tmp_interval->textContent = $array['interval'];
+
+            $tmp_threshold = DH::findFirstElementOrCreate( 'threshold', $xmlElement );
+            $tmp_threshold->textContent = $array['threshold'];
+
+            $tmp_decoder->appendChild($xmlElement);
+
+            //update memory
+            unset( $this->disabled_scans[$key] );
+
+            $this->scan[$key]['interval'] = $array['interval'];
+            $this->scan[$key]['threshold'] = $array['threshold'];
+        }
+        else
+        {
+            $tmp_action = DH::findFirstElementOrCreate( 'action', $tmp_name );
+            $tmp_action_allow = DH::findFirstElementOrCreate( 'allow', $tmp_action );
+            $tmp_action->removeChild( $tmp_action_allow );
+            $tmp_action_alert = DH::findFirstElementOrCreate( 'alert', $tmp_action );
+
+            $this->scan[$key]['action'] = 'alert';
+        }
+
+
+
+
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**">

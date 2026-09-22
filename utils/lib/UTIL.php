@@ -220,7 +220,6 @@ class UTIL
         //$this->log->info("start UTIL: " . $this->PHP_FILE . " | " . implode(", ", $argv));
 
 
-
         if( $this->utilType != "custom" )
         {
             PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" . " [" . phpversion() ."]" );
@@ -784,6 +783,7 @@ class UTIL
             exit(0);
         }
     }
+
 
     public function arg_validation()
     {
@@ -1959,7 +1959,12 @@ class UTIL
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getAll());
                     elseif( $this->utilType == 'log-profile' )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfilePredefinedStore, 'objects' => $this->pan->LogProfilePredefinedStore->getAll());
+
                         $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getAll());
+                    }
+
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -2080,7 +2085,12 @@ class UTIL
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
                     elseif( $this->utilType == 'log-profile' )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfilePredefinedStore, 'objects' => $this->pan->LogProfilePredefinedStore->getAll());
+
                         $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getall());
+                    }
+
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);

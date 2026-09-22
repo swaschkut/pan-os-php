@@ -513,7 +513,7 @@ class Tag
      */
     public function equals($otherObject): bool
     {
-        if( !$otherObject->isTag() )
+        if( get_class( $otherObject ) !== "Tag" )
             return FALSE;
 
         if( $otherObject->name != $this->name )

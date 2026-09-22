@@ -498,4 +498,16 @@ RQuery::$defaultFilters['log-profile']['filter']['operators']['is.all-logs'] = a
     },
     'arg' => FALSE
 );
+
+RQuery::$defaultFilters['log-profile']['object']['operators']['is.predefined'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( str_contains($object->owner->name(), "predefined"))
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE
+);
 // </editor-fold>
