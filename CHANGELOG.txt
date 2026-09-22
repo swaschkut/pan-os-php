@@ -1,5 +1,13 @@
 CHANGELOG
 
+2.1.60
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
 2.1.59 (20260922)
 UTIL:
 * pan-os-php changelog[=2.1.56] | introduction of argument changelog
@@ -43,6 +51,7 @@ GENERAL:
 * all class with usage of htmlspecialchars migrated to PH::panosphp_htmlspecialchars
 * Device App-ID update to version: 9137-10202
 * Device App-ID update to version: 9149-10248
+
 
 2.1.58 (20260803)
 UTIL:
