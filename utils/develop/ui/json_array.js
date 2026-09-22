@@ -2633,6 +2633,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "has.template-name-reference": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "with-no-serial": {
                         "Function": {},
                         "arg": false,
@@ -4917,6 +4925,10 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },

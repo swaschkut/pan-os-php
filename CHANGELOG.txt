@@ -42,7 +42,7 @@ GENERAL:
 * Device App-ID update to version: 9133-10186
 * all class with usage of htmlspecialchars migrated to PH::panosphp_htmlspecialchars
 * Device App-ID update to version: 9137-10202
-
+* Device App-ID update to version: 9149-10248
 
 2.1.58 (20260803)
 UTIL:
