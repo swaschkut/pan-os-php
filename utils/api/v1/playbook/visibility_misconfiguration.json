@@ -339,8 +339,17 @@
     }, 
     {
       "type": "rule",
+      "actions": "actions=exportToExcel:8c-iii_Cleanup-Rules.html",
+      "filter": "filter=(rule is.enabled) and !(action is.allow) and (app is.any) and (service is.any) and (src is.any) and (from is.any) and (to is.any) and (dst is.any) and (user is.any) and (url.category is.any)",
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
+    },
+    {
+      "type": "rule",
       "ruletype": "ruletype=nat",
-      "actions": "actions=exportToExcel:8c-iii_All_nat_rules.html",
+      "actions": "actions=exportToExcel:8c-iv_All_nat_rules.html",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -349,7 +358,7 @@
     {
       "type": "rule",
       "ruletype": "ruletype=decryption",
-      "actions": "actions=exportToExcel:8c-iv_AllDecrypt_rules.html",
+      "actions": "actions=exportToExcel:8c-v_AllDecrypt_rules.html",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -357,7 +366,7 @@
     },
     {
       "type": "zone",
-      "actions": "actions=exportToExcel:8c-v_All_Zones.html",
+      "actions": "actions=exportToExcel:8c-vi_All_Zones.html,WhereUsed|UsedInLocation",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -365,7 +374,7 @@
     },
     {
       "type": "zone-protection-profile",
-      "actions": "actions=exportToExcel:8c-vi_All_ZPP.html,WhereUsed|UsedInLocation|TotalUse",
+      "actions": "actions=exportToExcel:8c-vii-a_All_ZPP.html,WhereUsed|UsedInLocation|TotalUse",
       "filter": "filter=!(object is.unused)",      
       "location": "location=any",
       "html-merger-explanation": "",
@@ -373,8 +382,17 @@
       "html-merger-severity": ""
     },
     {
+      "type": "zone-protection-profile",
+      "actions": "actions=exportToExcel:8c-vii-b_Recon-not_visible.html,WhereUsed|UsedInLocation|TotalUse",
+      "filter": "filter=!(object is.visibility) and !(object is.unused)",      
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
+    },
+    {
       "type": "log-profile",
-      "actions": "actions=exportToExcel:8c-vii_All_LFP.html,UsedInLocation|TotalUse",
+      "actions": "actions=exportToExcel:8c-viii_All_LFP.html,UsedInLocation|TotalUse",
       "filter": "filter=!(object is.unused)",
       "location": "location=any",
       "html-merger-explanation": "",
@@ -433,8 +451,38 @@
       "html-merger-severity": ""
     },
     {
+      "type": "address",
+      "actions": "actions=exportToExcel:9f_i-ipv4_add-missconfigured.html",
+      "filter": "filter=(name regex /$$ipv4$$/ ) and !(value is.included-in.name)",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects",
+      "location": "location=any",
+      "html-merger-explanation": "Find missconfigured address objects based on IPv4 name and value",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""    
+    },
+      {
+      "type": "service",
+      "actions": "actions=exportToExcel:9f_ii-TCP_svc-missconfigured.html",
+      "filter": "filter=(name regex /TCP/i ) and (object is.udp)",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects",
+      "location": "location=any",
+      "html-merger-explanation": "Find missconfigured service objects based on TCP name and udp protocol",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
+    },
+    {
+      "type": "service",
+      "actions": "actions=exportToExcel:9f_iii-UDP_svc-missconfigured.html",
+      "filter": "filter=(name regex /UDP/i ) and (object is.tcp)",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects",
+      "location": "location=any",
+      "html-merger-explanation": "Find missconfigured service objects based on UDP name and tcp protocol",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
+    },
+    {
       "type": "rule",
-      "actions": "actions=exportToExcel:9f_Rulename_contains_TestorTemp.html",
+      "actions": "actions=exportToExcel:9g_i-Rulename_contains_TestorTemp.html",
       "filter": "filter=((name contains test) or (name contains temp)) and (rule is.enabled)",
       "location": "location=any",
       "html-merger-explanation": "",
@@ -443,7 +491,7 @@
     },
     {
       "type": "rule",
-      "actions": "actions=exportToExcel:9g_Tag_contains_TestorTemp.html",
+      "actions": "actions=exportToExcel:9g_ii-Tag_contains_TestorTemp.html",
       "filter": "filter=((tag has.regex /temp/i ) or (tag has.regex /test/i )) and (rule is.enabled)",
       "location": "location=any",
       "html-merger-explanation": "",
