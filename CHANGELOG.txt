@@ -1,6 +1,6 @@
 CHANGELOG
 
-2.1.59 [develop]
+2.1.59 (20260922)
 UTIL:
 * pan-os-php changelog[=2.1.56] | introduction of argument changelog
 * playbook | best-practice-set.json | add url and wf
