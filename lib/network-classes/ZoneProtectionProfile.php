@@ -581,7 +581,7 @@ class ZoneProtectionProfile
     {
         foreach($this->scan as $scan)
         {
-            if( $scan['action'] == "allow" )
+            if( !isset($scan['action']) || $scan['action'] == "allow" )
                 return false;
         }
         if( empty($this->disabled_scans) )
