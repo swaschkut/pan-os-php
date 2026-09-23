@@ -32,6 +32,8 @@ trait lib_1_rule_marker
         PH::print_stdout("");
 
         PH::print_stdout("Listing optional arguments:");
+        PH::print_stdout(" - limit=N          mark at most N eligible, unmarked rules");
+        PH::print_stdout(" - preview          list the selected rules without changing the configuration");
         PH::print_stdout();
 
         exit(1);
@@ -43,7 +45,7 @@ trait lib_1_rule_marker
         if( isset(PH::$args['help']) )
             $this->display_usage_and_exit_p1();
 
-        $supportedOptions = array('phase', 'in', 'out', 'help', 'location', 'debugapi', 'filter');
+        $supportedOptions = array('phase', 'in', 'out', 'help', 'location', 'debugapi', 'filter', 'limit', 'preview');
         $supportedOptions = array_flip($supportedOptions);
 
         foreach( PH::$args as $arg => $argvalue )
@@ -52,6 +54,14 @@ trait lib_1_rule_marker
                 display_error_usage_exit("unknown argument '{$arg}'");
         }
         unset($arg);
+
+        $limit = null;
+        if( isset(PH::$args['limit']) )
+        {
+            $limit = filter_var(PH::$args['limit'], FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)));
+            if( $limit === FALSE )
+                derr('limit must be a positive integer');
+        }
 
         $debugAPI = FALSE;
 
@@ -88,16 +98,51 @@ trait lib_1_rule_marker
         $pan = $return['pan'];
 
         PH::print_stdout(" - Found DG/Vsys '$location'");
+        if( isset(PH::$args['preview']) )
+        {
+            // Populate tag objects in memory so the rule filter matches the live path.
+            TH::createTags($pan, 'file');
+            $this->ruleMarker_Phase1_preview($subSystem, $limit);
+            return;
+        }
+
         PH::print_stdout(" - Looking/creating for necessary Tags to mark rules");
         TH::createTags($pan, $configInput['type']);
 
         //
         // REAL JOB STARTS HERE
         //
-        $this->ruleMarker_Phase1_main($subSystem, $configInput, $pan, $inputConnector, $configOutput);
+        $this->ruleMarker_Phase1_main($subSystem, $configInput, $pan, $inputConnector, $configOutput, $limit);
     }
 
-    function ruleMarker_Phase1_main($subSystem, $configInput, $pan, $inputConnector, $configOutput)
+    function ruleMarker_Phase1_preview($subSystem, $limit)
+    {
+        $allRules = $subSystem->securityRules->rules();
+        $rules = $subSystem->securityRules->rules('!(action is.negative) and (app is.any) and !(rule is.disabled) and !(tag has appid#ignore)');
+        $ridTagLibrary = new RuleIDTagLibrary();
+        $ridTagLibrary->readFromRuleArray($allRules);
+
+        $selected = 0;
+        $alreadyMarked = 0;
+        foreach( $rules as $rule )
+        {
+            if( $ridTagLibrary->ruleIsTagged($rule) )
+            {
+                $alreadyMarked++;
+                continue;
+            }
+
+            if( $limit === null || $selected < $limit )
+            {
+                PH::print_stdout(" - " . $rule->name() . ($rule->isPostRule() ? ' [post-rule]' : ' [pre-rule]'));
+                $selected++;
+            }
+        }
+        PH::print_stdout("Preview: " . count($allRules) . " local security rules, " . count($rules) . " eligible, {$alreadyMarked} already marked");
+        PH::print_stdout("Preview: {$selected} rules would be marked; no changes made");
+    }
+
+    function ruleMarker_Phase1_main($subSystem, $configInput, $pan, $inputConnector, $configOutput, $limit)
     {
         $rules = $subSystem->securityRules->rules('!(action is.negative) and (app is.any) and !(rule is.disabled) and !(tag has appid#ignore)');
         PH::print_stdout(" - Total number of rules: {$subSystem->securityRules->count()} vs " . count($rules) . " potentially taggable");
@@ -157,6 +202,9 @@ trait lib_1_rule_marker
                 $xmlPostRules .= "<entry name=\"".PH::panosphp_htmlspecialchars( $rule->name() )."\"><description>" . PH::panosphp_htmlspecialchars($rule->description()) . "</description></entry>";
             else
                 $xmlPreRules .= "<entry name=\"".PH::panosphp_htmlspecialchars( $rule->name() )."\"><description>" . PH::panosphp_htmlspecialchars($rule->description()) . "</description></entry>";
+
+            if( $limit !== null && $markedRules >= $limit )
+                break;
         }
 
         PH::print_stdout("\n\nNumber of rules marked: '{$markedRules}'    (vs already marked: '{$alreadyMarked}')");

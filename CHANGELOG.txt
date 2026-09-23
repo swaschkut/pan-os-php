@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.60
 UTIL:
+* type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 
 BUGFIX:
 
