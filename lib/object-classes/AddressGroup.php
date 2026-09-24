@@ -288,6 +288,8 @@ class AddressGroup
                     {
                         if( $this->name() == $f->name() )
                         {
+                            $f->removeReference($this);
+
                             mwarning("addressgroup with name: " . $this->name() . " is added as subgroup to itself, you should review your XML config file", $this->xmlroot, FALSE, false);
                             continue;
                         }

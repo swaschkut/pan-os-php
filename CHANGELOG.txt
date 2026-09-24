@@ -5,6 +5,7 @@ UTIL:
 * type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 
 BUGFIX:
+* type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member
 
 GENERAL:
 
