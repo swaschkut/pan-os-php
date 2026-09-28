@@ -1676,14 +1676,17 @@ class PanoramaConf
                                     $deviceGroupName = $serial->getDeviceGroup();
                                     $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
 
-                                    $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
-                                    if( $logProfObj !== null )
+                                    if( $deviceGroupOjb !== null )
                                     {
-                                        if( $logProfName == $logProfObj->name() )
+                                        $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
+                                        if( $logProfObj !== null )
                                         {
+                                            if( $logProfName == $logProfObj->name() )
+                                            {
 
-                                            $zone->logsetting_Obj = $logProfObj;
-                                            $logProfObj->addReference($zone);
+                                                $zone->logsetting_Obj = $logProfObj;
+                                                $logProfObj->addReference($zone);
+                                            }
                                         }
                                     }
                                 }
