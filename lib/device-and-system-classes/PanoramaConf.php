@@ -1689,6 +1689,8 @@ class PanoramaConf
                                             }
                                         }
                                     }
+                                    else
+                                        mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName' in TemplateStack '$templateStack->name()'", null, false );
                                 }
                             }
                         }
