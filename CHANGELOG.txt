@@ -8,6 +8,7 @@ BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member
 
 GENERAL:
+*  Device App-ID update to version: 9152-10258
 
 
 2.1.59 (20260922)
