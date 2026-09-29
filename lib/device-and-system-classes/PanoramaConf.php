@@ -1693,8 +1693,8 @@ class PanoramaConf
                                         else
                                             mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName'", null, false );
                                     }
-                                    #else
-                                    #    mwarning( "managedDevice '$managedFirewall->name()' has no DeviceGroup attached", null, false );
+                                    else
+                                        mwarning( "managedDevice '{$managedFirewall->name()}' has no DeviceGroup attached", null, false );
                                 }
                             }
                         }
