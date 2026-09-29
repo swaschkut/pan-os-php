@@ -2,10 +2,14 @@ CHANGELOG
 
 2.1.60
 UTIL:
+* type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 
 BUGFIX:
+* type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member
+* class PanoramaConf | bugfix if DG can not be found for logprofile
 
 GENERAL:
+*  Device App-ID update to version: 9152-10258
 
 
 2.1.59 (20260922)

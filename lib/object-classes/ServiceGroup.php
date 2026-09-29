@@ -125,6 +125,9 @@ class ServiceGroup
                 {
                     if( $this->name() == $f->name() )
                     {
+                        //todo: needed to not run into issue for type=service 'filter=(object is.unused.recursive)'
+                        $f->removeReference($this);
+
                         mwarning("servicegroup with name: " . $this->name() . " is added as subgroup to itself, you should review your XML config file", $this->xmlroot, FALSE, false);
                         continue;
                     }
