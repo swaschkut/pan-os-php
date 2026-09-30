@@ -859,6 +859,7 @@ class PanoramaConf
                     {
                         $parentDG->_childDeviceGroups[$dgName] = $ldv;
                         $ldv->parentDeviceGroup = $parentDG;
+                        $parentDG->addReference($ldv);
 
                         $storeType = array(
                             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',

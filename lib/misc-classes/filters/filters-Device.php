@@ -210,6 +210,34 @@ RQuery::$defaultFilters['device']['template']['operators']['is.unused'] = array(
     )
 );
 
+RQuery::$defaultFilters['device']['templatestack']['operators']['is.unused'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var TemplateStack $object */
+        $object = $context->object;
+
+        if( get_class( $object ) !== "TemplateStack" )
+            return null;
+
+        if( count($object->getReferences()) == 0 )
+        {
+            if( $object->name() !== "Service_Conn_Template_Stack"
+                && $object->name() !== "Mobile_User_Template_Stack"
+                && $object->name() !== "Remote_Network_Template_Stack"
+                && $object->name() !== "Explicit_Proxy_Template_Stack"
+            )
+                return true;
+        }
+
+
+        return false;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['device']['manageddevice']['operators']['with-no-dg'] = array(
     'Function' => function (DeviceRQueryContext $context) {
         /** @var ManagedDevice $object */

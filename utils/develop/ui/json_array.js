@@ -2625,6 +2625,14 @@ var subjectObject =
         "filter": {
             "devicegroup": {
                 "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "has.vsys": {
                         "Function": {},
                         "arg": true,
@@ -2705,6 +2713,14 @@ var subjectObject =
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -2713,6 +2729,14 @@ var subjectObject =
                     "has.member": {
                         "Function": {},
                         "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
