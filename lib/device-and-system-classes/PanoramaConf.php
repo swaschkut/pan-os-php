@@ -859,6 +859,7 @@ class PanoramaConf
                     {
                         $parentDG->_childDeviceGroups[$dgName] = $ldv;
                         $ldv->parentDeviceGroup = $parentDG;
+                        $parentDG->addReference($ldv);
 
                         $storeType = array(
                             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
@@ -1693,8 +1694,20 @@ class PanoramaConf
                                         else
                                             mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName'", null, false );
                                     }
-                                    #else
-                                    #    mwarning( "managedDevice '$managedFirewall->name()' has no DeviceGroup attached", null, false );
+                                    else
+                                    {
+                                        $this->LogProfileStore->find( $logProfName );
+                                        if( $logProfObj !== null )
+                                        {
+                                            if( $logProfName == $logProfObj->name() )
+                                            {
+                                                $zone->logsetting_Obj = $logProfObj;
+                                                $logProfObj->addReference($zone);
+                                            }
+                                        }
+                                        mwarning( "managedDevice '{$managedFirewall->name()}' has no DeviceGroup attached. Template: '{$template->name()}' Zone: '{$zone->name()}' is using LogProfile: '$logProfName'", null, false );
+                                    }
+
                                 }
                             }
                         }

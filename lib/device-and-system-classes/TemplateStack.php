@@ -100,6 +100,7 @@ class TemplateStack
                 {
                     $managedFirewall->addTemplateStack($this->name);
                     $managedFirewall->addReference( $this );
+                    $this->addReference( $managedFirewall );
                 }
             }
         }

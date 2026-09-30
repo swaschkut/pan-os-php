@@ -190,6 +190,54 @@ RQuery::$defaultFilters['device']['template']['operators']['has-multi-vsys'] = a
     )
 );
 
+RQuery::$defaultFilters['device']['template']['operators']['is.unused'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template $object */
+        $object = $context->object;
+
+        if( get_class( $object ) !== "Template" )
+            return null;
+
+        if( count($object->getReferences()) == 0 )
+            return true;
+
+        return false;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['device']['templatestack']['operators']['is.unused'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var TemplateStack $object */
+        $object = $context->object;
+
+        if( get_class( $object ) !== "TemplateStack" )
+            return null;
+
+        if( count($object->getReferences()) == 0 )
+        {
+            if( $object->name() !== "Service_Conn_Template_Stack"
+                && $object->name() !== "Mobile_User_Template_Stack"
+                && $object->name() !== "Remote_Network_Template_Stack"
+                && $object->name() !== "Explicit_Proxy_Template_Stack"
+            )
+                return true;
+        }
+
+
+        return false;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['device']['manageddevice']['operators']['with-no-dg'] = array(
     'Function' => function (DeviceRQueryContext $context) {
         /** @var ManagedDevice $object */
@@ -201,6 +249,26 @@ RQuery::$defaultFilters['device']['manageddevice']['operators']['with-no-dg'] = 
 
         $DG = $object->getDeviceGroup();
         if( $DG === "" )
+            return TRUE;
+
+        return false;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['device']['devicegroup']['operators']['is.unused'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var DeviceGroup $object */
+        $object = $context->object;
+
+        if( get_class( $object ) !== "DeviceGroup" )
+            return null;
+
+        if( count($object->getReferences()) === 0 )
             return TRUE;
 
         return false;
