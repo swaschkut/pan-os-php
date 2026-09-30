@@ -27,6 +27,7 @@ class DeviceGroup
     use PanSubHelperTrait;
     use XmlConvertible;
     use StatCollectorTrait;
+    use ReferenceableObject;
 
     /** String */
     protected $name;
@@ -470,6 +471,7 @@ class DeviceGroup
                     if ($managedFirewall !== null) {
                         $managedFirewall->addDeviceGroup($this->name);
                         $managedFirewall->addReference($this);
+                        $this->addReference($managedFirewall);
                     }
 
                 }
@@ -489,6 +491,7 @@ class DeviceGroup
                 {
                     $template->addReference($this);
                     #print "ref DG ".$this->name()." added - ".$template->name()."\n";
+                    $this->addReference($template);
                 }
 
             }
