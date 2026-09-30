@@ -255,7 +255,7 @@ class PH
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
     private static $library_version_bugfix = 60;
-    private static $library_version_release = "beta";
+    private static $library_version_release = "dev";
 
 
     //BASIC AUTH PAN-OS 7.1
