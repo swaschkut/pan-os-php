@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 * type=device | introduce 'filter=(template/devicegroup/templatestack is.unused)'
+* type=device actions=exporttohtml:file.html | extend html creation
 
 BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member

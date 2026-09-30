@@ -1551,7 +1551,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
 
         #$headers = '<th>location</th><th>name</th><th>template</th>';
-        $headers = '<th>ID</th><th>name</th><th>managed-device</th><th>device-group</th><th>template-stack</th><th>template</th><th>log-collector</th>';
+        $headers = '<th>ID</th><th>name</th><th>managed-device</th><th>device-group</th><th>template-stack</th><th>template</th><th>log-collector</th><th>child-devicegroup</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -1606,6 +1606,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction("[template]");
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
+                    //child-devicegroups
+                    $lines .= $context->encloseFunction("---");
                 }
                 elseif( get_class($object) == "DeviceGroup" )
                 {
@@ -1626,50 +1628,103 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction( "-SELF-" );
 
                     //t-stack
-                    $tmp_string = "";
+                    $tmp_stack = array();
+                    $tmp_template = array();
                     foreach( $object->getDevicesInGroup() as $key => $device )
                     {
                         $managedFirewall = $object->owner->managedFirewallsStore->find($key);
-                        $tmp_string .= $managedFirewall->getTemplateStack()."\n";
+                        $templateStack_string = $managedFirewall->getTemplateStack();
+                        $tmp_stack[$managedFirewall->getTemplateStack()] = $templateStack_string;
+
+                        /* @var PanoramaConf $panoramaConf */
+                        $panoramaConf = $object->owner;
+                        $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
+                        if( $tstack_obj !== null )
+                        {
+                            $tmp_template = array_merge( $tmp_template, array_reverse($tstack_obj->templates) );
+                        }
                     }
-                    $lines .= $context->encloseFunction($tmp_string);
+                    $lines .= $context->encloseFunction($tmp_stack);
                     //template
-                    $lines .= $context->encloseFunction("[template]");
+                    $lines .= $context->encloseFunction($tmp_template );
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
+                    //child-devicegroups
+                    $tmp_childDG_array = array();
+                    foreach( $object->childDeviceGroups(true) as $childDeviceGroup )
+                    {
+                        $tmp_childDG_array[] = $childDeviceGroup->name();
+                    }
+                    $lines .= $context->encloseFunction($tmp_childDG_array);
+
                 }
                 elseif( get_class($object) == "TemplateStack" )
                 {
                     //serial
-                    $lines .= $context->encloseFunction("[serial]");
+                    $tmp_serial = array();
+                    $tmp_devicegroups = array();
+                    foreach( $object->FirewallsSerials as $serial => $managedFirewall )
+                    {
+                        /* @var ManagedDevice $managedFirewall */
+                        if( $managedFirewall !== null )
+                        {
+                            $tmp_serial[] = $serial;
+                            $tmp_devicegroups[$managedFirewall->getDeviceGroup()] = $managedFirewall->getDeviceGroup();
+                        }
+
+                    }
+                    $lines .= $context->encloseFunction($tmp_serial );
+
                     //dg
-                    $lines .= $context->encloseFunction("[DG]");
+
+                    $lines .= $context->encloseFunction($tmp_devicegroups);
+
                     //t-stack
                     $lines .= $context->encloseFunction( "-SELF-" );
                     //template
                     $lines .= $context->encloseFunction( array_reverse($object->templates) );
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
+                    //child-devicegroups
+                    $lines .= $context->encloseFunction("---");
                 }
                 elseif( get_class($object) == "Template" )
                 {
-                    //serial
-                    $lines .= $context->encloseFunction("[serial]");
-                    //dg
-                    $lines .= $context->encloseFunction("[DG]");
-
-                    //t-stack
                     $refTextArray = array();
+                    $tmp_serial = array();
+                    $tmp_devicegroups = array();
                     foreach( $object->getReferences() as $ref )
                     {
                         if( get_class($ref) == "TemplateStack" )
-                            $refTextArray[] = $ref->_PANC_shortName();
+                        {
+                            $refTextArray[$ref->name()] = $ref->name();
+
+                            foreach( $ref->FirewallsSerials as $serial => $managedFirewall )
+                            {
+                                /* @var ManagedDevice $managedFirewall */
+                                if( $managedFirewall !== null )
+                                {
+                                    $tmp_serial[] = $serial;
+                                    if( $managedFirewall->getDeviceGroup() !== null )
+                                        $tmp_devicegroups[$managedFirewall->getDeviceGroup()] = $managedFirewall->getDeviceGroup();
+                                }
+                            }
+                        }
                     }
-                    $lines .= $context->encloseFunction($refTextArray);
+
+                    //serial
+                    $lines .= $context->encloseFunction( $tmp_serial );
+                    //dg
+                    $lines .= $context->encloseFunction( $tmp_devicegroups );
+
+                    //t-stack
+                    $lines .= $context->encloseFunction( $refTextArray );
                     //template
                     $lines .= $context->encloseFunction("-SELF-" );
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
+                    //child-devicegroups
+                    $lines .= $context->encloseFunction("---");
                 }
                 elseif( get_class($object) == "LogCollectorGroup" )
                 {
@@ -1683,6 +1738,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction("[template]");
                     //log-collect
                     $lines .= $context->encloseFunction("-SELF-" );
+                    //child-devicegroups
+                    $lines .= $context->encloseFunction("---");
                 }
 
                 if( $addWhereUsed )
