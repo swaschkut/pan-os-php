@@ -111,6 +111,10 @@ class ZoneProtectionProfile
 
     public $scan_alert = array();
 
+
+    public $scan_white_list = array();
+
+
     /**
      * ZoneProtectionProfile constructor.
      * @param string $name
@@ -521,6 +525,102 @@ class ZoneProtectionProfile
               <discard-icmp-error>yes</discard-icmp-error>
             </entry>
          */
+
+        /*
+           <scan-white-list>
+            <entry name="exclude_src">
+              <ipv4>public_ipv4_dslmobil</ipv4>
+            </entry>
+            <entry name="exclude_src_ip">
+              <ipv4>192.168.1.1</ipv4>
+            </entry>
+            <entry name="exclude_IPv6">
+              <ipv6>public_ipv6_dslmobil</ipv6>
+            </entry>
+          </scan-white-list>
+         */
+
+        $scan_white_list_Node = DH::findFirstElement('scan-white-list', $xml);
+        if( $scan_white_list_Node !== FALSE )
+        {
+            foreach ($scan_white_list_Node->childNodes as $scan_white_list_entry_Node)
+            {
+                if ($scan_white_list_entry_Node->nodeType != 1)
+                    continue;
+
+                if ($debug)
+                    DH::DEBUGprintDOMDocument($scan_white_list_entry_Node);
+
+                $tmp_array = array();
+
+                $scan_whitelist_name = DH::findAttribute('name', $scan_white_list_entry_Node);
+                $tmp_array['name'] = $scan_whitelist_name;
+
+                $scan_whitelist_ipv4 = DH::findFirstElement('ipv4', $scan_white_list_entry_Node);
+                $scan_whitelist_ipv6 = DH::findFirstElement('ipv6', $scan_white_list_entry_Node);
+                if( $scan_whitelist_ipv4 !== FALSE )
+                {
+                    $tmp_ip = $scan_whitelist_ipv4->textContent;
+                    $tmp_array['ipv4'] = $tmp_ip;
+
+                    //not working yet
+                    #$this->findorCreateAddressObject( $tmp_ip );
+                }
+
+                if( $scan_whitelist_ipv6 !== FALSE )
+                {
+                    $tmp_ip = $scan_whitelist_ipv6->textContent;
+                    $tmp_array['ipv6'] = $tmp_ip;
+
+                    #$this->findorCreateAddressObject( $tmp_ip );
+                }
+
+
+
+                $this->scan_white_list[$scan_whitelist_name] = $tmp_array;
+            }
+        }
+
+    }
+
+    public function findorCreateAddressObject( $ip )
+    {
+        if( strpos($ip, "/") === FALSE )
+        {
+            print "class: ".get_class($this->owner->owner)."\n";
+            //firewall
+            if( get_class($this->owner->owner) == "PANConf" )
+            {
+                print "PANconf found\n";
+                print "count vsys: ".count($this->owner->owner->getVirtualSystems())."\n";
+
+                $vsys_array = $this->owner->owner->getVirtualSystems();
+                if( count($vsys_array) == 0 )
+                    $vsys_array[] = $this->owner->owner->findVirtualSystem("vsys1" );
+
+                foreach( $vsys_array as $vsys )
+                {
+                    $object = $vsys->addressStore->findOrCreate($ip);
+
+                    print "object: ". $object->value() ."\n";
+                    if( is_object($object) )
+                    {
+                        print "add reference\n";
+                        $object->addReference($this);
+                    }
+
+                    else
+                        derr("objectname: " . $ip . " not found. Can not be added to ZPP.\n", $this);
+
+                    return $object->value();
+                }
+            }
+            else
+            {
+
+            }
+        }
+        return $ip;
     }
 
     /**
@@ -635,11 +735,23 @@ class ZoneProtectionProfile
 
             $this->scan[$key]['action'] = 'alert';
         }
-
-
-
-
     }
+
+    public function scan_whitelist_add( $objname, $value_name, $ip_type )
+    {
+        $tmp_whitelist = DH::findFirstElementOrCreate( 'scan-white-list', $this->xmlroot );
+
+        $tmp_entry = DH::findFirstElementByNameAttrOrCreate( 'entry', $objname, $tmp_whitelist, $this->xmlroot->ownerDocument );
+
+        $tmp_ip_type_node = DH::findFirstElementOrCreate( $ip_type, $tmp_entry, $value_name );
+
+        $tmp_array = array();
+        $tmp_array['name'] = $objname;
+        $tmp_array[$ip_type] = $value_name;
+
+        $this->scan_white_list[$objname] = $tmp_array;
+    }
+
 
     static public $templatexml = '<entry name="**temporarynamechangeme**">
 <esp>

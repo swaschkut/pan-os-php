@@ -13887,6 +13887,24 @@ var subjectObject =
             "scan.alert-only-set": {
                 "name": "scan.alert-only-set",
                 "MainFunction": {}
+            },
+            "scan.whitelist.add": {
+                "name": "scan.whitelist.add",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "ip_value_objname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "ip_type": {
+                        "type": "string",
+                        "default": "ipv4"
+                    }
+                }
             }
         },
         "filter": {
