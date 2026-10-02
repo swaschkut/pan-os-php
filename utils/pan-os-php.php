@@ -86,7 +86,7 @@ if( isset(PH::$args['changelog']) )
     $includeHeader = true;
 
     // Strip leading 'v' or 'V' from framework version if present
-    $cleanVersion = $version." ";
+    $cleanVersion = $version;
     $quotedVersion = preg_quote($cleanVersion, '/');
 
     // Pattern breakdown:
