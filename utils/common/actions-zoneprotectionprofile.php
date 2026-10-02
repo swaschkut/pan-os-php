@@ -185,6 +185,8 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
         $headers .= '<th>IPv6 filter HDR</th>';
         $headers .= '<th>ICMPv6</th>';
 
+        $headers .= '<th>scan whitelist</th>';
+
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
@@ -317,6 +319,16 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                 {
                     $lines .= $context->encloseFunction($contentString);
                 }
+
+                $tmp_scan_whitelist_array = array();
+                foreach ($object->scan_white_list as $name => $item)
+                {
+                    if( isset($item['ipv4']) )
+                        $tmp_scan_whitelist_array[$name] = "- [".$item['name'] . "] IPv4: " . $item['ipv4'];
+                    elseif( isset($item['ipv6']) )
+                        $tmp_scan_whitelist_array[$name] = "- [".$item['name'] . "] IPv6: " . $item['ipv6'];
+                }
+                $lines .= $context->encloseFunction($tmp_scan_whitelist_array);
 
                 if( $addWhereUsed )
                 {
