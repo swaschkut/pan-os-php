@@ -409,7 +409,7 @@ ZoneProtectionProfileCallContext::$supportedActions['scan.whitelist.add'] = arra
         if( isset( $object->scan_white_list[$objname] ) )
             derr( "ERROR: object '{$objname}' already exists in scan whitelist\n", null, false );
 
-        if( $ip_type !== 'ipv4' || $ip_type !== 'ipv6')
+        if( $ip_type !== 'ipv4' && $ip_type !== 'ipv6')
             derr( "ERROR: invalid ip_type '{$ip_type}'\n", null, false );
 
         $object->scan_whitelist_add( $objname, $ip_value_objname, $ip_type);
