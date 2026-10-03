@@ -25,6 +25,7 @@
       "ext-yaml": "*",
       "ext-iconv": "*",
       "ext-openssl": "*",
-      "ext-libxml": "*"
+      "ext-libxml": "*",
+      "ext-ldap": "*"
     }
 }

@@ -28,6 +28,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
     php$php_var-mbstring \
     php$php_var-bcmath \
     php$php_var-yaml \
+    php$php_var-ldap \
     python3 \
     python3-pandas \
     python3-bs4 \

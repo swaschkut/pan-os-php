@@ -7,6 +7,7 @@ UTIL:
 * type=device actions=exporttohtml:file.html | extend html creation
 * type=zone-protection-profile | introduce 'actions=scan.whitelist.add:test2,1.2.3.4'
 * type=zone-protection-profile | extend actions=exporttohtml:file.html - with scan-whitelist information
+* develop | introduce ldap validation scripts
 
 BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member
