@@ -182,7 +182,15 @@ foreach ($usersToTest as $user) {
             $mail = $entry['mail'][0] ?? 'No email specified';
             $pwdLastSet = isset($entry['pwdlastset'][0]) ? convertWinFileTime($entry['pwdlastset'][0]) : 'N/A';
             $accExpires = isset($entry['accountexpires'][0]) ? convertWinFileTime($entry['accountexpires'][0]) : 'N/A';
-            
+
+            // Prüfen, ob das Ablaufdatum in der Vergangenheit liegt
+            if (!empty($rawExpires) && $rawExpires != "9223372036854775807" && $rawExpires != "0") {
+                $expireUnix = (int)($rawExpires / 10000000) - 11644473600;
+                if ($expireUnix < time()) {
+                    $accExpires .= " ❌";
+                }
+            }
+
             $uacRaw = $entry['useraccountcontrol'][0] ?? null;
             $accountStatus = getAccountStatus($uacRaw);
 
