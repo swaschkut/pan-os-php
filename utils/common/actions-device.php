@@ -109,8 +109,11 @@ DeviceCallContext::$supportedActions['display'] = array(
 
                 if( isset($device['vsyslist']) && !empty($device['vsyslist']) )
                 {
-                    PH::print_stdout($context->padding."  - virtualsystem: '".array_keys($device['vsyslist'])[0]."'");
-                    $context->objectList['serial'][$key] = array( 'serial' => $key, 'dg' => $managedFirewall->devicegroup, 'template-stack' => $managedFirewall->template_stack, 'vsys' => array_keys($device['vsyslist'])[0] );
+                    foreach( $device['vsyslist'] as $vsys )
+                    {
+                        PH::print_stdout($context->padding."  - virtualsystem: '".$vsys."'");
+                        $context->objectList['serial'][$key] = array( 'serial' => $key, 'dg' => $managedFirewall->devicegroup, 'template-stack' => $managedFirewall->template_stack, 'vsys' => $vsys );
+                    }
                 }
                 else
                 {
@@ -1601,9 +1604,32 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
 
                     //t-stack
-                    $lines .= $context->encloseFunction( $object->getTemplateStack() );
+                    $tmp_stack = array();
+                    $tmp_template = array();
+
+                    $templateStack_string = $object->getTemplateStack();
+                    $tmp_stack[$object->getTemplateStack()] = $templateStack_string;
+
+                    /* @var PanoramaConf $panoramaConf */
+                    $panoramaConf = $object->owner->owner;
+                    $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
+                    if( $tstack_obj !== null )
+                    {
+                        foreach( array_reverse($tstack_obj->templates) as $template_obj )
+                        {
+                            /* @var Template $template_obj */
+                            $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
+                            $vsys_name = array();
+                            foreach( $all_vsys as $vsys_obj )
+                            {
+                                $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
+                            }
+                            $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                        }
+                    }
+                    $lines .= $context->encloseFunction( $tmp_stack );
                     //template
-                    $lines .= $context->encloseFunction("[template]");
+                    $lines .= $context->encloseFunction($tmp_template );
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
                     //child-devicegroups
@@ -1613,13 +1639,18 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                 {
                     $devicesInGroup = $object->getDevicesInGroup();
                     //serial
-                    $tmp_string = "";
+                    $tmp_string = array();
                     foreach( $object->getDevicesInGroup() as $key => $device )
                     {
                         if( isset($device['vsyslist']) )
-                            $tmp_string .= $key." [".array_keys($device['vsyslist'])[0]."]\n";
+                        {
+                            foreach( $device['vsyslist'] as $vsys => $vsys_name )
+                            {
+                                $tmp_string[] = $key." [".$vsys_name."]";
+                            }
+                        }
                         else
-                            $tmp_string .= $key." [vsys1]\n";
+                            $tmp_string[] = $key." [vsys1]";
                     }
 
                     $lines .= $context->encloseFunction($tmp_string);
@@ -1641,7 +1672,17 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
                         if( $tstack_obj !== null )
                         {
-                            $tmp_template = array_merge( $tmp_template, array_reverse($tstack_obj->templates) );
+                            foreach( array_reverse($tstack_obj->templates) as $template_obj )
+                            {
+                                /* @var Template $template_obj */
+                                $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
+                                $vsys_name = array();
+                                foreach( $all_vsys as $vsys_obj )
+                                {
+                                    $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
+                                }
+                                $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                            }
                         }
                     }
                     $lines .= $context->encloseFunction($tmp_stack);
@@ -1653,7 +1694,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $tmp_childDG_array = array();
                     foreach( $object->childDeviceGroups(true) as $childDeviceGroup )
                     {
-                        $tmp_childDG_array[] = $childDeviceGroup->name();
+                        $tmp_childDG_array[$childDeviceGroup->name()] = $childDeviceGroup->name();
                     }
                     $lines .= $context->encloseFunction($tmp_childDG_array);
 

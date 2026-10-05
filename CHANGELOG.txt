@@ -8,6 +8,7 @@ UTIL:
 * type=zone-protection-profile | introduce 'actions=scan.whitelist.add:test2,1.2.3.4'
 * type=zone-protection-profile | extend actions=exporttohtml:file.html - with scan-whitelist information
 * develop | introduce ldap validation scripts
+* type=device | optimisation of actions=display/exporttohtml - related to serial and multiple vsys / template and vsys configured
 
 BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member

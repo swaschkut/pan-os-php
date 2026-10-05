@@ -458,7 +458,9 @@ class DeviceGroup
                 {
                     foreach ($vsysChild->childNodes as $vsysentry)
                     {
-                        #if ($vsysentry->nodeType != 1) continue;
+                        if ($vsysentry->nodeType != 1)
+                            continue;
+
                         $vname = DH::findAttribute('name', $vsysentry);
                         $vsyslist[$vname] = $vname;
                     }
