@@ -454,13 +454,17 @@ class DeviceGroup
 
                 $vsysChild = DH::firstChildElement($device);
 
-                if ($vsysChild !== FALSE) {
-                    foreach ($vsysChild->childNodes as $vsysentry) {
-                        if ($vsysentry->nodeType != 1) continue;
+                if ($vsysChild !== FALSE)
+                {
+                    foreach ($vsysChild->childNodes as $vsysentry)
+                    {
+                        #if ($vsysentry->nodeType != 1) continue;
                         $vname = DH::findAttribute('name', $vsysentry);
                         $vsyslist[$vname] = $vname;
                     }
-                } else {
+                }
+                else
+                {
                     //print "No vsys for device '$devname'\n";
                     $vsyslist['vsys1'] = 'vsys1';
                 }
