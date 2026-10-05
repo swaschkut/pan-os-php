@@ -1593,10 +1593,13 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         if( get_class($ref) == "DeviceGroup" )
                         {
                             $devicesInGroup = $ref->getDevicesInGroup();
-                            $vsysName = "---";
-                            if( isset( array_keys($devicesInGroup[$object->name()]['vsyslist'])[0] ) )
-                                $vsysName = array_keys($devicesInGroup[$object->name()]['vsyslist'])[0];
-                            $refTextArray[] = $ref->_PANC_shortName()." [".$vsysName."]";
+                            $vsysName = array();
+                            if( !isset( array_keys($devicesInGroup[$object->name()]['vsyslist'])[0] ) )
+                                $refTextArray[] = $ref->_PANC_shortName()." [---]";
+                            foreach( $devicesInGroup[$object->name()]['vsyslist'] as $vsysName )
+                            {
+                                $refTextArray[] = $ref->_PANC_shortName()." [".$vsysName."]";
+                            }
                         }
 
                     }
