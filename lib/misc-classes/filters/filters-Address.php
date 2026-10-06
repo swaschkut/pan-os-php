@@ -1670,6 +1670,8 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.match.exact'] = ar
 
         $values = explode(',', $context->value);
 
+        if( $object->isRegion() || $object->isEDL())
+            return null;
 
         if( !isset($context->cachedValueMapping) )
         {
@@ -1702,6 +1704,8 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.match.exact.from.f
     {
         $object = $context->object;
 
+        if( $object->isRegion() || $object->isEDL())
+            return null;
 
         if( !isset($context->cachedValueMapping) )
         {
@@ -1747,7 +1751,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.included-in'] = ar
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isEDL() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
@@ -1791,7 +1795,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full'] = 
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isEDL() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() )
@@ -1840,7 +1844,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full-or-p
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isEDL() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() )
@@ -1890,6 +1894,8 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.match.exact.from.f
     {
         $object = $context->object;
 
+        if( $object->isRegion() || $object->isEDL())
+            return null;
 
         if( !isset($context->cachedValueMapping) )
         {
@@ -1935,7 +1941,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.included-in.from.f
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isEDL() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
@@ -1982,7 +1988,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isEDL() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() )
@@ -2034,6 +2040,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from
 RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full-or-partial.from.file'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
+
+        if( $object->isRegion() || $object->isEDL())
+            return null;
 
         if( $object->isAddress() )
         {
@@ -2130,6 +2139,8 @@ RQuery::$defaultFilters['address']['value']['operators']['is.included-in.name'] 
             return null;
         }
 
+        if( $object->isRegion() || $object->isEDL())
+            return null;
 
         if( $object->isType_ipNetmask() || $object->isType_ipRange() || $object->isType_FQDN() || $object->isType_TMP() )
         {
@@ -2165,6 +2176,12 @@ RQuery::$defaultFilters['address']['value']['operators']['is.in.file'] = Array(
     'Function' => function(AddressRQueryContext $context )
     {
         $object = $context->object;
+
+        if( $object->isGroup()  )
+            return null;
+
+        if( $object->isRegion() || $object->isEDL())
+            return null;
 
         if( !isset($context->cachedList) )
         {
@@ -2323,7 +2340,7 @@ RQuery::$defaultFilters['address']['ip.count']['operators']['>,<,=,!'] = array(
         if( $object->isRegion() || $object->isEDL() )
         {
             //count IP addresses
-            return false;
+            return null;
         }
         elseif( $object->isGroup() )
         {
