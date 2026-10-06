@@ -1611,7 +1611,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $tmp_template = array();
 
                     $templateStack_string = $object->getTemplateStack();
-                    $tmp_stack[$object->getTemplateStack()] = $templateStack_string;
+                    if( $templateStack_string !== null )
+                        $tmp_stack[$templateStack_string] = $templateStack_string;
 
                     /* @var PanoramaConf $panoramaConf */
                     $panoramaConf = $object->owner->owner;
@@ -1623,6 +1624,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                             /* @var Template $template_obj */
                             $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
                             $vsys_name = array();
+                            if( empty($all_vsys) )
+                                $vsys_name[] = "----";
                             foreach( $all_vsys as $vsys_obj )
                             {
                                 $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
@@ -1668,7 +1671,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     {
                         $managedFirewall = $object->owner->managedFirewallsStore->find($key);
                         $templateStack_string = $managedFirewall->getTemplateStack();
-                        $tmp_stack[$managedFirewall->getTemplateStack()] = $templateStack_string;
+                        if( $templateStack_string !== null )
+                            $tmp_stack[$templateStack_string] = $templateStack_string;
 
                         /* @var PanoramaConf $panoramaConf */
                         $panoramaConf = $object->owner;
@@ -1680,6 +1684,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                                 /* @var Template $template_obj */
                                 $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
                                 $vsys_name = array();
+                                if( empty($all_vsys) )
+                                    $vsys_name[] = "----";
                                 foreach( $all_vsys as $vsys_obj )
                                 {
                                     $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
@@ -1725,8 +1731,25 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
                     //t-stack
                     $lines .= $context->encloseFunction( "-SELF-" );
+
+                    $tmp_template = array();
+                    foreach( array_reverse($object->templates) as $template_obj )
+                    {
+                        /* @var Template $template_obj */
+                        $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
+                        $vsys_name = array();
+                        if( empty($all_vsys) )
+                            $vsys_name[] = "----";
+                        foreach( $all_vsys as $vsys_obj )
+                        {
+                            $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
+                        }
+                        $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                    }
+
                     //template
-                    $lines .= $context->encloseFunction( array_reverse($object->templates) );
+                    $lines .= $context->encloseFunction($tmp_template );
+                    
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
                     //child-devicegroups
