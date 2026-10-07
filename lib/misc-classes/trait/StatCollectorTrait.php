@@ -1114,7 +1114,7 @@ trait StatCollectorTrait
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );
-        $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
+        $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter."!(user is.any)" ) );
 
         $stdoutarray['service port'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(service is.any)" ) );
 

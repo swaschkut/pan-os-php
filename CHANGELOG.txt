@@ -14,6 +14,7 @@ BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member
 * class PanoramaConf | bugfix if DG can not be found for logprofile
 * type=address | bugfix for filters to avoid error out by region/edl objects
+* type=stats | bugfix for user-id # / percentage calculation - use all enabled rules
 
 GENERAL:
 *  Device App-ID update to version: 9152-10258
