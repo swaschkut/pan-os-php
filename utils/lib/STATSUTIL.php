@@ -130,7 +130,7 @@ class STATSUTIL extends RULEUTIL
                     if (in_array('any', $this->objectsLocation, true) || $in_obj_location)
                     {
                         // Fallback-Werte setzen
-                        $tmp_dgs = !empty($deviceGroups) ? $deviceGroups : ["---"];
+                        $tmp_dgs = !empty($deviceGroups) ? $deviceGroups : array();
                         $tmp_tstack = $managedFirewall->template_stack ?? "---";
                         $fwName = $managedFirewall->name();
 
@@ -141,30 +141,35 @@ class STATSUTIL extends RULEUTIL
                             if( in_array( 'any', $this->objectsLocation) || in_array( $tmp_dg, $this->objectsLocation) )
                             {
                                 $DG_obj = $this->pan->findDeviceGroup($tmp_dg);
-                                $managedDevices = $DG_obj->getDevicesInGroup();
-
-                                // VSYS-Liste verarbeiten
-                                $vsys_array = $managedDevices[$fwName]['vsyslist'] ?? [];
-                                if (empty($vsys_array))
+                                if( $DG_obj !== null )
                                 {
-                                    $vsys_array = ["vsys1"];
+                                    $managedDevices = $DG_obj->getDevicesInGroup();
+
+                                    // VSYS-Liste verarbeiten
+                                    $vsys_array = $managedDevices[$fwName]['vsyslist'] ?? [];
+                                    if (empty($vsys_array))
+                                    {
+                                        $vsys_array = ["vsys1"];
+                                    }
+                                    $vsys_names = implode(", ", $vsys_array);
+
+                                    // Daten speichern & ausgeben
+                                    $tmp_devices[] = [
+                                        'serial'         => $fwName,
+                                        'dg'             => $tmp_dg,
+                                        'vsyss'          => $vsys_names,
+                                        'template-stack' => $tmp_tstack
+                                    ];
+
+                                    PH::print_stdout(
+                                        " - " . str_pad($fwName, 16) .
+                                        " - DG: " . str_pad($tmp_dg, 30) .
+                                        " - VSYS: " . str_pad("[" . $vsys_names . "]", 10) .
+                                        " - T-Stack: " . str_pad($tmp_tstack, 30)
+                                    );
                                 }
-                                $vsys_names = implode(", ", $vsys_array);
-
-                                // Daten speichern & ausgeben
-                                $tmp_devices[] = [
-                                    'serial'         => $fwName,
-                                    'dg'             => $tmp_dg,
-                                    'vsyss'          => $vsys_names,
-                                    'template-stack' => $tmp_tstack
-                                ];
-
-                                PH::print_stdout(
-                                    " - " . str_pad($fwName, 16) .
-                                    " - DG: " . str_pad($tmp_dg, 30) .
-                                    " - VSYS: " . str_pad("[" . $vsys_names . "]", 10) .
-                                    " - T-Stack: " . str_pad($tmp_tstack, 30)
-                                );
+                                else
+                                    mwarning( "DG: ".$tmp_dg." not found" );
                             }
                         }
                     }
