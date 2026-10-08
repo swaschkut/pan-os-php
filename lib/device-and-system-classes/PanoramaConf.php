@@ -1674,29 +1674,32 @@ class PanoramaConf
                                 foreach($templateStack->FirewallsSerials as $managedFirewall)
                                 {
                                     /* @var ManagedDevice $managedFirewall */
-                                    $deviceGroupName = $managedFirewall->getDeviceGroup();
-                                    if( !empty($deviceGroupName) )
+                                    $deviceGroupNames = $managedFirewall->getDeviceGroup();
+                                    if( !empty($deviceGroupNames) )
                                     {
-                                        $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
-
-                                        if( $deviceGroupOjb !== null )
+                                        foreach( $deviceGroupNames as $deviceGroupName )
                                         {
-                                            $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
-                                            if( $logProfObj !== null )
+                                            $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
+
+                                            if( $deviceGroupOjb !== null )
                                             {
-                                                if( $logProfName == $logProfObj->name() )
+                                                $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
+                                                if( $logProfObj !== null )
                                                 {
-                                                    $zone->logsetting_Obj = $logProfObj;
-                                                    $logProfObj->addReference($zone);
+                                                    if( $logProfName == $logProfObj->name() )
+                                                    {
+                                                        $zone->logsetting_Obj = $logProfObj;
+                                                        $logProfObj->addReference($zone);
+                                                    }
                                                 }
                                             }
+                                            else
+                                                mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName'", null, false );
                                         }
-                                        else
-                                            mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName'", null, false );
                                     }
                                     else
                                     {
-                                        $this->LogProfileStore->find( $logProfName );
+                                        $logProfObj = $this->LogProfileStore->find( $logProfName );
                                         if( $logProfObj !== null )
                                         {
                                             if( $logProfName == $logProfObj->name() )

@@ -247,9 +247,17 @@ RQuery::$defaultFilters['device']['manageddevice']['operators']['with-no-dg'] = 
         if( $class !== "ManagedDevice" )
             return false;
 
-        $DG = $object->getDeviceGroup();
-        if( $DG === "" )
+        $DGs = $object->getDeviceGroup();
+        if( empty( $DGs) )
             return TRUE;
+        else
+        {
+            foreach( $DGs as $DG )
+            {
+                if( $DG === "" )
+                    return TRUE;
+            }
+        }
 
         return false;
     },

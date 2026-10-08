@@ -7047,6 +7047,49 @@
                     }
                 }
             },
+            "user-check-ldap_new": {
+                "name": "user-check-ldap_new",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "actionType": {
+                        "type": "string",
+                        "default": "show",
+                        "help": "'show' and 'remove' are supported."
+                    },
+                    "ldapUser": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "define LDAP user for authentication to server"
+                    },
+                    "dn": {
+                        "type": "string",
+                        "default": "OU=TEST;DC=domain;DC=local",
+                        "help": "full OU to an LDAP part, separated with ';' - used to extract domain for auto-discovery"
+                    },
+                    "ldapServer": {
+                        "type": "string",
+                        "default": "auto",
+                        "help": "LDAP server fqdn \/ IP. Set to 'auto' or leave blank to discover automatically via DNS SRV records."
+                    },
+                    "useLdaps": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "Use LDAPS (Port 636) instead of LDAP (Port 389) when auto-discovering servers."
+                    },
+                    "filtercriteria": {
+                        "type": "string",
+                        "default": "mailNickname",
+                        "help": "Domain\\username - specify the search filter criteria where your Security Rule defined user name can be found in LDAP"
+                    },
+                    "existentUser": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "users no longer available in LDAP => false | users available in LDAP => true, e.g. if users are disabled and available in a specific LDAP group"
+                    }
+                }
+            },
             "user-remove": {
                 "name": "user-remove",
                 "MainFunction": {},

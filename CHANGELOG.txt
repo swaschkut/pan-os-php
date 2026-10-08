@@ -15,6 +15,7 @@ BUGFIX:
 * class PanoramaConf | bugfix if DG can not be found for logprofile
 * type=address | bugfix for filters to avoid error out by region/edl objects
 * type=stats | bugfix for user-id # / percentage calculation - use all enabled rules
+* type=device actions=exporttohtml:xyz.html | bugfixes to display correct amount of references and virtual systems
 
 GENERAL:
 *  Device App-ID update to version: 9152-10258

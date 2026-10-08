@@ -64,7 +64,12 @@ DeviceCallContext::$supportedActions['display'] = array(
             foreach( $object->FirewallsSerials as $serial => $managedFirewall )
             {
                 if( $managedFirewall !== null )
-                    PH::print_stdout( $context->padding." - serial: ".$serial." - DG: ".$managedFirewall->devicegroup);
+                {
+                    $deviceGroups = $managedFirewall->getDeviceGroup();
+                    foreach( $deviceGroups as $deviceGroup )
+                        PH::print_stdout( $context->padding." - serial: ".$serial." - DG: ".$deviceGroup);
+                }
+
             }
         }
         elseif( get_class($object) == "VirtualSystem" )
@@ -137,10 +142,15 @@ DeviceCallContext::$supportedActions['display'] = array(
 
             if( $device->isPanorama() )
             {
-                if( $managedDevice->getDeviceGroup() != null )
+                $deviceGroups = $managedDevice->getDeviceGroup();
+                if( !empty( $deviceGroups))
                 {
-                    PH::print_stdout( $padding."DG: ".$managedDevice->getDeviceGroup() );
-                    PH::$JSON_TMP['sub']['object'][$object->name()]['dg'] = $managedDevice->getDeviceGroup();
+                    foreach($deviceGroups as $deviceGroup)
+                    {
+                        PH::print_stdout( $padding."DG: ".$deviceGroup );
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['dg'] = $deviceGroup;
+                    }
+
                 }
 
 
@@ -1595,7 +1605,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                             $devicesInGroup = $ref->getDevicesInGroup();
                             $vsysName = array();
                             if( !isset( array_keys($devicesInGroup[$object->name()]['vsyslist'])[0] ) )
-                                $refTextArray[] = $ref->_PANC_shortName()." [---]";
+                                $refTextArray[] = $ref->_PANC_shortName()." [vsys1]";
                             foreach( $devicesInGroup[$object->name()]['vsyslist'] as $vsysName )
                             {
                                 $refTextArray[] = $ref->_PANC_shortName()." [".$vsysName."]";
@@ -1650,10 +1660,13 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     {
                         if( isset($device['vsyslist']) )
                         {
-                            foreach( $device['vsyslist'] as $vsys => $vsys_name )
+                            if( !empty($device['vsyslist']) )
                             {
-                                $tmp_string[] = $key." [".$vsys_name."]";
+                                foreach( $device['vsyslist'] as $vsys => $vsys_name )
+                                    $tmp_string[] = $key." [".$vsys_name."]";
                             }
+                            else
+                                $tmp_string[] = $key." [vsys1]";
                         }
                         else
                             $tmp_string[] = $key." [vsys1]";
@@ -1719,7 +1732,10 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         if( $managedFirewall !== null )
                         {
                             $tmp_serial[] = $serial;
-                            $tmp_devicegroups[$managedFirewall->getDeviceGroup()] = $managedFirewall->getDeviceGroup();
+                            foreach( $managedFirewall->getDeviceGroup() as $deviceGroup )
+                            {
+                                $tmp_devicegroups[$deviceGroup] = $deviceGroup;
+                            }
                         }
 
                     }
@@ -1772,8 +1788,13 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                                 if( $managedFirewall !== null )
                                 {
                                     $tmp_serial[] = $serial;
-                                    if( $managedFirewall->getDeviceGroup() !== null )
-                                        $tmp_devicegroups[$managedFirewall->getDeviceGroup()] = $managedFirewall->getDeviceGroup();
+                                    $deviceGroups = $managedFirewall->getDeviceGroup();
+                                    if( !empty( $deviceGroups ) )
+                                    {
+                                        foreach( $deviceGroups as $deviceGroup )
+                                            $tmp_devicegroups[$deviceGroup] = $deviceGroup;
+                                    }
+
                                 }
                             }
                         }
