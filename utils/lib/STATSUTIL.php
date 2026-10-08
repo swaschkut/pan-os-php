@@ -124,21 +124,50 @@ class STATSUTIL extends RULEUTIL
 
                 foreach( $AllmanagedFirewall as $managedFirewall )
                 {
-                    if( $managedFirewall->devicegroup == null )
-                        $tmp_dg = "---";
-                    else
-                        $tmp_dg = $managedFirewall->devicegroup;
-                    if( $managedFirewall->template_stack == null )
-                        $tmp_tstack = "---";
-                    else
-                        $tmp_tstack = $managedFirewall->template_stack;
+                    $deviceGroups = $managedFirewall->getDeviceGroup();
+                    $in_obj_location = !empty(array_intersect($deviceGroups, $this->objectsLocation));
 
-                    if( in_array( 'any', $this->objectsLocation) || in_array( $tmp_dg, $this->objectsLocation) )
+                    if (in_array('any', $this->objectsLocation, true) || $in_obj_location)
                     {
-                        $tmp_devices[] = array( 'serial' => $managedFirewall->name(), "dg" => $tmp_dg, "template-stack" => $tmp_tstack );
-                        PH::print_stdout( " - ".str_pad($managedFirewall->name(),16)." - DG: ".str_pad($tmp_dg,30)." - T-Stack: ".str_pad($tmp_tstack,30) );
-                    }
+                        // Fallback-Werte setzen
+                        $tmp_dgs = !empty($deviceGroups) ? $deviceGroups : ["---"];
+                        $tmp_tstack = $managedFirewall->template_stack ?? "---";
+                        $fwName = $managedFirewall->name();
 
+                        // 2. Einziger Hauptdurchlauf
+                        foreach ($tmp_dgs as $tmp_dg)
+                        {
+
+                            if( in_array( 'any', $this->objectsLocation) || in_array( $tmp_dg, $this->objectsLocation) )
+                            {
+                                $DG_obj = $this->pan->findDeviceGroup($tmp_dg);
+                                $managedDevices = $DG_obj->getDevicesInGroup();
+
+                                // VSYS-Liste verarbeiten
+                                $vsys_array = $managedDevices[$fwName]['vsyslist'] ?? [];
+                                if (empty($vsys_array))
+                                {
+                                    $vsys_array = ["vsys1"];
+                                }
+                                $vsys_names = implode(", ", $vsys_array);
+
+                                // Daten speichern & ausgeben
+                                $tmp_devices[] = [
+                                    'serial'         => $fwName,
+                                    'dg'             => $tmp_dg,
+                                    'vsyss'          => $vsys_names,
+                                    'template-stack' => $tmp_tstack
+                                ];
+
+                                PH::print_stdout(
+                                    " - " . str_pad($fwName, 16) .
+                                    " - DG: " . str_pad($tmp_dg, 30) .
+                                    " - VSYS: " . str_pad("[" . $vsys_names . "]", 10) .
+                                    " - T-Stack: " . str_pad($tmp_tstack, 30)
+                                );
+                            }
+                        }
+                    }
                 }
 
                 if( !isset(PH::$args['json-to-folder']) )
