@@ -254,7 +254,7 @@
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
       "html-merger-severity": ""
-   },
+    },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=file-blocking,predefined-file-blocking",
@@ -264,7 +264,7 @@
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
       "html-merger-severity": ""
-   },
+    },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=wildfire-analysis,predefined-wildfire-analysis",
@@ -482,7 +482,7 @@
     },
     {
       "type": "rule",
-      "actions": "actions=exportToExcel:9g_i-Rulename_contains_TestorTemp.html",
+      "actions": "actions=exportToExcel:9g-Rulename_contains_TestorTemp.html",
       "filter": "filter=((name contains test) or (name contains temp)) and (rule is.enabled)",
       "location": "location=any",
       "html-merger-explanation": "",
@@ -491,7 +491,7 @@
     },
     {
       "type": "rule",
-      "actions": "actions=exportToExcel:9g_ii-Tag_contains_TestorTemp.html",
+      "actions": "actions=exportToExcel:9g-Tag_contains_TestorTemp.html",
       "filter": "filter=((tag has.regex /temp/i ) or (tag has.regex /test/i )) and (rule is.enabled)",
       "location": "location=any",
       "html-merger-explanation": "",

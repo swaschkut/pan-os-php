@@ -290,7 +290,7 @@
       "type": "rule-merger",
       "method": "method=matchFromToDstSvcApp",
       "location": "location=any",
-      "exportcsv": "exportcsv=9c_iv-rule-merger_Srv.html",
+      "exportcsv": "exportcsv=9c_iv-rule-merger_Src.html",
       "panoramaprerules": "panoramaprerules",
       "shadow-ignoreinvalidaddressobjects": "shadow-ignoreinvalidaddressobjects",
       "additionalMatch": "additionalMatch=secprof,user,urlcategory,target",
