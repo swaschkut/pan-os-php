@@ -53,6 +53,11 @@ class LogCollectorGroup
         $this->devices = array();
     }
 
+    public function name()
+    {
+        return $this->name;
+    }
+
     public function load_from_templateXml()
     {
         if( $this->owner === null )

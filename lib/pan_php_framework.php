@@ -322,6 +322,7 @@ require_once $basedir . '/device-and-system-classes/Template.php';
 require_once $basedir . '/device-and-system-classes/TemplateStack.php';
 require_once $basedir . '/device-and-system-classes/ManagedDevice.php';
 require_once $basedir . '/device-and-system-classes/ManagedDeviceStore.php';
+require_once $basedir . '/device-and-system-classes/LogCollector.php';
 require_once $basedir . '/device-and-system-classes/LogCollectorGroup.php';
 
 require_once $basedir . '/device-and-system-classes/FawkesConf.php';
