@@ -1139,7 +1139,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( isset( $threat['default-action'] ) )
                             $string .= " [default:".$threat['default-action']."]";
                         if( isset( $threat['exempt-ip'] ) and count($threat['exempt-ip']) > 0 )
-                            $string .= " | ".implode( ",", $threat['exempt-ip'] );
+                            $string .= " | exempt-ip: ".implode( ",", $threat['exempt-ip'] );
+                        if( isset( $threat['time-attribute'] ) )
+                            $string .= " | time-attribute: ".$object->recursive_implode($threat['time-attribute']);
                         $tmp_array[] = $string;
                     }
 

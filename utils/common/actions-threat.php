@@ -41,11 +41,20 @@ ThreatCallContext::$supportedActions['displayreferences'] = array(
                 {
                     if( $threatName == $object->name() )
                     {
-                        asort($threatException['exempt-ip']);
-                        if( count($threatException['exempt-ip']) > 0)
-                            PH::print_stdout($strpad . '     - ' . "excemption-IP count: ".count($threatException['exempt-ip'])." | '".implode(',',$threatException['exempt-ip'])."'");
-                        else
-                            PH::print_stdout($strpad . '     - ' . "excemption-IP count: 0" );
+                        if( isset($threatException['exempt-ip']) )
+                        {
+                            asort($threatException['exempt-ip']);
+                            if( count($threatException['exempt-ip']) > 0)
+                                PH::print_stdout($strpad . '     - ' . "excemption-IP count: ".count($threatException['exempt-ip'])." | '".implode(',',$threatException['exempt-ip'])."'");
+                            else
+                                PH::print_stdout($strpad . '     - ' . "excemption-IP count: 0" );
+                        }
+
+                        if( isset($threatException['time-attribute']) )
+                        {
+                            $string = "time-attribute: ".$o->recursive_implode($threatException['time-attribute']);
+                            PH::print_stdout(  $strpad . '     - '.$string );
+                        }
                     }
                 }
             }

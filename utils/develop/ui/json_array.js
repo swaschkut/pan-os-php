@@ -12927,6 +12927,18 @@ var subjectObject =
                     }
                 }
             },
+            "refobject.time_attribute": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "severity": {
                 "operators": {
                     "eq": {

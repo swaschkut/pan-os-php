@@ -179,7 +179,10 @@ RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['
                 foreach($reference->threatException as $threatName => $threatException)
                 {
                     if( $threatName == $object->name() )
-                        $ip_exception_counter += count($threatException['exempt-ip']);
+                    {
+                        if( isset($threatException['exempt-ip']) )
+                            $ip_exception_counter += count($threatException['exempt-ip']);
+                    }
                 }
             }
         }
@@ -195,6 +198,37 @@ RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['
         return false;
     },
     'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat']['refobject.time_attribute']['operators']['is.set'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        $object = $context->object;
+        $counter = $context->value;
+
+        $ip_exception_counter = 0;
+        foreach($object->refrules as $reference)
+        {
+            /** @var AntiSpywareProfile|VulnerabilityProfile $reference*/
+            if( isset($reference->threatException) )
+            {
+                foreach($reference->threatException as $threatName => $threatException)
+                {
+                    if( $threatName == $object->name() )
+                    {
+                        if( isset($threatException['time-attribute']) )
+                            return TRUE;
+                    }
+                }
+            }
+        }
+
+        return false;
+    },
+    'arg' => false,
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
