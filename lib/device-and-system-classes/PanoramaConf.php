@@ -66,7 +66,10 @@ class PanoramaConf
     public $devicegrouproot;
 
     /** @var string[]|DomNode */
-    public $logcollectorgrouproot;
+    public array|DomNode $logcollectorroot;
+
+    /** @var string[]|DomNode */
+    public array|DomNode $logcollectorgrouproot;
 
 
     public $version = null;
@@ -85,6 +88,9 @@ class PanoramaConf
 
     /** @var TemplateStack[] */
     public $templatestacks = array();
+
+    /** @var LogCollector[] */
+    public $logCollector = array();
 
     /** @var LogCollectorGroup[] */
     public $logCollectorGroups = array();
@@ -610,6 +616,7 @@ class PanoramaConf
         $this->templateroot = DH::findFirstElementOrCreate('template', $this->localhostroot);
         $this->templatestackroot = DH::findFirstElementOrCreate('template-stack', $this->localhostroot);
         $this->logcollectorgrouproot = DH::findFirstElement('log-collector-group', $this->localhostroot);
+        $this->logcollectorroot = DH::findFirstElement('log-collector', $this->localhostroot);
 
         //above is general part
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1723,6 +1730,31 @@ class PanoramaConf
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Todo: keep this part as it is - DONE
         if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("LogCollector");
+        //
+        // loading LogCollector
+        //
+        if( $this->logcollectorroot !== FALSE )
+        {
+            foreach( $this->logcollectorroot->childNodes as $node )
+            {
+                if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+                #$ldv = new LogCollector('*tmp*', $this);
+                $ldv = new LogCollector( $this);
+                $ldv->load_from_domxml($node);
+                $this->logCollector[] = $ldv;
+                //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
+
+                //Todo: add templates to templatestack
+            }
+        }
+        //
+        // end of LogCollector
+        //
+
+
+        if( $debugLoadTime )
             PH::print_DEBUG_loadtime("LogCollectorGroup");
         //
         // loading LogCollectorGroup
@@ -2608,6 +2640,23 @@ class PanoramaConf
     {
         return $this->templatestacks;
     }
+
+    /**
+     * @return LogCollector[]
+     */
+    public function getLogCollector(): array
+    {
+        return $this->logCollector;
+    }
+
+    /**
+     * @return LogCollectorGroup[]
+     */
+    public function getLogCollectorGroup(): array
+    {
+        return $this->logCollectorGroups;
+    }
+
     public function isPanorama()
     {
         return TRUE;

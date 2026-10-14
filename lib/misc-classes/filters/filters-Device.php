@@ -210,6 +210,35 @@ RQuery::$defaultFilters['device']['template']['operators']['is.unused'] = array(
     )
 );
 
+RQuery::$defaultFilters['device']['template']['operators']['is.unused.recursive'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template $object */
+        $object = $context->object;
+
+        if( get_class( $object ) !== "Template" )
+            return null;
+
+        if( count($object->getReferences()) > 0 )
+        {
+            foreach( $object->getReferences() as $ref )
+            {
+                if( get_class( $ref ) == "TemplateStack" )
+                {
+                    if( count($ref->getReferences()) == 0 )
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['device']['templatestack']['operators']['is.unused'] = array(
     'Function' => function (DeviceRQueryContext $context) {
         /** @var TemplateStack $object */
