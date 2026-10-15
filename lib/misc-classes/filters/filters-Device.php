@@ -224,13 +224,13 @@ RQuery::$defaultFilters['device']['template']['operators']['is.unused.recursive'
             {
                 if( get_class( $ref ) == "TemplateStack" )
                 {
-                    if( count($ref->getReferences()) == 0 )
-                        return true;
+                    if( count($ref->getReferences()) > 0 )
+                        return false;
                 }
             }
         }
 
-        return false;
+        return true;
     },
     'arg' => false,
     'ci' => array(

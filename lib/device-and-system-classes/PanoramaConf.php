@@ -66,10 +66,10 @@ class PanoramaConf
     public $devicegrouproot;
 
     /** @var string[]|DomNode */
-    public array|DomNode $logcollectorroot;
+    public $logcollectorroot;
 
     /** @var string[]|DomNode */
-    public array|DomNode $logcollectorgrouproot;
+    public $logcollectorgrouproot;
 
 
     public $version = null;
