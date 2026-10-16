@@ -228,6 +228,8 @@ class SecurityProfileGroup
                             $profile = $sub->UrlFilteringPredefinedStore->find( $tmp_type->nodeValue );
                         elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                             $profile = $sub->VirusAndWildfireProfileStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'DataProfileStore' )
+                            $profile = $sub->DataFilteringPredefinedStore->find( $tmp_type->nodeValue );
 
                         if( $profile != null )
                         {

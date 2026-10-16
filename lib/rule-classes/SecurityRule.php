@@ -523,6 +523,8 @@ class SecurityRule extends RuleWithUserID
                             $profile = $sub->WildfirePredefinedStore->find( $firstE->textContent );
                         elseif( $tmp_store_name == 'URLProfileStore' )
                             $profile = $sub->UrlFilteringPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'DataProfileStore' )
+                            $profile = $sub->DataFilteringPredefinedStore->find( $firstE->textContent );
 
                         if( $profile != null )
                         {
