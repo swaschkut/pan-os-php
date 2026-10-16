@@ -549,9 +549,8 @@ class SecurityRule extends RuleWithUserID
                                 $profile = $sub->WildfirePredefinedStore->createSPTmp( $firstE->textContent, $this );
                             elseif( $tmp_store_name == 'URLProfileStore' )
                                 $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
-                                $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $firstE->textContent, $this );
-
+                            elseif( $tmp_store_name == 'DataProfileStore' )
+                                $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
 
 
                             if( $profile !== null )

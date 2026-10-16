@@ -872,7 +872,7 @@ class SecurityProfileStore extends ObjStore
 
             #DH::DEBUGprintDOMDocument($appx);
             $app = new DataFilteringProfile( $appName, $this );
-            #$app->load_from_domxml($appx);
+            $app->load_from_domxml($appx);
 
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
