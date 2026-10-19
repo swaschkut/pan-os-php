@@ -523,7 +523,7 @@ class SecurityRule extends RuleWithUserID
                             $profile = $sub->WildfirePredefinedStore->find( $firstE->textContent );
                         elseif( $tmp_store_name == 'URLProfileStore' )
                             $profile = $sub->UrlFilteringPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'DataProfileStore' )
+                        elseif( $tmp_store_name == 'DataFilteringProfileStore' )
                             $profile = $sub->DataFilteringPredefinedStore->find( $firstE->textContent );
 
                         if( $profile != null )
@@ -549,7 +549,7 @@ class SecurityRule extends RuleWithUserID
                                 $profile = $sub->WildfirePredefinedStore->createSPTmp( $firstE->textContent, $this );
                             elseif( $tmp_store_name == 'URLProfileStore' )
                                 $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'DataProfileStore' )
+                            elseif( $tmp_store_name == 'DataFilteringProfileStore' )
                                 $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
 
 
