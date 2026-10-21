@@ -2,6 +2,15 @@ CHANGELOG
 
 2.1.60
 UTIL:
+
+BUGFIX:
+
+GENERAL:
+* update Device App-ID to version: 9161-10297
+
+
+2.1.60 (20261021)
+UTIL:
 * type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 * type=device | introduce 'filter=(template/devicegroup/templatestack is.unused)'
 * type=device actions=exporttohtml:file.html | extend html creation
