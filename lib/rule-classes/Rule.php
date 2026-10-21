@@ -586,18 +586,24 @@ class Rule
         if( $this->_targets === null )
             return FALSE;
 
+        $result = $this->target_listContainsDeviceAndVsys($deviceSerial, $vsys);
+
+        if( $this->_targetIsNegated )
+            return !$result;
+
+        return $result;
+    }
+
+    private function target_listContainsDeviceAndVsys($deviceSerial, $vsys = null): bool
+    {
         if( !isset($this->_targets[$deviceSerial]) )
             return FALSE;
 
         if( count($this->_targets[$deviceSerial]) == 0 && $vsys === null )
             return TRUE;
 
-        if( $vsys === null )
-            return FALSE;
-
         return isset($this->_targets[$deviceSerial][$vsys]);
     }
-
 
     /**
      * For developer use only
