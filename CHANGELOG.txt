@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.61
 UTIL:
+* type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

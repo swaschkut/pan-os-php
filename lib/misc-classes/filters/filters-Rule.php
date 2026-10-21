@@ -4093,6 +4093,16 @@ RQuery::$defaultFilters['rule']['target']['operators']['has'] = array(
     )
 );
 
+RQuery::$defaultFilters['rule']['target']['operators']['is.negated'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        return $context->object->target_isNegated();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 
 RQuery::$defaultFilters['rule']['description']['operators']['is.empty'] = array(
     'Function' => function (RuleRQueryContext $context) {
