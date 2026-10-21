@@ -11,6 +11,8 @@ UTIL:
 * type=device | optimisation of actions=display/exporttohtml - related to serial and multiple vsys / template and vsys configured
 * type=device | extend with class LogCollector / LogCollectorGroup
 * type=device | introduce 'filter=(template is.unused.recursive)'
+* Class Panorama - introduce predefinedDataFilteringStore - base on if plugin is isntalled
+* type=securityprofile securityprofiletype=predefined-data-filtering | introduction
 
 BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member

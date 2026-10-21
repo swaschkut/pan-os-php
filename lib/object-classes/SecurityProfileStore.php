@@ -29,7 +29,7 @@ class SecurityProfileStore extends ObjStore
 
     public static $childn = 'SecurityProfile';
 
-    private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url', 'data-filtering');
+    private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url', 'data-filtering', 'predefined-data-filtering');
     private $secprof_fawkes_array = array('virus-and-wildfire-analysis', 'spyware', 'vulnerability', 'file-blocking', 'dns-security', 'url-filtering', 'custom-url-category', 'predefined-url', 'saas-security');
     /** @var DOMElement */
     public $securityProfileRoot;
@@ -64,6 +64,7 @@ class SecurityProfileStore extends ObjStore
         'PredefinedSecurityProfileFileBlocking' => array('name' => 'predefinedFileblocking', 'varName' => 'predefinedFileblockingSecProf', 'xpathRoot' => 'predefined-Fileblocking'),
         'PredefinedSecurityProfileWildfire' => array('name' => 'predefinedWildfire', 'varName' => 'predefinedWildfireSecProf', 'xpathRoot' => 'predefined-Wildfire'),
         'PredefinedSecurityProfileUrlFiltering' => array('name' => 'predefinedURLProfile', 'varName' => 'predefinedUrlFilteringSecProfiles', 'xpathRoot' => 'predefined-url-filtering'),
+        'PredefinedSecurityProfileDataFiltering' => array('name' => 'predefinedDataProfile', 'varName' => 'predefinedDataFilteringSecProfiles', 'xpathRoot' => 'predefined-data-filtering'),
         'PredefinedSecurityProfileVirusAndWildfire' => array('name' => 'predefinedVirusAndWildfire', 'varName' => 'predefinedVirusAndWildfireSecProf', 'xpathRoot' => 'predefined-VirusAndWildfire'),
 
 
@@ -129,6 +130,8 @@ class SecurityProfileStore extends ObjStore
     public static $predefinedWildfireStore = null;
     public static $predefinedUrlFitleringStore = null;
 
+    public static $predefinedDataFilteringStore = null;
+
     public static $predefinedVirusAndWildfireStore = null;
 
     /**
@@ -158,6 +161,20 @@ class SecurityProfileStore extends ObjStore
         self::$predefinedUrlFitleringStore->load_url_filtering_from_predefinedfile();
 
         return self::$predefinedUrlFitleringStore;
+    }
+
+    public static function getDataFilteringPredefinedStore( $owner )
+    {
+        /** @VAR PanoramaConf $owner **/
+        if( self::$predefinedDataFilteringStore !== null )
+            return self::$predefinedDataFilteringStore;
+
+
+        self::$predefinedDataFilteringStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileDataFiltering");
+        self::$predefinedDataFilteringStore->setName('predefined DataFiltering');
+        self::$predefinedDataFilteringStore->load_data_filtering_from_config($owner );
+
+        return self::$predefinedDataFilteringStore;
     }
 
     /**
@@ -318,6 +335,26 @@ class SecurityProfileStore extends ObjStore
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/url-filtering', $xmlDoc);
         $this->load_predefined_url_filtering_from_domxml($cursor);
 
+    }
+
+    public function load_data_filtering_from_config($owner)
+    {
+        if( isset( $owner->localhostroot ) )
+        {
+            $pluginRoot = DH::findFirstElement('plugins', $owner->localhostroot);
+
+            if( $pluginRoot !== FALSE )
+            {
+                $dataFilteringRoot = DH::findFirstElement('dlp', $pluginRoot);
+                $dataFilteringRoot = DH::findFirstElement('internal', $dataFilteringRoot);
+                $dataFilteringRoot = DH::findFirstElement('dlp-data-profiles', $dataFilteringRoot);
+
+                if( $dataFilteringRoot !== FALSE )
+                {
+                    $this->load_predefined_data_filtering_from_domxml($dataFilteringRoot);
+                }
+            }
+        }
     }
 
     public function load_virus_rules_from_predefinedfile($filename = null)
@@ -796,6 +833,45 @@ class SecurityProfileStore extends ObjStore
 
             #DH::DEBUGprintDOMDocument($appx);
             $app = new URLProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_data_filtering_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Data Filtering name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new DataFilteringProfile( $appName, $this );
             $app->load_from_domxml($appx);
 
             #$app = $this->newPredefinedSecurityProfileURL($appName);

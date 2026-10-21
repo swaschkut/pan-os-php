@@ -226,8 +226,11 @@ class SecurityProfileGroup
                             $profile = $sub->WildfirePredefinedStore->find( $tmp_type->nodeValue );
                         elseif( $tmp_store_name == 'URLProfileStore' )
                             $profile = $sub->UrlFilteringPredefinedStore->find( $tmp_type->nodeValue );
+                        //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
                         elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                             $profile = $sub->VirusAndWildfireProfileStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'DataFilteringProfileStore' )
+                            $profile = $sub->DataFilteringPredefinedStore->find( $tmp_type->nodeValue );
 
                         if( $profile != null )
                         {
@@ -252,8 +255,11 @@ class SecurityProfileGroup
                                 $profile = $sub->WildfirePredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
                             elseif( $tmp_store_name == 'URLProfileStore' )
                                 $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
+                            //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
                             elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                                 $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $tmp_type->nodeValue, $this );
+                            elseif( $tmp_store_name == 'DataFilteringProfileStore' )
+                                $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
 
                             #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
                             if( $profile !== null )

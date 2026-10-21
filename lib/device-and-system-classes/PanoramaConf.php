@@ -256,6 +256,8 @@ class PanoramaConf
     public $WildfirePredefinedStore;
     public $UrlFilteringPredefinedStore;
 
+    public $DataFilteringPredefinedStore;
+
     public $LogProfilePredefinedStore;
 
     /** @var TagStore */
@@ -1141,6 +1143,8 @@ class PanoramaConf
         $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
         $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
         $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+
+        $this->DataFilteringPredefinedStore = SecurityProfileStore::getDataFilteringPredefinedStore( $this );
 
         $this->LogProfilePredefinedStore = LogProfileStore::getLogProfPredefinedStore( $this );
 
