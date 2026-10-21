@@ -661,7 +661,7 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['has'] = ar
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || ($object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' ) )
             return null;
 
         if( !empty( $object->threatException ) )
@@ -689,7 +689,7 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['is.set'] =
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || ($object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' ) )
             return null;
 
         if( !empty( $object->threatException ) )
@@ -719,7 +719,7 @@ RQuery::$defaultFilters['securityprofile']['exempt-ip.count']['operators']['>,<,
         if( $operator == '=' )
             $operator = '==';
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' ) )
             return null;
 
         foreach ($object->threatException as $exception) {
@@ -747,7 +747,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         /** @var VulnerabilityProfile|AntiSpywareProfile|WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'wildfire' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'wildfire' ) )
             return null;
 
         if( $object->cloud_inline_analysis_enabled )
@@ -769,7 +769,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['oper
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'wildfire' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'wildfire' ) )
             return null;
 
         if( isset($object->additional['mica-engine-vulnerability-enabled']) )
@@ -813,7 +813,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         /** @var VulnerabilityProfile|AntiSpywareProfile|AntiVirusProfile|WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' and $object->secprof_type != 'wildfire' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' and $object->secprof_type != 'wildfire' ))
             return null;
 
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
@@ -826,7 +826,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         /** @var VulnerabilityProfile|AntiSpywareProfile|AntiVirusProfile|WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' and $object->secprof_type != 'wildfire' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' and $object->secprof_type != 'wildfire' ))
             return null;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
@@ -839,7 +839,7 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_action_best_practice();
@@ -853,7 +853,7 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.visibil
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_action_visibility();
@@ -867,7 +867,7 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_wildfireaction_best_practice();
@@ -880,7 +880,7 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_wildfireaction_visibility();
@@ -893,7 +893,7 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_mlavaction_best_practice();
@@ -906,7 +906,7 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.vi
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_mlavaction_visibility();
@@ -919,7 +919,7 @@ RQuery::$defaultFilters['securityprofile']['av.actions']['operators']['is.best-p
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_mlavaction_best_practice() && $object->av_wildfireaction_best_practice() && $object->av_action_best_practice();
@@ -932,7 +932,7 @@ RQuery::$defaultFilters['securityprofile']['av.actions']['operators']['is.visibi
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->av_mlavaction_visibility() && $object->av_wildfireaction_visibility() && $object->av_action_visibility();
@@ -945,7 +945,7 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.be
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
@@ -958,7 +958,7 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.vi
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
@@ -971,7 +971,7 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.best-practice'
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->is_best_practice();
@@ -984,7 +984,7 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.visibility'] =
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->is_visibility();
@@ -997,7 +997,7 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.adoption'] = a
         /** @var AntiVirusProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->is_adoption();
@@ -1010,7 +1010,7 @@ RQuery::$defaultFilters['securityprofile']['as.mica-engine']['operators']['is.be
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
@@ -1023,7 +1023,7 @@ RQuery::$defaultFilters['securityprofile']['as.mica-engine']['operators']['is.vi
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
@@ -1036,7 +1036,7 @@ RQuery::$defaultFilters['securityprofile']['as.rules']['operators']['is.best-pra
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->spyware_rules_best_practice();
@@ -1049,7 +1049,7 @@ RQuery::$defaultFilters['securityprofile']['as.rules']['operators']['is.visibili
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->spyware_rules_visibility();
@@ -1062,7 +1062,7 @@ RQuery::$defaultFilters['securityprofile']['as']['operators']['is.best-practice'
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->is_best_practice();
@@ -1075,7 +1075,7 @@ RQuery::$defaultFilters['securityprofile']['as']['operators']['is.visibility'] =
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->is_visibility();
@@ -1088,7 +1088,7 @@ RQuery::$defaultFilters['securityprofile']['as']['operators']['is.adoption'] = a
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' )
+        if( is_string($object) || $object->secprof_type != 'spyware' )
             return null;
 
         return $object->is_adoption();
@@ -1101,7 +1101,7 @@ RQuery::$defaultFilters['securityprofile']['vp.mica-engine']['operators']['is.be
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
@@ -1114,7 +1114,7 @@ RQuery::$defaultFilters['securityprofile']['vp.mica-engine']['operators']['is.vi
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
@@ -1127,7 +1127,7 @@ RQuery::$defaultFilters['securityprofile']['vp.rules']['operators']['is.best-pra
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->vulnerability_rules_best_practice();
@@ -1140,7 +1140,7 @@ RQuery::$defaultFilters['securityprofile']['vp.rules']['operators']['is.visibili
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->vulnerability_rules_visibility();
@@ -1153,7 +1153,7 @@ RQuery::$defaultFilters['securityprofile']['vp']['operators']['is.best-practice'
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->is_best_practice();
@@ -1166,7 +1166,7 @@ RQuery::$defaultFilters['securityprofile']['vp']['operators']['is.visibility'] =
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->is_visibility();
@@ -1179,7 +1179,7 @@ RQuery::$defaultFilters['securityprofile']['vp']['operators']['is.adoption'] = a
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || $object->secprof_type != 'vulnerability' )
             return null;
 
         return $object->is_adoption();
@@ -1193,7 +1193,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         $tmp_value_array = array( 'alert','allow','block','sinkhole');
@@ -1227,7 +1227,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-pra
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ) )
             return null;
 
         return $object->spyware_dnslist_best_practice();
@@ -1240,7 +1240,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.visibili
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         return $object->spyware_dnslist_visibility();
@@ -1253,7 +1253,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.adoption
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         return $object->spyware_dnslist_adoption();
@@ -1267,7 +1267,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         $tmp_value_array = array( 'disable','single-packet','extended-capture');
@@ -1300,7 +1300,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         $tmp_value_array = array( 'default','allow','block','sinkhole');
@@ -1332,7 +1332,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         $tmp_value_array = array( 'disable','single-packet','extended-capture');
@@ -1363,7 +1363,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.best
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         return $object->spyware_dns_security_best_practice() && $object->spyware_advanced_dns_security_best_practice();
@@ -1376,7 +1376,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.visi
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         return $object->spyware_dns_security_visibility() && $object->spyware_advanced_dns_security_visibility();
@@ -1389,7 +1389,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.adop
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         return $object->spyware_dns_security_adoption();
@@ -1402,7 +1402,7 @@ RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' ))
             return null;
 
         if( count($object->rules_obj) == 0 )
@@ -1439,7 +1439,7 @@ RQuery::$defaultFilters['securityprofile']['dns-rule']['operators']['has.from.qu
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
+        if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
         if( count($object->dns_rules_obj) == 0 )
@@ -1481,7 +1481,7 @@ RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.best-pra
         //class SecurityRule around line 537 - reading of Rule objects, which are not yet created e.g. DLP plugin
         //why could $object be a string?????
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->wildfire_rules_best_practice();
@@ -1494,7 +1494,7 @@ RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.visibili
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->wildfire_rules_visibility();
@@ -1507,7 +1507,7 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.best-practice'
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
         return $object->is_best_practice();
@@ -1520,7 +1520,7 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.visibility'] =
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->is_visibility();
@@ -1533,7 +1533,7 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.adoption'] = a
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->is_adoption();
@@ -1546,7 +1546,7 @@ RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.best-pra
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->wildfire_rules_best_practice();
@@ -1559,7 +1559,7 @@ RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.visibili
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->wildfire_rules_visibility();
@@ -1572,7 +1572,7 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.be
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
@@ -1585,7 +1585,7 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.vi
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
@@ -1599,7 +1599,7 @@ RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.best-practic
         /** @var VirusAndWildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->is_best_practice();
@@ -1612,7 +1612,7 @@ RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.visibility']
         /** @var VirusAndWildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || ($object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
         return $object->is_visibility();
@@ -1625,7 +1625,7 @@ RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.adoption'] =
         /** @var VirusAndWildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'virus-and-wildfire-analysis' )
+        if( is_string($object) || $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
 
         return $object->is_adoption();
@@ -1639,7 +1639,7 @@ RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.best-pract
         /** @var DNSSecurityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'dns-security' )
+        if( is_string($object) || $object->secprof_type != 'dns-security' )
             return null;
 
         return $object->is_best_practice();
@@ -1652,7 +1652,7 @@ RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.visibility
         /** @var DNSSecurityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'dns-security' )
+        if( is_string($object) || $object->secprof_type != 'dns-security' )
             return null;
 
         return $object->is_visibility();
@@ -1665,7 +1665,7 @@ RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.adoption']
         /** @var DNSSecurityProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'dns-security' )
+        if( is_string($object) || $object->secprof_type != 'dns-security' )
             return null;
 
         return $object->is_adoption();
@@ -1679,7 +1679,7 @@ RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.best-pra
         /** @var FileBlockingProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'file-blocking' )
+        if( is_string($object) || $object->secprof_type != 'file-blocking' )
             return null;
 
         return $object->fileblocking_rules_best_practice();
@@ -1692,7 +1692,7 @@ RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.visibili
         /** @var FileBlockingProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'file-blocking' )
+        if( is_string($object) || $object->secprof_type != 'file-blocking' )
             return null;
 
         return $object->fileblocking_rules_visibility();
@@ -1705,7 +1705,7 @@ RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.best-practice'
         /** @var FileBlockingProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'file-blocking' )
+        if( is_string($object) || $object->secprof_type != 'file-blocking' )
             return null;
 
         return $object->is_best_practice();
@@ -1718,7 +1718,7 @@ RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.visibility'] =
         /** @var FileBlockingProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'file-blocking' )
+        if( is_string($object) || $object->secprof_type != 'file-blocking' )
             return null;
 
         return $object->is_visibility();
@@ -1731,7 +1731,7 @@ RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.adoption'] = a
         /** @var FileBlockingProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'file-blocking' )
+        if( is_string($object) || $object->secprof_type != 'file-blocking' )
             return null;
 
         return $object->is_adoption();
@@ -1744,7 +1744,7 @@ RQuery::$defaultFilters['securityprofile']['df']['operators']['is.visibility'] =
         /** @var DataFilteringProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'data-filtering' )
+        if( is_string($object) || $object->secprof_type != 'data-filtering' )
             return null;
 
         return $object->is_visibility();
@@ -1757,7 +1757,7 @@ RQuery::$defaultFilters['securityprofile']['df']['operators']['is.adoption'] = a
         /** @var DataFilteringProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'data-filtering' )
+        if( is_string($object) || $object->secprof_type != 'data-filtering' )
             return null;
 
         return $object->is_adoption();
@@ -1770,7 +1770,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['is.visibility'] 
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->is_visibility();
@@ -1783,7 +1783,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['is.adoption'] = 
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->is_adoption();
@@ -1796,7 +1796,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['is.best-practice
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->is_best_practice();
@@ -1809,7 +1809,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->credential_is_visibility();
@@ -1822,7 +1822,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->credential_is_adoption();
@@ -1835,7 +1835,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->credential_is_best_practice();
@@ -1848,7 +1848,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return count($object->allow_credential) > 0;
@@ -1861,7 +1861,7 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.v
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->site_access_is_visibility();
@@ -1874,7 +1874,7 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.a
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->site_access_is_adoption();
@@ -1887,7 +1887,7 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.b
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->site_access_is_best_practice();
@@ -1900,7 +1900,7 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['allo
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return count($object->allow) > 0;
@@ -1913,7 +1913,7 @@ RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.v
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->mica_engine_is_visibility();
@@ -1926,7 +1926,7 @@ RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.b
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->mica_engine_is_bestpractice();
@@ -1939,7 +1939,7 @@ RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.a
         /** @var URLProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'url-filtering' )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         return $object->mica_engine_is_adoption();
@@ -1952,6 +1952,9 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
+        if( is_string($object) )
+            return null;
+
         if( str_contains($object->owner->name(), "predefined"))
             return TRUE;
 
@@ -1962,6 +1965,9 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
+
+        if( is_string($object) )
+            return null;
 
         if( get_class( $object ) == "PredefinedSecurityProfileURL"
             || get_class( $object ) == "customURLProfile"
@@ -1975,6 +1981,9 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.visibility
 RQuery::$defaultFilters['securityprofile']['device']['operators']['is.buckbeak'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
+
+        if( is_string($object) )
+            return null;
 
         $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
 

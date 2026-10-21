@@ -115,6 +115,7 @@ class Template
                     {
                         $managedFirewall->addTemplate($this->name);
                         $managedFirewall->addReference( $this );
+                        $this->addReference( $managedFirewall );
                     }
 
                 }

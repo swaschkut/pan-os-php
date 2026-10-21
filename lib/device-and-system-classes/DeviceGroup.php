@@ -27,6 +27,7 @@ class DeviceGroup
     use PanSubHelperTrait;
     use XmlConvertible;
     use StatCollectorTrait;
+    use ReferenceableObject;
 
     /** String */
     protected $name;
@@ -453,13 +454,19 @@ class DeviceGroup
 
                 $vsysChild = DH::firstChildElement($device);
 
-                if ($vsysChild !== FALSE) {
-                    foreach ($vsysChild->childNodes as $vsysentry) {
-                        if ($vsysentry->nodeType != 1) continue;
+                if ($vsysChild !== FALSE)
+                {
+                    foreach ($vsysChild->childNodes as $vsysentry)
+                    {
+                        if ($vsysentry->nodeType != 1)
+                            continue;
+
                         $vname = DH::findAttribute('name', $vsysentry);
                         $vsyslist[$vname] = $vname;
                     }
-                } else {
+                }
+                else
+                {
                     //print "No vsys for device '$devname'\n";
                     $vsyslist['vsys1'] = 'vsys1';
                 }
@@ -470,6 +477,7 @@ class DeviceGroup
                     if ($managedFirewall !== null) {
                         $managedFirewall->addDeviceGroup($this->name);
                         $managedFirewall->addReference($this);
+                        $this->addReference($managedFirewall);
                     }
 
                 }
@@ -489,6 +497,7 @@ class DeviceGroup
                 {
                     $template->addReference($this);
                     #print "ref DG ".$this->name()." added - ".$template->name()."\n";
+                    $this->addReference($template);
                 }
 
             }

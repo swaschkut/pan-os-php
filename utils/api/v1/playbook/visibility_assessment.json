@@ -213,7 +213,7 @@
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
-      "html-merger-severity": ""      
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
@@ -233,7 +233,7 @@
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
-      "html-merger-severity": ""      
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
@@ -243,7 +243,7 @@
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
-      "html-merger-severity": ""      
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
@@ -253,7 +253,7 @@
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
-      "html-merger-severity": ""      
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
@@ -263,7 +263,7 @@
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
-      "html-merger-severity": ""      
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofilegroup",
@@ -301,7 +301,7 @@
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
       "html-merger-severity": ""      
-    },
+    },      
     {
       "type": "threat-rule",
       "actions": "actions=exportToExcel:8b-iv_ThreatRules.html,UsedInLocation|WhereUsed",
@@ -309,7 +309,7 @@
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
       "html-merger-severity": ""
-    },      
+    },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:8c-i_All_sec_rules.html,visibility|bestpractice",
@@ -356,7 +356,7 @@
     },
     {
       "type": "zone",
-      "actions": "actions=exportToExcel:8c-vi_All_Zones.html",
+      "actions": "actions=exportToExcel:8c-vi_All_Zones.html,WhereUsed|UsedInLocation",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -364,7 +364,17 @@
     },
     {
       "type": "zone-protection-profile",
-      "actions": "actions=exportToExcel:8c-vii_All_ZPP.html,WhereUsed|UsedInLocation|TotalUse",
+      "actions": "actions=exportToExcel:8c-vii-a_All_ZPP.html,WhereUsed|UsedInLocation|TotalUse",
+      "filter": "filter=!(object is.unused)",      
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
+    },
+    {
+      "type": "zone-protection-profile",
+      "actions": "actions=exportToExcel:8c-vii-b_Recon-not_visible.html,WhereUsed|UsedInLocation|TotalUse",
+      "filter": "filter=!(object is.visibility) and !(object is.unused)",      
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -373,6 +383,7 @@
     {
       "type": "log-profile",
       "actions": "actions=exportToExcel:8c-viii_All_LFP.html,UsedInLocation|TotalUse",
+      "filter": "filter=!(object is.unused)",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -383,7 +394,7 @@
       "devicetype": "devicetype=manageddevice",
       "actions": "actions=exportToExcel:8d_Managed-Devices.html,UsedInLocation|WhereUsed",
       "location": "location=any"
-    },   
+    },       
     {
       "comment": "merge all previously created html files into one Excel sheet",
       "type": "html-merger",

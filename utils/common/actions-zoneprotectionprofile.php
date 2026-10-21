@@ -120,6 +120,24 @@ ZoneProtectionProfileCallContext::$supportedActions['display'] = array(
             }
         }
 
+
+        if( !empty($object->scan_white_list) )
+            //"     - SCAN:"
+            PH::print_stdout( "\n\n    - SCAN white list:");
+        foreach( $object->scan_white_list as $list_entry )
+        {
+            if( isset($list_entry['ipv4']) )
+                PH::print_stdout( "      * name: ".$list_entry['name'] ." IPv4: ".$list_entry['ipv4'] );
+            if( isset($list_entry['ipv6']) )
+                PH::print_stdout( "      * name: ".$list_entry['name'] ." IPv6: ".$list_entry['ipv6'] );
+        }
+
+        if( PH::$shadow_displayxmlnode )
+        {
+            PH::print_stdout(  "" );
+            DH::DEBUGprintDOMDocument($context->object->xmlroot);
+        }
+
     },
 );
 
@@ -166,6 +184,8 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
         $headers .= '<th>IPv6 Drop</th>';
         $headers .= '<th>IPv6 filter HDR</th>';
         $headers .= '<th>ICMPv6</th>';
+
+        $headers .= '<th>scan whitelist</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -300,6 +320,16 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction($contentString);
                 }
 
+                $tmp_scan_whitelist_array = array();
+                foreach ($object->scan_white_list as $name => $item)
+                {
+                    if( isset($item['ipv4']) )
+                        $tmp_scan_whitelist_array[$name] = "- [".$item['name'] . "] IPv4: " . $item['ipv4'];
+                    elseif( isset($item['ipv6']) )
+                        $tmp_scan_whitelist_array[$name] = "- [".$item['name'] . "] IPv6: " . $item['ipv6'];
+                }
+                $lines .= $context->encloseFunction($tmp_scan_whitelist_array);
+
                 if( $addWhereUsed )
                 {
                     $refTextArray = array();
@@ -373,6 +403,38 @@ ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set'] = arr
         if( $context->isAPI )
             $object->API_sync();
     }
+);
+
+ZoneProtectionProfileCallContext::$supportedActions['scan.whitelist.add'] = array(
+    'name' => 'scan.whitelist.add',
+    'MainFunction' => function (ZoneProtectionProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "ZoneProtectionProfile" )
+            return null;
+
+        $objname = &$context->arguments['name'];
+        $ip_value_objname = &$context->arguments['ip_value_objname'];
+        $ip_type = &$context->arguments['ip_type'];
+
+
+        if( isset( $object->scan_white_list[$objname] ) )
+            derr( "ERROR: object '{$objname}' already exists in scan whitelist\n", null, false );
+
+        if( $ip_type !== 'ipv4' && $ip_type !== 'ipv6')
+            derr( "ERROR: invalid ip_type '{$ip_type}'\n", null, false );
+
+        $object->scan_whitelist_add( $objname, $ip_value_objname, $ip_type);
+
+        if( $context->isAPI )
+            $object->API_sync();
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => '*nodefault*'),
+        'ip_value_objname' => array('type' => 'string', 'default' => '*nodefault*'),
+        'ip_type' => array('type' => 'string', 'default' => 'ipv4')
+
+    )
 );
 
 ZoneProtectionProfileCallContext::$supportedActions['alert-only-set'] = array(

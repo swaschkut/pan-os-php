@@ -111,7 +111,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=virus",
       "actions": "actions=virus.alert-only-set",
-      "filter": "filter=!(object is.unused)",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Antivirus Profiles"
     },
@@ -119,7 +119,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=spyware",
       "actions": "actions=spyware.alert-only-set",
-      "filter": "filter=!(object is.unused)",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Anti-Spyware Profiles"
     },
@@ -127,7 +127,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=vulnerability",
       "actions": "actions=vulnerability.alert-only-set",
-      "filter": "filter=!(object is.unused)",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Vulnerability Profiles"
     },
@@ -135,7 +135,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=url-filtering",
       "actions": "actions=url.alert-only-set",
-      "filter": "filter=!(object is.unused)",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "URL Filtering Profiles"
     },
@@ -143,7 +143,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=file-blocking",
       "actions": "actions=file-blocking.alert-only-set",
-      "filter": "filter=!(object is.unused)",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "File Blocking Profiles"
     },
@@ -151,7 +151,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=wildfire-analysis",
       "actions": "actions=wildfire.alert-only-set",
-      "filter": "filter=!(object is.unused)",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Wildfire Analysis Profiles"
     },

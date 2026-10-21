@@ -59,7 +59,7 @@ class DEVICEUTIL extends UTIL
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['devicetype'] = array('niceName' => 'deviceType', 'shortHelp' => 'specify which type(s) of your device want to edit, (default is "dg". ie: devicetype=any  devicetype=vsys,devicegroup,templatestack,template,container,devicecloud,manageddevice,deviceonprem,snippet', 'argDesc' => 'any|vsys|devicegroup|templatestack|template|container|devicecloud|manageddevice|deviceonprem|snippet');
+        $this->supportedArguments['devicetype'] = array('niceName' => 'deviceType', 'shortHelp' => 'specify which type(s) of your device want to edit, (default is "dg". ie: devicetype=any  devicetype=vsys,devicegroup,templatestack,template,container,devicecloud,manageddevice,deviceonprem,snippet,logcollector,logcollectorgroup', 'argDesc' => 'any|vsys|devicegroup|templatestack|template|container|devicecloud|manageddevice|deviceonprem|snippet|logcollector|logcollectorgroup');
     }
 
     public function location_filter_object()
@@ -87,6 +87,11 @@ class DEVICEUTIL extends UTIL
                     $this->objectsToProcess[] = array('store' => $this->pan, 'objects' => $this->pan->getTemplatesStacks());
                 if( array_search('any', $this->deviceTypes) !== FALSE || array_search('manageddevice', $this->deviceTypes) !== FALSE )
                     $this->objectsToProcess[] = array('store' => $this->pan->managedFirewallsStore, 'objects' => $this->pan->managedFirewallsStore->getAll());
+
+                if( array_search('any', $this->deviceTypes) !== FALSE || array_search('logcollector', $this->deviceTypes) !== FALSE )
+                    $this->objectsToProcess[] = array('store' => $this->pan, 'objects' => $this->pan->getLogCollector());
+                if( array_search('any', $this->deviceTypes) !== FALSE || array_search('logcollectorgroup', $this->deviceTypes) !== FALSE )
+                    $this->objectsToProcess[] = array('store' => $this->pan, 'objects' => $this->pan->getLogCollectorGroup());
             }
             elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
             {
@@ -112,7 +117,7 @@ class DEVICEUTIL extends UTIL
         //
         // Determine device types
         //
-        $supportedRuleTypes = array( 'any', 'vsys', 'devicegroup', 'template', 'templatestack', 'container', 'devicecloud', 'manageddevice', 'deviceonprem', 'snippet');
+        $supportedRuleTypes = array( 'any', 'vsys', 'devicegroup', 'template', 'templatestack', 'container', 'devicecloud', 'manageddevice', 'deviceonprem', 'snippet', 'logcollector', 'logcollectorgroup');
         if( !isset(PH::$args['devicetype']) )
         {
             if( $this->configType == 'panos' )
@@ -176,6 +181,12 @@ class DEVICEUTIL extends UTIL
                     $counter = count($store->getTemplatesStacks());
                 elseif( get_class($objects[0]) == "ManagedDevice" )
                     $counter = count($store->getAll());
+
+                elseif( get_class($objects[0]) == "LogCollector" )
+                    $counter = count($store->getLogCollector());
+                elseif( get_class($objects[0]) == "LogCollectorGroup" )
+                    $counter = count($store->getLogCollectorGroup());
+
                 else
                     $counter = 0;
             }

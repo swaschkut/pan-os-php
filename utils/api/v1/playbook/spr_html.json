@@ -47,7 +47,7 @@
     },
     {
       "type": "securityprofilegroup",
-      "actions": "actions=exportToExcel:1a-vii_SPG.html,UsedInLocation|TotalUse|bestpractice|visibility",
+      "actions": "actions=exportToExcel:1a-vii_SPG.html,UsedInLocation|TotalUse|visibility|bestpractice",
       "filter": "filter=!(object is.unused)",
       "location": "location=any"
     },

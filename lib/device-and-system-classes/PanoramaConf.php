@@ -66,6 +66,9 @@ class PanoramaConf
     public $devicegrouproot;
 
     /** @var string[]|DomNode */
+    public $logcollectorroot;
+
+    /** @var string[]|DomNode */
     public $logcollectorgrouproot;
 
 
@@ -85,6 +88,9 @@ class PanoramaConf
 
     /** @var TemplateStack[] */
     public $templatestacks = array();
+
+    /** @var LogCollector[] */
+    public $logCollector = array();
 
     /** @var LogCollectorGroup[] */
     public $logCollectorGroups = array();
@@ -610,6 +616,7 @@ class PanoramaConf
         $this->templateroot = DH::findFirstElementOrCreate('template', $this->localhostroot);
         $this->templatestackroot = DH::findFirstElementOrCreate('template-stack', $this->localhostroot);
         $this->logcollectorgrouproot = DH::findFirstElement('log-collector-group', $this->localhostroot);
+        $this->logcollectorroot = DH::findFirstElement('log-collector', $this->localhostroot);
 
         //above is general part
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -859,6 +866,7 @@ class PanoramaConf
                     {
                         $parentDG->_childDeviceGroups[$dgName] = $ldv;
                         $ldv->parentDeviceGroup = $parentDG;
+                        $parentDG->addReference($ldv);
 
                         $storeType = array(
                             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
@@ -1670,22 +1678,46 @@ class PanoramaConf
 
                             if( !empty($templateStack->FirewallsSerials) )
                             {
-                                foreach($templateStack->FirewallsSerials as $serial)
+                                foreach($templateStack->FirewallsSerials as $managedFirewall)
                                 {
-                                    /* @VAR ManagedDevice $serial */
-                                    $deviceGroupName = $serial->getDeviceGroup();
-                                    $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
-
-                                    $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
-                                    if( $logProfObj !== null )
+                                    /* @var ManagedDevice $managedFirewall */
+                                    $deviceGroupNames = $managedFirewall->getDeviceGroup();
+                                    if( !empty($deviceGroupNames) )
                                     {
-                                        if( $logProfName == $logProfObj->name() )
+                                        foreach( $deviceGroupNames as $deviceGroupName )
                                         {
+                                            $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
 
-                                            $zone->logsetting_Obj = $logProfObj;
-                                            $logProfObj->addReference($zone);
+                                            if( $deviceGroupOjb !== null )
+                                            {
+                                                $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
+                                                if( $logProfObj !== null )
+                                                {
+                                                    if( $logProfName == $logProfObj->name() )
+                                                    {
+                                                        $zone->logsetting_Obj = $logProfObj;
+                                                        $logProfObj->addReference($zone);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                                mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName'", null, false );
                                         }
                                     }
+                                    else
+                                    {
+                                        $logProfObj = $this->LogProfileStore->find( $logProfName );
+                                        if( $logProfObj !== null )
+                                        {
+                                            if( $logProfName == $logProfObj->name() )
+                                            {
+                                                $zone->logsetting_Obj = $logProfObj;
+                                                $logProfObj->addReference($zone);
+                                            }
+                                        }
+                                        mwarning( "managedDevice '{$managedFirewall->name()}' has no DeviceGroup attached. Template: '{$template->name()}' Zone: '{$zone->name()}' is using LogProfile: '$logProfName'", null, false );
+                                    }
+
                                 }
                             }
                         }
@@ -1697,6 +1729,31 @@ class PanoramaConf
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Todo: keep this part as it is - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("LogCollector");
+        //
+        // loading LogCollector
+        //
+        if( $this->logcollectorroot !== FALSE )
+        {
+            foreach( $this->logcollectorroot->childNodes as $node )
+            {
+                if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+                #$ldv = new LogCollector('*tmp*', $this);
+                $ldv = new LogCollector( $this);
+                $ldv->load_from_domxml($node);
+                $this->logCollector[] = $ldv;
+                //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
+
+                //Todo: add templates to templatestack
+            }
+        }
+        //
+        // end of LogCollector
+        //
+
+
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("LogCollectorGroup");
         //
@@ -2583,6 +2640,23 @@ class PanoramaConf
     {
         return $this->templatestacks;
     }
+
+    /**
+     * @return LogCollector[]
+     */
+    public function getLogCollector(): array
+    {
+        return $this->logCollector;
+    }
+
+    /**
+     * @return LogCollectorGroup[]
+     */
+    public function getLogCollectorGroup(): array
+    {
+        return $this->logCollectorGroups;
+    }
+
     public function isPanorama()
     {
         return TRUE;

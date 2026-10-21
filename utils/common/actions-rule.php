@@ -6528,6 +6528,256 @@ RuleCallContext::$supportedActions[] = Array(
     ),
 );
 
+
+RuleCallContext::$supportedActions[] = Array(
+    'name' => 'user-check-ldap_new',
+    'GlobalInitFunction' => function(RuleCallContext $context)
+    {
+        $context->first = true;
+        $context->end = true;
+    },
+    'MainFunction' => function(RuleCallContext $context)
+    {
+        if( $context->object->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $filtercriteria = $context->arguments['filtercriteria'];
+        $existentUser = $context->arguments['existentUser'];
+
+        if( $context->first )
+        {
+            $context->justthese = array("ou", "sn", "cn", "givenname", "mail", $filtercriteria);
+            $context->dn = str_replace( ";", ",", $context->arguments['dn'] );
+
+            $ldapUser = $context->arguments['ldapUser'];
+
+            // Check if available via .panconfigkeystore
+            $connector = PanAPIConnector::findOrCreateConnectorFromHost( 'ldap-password' );
+            $ldapPassword = $connector->apikey;
+
+            // --- LDAP SERVER DISCOVERY & CONNECTION LOGIC ---
+            $ldapServers = array();
+            $useLdaps = isset($context->arguments['useLdaps']) ? (bool)$context->arguments['useLdaps'] : false;
+
+            if( !empty($context->arguments['ldapServer']) && $context->arguments['ldapServer'] !== '*nodefault*' && $context->arguments['ldapServer'] !== 'auto' )
+            {
+                $ldapServers[] = $context->arguments['ldapServer'];
+            }
+            else
+            {
+                // Extract domain name automatically from the DN (e.g., DC=domain,DC=local -> domain.local)
+                preg_match_all('/DC=([^,;]+)/i', $context->arguments['dn'], $matches);
+                if( !empty($matches[1]) )
+                {
+                    $domain = implode('.', $matches[1]);
+                    PH::print_stdout( "     - Discovering LDAP servers via DNS SRV records for domain: {$domain}..." );
+
+                    $srvRecords = @dns_get_record("_ldap._tcp.{$domain}", DNS_SRV);
+                    if( !empty($srvRecords) )
+                    {
+                        foreach( $srvRecords as $rec )
+                        {
+                            $host = $rec['target'];
+                            $uri = $useLdaps ? "ldaps://{$host}:636" : "ldap://{$host}:389";
+                            if( !in_array($uri, $ldapServers) )
+                            {
+                                $ldapServers[] = $uri;
+                            }
+                        }
+                    }
+                }
+
+                if( empty($ldapServers) )
+                {
+                    derr( "Could not discover any LDAP servers automatically via DNS SRV. Please specify 'ldapServer' manually.", null, FALSE );
+                }
+            }
+
+            // Attempt connection across discovered or provided servers
+            $context->ldapconn = false;
+            foreach( $ldapServers as $serverUri )
+            {
+                PH::print_stdout( "     - Attempting connection to: {$serverUri}" );
+                $conn = @ldap_connect( $serverUri );
+                if( $conn )
+                {
+                    ldap_set_option($conn, LDAP_OPT_PROTOCOL_VERSION, 3);
+                    ldap_set_option($conn, LDAP_OPT_REFERRALS, 0);
+
+                    $bind = @ldap_bind($conn, $ldapUser, $ldapPassword);
+                    if( $bind )
+                    {
+                        $context->ldapconn = $conn;
+                        $context->ldapbind = $bind;
+                        PH::print_stdout( "     - Successfully connected and bound to: {$serverUri}" );
+                        break;
+                    }
+                }
+            }
+
+            if( !$context->ldapconn || !$context->ldapbind )
+            {
+                derr( "LDAP connection or bind failed for all target servers.", null, FALSE );
+            }
+
+            $context->first = false;
+        }
+
+        /*
+         * @var securityRule $rule
+         */
+        $rule = $context->object;
+
+        if( !$rule->isSecurityRule() )
+            return false;
+
+        $users = $rule->userID_getUsers();
+
+        foreach( $users as $user )
+        {
+            $needle = "//PERSON//";
+
+            $filter = "(|(".$filtercriteria."=".$needle."))";
+            if( strpos( $user, "\\" ) !== FALSE )
+            {
+                $dn = $context->dn;
+                $users = array( $user);
+            }
+            else
+            {
+                $dn = $user;
+                $users = array( );
+            }
+
+            if( count($users) > 0 )
+            {
+                foreach($users as $person)
+                {
+                    $domain_counter = explode( "\\", $person );
+                    if( count( $domain_counter ) > 1 )
+                        $person = $domain_counter[1];
+
+                    if( strpos( $filter, $needle ) )
+                        $filter = str_replace( $needle, $person, $filter );
+
+                    $sr=ldap_search( $context->ldapconn, $dn, $filter, $context->justthese);
+                    $info = ldap_get_entries($context->ldapconn, $sr);
+                }
+            }
+            else
+            {
+                if( strpos( $filter, $needle ) )
+                    $filter = str_replace( $needle, "*", $filter );
+
+                try
+                {
+                    PH::enableExceptionSupport();
+                    $sr=ldap_search( $context->ldapconn, $dn, $filter, $context->justthese);
+                    $info = ldap_get_entries($context->ldapconn, $sr);
+                }
+                catch (Exception $e)
+                {
+                    $info['count'] = 0;
+                    PH::disableExceptionSupport();
+                }
+            }
+
+            if( $info['count'] === 0 )
+                $response = false;
+            else
+                $response = true;
+
+            if( $response === null )
+                PH::print_stdout( "something went wrong with LDAP connection" );
+
+            $display = false;
+            if( !$response && !$existentUser)
+            {
+                $display = true;
+                $display_string = "     - user not available: ";
+            }
+            elseif( $response && $existentUser )
+            {
+                $display = true;
+                $display_string = "     - user available: ";
+            }
+            if( $display )
+            {
+                $string = $display_string;
+                if( count($users) > 0 )
+                    $remove_user = $users[0];
+                else
+                    $remove_user = $dn;
+
+                $string .= "'".$remove_user."'";
+                PH::print_stdout( $string );
+
+                if( $context->arguments['actionType'] === "remove" )
+                {
+                    PH::print_stdout( "        - removed" );
+
+                    if( !$rule->isSecurityRule() )
+                    {
+                        $string = "this is not a Security rule";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+
+                    if( $context->isAPI )
+                    {
+                        $rule->API_userID_removeUser($remove_user);
+                    }
+                    else
+                        $rule->userID_removeUser( $remove_user );
+
+                    if( $rule->userID_count() < 1 )
+                    {
+                        $string = "no USER objects remaining so the Rule will be disabled...";
+                        PH::ACTIONlog( $context, $string );
+
+                        if( $context->isAPI )
+                            $rule->API_setDisabled(TRUE);
+                        else
+                            $rule->setDisabled(TRUE);
+                    }
+                }
+            }
+        }
+    },
+    'GlobalFinishFunction' => function(RuleCallContext $context)
+    {
+        if( $context->end )
+        {
+            if( !empty($context->ldapconn) )
+            {
+                ldap_close($context->ldapconn);
+            }
+            $context->end = false;
+        }
+    },
+
+    'args' => Array(
+        'actionType' => Array( 'type' => 'string', 'default' => 'show',
+            'help' => "'show' and 'remove' are supported."
+        ),
+        'ldapUser' => Array( 'type' => 'string', 'default' => '*nodefault*',
+            'help' => "define LDAP user for authentication to server" ),
+        'dn' => Array( 'type' => 'string', 'default' => 'OU=TEST;DC=domain;DC=local',
+            'help' => "full OU to an LDAP part, separated with ';' - used to extract domain for auto-discovery" ),
+        'ldapServer' => Array( 'type' => 'string', 'default' => 'auto',
+            'help' => "LDAP server fqdn / IP. Set to 'auto' or leave blank to discover automatically via DNS SRV records." ),
+        'useLdaps' => Array( 'type' => 'bool', 'default' => 'true',
+            'help' => "Use LDAPS (Port 636) instead of LDAP (Port 389) when auto-discovering servers." ),
+        'filtercriteria' => Array( 'type' => 'string', 'default' => 'mailNickname',
+            'help' => "Domain\\username - specify the search filter criteria where your Security Rule defined user name can be found in LDAP" ),
+        'existentUser' => Array( 'type' => 'bool', 'default' => 'false',
+            'help' => "users no longer available in LDAP => false | users available in LDAP => true, e.g. if users are disabled and available in a specific LDAP group" ),
+    ),
+);
+
 //                                                   //
 //                HIP Based Actions     //
 //                                                   //

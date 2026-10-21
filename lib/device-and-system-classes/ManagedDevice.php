@@ -30,7 +30,7 @@ class ManagedDevice
     public $owner;
 
     # Todo: that does not reflect multi-vsys for managed-device
-    public $devicegroup;
+    public $devicegroup = array();
     public $template;
     public $template_stack;
 
@@ -87,7 +87,7 @@ class ManagedDevice
 
     public function addDeviceGroup($devicegroup)
     {
-        $this->devicegroup = $devicegroup;
+        $this->devicegroup[$devicegroup] = $devicegroup;
     }
 
     public function addTemplate($template)

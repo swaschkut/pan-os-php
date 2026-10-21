@@ -168,7 +168,7 @@ class RULEMERGER extends UTIL
             PH::print_stdout("#####################################");
             PH::print_stdout();
 
-            $this->pan->display_statistics();
+            $this->pan->display_statistics( null, false, "display-available");
 
             PH::print_stdout();
             PH::print_stdout("#####################################");
@@ -287,7 +287,7 @@ class RULEMERGER extends UTIL
 
             PH::print_stdout();
             PH::print_stdout("Stats before merging :");
-            $this->processedLocation->display_statistics();
+            $this->processedLocation->display_statistics( null, false, "display-available");
 
             ##################
 
@@ -297,7 +297,7 @@ class RULEMERGER extends UTIL
 
             PH::print_stdout();
             PH::print_stdout("Stats after merging :");
-            $this->processedLocation->display_statistics();
+            $this->processedLocation->display_statistics( null, false, "display-available");
 
             PH::print_stdout();
             PH::print_stdout("#####################################");

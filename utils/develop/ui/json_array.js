@@ -2625,6 +2625,14 @@ var subjectObject =
         "filter": {
             "devicegroup": {
                 "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "has.vsys": {
                         "Function": {},
                         "arg": true,
@@ -2705,6 +2713,14 @@ var subjectObject =
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -2713,6 +2729,14 @@ var subjectObject =
                     "has.member": {
                         "Function": {},
                         "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -7011,6 +7035,49 @@ var subjectObject =
                         "type": "string",
                         "default": "OU=TEST;DC=domain;DC=local",
                         "help": "full OU to an LDAP part, sparated with ';' - this is a specific setting"
+                    },
+                    "filtercriteria": {
+                        "type": "string",
+                        "default": "mailNickname",
+                        "help": "Domain\\username - specify the search filter criteria where your Security Rule defined user name can be found in LDAP"
+                    },
+                    "existentUser": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "users no longer available in LDAP => false | users available in LDAP => true, e.g. if users are disabled and available in a specific LDAP group"
+                    }
+                }
+            },
+            "user-check-ldap_new": {
+                "name": "user-check-ldap_new",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "actionType": {
+                        "type": "string",
+                        "default": "show",
+                        "help": "'show' and 'remove' are supported."
+                    },
+                    "ldapUser": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "define LDAP user for authentication to server"
+                    },
+                    "dn": {
+                        "type": "string",
+                        "default": "OU=TEST;DC=domain;DC=local",
+                        "help": "full OU to an LDAP part, separated with ';' - used to extract domain for auto-discovery"
+                    },
+                    "ldapServer": {
+                        "type": "string",
+                        "default": "auto",
+                        "help": "LDAP server fqdn \/ IP. Set to 'auto' or leave blank to discover automatically via DNS SRV records."
+                    },
+                    "useLdaps": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "Use LDAPS (Port 636) instead of LDAP (Port 389) when auto-discovering servers."
                     },
                     "filtercriteria": {
                         "type": "string",
@@ -12860,6 +12927,18 @@ var subjectObject =
                     }
                 }
             },
+            "refobject.time_attribute": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "severity": {
                 "operators": {
                     "eq": {
@@ -13863,6 +13942,24 @@ var subjectObject =
             "scan.alert-only-set": {
                 "name": "scan.alert-only-set",
                 "MainFunction": {}
+            },
+            "scan.whitelist.add": {
+                "name": "scan.whitelist.add",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "ip_value_objname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "ip_type": {
+                        "type": "string",
+                        "default": "ipv4"
+                    }
+                }
             }
         },
         "filter": {

@@ -1,5 +1,31 @@
 CHANGELOG
 
+2.1.60
+UTIL:
+* type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
+* type=device | introduce 'filter=(template/devicegroup/templatestack is.unused)'
+* type=device actions=exporttohtml:file.html | extend html creation
+* type=zone-protection-profile | introduce 'actions=scan.whitelist.add:test2,1.2.3.4'
+* type=zone-protection-profile | extend actions=exporttohtml:file.html - with scan-whitelist information
+* develop | introduce ldap validation scripts
+* type=device | optimisation of actions=display/exporttohtml - related to serial and multiple vsys / template and vsys configured
+* type=device | extend with class LogCollector / LogCollectorGroup
+* type=device | introduce 'filter=(template is.unused.recursive)'
+
+BUGFIX:
+* type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member
+* class PanoramaConf | bugfix if DG can not be found for logprofile
+* type=address | bugfix for filters to avoid error out by region/edl objects
+* type=stats | bugfix for user-id # / percentage calculation - use all enabled rules
+* type=device actions=exporttohtml:xyz.html | bugfixes to display correct amount of references and virtual systems
+* type=stats | bugfix related to class ManagedDevice variable devicegroup change to array
+* type=securityprofile | all filters - bugfix if DLP plug-in is used and DLP profile is available as string not as an object
+
+GENERAL:
+* Device App-ID update to version: 9152-10258
+* Device App-ID update to version: 9153-10265
+
+
 2.1.59 (20260922)
 UTIL:
 * pan-os-php changelog[=2.1.56] | introduction of argument changelog
@@ -43,6 +69,7 @@ GENERAL:
 * all class with usage of htmlspecialchars migrated to PH::panosphp_htmlspecialchars
 * Device App-ID update to version: 9137-10202
 * Device App-ID update to version: 9149-10248
+
 
 2.1.58 (20260803)
 UTIL:
