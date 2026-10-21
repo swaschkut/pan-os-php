@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* class SecurityProfileStore | bugfix related to plugin/dlp - if not set
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
