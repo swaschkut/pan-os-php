@@ -346,12 +346,17 @@ class SecurityProfileStore extends ObjStore
             if( $pluginRoot !== FALSE )
             {
                 $dataFilteringRoot = DH::findFirstElement('dlp', $pluginRoot);
-                $dataFilteringRoot = DH::findFirstElement('internal', $dataFilteringRoot);
-                $dataFilteringRoot = DH::findFirstElement('dlp-data-profiles', $dataFilteringRoot);
 
                 if( $dataFilteringRoot !== FALSE )
                 {
-                    $this->load_predefined_data_filtering_from_domxml($dataFilteringRoot);
+                    $internalRoot = DH::findFirstElement('internal', $dataFilteringRoot);
+                    if( $internalRoot !== FALSE )
+                    {
+                        $dlp_data_profile_Root = DH::findFirstElement('dlp-data-profiles', $internalRoot);
+
+                        if( $dlp_data_profile_Root !== FALSE )
+                            $this->load_predefined_data_filtering_from_domxml($dlp_data_profile_Root);
+                    }
                 }
             }
         }
