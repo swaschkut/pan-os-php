@@ -1,6 +1,19 @@
 CHANGELOG
 
-2.1.60
+2.1.61
+UTIL:
+* type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
+* type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
+
+BUGFIX:
+* class SecurityProfileStore | bugfix related to plugin/dlp - if not set
+* type=rule | bugfix for 'filter=(target has XYZ)' - to get also these rules where negation is used, but serial is not mentioned
+
+GENERAL:
+* update Device App-ID to version: 9161-10297
+
+
+2.1.60 (20261021)
 UTIL:
 * type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 * type=device | introduce 'filter=(template/devicegroup/templatestack is.unused)'

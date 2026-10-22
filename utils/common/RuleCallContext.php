@@ -1584,6 +1584,14 @@ class RuleCallContext extends CallContext
                 return self::enclose( "", $wrap);
         }
 
+        if( $fieldName == 'target_negated' )
+        {
+            if( !method_exists($rule, 'target_isNegated') || !$rule->target_isNegated() )
+                return self::enclose('no');
+
+            return self::enclose('yes');
+        }
+
         if( $fieldName == 'target' )
         {
             if( $rule->target_isAny() )

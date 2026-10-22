@@ -5342,6 +5342,7 @@ RuleCallContext::$supportedActions[] = array(
             'decryption-certificate' => 'decryption-certificate',
             'certificate-not-valid-before' => 'certificate-not-valid-before',
             'certificate-not-valid-after' => 'certificate-not-valid-after',
+            'target_negated' => 'target_negated',
             'target' => 'target',
             'first-hit' => 'first-hit',
             'last-hit' => 'last-hit',

@@ -4093,6 +4093,29 @@ RQuery::$defaultFilters['rule']['target']['operators']['has'] = array(
     )
 );
 
+RQuery::$defaultFilters['rule']['target']['operators']['has.regex'] = array(
+    'Function' => function (RuleRQueryContext $context)
+    {
+        return $context->object->target_hasDeviceRegex($context->value);
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if one of the target serial numbers matches the regular expression. Negated targets are taken into account. Ie: "(target has.regex /00YC25C/)"',
+    'ci' => array(
+        'fString' => '(%PROP%  /00YC25C/)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['rule']['target']['operators']['is.negated'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        return $context->object->target_isNegated();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 
 RQuery::$defaultFilters['rule']['description']['operators']['is.empty'] = array(
     'Function' => function (RuleRQueryContext $context) {
