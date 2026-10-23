@@ -1322,6 +1322,109 @@ class SecurityProfileStore extends ObjStore
         return $f;
     }
 
+    /**
+     * @param AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|FileBlockingProfile|URLProfile $rule
+     * @param string $newName
+     * @return AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|FileBlockingProfile|URLProfile
+     */
+    public function cloneSecurityProfile($object, $newName = null )
+    {
+        if( $newName !== null )
+        {
+            if( !$this->isSPObjectNameAvailable($newName) )
+                derr('this SecurityProfile name is not available: ' . $newName);
+        }
+        else
+            $newName = $this->findAvailableName($object->name(), '', 0);
+
+
+        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|FileBlockingProfile|URLProfile $newRule */
+        $newObject = new $this->type($newName, $this);
+
+        // make sure the target store has an XML root and know its document
+        if( $this->xmlroot === null )
+            $this->createXmlRoot();
+
+        $xml = $object->xmlroot->cloneNode(TRUE);
+
+        // the source may belong to another DOMDocument (e.g. predefined.xml)
+        if( $xml->ownerDocument !== $this->xmlroot->ownerDocument )
+            $xml = $this->xmlroot->ownerDocument->importNode($xml, TRUE);
+
+
+        $newObject->load_from_domxml($xml);
+
+        //trick to avoid name change propagation and errors
+        $newObject->owner = null;
+
+        $newObject->setName($newName);
+
+        // finally add it to the store
+        $this->addSecurityProfile($newObject);
+
+        return $newObject;
+    }
+
+    /**
+     * @param string $base
+     * @param string $suffix
+     * @param integer|string $startCount
+     * @return string
+     */
+    public function findAvailableName($base, $suffix = '', $startCount = 0, $nested = TRUE)
+    {
+        //Todo based on PAN-OS rule name was extended
+        if( $this->owner->version >= 81 )
+            $maxl = 63;
+        else
+            $maxl = 31;
+
+
+        $basel = strlen($base);
+        $suffixl = strlen($suffix);
+        $inc = $startCount;
+        $basePlusSuffixL = $basel + $suffixl;
+
+        while( TRUE )
+        {
+            if( $inc == 0 )
+            {
+                if( $basePlusSuffixL > $maxl )
+                    $newname = substr($base, 0, $basel - $suffixl) . $suffix;
+                else
+                    $newname = $base . $suffix;
+            }
+            else
+            {
+                $incl = strlen(strval($inc));
+
+                if( $basePlusSuffixL + $incl > $maxl )
+                    $newname = substr($base, 0, $basel - $suffixl - $incl) . $suffix . $inc;
+                else
+                    $newname = $base . $suffix . $inc;
+            }
+
+            if( $this->isSPObjectNameAvailable($newname, $nested) )
+                return $newname;
+
+            $inc++;
+        }
+    }
+
+    /**
+     * Check if this name is available (for new rule for example)
+     * @param string $name
+     * @param bool $nested
+     * @return bool
+     */
+    public function isSPObjectNameAvailable($name, $nested = FALSE): bool
+    {
+        if (isset($this->fastNameToIndex[$name])) {
+            return FALSE;
+        }
+
+        return true;
+    }
 
     public function createXmlRoot()
     {
