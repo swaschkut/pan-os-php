@@ -5,6 +5,7 @@ UTIL:
 * type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
 * type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
 * type=securityprofile | introduce actions=clone-predefined-and-change-references
+* type=zone/zone-protection-profile | introduce 'filter=(template.owner is.unused/ template.owner is.unused.recursive / manageddevice.owner is.in.list/manageddevice.owner is.in.file)'
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

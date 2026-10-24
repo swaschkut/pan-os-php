@@ -384,4 +384,153 @@ RQuery::$defaultFilters['zone-protection-profile']['object']['operators']['is.vi
     'arg' => FALSE
 );
 
+
+
+RQuery::$defaultFilters['zone-protection-profile']['template.owner']['operators']['is.unused'] = array(
+    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+        $object = $context->object;
+
+        $template = $object->owner->owner->owner;
+
+        if( count($template->getReferences()) == 0 )
+            return true;
+        else
+            return false;
+
+        return null;
+    },
+    'arg' => FALSE
+);
+
+RQuery::$defaultFilters['zone-protection-profile']['template.owner']['operators']['is.unused.recursive'] = array(
+    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+        $object = $context->object;
+
+        $template = $object->owner->owner->owner;
+
+        if( count($template->getReferences()) > 0 )
+        {
+            foreach( $template->getReferences() as $ref )
+            {
+                if( get_class( $ref ) == "TemplateStack" )
+                {
+                    if( count($ref->getReferences()) == 0 )
+                        return true;
+                    else
+                        return false;
+                }
+            }
+        }
+
+        return null;
+    },
+    'arg' => FALSE
+);
+
+RQuery::$defaultFilters['zone-protection-profile']['manageddevice.owner']['operators']['is.in.file'] = array(
+    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+        $object = $context->object;
+
+
+        if( !isset($context->cachedList) )
+        {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
+            $text = file_get_contents($context->value);
+
+            if( $text === FALSE )
+                derr("cannot open file '{$context->value}");
+
+            $lines = explode("\n", $text);
+            foreach( $lines as $line )
+            {
+                $line = trim($line);
+                if( strlen($line) == 0 )
+                    continue;
+                $list[$line] = TRUE;
+            }
+
+            $context->cachedList = &$list;
+        }
+        else
+            $list = &$context->cachedList;
+
+
+        $template = $object->owner->owner->owner;
+
+        if( count($template->getReferences()) > 0 )
+        {
+            foreach( $template->getReferences() as $ref )
+            {
+                if( get_class( $ref ) == "TemplateStack" )
+                {
+                    if( count($ref->getReferences()) > 0 )
+                    {
+                        foreach( $ref->getReferences() as $ref2 )
+                        {
+                            if( get_class( $ref2 ) == "ManagedDevice" )
+                            {
+                                return isset($list[$ref2->name()]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    },
+    'arg' => TRUE
+);
+
+RQuery::$defaultFilters['zone-protection-profile']['manageddevice.owner']['operators']['is.in.list'] = array(
+    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+        $object = $context->object;
+
+
+        if( !isset($context->cachedList) )
+        {
+            $lines = explode(",", $context->value);
+            foreach( $lines as $line )
+            {
+                $line = trim($line);
+                if( strlen($line) == 0 )
+                    continue;
+                $list[$line] = TRUE;
+            }
+
+            $context->cachedList = &$list;
+        }
+        else
+            $list = &$context->cachedList;
+
+
+        $template = $object->owner->owner->owner;
+
+        if( count($template->getReferences()) > 0 )
+        {
+            foreach( $template->getReferences() as $ref )
+            {
+                if( get_class( $ref ) == "TemplateStack" )
+                {
+                    if( count($ref->getReferences()) > 0 )
+                    {
+                        foreach( $ref->getReferences() as $ref2 )
+                        {
+                            if( get_class( $ref2 ) == "ManagedDevice" )
+                            {
+                                return isset($list[$ref2->name()]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    },
+    'arg' => TRUE
+);
+
 // </editor-fold>
