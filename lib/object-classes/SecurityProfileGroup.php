@@ -1126,6 +1126,15 @@ class SecurityProfileGroup
                 $tmp1->appendChild( $tmp );
             }
         }
+
+        if( count($this->secprofProfiles_obj) !== count( $this->secprofiles ) )
+        {
+            foreach( $this->secprofiles as $key => $value )
+            {
+                if( !isset($this->secprofProfiles_obj[$key]) )
+                    mwarning("SecurityProfileGroup contains a key in secprofiles array which is not in secprofProfiles_obj array", null, false);
+            }
+        }
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

@@ -6744,3 +6744,91 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
     }
 );
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'clone-predefined-and-change-references',
+    'MainFunction' => function (SecurityProfileCallContext $context)
+    {
+        $object = $context->object;
+
+        if( str_contains($object->owner->name(), "predefined") )
+        {
+            if( str_contains($object->owner->name(), "DataFiltering") )
+            {
+                PH::print_stdout("skip object as it predefined DataFiltering");
+                return false;
+            }
+
+
+            if( count( $object->getReferences() ) > 0 )
+            {
+                $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+                $spStore = get_class($object)."Store";
+
+                /** @var SecurityProfileStore $targetStore */
+                $targetStore = $rootObject->$spStore;
+
+                $newObject = $targetStore->cloneSecurityProfile($object, $object->name()."_predefined");
+
+
+                $type = $object->secprof_type;   // 'virus', 'spyware', 'vulnerability', 'file-blocking',
+                // 'wildfire-analysis', 'url-filtering', 'data-filtering', ...
+
+                $setterByType = array(
+                        'virus'                       => 'setSecProf_AV',
+                        'spyware'                     => 'setSecProf_Spyware',
+                        'vulnerability'               => 'setSecProf_Vuln',
+                        'file-blocking'               => 'setSecProf_FileBlock',
+                        'wildfire-analysis'           => 'setSecProf_Wildfire',
+                        'url-filtering'               => 'setSecProf_URL',
+                        'data-filtering'              => 'setSecProf_DataFilt',
+                        'virus-and-wildfire-analysis' => 'setSecProf_AVWF',
+                        'dns-security'                => 'setSecProf_DNSSEC',
+                );
+
+                if( !isset($setterByType[$type]) )
+                {
+                    PH::ACTIONstatus($context, "SKIPPED", "no setter for type '{$type}'");
+                    return false;
+                }
+                $setter = $setterByType[$type];
+
+
+                foreach( $object->getReferences() as $ref )
+                {
+                    if( get_class($ref) == "SecurityRule" )
+                    {
+                        if( $ref->securityProfileType() !== 'profile' )
+                            continue;
+
+                        $profiles = $ref->securityProfiles();
+                        if( !isset($profiles[$type]) || $profiles[$type] !== $object )
+                            continue;
+
+                        $ref->$setter($newObject);              // object
+                    }
+                    elseif( get_class($ref) == "SecurityProfileGroup" )
+                    {
+                        $profiles = $ref->securityProfiles();
+                        if( !isset($profiles[$type]) || $profiles[$type] !== $object )
+                            continue;
+
+                        $ref->$setter($newObject->name());
+                    }
+                    else
+                        continue;
+
+                    $object->removeReference($ref);
+                    $newObject->addReference($ref);
+
+                    if( $context->isAPI )
+                        $ref->API_sync();
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+);

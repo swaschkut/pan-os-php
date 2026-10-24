@@ -9,7 +9,9 @@ class SecurityProfile
     use PathableName;
     use XmlConvertible;
     use ObjectWithDescription;
-    use ReferenceableObject;
+    use ReferenceableObject {
+        removeReference as super_removeReference;
+    }
 
     /** @var string|null */
     protected $value;

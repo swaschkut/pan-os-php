@@ -63,7 +63,8 @@ class SharedGatewayStore extends ObjStore
                 continue;
             }
 
-            $localVsys = new VirtualSystem($this, $this->owner);
+            //$localVsys = new VirtualSystem($this, $this->owner);
+            $localVsys = new VirtualSystem($this);
             $localVsys->load_from_domxml($node);
 
             $this->virtualSystems[] = $localVsys;

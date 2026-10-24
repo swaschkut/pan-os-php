@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
 * type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
+* type=securityprofile | introduce actions=clone-predefined-and-change-references
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

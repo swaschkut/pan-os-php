@@ -606,6 +606,45 @@ class Rule
     }
 
     /**
+     * @param string $regex complete regex incl. delimiters, e.g. /00YC25C/
+     * @param string|null $vsys optional: if set, only a vsys of the matching serial is accepted
+     * @return bool
+     */
+    public function target_hasDeviceRegex($regex, $vsys = null)
+    {
+        if( $this->_targets === null )
+            return FALSE;
+
+        $result = $this->target_listContainsDeviceRegex($regex, $vsys);
+
+        if( $this->_targetIsNegated )
+            return !$result;
+
+        return $result;
+    }
+
+    private function target_listContainsDeviceRegex($regex, $vsys = null): bool
+    {
+        foreach( $this->_targets as $serial => $vsysList )
+        {
+            $matching = preg_match($regex, (string)$serial);
+            if( $matching === FALSE )
+                derr("regular expression error on '{$regex}'");
+
+            if( $matching !== 1 )
+                continue;
+
+            if( $vsys === null )
+                return TRUE;
+
+            if( isset($vsysList[$vsys]) )
+                return TRUE;
+        }
+
+        return FALSE;
+    }
+
+    /**
      * For developer use only
      *
      */

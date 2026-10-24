@@ -1330,7 +1330,7 @@ class UTIL
         {
             $this->objectsTemplate = PH::$args['template'];
             if( !is_string($this->objectsTemplate) || strlen($this->objectsTemplate) < 1 )
-                $this->display_error_usage_exit('"location" argument is not a valid string');
+                $this->display_error_usage_exit('"template" argument is not a valid string');
         }
         else
         {
@@ -1811,6 +1811,11 @@ class UTIL
                     }
                 }
             }
+        }
+        else
+        {
+            print_r( $this->objectsTemplate );
+            derr("more than one template specified, not yet implemented ", null, FALSE);
         }
     }
 
