@@ -252,7 +252,7 @@ class SecurityProfileStore extends ObjStore
 
 
         self::$predefinedWildfireStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileWildfire");
-        self::$predefinedWildfireStore->setName('predefined Wildfire');
+        self::$predefinedWildfireStore->setName('predefined Wildfire-Analysis');
         self::$predefinedWildfireStore->load_wildfire_rules_from_predefinedfile();
 
         return self::$predefinedWildfireStore;

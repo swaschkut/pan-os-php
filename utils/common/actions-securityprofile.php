@@ -6773,6 +6773,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 $type = $object->secprof_type;   // 'virus', 'spyware', 'vulnerability', 'file-blocking',
                 // 'wildfire-analysis', 'url-filtering', 'data-filtering', ...
+                if( $type == 'wildfire' )
+                    $type = 'wildfire-analysis';
 
                 $setterByType = array(
                         'virus'                       => 'setSecProf_AV',
@@ -6809,11 +6811,22 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     elseif( get_class($ref) == "SecurityProfileGroup" )
                     {
-                        $profiles = $ref->securityProfiles();
-                        if( !isset($profiles[$type]) || $profiles[$type] !== $object )
-                            continue;
 
-                        $ref->$setter($newObject->name());
+                        $profiles = $ref->securityProfiles();
+
+                        // match on the same object OR the same name, so a different instance doesn't hide it
+                        if( !isset($profiles[$type])
+                                || !is_object($profiles[$type])
+                                || ( $profiles[$type] !== $object && $profiles[$type]->name() !== $object->name() ) )
+                        {
+                            PH::print_stdout("   - group '".$ref->name()."': no matching '".$type."' profile, skipped");
+                            continue;
+                        }
+
+                        $ref->secprofProfiles_obj[$type] = $newObject;   // public property on the group
+                        $ref->secprofiles[$type] = $newObject->name();   // keep both arrays consistent
+                        $ref->rewriteXML();
+
                     }
                     else
                         continue;

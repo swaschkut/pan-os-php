@@ -96,6 +96,7 @@ class SecurityProfileGroup
         foreach( $used_secprof_array as $secprof )
         {
             $this->secprofiles[$secprof] = null;
+            $this->secprofProfiles_obj[$secprof] = null;
         }
 
         $this->owner = $owner;
@@ -394,6 +395,7 @@ class SecurityProfileGroup
     public function removeSecurityProfile()
     {
         $this->secprofiles = array();
+        $this->secprofProfiles_obj = array();
 
         $this->rewriteXML();
 
@@ -1132,7 +1134,7 @@ class SecurityProfileGroup
             foreach( $this->secprofiles as $key => $value )
             {
                 if( !isset($this->secprofProfiles_obj[$key]) )
-                    mwarning("SecurityProfileGroup contains a key in secprofiles array which is not in secprofProfiles_obj array", null, false);
+                    mwarning("SecurityProfileGroup: '". $this->name() ."' contains a key in secprofiles array which is not in secprofProfiles_obj array: '".$key."'", null, false);
             }
         }
     }

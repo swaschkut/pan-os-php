@@ -8745,6 +8745,23 @@ var subjectObject =
                             "fString": "(%PROP%  00YC25C)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "has.regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if one of the target serial numbers matches the regular expression. Negated targets are taken into account. Ie: \"(target has.regex \/00YC25C\/)\"",
+                        "ci": {
+                            "fString": "(%PROP%  \/00YC25C\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.negated": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -9267,6 +9284,10 @@ var subjectObject =
     "securityprofile": {
         "name": "securityprofile",
         "action": {
+            "clone-predefined-and-change-references": {
+                "name": "clone-predefined-and-change-references",
+                "MainFunction": {}
+            },
             "custom-url-category-add-ending-token": {
                 "name": "custom-url-category-add-ending-token",
                 "MainFunction": {},
