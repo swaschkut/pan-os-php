@@ -14,6 +14,7 @@ BUGFIX:
 * class VirtualSystem | fix related to SharedGateway to NOT create default-security-rule in Panorama Template
 * class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
 * type=stats actions=display-bpa | optimisation for Zone/ZPP visibility calculation
+* class DH.php | bugfix to generate set commands
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

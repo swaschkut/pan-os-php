@@ -675,7 +675,8 @@ class DH
 
             if( $element->nodeName == "entry" )
             {
-                if( strpos( $xpath, ' "'.$element->getAttribute('name').'"' ) === FALSE )
+                //if( strpos( $xpath, ' "'.$element->getAttribute('name').'"' ) === FALSE )
+                if( !str_ends_with( rtrim($xpath), ' "'.$element->getAttribute('name').'"' ) )
                     $string .= ' "' . $element->getAttribute('name').'"';
 
                 if( strpos( $xpath, "delete" ) !== FALSE )
@@ -689,7 +690,8 @@ class DH
             }
             else
             {
-                if( strpos( $xpath, " ".$element->nodeName ) === FALSE )
+                //if( strpos( $xpath, " ".$element->nodeName ) === FALSE )
+                if( !str_ends_with( rtrim($xpath), " ".$element->nodeName ) )
                 {
                     if( $debug )
                     {
