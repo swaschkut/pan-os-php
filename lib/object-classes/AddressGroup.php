@@ -1125,7 +1125,7 @@ class AddressGroup
 
         foreach( $this->members as $o )
         {
-            $localResult = $o->includesIP4Network($netStartEnd);
+            $localResult = $o->includesIP6Network($netStartEnd);
             if( $localResult == 1 )
             {
                 return 1;

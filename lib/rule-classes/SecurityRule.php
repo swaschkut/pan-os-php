@@ -240,7 +240,7 @@ class SecurityRule extends RuleWithUserID
                 $actionFound = array_search($node->textContent, self::$RuleActions);
                 if( $actionFound === FALSE )
                 {
-                    mwarning("unsupported action '{$tmp->textContent}' found, allow assumed", $tmp);
+                    mwarning("unsupported action '{$node->textContent}' found, allow assumed", $node);
                 }
                 else
                 {
@@ -908,7 +908,7 @@ class SecurityRule extends RuleWithUserID
     protected function extract_hip_profile_from_domxml()
     {
 
-        if( $this->hipprofroot === null || $this->secprofroot === FALSE )
+        if( $this->hipprofroot === null || $this->hipprofroot === FALSE )
         {
             $this->hipprofroot = null;
             return;
@@ -1923,22 +1923,11 @@ class SecurityRule extends RuleWithUserID
      * For developer use only
      *
      */
-    protected function rewriteSDsri_XML()
+    protected function rewriteDsri_XML()
     {
-        if( $this->dsri )
-        {
-            $find_option = DH::findFirstElementOrCreate('option', $this->xmlroot);
-            $this->xmlroot = $find_option;
-            $find = DH::findFirstElementOrCreate('disable-server-response-inspection', $this->xmlroot);
-            DH::setDomNodeText($find, 'yes');
-        }
-        else
-        {
-            $find_option = DH::findFirstElementOrCreate('option', $this->xmlroot);
-            $this->xmlroot = $find_option;
-            $find = DH::findFirstElementOrCreate('disable-server-response-inspection', $this->xmlroot);
-            DH::setDomNodeText($find, 'no');
-        }
+        $find_option = DH::findFirstElementOrCreate('option', $this->xmlroot);
+        $find = DH::findFirstElementOrCreate('disable-server-response-inspection', $find_option);
+        DH::setDomNodeText($find, $this->dsri ? 'yes' : 'no');
     }
 
     /**
@@ -1953,7 +1942,7 @@ class SecurityRule extends RuleWithUserID
 
         if( $dsri != $old )
         {
-            $this->rewriteSDsri_XML();
+            $this->rewriteDsri_XML();
             return TRUE;
         }
 
@@ -1974,11 +1963,15 @@ class SecurityRule extends RuleWithUserID
             $xpath = $this->getXPath() . '/option/disable-server-response-inspection';
             $con = findConnectorOrDie($this);
             if( $this->dsri )
+            {
                 if( $con->isAPI() )
                     $con->sendEditRequest($xpath, '<disable-server-response-inspection>yes</disable-server-response-inspection>');
+            }
             else
+            {
                 if( $con->isAPI() )
                     $con->sendEditRequest($xpath, '<disable-server-response-inspection>no</disable-server-response-inspection>');
+            }
         }
 
         return $ret;
@@ -2117,12 +2110,15 @@ class SecurityRule extends RuleWithUserID
             $con = findConnectorOrDie($this);
 
             if( empty($this->qosMarking) )
+            {
                 if( $con->isAPI() )
                     $con->sendDeleteRequest($xpath);
+            }
             else
+            {
                 if( $con->isAPI() )
                     $con->sendSetRequest($this->getXPath(), '<qos><marking><' . $arg1 . '>' . $arg2 . '</' . $arg1 . '></marking></qos>');
-
+            }
         }
 
         return $ret;

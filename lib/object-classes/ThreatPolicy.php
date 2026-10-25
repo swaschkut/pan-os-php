@@ -34,6 +34,7 @@ class ThreatPolicy
     public $filetype = array();
     public $application = array();
     public $action = null;
+    public $default_action = null;
 
     public $threatname = null;
     public $packetCapture = null;
@@ -348,7 +349,7 @@ class ThreatPolicy
             $stringHost = " - host:'".$this->host()."'";
         $stringThreatName = "";
         if( $this->threatname !== null )
-            $stringThreatName = " - threat-name:'".$this->threatName()."'";
+            $stringThreatName = " - threat-name:'".$this->threatname()."'";
         $stringAction = "";
         if( $this->action() !== null )
             $stringAction = " - action:'".$this->action()."'";
