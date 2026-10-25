@@ -30,6 +30,12 @@ class ZoneRuleContainer extends ObjRuleContainer
     /** @var null|ZoneStore */
     public $parentCentralStore = null;
 
+    /**
+     * zoneName => [ "serial/vsys" => Zone|null ]   (null = Zone dort nicht gefunden)
+     * @var array
+     */
+    public $zonesPerTarget = array();
+
     public function __construct($owner)
     {
         $this->owner = $owner;
@@ -198,96 +204,130 @@ class ZoneRuleContainer extends ObjRuleContainer
                 derr('this container has members with empty name!', $node);
             }
 
-            //disabled as 20260528 - as it was always set to run the bugfix code
-            /*
-            $bugfix = true;
-            if( $bugfix )
+
+
+            if (isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup')
             {
-            */
+                //new Code Claude 20261025
 
-                if (isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup')
+
+                $actualDG   = $this->owner->owner->owner;
+                $panorama   = $actualDG->owner;
+                $devices    = $actualDG->getDevicesInGroup(true);
+                $zoneName   = $node->textContent;
+                $representative = null;
+
+                foreach( $devices as $deviceObj )
                 {
-                    $actualDG = $this->owner->owner->owner;
-                    $devices =  $actualDG->getDevicesInGroup(true);
+                    $serial = $deviceObj['serial'];
+                    $managedFirewall = $panorama->managedFirewallsStore->find($serial);
 
-                    $search_f_TStack = array();
-                    foreach( $devices as $deviceObj )
+                    $stack = null;
+                    if( $managedFirewall !== null && !empty($managedFirewall->template_stack) )
+                        $stack = $panorama->findTemplateStack($managedFirewall->template_stack);
+
+                    // vsys aus der DG-Zuweisung; ohne Angabe -> vsys1
+                    $vsysNames = !empty($deviceObj['vsyslist']) ? array_keys($deviceObj['vsyslist']) : array('vsys1');
+
+                    foreach( $vsysNames as $vsysName )
                     {
-                        /* @var ManagedDevice $managedFirewall*/
-                        $managedFirewall = $this->owner->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
+                        $zone = ($stack !== null) ? $this->findZoneInStack($stack, $vsysName, $zoneName) : null;
+                        $this->zonesPerTarget[$zoneName][$serial.'/'.$vsysName] = $zone;
 
-                        if( !empty( $managedFirewall->template_stack ) )
-                            $search_f_TStack[] = $managedFirewall->template_stack;
+                        if( $representative === null && $zone !== null )
+                            $representative = $zone;
                     }
+                }
 
-                    if( count($search_f_TStack ) > 0 )
+                // $this->o bekommt weiterhin EIN Objekt pro Name (für Filter, XML, Ausgabe)
+                $f = ($representative !== null) ? $representative
+                    : $this->parentCentralStore->findOrCreate($zoneName, $this);
+                if( !$this->has($f) )
+                {
+                    $this->o[] = $f;
+                    $f->addReference($this);
+                }
+
+
+                /*
+                $actualDG = $this->owner->owner->owner;
+                $devices =  $actualDG->getDevicesInGroup(true);
+
+                $search_f_TStack = array();
+                foreach( $devices as $deviceObj )
+                {
+                    /* @var ManagedDevice $managedFirewall*/
+/*                    $managedFirewall = $this->owner->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
+
+                    if( !empty( $managedFirewall->template_stack ) )
+                        $search_f_TStack[] = $managedFirewall->template_stack;
+                }
+
+                if( count($search_f_TStack ) > 0 )
+                {
+                    foreach( $search_f_TStack as $search_f_TStackItem )
                     {
-                        foreach( $search_f_TStack as $search_f_TStackItem )
+                        $tmp_devicegroup = $this->owner->owner->owner;
+                        $tmp_panorama = $tmp_devicegroup->owner;
+                        $tmp_TemplateStack = $tmp_panorama->findTemplateStack($search_f_TStackItem);
+
+                        if( $tmp_TemplateStack == null )
+                            continue;
+
+                        /* @var TemplateStack $tmp_TemplateStack */
+/*                        $tmp_templates = $tmp_TemplateStack->templates;
+
+                        $all = array_merge(array($tmp_TemplateStack), $tmp_templates);
+
+                        $zone_added = false;
+                        foreach ($all as $template)
                         {
-                            $tmp_devicegroup = $this->owner->owner->owner;
-                            $tmp_panorama = $tmp_devicegroup->owner;
-                            $tmp_TemplateStack = $tmp_panorama->findTemplateStack($search_f_TStackItem);
-
-                            if( $tmp_TemplateStack == null )
-                                continue;
-
-                            /* @var TemplateStack $tmp_TemplateStack */
-                            $tmp_templates = $tmp_TemplateStack->templates;
-
-                            $all = array_merge($tmp_templates, array($tmp_TemplateStack));
-
-                            $zone_added = false;
-                            foreach ($all as $template)
+                            /** @var Template|TemplateStack $template */
+/*
+                            $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                            foreach ($all_vsys as $vsys)
                             {
-                                /** @var Template|TemplateStack $template */
-
-                                $all_vsys = $template->deviceConfiguration->getVirtualSystems();
-                                foreach ($all_vsys as $vsys)
+                                /** @var VirtualSystem $vsys */
+/*
+                                $tmp_zone = $vsys->zoneStore->find($node->textContent, $this);
+                                if ($tmp_zone !== null)
                                 {
-                                    /** @var VirtualSystem $vsys */
-
-                                    $tmp_zone = $vsys->zoneStore->find($node->textContent, $this);
-                                    if ($tmp_zone !== null)
+                                    #$zone_added = true;
+                                    if (!$this->has($tmp_zone))
                                     {
-                                        #$zone_added = true;
-                                        if (!$this->has($tmp_zone))
-                                        {
-                                            $this->o[] = $tmp_zone;
-                                            $tmp_zone->addReference($this);
-                                        }
+                                        $this->o[] = $tmp_zone;
+                                        $tmp_zone->addReference($this);
                                     }
                                 }
                             }
-
-                            #if( !$zone_added )
-                                #print "Zone: ".$node->textContent." NOT found \n";
-
-                            //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
-                            $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                            if (!$this->has($f))
-                            {
-                                $this->o[] = $f;
-                                $f->addReference($this);
-                            }
-
-                            //only check the first template-stack - more to check???
-                            break;
                         }
-                    }
-                    else
-                    {
-                        //if zone is not found in Template / Template-Stack
+
+                        #if( !$zone_added )
+                            #print "Zone: ".$node->textContent." NOT found \n";
+
+                        //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
                         $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                        if( !$this->has($f) )
+                        if (!$this->has($f))
                         {
                             $this->o[] = $f;
                             $f->addReference($this);
                         }
+
+                        //only check the first template-stack - more to check???
+                        //YES
+                        //Todo:
+                        //a parentDG can have a rule with from ZONE -> trust
+                        //this parentDG can be used by multiple childDG, so multiple Serial#
+                        //these Serial# [manageddevice] can be attached to different multiple TStack
+                        //these Tstack can have multiple different Templates
+                        //These templates can have multiple vsys
+                        //these vsys can have Zones defined in zonestore
+                        break;
                     }
                 }
                 else
                 {
-                    //if NOT Panorama / Device-Group
+                    //if zone is not found in Template / Template-Stack
                     $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                     if( !$this->has($f) )
                     {
@@ -295,11 +335,11 @@ class ZoneRuleContainer extends ObjRuleContainer
                         $f->addReference($this);
                     }
                 }
-            /*
+                */
             }
             else
             {
-                //old Code before 2.1.37
+                //if NOT Panorama / Device-Group
                 $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                 if( !$this->has($f) )
                 {
@@ -307,7 +347,7 @@ class ZoneRuleContainer extends ObjRuleContainer
                     $f->addReference($this);
                 }
             }
-            */
+
 
             $i++;
         }
@@ -432,6 +472,42 @@ class ZoneRuleContainer extends ObjRuleContainer
     public function isAny()
     {
         return (count($this->o) == 0);
+    }
+
+
+    private function findZoneInStack(TemplateStack $stack, $vsysName, $zoneName)
+    {
+        // PAN-OS-Precedence: TStack first, than Templates from top to bottom
+        $chain = array_merge(array($stack), $stack->templates);
+
+        foreach( $chain as $t )
+        {
+            /** @var Template|TemplateStack $t */
+            $vsys = $t->deviceConfiguration->findVirtualSystem($vsysName);
+            if( $vsys === null )
+                continue;
+
+            $zone = $vsys->zoneStore->find($zoneName, $this);
+            if( $zone !== null )
+                return $zone;
+        }
+        return null;
+    }
+
+    public function zonesForAllTargets(Zone $zone)
+    {
+        $name = $zone->name();
+        if( !isset($this->zonesPerTarget[$name]) )
+            return array($zone);
+
+        $ret = array();
+        foreach( $this->zonesPerTarget[$name] as $target => $z )
+        {
+            if( $z === null )
+                $z = $this->parentCentralStore->findOrCreate($name);   // tmp-Zone
+            $ret[$target] = $z;
+        }
+        return $ret;
     }
 }
 

@@ -1110,7 +1110,8 @@ trait StatCollectorTrait
         $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         //zone LFP is not needed so that this is visible
-        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        #$filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.targets.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );

@@ -6,12 +6,14 @@ UTIL:
 * type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
 * type=securityprofile | introduce actions=clone-predefined-and-change-references
 * type=zone/zone-protection-profile | introduce 'filter=(template.owner is.unused/ template.owner is.unused.recursive / manageddevice.owner is.in.list/manageddevice.owner is.in.file)'
+* type=rule 'filter=(from all.targets.has.from.query subquery1)' 'subquery1=(zpp is.set)'
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
 * type=rule | bugfix for 'filter=(target has XYZ)' - to get also these rules where negation is used, but serial is not mentioned
 * class VirtualSystem | fix related to SharedGateway to NOT create default-security-rule in Panorama Template
 * class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
+* type=stats actions=display-bpa | optimisation for Zone/ZPP visibility calculation
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

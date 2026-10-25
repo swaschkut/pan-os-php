@@ -113,6 +113,135 @@ RQuery::$defaultFilters['rule']['from']['operators']['all.has.from.query'] = arr
     'help' => 'example: \'filter=(from all.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
 );
 
+/*
+RQuery::$defaultFilters['rule']['from']['operators']['all.targets.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+        $errorMessage = '';
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        $found = FALSE;
+        foreach( $rule->from->getAll() as $zone )
+        {
+            /** @var Zone $zone */
+   /*         if( $zone === null )
+                continue;
+
+            $name = $zone->name();
+
+            // Panorama/DG: check each Zone, per one Serial/vsys
+            if( isset($rule->from->zonesPerTarget[$name]) )
+                $candidates = $rule->from->zonesPerTarget[$name];
+            else
+                $candidates = array($zone);   // Firewall-Config / NO DG-Kontext: bisheriges Verhalten
+
+            foreach( $candidates as $target => $z )
+            {
+                // Zone existiert im Stack dieser Firewall nicht -> nicht verifizierbar = ungeschützt
+                // (offene Frage aus dem Report; hier ggf. 'continue' statt 'return FALSE')
+                if( $z === null )
+                    return FALSE;
+
+                if( !$rQuery->matchSingleObject(array('object' => $z, 'nestedQueries' => &$context->nestedQueries)) )
+                    return FALSE;
+
+                $found = TRUE;
+            }
+        }
+
+        return $found;
+    },
+    'arg' => TRUE,
+    'help' => 'like all.has.from.query, but on Panorama checks the zone of every Serial/vsys the rule is deployed to. example: \'filter=(from all.targets.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
+*/
+
+// ALLE Serial/vsys müssen passen
+RQuery::$defaultFilters['rule']['from']['operators']['all.targets.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $errorMessage = '';
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        $rQuery = $context->cachedSubRQuery;
+
+        $found = FALSE;
+        foreach( $rule->from->getAll() as $zone )
+        {
+            if( $zone === null ) continue;
+            foreach( $rule->from->zonesForAllTargets($zone) as $target => $z )
+            {
+                if( !$rQuery->matchSingleObject(array('object' => $z, 'nestedQueries' => &$context->nestedQueries)) )
+                    return FALSE;
+                $found = TRUE;
+            }
+        }
+        return $found;
+    },
+    'arg' => TRUE,
+    'help' => 'TRUE if subquery matches on ALL Serial/vsys the rule is deployed to. example: \'filter=(from all.targets.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
+
+// MINDESTENS EINE Serial/vsys muss passen
+RQuery::$defaultFilters['rule']['from']['operators']['targets.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $errorMessage = '';
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        $rQuery = $context->cachedSubRQuery;
+
+        foreach( $rule->from->getAll() as $zone )
+        {
+            if( $zone === null ) continue;
+            foreach( $rule->from->zonesForAllTargets($zone) as $target => $z )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $z, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'TRUE if subquery matches on AT LEAST ONE Serial/vsys the rule is deployed to. example: \'filter=(from targets.has.from.query subquery1)\' \'subquery1=!(zpp is.set)\'',
+);
+
+
 RQuery::$defaultFilters['rule']['to']['operators']['has'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
         /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
