@@ -11,6 +11,7 @@ BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
 * type=rule | bugfix for 'filter=(target has XYZ)' - to get also these rules where negation is used, but serial is not mentioned
 * class VirtualSystem | fix related to SharedGateway to NOT create default-security-rule in Panorama Template
+* class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
