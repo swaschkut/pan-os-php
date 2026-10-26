@@ -222,7 +222,6 @@ class ZoneRuleContainer extends ObjRuleContainer
                 $panorama   = $actualDG->owner;
                 $devices    = $actualDG->getDevicesInGroup(true);
                 $zoneName   = $node->textContent;
-                $representative = null;
 
                 foreach( $devices as $deviceObj )
                 {
@@ -260,19 +259,14 @@ class ZoneRuleContainer extends ObjRuleContainer
                             'candidates' => $res['candidates']
                         );
 
-                        if( $representative === null && $res['zone'] !== null )
-                            $representative = $res['zone'];
                     }
                 }
 
-                // $this->o bekommt weiterhin EIN Objekt pro Name (für Filter, XML, Ausgabe)
-                $f = ($representative !== null) ? $representative
-                    : $this->parentCentralStore->findOrCreate($zoneName, $this);
-                if( !$this->has($f) )
-                {
-                    $this->o[] = $f;
-                    $f->addReference($this);
-                }
+                // $this->o keeps the 2.1.60 reading (first template-stack, templates before stack, first vsys
+                // holding the name). Used by 'zone protection', 'from-visible', 'from-zone-location', 'from has'.
+                // The per-target reading above is only used by 'all.targets' / 'targets' filters,
+                // 'zone protection all-targets' and the '*-all-targets' export columns.
+                $this->load_zone_legacy_first_stack($actualDG, $zoneName);
 
 
                 /*
@@ -520,18 +514,236 @@ class ZoneRuleContainer extends ObjRuleContainer
         return null;
     }
 
+    /**
+     * 2.1.60 zone lookup for $this->o - kept unchanged on purpose (stats 'zone protection', export 'from-visible').
+     * first template-stack of the DG firewalls, its templates read before the stack, first vsys holding the name
+     */
+    private function load_zone_legacy_first_stack(DeviceGroup $actualDG, $zoneName)
+    {
+        $devices = $actualDG->getDevicesInGroup(true);
+
+        $search_f_TStack = array();
+        foreach( $devices as $deviceObj )
+        {
+            /* @var ManagedDevice $managedFirewall*/
+            $managedFirewall = $actualDG->owner->managedFirewallsStore->find($deviceObj['serial']);
+
+            if( !empty( $managedFirewall->template_stack ) )
+                $search_f_TStack[] = $managedFirewall->template_stack;
+        }
+
+        if( count($search_f_TStack ) > 0 )
+        {
+            foreach( $search_f_TStack as $search_f_TStackItem )
+            {
+                $tmp_TemplateStack = $actualDG->owner->findTemplateStack($search_f_TStackItem);
+
+                if( $tmp_TemplateStack == null )
+                    continue;
+
+                /* @var TemplateStack $tmp_TemplateStack */
+                $tmp_templates = $tmp_TemplateStack->templates;
+
+                $all = array_merge($tmp_templates, array($tmp_TemplateStack));
+
+                foreach ($all as $template)
+                {
+                    /** @var Template|TemplateStack $template */
+                    $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                    foreach ($all_vsys as $vsys)
+                    {
+                        /** @var VirtualSystem $vsys */
+                        $tmp_zone = $vsys->zoneStore->find($zoneName, $this);
+                        if ($tmp_zone !== null)
+                        {
+                            if (!$this->has($tmp_zone))
+                            {
+                                $this->o[] = $tmp_zone;
+                                $tmp_zone->addReference($this);
+                            }
+                        }
+                    }
+                }
+
+                //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
+                $f = $this->parentCentralStore->findOrCreate($zoneName, $this);
+                if (!$this->has($f))
+                {
+                    $this->o[] = $f;
+                    $f->addReference($this);
+                }
+
+                //2.1.60 reading: only the first template-stack
+                break;
+            }
+        }
+        else
+        {
+            //if zone is not found in Template / Template-Stack
+            $f = $this->parentCentralStore->findOrCreate($zoneName, $this);
+            if( !$this->has($f) )
+            {
+                $this->o[] = $f;
+                $f->addReference($this);
+            }
+        }
+    }
+
+    /**
+     * Is the rule pushed to this serial/vsys? (rule Target incl. negate; no Target = every DG firewall)
+     * a Target entry without vsys covers every vsys of that serial
+     */
+    private function isDeployedToTarget($serial, $vsysName)
+    {
+        $rule = $this->owner;
+        if( !is_object($rule) || !method_exists($rule, 'target_isAny') || $rule->target_isAny() )
+            return TRUE;
+
+        $targets = $rule->targets();
+        $inList = isset($targets[$serial]) && ( count($targets[$serial]) == 0 || isset($targets[$serial][$vsysName]) );
+
+        if( $rule->target_isNegated() )
+            return !$inList;
+
+        return $inList;
+    }
+
+    /**
+     * Per serial/vsys the rule is pushed to: the zone this target receives and how it was resolved.
+     * Returns null when there is no Panorama/DG per-target data (firewall config, shared, DG without firewalls).
+     *
+     * @return null|array  "serial/vsys" => array('zone' => Zone, 'status' => string, 'candidates' => array("<tpl>/<vsys>" => Zone))
+     *   status: found | protected-all | unprotected-all | ambiguous | missing | no-target
+     *   'missing' and 'no-target' carry a tmp zone (zpp is.set == FALSE)
+     */
+    public function targetsForZone($zoneName)
+    {
+        if( !isset($this->zonesPerTarget[$zoneName]) )
+            return null;
+
+        $ret = array();
+        foreach( $this->zonesPerTarget[$zoneName] as $target => $z )
+        {
+            $ex = explode('/', $target, 2);
+            if( !$this->isDeployedToTarget($ex[0], $ex[1]) )
+                continue;
+
+            $status = 'found';
+            $candidates = array();
+            if( isset($this->zoneStatusPerTarget[$zoneName][$target]) )
+            {
+                $status = $this->zoneStatusPerTarget[$zoneName][$target]['status'];
+                $candidates = $this->zoneStatusPerTarget[$zoneName][$target]['candidates'];
+            }
+
+            if( $z === null )
+                $z = $this->parentCentralStore->findOrCreate($zoneName);   // tmp-Zone
+
+            $ret[$target] = array('zone' => $z, 'status' => $status, 'candidates' => $candidates);
+        }
+
+        // DG has firewalls, but the Target excludes all of them: rule is pushed nowhere -> not protected
+        if( count($ret) == 0 )
+            $ret['---'] = array('zone' => $this->parentCentralStore->findOrCreate($zoneName), 'status' => 'no-target', 'candidates' => array());
+
+        return $ret;
+    }
+
+    /**
+     * Zones to evaluate for 'all.targets.has.from.query' / 'targets.has.from.query'
+     * @return Zone[]
+     */
     public function zonesForAllTargets(Zone $zone)
     {
-        $name = $zone->name();
-        if( !isset($this->zonesPerTarget[$name]) )
+        $targets = $this->targetsForZone($zone->name());
+        if( $targets === null )
             return array($zone);
 
         $ret = array();
-        foreach( $this->zonesPerTarget[$name] as $target => $z )
+        foreach( $targets as $target => $info )
+            $ret[$target] = $info['zone'];
+
+        return $ret;
+    }
+
+    /**
+     * export 'from-visible-all-targets' for one from-zone - same zones as zonesForAllTargets()
+     */
+    public function visibleAllTargetsString(Zone $zone)
+    {
+        $targets = $this->targetsForZone($zone->name());
+        if( $targets === null )
         {
-            if( $z === null )
-                $z = $this->parentCentralStore->findOrCreate($name);   // tmp-Zone
-            $ret[$target] = $z;
+            if( $zone->isTmp() )
+                return '**missing - NOT visible**';
+            return $zone->isVisible() ? '**visible**' : '**NOT visible**';
+        }
+
+        $missing = FALSE;
+        $ambiguous = FALSE;
+        $allVisible = TRUE;
+        foreach( $targets as $info )
+        {
+            if( $info['status'] == 'missing' )
+                $missing = TRUE;
+            elseif( $info['status'] == 'ambiguous' )
+                $ambiguous = TRUE;
+
+            if( $info['zone']->isTmp() || !$info['zone']->isVisible() )
+                $allVisible = FALSE;
+        }
+
+        if( $allVisible )
+            return '**visible**';
+        if( $missing )
+            return '**missing - NOT visible**';
+        if( $ambiguous )
+            return '**ambiguous - NOT visible**';
+        return '**NOT visible**';
+    }
+
+    /**
+     * export 'from-zone-all-targets' for one from-zone: one entry per serial/vsys
+     * @return string[]
+     */
+    public function zoneAllTargetsStrings(Zone $zone)
+    {
+        $zppString = function( Zone $z )
+        {
+            return !empty($z->zoneProtectionProfile) ? $z->zoneProtectionProfile : '---';
+        };
+
+        $targets = $this->targetsForZone($zone->name());
+        if( $targets === null )
+        {
+            if( $zone->isTmp() )
+                return array('missing');
+            return array($zppString($zone));
+        }
+
+        $ret = array();
+        foreach( $targets as $target => $info )
+        {
+            if( $info['status'] == 'no-target' )
+                $ret[] = 'no target';
+            elseif( $info['status'] == 'missing' )
+                $ret[] = $target.': missing';
+            elseif( $info['status'] == 'ambiguous' )
+            {
+                $c = array();
+                foreach( $info['candidates'] as $loc => $z )
+                    $c[] = $loc.' '.$zppString($z);
+                $ret[] = $target.': ambiguous ('.implode(', ', $c).')';
+            }
+            else
+            {
+                $c = array();
+                foreach( $info['candidates'] as $loc => $z )
+                    $c[] = $loc.' '.$zppString($z);
+                if( count($c) == 0 )
+                    $c[] = $zppString($info['zone']);
+                $ret[] = $target.': '.implode(', ', $c);
+            }
         }
         return $ret;
     }

@@ -1110,9 +1110,12 @@ trait StatCollectorTrait
         $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         //zone LFP is not needed so that this is visible
-        #$filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
-        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.targets.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        // 'zone protection': 2.1.60 reading (first template-stack) - kept stable, transitional
+        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
+        // 'zone protection all-targets': every from-zone protected on every serial/vsys the rule is pushed to (Target honoured)
+        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.targets.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        $stdoutarray['zone protection all-targets'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter."!(user is.any)" ) );
@@ -1312,6 +1315,7 @@ trait StatCollectorTrait
         $workingArray[] = array( 'wf adoption', $ruleForCalculation);
 
         $workingArray[] = array( 'zone protection', $ruleForCalculation);
+        $workingArray[] = array( 'zone protection all-targets', $ruleForCalculation);
         $workingArray[] = array( 'app id', $ruleForCalculation);
         $workingArray[] = array( 'user id', 'security rules enabled');
         $workingArray[] = array( 'service port', $ruleForCalculation);

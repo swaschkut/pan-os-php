@@ -480,6 +480,44 @@ class RuleCallContext extends CallContext
                 return self::enclose("", $wrap);
         }
 
+        if( $fieldName == 'from-visible-all-targets' )
+        {
+            if( method_exists($rule->from, 'isAny'))
+            {
+                if( $rule->from->isAny() )
+                    return self::enclose('**NOT visible**');
+                $zpp_array = array();
+                foreach($rule->from->getAll() as $zones_to_check)
+                {
+                    /* @var Zone $zones_to_check */
+                    $zpp_array[] = $rule->from->visibleAllTargetsString($zones_to_check);
+                }
+                return self::enclose($zpp_array, $wrap);
+            }
+            else
+                return self::enclose("", $wrap);
+        }
+
+        if( $fieldName == 'from-zone-all-targets' )
+        {
+            if( method_exists($rule->from, 'isAny'))
+            {
+                if( $rule->from->isAny() )
+                    return self::enclose('---');
+                $zones = $rule->from->getAll();
+                $zpp_array = array();
+                foreach($zones as $zones_to_check)
+                {
+                    /* @var Zone $zones_to_check */
+                    foreach( $rule->from->zoneAllTargetsStrings($zones_to_check) as $line )
+                        $zpp_array[] = ( count($zones) > 1 ? $zones_to_check->name().' | ' : '' ).$line;
+                }
+                return self::enclose($zpp_array, $wrap);
+            }
+            else
+                return self::enclose("", $wrap);
+        }
+
         if( $fieldName == 'from-zpp' )
         {
             if( method_exists($rule->from, 'isAny'))

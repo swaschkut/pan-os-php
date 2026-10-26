@@ -7,13 +7,16 @@ UTIL:
 * type=securityprofile | introduce actions=clone-predefined-and-change-references
 * type=zone/zone-protection-profile | introduce 'filter=(template.owner is.unused/ template.owner is.unused.recursive / manageddevice.owner is.in.list/manageddevice.owner is.in.file)'
 * type=rule 'filter=(from all.targets.has.from.query subquery1)' 'subquery1=(zpp is.set)'
+* type=rule 'filter=(from targets.has.from.query subquery1)' 'subquery1=!(zpp is.set)' - at least one serial/vsys
+* type=stats | introduce 'zone protection all-targets' (+ calc / percentage): from-zone protected on every serial/vsys the rule is pushed to, rule Target incl. negate honoured
+* type=rule actions=exporttoexcel:file,Visibility | introduce columns 'from-visible-all-targets' and 'from-zone-all-targets' (missing / ambiguous for templates with named vsys)
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
 * type=rule | bugfix for 'filter=(target has XYZ)' - to get also these rules where negation is used, but serial is not mentioned
 * class VirtualSystem | fix related to SharedGateway to NOT create default-security-rule in Panorama Template
 * class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
-* type=stats actions=display-bpa | optimisation for Zone/ZPP visibility calculation
+* type=stats | 'zone protection' and export 'from-visible' / 'from-zone-location' keep the 2.1.60 reading (first template-stack) - transitional
 * class DH.php | bugfix to generate set commands
 
 GENERAL:

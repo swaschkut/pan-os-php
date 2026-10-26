@@ -5234,6 +5234,8 @@ RuleCallContext::$supportedActions[] = array(
             'from' => 'from',
             'from-visible' => 'from-visible',
             'from-zone-location' => 'from-zone-location',
+            'from-visible-all-targets' => 'from-visible-all-targets',
+            'from-zone-all-targets' => 'from-zone-all-targets',
             'from-zpp' => 'from-zpp',
             'from-lfp' => 'from-lfp',
             'to' => 'to',
@@ -5494,7 +5496,7 @@ RuleCallContext::$supportedActions[] = array(
                         $continue = true;
                     }
                     elseif(
-                        ($fieldName == 'from-visible' || $fieldName == 'from-zone-location' || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
+                        ($fieldName == 'from-visible' || $fieldName == 'from-zone-location' || $fieldName == 'from-visible-all-targets' || $fieldName == 'from-zone-all-targets' || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                             || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
                             || $fieldName == 'sp_wf_visible'
                             || $fieldName == 'sp_dns_sec_visible' || $fieldName == 'sp_av_and_wf_visible'
@@ -5769,7 +5771,7 @@ RuleCallContext::$supportedActions[] = array(
                 $continue = true;
             }
             elseif(
-                ($fieldName == 'from-visible' || $fieldName == 'from-zone-location' || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
+                ($fieldName == 'from-visible' || $fieldName == 'from-zone-location' || $fieldName == 'from-visible-all-targets' || $fieldName == 'from-zone-all-targets' || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                         || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
                         || $fieldName == 'sp_wf_visible'
                         || $fieldName == 'sp_av_and_wf_visible' || $fieldName == 'sp_dns_sec_visible'
