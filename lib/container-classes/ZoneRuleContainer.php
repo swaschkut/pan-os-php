@@ -36,6 +36,13 @@ class ZoneRuleContainer extends ObjRuleContainer
      */
     public $zonesPerTarget = array();
 
+    /**
+     * zoneName => [ "serial/vsys" => array('status' => ..., 'candidates' => array("<tpl>/<vsys>" => Zone)) ]
+     * status: found | protected-all | unprotected-all | ambiguous | missing
+     * @var array
+     */
+    public $zoneStatusPerTarget = array();
+
     public function __construct($owner)
     {
         $this->owner = $owner;
@@ -229,6 +236,7 @@ class ZoneRuleContainer extends ObjRuleContainer
                     // vsys aus der DG-Zuweisung; ohne Angabe -> vsys1
                     $vsysNames = !empty($deviceObj['vsyslist']) ? array_keys($deviceObj['vsyslist']) : array('vsys1');
 
+                    /*
                     foreach( $vsysNames as $vsysName )
                     {
                         $zone = ($stack !== null) ? $this->findZoneInStack($stack, $vsysName, $zoneName) : null;
@@ -236,6 +244,24 @@ class ZoneRuleContainer extends ObjRuleContainer
 
                         if( $representative === null && $zone !== null )
                             $representative = $zone;
+                    }
+                    */
+                    foreach( $vsysNames as $vsysName )
+                    {
+                        if( $stack !== null )
+                            $res = $this->resolveZoneInStack($stack, $vsysName, $zoneName);
+                        else
+                            $res = array('status' => 'missing', 'zone' => null, 'candidates' => array());
+
+                        $target = $serial.'/'.$vsysName;
+                        $this->zonesPerTarget[$zoneName][$target] = $res['zone'];
+                        $this->zoneStatusPerTarget[$zoneName][$target] = array(
+                            'status'     => $res['status'],
+                            'candidates' => $res['candidates']
+                        );
+
+                        if( $representative === null && $res['zone'] !== null )
+                            $representative = $res['zone'];
                     }
                 }
 
@@ -508,6 +534,93 @@ class ZoneRuleContainer extends ObjRuleContainer
             $ret[$target] = $z;
         }
         return $ret;
+    }
+
+    /**
+     * Resolve the zone a firewall's serial/vsys receives from its template-stack.
+     *
+     * 1) stack or one of its templates has a vsys named like the DG assignment (vsysN):
+     *    zone of the highest level in that vsys (stack > template1 > template2 ...), else 'missing'
+     * 2) no vsys of that name (templates with named vsys, e.g. 'D1TSTTFW01'):
+     *    all vsys of the chain that hold the zone name (per vsys the highest level wins)
+     *      all with ZPP     -> 'protected-all'
+     *      none with ZPP    -> 'unprotected-all'
+     *      mixed            -> 'ambiguous'  (returns an unprotected zone -> zpp is.set == FALSE)
+     *      none holds name  -> 'missing'
+     *
+     * @return array('status' => string, 'zone' => Zone|null, 'candidates' => array("<tpl>/<vsys>" => Zone))
+     */
+    private function resolveZoneInStack(TemplateStack $stack, $vsysName, $zoneName)
+    {
+        $chain = array_merge(array($stack), $stack->templates);
+
+        // 1) firewall's vsys name exists in the chain -> unambiguous
+        if( $this->stackHasVsys($chain, $vsysName) )
+        {
+            foreach( $chain as $t )
+            {
+                /** @var Template|TemplateStack $t */
+                $vsys = $t->deviceConfiguration->findVirtualSystem($vsysName);
+                if( $vsys === null )
+                    continue;
+
+                $zone = $vsys->zoneStore->find($zoneName, null);
+                if( $zone !== null )
+                    return array('status' => 'found', 'zone' => $zone,
+                        'candidates' => array($t->name().'/'.$vsys->name() => $zone));
+            }
+            return array('status' => 'missing', 'zone' => null, 'candidates' => array());
+        }
+
+        // 2) named vsys: collect per vsys name the zone of the highest level
+        $perVsys = array();
+        foreach( $chain as $t )
+        {
+            foreach( $t->deviceConfiguration->getVirtualSystems() as $vsys )
+            {
+                /** @var VirtualSystem $vsys */
+                if( isset($perVsys[$vsys->name()]) )
+                    continue;
+
+                $zone = $vsys->zoneStore->find($zoneName, null);
+                if( $zone !== null )
+                    $perVsys[$vsys->name()] = array('loc' => $t->name().'/'.$vsys->name(), 'zone' => $zone);
+            }
+        }
+
+        if( count($perVsys) == 0 )
+            return array('status' => 'missing', 'zone' => null, 'candidates' => array());
+
+        $with = array();
+        $without = array();
+        foreach( $perVsys as $c )
+        {
+            if( !empty($c['zone']->zoneProtectionProfile) )
+                $with[$c['loc']] = $c['zone'];
+            else
+                $without[$c['loc']] = $c['zone'];
+        }
+
+        if( count($without) == 0 )
+            return array('status' => 'protected-all', 'zone' => reset($with), 'candidates' => $with);
+
+        if( count($with) == 0 )
+            return array('status' => 'unprotected-all', 'zone' => reset($without), 'candidates' => $without);
+
+        // mixed: return an unprotected zone so that 'zpp is.set' evaluates FALSE
+        return array('status' => 'ambiguous', 'zone' => reset($without), 'candidates' => $with + $without);
+    }
+
+    /**
+     * @param Template[]|TemplateStack[] $chain
+     */
+    private function stackHasVsys(array $chain, $vsysName)
+    {
+        foreach( $chain as $t )
+            if( $t->deviceConfiguration->findVirtualSystem($vsysName) !== null )
+                return TRUE;
+
+        return FALSE;
     }
 }
 
