@@ -20,6 +20,7 @@ BUGFIX:
 * class DH.php | bugfix to generate set commands
 * SCM-API related bugfixed
 * SCM-API - differnet class are not reading snippets correctly
+* type=rule 'filter=( {RULEUSAGE} )' - bugfix to correctly interpret log-data from different firewalls
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

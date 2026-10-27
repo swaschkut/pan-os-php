@@ -2219,18 +2219,27 @@ class Rule
         }
     }
 
+    /**
+     * Filters *.fast based on rule usage data of the firewalls ('hit-count', 'is.unused', timestamps).
+     *
+     * The data of every firewall (and vsys) a rule is deployed to is collected first and aggregated per rule:
+     *   hit-count                    sum over all firewalls
+     *   last-hit-timestamp           latest hit on any firewall
+     *   first-hit-timestamp          earliest hit on any firewall
+     *   rule-creation-timestamp      earliest creation on any firewall
+     *   rule-modification-timestamp  latest modification on any firewall
+     *   is.unused                    unused on every firewall the rule is deployed to
+     * The filter is then evaluated once against the aggregated value, so the result no longer depends on the
+     * order of the firewalls and several filters with different values can be used in the same run.
+     */
     public function ruleUsageFast( $context, $hitType )
     {
-        /** @var @var RuleRQueryContext $context */
-
+        /** @var RuleRQueryContext $context */
 
         $supported_hitType = array( 'hit-count', 'last-hit-timestamp', 'first-hit-timestamp', 'rule-creation-timestamp', 'rule-modification-timestamp');
         if( !in_array( $hitType, $supported_hitType ) )
             derr( "supported hitType: ".implode( ", ", $supported_hitType ) );
 
-
-        #$unused_flag = 'unused' . $this->ruleNature();
-        $unused_flag = $hitType . $this->ruleNature();
         $rule_base = $this->ruleNature();
 
         $sub = $this->owner->owner;
@@ -2240,132 +2249,145 @@ class Rule
             return null;
         }
 
-
         $connector = findConnector($sub);
-
         if( $connector === null )
             derr("this filter is available only from API enabled PANConf objects");
 
+        $usage = $this->ruleUsageCollect( $sub, $rule_base, $connector );
+
+        if( !isset($usage['rules'][$this->name()]) )
+            return FALSE;
+
+        $ruleUsage = $usage['rules'][$this->name()];
+
+        if( $context->operator == "is.unused.fast" )
+            return $ruleUsage['unused'];
+
+        if( $hitType == 'hit-count' )
+        {
+            $filter_hitcount = trim((string)$context->value);
+            if( !is_numeric($filter_hitcount) )
+                derr( "hit-count filter value must be a number, '".$context->value."' given", null, FALSE );
+
+            return self::ruleUsageCompare( $ruleUsage['hit-count'], $context->operator, (int)$filter_hitcount );
+        }
+
+        return self::ruleUsageCompareTimestamp( $ruleUsage[$hitType], $context->operator, $context->value, $hitType );
+    }
+
+    /**
+     * Collects rule usage data of all firewalls / vsys of $sub once per rulebase and caches it on $sub.
+     * The cache holds raw values only, so it is valid for any operator / filter value.
+     *
+     * @return array  ['rules' => [ruleName => aggregated values + 'per-device'], 'devices' => [...], 'missing' => [...]]
+     */
+    private function ruleUsageCollect( $sub, $rule_base, $connector ): array
+    {
         if( !isset($sub->apiCache) )
             $sub->apiCache = array();
 
-        // caching results for speed improvements
-        if( !isset($sub->apiCache[$unused_flag]) )
+        if( isset($sub->apiCache['rule-usage'][$rule_base]) )
+            return $sub->apiCache['rule-usage'][$rule_base];
+
+        $usage = array( 'rules' => array(), 'devices' => array(), 'missing' => array() );
+
+        if( $sub->isVirtualSystem() )
         {
-            $sub->apiCache[$unused_flag] = array();
+            $connector->refreshSystemInfos();
+            PH::print_stdout( "Firewall: " . $connector->info_hostname . " (serial: '" . $connector->info_serial . "', PAN-OS: '" . $connector->info_PANOS_version . "') was rebooted '" . $connector->info_uptime . "' ago." );
 
-            if( $this->owner->owner->version < 81 )
-                $apiCmd = '<show><running><rule-use><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $sub->name() . '</vsys></rule-use></running></show>';
-            else
-                $apiCmd = '<show><running><rule-use><highlight><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $sub->name() . '</vsys></highlight></rule-use></running></show>';
+            $version = $connector->info_PANOS_version_int;
+            if( empty($version) )
+                $version = $this->owner->owner->version;
 
+            $this->ruleUsageCollectVsys( $usage, $connector, $connector->info_serial, $sub->name(), $rule_base, $version );
+        }
+        else
+        {
+            $devices = $sub->getDevicesInGroup(TRUE);
 
-            if( $sub->isVirtualSystem() )
+            $connectedDevices = $connector->panorama_getConnectedFirewallsSerials();
+            foreach( $devices as $id => $device )
             {
-                PH::print_stdout( "Firewall: " . $connector->info_hostname . " (serial: '" . $connector->info_serial . "', PAN-OS: '" . $connector->info_PANOS_version . "') was rebooted '" . $connector->info_uptime . "' ago." );
-                $apiResult = $connector->sendCmdRequest($apiCmd);
-
-                $rulesXml = DH::findXPath('/result/rules/entry', $apiResult);
-                for( $i = 0; $i < $rulesXml->length; $i++ )
+                if( !isset($connectedDevices[$device['serial']]) )
                 {
-                    $ruleName = $rulesXml->item($i)->textContent;
-                    $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
-                }
-
-                if( $this->owner->owner->version >= 81 )
-                    self::ruleUsage81( $sub, null, $rule_base, $connector, $hitType, $unused_flag, $context );
-            }
-            else
-            {
-                $devices = $sub->getDevicesInGroup(TRUE);
-
-                $connectedDevices = $connector->panorama_getConnectedFirewallsSerials();
-                foreach( $devices as $id => $device )
-                {
-                    if( !isset($connectedDevices[$device['serial']]) )
-                    {
-                        unset($devices[$id]);
-                        PH::print_stdout( "\n  - firewall device with serial: " . $device['serial'] . " is not connected." );
-                    }
-                }
-
-                $firstLoop = TRUE;
-
-                foreach( $devices as $device )
-                {
-                    $newConnector = new PanAPIConnector($connector->apihost, $connector->apikey, 'panos-via-panorama', $device['serial']);
-                    $newConnector->setShowApiCalls($connector->showApiCalls);
-                    $newConnector->refreshSystemInfos();
-                    PH::print_stdout( "Firewall: " . $newConnector->info_hostname . " (serial: '" . $newConnector->info_serial . "', PAN-OS: '" . $newConnector->info_PANOS_version . "') was rebooted '" . $newConnector->info_uptime . "' ago." );
-                    $tmpCache = array();
-
-                    foreach( $device['vsyslist'] as $vsys )
-                    {
-                        if( $newConnector->info_PANOS_version_int < 81 )
-                            $apiCmd = '<show><running><rule-use><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $vsys . '</vsys></rule-use></running></show>';
-                        else
-                            $apiCmd = '<show><running><rule-use><highlight><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $vsys . '</vsys></highlight></rule-use></running></show>';
-
-                        $apiResult = $newConnector->sendCmdRequest($apiCmd);
-
-                        $rulesXml = DH::findXPath('/result/rules/entry', $apiResult);
-
-                        for( $i = 0; $i < $rulesXml->length; $i++ )
-                        {
-                            $ruleName = $rulesXml->item($i)->textContent;
-                            if( $firstLoop )
-                                $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
-                            else
-                            {
-                                $tmpCache[$ruleName] = $ruleName;
-                            }
-                        }
-
-                        if( $newConnector->info_PANOS_version_int >= 81 )
-                            self::ruleUsage81( $sub, $vsys, $rule_base, $newConnector, $hitType, $unused_flag, $context );
-
-                        if( !$firstLoop )
-                        {
-                            $operator = $context->operator;
-                            if($operator == "is.unused.fast")
-                            {
-                                foreach( $sub->apiCache[$unused_flag] as $unusedEntry )
-                                {
-                                    if( !isset($tmpCache[$unusedEntry]) )
-                                        unset($sub->apiCache[$unused_flag][$unusedEntry]);
-                                }
-                            }
-                        }
-
-                        $firstLoop = FALSE;
-                    }
+                    unset($devices[$id]);
+                    $usage['missing'][] = $device['serial'];
+                    PH::print_stdout( "\n  - firewall device with serial: " . $device['serial'] . " is not connected - its rule usage is NOT part of the result." );
                 }
             }
 
-            #foreach($sub->apiCache[$unused_flag] as  $ruleName => $entry)
-            #    print $ruleName."\n";
+            foreach( $devices as $device )
+            {
+                $newConnector = $connector->cloneForPanoramaManagedDevice($device['serial']);
+                $newConnector->setShowApiCalls($connector->showApiCalls);
+                $newConnector->refreshSystemInfos();
+                PH::print_stdout( "Firewall: " . $newConnector->info_hostname . " (serial: '" . $newConnector->info_serial . "', PAN-OS: '" . $newConnector->info_PANOS_version . "') was rebooted '" . $newConnector->info_uptime . "' ago." );
+
+                foreach( $device['vsyslist'] as $vsys )
+                    $this->ruleUsageCollectVsys( $usage, $newConnector, $device['serial'], $vsys, $rule_base, $newConnector->info_PANOS_version_int );
+            }
         }
 
-        if( isset($sub->apiCache[$unused_flag][$this->name()]) )
-            return TRUE;
-        else
-            return FALSE;
+        //final 'unused' decision: unused on every firewall/vsys the rule is known on
+        foreach( $usage['rules'] as $ruleName => $ruleUsage )
+        {
+            $unused = TRUE;
+            foreach( $ruleUsage['per-device'] as $deviceUsage )
+            {
+                if( !$deviceUsage['unused'] )
+                {
+                    $unused = FALSE;
+                    break;
+                }
+            }
+            $usage['rules'][$ruleName]['unused'] = $unused;
+        }
 
-        return null;
+        if( $connector->showApiCalls )
+        {
+            PH::print_stdout( "rule usage '".$rule_base."' aggregated over ".count($usage['devices'])." firewall/vsys:" );
+            foreach( $usage['rules'] as $ruleName => $ruleUsage )
+            {
+                PH::print_stdout( "  - '".$ruleName."' hit-count: ".$ruleUsage['hit-count']
+                    ." | last-hit: ".self::ruleUsageDate($ruleUsage['last-hit-timestamp'])
+                    ." | first-hit: ".self::ruleUsageDate($ruleUsage['first-hit-timestamp'])
+                    ." | unused: ".($ruleUsage['unused'] ? 'yes' : 'no') );
+                foreach( $ruleUsage['per-device'] as $deviceKey => $deviceUsage )
+                    PH::print_stdout( "      ".$deviceKey.": hit-count ".$deviceUsage['hit-count']." | last-hit ".self::ruleUsageDate($deviceUsage['last-hit-timestamp']) );
+            }
+        }
+
+        $sub->apiCache['rule-usage'][$rule_base] = $usage;
+
+        return $usage;
     }
 
-    function ruleUsage81( &$sub, $vsys, $rule_base, $connector, $hitType, $unused_flag, $context )
+    /**
+     * Reads 'rule-use unused' and, for PAN-OS >= 8.1, 'rule-hit-count' of one firewall/vsys and merges it into $usage.
+     */
+    private function ruleUsageCollectVsys( array &$usage, $connector, $serial, $vsys, $rule_base, $version ): void
     {
-            if( $vsys !== null)
-                $name = $vsys;
-            else
-                $name = $sub->name();
+        $deviceKey = $serial."/".$vsys;
+        $usage['devices'][$deviceKey] = array( 'serial' => $serial, 'vsys' => $vsys, 'version' => $version );
 
-            $apiCmd2 = '<show><rule-hit-count><vsys><vsys-name><entry%20name="' . $name . '"><rule-base><entry%20name="' . $rule_base . '"><rules>';
+        if( $version < 81 )
+            $apiCmd = '<show><running><rule-use><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $vsys . '</vsys></rule-use></running></show>';
+        else
+            $apiCmd = '<show><running><rule-use><highlight><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $vsys . '</vsys></highlight></rule-use></running></show>';
+
+        $apiResult = $connector->sendCmdRequest($apiCmd);
+        $unusedRules = array();
+        $rulesXml = DH::findXPath('/result/rules/entry', $apiResult);
+        for( $i = 0; $i < $rulesXml->length; $i++ )
+            $unusedRules[$rulesXml->item($i)->textContent] = TRUE;
+
+        $hitData = array();
+        if( $version >= 81 )
+        {
+            $apiCmd2 = '<show><rule-hit-count><vsys><vsys-name><entry%20name="' . $vsys . '"><rule-base><entry%20name="' . $rule_base . '"><rules>';
             $apiCmd2 .= '<all></all>';
             $apiCmd2 .= '</rules></entry></rule-base></entry></vsys-name></vsys></rule-hit-count></show>';
-
-            PH::print_stdout( "additional check needed as PAN-OS >= 8.1.X" );
 
             $apiResult = $connector->sendCmdRequest($apiCmd2);
 
@@ -2373,89 +2395,96 @@ class Rule
             for( $i = 0; $i < $rulesXml->length; $i++ )
             {
                 $ruleName = $rulesXml->item($i)->getAttribute('name');
-
+                $values = array( 'hit-count' => 0, 'last-hit-timestamp' => 0, 'first-hit-timestamp' => 0,
+                    'rule-creation-timestamp' => 0, 'rule-modification-timestamp' => 0 );
                 foreach( $rulesXml->item($i)->childNodes as $node )
                 {
-                    if( $node->nodeName == $hitType )
-                    {
-                        if( $hitType == "hit-count" )
-                        {
-                            $hitcount_value = $node->textContent;
-                            $operator = $context->operator;
-                            $filter_hitcount = $context->value;
-                            if($operator == "is.unused.fast")
-                            {
-                                if( $hitcount_value == 0 )
-                                {
-                                    //match, no unset
-                                }
-                                else
-                                {
-                                    if( isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                        unset($sub->apiCache[$unused_flag][$ruleName]);
-                                }
-                            }
-                            else
-                            {
-                                if( $operator == '=' )
-                                    $operator = '==';
+                    if( isset($values[$node->nodeName]) )
+                        $values[$node->nodeName] = (int)$node->textContent;
+                }
+                $hitData[$ruleName] = $values;
+            }
+        }
+        else
+            PH::print_stdout( "   - firewall/vsys '".$deviceKey."' runs PAN-OS < 8.1: no hit-count / timestamp data, only 'unused' information is available" );
 
-                                $operator_string = $hitcount_value." ".$operator." ".$filter_hitcount;
-                                #print $ruleName."|".$operator_string."\n";
+        foreach( array_keys($unusedRules + $hitData) as $ruleName )
+        {
+            if( !isset($usage['rules'][$ruleName]) )
+                $usage['rules'][$ruleName] = array( 'hit-count' => 0, 'last-hit-timestamp' => 0, 'first-hit-timestamp' => 0,
+                    'rule-creation-timestamp' => 0, 'rule-modification-timestamp' => 0, 'per-device' => array() );
+            $aggregated = &$usage['rules'][$ruleName];
 
-                                if( eval("return $operator_string;" ) )
-                                {
-                                    //match, no unset
-                                    if( !isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                        $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
-                                }
-                                else
-                                {
-                                    if( isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                        unset($sub->apiCache[$unused_flag][$ruleName]);
-                                }
-                            }
-                        }
-                        elseif( $hitType == "last-hit-timestamp" || $hitType == "first-hit-timestamp"
-                            || $hitType == "rule-creation-timestamp"
-                            || $hitType == "rule-modification-timestamp" )
-                        {
-                            $timestamp_value = $node->textContent;
-                            if( $context->value == 0 )
-                                $filter_timestamp = $context->value;
-                            else
-                                $filter_timestamp = strtotime($context->value);
-                            $operator = $context->operator;
-                            if( $operator == '=' )
-                                $operator = '==';
-                            
-                            $operator_string = $timestamp_value." ".$operator." ".$filter_timestamp;
-                            if( empty($filter_timestamp) )
-                            {
-                                if( !isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                    $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
-                            }
-                            elseif( $operator == '==' && $timestamp_value == 0 )
-                            {
-                                //match, no unset
-                                if( !isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                    $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
-                            }
-                            elseif( $timestamp_value != 0 && eval("return $operator_string;" ) )
-                            {
-                                //match, no unset
-                                if( !isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                    $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
-                            }
-                            else
-                            {
-                                if( isset($sub->apiCache[$unused_flag][$ruleName]) )
-                                    unset($sub->apiCache[$unused_flag][$ruleName]);
-                            }
-                        }
-                    }
+            $values = isset($hitData[$ruleName]) ? $hitData[$ruleName] : null;
+            //unused on this firewall/vsys: listed by rule-use and (if available) no hits
+            $deviceUnused = isset($unusedRules[$ruleName]) && ($values === null || $values['hit-count'] == 0);
+
+            $aggregated['per-device'][$deviceKey] = array(
+                'unused' => $deviceUnused,
+                'hit-count' => $values !== null ? $values['hit-count'] : null,
+                'last-hit-timestamp' => $values !== null ? $values['last-hit-timestamp'] : null );
+
+            if( $values !== null )
+            {
+                $aggregated['hit-count'] += $values['hit-count'];
+                $aggregated['last-hit-timestamp'] = max( $aggregated['last-hit-timestamp'], $values['last-hit-timestamp'] );
+                $aggregated['rule-modification-timestamp'] = max( $aggregated['rule-modification-timestamp'], $values['rule-modification-timestamp'] );
+                foreach( array('first-hit-timestamp', 'rule-creation-timestamp') as $earliest )
+                {
+                    if( $values[$earliest] > 0 && ($aggregated[$earliest] == 0 || $values[$earliest] < $aggregated[$earliest]) )
+                        $aggregated[$earliest] = $values[$earliest];
                 }
             }
+            unset($aggregated);
+        }
+    }
+
+    private static function ruleUsageCompare( $value, $operator, $filter ): bool
+    {
+        switch( $operator )
+        {
+            case '>':  return $value > $filter;
+            case '<':  return $value < $filter;
+            case '>=': return $value >= $filter;
+            case '<=': return $value <= $filter;
+            case '=':
+            case '==': return $value == $filter;
+            case '!=': return $value != $filter;
+        }
+        derr( "unsupported operator '".$operator."'", null, FALSE );
+        return FALSE;
+    }
+
+    /**
+     * $value 0 means "never" (e.g. never hit). Filter value '0' selects exactly these rules ('= 0'),
+     * a date never matches them.
+     * '=' / '!=' compare the calendar day, the other operators the exact time.
+     */
+    private static function ruleUsageCompareTimestamp( $value, $operator, $filterValue, $hitType ): bool
+    {
+        $filterValue = trim((string)$filterValue);
+
+        if( $filterValue === '0' )
+            return self::ruleUsageCompare( $value > 0 ? 1 : 0, $operator, 0 );
+
+        $filter_timestamp = strtotime($filterValue);
+        if( $filter_timestamp === FALSE )
+            derr( $hitType." filter: '".$filterValue."' is not a valid date - use MM/DD/YYYY, DD-MM-YYYY, '21 September 2021' or '-90 days'", null, FALSE );
+
+        if( $value == 0 )
+            return FALSE;
+
+        if( $operator == '=' || $operator == '==' )
+            return date('Y-m-d', $value) === date('Y-m-d', $filter_timestamp);
+        if( $operator == '!=' )
+            return date('Y-m-d', $value) !== date('Y-m-d', $filter_timestamp);
+
+        return self::ruleUsageCompare( $value, $operator, $filter_timestamp );
+    }
+
+    private static function ruleUsageDate( $timestamp ): string
+    {
+        return $timestamp > 0 ? date('Y-m-d H:i:s', $timestamp) : 'never';
     }
 
     public function ServiceResolveSummary( $RuleReferenceLocation = null )
@@ -2779,107 +2808,136 @@ class Rule
 
         $threatArray = array();
 
-        $d_actual = time();
-        $char_counter_array = count_chars($date,1);
-        if( strpos( $date, "/" ) !== FALSE )
-        {
-            $d2 = DateTime::createFromFormat('Y/m/d', $date);
-            $d = $d2->getTimestamp();
-        }
-        elseif(  isset($char_counter_array['-']) and $char_counter_array['-'] == 2)
-        {
-            $d2 = DateTime::createFromFormat('d-m-Y', $date);
-            $d = $d2->getTimestamp();
+        $d2 = self::threatLogParseDate( $date );
 
-        }
-
-        else
-        {
-            $d = $d_actual;
-            if( $date !== 0 )
-            {
-                $d = $d_actual + ($date)*24*3600;
-            }
-            $d2 = new DateTime('@' . $d);
-            #$d2 = new DateTime();
-            #$d2->setTimestamp($d);
-        }
-        //var_dump($d);
-        //exit();
-        /////////////////
-        if( empty($context->cachedList) )
-        {
+        $query_operator = "geq";
+        if( $operator == ">" )
             $query_operator = "geq";
-            if( $operator == ">" )
-                $query_operator = "geq";
-            elseif( $operator == "<" )
-                $query_operator = "leq";
-            else
-                derr( "actual supported operator '>' and '<'", null, false );
+        elseif( $operator == "<" )
+            $query_operator = "leq";
+        else
+            derr( "actual supported operator '>' and '<'", null, false );
 
-            $year = $d2->format("Y");
-            $month = $d2->format("m");
-            $day = $d2->format("d");
-            $query_date = $year."/".$month."/".$day;
-            //( receive_time geq '2025/01/12 00:00:00' ) and (time_generated geq '2025/01/12 00:00:00')
-            //$query = "(time_generated geq '".$d." 00:00:00')";
-            if( $perRule )
-                $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )  and ( rule eq '".$this->name()."' )";
-            else
-                $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )";
+        $query_date = $d2->format("Y/m/d");
 
-            $tmp_array = array();
+        $sub = $this->owner->owner;
+
+        //( receive_time geq '2025/01/12 00:00:00' ) and (time_generated geq '2025/01/12 00:00:00')
+        if( $perRule )
+            $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )  and ( rule eq '".$this->name()."' )";
+        else
+            $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )";
+
+        //Panorama returns the logs of all firewalls; limit them to the firewalls/vsys of this DeviceGroup,
+        //otherwise rules with the same name in other DeviceGroups or local firewall rules are counted too
+        if( $sub->isDeviceGroup() )
+        {
+            $devices = $sub->getDevicesInGroup(TRUE);
+            if( count($devices) > 0 )
+                $query .= " and (".array_to_devicequery($devices).")";
+        }
+
+        $cacheKey = $sub->name()."|".$query;
+        if( !is_array($context->cachedList) )
+            $context->cachedList = array();
+
+        if( !isset($context->cachedList[$cacheKey]) )
+        {
+            $connector = findConnector($sub);
+            if( $connector === null )
+                derr("this filter is available only from API enabled PANConf objects");
+
+            $nlogs = 5000;
             $full_array = array();
             $orig_query = $query;
             do
             {
-                //get threat-log per day
                 $apiArgs = Array();
                 $apiArgs['type'] = 'log';
                 $apiArgs['log-type'] = 'threat';
-                $apiArgs['nlogs'] = '5000';
-                if( !empty($query) )
-                    $apiArgs['query'] = $query;
-
-                $connector = findConnector($this->owner->owner);
-
-                if( $connector === null )
-                    derr("this filter is available only from API enabled PANConf objects");
+                $apiArgs['nlogs'] = (string)$nlogs;
+                $apiArgs['query'] = $query;
 
                 $tmp_array = $connector->getLog($apiArgs);
-                $full_array = array_merge($tmp_array, $full_array);
+
+                //next page overlaps by design ('leq' last time_generated) - add only new entries
+                $added = 0;
+                foreach( $tmp_array as $log )
+                {
+                    $logKey = isset($log['seqno']) ? ($log['serial'] ?? '')."|".$log['seqno'] : md5(serialize($log));
+                    if( !isset($full_array[$logKey]) )
+                    {
+                        $full_array[$logKey] = $log;
+                        $added++;
+                    }
+                }
 
                 $last_array_entry = end($tmp_array);
+                if( $last_array_entry === FALSE || !isset($last_array_entry['time_generated']) )
+                    break;
                 $query = $orig_query." and (time_generated leq '".$last_array_entry['time_generated']."')";
+            }
+            while( count($tmp_array) == $nlogs && $added > 0 );
 
-            }while( (count($tmp_array) == 5000) );
-            $context->cachedList = $full_array;
+            $context->cachedList[$cacheKey] = array_values($full_array);
 
             PH::print_stdout( "------------------------------------------------------------------------");
-            PH::print_stdout("Threat Log count: ".count($context->cachedList));
+            PH::print_stdout("Threat Log count: ".count($context->cachedList[$cacheKey]));
         }
 
         $counter = 0;
-        foreach( $context->cachedList as $threat_log )
+        foreach( $context->cachedList[$cacheKey] as $threat_log )
         {
-            if( isset( $threat_log['rule'] ) )
+            if( isset( $threat_log['rule'] ) && $threat_log['rule'] === $this->name() )
             {
-                if( $threat_log['rule'] === $this->name() )
-                {
-                    $threatArray[$this->name()][] = $threat_log;
+                $threatArray[$this->name()][] = $threat_log;
 
-                    $counter++;
-                    if( $counter > 10 )
-                        break;
-                }
+                $counter++;
+                if( $counter > 10 )
+                    break;
             }
         }
 
         if( $perRule )
-            $context->cachedList = array();
+            unset($context->cachedList[$cacheKey]);
 
         return $threatArray;
     }
+
+    /**
+     * Date argument of the threat-log filters:
+     *   YYYY/MM/DD, MM/DD/YYYY [american], DD-MM-YYYY [european], a number of days relative to today (-7),
+     *   or anything strtotime() understands ('-7 days', '21 September 2021').
+     */
+    private static function threatLogParseDate( $date ): DateTime
+    {
+        $date = trim((string)$date);
+        $d2 = FALSE;
+
+        if( preg_match('#^\d{4}/\d{1,2}/\d{1,2}$#', $date) )
+            $d2 = DateTime::createFromFormat('!Y/m/d', $date);
+        elseif( preg_match('#^\d{1,2}/\d{1,2}/\d{4}$#', $date) )
+            $d2 = DateTime::createFromFormat('!m/d/Y', $date);
+        elseif( preg_match('#^\d{1,2}-\d{1,2}-\d{4}$#', $date) )
+            $d2 = DateTime::createFromFormat('!d-m-Y', $date);
+        elseif( preg_match('#^[-+]?\d+$#', $date) )
+            $d2 = new DateTime('@' . (time() + ((int)$date) * 24 * 3600));
+        else
+        {
+            $timestamp = strtotime($date);
+            if( $timestamp !== FALSE )
+                $d2 = new DateTime('@' . $timestamp);
+        }
+
+        if( $d2 === FALSE )
+            derr( "threat-log filter: '".$date."' is not a valid date - use MM/DD/YYYY, DD-MM-YYYY, YYYY/MM/DD or a number of days like -7", null, FALSE );
+
+        //'@timestamp' creates UTC - use the local day for the log query
+        $d2->setTimezone( new DateTimeZone(date_default_timezone_get()) );
+
+        return $d2;
+    }
+
     public function isPreRule(): bool
     {
         return $this->owner->ruleIsPreRule($this);
