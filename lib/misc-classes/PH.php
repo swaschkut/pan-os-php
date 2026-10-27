@@ -464,6 +464,28 @@ class PH
     }
 
     /**
+     * Drops the process-wide predefined stores (apps, threats, log profiles, security profiles).
+     * The next config load creates them again, so no object keeps references from a previously loaded config.
+     * Configs already loaded keep their own store objects.
+     */
+    public static function resetPredefinedStores(): void
+    {
+        SecurityProfileStore::$predefinedURLStore = null;
+        SecurityProfileStore::$predefinedVirusStore = null;
+        SecurityProfileStore::$predefinedSpywareStore = null;
+        SecurityProfileStore::$predefinedVulnerabilityStore = null;
+        SecurityProfileStore::$predefinedFileblockingStore = null;
+        SecurityProfileStore::$predefinedWildfireStore = null;
+        SecurityProfileStore::$predefinedUrlFitleringStore = null;
+        SecurityProfileStore::$predefinedDataFilteringStore = null;
+        SecurityProfileStore::$predefinedVirusAndWildfireStore = null;
+
+        AppStore::$predefinedStore = null;
+        ThreatStore::$predefinedStore = null;
+        LogProfileStore::$predefinedLogProfStore = null;
+    }
+
+    /**
      * Clears static variables and forces garbage collection to free memory.
      * This is particularly useful in playbook scenarios where multiple utilities
      * are executed sequentially and memory accumulates between steps.
@@ -486,6 +508,11 @@ class PH
         // Clear CLI args
         PH::$args = array();
         PH::$argv = array();
+
+        // Predefined stores are process-wide singletons (static). Their objects collect references
+        // (SecurityProfileGroup, SecurityRule, ...) from every config loaded in this process; a playbook running
+        // its steps in-process would otherwise keep the references of all previous steps.
+        PH::resetPredefinedStores();
 
         // Clear load time tracking
         PH::$loadStartTime = null;
