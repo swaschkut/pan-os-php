@@ -971,162 +971,176 @@ class Rule
             PH::print_stdout( $padding.$res->textContent );
     }
 
+    /**
+     * Rule hit count of this rule.
+     *
+     * VSYS: the values of the firewall.
+     * DeviceGroup: Panorama returns one <device-vsys> entry per firewall/vsys of the DeviceGroup; these are aggregated:
+     *   hit-count                  sum over all firewalls (rule usage data is not synced between HA peers)
+     *   last-hit / last-reset      latest of all firewalls
+     *   first-hit / rule-creation  earliest of all firewalls (0 = never / unknown is ignored)
+     *   rule-modification          latest of all firewalls
+     *   latest                     'yes' only if every firewall reports 'yes'
+     * 'per-device' holds the values of every firewall/vsys. With shadow-apicalls the raw XML and the per-device
+     * values are printed as well.
+     *
+     * @return array|null  keys: latest, hit-count, last-hit, last-reset, first-hit, rule-creation, rule-modification, per-device
+     */
     public function API_showRuleHitCount( $all = false, $print = TRUE )
     {
         $con = findConnectorOrDie($this);
 
-        $rule_hitcount_array = array();
-
-        if( $con->info_PANOS_version_int >= 90 )
-        {
-            $system = $this->owner->owner;
-            $cmd = $this->prepareRuleHitCount('show', $all);
-
-            if( $cmd == null )
-            {
-                PH::print_stdout( "   * not working for Panorama/FW shared" );
-                return;
-            }
-
-
-            $res = $con->sendOpRequest($cmd, TRUE);
-            $res = DH::findFirstElement( "result", $res);
-
-
-            $res = DH::findFirstElement( "rule-hit-count", $res);
-            if( !$res )
-                return null;
-
-            if( $system->isPanorama() )
-            {
-                #DH::DEBUGprintDOMDocument($res);
-            }
-            elseif( $system->isDeviceGroup() && $system->name() !== ""  )
-            {
-                #DH::DEBUGprintDOMDocument($res);
-                $res = DH::findFirstElement( "device-group", $res);
-            }
-
-            elseif( $system->isVirtualSystem() )
-                $res = DH::findFirstElement( "vsys", $res);
-
-            if( $system->isDeviceGroup() && $system->name() === ""  )
-            {
-                #$res = DH::findFirstElement( "entry", $res);
-                $res = $res;
-            }
-            else
-                $res = DH::findFirstElement( "entry", $res);
-
-            $res = DH::findFirstElement( "rule-base", $res);
-            $res = DH::findFirstElement( "entry", $res);
-            $res = DH::findFirstElement( "rules", $res);
-            $res = DH::findFirstElement( "entry", $res);
-
-
-            if( $system->isDeviceGroup()  )
-            {
-                #DH::DEBUGprintDOMDocument($res);
-                //<rule-base><entry ...><rules><entry name="demo2-1"><device-vsys><entry name="child/1234567890/vsys1">
-                $res = DH::findFirstElement( "device-vsys", $res);
-                $res = DH::findFirstElement( "entry", $res);
-            }
-
-            if( $res !== FALSE )
-            {
-                $latest = DH::findFirstElement( "latest", $res);
-                $hit_count = DH::findFirstElement( "hit-count", $res);
-                $last_hit_timestamp = DH::findFirstElement( "last-hit-timestamp", $res);
-                $last_reset_timestamp = DH::findFirstElement( "last-reset-timestamp", $res);
-
-                $first_hit_timestamp = DH::findFirstElement( "first-hit-timestamp", $res);
-                $rule_creation_timestamp = DH::findFirstElement( "rule-creation-timestamp", $res);
-                $rule_modification_timestamp = DH::findFirstElement( "rule-modification-timestamp", $res);
-
-                //create Array and return
-                $padding = "    * ";
-                if( $latest )
-                {
-                    if( $print )
-                        PH::print_stdout( $padding."latest: ".$latest->textContent );
-                    $rule_hitcount_array['latest'] = $latest->textContent;
-                }
-
-                if( $hit_count)
-                {
-                    if( $print )
-                        PH::print_stdout( $padding."hit-count: ".$hit_count->textContent );
-                    $rule_hitcount_array['hit-count'] = $hit_count->textContent;
-                }
-
-                if( $last_hit_timestamp )
-                {
-                    $unixTimestamp = $last_hit_timestamp->textContent;
-                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                        $result = "0";
-                    else
-                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                    if( $print )
-                        PH::print_stdout( $padding."last-hit: ".$result );
-                    $rule_hitcount_array['last-hit'] = $result;
-                }
-
-                if( $last_reset_timestamp )
-                {
-                    $unixTimestamp = $last_reset_timestamp->textContent;
-                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                        $result = "0";
-                    else
-                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                    if( $print )
-                        PH::print_stdout( $padding."last-reset: ".$result );
-                    $rule_hitcount_array['last-reset'] = $result;
-                }
-
-                if( $first_hit_timestamp )
-                {
-                    $unixTimestamp = $first_hit_timestamp->textContent;
-                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                        $result = "0";
-                    else
-                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                    if( $print )
-                        PH::print_stdout( $padding."first-hit: ".$result );
-                    $rule_hitcount_array['first-hit'] = $result;
-                }
-
-                if( $rule_creation_timestamp )
-                {
-                    $unixTimestamp = $rule_creation_timestamp->textContent;
-                    if( $unixTimestamp === "" )
-                        $result = 0;
-                    else
-                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                    if( $print )
-                        PH::print_stdout( $padding."rule-creation: ".$result );
-                    $rule_hitcount_array['rule-creation'] = $result;
-                }
-                if( $rule_modification_timestamp )
-                {
-                    $unixTimestamp = $rule_modification_timestamp->textContent;
-                    if( $unixTimestamp === "" )
-                        $result = 0;
-                    else
-                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                    if( $print )
-                        PH::print_stdout( $padding."rule-modification: ".$result );
-                    $rule_hitcount_array['rule-modification'] = $result;
-                }
-            }
-
-        }
-        else
+        if( $con->info_PANOS_version_int < 90 )
         {
             if( $print )
                 PH::print_stdout( "  PAN-OS version must be 9.0 or higher" );
+            return array();
         }
 
+        $system = $this->owner->owner;
+        $cmd = $this->prepareRuleHitCount('show', $all);
+
+        if( $cmd == null )
+        {
+            PH::print_stdout( "   * not working for Panorama/FW shared" );
+            return null;
+        }
+
+        $res = $con->sendOpRequest($cmd, TRUE);
+        $res = DH::findFirstElement( "result", $res);
+        if( $res === FALSE )
+            return null;
+
+        $res = DH::findFirstElement( "rule-hit-count", $res);
+        if( $res === FALSE )
+            return null;
+
+        if( $con->showApiCalls )
+            DH::DEBUGprintDOMDocument($res);
+
+        // <rule-hit-count><device-group|vsys><entry name="LOCATION"><rule-base><entry name="security"><rules><entry name="RULE">
+        if( $system->isDeviceGroup() && $system->name() !== "" )
+            $res = DH::findFirstElement( "device-group", $res);
+        elseif( $system->isVirtualSystem() )
+            $res = DH::findFirstElement( "vsys", $res);
+
+        if( !($system->isDeviceGroup() && $system->name() === "") )
+            $res = DH::findFirstElement( "entry", $res);
+
+        foreach( array("rule-base", "entry", "rules", "entry") as $childName )
+        {
+            if( $res === FALSE )
+                return null;
+            $res = DH::findFirstElement( $childName, $res);
+        }
+        if( $res === FALSE )
+            return null;
+
+        // one node with the values per firewall/vsys
+        $valueNodes = array();
+        if( $system->isDeviceGroup() )
+        {
+            //<rules><entry name="demo2-1"><device-vsys><entry name="child/1234567890/vsys1">
+            $deviceVsys = DH::findFirstElement( "device-vsys", $res);
+            if( $deviceVsys !== FALSE )
+            {
+                foreach( $deviceVsys->childNodes as $entry )
+                {
+                    if( $entry->nodeType != XML_ELEMENT_NODE )
+                        continue;
+                    $valueNodes[$entry->getAttribute('name')] = $entry;
+                }
+            }
+        }
+        else
+            $valueNodes[$system->name()] = $res;
+
+        if( count($valueNodes) == 0 )
+            return array();
+
+        $aggregated = array( 'latest' => null, 'hit-count' => 0,
+            'last-hit-timestamp' => 0, 'last-reset-timestamp' => 0, 'first-hit-timestamp' => 0,
+            'rule-creation-timestamp' => 0, 'rule-modification-timestamp' => 0 );
+        $found = array();
+        $perDevice = array();
+
+        foreach( $valueNodes as $deviceName => $node )
+        {
+            $values = array();
+            foreach( array('latest', 'hit-count', 'last-hit-timestamp', 'last-reset-timestamp', 'first-hit-timestamp',
+                         'rule-creation-timestamp', 'rule-modification-timestamp') as $field )
+            {
+                $element = DH::findFirstElement( $field, $node);
+                if( $element === FALSE )
+                    continue;
+                $found[$field] = TRUE;
+                $values[$field] = $element->textContent;
+            }
+
+            if( isset($values['latest']) )
+                $aggregated['latest'] = ( $aggregated['latest'] === 'no' || $values['latest'] !== 'yes' ) ? 'no' : 'yes';
+            if( isset($values['hit-count']) )
+                $aggregated['hit-count'] += (int)$values['hit-count'];
+            foreach( array('last-hit-timestamp', 'last-reset-timestamp', 'rule-modification-timestamp') as $latestField )
+            {
+                if( isset($values[$latestField]) )
+                    $aggregated[$latestField] = max( $aggregated[$latestField], (int)$values[$latestField] );
+            }
+            foreach( array('first-hit-timestamp', 'rule-creation-timestamp') as $earliestField )
+            {
+                if( isset($values[$earliestField]) && (int)$values[$earliestField] > 0
+                    && ($aggregated[$earliestField] == 0 || (int)$values[$earliestField] < $aggregated[$earliestField]) )
+                    $aggregated[$earliestField] = (int)$values[$earliestField];
+            }
+
+            $perDevice[$deviceName] = array(
+                'hit-count' => isset($values['hit-count']) ? $values['hit-count'] : '',
+                'last-hit' => isset($values['last-hit-timestamp']) ? self::hitCountDate($values['last-hit-timestamp'], "0") : '',
+                'first-hit' => isset($values['first-hit-timestamp']) ? self::hitCountDate($values['first-hit-timestamp'], "0") : '' );
+        }
+
+        // same keys and formats as before: hit-count as string, dates 'Y-m-d H:i:s', "0" / 0 for none
+        $rule_hitcount_array = array();
+        if( isset($found['latest']) )
+            $rule_hitcount_array['latest'] = $aggregated['latest'];
+        if( isset($found['hit-count']) )
+            $rule_hitcount_array['hit-count'] = (string)$aggregated['hit-count'];
+        if( isset($found['last-hit-timestamp']) )
+            $rule_hitcount_array['last-hit'] = self::hitCountDate($aggregated['last-hit-timestamp'], "0");
+        if( isset($found['last-reset-timestamp']) )
+            $rule_hitcount_array['last-reset'] = self::hitCountDate($aggregated['last-reset-timestamp'], "0");
+        if( isset($found['first-hit-timestamp']) )
+            $rule_hitcount_array['first-hit'] = self::hitCountDate($aggregated['first-hit-timestamp'], "0");
+        if( isset($found['rule-creation-timestamp']) )
+            $rule_hitcount_array['rule-creation'] = self::hitCountDate($aggregated['rule-creation-timestamp'], 0);
+        if( isset($found['rule-modification-timestamp']) )
+            $rule_hitcount_array['rule-modification'] = self::hitCountDate($aggregated['rule-modification-timestamp'], 0);
+
+        if( $print )
+        {
+            $padding = "    * ";
+            foreach( $rule_hitcount_array as $key => $value )
+                PH::print_stdout( $padding.$key.": ".$value );
+        }
+        if( $print || $con->showApiCalls )
+        {
+            if( count($perDevice) > 1 || $con->showApiCalls )
+            {
+                foreach( $perDevice as $deviceName => $values )
+                    PH::print_stdout( "      - ".$deviceName.": hit-count ".$values['hit-count']." | last-hit ".$values['last-hit']." | first-hit ".$values['first-hit'] );
+            }
+        }
+
+        $rule_hitcount_array['per-device'] = $perDevice;
+
         return $rule_hitcount_array;
+    }
+
+    private static function hitCountDate( $unixTimestamp, $none )
+    {
+        if( $unixTimestamp === "" || $unixTimestamp === null || (int)$unixTimestamp == 0 )
+            return $none;
+        return date( 'Y-m-d H:i:s', (int)$unixTimestamp );
     }
 
     public function API_apps_seen()

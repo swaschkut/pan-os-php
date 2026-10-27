@@ -21,6 +21,7 @@ BUGFIX:
 * SCM-API related bugfixed
 * SCM-API - differnet class are not reading snippets correctly
 * type=rule 'filter=( {RULEUSAGE} )' - bugfix to correctly interpret log-data from different firewalls
+* type=rule actions=exporttohtml | bugfix for ruleusage information
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
