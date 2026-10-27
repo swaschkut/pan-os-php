@@ -224,15 +224,25 @@ AddressCallContext::$supportedActions[] = array(
         $object = $context->object;
 
         if( $context->isAPI )
-            $object->API_removeWhereIamUsed(TRUE, $context->padding, $context->arguments['actionIfLastMemberInRule']);
+            $object->API_removeWhereIamUsed(TRUE, $context->padding, $context->arguments['actionIfLastMemberInRule'], $context->arguments['actionIfLastMemberInGroup']);
         else
-            $object->removeWhereIamUsed(TRUE, $context->padding, $context->arguments['actionIfLastMemberInRule']);
+            $object->removeWhereIamUsed(TRUE, $context->padding, $context->arguments['actionIfLastMemberInRule'], $context->arguments['actionIfLastMemberInGroup']);
     },
     'args' => array('actionIfLastMemberInRule' => array('type' => 'string',
         'default' => 'delete',
         'choices' => array('delete', 'disable', 'setAny')
     ),
+        'actionIfLastMemberInGroup' => array('type' => 'string',
+            'default' => 'delete',
+            'choices' => array('delete', 'skip')
+        ),
     ),
+    'help' => "removes the object from every rule and group it is used in.\n" .
+        "  - actionIfLastMemberInRule: what to do with a rule if the object is the last member of its source/destination/service: delete | disable | setAny\n" .
+        "  - actionIfLastMemberInGroup: what to do with a group if the object is its last member:\n" .
+        "     - delete: remove the group where it is used (using actionIfLastMemberInRule, also for nested groups) and delete it\n" .
+        "     - skip: keep the object in this group\n" .
+        "  example: 'actions=removeWhereUsed:disable,skip'",
 );
 
 AddressCallContext::$supportedActions[] = array(

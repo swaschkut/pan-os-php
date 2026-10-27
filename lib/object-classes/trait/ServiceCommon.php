@@ -148,16 +148,23 @@ trait ServiceCommon
      * @param $actionIfLastInRule string can be delete|setany|disable
      * @param $outputPadding string|int
      */
-    private function __removeWhereIamUsed($apiMode, $displayOutput = FALSE, $outputPadding = '', $actionIfLastInRule = 'delete')
+    private function __removeWhereIamUsed($apiMode, $displayOutput = FALSE, $outputPadding = '', $actionIfLastInRule = 'delete', $actionIfLastInGroup = 'delete')
     {
         /** @var Service|ServiceGroup $this */
 
         if( is_numeric($outputPadding) )
             $outputPadding = str_pad(' ', $outputPadding);
 
+        $actionIfLastInRule = strtolower($actionIfLastInRule);
+        $actionIfLastInGroup = strtolower($actionIfLastInGroup);
+
         $allowedActionIfLastInRule = array('delete' => TRUE, 'setany' => TRUE, 'disable' => TRUE);
         if( !isset($allowedActionIfLastInRule[$actionIfLastInRule]) )
             derr('unsupported actionIfLastInRule=' . $actionIfLastInRule);
+
+        $allowedActionIfLastInGroup = array('delete' => TRUE, 'skip' => TRUE);
+        if( !isset($allowedActionIfLastInGroup[$actionIfLastInGroup]) )
+            derr('unsupported actionIfLastInGroup=' . $actionIfLastInGroup);
 
         foreach( $this->getReferences() as $ref )
         {
@@ -165,12 +172,7 @@ trait ServiceCommon
             if( $refClass == 'ServiceGroup' )
             {
                 /** @var ServiceGroup $ref */
-                if( $displayOutput )
-                    PH::print_stdout( $outputPadding . "- removing from {$ref->_PANC_shortName()}" );
-                if( $apiMode )
-                    $ref->API_removeMember($this);
-                else
-                    $ref->removeMember($this);
+                $this->__removeFromGroup( $ref, $apiMode, $displayOutput, $outputPadding, $actionIfLastInRule, $actionIfLastInGroup );
             }
             elseif( $refClass == 'ServiceRuleContainer' )
             {
@@ -276,20 +278,85 @@ trait ServiceCommon
      * @param $displayOutput bool
      * @param $actionIfLastInRule string can be delete|setany|disable
      * @param $outputPadding string|int
+     * @param $actionIfLastInGroup string can be delete|skip
      */
-    public function removeWhereIamUsed($displayOutput = FALSE, $outputPadding = '', $actionIfLastInRule = 'delete')
+    public function removeWhereIamUsed($displayOutput = FALSE, $outputPadding = '', $actionIfLastInRule = 'delete', $actionIfLastInGroup = 'delete')
     {
-        $this->__removeWhereIamUsed(FALSE, $displayOutput, $outputPadding, $actionIfLastInRule);
+        $this->__removeWhereIamUsed(FALSE, $displayOutput, $outputPadding, $actionIfLastInRule, $actionIfLastInGroup);
     }
 
     /**
      * @param bool $displayOutput
      * @param string $actionIfLastInRule can be delete|setany|disable
      * @param $outputPadding string|int
+     * @param $actionIfLastInGroup string can be delete|skip
      */
-    public function API_removeWhereIamUsed($displayOutput = FALSE, $outputPadding = '', $actionIfLastInRule = 'delete')
+    public function API_removeWhereIamUsed($displayOutput = FALSE, $outputPadding = '', $actionIfLastInRule = 'delete', $actionIfLastInGroup = 'delete')
     {
-        $this->__removeWhereIamUsed(TRUE, $displayOutput, $outputPadding, $actionIfLastInRule);
+        $this->__removeWhereIamUsed(TRUE, $displayOutput, $outputPadding, $actionIfLastInRule, $actionIfLastInGroup);
+    }
+
+    /**
+     * Removes $this from group $group. If $this is the last member of $group:
+     *  - actionIfLastInGroup 'skip':   $this stays in $group, nothing else changes
+     *  - actionIfLastInGroup 'delete': $group is first removed where it is used (same actionIfLastInRule /
+     *                                  actionIfLastInGroup, so nested groups and rules are handled the same way)
+     *                                  and then deleted. If $group is still used afterwards (e.g. a rule was only
+     *                                  disabled), $this stays in $group, because an empty group is not valid.
+     * @return void
+     */
+    private function __removeFromGroup( $group, $apiMode, $displayOutput, $outputPadding, $actionIfLastInRule, $actionIfLastInGroup )
+    {
+        //group was already deleted earlier in this run (e.g. as an emptied parent group) - nothing left to do
+        if( $group->owner === null )
+        {
+            if( $displayOutput )
+                PH::print_stdout( $outputPadding . "- group {$group->name()} was already deleted" );
+            return;
+        }
+
+        $groupType = 'servicegroup';
+
+        if( count($group->members()) > 1 )
+        {
+            if( $displayOutput )
+                PH::print_stdout( $outputPadding . "- removing from {$group->_PANC_shortName()}" );
+            if( $apiMode )
+                $group->API_removeMember($this);
+            else
+                $group->removeMember($this);
+            return;
+        }
+
+        if( $actionIfLastInGroup == 'skip' )
+        {
+            PH::print_stdout( $outputPadding . "- skip: last member of {$groupType} {$group->_PANC_shortName()} - kept in group (actionIfLastMemberInGroup=skip)" );
+            return;
+        }
+
+        if( $displayOutput )
+            PH::print_stdout( $outputPadding . "- last member of {$groupType} {$group->_PANC_shortName()} - removing the group where it is used and deleting it" );
+
+        if( $apiMode )
+            $group->API_removeWhereIamUsed($displayOutput, $outputPadding . "  ", $actionIfLastInRule, $actionIfLastInGroup);
+        else
+            $group->removeWhereIamUsed($displayOutput, $outputPadding . "  ", $actionIfLastInRule, $actionIfLastInGroup);
+
+        if( $group->countReferences() > 0 )
+        {
+            PH::print_stdout( $outputPadding . "- {$groupType} {$group->_PANC_shortName()} is still used (actionIfLastMemberInRule=" . $actionIfLastInRule . ") - object kept as its last member" );
+            return;
+        }
+
+        if( $apiMode )
+            $group->API_removeMember($this);
+        else
+            $group->removeMember($this);
+
+        if( $apiMode )
+            $group->owner->API_remove($group);
+        else
+            $group->owner->remove($group);
     }
 
 
