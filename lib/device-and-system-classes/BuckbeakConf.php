@@ -136,6 +136,40 @@ class BuckbeakConf
 
     public $_fakeMode = FALSE;
 
+    /**
+     * Stores whose lookups (find / findOrCreate with $nested) continue in the parent container.
+     * Single source for every place that links a Container, DeviceCloud or DeviceOnPrem to its parent,
+     * so that objects created via scm-api:// and objects loaded from XML (out=) behave the same.
+     * Same idea as the DeviceGroup list in PanoramaConf::load_from_domxml(), plus zoneStore:
+     * in SCM, zones are folder configuration and are inherited by child folders.
+     */
+    public static $parentLinkedStoreTypes = array(
+        'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+        'EDLStore', 'LogProfileStore', 'zoneStore',
+
+        'securityProfileGroupStore',
+
+        'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
+        'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
+        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+
+        'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
+    );
+
+    /**
+     * @param Container|DeviceCloud|DeviceOnPrem $child
+     * @param Container $parentContainer
+     */
+    public static function linkStoresToParent( $child, $parentContainer )
+    {
+        foreach( self::$parentLinkedStoreTypes as $type )
+        {
+            if( isset($child->$type) && isset($parentContainer->$type) )
+                $child->$type->parentCentralStore = $parentContainer->$type;
+        }
+    }
+
     public $debugLoadTime = false;
 
     public $sizeArray = array();
@@ -437,37 +471,7 @@ class BuckbeakConf
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
 
-                    //Todo: swaschkut 20210505 - check if other Stores must be added
-                    //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-                    $storeType = array(
-                        'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                        'securityProfileGroupStore',
-
-                        'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                        //'DataFilteringProfileStore',
-                        'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                        //'WildfireProfileStore',
-                        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore',
-
-                        'LogProfileStore'
-
-                    );
-
-                    foreach( $storeType as $type )
-                    {
-                        #PH::print_stdout("------------------------");
-                        #PH::print_stdout( "validate container: ".$containerName );
-                        #PH::print_stdout( "Container parent: ".$containerToParent[$containerName] );
-
-                        #PH::print_stdout( "found parent container: ".$parentContainer->name() );
-
-                        #PH::print_stdout( "store type: ".$type );
-                        $ldv->$type->parentCentralStore = $parentContainer->$type;
-                    }
+                    self::linkStoresToParent( $ldv, $parentContainer );
 
                 }
             }
@@ -912,34 +916,7 @@ class BuckbeakConf
         {
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
-
-            /*
-            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
-            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
-            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
-            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-            */
-            //Todo: swaschkut 20210505 - check if other Stores must be added
-            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-            $storeType = array(
-                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                'securityProfileGroupStore',
-
-                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                //'DataFilteringProfileStore',
-                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-            );
-
-            foreach( $storeType as $type )
-                $newDG->$type->parentCentralStore = $parentContainer->$type;
+            self::linkStoresToParent( $newDG, $parentContainer );
         }
 
         return $newDG;
@@ -1007,35 +984,7 @@ class BuckbeakConf
         {
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
-
-            /*
-            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
-            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
-            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
-            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-            */
-            //Todo: swaschkut 20210505 - check if other Stores must be added
-            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-            $storeType = array(
-                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                'securityProfileGroupStore',
-
-                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                //'DataFilteringProfileStore',
-                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-            );
-
-            foreach( $storeType as $type )
-                $newDG->$type->parentCentralStore = $parentContainer->$type;
+            self::linkStoresToParent( $newDG, $parentContainer );
         }
 
         return $newDG;
@@ -1115,35 +1064,7 @@ class BuckbeakConf
         {
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
-
-            /*
-            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
-            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
-            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
-            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-            */
-            //Todo: swaschkut 20210505 - check if other Stores must be added
-            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-            $storeType = array(
-                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                'securityProfileGroupStore',
-
-                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                //'DataFilteringProfileStore',
-                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-            );
-
-            foreach( $storeType as $type )
-                $newDG->$type->parentCentralStore = $parentContainer->$type;
+            self::linkStoresToParent( $newDG, $parentContainer );
         }
 
         return $newDG;

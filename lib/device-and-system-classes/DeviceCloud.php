@@ -471,23 +471,32 @@ class DeviceCloud
                 //Todo: swaschkut 20210505 - check if other Stores must be added
                 //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 
-                $storeType = array(
-                    'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+                if( get_class($this->owner) === "BuckbeakConf" )
 
-                    'securityProfileGroupStore',
+                    BuckbeakConf::linkStoresToParent( $this, $parentContainer );
 
-                    'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                    'DataFilteringProfileStore',
-                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                    //'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+                else
 
-                    'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
+                {
+                    $storeType = array(
+                        'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
 
-                );
+                        'securityProfileGroupStore',
 
-                foreach( $storeType as $type )
-                    $this->$type->parentCentralStore = $parentContainer->$type;
+                        'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
+                        'DataFilteringProfileStore',
+                        'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
+                        //'WildfireProfileStore',
+                        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+
+                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
+
+                    );
+
+                    foreach( $storeType as $type )
+                        $this->$type->parentCentralStore = $parentContainer->$type;
+
+                }
             }
         }
 
