@@ -448,7 +448,9 @@ class PanSCMAPIConnector
 
     public function getAccessToken()
     {
-        if( $this->access_token === null || $this->access_token_refreshed_time = time() + $this->access_token_timeout )
+        if( $this->access_token === null
+            || $this->access_token_refreshed_time === null
+            || time() >= ($this->access_token_refreshed_time + $this->access_token_timeout - 60) )
         {
             /*
             curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
@@ -861,8 +863,8 @@ class PanSCMAPIConnector
 
         $response = curl_exec($this->_curl_handle);
 
-        $this->displayCurlResponse($response, $url);
         $jsonArray = json_decode($response, TRUE);
+        $this->displayCurlResponse($response, $url, $jsonArray);
 
         /*
         if( $this->showApiCalls )
@@ -1167,7 +1169,7 @@ class PanSCMAPIConnector
 
     function loadResources( $folder, $sub, $utilType, $type, $foldertype)
     {
-        if( $utilType == "zone" || $utilType == "zone-protection-profile" )
+        if( $type == "zones" || $type == "zone-protection-profiles" )
             $resource = $this->getNetworkResource( $type, $foldertype, $folder, $this->global_limit);
         else
             $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit);
@@ -1204,10 +1206,12 @@ class PanSCMAPIConnector
 
                     foreach( $snippets as $snippet )
                     {
-                        if( !isset( $this->loadedSnippets[strtolower(get_class($sub))][$snippet->name()][$type] ) )
+                        if( !isset( $this->loadedSnippets["snippet"][$snippet->name()][$type] ) )
                         {
-                            $resource = $this->loadResources($snippet->name(), $snippet, $utilType, $type, "snippet");
+                            $snippetResource = $this->loadResources($snippet->name(), $snippet, $utilType, $type, "snippet");
                             $this->loadedSnippets["snippet"][$snippet->name()][$type] = $snippet->name();
+                            if( $snippetResource !== null )
+                                $this->importConfig($snippet, $snippet->name(), $type, $snippetResource);
                         }
                     }
                 }
@@ -1245,12 +1249,12 @@ class PanSCMAPIConnector
                 }
             }
 
-            $json_string = json_encode($resource, JSON_PRETTY_PRINT);
             #if( $this->showApiCalls )
                 #print $json_string . "\n";
 
-            if( strpos($type, '-rules') !== FALSE )
+            if( strpos($type, '-rules') !== FALSE && !isset( $this->loadedSnippets[$foldertype][$sub->name()][$type."#post"] ) )
             {
+                $this->loadedSnippets[$foldertype][$sub->name()][$type."#post"] = $sub->name();
                 $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, 'post');
 
                 if( $resource !== null )
@@ -1267,19 +1271,19 @@ class PanSCMAPIConnector
                         #PH::print_stdout("------------------------------");
                 }
 
-                $json_string = json_encode($resource, JSON_PRETTY_PRINT);
             }
         }
     }
 
-    function importConfig($sub, $folder, $type, $jsonArray)
+    function importConfig($baseSub, $folder, $type, $jsonArray)
     {
         if( !isset($jsonArray['data']) )
             return null;
 
-        /** @var Container|DeviceCloud $sub */
         foreach( $jsonArray['data'] as $object )
         {
+            /** @var Container|DeviceCloud|Snippet $sub */
+            $sub = $baseSub;
             if( isset( $object['folder'] ) )
             {
                 if( !isset( $object['snippet'] ) )
@@ -1297,7 +1301,9 @@ class PanSCMAPIConnector
                     if( $object['snippet'] == "predefined" )
                         $tmp_snippetName .= "-snippet";
 
-                    $sub = $sub->owner->findSnippet($tmp_snippetName);
+                    $sub = $baseSub->owner->findSnippet($tmp_snippetName);
+                    if( $sub === null )
+                        continue;
                 }
 
             }
@@ -1307,7 +1313,9 @@ class PanSCMAPIConnector
                 if( $object['snippet'] == "predefined" )
                 {
                     $tmp_snippetName .= "-snippet";
-                    $sub = $sub->owner->findSnippet($tmp_snippetName);
+                    $sub = $baseSub->owner->findSnippet($tmp_snippetName);
+                    if( $sub === null )
+                        continue;
                 }
                 elseif( $object['snippet'] !== $folder )
                     continue;
@@ -1819,7 +1827,7 @@ class PanSCMAPIConnector
                     //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
                     $tmp_url = $sub->$profileStoreName->find($object['name']);
                     if ($tmp_url !== null)
-                        return "continue";
+                        continue;
 
 
                     $dom = null;
@@ -1844,7 +1852,7 @@ class PanSCMAPIConnector
                     //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
                     $tmp_url = $sub->network->$profileStoreName->find($object['name']);
                     if ($tmp_url !== null)
-                        return "continue";
+                        continue;
 
 
                     $dom = null;
@@ -2229,9 +2237,10 @@ class PanSCMAPIConnector
     }
 
 
-    private function displayCurlResponse( $response, $url )
+    private function displayCurlResponse( $response, $url, $jsonArray = null )
     {
-        $jsonArray = json_decode($response, TRUE);
+        if( $jsonArray === null )
+            $jsonArray = json_decode($response, TRUE);
 
         if( isset($jsonArray['_errors']) )
         {

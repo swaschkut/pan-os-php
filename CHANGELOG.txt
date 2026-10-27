@@ -18,6 +18,7 @@ BUGFIX:
 * class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
 * type=stats | 'zone protection' and export 'from-visible' / 'from-zone-location' keep the 2.1.60 reading (first template-stack) - transitional
 * class DH.php | bugfix to generate set commands
+* SCM-API related bugfixed
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

@@ -1844,6 +1844,8 @@ class UTIL
 
             $folderArray = array_merge($folderArray, $responseArray);
 
+            //static folder list overlaps with /config/setup/v1/folders - load each location once
+            $folderArray = array_values(array_unique($folderArray));
         }
 
 
