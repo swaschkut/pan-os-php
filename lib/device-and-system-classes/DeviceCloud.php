@@ -460,43 +460,7 @@ class DeviceCloud
                 $parentContainer->_childContainers[$this->name] = $this;
                 $this->parentContainer = $parentContainer;
 
-                /*
-                $this->addressStore->parentCentralStore = $parentContainer->addressStore;
-                $this->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-                $this->tagStore->parentCentralStore = $parentContainer->tagStore;
-                $this->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-                $this->appStore->parentCentralStore = $parentContainer->appStore;
-                $this->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-                */
-                //Todo: swaschkut 20210505 - check if other Stores must be added
-                //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-                if( get_class($this->owner) === "BuckbeakConf" )
-
-                    BuckbeakConf::linkStoresToParent( $this, $parentContainer );
-
-                else
-
-                {
-                    $storeType = array(
-                        'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                        'securityProfileGroupStore',
-
-                        'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                        'DataFilteringProfileStore',
-                        'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                        //'WildfireProfileStore',
-                        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-                    );
-
-                    foreach( $storeType as $type )
-                        $this->$type->parentCentralStore = $parentContainer->$type;
-
-                }
+                $this->linkStoresToParent( $parentContainer );
             }
         }
 

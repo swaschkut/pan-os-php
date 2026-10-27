@@ -870,21 +870,7 @@ class PanoramaConf
                         $ldv->parentDeviceGroup = $parentDG;
                         $parentDG->addReference($ldv);
 
-                        $storeType = array(
-                            'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                            'EDLStore', 'LogProfileStore',
-
-                            'securityProfileGroupStore',
-
-                            'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
-                            'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
-
-                        );
-
-                        foreach( $storeType as $type )
-                            $ldv->$type->parentCentralStore = $parentDG->$type;
+                        $ldv->linkStoresToParent( $parentDG );
                     }
                 }
 
@@ -2323,26 +2309,7 @@ class PanoramaConf
             {
                 $parentDG->_childDeviceGroups[$name] = $newDG;
 
-                //Todo: swaschkut 20210505 - check if other Stores must be added
-                //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-                $storeType = array(
-                    'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                    'securityProfileGroupStore',
-
-                    'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore',
-                    'DataFilteringProfileStore',
-                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                    'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                    'LogProfileStore'
-
-                );
-
-                foreach( $storeType as $type )
-                    $newDG->$type->parentCentralStore = $parentDG->$type;
+                $newDG->linkStoresToParent( $parentDG );
             }
         }
 

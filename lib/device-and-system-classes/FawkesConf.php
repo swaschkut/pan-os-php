@@ -397,26 +397,7 @@ class FawkesConf
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
 
-                    //Todo: swaschkut 20210505 - check if other Stores must be added
-                    //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-                    $storeType = array(
-                        'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                        'securityProfileGroupStore',
-
-                        'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                        //'DataFilteringProfileStore',
-                        'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                        //'WildfireProfileStore',
-                        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-                    );
-
-                    foreach( $storeType as $type )
-                        $ldv->$type->parentCentralStore = $parentContainer->$type;
+                    $ldv->linkStoresToParent( $parentContainer );
                 }
             }
             
@@ -1105,33 +1086,7 @@ class FawkesConf
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
 
-            /*
-            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
-            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
-            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
-            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-            */
-            //Todo: swaschkut 20210505 - check if other Stores must be added
-            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-            $storeType = array(
-                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                'securityProfileGroupStore',
-
-                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                //'DataFilteringProfileStore',
-                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-            );
-
-            foreach( $storeType as $type )
-                $newDG->$type->parentCentralStore = $parentContainer->$type;
+            $newDG->linkStoresToParent( $parentContainer );
         }
 
         return $newDG;
@@ -1200,34 +1155,7 @@ class FawkesConf
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
 
-            /*
-            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
-            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
-            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
-            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-            */
-            //Todo: swaschkut 20210505 - check if other Stores must be added
-            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-            $storeType = array(
-                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                'securityProfileGroupStore',
-
-                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                //'DataFilteringProfileStore',
-                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-            );
-
-            foreach( $storeType as $type )
-                $newDG->$type->parentCentralStore = $parentContainer->$type;
+            $newDG->linkStoresToParent( $parentContainer );
         }
 
         return $newDG;
@@ -1295,34 +1223,7 @@ class FawkesConf
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
 
-            /*
-            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
-            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
-            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
-            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-            */
-            //Todo: swaschkut 20210505 - check if other Stores must be added
-            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-            $storeType = array(
-                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                'securityProfileGroupStore',
-
-                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                //'DataFilteringProfileStore',
-                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-            );
-
-            foreach( $storeType as $type )
-                $newDG->$type->parentCentralStore = $parentContainer->$type;
+            $newDG->linkStoresToParent( $parentContainer );
         }
 
         return $newDG;
