@@ -210,6 +210,9 @@ class DeviceOnPrem
     /** @var Container parentContainer in case it load as part of Panorama */
     public $parentContainer = null;
 
+    /** @var Snippet[] */
+    public $attachedSnippets = array();
+
     public $version = null;
 
     /** @var Array */
@@ -413,6 +416,26 @@ class DeviceOnPrem
         $this->name = DH::findAttribute('name', $xml);
         if( $this->name === FALSE )
             derr("DeviceOnPrem name not found\n", $xml);
+
+        //attached snippets (written by addSnippet() as <snippets><member>NAME</member></snippets>)
+        $tmp_snippets = DH::findFirstElement('snippets', $xml);
+        if( $tmp_snippets !== FALSE )
+        {
+            foreach( $tmp_snippets->childNodes as $member )
+            {
+                if( $member->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $snippetName = $member->textContent;
+                if( $member->nodeName == 'entry' && DH::findAttribute('name', $member) !== FALSE )
+                    $snippetName = DH::findAttribute('name', $member);
+
+                $snippetObj = $this->owner->findSnippet( $snippetName );
+                if( $snippetObj !== null && !isset($this->attachedSnippets[$snippetObj->name()]) )
+                    $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+            }
+        }
+
 
 
         $tmp_parentContainer = DH::findFirstElement('parent', $xml);
@@ -1075,11 +1098,32 @@ class DeviceOnPrem
         return TRUE;
     }
 
-    public function addSnippet( $name )
+    public function addSnippet( $snippetObj )
     {
-        $snippets = DH::findFirstElementOrCreate('snippets', $this->xmlroot);
-        DH::findFirstElementByNameAttrOrCreate( "entry", $name, $snippets, $this->xmlroot->ownerDocument );
+        /** @var Snippet $snippetObj */
+        if( !isset($this->attachedSnippets[$snippetObj->name()]) )
+        {
+            $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
 
+            $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+
+            $snippetObj->addReference($this);
+        }
+    }
+
+    public function getAttachedSnippets()
+    {
+        return $this->attachedSnippets;
+    }
+
+    public function getAttachedSnippetNames()
+    {
+        $name = array();
+        foreach( $this->attachedSnippets as $snippet )
+            $name[$snippet->name()] = $snippet->name();
+
+        return $name;
     }
 
     #static public $templateXml = '<entry name="temporarynamechangemeplease"><address/><address-group/><service/><service-group/><rulebase></rulebase></entry>';

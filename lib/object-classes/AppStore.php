@@ -105,7 +105,7 @@ class AppStore extends ObjStore
                 if( get_class($this->owner) !== "Snippet" )
                 {
                     $attachedSnippets = $this->owner->getAttachedSnippets();
-                    if (count($attachedSnippets) > 1)
+                    if (count($attachedSnippets) > 0)
                     {
                         foreach ($attachedSnippets as $snippet)
                         {

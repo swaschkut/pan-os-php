@@ -108,13 +108,8 @@ class PanSCMAPIConnector
 
 
         $folderNameArray = array();
-        $deviceCloudArray = array();
-        $deviceOnPremArray = array();
-
-        $parentContainerNotFound = array();
-        $parentContainerNotFound_2 = array();
-        $parentContainerNotFound_3 = array();
-        $parentContainerNotFound_4 = array();
+        $pendingContainers = array();
+        $deviceArray = array();
 
         foreach( $responseArray['data'] as $folder )
         {
@@ -133,54 +128,21 @@ class PanSCMAPIConnector
                 PH::print_stdout("-----------");
             }
 
+            $parent = !empty($folder['parent']) ? $folder['parent'] : null;
 
-            if( !empty($folder['parent']) )
-            {
-                $parent = $folder['parent'];
+            if( $parent == "ngfw-shared" && $pan->findContainer( "ngfw-shared" ) === null )
+                $pan->createContainer( "ngfw-shared", "All" );
 
-                if( $parent == "ngfw-shared" )
-                {
-                    $sub = $pan->findContainer( "ngfw-shared" );
-                    if( $sub == null )
-                    {
-                        $sub = $pan->createContainer( "ngfw-shared", "All" );
-                    }
-                }
-            }
-
-            else
-                $parent = null;
+            $tmpArray = array();
+            $tmpArray['folder'] = $folder;
+            $tmpArray['parent'] = $parent;
 
             if( $folder['type'] == "container" )
-            {
-                $parentContainer = $pan->findContainer( $parent );
-                if( $parentContainer !== null )
-                {
-                    $sub = $pan->findContainer( $folder['name'] );
-                    if( $sub == null )
-                        $sub = $pan->createContainer( $folder['name'], $parent );
-                    $sub->setSaseID($folder['id']);
-                }
-                else
-                {
-                    $tmpArray = array();
-                    $tmpArray['folder'] = $folder;
-                    $tmpArray['parent'] = $parent;
-                    $parentContainerNotFound[] = $tmpArray;
-                }
-            }
-            elseif( $folder['type'] == "cloud" )
-            {
-                $tmpArray = array();
-                $tmpArray['folder'] = $folder;
-                $tmpArray['parent'] = $parent;
-                $deviceCloudArray[] = $tmpArray;
-            }
-            elseif( $folder['type'] == "on-prem" )
+                $pendingContainers[] = $tmpArray;
+            elseif( $folder['type'] == "cloud" || $folder['type'] == "on-prem" )
             {
                 /*
-                Array
-                (
+                on-prem example:
                     [display_name] => RSNISFIRE01
                     [id] => b6a795ac-9ad2-4b9a-96b8-449b58b85afa
                     [model] => PA-440
@@ -188,115 +150,55 @@ class PanSCMAPIConnector
                     [parent] => ZTP_LandingFolder
                     [serial_number] => 021209061525
                     [type] => on-prem
-                )
                  */
-
-                $tmpArray = array();
-                $tmpArray['folder'] = $folder;
-                $tmpArray['parent'] = $parent;
-                $deviceOnPremArray[] = $tmpArray;
+                $deviceArray[] = $tmpArray;
             }
-            //todo: swaschkut 20260125 - any other type???? what about on-prem???
-
+            //todo: swaschkut 20260125 - any other type????
         }
 
-        foreach( $parentContainerNotFound as $parentNotFound )
+        //containers: a parent must exist before its child is created;
+        //repeat until nothing changes, which covers any folder depth and any response order
+        do
         {
-            $folder = $parentNotFound['folder'];
-            $parent = $parentNotFound['parent'];
-
-            if( $pan->findContainer( $parent ) !== null )
+            $progress = FALSE;
+            $stillPending = array();
+            foreach( $pendingContainers as $pending )
             {
-                $sub = $pan->findContainer( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createContainer( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
+                $parent = $pending['parent'];
+                if( $parent === null || $pan->findContainer( $parent ) !== null )
+                {
+                    $this->Connector_setupContainer( $pan, $pending['folder'], $parent );
+                    $progress = TRUE;
+                }
+                else
+                    $stillPending[] = $pending;
+            }
+            $pendingContainers = $stillPending;
+        }
+        while( $progress && count($pendingContainers) > 0 );
+
+        //parent not part of the response - create anyway, createContainer() reports the missing parent
+        foreach( $pendingContainers as $pending )
+            $this->Connector_setupContainer( $pan, $pending['folder'], $pending['parent'] );
+
+        //devices last, so that their parent containers exist
+        foreach( $deviceArray as $device )
+        {
+            $folder = $device['folder'];
+            $parent = $device['parent'];
+
+            if( $folder['type'] == "on-prem" )
+            {
+                $sub = $pan->findDeviceOnPrem( $folder['name'] );
+                if( $sub === null )
+                    $sub = $pan->createDeviceOnPrem( $folder['name'], $parent );
             }
             else
             {
-                $tmpArray = array();
-                $tmpArray['folder'] = $folder;
-                $tmpArray['parent'] = $parent;
-                $parentContainerNotFound_2[] = $tmpArray;
+                $sub = $pan->findDeviceCloud( $folder['name'] );
+                if( $sub === null )
+                    $sub = $pan->createDeviceCloud( $folder['name'], $parent );
             }
-        }
-
-        foreach( $parentContainerNotFound_2 as $parentNotFound_2 )
-        {
-            $folder = $parentNotFound_2['folder'];
-            $parent = $parentNotFound_2['parent'];
-
-            if( $pan->findContainer( $parent ) !== null )
-            {
-                $sub = $pan->findContainer( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createContainer( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
-            }
-            else
-            {
-                $tmpArray = array();
-                $tmpArray['folder'] = $folder;
-                $tmpArray['parent'] = $parent;
-                $parentContainerNotFound_3[] = $tmpArray;
-            }
-        }
-
-        foreach( $parentContainerNotFound_3 as $parentNotFound_3 )
-        {
-            $folder = $parentNotFound_3['folder'];
-            $parent = $parentNotFound_3['parent'];
-
-            if( $pan->findContainer( $parent ) !== null )
-            {
-                $sub = $pan->findContainer( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createContainer( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
-            }
-            else
-            {
-                $tmpArray = array();
-                $tmpArray['folder'] = $folder;
-                $tmpArray['parent'] = $parent;
-                $parentContainerNotFound_4[] = $tmpArray;
-            }
-        }
-
-        foreach( $parentContainerNotFound_4 as $parentNotFound_4 )
-        {
-            $folder = $parentNotFound_4['folder'];
-            $parent = $parentNotFound_4['parent'];
-
-            $sub = $pan->findContainer( $folder['name'] );
-            if( $sub == null )
-                $sub = $pan->createContainer( $folder['name'], $parent );
-            $sub->setSaseID($folder['id']);
-
-            $this->Connector_addSnippet($pan, $sub, $folder);
-        }
-
-        foreach( $deviceOnPremArray as $deviceOnPrem )
-        {
-            $folder = $deviceOnPrem['folder'];
-            $parent = $deviceOnPrem['parent'];
-
-            $sub = $pan->findDeviceCloud( $folder['name'] );
-            if( $sub == null )
-                $sub = $pan->createDeviceCloud( $folder['name'], $parent );
-            $sub->setSaseID($folder['id']);
-
-            $this->Connector_addSnippet($pan, $sub, $folder);
-        }
-
-        foreach( $deviceCloudArray as $deviceCloud )
-        {
-            $folder = $deviceCloud['folder'];
-            $parent = $deviceCloud['parent'];
-
-            $sub = $pan->findDeviceCloud( $folder['name'] );
-            if( $sub == null )
-                $sub = $pan->createDeviceCloud( $folder['name'], $parent );
             $sub->setSaseID($folder['id']);
 
             $this->Connector_addSnippet($pan, $sub, $folder);
@@ -305,17 +207,40 @@ class PanSCMAPIConnector
         return $folderNameArray;
     }
 
+    private function Connector_setupContainer( BuckbeakConf $pan, $folder, $parent )
+    {
+        $sub = $pan->findContainer( $folder['name'] );
+        if( $sub === null )
+        {
+            if( $parent === null )
+                $sub = $pan->createContainer( $folder['name'] );
+            else
+                $sub = $pan->createContainer( $folder['name'], $parent );
+        }
+        $sub->setSaseID($folder['id']);
+
+        $this->Connector_addSnippet($pan, $sub, $folder);
+
+        return $sub;
+    }
+
     public function Connector_addSnippet($pan, $sub, $folder)
     {
-        if( isset($folder['snippets']) )
+        if( !isset($folder['snippets']) || !is_array($folder['snippets']) )
+            return;
+
+        foreach( $folder['snippets'] as $snippetName )
         {
-            foreach( $folder['snippets'] as $snippet )
+            $snippet = $pan->findSnippet( $snippetName );
+            if( $snippet === null )
             {
-                $snippet = $pan->findSnippet( $snippet );
-                /** @var Container $sub */
-                if( !isset($sub->attachedSnippets[$snippet->name()]) )
-                    $sub->addSnippet( $snippet );
+                mwarning( "SCM: snippet '".$snippetName."' attached to '".$folder['name']."' not found in /config/setup/v1/snippets", null, FALSE );
+                continue;
             }
+
+            /** @var Container|DeviceCloud|DeviceOnPrem $sub */
+            if( !isset($sub->attachedSnippets[$snippet->name()]) )
+                $sub->addSnippet( $snippet );
         }
     }
 
@@ -1048,7 +973,7 @@ class PanSCMAPIConnector
             if(strpos( $url, "?" ) !== FALSE)
                 $url .= "&offset=" . $offset;
             else
-                $url .= "?offset=" . $limit;
+                $url .= "?offset=" . $offset;
 
             if( $this->showApiCalls )
                 PH::print_stdout("URL: ".$url);
@@ -1078,13 +1003,14 @@ class PanSCMAPIConnector
         $jsonArray = $this->curl_request_SCM( $url);
 
 
+        $pageSize = ( $limit !== null ) ? (int)$limit : $this->global_limit;
         if( $jsonArray !== null
             && isset($jsonArray['total'])
-            && $jsonArray['total'] > ($this->global_limit - 1)
-            && $jsonArray['total'] > ($runtime * $this->global_limit)
+            && $jsonArray['total'] > ($pageSize - 1)
+            && $jsonArray['total'] > ($runtime * $pageSize)
         )
         {
-            $offset = $this->global_limit * $runtime;
+            $offset = $pageSize * $runtime;
             $runtime++;
 
             if( $this->showApiCalls )
@@ -1094,7 +1020,8 @@ class PanSCMAPIConnector
                 PH::print_stdout("Folder: '".$folder."'");
             }
 
-            $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
+            //next page of the same URL (getResource() builds a different URL and ignores \$url_config)
+            $resource = $this->getResourceURL( $url_config, $type, $foldertype, $folder, $pageSize, $prePost, $offset, $runtime);
 
 
             if( isset( $resource['msg'] ) && $resource['msg'] == "Access denied" )

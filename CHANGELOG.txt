@@ -19,6 +19,7 @@ BUGFIX:
 * type=stats | 'zone protection' and export 'from-visible' / 'from-zone-location' keep the 2.1.60 reading (first template-stack) - transitional
 * class DH.php | bugfix to generate set commands
 * SCM-API related bugfixed
+* SCM-API - differnet class are not reading snippets correctly
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
