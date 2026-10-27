@@ -213,16 +213,26 @@ class ZoneRuleContainer extends ObjRuleContainer
 
 
 
-            if (isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup')
+            $isDG     = isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup';
+            $isShared = !$isDG && isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'PanoramaConf';
+
+            if( $isDG || $isShared )
             {
-                //new Code Claude 20261025
-
-
-                $actualDG   = $this->owner->owner->owner;
-                $panorama   = $actualDG->owner;
-                $devices    = $actualDG->getDevicesInGroup(true);
                 $zoneName   = $node->textContent;
 
+                if( $isDG )
+                {
+                    $actualDG = $this->owner->owner->owner;
+                    $panorama = $actualDG->owner;
+                    $devices  = $actualDG->getDevicesInGroup(true);
+                }
+                else
+                {
+                    // shared = parent of every top-level device group: union of the firewalls of all device groups
+                    $actualDG = null;
+                    $panorama = $this->owner->owner->owner;
+                    $devices  = $this->devicesOfAllDeviceGroups($panorama);
+                }
                 foreach( $devices as $deviceObj )
                 {
                     $serial = $deviceObj['serial'];
@@ -266,7 +276,18 @@ class ZoneRuleContainer extends ObjRuleContainer
                 // holding the name). Used by 'zone protection', 'from-visible', 'from-zone-location', 'from has'.
                 // The per-target reading above is only used by 'all.targets' / 'targets' filters,
                 // 'zone protection all-targets' and the '*-all-targets' export columns.
-                $this->load_zone_legacy_first_stack($actualDG, $zoneName);
+                if( $isDG )
+                    $this->load_zone_legacy_first_stack($actualDG, $zoneName);
+                else
+                {
+                    // 2.1.60 reading for shared rules: placeholder zone (unchanged)
+                    $f = $this->parentCentralStore->findOrCreate($zoneName, $this);
+                    if( !$this->has($f) )
+                    {
+                        $this->o[] = $f;
+                        $f->addReference($this);
+                    }
+                }
 
 
                 /*
@@ -587,6 +608,27 @@ class ZoneRuleContainer extends ObjRuleContainer
                 $f->addReference($this);
             }
         }
+    }
+
+    /**
+     * shared rules are pushed to every firewall of every device group:
+     * union of getDevicesInGroup() of all device groups, vsys lists merged
+     */
+    private function devicesOfAllDeviceGroups(PanoramaConf $panorama)
+    {
+        $devices = array();
+        foreach( $panorama->getDeviceGroups() as $dg )
+        {
+            foreach( $dg->getDevicesInGroup(false) as $serial => $d )
+            {
+                if( !isset($devices[$serial]) )
+                    $devices[$serial] = array('serial' => $d['serial'], 'vsyslist' => array());
+                if( !empty($d['vsyslist']) )
+                    foreach( $d['vsyslist'] as $v )
+                        $devices[$serial]['vsyslist'][$v] = $v;
+            }
+        }
+        return $devices;
     }
 
     /**
