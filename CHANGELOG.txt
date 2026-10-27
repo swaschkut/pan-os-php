@@ -27,6 +27,7 @@ BUGFIX:
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
+* update Device App-ID to version: 9165-10321
 
 
 2.1.60 (20261021)
