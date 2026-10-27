@@ -999,7 +999,7 @@ class Rule
 
             if( $system->isPanorama() )
             {
-                DH::DEBUGprintDOMDocument($res);
+                #DH::DEBUGprintDOMDocument($res);
             }
             elseif( $system->isDeviceGroup() && $system->name() !== ""  )
             {
@@ -1026,7 +1026,7 @@ class Rule
 
             if( $system->isDeviceGroup()  )
             {
-                DH::DEBUGprintDOMDocument($res);
+                #DH::DEBUGprintDOMDocument($res);
                 //<rule-base><entry ...><rules><entry name="demo2-1"><device-vsys><entry name="child/1234567890/vsys1">
                 $res = DH::findFirstElement( "device-vsys", $res);
                 $res = DH::findFirstElement( "entry", $res);
