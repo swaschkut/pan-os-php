@@ -871,8 +871,8 @@ class AppStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/application', $xmlDoc);
 

@@ -312,8 +312,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
@@ -328,8 +328,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/url-filtering', $xmlDoc);
@@ -369,8 +369,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
@@ -385,8 +385,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
@@ -401,8 +401,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/spyware', $xmlDoc);
@@ -417,8 +417,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/vulnerability', $xmlDoc);
@@ -433,8 +433,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/file-blocking', $xmlDoc);
@@ -449,8 +449,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename);
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/wildfire-analysis', $xmlDoc);

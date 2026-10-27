@@ -463,6 +463,69 @@ class PH
         //print_r( $argv );
     }
 
+    /** @var DOMDocument|null parsed lib/object-classes/predefined.xml, shared by all predefined stores */
+    private static $predefinedXmlDoc = null;
+
+    /**
+     * Returns the parsed predefined.xml. The default file is parsed once per process and shared by every predefined
+     * store (apps, threats, log profiles, security profiles, URL categories, regions). Each parse costs ~280 MB in
+     * libxml2, and the predefined objects keep pointers into their document, so separate parses stayed in memory side
+     * by side (11 per config load). Another $filename is parsed on every call, as before.
+     * The returned document is read-only for the callers.
+     */
+    public static function getPredefinedXmlDoc( $filename = null ): DOMDocument
+    {
+        $default = dirname(__FILE__) . '/../object-classes/predefined.xml';
+        if( $filename === null )
+            $filename = $default;
+
+        $isDefault = realpath($filename) !== FALSE && realpath($filename) === realpath($default);
+
+        if( $isDefault && self::$predefinedXmlDoc !== null )
+            return self::$predefinedXmlDoc;
+
+        $xmlDoc = new DOMDocument();
+        if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
+            derr( "cannot load predefined file '".$filename."'", null, FALSE );
+
+        if( $isDefault )
+            self::$predefinedXmlDoc = $xmlDoc;
+
+        return $xmlDoc;
+    }
+
+    /**
+     * Returns memory freed by PHP / libxml2 to the operating system (glibc malloc_trim via FFI).
+     * Without this, the process keeps the peak RSS of the largest config load although the memory is free and reused.
+     * Does nothing if FFI is not available or the C library has no malloc_trim (e.g. musl).
+     */
+    public static function releaseMemoryToOS(): bool
+    {
+        static $libc = FALSE;
+
+        if( $libc === FALSE )
+        {
+            $libc = null;
+            if( extension_loaded('ffi') && PHP_OS_FAMILY === 'Linux' )
+            {
+                try
+                {
+                    $libc = FFI::cdef("int malloc_trim(size_t pad);", "libc.so.6");
+                }
+                catch( Throwable $e )
+                {
+                    $libc = null;
+                }
+            }
+        }
+
+        if( $libc === null )
+            return FALSE;
+
+        $libc->malloc_trim(0);
+        return TRUE;
+    }
+
     /**
      * Drops the process-wide predefined stores (apps, threats, log profiles, security profiles).
      * The next config load creates them again, so no object keeps references from a previously loaded config.
@@ -483,6 +546,8 @@ class PH
         AppStore::$predefinedStore = null;
         ThreatStore::$predefinedStore = null;
         LogProfileStore::$predefinedLogProfStore = null;
+
+        self::$predefinedXmlDoc = null;
     }
 
     /**
@@ -529,6 +594,9 @@ class PH
         {
             gc_mem_caches();
         }
+
+        // memory freed by libxml2 (DOM) / PHP stays mapped in the process until malloc_trim
+        PH::releaseMemoryToOS();
 
         $memAfter = memory_get_usage(true);
         $memFreed = $memBefore - $memAfter;
