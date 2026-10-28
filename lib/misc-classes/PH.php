@@ -463,17 +463,29 @@ class PH
         //print_r( $argv );
     }
 
-    /** @var DOMDocument|null parsed lib/object-classes/predefined.xml, shared by all predefined stores */
+    /** @var DOMDocument|null small sections of lib/object-classes/predefined.xml, shared by all predefined stores */
     private static $predefinedXmlDoc = null;
 
     /**
-     * Returns the parsed predefined.xml. The default file is parsed once per process and shared by every predefined
-     * store (apps, threats, log profiles, security profiles, URL categories, regions). Each parse costs ~280 MB in
-     * libxml2, and the predefined objects keep pointers into their document, so separate parses stayed in memory side
-     * by side (11 per config load). Another $filename is parsed on every call, as before.
+     * Top-level sections of predefined.xml that are large (application ~13 MB, threats ~15 MB of XML, together
+     * ~240 MB as DOM). They are parsed on request only, not cached; the stores build their objects from them and then
+     * drop their node pointers, so the DOM is freed again.
+     */
+    private static $predefinedLargeSections = array('application', 'application-container', 'application-version', 'threats');
+
+    /** sections of predefined.xml read by pan-os-php besides the large ones (together < 0.1 MB) */
+    private static $predefinedSmallSections = array('profiles', 'pan-url-categories', 'log-settings', 'region');
+
+    /**
+     * Returns predefined.xml as DOM, limited to the top-level $sections (e.g. array('threats')). Paths stay the same
+     * ('/predefined/threats/...'). The file is streamed with XMLReader, so the complete document (31 MB, ~280 MB as
+     * DOM) is never built:
+     *  - only small sections requested: one shared document holding all small sections, parsed once per process
+     *  - a large section requested: a new document with just the requested sections, not cached
+     * $sections === null or another $filename: the whole file, parsed on every call, as before.
      * The returned document is read-only for the callers.
      */
-    public static function getPredefinedXmlDoc( $filename = null ): DOMDocument
+    public static function getPredefinedXmlDoc( $filename = null, $sections = null ): DOMDocument
     {
         $default = dirname(__FILE__) . '/../object-classes/predefined.xml';
         if( $filename === null )
@@ -481,15 +493,145 @@ class PH
 
         $isDefault = realpath($filename) !== FALSE && realpath($filename) === realpath($default);
 
-        if( $isDefault && self::$predefinedXmlDoc !== null )
-            return self::$predefinedXmlDoc;
+        if( !$isDefault || $sections === null )
+        {
+            $xmlDoc = new DOMDocument();
+            if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
+                derr( "cannot load predefined file '".$filename."'", null, FALSE );
+            return $xmlDoc;
+        }
 
-        $xmlDoc = new DOMDocument();
-        if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
+        if( count(array_intersect($sections, self::$predefinedLargeSections)) == 0 )
+        {
+            if( self::$predefinedXmlDoc === null )
+                self::$predefinedXmlDoc = self::readPredefinedSections( $filename, self::$predefinedSmallSections );
+            return self::$predefinedXmlDoc;
+        }
+
+        return self::readPredefinedSections( $filename, $sections );
+    }
+
+    /**
+     * Streams the default predefined.xml and calls $callback( $name, DOMElement|null $entry ) for every <entry> below
+     * $path (e.g. array('threats', 'vulnerability')). With $expand each entry is copied into its own small document,
+     * so at most one entry is held as DOM at a time; without $expand only the name attribute is read.
+     * @return bool FALSE if the path does not exist
+     */
+    public static function eachPredefinedEntry( array $path, callable $callback, $expand = TRUE, $filename = null ): bool
+    {
+        if( $filename === null )
+            $filename = dirname(__FILE__) . '/../object-classes/predefined.xml';
+
+        $reader = new XMLReader();
+        if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
             derr( "cannot load predefined file '".$filename."'", null, FALSE );
 
-        if( $isDefault )
-            self::$predefinedXmlDoc = $xmlDoc;
+        // <predefined>
+        while( $reader->read() && $reader->nodeType != XMLReader::ELEMENT );
+
+        // descend along $path
+        foreach( $path as $name )
+        {
+            if( !self::xmlReaderChildElement($reader, $name) )
+            {
+                $reader->close();
+                return FALSE;
+            }
+        }
+
+        if( !$reader->isEmptyElement )
+        {
+            $entryDepth = $reader->depth + 1;
+            $reader->read();
+            while( $reader->depth >= $entryDepth )
+            {
+                if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == $entryDepth && $reader->name == 'entry' )
+                {
+                    $node = null;
+                    if( $expand )
+                    {
+                        $tmpDoc = new DOMDocument();
+                        $node = $reader->expand($tmpDoc);
+                        if( $node === FALSE )
+                            derr( "cannot read predefined entry '".$reader->getAttribute('name')."'", null, FALSE );
+                    }
+                    $callback( $reader->getAttribute('name'), $node );
+                    if( !$reader->next() )
+                        break;
+                    continue;
+                }
+                if( !$reader->read() )
+                    break;
+            }
+        }
+
+        $reader->close();
+        return TRUE;
+    }
+
+    /**
+     * moves $reader from an element to its child element named $name
+     */
+    private static function xmlReaderChildElement( XMLReader $reader, $name ): bool
+    {
+        if( $reader->nodeType != XMLReader::ELEMENT || $reader->isEmptyElement )
+            return FALSE;
+
+        $parentDepth = $reader->depth;
+        if( !$reader->read() )
+            return FALSE;
+
+        while( $reader->depth > $parentDepth )
+        {
+            if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == $parentDepth + 1 && $reader->name == $name )
+                return TRUE;
+            if( !$reader->next() )
+                return FALSE;
+        }
+        return FALSE;
+    }
+
+    /**
+     * Streams $filename and returns a document <predefined> with only the given top-level sections.
+     */
+    private static function readPredefinedSections( $filename, array $sections ): DOMDocument
+    {
+        $wanted = array_flip($sections);
+
+        $xmlDoc = new DOMDocument();
+        $root = $xmlDoc->appendChild( $xmlDoc->createElement('predefined') );
+
+        $reader = new XMLReader();
+        if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
+            derr( "cannot load predefined file '".$filename."'", null, FALSE );
+
+        // move to <predefined>
+        while( $reader->read() && $reader->nodeType != XMLReader::ELEMENT );
+
+        $found = 0;
+        if( $reader->read() )
+        {
+            while( TRUE )
+            {
+                if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == 1 )
+                {
+                    if( isset($wanted[$reader->name]) )
+                    {
+                        $node = $reader->expand($xmlDoc);
+                        if( $node === FALSE )
+                            derr( "cannot read section '".$reader->name."' of predefined file '".$filename."'", null, FALSE );
+                        $root->appendChild($node);
+                        $found++;
+                    }
+                    if( !$reader->next() )
+                        break;
+                    continue;
+                }
+                if( !$reader->read() )
+                    break;
+            }
+        }
+        $reader->close();
 
         return $xmlDoc;
     }

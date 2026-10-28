@@ -1,0 +1,1780 @@
+diff --git a/lib/misc-classes/PH.php b/lib/misc-classes/PH.php
+index 496ff31..ee27a35 100644
+--- a/lib/misc-classes/PH.php
++++ b/lib/misc-classes/PH.php
+@@ -463,17 +463,29 @@ class PH
+         //print_r( $argv );
+     }
+ 
+-    /** @var DOMDocument|null parsed lib/object-classes/predefined.xml, shared by all predefined stores */
++    /** @var DOMDocument|null small sections of lib/object-classes/predefined.xml, shared by all predefined stores */
+     private static $predefinedXmlDoc = null;
+ 
+     /**
+-     * Returns the parsed predefined.xml. The default file is parsed once per process and shared by every predefined
+-     * store (apps, threats, log profiles, security profiles, URL categories, regions). Each parse costs ~280 MB in
+-     * libxml2, and the predefined objects keep pointers into their document, so separate parses stayed in memory side
+-     * by side (11 per config load). Another $filename is parsed on every call, as before.
++     * Top-level sections of predefined.xml that are large (application ~13 MB, threats ~15 MB of XML, together
++     * ~240 MB as DOM). They are parsed on request only, not cached; the stores build their objects from them and then
++     * drop their node pointers, so the DOM is freed again.
++     */
++    private static $predefinedLargeSections = array('application', 'application-container', 'application-version', 'threats');
++
++    /** sections of predefined.xml read by pan-os-php besides the large ones (together < 0.1 MB) */
++    private static $predefinedSmallSections = array('profiles', 'pan-url-categories', 'log-settings', 'region');
++
++    /**
++     * Returns predefined.xml as DOM, limited to the top-level $sections (e.g. array('threats')). Paths stay the same
++     * ('/predefined/threats/...'). The file is streamed with XMLReader, so the complete document (31 MB, ~280 MB as
++     * DOM) is never built:
++     *  - only small sections requested: one shared document holding all small sections, parsed once per process
++     *  - a large section requested: a new document with just the requested sections, not cached
++     * $sections === null or another $filename: the whole file, parsed on every call, as before.
+      * The returned document is read-only for the callers.
+      */
+-    public static function getPredefinedXmlDoc( $filename = null ): DOMDocument
++    public static function getPredefinedXmlDoc( $filename = null, $sections = null ): DOMDocument
+     {
+         $default = dirname(__FILE__) . '/../object-classes/predefined.xml';
+         if( $filename === null )
+@@ -481,15 +493,145 @@ class PH
+ 
+         $isDefault = realpath($filename) !== FALSE && realpath($filename) === realpath($default);
+ 
+-        if( $isDefault && self::$predefinedXmlDoc !== null )
++        if( !$isDefault || $sections === null )
++        {
++            $xmlDoc = new DOMDocument();
++            if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
++                derr( "cannot load predefined file '".$filename."'", null, FALSE );
++            return $xmlDoc;
++        }
++
++        if( count(array_intersect($sections, self::$predefinedLargeSections)) == 0 )
++        {
++            if( self::$predefinedXmlDoc === null )
++                self::$predefinedXmlDoc = self::readPredefinedSections( $filename, self::$predefinedSmallSections );
+             return self::$predefinedXmlDoc;
++        }
++
++        return self::readPredefinedSections( $filename, $sections );
++    }
++
++    /**
++     * Streams the default predefined.xml and calls $callback( $name, DOMElement|null $entry ) for every <entry> below
++     * $path (e.g. array('threats', 'vulnerability')). With $expand each entry is copied into its own small document,
++     * so at most one entry is held as DOM at a time; without $expand only the name attribute is read.
++     * @return bool FALSE if the path does not exist
++     */
++    public static function eachPredefinedEntry( array $path, callable $callback, $expand = TRUE, $filename = null ): bool
++    {
++        if( $filename === null )
++            $filename = dirname(__FILE__) . '/../object-classes/predefined.xml';
++
++        $reader = new XMLReader();
++        if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
++            derr( "cannot load predefined file '".$filename."'", null, FALSE );
++
++        // <predefined>
++        while( $reader->read() && $reader->nodeType != XMLReader::ELEMENT );
++
++        // descend along $path
++        foreach( $path as $name )
++        {
++            if( !self::xmlReaderChildElement($reader, $name) )
++            {
++                $reader->close();
++                return FALSE;
++            }
++        }
++
++        if( !$reader->isEmptyElement )
++        {
++            $entryDepth = $reader->depth + 1;
++            $reader->read();
++            while( $reader->depth >= $entryDepth )
++            {
++                if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == $entryDepth && $reader->name == 'entry' )
++                {
++                    $node = null;
++                    if( $expand )
++                    {
++                        $tmpDoc = new DOMDocument();
++                        $node = $reader->expand($tmpDoc);
++                        if( $node === FALSE )
++                            derr( "cannot read predefined entry '".$reader->getAttribute('name')."'", null, FALSE );
++                    }
++                    $callback( $reader->getAttribute('name'), $node );
++                    if( !$reader->next() )
++                        break;
++                    continue;
++                }
++                if( !$reader->read() )
++                    break;
++            }
++        }
++
++        $reader->close();
++        return TRUE;
++    }
++
++    /**
++     * moves $reader from an element to its child element named $name
++     */
++    private static function xmlReaderChildElement( XMLReader $reader, $name ): bool
++    {
++        if( $reader->nodeType != XMLReader::ELEMENT || $reader->isEmptyElement )
++            return FALSE;
++
++        $parentDepth = $reader->depth;
++        if( !$reader->read() )
++            return FALSE;
++
++        while( $reader->depth > $parentDepth )
++        {
++            if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == $parentDepth + 1 && $reader->name == $name )
++                return TRUE;
++            if( !$reader->next() )
++                return FALSE;
++        }
++        return FALSE;
++    }
++
++    /**
++     * Streams $filename and returns a document <predefined> with only the given top-level sections.
++     */
++    private static function readPredefinedSections( $filename, array $sections ): DOMDocument
++    {
++        $wanted = array_flip($sections);
+ 
+         $xmlDoc = new DOMDocument();
+-        if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
++        $root = $xmlDoc->appendChild( $xmlDoc->createElement('predefined') );
++
++        $reader = new XMLReader();
++        if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
+             derr( "cannot load predefined file '".$filename."'", null, FALSE );
+ 
+-        if( $isDefault )
+-            self::$predefinedXmlDoc = $xmlDoc;
++        // move to <predefined>
++        while( $reader->read() && $reader->nodeType != XMLReader::ELEMENT );
++
++        $found = 0;
++        if( $reader->read() )
++        {
++            while( TRUE )
++            {
++                if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == 1 )
++                {
++                    if( isset($wanted[$reader->name]) )
++                    {
++                        $node = $reader->expand($xmlDoc);
++                        if( $node === FALSE )
++                            derr( "cannot read section '".$reader->name."' of predefined file '".$filename."'", null, FALSE );
++                        $root->appendChild($node);
++                        $found++;
++                    }
++                    if( !$reader->next() )
++                        break;
++                    continue;
++                }
++                if( !$reader->read() )
++                    break;
++            }
++        }
++        $reader->close();
+ 
+         return $xmlDoc;
+     }
+diff --git a/lib/misc-classes/filters/filters-Address.php b/lib/misc-classes/filters/filters-Address.php
+index 8bc6101..33dd120 100644
+--- a/lib/misc-classes/filters/filters-Address.php
++++ b/lib/misc-classes/filters/filters-Address.php
+@@ -521,7 +521,7 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
+             $list = array();
+             $filename = dirname(__FILE__) . '/../../object-classes/predefined.xml';
+ 
+-            $xmlDoc_region = PH::getPredefinedXmlDoc($filename);
++            $xmlDoc_region = PH::getPredefinedXmlDoc($filename, array('region'));
+ 
+             $cursor = DH::findXPathSingleEntryOrDie('/predefined/region', $xmlDoc_region);
+             foreach( $cursor->childNodes as $region_entry )
+diff --git a/lib/misc-classes/trait/ReferenceableObject.php b/lib/misc-classes/trait/ReferenceableObject.php
+index 87a8af6..6249f3f 100644
+--- a/lib/misc-classes/trait/ReferenceableObject.php
++++ b/lib/misc-classes/trait/ReferenceableObject.php
+@@ -54,8 +54,8 @@ trait ReferenceableObject
+         if( $ref === null )
+             return;
+ 
+-        $serial = spl_object_hash($ref);
+-        #$pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
++        // integer key: same identity as spl_object_hash(), without a 32 character string per reference
++        $serial = spl_object_id($ref);
+ 
+         if( isset($this->refrules[$serial]) )
+             return;
+@@ -69,8 +69,7 @@ trait ReferenceableObject
+         if( $ref === null )
+             return;
+ 
+-        $serial = spl_object_hash($ref);
+-        #$pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
++        $serial = spl_object_id($ref);
+ 
+         if( isset($this->refrules[$serial]) )
+         {
+@@ -232,10 +231,11 @@ trait ReferenceableObject
+                 if( get_class( $reference ) == "Address" || get_class( $reference ) == "AddressGroup" )
+                 {
+                     $recursiveReferences = $reference->getReferencesRecursive();
+-                    $references = array_merge( $references, $recursiveReferences );
++                    // keys are object ids: union keeps every object once (array_merge would renumber them)
++                    $references = $references + $recursiveReferences;
+                 }
+             }
+-            $references = array_merge( $references, $this->refrules );
++            $references = $references + $this->refrules;
+         }
+ 
+         return $references;
+diff --git a/lib/object-classes/AppStore.php b/lib/object-classes/AppStore.php
+index c769060..17b60d7 100644
+--- a/lib/object-classes/AppStore.php
++++ b/lib/object-classes/AppStore.php
+@@ -248,515 +248,531 @@ class AppStore extends ObjStore
+ 
+             $app = $this->nameIndex[$appName];
+ 
+-            #xpath /predefined/default
+-            $timeoutcur = DH::findFirstElement('timeout', $appx);
+-            if( $timeoutcur !== FALSE )
+-            {
+-                $app->timeout = $timeoutcur->textContent;
+-            }
+-            $tcptimeoutcur = DH::findFirstElement('tcp-timeout', $appx);
+-            if( $tcptimeoutcur !== FALSE )
+-            {
+-                $app->tcp_timeout = $tcptimeoutcur->textContent;
+-            }
+-            $udptimeoutcur = DH::findFirstElement('udp-timeout', $appx);
+-            if( $udptimeoutcur !== FALSE )
+-            {
+-                $app->udp_timeout = $udptimeoutcur->textContent;
+-            }
+-            $tcp_half_timeoutcur = DH::findFirstElement('tcp-half-closed-timeout', $appx);
+-            if( $tcp_half_timeoutcur !== FALSE )
+-            {
+-                $app->tcp_half_closed_timeout = $tcp_half_timeoutcur->textContent;
+-            }
+-            $tcp_wait_timeoutcur = DH::findFirstElement('tcp-time-wait-timeout', $appx);
+-            if( $tcp_wait_timeoutcur !== FALSE )
+-            {
+-                $app->tcp_time_wait_timeout = $tcp_wait_timeoutcur->textContent;
+-            }
++            $this->load_predefined_app_details( $app, $appx );
++        }
++    }
+ 
+-            $obsolete = DH::findFirstElement('obsolete', $appx);
+-            if( $obsolete !== FALSE )
+-            {
+-                $app->obsolete = $obsolete->textContent;
++    /**
++     * Reads the properties of one predefined application from its XML entry (second pass of load_from_domxml();
++     * also used when predefined.xml is streamed entry by entry, see load_from_predefinedfile()).
++     */
++    /** @ignore used by load_from_predefinedfile() (add() is protected) */
++    public function addPredefinedApp( App $app ): void
++    {
++        $this->add($app);
++    }
+ 
+-                if( $app->obsolete == "yes" )
+-                {
+-                    //Todo: 20211116 - not all obsolete apps are disabled on applipedia, WHY?
+-                    #$this->remove( $app );
+-                    #continue;
+-                }
+-            }
++    public function load_predefined_app_details( App $app, DOMElement $appx ): void
++    {
+ 
++        #xpath /predefined/default
++        $timeoutcur = DH::findFirstElement('timeout', $appx);
++        if( $timeoutcur !== FALSE )
++        {
++            $app->timeout = $timeoutcur->textContent;
++        }
++        $tcptimeoutcur = DH::findFirstElement('tcp-timeout', $appx);
++        if( $tcptimeoutcur !== FALSE )
++        {
++            $app->tcp_timeout = $tcptimeoutcur->textContent;
++        }
++        $udptimeoutcur = DH::findFirstElement('udp-timeout', $appx);
++        if( $udptimeoutcur !== FALSE )
++        {
++            $app->udp_timeout = $udptimeoutcur->textContent;
++        }
++        $tcp_half_timeoutcur = DH::findFirstElement('tcp-half-closed-timeout', $appx);
++        if( $tcp_half_timeoutcur !== FALSE )
++        {
++            $app->tcp_half_closed_timeout = $tcp_half_timeoutcur->textContent;
++        }
++        $tcp_wait_timeoutcur = DH::findFirstElement('tcp-time-wait-timeout', $appx);
++        if( $tcp_wait_timeoutcur !== FALSE )
++        {
++            $app->tcp_time_wait_timeout = $tcp_wait_timeoutcur->textContent;
++        }
+ 
+-            #xpath /predefined
+-            $tmp = DH::findFirstElement('category', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                $app->category = $tmp->textContent;
+-            }
++        $obsolete = DH::findFirstElement('obsolete', $appx);
++        if( $obsolete !== FALSE )
++        {
++            $app->obsolete = $obsolete->textContent;
+ 
+-            $tmp = DH::findFirstElement('subcategory', $appx);
+-            if( $tmp !== FALSE )
++            if( $app->obsolete == "yes" )
+             {
+-                $app->subCategory = $tmp->textContent;
++                //Todo: 20211116 - not all obsolete apps are disabled on applipedia, WHY?
++                #$this->remove( $app );
++                #continue;
+             }
++        }
+ 
+-            $tmp = DH::findFirstElement('technology', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                $app->technology = $tmp->textContent;
+-            }
+ 
++        #xpath /predefined
++        $tmp = DH::findFirstElement('category', $appx);
++        if( $tmp !== FALSE )
++        {
++            $app->category = $tmp->textContent;
++        }
+ 
+-            $tmp = DH::findFirstElement('tag', $appx);
+-            if( $tmp !== FALSE )
++        $tmp = DH::findFirstElement('subcategory', $appx);
++        if( $tmp !== FALSE )
++        {
++            $app->subCategory = $tmp->textContent;
++        }
++
++        $tmp = DH::findFirstElement('technology', $appx);
++        if( $tmp !== FALSE )
++        {
++            $app->technology = $tmp->textContent;
++        }
++
++
++        $tmp = DH::findFirstElement('tag', $appx);
++        if( $tmp !== FALSE )
++        {
++            $tag_array = array();
++            foreach( $tmp->childNodes as $tag )
+             {
+-                $tag_array = array();
+-                foreach( $tmp->childNodes as $tag )
+-                {
+-                    if( $tag->nodeType != XML_ELEMENT_NODE )
+-                        continue;
++                if( $tag->nodeType != XML_ELEMENT_NODE )
++                    continue;
+ 
+-                    /** @var  $tag DOMElement */
+-                    $tag_text = str_replace( "[", "", $tag->textContent);
+-                    $tag_text = str_replace( "]", "", $tag_text);
++                /** @var  $tag DOMElement */
++                $tag_text = str_replace( "[", "", $tag->textContent);
++                $tag_text = str_replace( "]", "", $tag_text);
+ 
+-                    $tag_array[$tag_text] = $tag_text;
+-                }
+-                $app->apptag = $tag_array;
++                $tag_array[$tag_text] = $tag_text;
+             }
++            $app->apptag = $tag_array;
++        }
+ 
+-            // <parent-app>writesonic-base</parent-app>
+-            $tmp = DH::findFirstElement('parent-app', $appx);
+-            if( $tmp !== FALSE )
+-                $app->parent_app = $tmp->textContent;
++        // <parent-app>writesonic-base</parent-app>
++        $tmp = DH::findFirstElement('parent-app', $appx);
++        if( $tmp !== FALSE )
++            $app->parent_app = $tmp->textContent;
+ 
+-            $tmp = DH::findFirstElement('evasive-behavior', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['evasive'] = TRUE;
+-            }
+-            $tmp = DH::findFirstElement('consume-big-bandwidth', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['excessive-bandwidth'] = TRUE;
+-            }
+-            $tmp = DH::findFirstElement('used-by-malware', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['used-by-malware'] = TRUE;
+-            }
+-            $tmp = DH::findFirstElement('able-to-transfer-file', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['transfers-files'] = TRUE;
+-            }
+-            $tmp = DH::findFirstElement('has-known-vulnerability', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['vulnerabilities'] = TRUE;
+-            }
+-            $tmp = DH::findFirstElement('tunnel-other-application', $appx);
+-            if( $tmp !== FALSE )
++        $tmp = DH::findFirstElement('evasive-behavior', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['evasive'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('consume-big-bandwidth', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['excessive-bandwidth'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('used-by-malware', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['used-by-malware'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('able-to-transfer-file', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['transfers-files'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('has-known-vulnerability', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['vulnerabilities'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('tunnel-other-application', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['tunnels-other-apps'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('prone-to-misuse', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['prone-to-misuse'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('is-saas', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['saas'] = TRUE;
++        }
++        $tmp = DH::findFirstElement('pervasive-use', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->_characteristics['widely-used'] = TRUE;
++        }
++
++
++        $tmp = DH::findFirstElement('risk', $appx);
++        if( $tmp !== FALSE )
++        {
++            $app->risk = $tmp->textContent;
++        }
++        $tmp = DH::findFirstElement('virusident-ident', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->virusident = TRUE;
++        }
++        $tmp = DH::findFirstElement('filetype-ident', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->filetypeident = TRUE;
++        }
++        $tmp = DH::findFirstElement('file-forward', $appx);
++        if( $tmp !== FALSE )
++        {
++            if( $tmp->textContent == 'yes' )
++                $app->fileforward = TRUE;
++        }
++
++
++        $cursor = DH::findFirstElement('use-applications', $appx);
++        if( $cursor !== FALSE )
++        {
++            foreach( $cursor->childNodes as $depNode )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['tunnels-other-apps'] = TRUE;
++                if( $depNode->nodeType != XML_ELEMENT_NODE )
++                    continue;
++
++                $depName = $depNode->textContent;
++                if( strlen($depName) < 1 )
++                    derr("dependency name length is < 0");
++                $depApp = $this->findOrCreate($depName);
++                $app->explicitUse[] = $depApp;
+             }
+-            $tmp = DH::findFirstElement('prone-to-misuse', $appx);
+-            if( $tmp !== FALSE )
++        }
++
++        $cursor = DH::findFirstElement('implicit-use-applications', $appx);
++        if( $cursor !== FALSE )
++        {
++            foreach( $cursor->childNodes as $depNode )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['prone-to-misuse'] = TRUE;
++                if( $depNode->nodeType != XML_ELEMENT_NODE )
++                    continue;
++
++                $depName = $depNode->textContent;
++                if( strlen($depName) < 1 )
++                    derr("dependency name length is < 0");
++                $depApp = $this->findOrCreate($depName);
++                $app->implicitUse[] = $depApp;
+             }
+-            $tmp = DH::findFirstElement('is-saas', $appx);
+-            if( $tmp !== FALSE )
++        }
++
++        $cursor = DH::findFirstElement('tunnel-applications', $appx);
++        if( $cursor !== FALSE )
++        {
++            foreach( $cursor->childNodes as $depNode )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['saas'] = TRUE;
++                if( $depNode->nodeType != XML_ELEMENT_NODE )
++                    continue;
++
++                $depName = $depNode->textContent;
++                if( strlen($depName) < 1 )
++                    derr("dependency name length is < 0");
++                $depApp = $this->findOrCreate($depName);
++                $app->tunnelApp[] = $depApp;
+             }
+-            $tmp = DH::findFirstElement('pervasive-use', $appx);
+-            if( $tmp !== FALSE )
++        }
++
++        $cursor = DH::findFirstElement('applicable-decoders', $appx);
++        if( $cursor !== FALSE )
++        {
++            foreach( $cursor->childNodes as $depNode )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->_characteristics['widely-used'] = TRUE;
++                if( $depNode->nodeType != XML_ELEMENT_NODE )
++                    continue;
++
++                $depName = $depNode->textContent;
++                if( strlen($depName) < 1 )
++                    derr("dependency name length is < 0");
++
++                $app->decoder[$depName] = $depName;
+             }
++        }
++        $cursor = DH::findFirstElement('default', $appx);
++        if( $cursor === FALSE )
++            return;
+ 
++        $protocur = DH::findFirstElement('ident-by-ip-protocol', $cursor);
++        if( $protocur !== FALSE )
++        {
++            $app->proto = $protocur->textContent;
++        }
+ 
+-            $tmp = DH::findFirstElement('risk', $appx);
+-            if( $tmp !== FALSE )
++        $icmpcur = DH::findFirstElement('ident-by-icmp-type', $cursor);
++        if( $icmpcur !== FALSE )
++        {
++            $icmptype = DH::findFirstElement('type', $icmpcur);
++            if( $icmptype !== FALSE )
+             {
+-                $app->risk = $tmp->textContent;
++                $app->icmpsub = $icmptype->textContent;
+             }
+-            $tmp = DH::findFirstElement('virusident-ident', $appx);
+-            if( $tmp !== FALSE )
++            //TODO: <code>0</code>
++            $icmpcode = DH::findFirstElement('code', $icmpcur);
++            if( $icmpcode !== FALSE )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->virusident = TRUE;
++                $app->icmpcode = $icmpcode->textContent;
+             }
+-            $tmp = DH::findFirstElement('filetype-ident', $appx);
+-            if( $tmp !== FALSE )
++        }
++
++        $icmp6cur = DH::findFirstElement('ident-by-icmp6-type', $cursor);
++        if( $icmp6cur !== FALSE )
++        {
++            $icmp6type = DH::findFirstElement('type', $icmp6cur);
++            if( $icmp6type !== FALSE )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->filetypeident = TRUE;
++                $app->icmp6sub = $icmp6type->textContent;
+             }
+-            $tmp = DH::findFirstElement('file-forward', $appx);
+-            if( $tmp !== FALSE )
++            //TODO: <code>0</code>
++            $icmp6code = DH::findFirstElement('code', $icmp6cur);
++            if( $icmp6code !== FALSE )
+             {
+-                if( $tmp->textContent == 'yes' )
+-                    $app->fileforward = TRUE;
++                $app->icmp6code = $icmp6code->textContent;
+             }
+ 
++        }
+ 
+-            $cursor = DH::findFirstElement('use-applications', $appx);
+-            if( $cursor !== FALSE )
++        $portcur = DH::findFirstElement('port', $cursor);
++        if( $portcur !== FALSE )
++        {
++            foreach( $portcur->childNodes as $portx )
+             {
+-                foreach( $cursor->childNodes as $depNode )
+-                {
+-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
+-                        continue;
+-
+-                    $depName = $depNode->textContent;
+-                    if( strlen($depName) < 1 )
+-                        derr("dependency name length is < 0");
+-                    $depApp = $this->findOrCreate($depName);
+-                    $app->explicitUse[] = $depApp;
+-                }
+-            }
++                if( $portx->nodeType != XML_ELEMENT_NODE )
++                    continue;
+ 
+-            $cursor = DH::findFirstElement('implicit-use-applications', $appx);
+-            if( $cursor !== FALSE )
+-            {
+-                foreach( $cursor->childNodes as $depNode )
+-                {
+-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
+-                        continue;
+-
+-                    $depName = $depNode->textContent;
+-                    if( strlen($depName) < 1 )
+-                        derr("dependency name length is < 0");
+-                    $depApp = $this->findOrCreate($depName);
+-                    $app->implicitUse[] = $depApp;
+-                }
+-            }
++                /** @var  $portx DOMElement */
+ 
+-            $cursor = DH::findFirstElement('tunnel-applications', $appx);
+-            if( $cursor !== FALSE )
+-            {
+-                foreach( $cursor->childNodes as $depNode )
+-                {
+-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
+-                        continue;
+-
+-                    $depName = $depNode->textContent;
+-                    if( strlen($depName) < 1 )
+-                        derr("dependency name length is < 0");
+-                    $depApp = $this->findOrCreate($depName);
+-                    $app->tunnelApp[] = $depApp;
+-                }
+-            }
++                $ex = explode('/', $portx->textContent);
+ 
+-            $cursor = DH::findFirstElement('applicable-decoders', $appx);
+-            if( $cursor !== FALSE )
+-            {
+-                foreach( $cursor->childNodes as $depNode )
++                if( count($ex) != 2 )
++                    derr('unsupported port description: ' . $portx->textContent);
++
++                if( $ex[0] == 'tcp' )
+                 {
+-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
+-                        continue;
++                    $exports = explode(',', $ex[1]);
++                    $ports = array();
++
++                    if( count($exports) < 1 )
++                        derr('unsupported port description: ' . $portx->textContent);
++
++                    foreach( $exports as &$sport )
++                    {
++                        if( $sport == 'dynamic' )
++                        {
++                            $ports[] = array(0 => 'dynamic');
++                            continue;
++                        }
++                        $tmpex = explode('-', $sport);
++                        if( count($tmpex) < 2 )
++                        {
++                            $ports[] = array(0 => 'single', 1 => $sport);
++                            continue;
++                        }
+ 
+-                    $depName = $depNode->textContent;
+-                    if( strlen($depName) < 1 )
+-                        derr("dependency name length is < 0");
++                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+ 
+-                    $app->decoder[$depName] = $depName;
++                    }
++                    //print_r($ports);
++
++                    if( $app->tcp === null )
++                        $app->tcp = $ports;
++                    else
++                        $app->tcp = array_merge($app->tcp, $ports);
+                 }
+-            }
+-            $cursor = DH::findFirstElement('default', $appx);
+-            if( $cursor === FALSE )
+-                continue;
++                elseif( $ex[0] == 'udp' )
++                {
++                    $exports = explode(',', $ex[1]);
++                    $ports = array();
+ 
+-            $protocur = DH::findFirstElement('ident-by-ip-protocol', $cursor);
+-            if( $protocur !== FALSE )
+-            {
+-                $app->proto = $protocur->textContent;
+-            }
++                    if( count($exports) < 1 )
++                        derr('unsupported port description: ' . $portx->textContent);
+ 
+-            $icmpcur = DH::findFirstElement('ident-by-icmp-type', $cursor);
+-            if( $icmpcur !== FALSE )
+-            {
+-                $icmptype = DH::findFirstElement('type', $icmpcur);
+-                if( $icmptype !== FALSE )
++                    foreach( $exports as &$sport )
++                    {
++                        if( $sport == 'dynamic' )
++                        {
++                            $ports[] = array(0 => 'dynamic');
++                            continue;
++                        }
++                        $tmpex = explode('-', $sport);
++                        if( count($tmpex) < 2 )
++                        {
++                            $ports[] = array(0 => 'single', 1 => $sport);
++                            continue;
++                        }
++
++                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
++
++                    }
++                    //print_r($ports);
++
++                    if( $app->udp === null )
++                        $app->udp = $ports;
++                    else
++                        $app->udp = array_merge($app->udp, $ports);
++                }
++                elseif( $ex[0] == 'icmp' )
+                 {
+-                    $app->icmpsub = $icmptype->textContent;
++                    $app->icmp = $ex[1];
+                 }
+-                //TODO: <code>0</code>
+-                $icmpcode = DH::findFirstElement('code', $icmpcur);
+-                if( $icmpcode !== FALSE )
++                elseif( $ex[0] == 'icmp6' )
+                 {
+-                    $app->icmpcode = $icmpcode->textContent;
++                    $app->icmp6 = $ex[1];
+                 }
++                else
++                    derr('unsupported port description: ' . $portx->textContent);
+             }
++        }
+ 
+-            $icmp6cur = DH::findFirstElement('ident-by-icmp6-type', $cursor);
+-            if( $icmp6cur !== FALSE )
++        $ext_portcur = DH::findFirstElement('extended-port', $cursor);
++        if( $ext_portcur !== FALSE )
++        {
++            foreach( $ext_portcur->childNodes as $portx )
+             {
+-                $icmp6type = DH::findFirstElement('type', $icmp6cur);
+-                if( $icmp6type !== FALSE )
++                $port_secure = FALSE;
++
++                if( $portx->nodeType != XML_ELEMENT_NODE )
++                    continue;
++
++                /** @var  $portx DOMElement */
++
++                $ex = explode('/', $portx->textContent);
++
++                if( count($ex) == 3 )
+                 {
+-                    $app->icmp6sub = $icmp6type->textContent;
++                    $port_secure = TRUE;
++                    unset($ex[2]);
+                 }
+-                //TODO: <code>0</code>
+-                $icmp6code = DH::findFirstElement('code', $icmp6cur);
+-                if( $icmp6code !== FALSE )
++                else
+                 {
+-                    $app->icmp6code = $icmp6code->textContent;
++                    //not interested in the same ports as under <ports>
++                    continue;
+                 }
+ 
+-            }
++                if( count($ex) != 2 )
++                    derr('unsupported port description: ' . $portx->textContent);
+ 
+-            $portcur = DH::findFirstElement('port', $cursor);
+-            if( $portcur !== FALSE )
+-            {
+-                foreach( $portcur->childNodes as $portx )
++                if( $ex[0] == 'tcp' )
+                 {
+-                    if( $portx->nodeType != XML_ELEMENT_NODE )
+-                        continue;
+-
+-                    /** @var  $portx DOMElement */
++                    $exports = explode(',', $ex[1]);
++                    $ports = array();
+ 
+-                    $ex = explode('/', $portx->textContent);
+-
+-                    if( count($ex) != 2 )
++                    if( count($exports) < 1 )
+                         derr('unsupported port description: ' . $portx->textContent);
+ 
+-                    if( $ex[0] == 'tcp' )
++                    foreach( $exports as &$sport )
+                     {
+-                        $exports = explode(',', $ex[1]);
+-                        $ports = array();
+-
+-                        if( count($exports) < 1 )
+-                            derr('unsupported port description: ' . $portx->textContent);
+-
+-                        foreach( $exports as &$sport )
++                        if( $sport == 'dynamic' )
+                         {
+-                            if( $sport == 'dynamic' )
+-                            {
+-                                $ports[] = array(0 => 'dynamic');
+-                                continue;
+-                            }
+-                            $tmpex = explode('-', $sport);
+-                            if( count($tmpex) < 2 )
+-                            {
+-                                $ports[] = array(0 => 'single', 1 => $sport);
+-                                continue;
+-                            }
+-
+-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+-
++                            $ports[] = array(0 => 'dynamic');
++                            continue;
+                         }
+-                        //print_r($ports);
++                        $tmpex = explode('-', $sport);
++                        if( count($tmpex) < 2 )
++                        {
++                            $ports[] = array(0 => 'single', 1 => $sport);
++                            continue;
++                        }
++
++                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+ 
++                    }
++                    //print_r($ports);
++                    if( !$port_secure )
++                    {
+                         if( $app->tcp === null )
+                             $app->tcp = $ports;
+                         else
+                             $app->tcp = array_merge($app->tcp, $ports);
+                     }
+-                    elseif( $ex[0] == 'udp' )
++                    else
+                     {
+-                        $exports = explode(',', $ex[1]);
+-                        $ports = array();
+-
+-                        if( count($exports) < 1 )
+-                            derr('unsupported port description: ' . $portx->textContent);
+-
+-                        foreach( $exports as &$sport )
+-                        {
+-                            if( $sport == 'dynamic' )
+-                            {
+-                                $ports[] = array(0 => 'dynamic');
+-                                continue;
+-                            }
+-                            $tmpex = explode('-', $sport);
+-                            if( count($tmpex) < 2 )
+-                            {
+-                                $ports[] = array(0 => 'single', 1 => $sport);
+-                                continue;
+-                            }
+-
+-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+-
+-                        }
+-                        //print_r($ports);
+-
+-                        if( $app->udp === null )
+-                            $app->udp = $ports;
++                        if( $app->tcp_secure === null )
++                            $app->tcp_secure = $ports;
+                         else
+-                            $app->udp = array_merge($app->udp, $ports);
+-                    }
+-                    elseif( $ex[0] == 'icmp' )
+-                    {
+-                        $app->icmp = $ex[1];
++                            $app->tcp_secure = array_merge($app->tcp_secure, $ports);
+                     }
+-                    elseif( $ex[0] == 'icmp6' )
+-                    {
+-                        $app->icmp6 = $ex[1];
+-                    }
+-                    else
+-                        derr('unsupported port description: ' . $portx->textContent);
+-                }
+-            }
+ 
+-            $ext_portcur = DH::findFirstElement('extended-port', $cursor);
+-            if( $ext_portcur !== FALSE )
+-            {
+-                foreach( $ext_portcur->childNodes as $portx )
++                }
++                elseif( $ex[0] == 'udp' )
+                 {
+-                    $port_secure = FALSE;
+-
+-                    if( $portx->nodeType != XML_ELEMENT_NODE )
+-                        continue;
+-
+-                    /** @var  $portx DOMElement */
+-
+-                    $ex = explode('/', $portx->textContent);
+-
+-                    if( count($ex) == 3 )
+-                    {
+-                        $port_secure = TRUE;
+-                        unset($ex[2]);
+-                    }
+-                    else
+-                    {
+-                        //not interested in the same ports as under <ports>
+-                        continue;
+-                    }
++                    $exports = explode(',', $ex[1]);
++                    $ports = array();
+ 
+-                    if( count($ex) != 2 )
++                    if( count($exports) < 1 )
+                         derr('unsupported port description: ' . $portx->textContent);
+ 
+-                    if( $ex[0] == 'tcp' )
++                    foreach( $exports as &$sport )
+                     {
+-                        $exports = explode(',', $ex[1]);
+-                        $ports = array();
+-
+-                        if( count($exports) < 1 )
+-                            derr('unsupported port description: ' . $portx->textContent);
+-
+-                        foreach( $exports as &$sport )
++                        if( $sport == 'dynamic' )
+                         {
+-                            if( $sport == 'dynamic' )
+-                            {
+-                                $ports[] = array(0 => 'dynamic');
+-                                continue;
+-                            }
+-                            $tmpex = explode('-', $sport);
+-                            if( count($tmpex) < 2 )
+-                            {
+-                                $ports[] = array(0 => 'single', 1 => $sport);
+-                                continue;
+-                            }
+-
+-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+-
++                            $ports[] = array(0 => 'dynamic');
++                            continue;
+                         }
+-                        //print_r($ports);
+-                        if( !$port_secure )
++                        $tmpex = explode('-', $sport);
++                        if( count($tmpex) < 2 )
+                         {
+-                            if( $app->tcp === null )
+-                                $app->tcp = $ports;
+-                            else
+-                                $app->tcp = array_merge($app->tcp, $ports);
+-                        }
+-                        else
+-                        {
+-                            if( $app->tcp_secure === null )
+-                                $app->tcp_secure = $ports;
+-                            else
+-                                $app->tcp_secure = array_merge($app->tcp_secure, $ports);
++                            $ports[] = array(0 => 'single', 1 => $sport);
++                            continue;
+                         }
+ 
++                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
++
+                     }
+-                    elseif( $ex[0] == 'udp' )
++                    //print_r($ports);
++                    if( !$port_secure )
+                     {
+-                        $exports = explode(',', $ex[1]);
+-                        $ports = array();
+-
+-                        if( count($exports) < 1 )
+-                            derr('unsupported port description: ' . $portx->textContent);
+-
+-                        foreach( $exports as &$sport )
+-                        {
+-                            if( $sport == 'dynamic' )
+-                            {
+-                                $ports[] = array(0 => 'dynamic');
+-                                continue;
+-                            }
+-                            $tmpex = explode('-', $sport);
+-                            if( count($tmpex) < 2 )
+-                            {
+-                                $ports[] = array(0 => 'single', 1 => $sport);
+-                                continue;
+-                            }
+-
+-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+-
+-                        }
+-                        //print_r($ports);
+-                        if( !$port_secure )
+-                        {
+-                            if( $app->udp === null )
+-                                $app->udp = $ports;
+-                            else
+-                                $app->udp = array_merge($app->udp, $ports);
+-                        }
++                        if( $app->udp === null )
++                            $app->udp = $ports;
+                         else
+-                        {
+-                            if( $app->udp_secure === null )
+-                                $app->udp_secure = $ports;
+-                            else
+-                                $app->udp_secure = array_merge($app->udp_secure, $ports);
+-                        }
+-
++                            $app->udp = array_merge($app->udp, $ports);
+                     }
+-                    elseif( $ex[0] == 'icmp' )
++                    else
+                     {
+-                        if( !$port_secure )
+-                        {
+-                            $app->icmp = $ex[1];
+-                        }
++                        if( $app->udp_secure === null )
++                            $app->udp_secure = $ports;
+                         else
+-                        {
+-                            $app->icmp_secure = $ex[1];
+-                        }
++                            $app->udp_secure = array_merge($app->udp_secure, $ports);
+                     }
+-                    elseif( $ex[0] == 'icmp6' )
++
++                }
++                elseif( $ex[0] == 'icmp' )
++                {
++                    if( !$port_secure )
+                     {
+-                        if( !$port_secure )
+-                        {
+-                            $app->icmp6 = $ex[1];
+-                        }
+-                        else
+-                        {
+-                            $app->icmp6_secure = $ex[1];
+-                        }
++                        $app->icmp = $ex[1];
+                     }
+                     else
+-                        derr('unsupported port description: ' . $portx->textContent);
++                    {
++                        $app->icmp_secure = $ex[1];
++                    }
+                 }
++                elseif( $ex[0] == 'icmp6' )
++                {
++                    if( !$port_secure )
++                    {
++                        $app->icmp6 = $ex[1];
++                    }
++                    else
++                    {
++                        $app->icmp6_secure = $ex[1];
++                    }
++                }
++                else
++                    derr('unsupported port description: ' . $portx->textContent);
+             }
++        }
+ 
+-            $tmp = DH::findFirstElement('alg-disable-capability', $appx);
+-            if( $tmp !== FALSE )
+-            {
+-                $app->alg_disable_capability = TRUE;
+-            }
+-
++        $tmp = DH::findFirstElement('alg-disable-capability', $appx);
++        if( $tmp !== FALSE )
++        {
++            $app->alg_disable_capability = TRUE;
+         }
++
+     }
+ 
+     public function load_containers_from_domxml(&$xmlDom)
+@@ -871,12 +887,40 @@ class AppStore extends ObjStore
+             $filename = dirname(__FILE__) . '/predefined.xml';
+         }
+ 
+-        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $isDefaultFile = realpath($filename) === realpath(dirname(__FILE__) . '/predefined.xml');
+ 
+-        $cursor = DH::findXPathSingleEntryOrDie('/predefined/application', $xmlDoc);
++        if( $isDefaultFile )
++        {
++            // streamed entry by entry: the 'application' section (~13 MB XML, ~110 MB as DOM) is never held as a whole.
++            // Same two passes as load_from_domxml(): first every name (dependencies refer to apps read later), then the details.
++            $store = $this;
++            $found = PH::eachPredefinedEntry( array('application'), function( $appName, $appx ) use ( $store )
++            {
++                if( $appName === null || $appName === '' )
++                    derr("app name not found\n");
++                $app = new App($appName, $store);
++                $app->type = 'predefined';
++                $store->addPredefinedApp($app);
++            }, FALSE );
++            if( !$found )
++                derr( "cannot find /predefined/application in '".$filename."'", null, FALSE );
++
++            PH::eachPredefinedEntry( array('application'), function( $appName, $appx ) use ( $store )
++            {
++                $app = $store->nameIndex[$appName];
++                $store->load_predefined_app_details( $app, $appx );
++            } );
+ 
+-        $this->load_from_domxml($cursor);
++            $xmlDoc = PH::getPredefinedXmlDoc($filename, array('application-container', 'application-version'));
++        }
++        else
++        {
++            $xmlDoc = PH::getPredefinedXmlDoc($filename);
++
++            $cursor = DH::findXPathSingleEntryOrDie('/predefined/application', $xmlDoc);
++
++            $this->load_from_domxml($cursor);
++        }
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/application-container', $xmlDoc);
+ 
+@@ -889,6 +933,11 @@ class AppStore extends ObjStore
+         // fixing someone mess ;)
+         $app = $this->findOrCreate('ftp');
+         $app->tcp[] = array(0 => 'dynamic');
++
++        // the predefined apps are completely parsed into their properties; dropping the node pointers frees the
++        // DOM of the 'application' section (~110 MB). Custom apps of a configuration keep their xmlroot.
++        foreach( $this->o as $predefinedApp )
++            $predefinedApp->xmlroot = null;
+     }
+ 
+     /**
+diff --git a/lib/object-classes/LogProfileStore.php b/lib/object-classes/LogProfileStore.php
+index ffb0ab0..20286d6 100644
+--- a/lib/object-classes/LogProfileStore.php
++++ b/lib/object-classes/LogProfileStore.php
+@@ -443,7 +443,7 @@ class LogProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('log-settings'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/log-settings/profiles', $xmlDoc);
+diff --git a/lib/object-classes/SecurityProfileStore.php b/lib/object-classes/SecurityProfileStore.php
+index e0470db..49f21ac 100644
+--- a/lib/object-classes/SecurityProfileStore.php
++++ b/lib/object-classes/SecurityProfileStore.php
+@@ -313,7 +313,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('pan-url-categories'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
+@@ -329,7 +329,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/url-filtering', $xmlDoc);
+@@ -370,7 +370,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
+@@ -386,7 +386,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
+@@ -402,7 +402,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/spyware', $xmlDoc);
+@@ -418,7 +418,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/vulnerability', $xmlDoc);
+@@ -434,7 +434,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/file-blocking', $xmlDoc);
+@@ -450,7 +450,7 @@ class SecurityProfileStore extends ObjStore
+         }
+ 
+         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
+ 
+ 
+         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/wildfire-analysis', $xmlDoc);
+diff --git a/lib/object-classes/Service.php b/lib/object-classes/Service.php
+index 349008d..cc2a1d0 100644
+--- a/lib/object-classes/Service.php
++++ b/lib/object-classes/Service.php
+@@ -40,13 +40,14 @@ class Service
+     public $childancestor;
+ 
+     /** @var null|DOMElement */
+-    public $protocolRoot = null;
++    // protocolRoot / tcpOrUdpRoot / dportroot are not stored any more (each held DOM node costs ~0.5 KB in PHP),
++    // they are looked up from xmlroot when needed, see __get(), protocolNode(), tcpOrUdpNode()
+ 
+     /** @var null|DOMElement */
+-    protected $tcpOrUdpRoot = null;
++
+ 
+     /** @var null|DOMElement */
+-    public $dportroot = null;
++
+ 
+     public $type = '';
+ 
+@@ -100,6 +101,37 @@ class Service
+      * @param DOMElement $xml
+      * @throws Exception
+      */
++    /** <protocol> of this service */
++    private function protocolNode()
++    {
++        return DH::findFirstElementOrDie('protocol', $this->xmlroot);
++    }
++
++    /** <tcp> or <udp> below <protocol> */
++    private function tcpOrUdpNode()
++    {
++        $node = DH::findFirstElement($this->_protocol, $this->protocolNode());
++        if( $node === FALSE )
++            derr("Error: <".$this->_protocol."> not found for service " . $this->name);
++        return $node;
++    }
++
++    /**
++     * compatibility for the former public properties protocolRoot / tcpOrUdpRoot / dportroot / overrideroot nodes
++     */
++    public function __get($name)
++    {
++        if( $name == 'protocolRoot' )
++            return $this->xmlroot === null ? null : $this->protocolNode();
++        if( $name == 'tcpOrUdpRoot' )
++            return $this->xmlroot === null ? null : $this->tcpOrUdpNode();
++        if( $name == 'dportroot' )
++            return $this->xmlroot === null ? null : DH::findFirstElement('port', $this->tcpOrUdpNode());
++
++        trigger_error("Undefined property: ".get_class($this)."::\$".$name, E_USER_NOTICE);
++        return null;
++    }
++
+     public function load_from_domxml($xml)
+     {
+         $this->xmlroot = $xml;
+@@ -113,23 +145,23 @@ class Service
+         //
+         // seeking <protocol>
+         //
+-        $this->protocolRoot = DH::findFirstElementOrDie('protocol', $xml);
++        $protocolRoot = DH::findFirstElementOrDie('protocol', $xml);
+ 
+-        $this->tcpOrUdpRoot = DH::findFirstElement('tcp', $this->protocolRoot);
++        $tcpOrUdpRoot = DH::findFirstElement('tcp', $protocolRoot);
+ 
+-        if( $this->tcpOrUdpRoot === FALSE )
++        if( $tcpOrUdpRoot === FALSE )
+         {
+             $this->_protocol = 'udp';
+-            $this->tcpOrUdpRoot = DH::findFirstElement('udp', $this->protocolRoot);
++            $tcpOrUdpRoot = DH::findFirstElement('udp', $protocolRoot);
+         }
+-        if( $this->tcpOrUdpRoot === FALSE )
++        if( $tcpOrUdpRoot === FALSE )
+             derr("Error: <tcp> or <udp> not found for service" . $this->name . "\n");
+ 
+-        $this->dportroot = DH::findFirstElementOrDie('port', $this->tcpOrUdpRoot);
++        $dportroot = DH::findFirstElementOrDie('port', $tcpOrUdpRoot);
+ 
+-        $this->_dport = $this->dportroot->textContent;
++        $this->_dport = $dportroot->textContent;
+ 
+-        $sportroot = DH::findFirstElement('source-port', $this->tcpOrUdpRoot);
++        $sportroot = DH::findFirstElement('source-port', $tcpOrUdpRoot);
+         if( $sportroot !== FALSE )
+         {
+             $this->_sport = $sportroot->textContent;
+@@ -142,10 +174,12 @@ class Service
+                 $this->tags->load_from_domxml($tagRoot);
+         }
+ 
+-        $this->overrideroot = DH::findFirstElement('override', $this->tcpOrUdpRoot);
+-        if( $this->overrideroot !== FALSE )
++        $overrideroot = DH::findFirstElement('override', $tcpOrUdpRoot);
++        // only a flag is kept; the <override> node is looked up again where needed
++        $this->overrideroot = ( $overrideroot !== FALSE );
++        if( $overrideroot !== FALSE )
+         {
+-            $override_noyes = DH::findFirstElement('yes', $this->overrideroot);
++            $override_noyes = DH::findFirstElement('yes', $overrideroot);
+             if( $override_noyes !== FALSE )
+             {
+                 $timeoutroot = DH::findFirstElement('timeout', $override_noyes);
+@@ -210,7 +244,7 @@ class Service
+             return FALSE;
+ 
+         $this->_dport = $newPorts;
+-        $tmp = DH::findFirstElementOrCreate('port', $this->tcpOrUdpRoot, $this->_dport);
++        $tmp = DH::findFirstElementOrCreate('port', $this->tcpOrUdpNode(), $this->_dport);
+         DH::setDomNodeText($tmp, $newPorts);
+         return TRUE;
+     }
+@@ -237,9 +271,9 @@ class Service
+                 return FALSE;
+ 
+             $this->_sport = $newPorts;
+-            $sportroot = DH::findFirstElement('source-port', $this->tcpOrUdpRoot);
++            $sportroot = DH::findFirstElement('source-port', $this->tcpOrUdpNode());
+             if( $sportroot !== FALSE )
+-                $this->tcpOrUdpRoot->removeChild($sportroot);
++                $this->tcpOrUdpNode()->removeChild($sportroot);
+ 
+             return TRUE;
+         }
+@@ -248,10 +282,10 @@ class Service
+ 
+         if( strlen($this->_sport) == 0 )
+         {
+-            DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpRoot, $newPorts);
++            DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpNode(), $newPorts);
+             return TRUE;
+         }
+-        $sportroot = DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpRoot);
++        $sportroot = DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpNode());
+         DH::setDomNodeText($sportroot, $newPorts);
+         return TRUE;
+     }
+@@ -298,14 +332,15 @@ class Service
+ 
+         $this->_protocol = $newProtocol;
+ 
+-        DH::clearDomNodeChilds($this->protocolRoot);
++        $protocolRoot = $this->protocolNode();
++        DH::clearDomNodeChilds($protocolRoot);
+ 
+-        $this->tcpOrUdpRoot = DH::createElement($this->protocolRoot, $this->_protocol);
++        $tcpOrUdpRoot = DH::createElement($protocolRoot, $this->_protocol);
+ 
+-        DH::createElement($this->tcpOrUdpRoot, 'port', $this->_dport);
++        DH::createElement($tcpOrUdpRoot, 'port', $this->_dport);
+ 
+         if( strlen($this->_sport) > 0 )
+-            DH::createElement($this->tcpOrUdpRoot, 'source-port', $this->_dport);
++            DH::createElement($tcpOrUdpRoot, 'source-port', $this->_dport);
+     }
+ 
+     /**
+@@ -378,7 +413,7 @@ class Service
+         }
+ 
+ 
+-        $tmp_override = DH::findFirstElementOrCreate('override', $this->tcpOrUdpRoot);
++        $tmp_override = DH::findFirstElementOrCreate('override', $this->tcpOrUdpNode());
+         $tmpno = DH::findFirstElement('no', $tmp_override);
+         if( $tmpno !== false )
+             $tmp_override->removeChild( $tmpno );
+@@ -488,7 +523,7 @@ class Service
+         $this->_halfclose_timeout = "";
+         $this->_timewait_timeout = "";
+ 
+-        $tmp = DH::findFirstElement('override', $this->tcpOrUdpRoot);
++        $tmp = DH::findFirstElement('override', $this->tcpOrUdpNode());
+         if( $tmp !== false )
+         {
+             $tmpyes = DH::findFirstElement('yes', $tmp);
+diff --git a/lib/object-classes/ThreatStore.php b/lib/object-classes/ThreatStore.php
+index 8d050eb..a61d270 100644
+--- a/lib/object-classes/ThreatStore.php
++++ b/lib/object-classes/ThreatStore.php
+@@ -26,11 +26,125 @@ class ThreatStore extends ObjStore
+ 
+         self::$predefinedStore = new ThreatStore( $owner );
+         self::$predefinedStore->setName('predefined Threats');
+-        self::$predefinedStore->load_from_predefinedfile();
++        // ~35 000 threats: read from predefined.xml on first use only, see ensureLoaded()
++        self::$predefinedStore->loadPredefinedOnFirstUse = TRUE;
+ 
+         return self::$predefinedStore;
+     }
+ 
++    /** @var bool the predefined threats are not read yet, ensureLoaded() reads them */
++    public $loadPredefinedOnFirstUse = FALSE;
++
++    public function ensureLoaded(): void
++    {
++        if( !$this->loadPredefinedOnFirstUse )
++            return;
++        $this->loadPredefinedOnFirstUse = FALSE;
++        $this->load_from_predefinedfile();
++    }
++
++    public function count()
++    {
++        $this->ensureLoaded();
++        return parent::count();
++    }
++
++    public function countUnused()
++    {
++        $this->ensureLoaded();
++        return parent::countUnused();
++    }
++
++    public function find($name, $ref = null, $nested = TRUE)
++    {
++        $this->ensureLoaded();
++        return parent::find($name, $ref, $nested);
++    }
++
++    public function findOrCreate($name, $ref = null)
++    {
++        $this->ensureLoaded();
++        return parent::findOrCreate($name, $ref);
++    }
++
++    public function inStore($Obj)
++    {
++        $this->ensureLoaded();
++        return parent::inStore($Obj);
++    }
++
++    public function getAll()
++    {
++        $this->ensureLoaded();
++        return parent::getAll();
++    }
++
++    public function display($indentSpace = 0)
++    {
++        $this->ensureLoaded();
++        return parent::display($indentSpace);
++    }
++
++    public function &resultingObjectSet()
++    {
++        $this->ensureLoaded();
++        $ret = &parent::resultingObjectSet();
++        return $ret;
++    }
++
++    /**
++     * XML of a predefined threat (the DOM is not kept after loading, see load_from_predefinedfile()).
++     * @return DOMElement|null
++     */
++    public function predefinedThreatXml( Threat $threat )
++    {
++        if( $threat->xmlroot !== null )
++            return $threat->xmlroot;
++
++        // only 'display-xml' needs it: the section is read once, then kept for further threats
++        if( $this->predefinedThreatsXml === null )
++            $this->predefinedThreatsXml = PH::getPredefinedXmlDoc( null, array('threats') );
++
++        $name = $threat->name();
++        foreach( array('vulnerability', 'phone-home') as $section )
++        {
++            $node = DH::findXPathSingleEntry( "/predefined/threats/".$section."/entry[@name=".self::xpathLiteral($name)."]", $this->predefinedThreatsXml );
++            if( $node !== FALSE && $node !== null )
++                return $node;
++        }
++        return null;
++    }
++
++    /** @var DOMDocument|null 'threats' section of predefined.xml, read by predefinedThreatXml() on first use */
++    private $predefinedThreatsXml = null;
++
++    private static function xpathLiteral( $value ): string
++    {
++        if( strpos($value, "'") === FALSE )
++            return "'".$value."'";
++        if( strpos($value, '"') === FALSE )
++            return '"'.$value.'"';
++        return "concat('".str_replace("'", "',\"'\",'", $value)."')";
++    }
++
++    public function load_phone_home_entry( DOMElement $threatx ): Threat
++    {
++        $threatName = DH::findAttribute('name', $threatx);
++        if( $threatName === FALSE )
++            derr("threat name not found\n");
++
++        $threat = new ThreatSpyware($threatName, $this);
++        $threat->type = 'spyware';
++        $threat->xmlroot = $threatx;
++        $threat->spyware_load_from_domxml( $threatx );
++
++        $this->add($threat);
++
++        $this->phoneHome[] = $threat;
++
++        return $threat;
++    }
++
+ 
+     public function __construct($owner)
+     {
+@@ -49,14 +163,36 @@ class ThreatStore extends ObjStore
+             $filename = dirname(__FILE__) . '/predefined.xml';
+         }
+ 
+-        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
++        if( realpath($filename) === realpath(dirname(__FILE__) . '/predefined.xml') )
++        {
++            // streamed entry by entry: the 'threats' section (~15 MB XML, ~130 MB as DOM) is never held as a whole
++            $store = $this;
++            foreach( array('vulnerability' => 'load_vulnerability_entry', 'phone-home' => 'load_phone_home_entry') as $section => $method )
++            {
++                $found = PH::eachPredefinedEntry( array('threats', $section), function( $name, $threatx ) use ( $store, $method )
++                {
++                    // node not kept: each entry has its own small document, freed right away
++                    $store->$method( $threatx )->xmlroot = null;
++                } );
++                if( !$found )
++                    derr( "cannot find /predefined/threats/".$section." in '".$filename."'", null, FALSE );
++            }
++        }
++        else
++        {
++            $xmlDoc = PH::getPredefinedXmlDoc($filename);
++
++            $cursor = DH::findXPathSingleEntryOrDie('/predefined/threats/vulnerability', $xmlDoc);
++            $this->load_vulnerability_from_domxml($cursor);
+ 
+-        $cursor = DH::findXPathSingleEntryOrDie('/predefined/threats/vulnerability', $xmlDoc);
+-        $this->load_vulnerability_from_domxml($cursor);
++            $cursor = DH::findXPathSingleEntryOrDie('/predefined/threats/phone-home', $xmlDoc);
++            $this->load_phone_home_containers_from_domxml($cursor);
++        }
+ 
+-        $cursor = DH::findXPathSingleEntryOrDie('/predefined/threats/phone-home', $xmlDoc);
+-        $this->load_phone_home_containers_from_domxml($cursor);
++        // threats are completely parsed into their properties; dropping the node pointers frees the DOM of the
++        // 'threats' section (~130 MB). 'display-xml' reads the node again, see predefinedThreatXml().
++        foreach( $this->o as $threat )
++            $threat->xmlroot = null;
+ 
+ 
+         #$appid_version = DH::findXPathSingleEntryOrDie('/predefined/application-version', $xmlDoc);
+@@ -71,19 +207,26 @@ class ThreatStore extends ObjStore
+             if( $threatx->nodeType != XML_ELEMENT_NODE )
+                 continue;
+ 
+-            $threatName = DH::findAttribute('name', $threatx);
+-            if( $threatName === FALSE )
+-                derr("threat name not found\n");
++            $this->load_vulnerability_entry( $threatx );
++        }
++    }
+ 
+-            $threat = new ThreatVulnerability($threatName, $this);
+-            $threat->type = 'vulnerability';
+-            $threat->xmlroot = $threatx;
+-            $threat->vulnerability_load_from_domxml( $threatx );
++    public function load_vulnerability_entry( DOMElement $threatx ): Threat
++    {
++        $threatName = DH::findAttribute('name', $threatx);
++        if( $threatName === FALSE )
++            derr("threat name not found\n");
+ 
+-            $this->add($threat);
++        $threat = new ThreatVulnerability($threatName, $this);
++        $threat->type = 'vulnerability';
++        $threat->xmlroot = $threatx;
++        $threat->vulnerability_load_from_domxml( $threatx );
+ 
+-            $this->vulnerability[] = $threat;
+-        }
++        $this->add($threat);
++
++        $this->vulnerability[] = $threat;
++
++        return $threat;
+     }
+ 
+     public function load_phone_home_containers_from_domxml(DOMElement $xml)
+@@ -93,18 +236,7 @@ class ThreatStore extends ObjStore
+             if( $threatx->nodeType != XML_ELEMENT_NODE )
+                 continue;
+ 
+-            $threatName = DH::findAttribute('name', $threatx);
+-            if( $threatName === FALSE )
+-                derr("threat name not found\n");
+-
+-            $threat = new ThreatSpyware($threatName, $this);
+-            $threat->type = 'spyware';
+-            $threat->xmlroot = $threatx;
+-            $threat->spyware_load_from_domxml( $threatx );
+-
+-            $this->add($threat);
+-
+-            $this->phoneHome[] = $threat;
++            $this->load_phone_home_entry( $threatx );
+         }
+     }
+ }
+diff --git a/utils/common/actions-service.php b/utils/common/actions-service.php
+index 0a6d6f6..0d49582 100644
+--- a/utils/common/actions-service.php
++++ b/utils/common/actions-service.php
+@@ -1618,9 +1618,10 @@ ServiceCallContext::$supportedActions[] = array(
+             return null;
+         }
+ 
+-        if( $object->overrideroot !== FALSE )
++        $overrideroot = $object->overrideroot ? DH::findFirstElement('override', $object->tcpOrUdpRoot) : FALSE;
++        if( $overrideroot !== FALSE )
+         {
+-            $override_noyes = DH::findFirstElement('yes', $object->overrideroot);
++            $override_noyes = DH::findFirstElement('yes', $overrideroot);
+             if( $override_noyes !== FALSE )
+             {
+                 if( $context->isAPI )
+diff --git a/utils/common/actions-threat.php b/utils/common/actions-threat.php
+index 125bef9..9c36cad 100644
+--- a/utils/common/actions-threat.php
++++ b/utils/common/actions-threat.php
+@@ -227,7 +227,12 @@ ThreatCallContext::$supportedActions[] = array(
+     {
+         $threat = $context->object;
+ 
+-        DH::DEBUGprintDOMDocument($threat->xmlroot);
++        $xml = $threat->xmlroot;
++        if( $xml === null && $threat->owner instanceof ThreatStore )
++            $xml = $threat->owner->predefinedThreatXml( $threat );
++
++        if( $xml !== null )
++            DH::DEBUGprintDOMDocument($xml);
+ 
+     }
+ );
+\ No newline at end of file

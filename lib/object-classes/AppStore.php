@@ -248,515 +248,531 @@ class AppStore extends ObjStore
 
             $app = $this->nameIndex[$appName];
 
-            #xpath /predefined/default
-            $timeoutcur = DH::findFirstElement('timeout', $appx);
-            if( $timeoutcur !== FALSE )
+            $this->load_predefined_app_details( $app, $appx );
+        }
+    }
+
+    /**
+     * Reads the properties of one predefined application from its XML entry (second pass of load_from_domxml();
+     * also used when predefined.xml is streamed entry by entry, see load_from_predefinedfile()).
+     */
+    /** @ignore used by load_from_predefinedfile() (add() is protected) */
+    public function addPredefinedApp( App $app ): void
+    {
+        $this->add($app);
+    }
+
+    public function load_predefined_app_details( App $app, DOMElement $appx ): void
+    {
+
+        #xpath /predefined/default
+        $timeoutcur = DH::findFirstElement('timeout', $appx);
+        if( $timeoutcur !== FALSE )
+        {
+            $app->timeout = $timeoutcur->textContent;
+        }
+        $tcptimeoutcur = DH::findFirstElement('tcp-timeout', $appx);
+        if( $tcptimeoutcur !== FALSE )
+        {
+            $app->tcp_timeout = $tcptimeoutcur->textContent;
+        }
+        $udptimeoutcur = DH::findFirstElement('udp-timeout', $appx);
+        if( $udptimeoutcur !== FALSE )
+        {
+            $app->udp_timeout = $udptimeoutcur->textContent;
+        }
+        $tcp_half_timeoutcur = DH::findFirstElement('tcp-half-closed-timeout', $appx);
+        if( $tcp_half_timeoutcur !== FALSE )
+        {
+            $app->tcp_half_closed_timeout = $tcp_half_timeoutcur->textContent;
+        }
+        $tcp_wait_timeoutcur = DH::findFirstElement('tcp-time-wait-timeout', $appx);
+        if( $tcp_wait_timeoutcur !== FALSE )
+        {
+            $app->tcp_time_wait_timeout = $tcp_wait_timeoutcur->textContent;
+        }
+
+        $obsolete = DH::findFirstElement('obsolete', $appx);
+        if( $obsolete !== FALSE )
+        {
+            $app->obsolete = $obsolete->textContent;
+
+            if( $app->obsolete == "yes" )
             {
-                $app->timeout = $timeoutcur->textContent;
+                //Todo: 20211116 - not all obsolete apps are disabled on applipedia, WHY?
+                #$this->remove( $app );
+                #continue;
             }
-            $tcptimeoutcur = DH::findFirstElement('tcp-timeout', $appx);
-            if( $tcptimeoutcur !== FALSE )
+        }
+
+
+        #xpath /predefined
+        $tmp = DH::findFirstElement('category', $appx);
+        if( $tmp !== FALSE )
+        {
+            $app->category = $tmp->textContent;
+        }
+
+        $tmp = DH::findFirstElement('subcategory', $appx);
+        if( $tmp !== FALSE )
+        {
+            $app->subCategory = $tmp->textContent;
+        }
+
+        $tmp = DH::findFirstElement('technology', $appx);
+        if( $tmp !== FALSE )
+        {
+            $app->technology = $tmp->textContent;
+        }
+
+
+        $tmp = DH::findFirstElement('tag', $appx);
+        if( $tmp !== FALSE )
+        {
+            $tag_array = array();
+            foreach( $tmp->childNodes as $tag )
             {
-                $app->tcp_timeout = $tcptimeoutcur->textContent;
+                if( $tag->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                /** @var  $tag DOMElement */
+                $tag_text = str_replace( "[", "", $tag->textContent);
+                $tag_text = str_replace( "]", "", $tag_text);
+
+                $tag_array[$tag_text] = $tag_text;
             }
-            $udptimeoutcur = DH::findFirstElement('udp-timeout', $appx);
-            if( $udptimeoutcur !== FALSE )
+            $app->apptag = $tag_array;
+        }
+
+        // <parent-app>writesonic-base</parent-app>
+        $tmp = DH::findFirstElement('parent-app', $appx);
+        if( $tmp !== FALSE )
+            $app->parent_app = $tmp->textContent;
+
+        $tmp = DH::findFirstElement('evasive-behavior', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['evasive'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('consume-big-bandwidth', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['excessive-bandwidth'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('used-by-malware', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['used-by-malware'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('able-to-transfer-file', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['transfers-files'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('has-known-vulnerability', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['vulnerabilities'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('tunnel-other-application', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['tunnels-other-apps'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('prone-to-misuse', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['prone-to-misuse'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('is-saas', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['saas'] = TRUE;
+        }
+        $tmp = DH::findFirstElement('pervasive-use', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->_characteristics['widely-used'] = TRUE;
+        }
+
+
+        $tmp = DH::findFirstElement('risk', $appx);
+        if( $tmp !== FALSE )
+        {
+            $app->risk = $tmp->textContent;
+        }
+        $tmp = DH::findFirstElement('virusident-ident', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->virusident = TRUE;
+        }
+        $tmp = DH::findFirstElement('filetype-ident', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->filetypeident = TRUE;
+        }
+        $tmp = DH::findFirstElement('file-forward', $appx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == 'yes' )
+                $app->fileforward = TRUE;
+        }
+
+
+        $cursor = DH::findFirstElement('use-applications', $appx);
+        if( $cursor !== FALSE )
+        {
+            foreach( $cursor->childNodes as $depNode )
             {
-                $app->udp_timeout = $udptimeoutcur->textContent;
+                if( $depNode->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $depName = $depNode->textContent;
+                if( strlen($depName) < 1 )
+                    derr("dependency name length is < 0");
+                $depApp = $this->findOrCreate($depName);
+                $app->explicitUse[] = $depApp;
             }
-            $tcp_half_timeoutcur = DH::findFirstElement('tcp-half-closed-timeout', $appx);
-            if( $tcp_half_timeoutcur !== FALSE )
+        }
+
+        $cursor = DH::findFirstElement('implicit-use-applications', $appx);
+        if( $cursor !== FALSE )
+        {
+            foreach( $cursor->childNodes as $depNode )
             {
-                $app->tcp_half_closed_timeout = $tcp_half_timeoutcur->textContent;
+                if( $depNode->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $depName = $depNode->textContent;
+                if( strlen($depName) < 1 )
+                    derr("dependency name length is < 0");
+                $depApp = $this->findOrCreate($depName);
+                $app->implicitUse[] = $depApp;
             }
-            $tcp_wait_timeoutcur = DH::findFirstElement('tcp-time-wait-timeout', $appx);
-            if( $tcp_wait_timeoutcur !== FALSE )
+        }
+
+        $cursor = DH::findFirstElement('tunnel-applications', $appx);
+        if( $cursor !== FALSE )
+        {
+            foreach( $cursor->childNodes as $depNode )
             {
-                $app->tcp_time_wait_timeout = $tcp_wait_timeoutcur->textContent;
+                if( $depNode->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $depName = $depNode->textContent;
+                if( strlen($depName) < 1 )
+                    derr("dependency name length is < 0");
+                $depApp = $this->findOrCreate($depName);
+                $app->tunnelApp[] = $depApp;
+            }
+        }
+
+        $cursor = DH::findFirstElement('applicable-decoders', $appx);
+        if( $cursor !== FALSE )
+        {
+            foreach( $cursor->childNodes as $depNode )
+            {
+                if( $depNode->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $depName = $depNode->textContent;
+                if( strlen($depName) < 1 )
+                    derr("dependency name length is < 0");
+
+                $app->decoder[$depName] = $depName;
+            }
+        }
+        $cursor = DH::findFirstElement('default', $appx);
+        if( $cursor === FALSE )
+            return;
+
+        $protocur = DH::findFirstElement('ident-by-ip-protocol', $cursor);
+        if( $protocur !== FALSE )
+        {
+            $app->proto = $protocur->textContent;
+        }
+
+        $icmpcur = DH::findFirstElement('ident-by-icmp-type', $cursor);
+        if( $icmpcur !== FALSE )
+        {
+            $icmptype = DH::findFirstElement('type', $icmpcur);
+            if( $icmptype !== FALSE )
+            {
+                $app->icmpsub = $icmptype->textContent;
+            }
+            //TODO: <code>0</code>
+            $icmpcode = DH::findFirstElement('code', $icmpcur);
+            if( $icmpcode !== FALSE )
+            {
+                $app->icmpcode = $icmpcode->textContent;
+            }
+        }
+
+        $icmp6cur = DH::findFirstElement('ident-by-icmp6-type', $cursor);
+        if( $icmp6cur !== FALSE )
+        {
+            $icmp6type = DH::findFirstElement('type', $icmp6cur);
+            if( $icmp6type !== FALSE )
+            {
+                $app->icmp6sub = $icmp6type->textContent;
+            }
+            //TODO: <code>0</code>
+            $icmp6code = DH::findFirstElement('code', $icmp6cur);
+            if( $icmp6code !== FALSE )
+            {
+                $app->icmp6code = $icmp6code->textContent;
             }
 
-            $obsolete = DH::findFirstElement('obsolete', $appx);
-            if( $obsolete !== FALSE )
-            {
-                $app->obsolete = $obsolete->textContent;
+        }
 
-                if( $app->obsolete == "yes" )
+        $portcur = DH::findFirstElement('port', $cursor);
+        if( $portcur !== FALSE )
+        {
+            foreach( $portcur->childNodes as $portx )
+            {
+                if( $portx->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                /** @var  $portx DOMElement */
+
+                $ex = explode('/', $portx->textContent);
+
+                if( count($ex) != 2 )
+                    derr('unsupported port description: ' . $portx->textContent);
+
+                if( $ex[0] == 'tcp' )
                 {
-                    //Todo: 20211116 - not all obsolete apps are disabled on applipedia, WHY?
-                    #$this->remove( $app );
-                    #continue;
-                }
-            }
+                    $exports = explode(',', $ex[1]);
+                    $ports = array();
 
-
-            #xpath /predefined
-            $tmp = DH::findFirstElement('category', $appx);
-            if( $tmp !== FALSE )
-            {
-                $app->category = $tmp->textContent;
-            }
-
-            $tmp = DH::findFirstElement('subcategory', $appx);
-            if( $tmp !== FALSE )
-            {
-                $app->subCategory = $tmp->textContent;
-            }
-
-            $tmp = DH::findFirstElement('technology', $appx);
-            if( $tmp !== FALSE )
-            {
-                $app->technology = $tmp->textContent;
-            }
-
-
-            $tmp = DH::findFirstElement('tag', $appx);
-            if( $tmp !== FALSE )
-            {
-                $tag_array = array();
-                foreach( $tmp->childNodes as $tag )
-                {
-                    if( $tag->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    /** @var  $tag DOMElement */
-                    $tag_text = str_replace( "[", "", $tag->textContent);
-                    $tag_text = str_replace( "]", "", $tag_text);
-
-                    $tag_array[$tag_text] = $tag_text;
-                }
-                $app->apptag = $tag_array;
-            }
-
-            // <parent-app>writesonic-base</parent-app>
-            $tmp = DH::findFirstElement('parent-app', $appx);
-            if( $tmp !== FALSE )
-                $app->parent_app = $tmp->textContent;
-
-            $tmp = DH::findFirstElement('evasive-behavior', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['evasive'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('consume-big-bandwidth', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['excessive-bandwidth'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('used-by-malware', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['used-by-malware'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('able-to-transfer-file', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['transfers-files'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('has-known-vulnerability', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['vulnerabilities'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('tunnel-other-application', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['tunnels-other-apps'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('prone-to-misuse', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['prone-to-misuse'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('is-saas', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['saas'] = TRUE;
-            }
-            $tmp = DH::findFirstElement('pervasive-use', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->_characteristics['widely-used'] = TRUE;
-            }
-
-
-            $tmp = DH::findFirstElement('risk', $appx);
-            if( $tmp !== FALSE )
-            {
-                $app->risk = $tmp->textContent;
-            }
-            $tmp = DH::findFirstElement('virusident-ident', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->virusident = TRUE;
-            }
-            $tmp = DH::findFirstElement('filetype-ident', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->filetypeident = TRUE;
-            }
-            $tmp = DH::findFirstElement('file-forward', $appx);
-            if( $tmp !== FALSE )
-            {
-                if( $tmp->textContent == 'yes' )
-                    $app->fileforward = TRUE;
-            }
-
-
-            $cursor = DH::findFirstElement('use-applications', $appx);
-            if( $cursor !== FALSE )
-            {
-                foreach( $cursor->childNodes as $depNode )
-                {
-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $depName = $depNode->textContent;
-                    if( strlen($depName) < 1 )
-                        derr("dependency name length is < 0");
-                    $depApp = $this->findOrCreate($depName);
-                    $app->explicitUse[] = $depApp;
-                }
-            }
-
-            $cursor = DH::findFirstElement('implicit-use-applications', $appx);
-            if( $cursor !== FALSE )
-            {
-                foreach( $cursor->childNodes as $depNode )
-                {
-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $depName = $depNode->textContent;
-                    if( strlen($depName) < 1 )
-                        derr("dependency name length is < 0");
-                    $depApp = $this->findOrCreate($depName);
-                    $app->implicitUse[] = $depApp;
-                }
-            }
-
-            $cursor = DH::findFirstElement('tunnel-applications', $appx);
-            if( $cursor !== FALSE )
-            {
-                foreach( $cursor->childNodes as $depNode )
-                {
-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $depName = $depNode->textContent;
-                    if( strlen($depName) < 1 )
-                        derr("dependency name length is < 0");
-                    $depApp = $this->findOrCreate($depName);
-                    $app->tunnelApp[] = $depApp;
-                }
-            }
-
-            $cursor = DH::findFirstElement('applicable-decoders', $appx);
-            if( $cursor !== FALSE )
-            {
-                foreach( $cursor->childNodes as $depNode )
-                {
-                    if( $depNode->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $depName = $depNode->textContent;
-                    if( strlen($depName) < 1 )
-                        derr("dependency name length is < 0");
-
-                    $app->decoder[$depName] = $depName;
-                }
-            }
-            $cursor = DH::findFirstElement('default', $appx);
-            if( $cursor === FALSE )
-                continue;
-
-            $protocur = DH::findFirstElement('ident-by-ip-protocol', $cursor);
-            if( $protocur !== FALSE )
-            {
-                $app->proto = $protocur->textContent;
-            }
-
-            $icmpcur = DH::findFirstElement('ident-by-icmp-type', $cursor);
-            if( $icmpcur !== FALSE )
-            {
-                $icmptype = DH::findFirstElement('type', $icmpcur);
-                if( $icmptype !== FALSE )
-                {
-                    $app->icmpsub = $icmptype->textContent;
-                }
-                //TODO: <code>0</code>
-                $icmpcode = DH::findFirstElement('code', $icmpcur);
-                if( $icmpcode !== FALSE )
-                {
-                    $app->icmpcode = $icmpcode->textContent;
-                }
-            }
-
-            $icmp6cur = DH::findFirstElement('ident-by-icmp6-type', $cursor);
-            if( $icmp6cur !== FALSE )
-            {
-                $icmp6type = DH::findFirstElement('type', $icmp6cur);
-                if( $icmp6type !== FALSE )
-                {
-                    $app->icmp6sub = $icmp6type->textContent;
-                }
-                //TODO: <code>0</code>
-                $icmp6code = DH::findFirstElement('code', $icmp6cur);
-                if( $icmp6code !== FALSE )
-                {
-                    $app->icmp6code = $icmp6code->textContent;
-                }
-
-            }
-
-            $portcur = DH::findFirstElement('port', $cursor);
-            if( $portcur !== FALSE )
-            {
-                foreach( $portcur->childNodes as $portx )
-                {
-                    if( $portx->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    /** @var  $portx DOMElement */
-
-                    $ex = explode('/', $portx->textContent);
-
-                    if( count($ex) != 2 )
+                    if( count($exports) < 1 )
                         derr('unsupported port description: ' . $portx->textContent);
 
-                    if( $ex[0] == 'tcp' )
+                    foreach( $exports as &$sport )
                     {
-                        $exports = explode(',', $ex[1]);
-                        $ports = array();
-
-                        if( count($exports) < 1 )
-                            derr('unsupported port description: ' . $portx->textContent);
-
-                        foreach( $exports as &$sport )
+                        if( $sport == 'dynamic' )
                         {
-                            if( $sport == 'dynamic' )
-                            {
-                                $ports[] = array(0 => 'dynamic');
-                                continue;
-                            }
-                            $tmpex = explode('-', $sport);
-                            if( count($tmpex) < 2 )
-                            {
-                                $ports[] = array(0 => 'single', 1 => $sport);
-                                continue;
-                            }
-
-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
-
+                            $ports[] = array(0 => 'dynamic');
+                            continue;
                         }
-                        //print_r($ports);
+                        $tmpex = explode('-', $sport);
+                        if( count($tmpex) < 2 )
+                        {
+                            $ports[] = array(0 => 'single', 1 => $sport);
+                            continue;
+                        }
 
+                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+
+                    }
+                    //print_r($ports);
+
+                    if( $app->tcp === null )
+                        $app->tcp = $ports;
+                    else
+                        $app->tcp = array_merge($app->tcp, $ports);
+                }
+                elseif( $ex[0] == 'udp' )
+                {
+                    $exports = explode(',', $ex[1]);
+                    $ports = array();
+
+                    if( count($exports) < 1 )
+                        derr('unsupported port description: ' . $portx->textContent);
+
+                    foreach( $exports as &$sport )
+                    {
+                        if( $sport == 'dynamic' )
+                        {
+                            $ports[] = array(0 => 'dynamic');
+                            continue;
+                        }
+                        $tmpex = explode('-', $sport);
+                        if( count($tmpex) < 2 )
+                        {
+                            $ports[] = array(0 => 'single', 1 => $sport);
+                            continue;
+                        }
+
+                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+
+                    }
+                    //print_r($ports);
+
+                    if( $app->udp === null )
+                        $app->udp = $ports;
+                    else
+                        $app->udp = array_merge($app->udp, $ports);
+                }
+                elseif( $ex[0] == 'icmp' )
+                {
+                    $app->icmp = $ex[1];
+                }
+                elseif( $ex[0] == 'icmp6' )
+                {
+                    $app->icmp6 = $ex[1];
+                }
+                else
+                    derr('unsupported port description: ' . $portx->textContent);
+            }
+        }
+
+        $ext_portcur = DH::findFirstElement('extended-port', $cursor);
+        if( $ext_portcur !== FALSE )
+        {
+            foreach( $ext_portcur->childNodes as $portx )
+            {
+                $port_secure = FALSE;
+
+                if( $portx->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                /** @var  $portx DOMElement */
+
+                $ex = explode('/', $portx->textContent);
+
+                if( count($ex) == 3 )
+                {
+                    $port_secure = TRUE;
+                    unset($ex[2]);
+                }
+                else
+                {
+                    //not interested in the same ports as under <ports>
+                    continue;
+                }
+
+                if( count($ex) != 2 )
+                    derr('unsupported port description: ' . $portx->textContent);
+
+                if( $ex[0] == 'tcp' )
+                {
+                    $exports = explode(',', $ex[1]);
+                    $ports = array();
+
+                    if( count($exports) < 1 )
+                        derr('unsupported port description: ' . $portx->textContent);
+
+                    foreach( $exports as &$sport )
+                    {
+                        if( $sport == 'dynamic' )
+                        {
+                            $ports[] = array(0 => 'dynamic');
+                            continue;
+                        }
+                        $tmpex = explode('-', $sport);
+                        if( count($tmpex) < 2 )
+                        {
+                            $ports[] = array(0 => 'single', 1 => $sport);
+                            continue;
+                        }
+
+                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+
+                    }
+                    //print_r($ports);
+                    if( !$port_secure )
+                    {
                         if( $app->tcp === null )
                             $app->tcp = $ports;
                         else
                             $app->tcp = array_merge($app->tcp, $ports);
                     }
-                    elseif( $ex[0] == 'udp' )
+                    else
                     {
-                        $exports = explode(',', $ex[1]);
-                        $ports = array();
+                        if( $app->tcp_secure === null )
+                            $app->tcp_secure = $ports;
+                        else
+                            $app->tcp_secure = array_merge($app->tcp_secure, $ports);
+                    }
 
-                        if( count($exports) < 1 )
-                            derr('unsupported port description: ' . $portx->textContent);
+                }
+                elseif( $ex[0] == 'udp' )
+                {
+                    $exports = explode(',', $ex[1]);
+                    $ports = array();
 
-                        foreach( $exports as &$sport )
+                    if( count($exports) < 1 )
+                        derr('unsupported port description: ' . $portx->textContent);
+
+                    foreach( $exports as &$sport )
+                    {
+                        if( $sport == 'dynamic' )
                         {
-                            if( $sport == 'dynamic' )
-                            {
-                                $ports[] = array(0 => 'dynamic');
-                                continue;
-                            }
-                            $tmpex = explode('-', $sport);
-                            if( count($tmpex) < 2 )
-                            {
-                                $ports[] = array(0 => 'single', 1 => $sport);
-                                continue;
-                            }
-
-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
-
+                            $ports[] = array(0 => 'dynamic');
+                            continue;
                         }
-                        //print_r($ports);
+                        $tmpex = explode('-', $sport);
+                        if( count($tmpex) < 2 )
+                        {
+                            $ports[] = array(0 => 'single', 1 => $sport);
+                            continue;
+                        }
 
+                        $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
+
+                    }
+                    //print_r($ports);
+                    if( !$port_secure )
+                    {
                         if( $app->udp === null )
                             $app->udp = $ports;
                         else
                             $app->udp = array_merge($app->udp, $ports);
                     }
-                    elseif( $ex[0] == 'icmp' )
+                    else
+                    {
+                        if( $app->udp_secure === null )
+                            $app->udp_secure = $ports;
+                        else
+                            $app->udp_secure = array_merge($app->udp_secure, $ports);
+                    }
+
+                }
+                elseif( $ex[0] == 'icmp' )
+                {
+                    if( !$port_secure )
                     {
                         $app->icmp = $ex[1];
                     }
-                    elseif( $ex[0] == 'icmp6' )
+                    else
+                    {
+                        $app->icmp_secure = $ex[1];
+                    }
+                }
+                elseif( $ex[0] == 'icmp6' )
+                {
+                    if( !$port_secure )
                     {
                         $app->icmp6 = $ex[1];
                     }
                     else
-                        derr('unsupported port description: ' . $portx->textContent);
+                    {
+                        $app->icmp6_secure = $ex[1];
+                    }
                 }
+                else
+                    derr('unsupported port description: ' . $portx->textContent);
             }
-
-            $ext_portcur = DH::findFirstElement('extended-port', $cursor);
-            if( $ext_portcur !== FALSE )
-            {
-                foreach( $ext_portcur->childNodes as $portx )
-                {
-                    $port_secure = FALSE;
-
-                    if( $portx->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    /** @var  $portx DOMElement */
-
-                    $ex = explode('/', $portx->textContent);
-
-                    if( count($ex) == 3 )
-                    {
-                        $port_secure = TRUE;
-                        unset($ex[2]);
-                    }
-                    else
-                    {
-                        //not interested in the same ports as under <ports>
-                        continue;
-                    }
-
-                    if( count($ex) != 2 )
-                        derr('unsupported port description: ' . $portx->textContent);
-
-                    if( $ex[0] == 'tcp' )
-                    {
-                        $exports = explode(',', $ex[1]);
-                        $ports = array();
-
-                        if( count($exports) < 1 )
-                            derr('unsupported port description: ' . $portx->textContent);
-
-                        foreach( $exports as &$sport )
-                        {
-                            if( $sport == 'dynamic' )
-                            {
-                                $ports[] = array(0 => 'dynamic');
-                                continue;
-                            }
-                            $tmpex = explode('-', $sport);
-                            if( count($tmpex) < 2 )
-                            {
-                                $ports[] = array(0 => 'single', 1 => $sport);
-                                continue;
-                            }
-
-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
-
-                        }
-                        //print_r($ports);
-                        if( !$port_secure )
-                        {
-                            if( $app->tcp === null )
-                                $app->tcp = $ports;
-                            else
-                                $app->tcp = array_merge($app->tcp, $ports);
-                        }
-                        else
-                        {
-                            if( $app->tcp_secure === null )
-                                $app->tcp_secure = $ports;
-                            else
-                                $app->tcp_secure = array_merge($app->tcp_secure, $ports);
-                        }
-
-                    }
-                    elseif( $ex[0] == 'udp' )
-                    {
-                        $exports = explode(',', $ex[1]);
-                        $ports = array();
-
-                        if( count($exports) < 1 )
-                            derr('unsupported port description: ' . $portx->textContent);
-
-                        foreach( $exports as &$sport )
-                        {
-                            if( $sport == 'dynamic' )
-                            {
-                                $ports[] = array(0 => 'dynamic');
-                                continue;
-                            }
-                            $tmpex = explode('-', $sport);
-                            if( count($tmpex) < 2 )
-                            {
-                                $ports[] = array(0 => 'single', 1 => $sport);
-                                continue;
-                            }
-
-                            $ports[] = array(0 => 'range', 1 => $tmpex[0], 2 => $tmpex[1]);
-
-                        }
-                        //print_r($ports);
-                        if( !$port_secure )
-                        {
-                            if( $app->udp === null )
-                                $app->udp = $ports;
-                            else
-                                $app->udp = array_merge($app->udp, $ports);
-                        }
-                        else
-                        {
-                            if( $app->udp_secure === null )
-                                $app->udp_secure = $ports;
-                            else
-                                $app->udp_secure = array_merge($app->udp_secure, $ports);
-                        }
-
-                    }
-                    elseif( $ex[0] == 'icmp' )
-                    {
-                        if( !$port_secure )
-                        {
-                            $app->icmp = $ex[1];
-                        }
-                        else
-                        {
-                            $app->icmp_secure = $ex[1];
-                        }
-                    }
-                    elseif( $ex[0] == 'icmp6' )
-                    {
-                        if( !$port_secure )
-                        {
-                            $app->icmp6 = $ex[1];
-                        }
-                        else
-                        {
-                            $app->icmp6_secure = $ex[1];
-                        }
-                    }
-                    else
-                        derr('unsupported port description: ' . $portx->textContent);
-                }
-            }
-
-            $tmp = DH::findFirstElement('alg-disable-capability', $appx);
-            if( $tmp !== FALSE )
-            {
-                $app->alg_disable_capability = TRUE;
-            }
-
         }
+
+        $tmp = DH::findFirstElement('alg-disable-capability', $appx);
+        if( $tmp !== FALSE )
+        {
+            $app->alg_disable_capability = TRUE;
+        }
+
     }
 
     public function load_containers_from_domxml(&$xmlDom)
@@ -871,12 +887,40 @@ class AppStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $isDefaultFile = realpath($filename) === realpath(dirname(__FILE__) . '/predefined.xml');
 
-        $cursor = DH::findXPathSingleEntryOrDie('/predefined/application', $xmlDoc);
+        if( $isDefaultFile )
+        {
+            // streamed entry by entry: the 'application' section (~13 MB XML, ~110 MB as DOM) is never held as a whole.
+            // Same two passes as load_from_domxml(): first every name (dependencies refer to apps read later), then the details.
+            $store = $this;
+            $found = PH::eachPredefinedEntry( array('application'), function( $appName, $appx ) use ( $store )
+            {
+                if( $appName === null || $appName === '' )
+                    derr("app name not found\n");
+                $app = new App($appName, $store);
+                $app->type = 'predefined';
+                $store->addPredefinedApp($app);
+            }, FALSE );
+            if( !$found )
+                derr( "cannot find /predefined/application in '".$filename."'", null, FALSE );
 
-        $this->load_from_domxml($cursor);
+            PH::eachPredefinedEntry( array('application'), function( $appName, $appx ) use ( $store )
+            {
+                $app = $store->nameIndex[$appName];
+                $store->load_predefined_app_details( $app, $appx );
+            } );
+
+            $xmlDoc = PH::getPredefinedXmlDoc($filename, array('application-container', 'application-version'));
+        }
+        else
+        {
+            $xmlDoc = PH::getPredefinedXmlDoc($filename);
+
+            $cursor = DH::findXPathSingleEntryOrDie('/predefined/application', $xmlDoc);
+
+            $this->load_from_domxml($cursor);
+        }
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/application-container', $xmlDoc);
 
@@ -889,6 +933,11 @@ class AppStore extends ObjStore
         // fixing someone mess ;)
         $app = $this->findOrCreate('ftp');
         $app->tcp[] = array(0 => 'dynamic');
+
+        // the predefined apps are completely parsed into their properties; dropping the node pointers frees the
+        // DOM of the 'application' section (~110 MB). Custom apps of a configuration keep their xmlroot.
+        foreach( $this->o as $predefinedApp )
+            $predefinedApp->xmlroot = null;
     }
 
     /**

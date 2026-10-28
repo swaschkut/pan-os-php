@@ -443,7 +443,7 @@ class LogProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('log-settings'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/log-settings/profiles', $xmlDoc);

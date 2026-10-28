@@ -1618,9 +1618,10 @@ ServiceCallContext::$supportedActions[] = array(
             return null;
         }
 
-        if( $object->overrideroot !== FALSE )
+        $overrideroot = $object->overrideroot ? DH::findFirstElement('override', $object->tcpOrUdpRoot) : FALSE;
+        if( $overrideroot !== FALSE )
         {
-            $override_noyes = DH::findFirstElement('yes', $object->overrideroot);
+            $override_noyes = DH::findFirstElement('yes', $overrideroot);
             if( $override_noyes !== FALSE )
             {
                 if( $context->isAPI )

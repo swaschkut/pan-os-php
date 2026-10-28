@@ -227,7 +227,12 @@ ThreatCallContext::$supportedActions[] = array(
     {
         $threat = $context->object;
 
-        DH::DEBUGprintDOMDocument($threat->xmlroot);
+        $xml = $threat->xmlroot;
+        if( $xml === null && $threat->owner instanceof ThreatStore )
+            $xml = $threat->owner->predefinedThreatXml( $threat );
+
+        if( $xml !== null )
+            DH::DEBUGprintDOMDocument($xml);
 
     }
 );

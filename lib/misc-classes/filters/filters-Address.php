@@ -521,7 +521,7 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
             $list = array();
             $filename = dirname(__FILE__) . '/../../object-classes/predefined.xml';
 
-            $xmlDoc_region = PH::getPredefinedXmlDoc($filename);
+            $xmlDoc_region = PH::getPredefinedXmlDoc($filename, array('region'));
 
             $cursor = DH::findXPathSingleEntryOrDie('/predefined/region', $xmlDoc_region);
             foreach( $cursor->childNodes as $region_entry )

@@ -313,7 +313,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('pan-url-categories'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
@@ -329,7 +329,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/url-filtering', $xmlDoc);
@@ -370,7 +370,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
@@ -386,7 +386,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
@@ -402,7 +402,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/spyware', $xmlDoc);
@@ -418,7 +418,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/vulnerability', $xmlDoc);
@@ -434,7 +434,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/file-blocking', $xmlDoc);
@@ -450,7 +450,7 @@ class SecurityProfileStore extends ObjStore
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
-        $xmlDoc = PH::getPredefinedXmlDoc($filename);
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/wildfire-analysis', $xmlDoc);
