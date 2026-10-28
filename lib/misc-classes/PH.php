@@ -1092,7 +1092,9 @@ class PH
      *
      *   memory = memory_get_usage() (exact PHP memory, not the 2 MB chunks of memory_get_usage(TRUE))
      *   XML    = libxml2 / DOMDocument memory (C allocator, via FFI - Linux, macOS, Windows), NOT part of memory_get_usage()
-     *   RSS    = process resident memory / working set, includes the XML memory, does not drop when memory is freed
+     *   process memory (includes the XML memory, does not drop when memory is freed):
+     *            Linux "RSS" (resident), macOS "Footprint" (like Activity Monitor, includes compressed memory),
+     *            Windows "Private" (private bytes / commit)
      *   details: see debugLoadtimeFFI()
      *   all values in MB = 1024*1024 bytes, negative values = memory released
      */
@@ -1155,7 +1157,7 @@ class PH
         PH::debugLoadtimePrintSection("TOTAL load", $now, $mem, $rss, $xml, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss, PH::$loadDebugStartXml);
         PH::print_stdout( "debugLoadTime - end of load: PHP " . PH::debugLoadtimeMB($mem) . " MB (peak " . PH::debugLoadtimeMB(memory_get_peak_usage()) . " MB)"
             . ($xml !== null ? ", XML " . PH::debugLoadtimeMB($xml) . " MB" : PH::debugLoadtimeNotAvailable())
-            . ($rss !== null ? ", RSS " . PH::debugLoadtimeMB($rss) . " MB" : "") );
+            . PH::debugLoadtimeProcText($rss) );
 
         PH::print_DEBUG_loadtime_reset();
     }
@@ -1176,7 +1178,7 @@ class PH
     {
         PH::print_stdout( "debugLoadTime - start of load: PHP " . PH::debugLoadtimeMB(PH::$loadDebugStartMem) . " MB"
             . (PH::$loadDebugStartXml !== null ? ", XML " . PH::debugLoadtimeMB(PH::$loadDebugStartXml) . " MB" : PH::debugLoadtimeNotAvailable())
-            . (PH::$loadDebugStartRss !== null ? ", RSS " . PH::debugLoadtimeMB(PH::$loadDebugStartRss) . " MB" : "") );
+            . PH::debugLoadtimeProcText(PH::$loadDebugStartRss) );
     }
 
     static public function print_DEBUG_loadtime_reset()
@@ -1208,14 +1210,14 @@ class PH
         if( $xml !== null && $fromXml !== null )
             $line .= "  XML " . str_pad(PH::debugLoadtimeDelta(($xml - $fromXml) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
         if( $rss !== null && $fromRss !== null )
-            $line .= "  RSS " . str_pad(PH::debugLoadtimeDelta(($rss - $fromRss) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+            $line .= "  " . PH::debugLoadtimeProcLabel() . " " . str_pad(PH::debugLoadtimeDelta(($rss - $fromRss) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
 
         $line .= "   | total " . sprintf("%.3f s", $now - PH::$loadDebugStartTime)
             . ", " . PH::debugLoadtimeMB($mem - PH::$loadDebugStartMem) . " MB";
         if( $xml !== null && PH::$loadDebugStartXml !== null )
             $line .= ", XML " . PH::debugLoadtimeMB($xml - PH::$loadDebugStartXml) . " MB";
         if( $rss !== null )
-            $line .= ", RSS " . PH::debugLoadtimeMB($rss) . " MB";
+            $line .= ", " . PH::debugLoadtimeProcLabel() . " " . PH::debugLoadtimeMB($rss) . " MB";
 
         PH::print_stdout( $line );
     }
@@ -1244,8 +1246,11 @@ class PH
      *         Linux (glibc):  mallinfo2()            (glibc >= 2.33, fallback mallinfo())
      *         macOS:          mstats()               (all malloc zones)
      *         Windows:        HeapSummary()          (process heap, used by the UCRT malloc)
-     *   RSS = resident memory of the process
-     *         Linux: /proc/self/status, macOS: proc_pid_rusage(), Windows: K32GetProcessMemoryInfo() (working set)
+     *   process memory:
+     *         Linux:   RSS        /proc/self/status VmRSS
+     *         macOS:   Footprint  proc_pid_rusage() ri_phys_footprint - resident size is NOT used, macOS compresses
+     *                             memory, so resident can be far below the memory the process really uses
+     *         Windows: Private    K32GetProcessMemoryInfo() PrivateUsage - the working set can be trimmed by Windows
      *
      * requirements: extension "ffi" loaded (Windows: extension=ffi in php.ini), ffi.enable = "preload" (default, CLI allowed) or "1"
      */
@@ -1303,11 +1308,11 @@ class PH
                 $ffi = FFI::cdef("typedef struct { uint32_t cb; size_t cbAllocated; size_t cbCommitted; size_t cbReserved; size_t cbMaxReserve; } HEAP_SUMMARY;
                                  typedef struct { uint32_t cb; uint32_t PageFaultCount; size_t PeakWorkingSetSize; size_t WorkingSetSize;
                                      size_t QuotaPeakPagedPoolUsage; size_t QuotaPagedPoolUsage; size_t QuotaPeakNonPagedPoolUsage;
-                                     size_t QuotaNonPagedPoolUsage; size_t PagefileUsage; size_t PeakPagefileUsage; } PROCESS_MEMORY_COUNTERS;
+                                     size_t QuotaNonPagedPoolUsage; size_t PagefileUsage; size_t PeakPagefileUsage; size_t PrivateUsage; } PROCESS_MEMORY_COUNTERS_EX;
                                  void *GetProcessHeap(void);
                                  void *GetCurrentProcess(void);
                                  int HeapSummary(void *hHeap, uint32_t dwFlags, HEAP_SUMMARY *lpSummary);
-                                 int K32GetProcessMemoryInfo(void *Process, PROCESS_MEMORY_COUNTERS *ppsmemCounters, uint32_t cb);",
+                                 int K32GetProcessMemoryInfo(void *Process, PROCESS_MEMORY_COUNTERS_EX *ppsmemCounters, uint32_t cb);",
                                  "kernel32.dll");
                 PH::$loadDebugMallinfo = array('os' => 'windows', 'ffi' => $ffi);
             }
@@ -1360,8 +1365,12 @@ class PH
         return null;
     }
 
-    /** resident memory of the process in bytes, null if not available */
-    static private function debugLoadtimeRss()
+    /**
+     * process memory in bytes, null if not available
+     * $resident = FALSE: Linux RSS / macOS footprint / Windows private bytes (see debugLoadtimeFFI)
+     * $resident = TRUE:  resident size (macOS) / working set (Windows), only for information
+     */
+    static private function debugLoadtimeRss( $resident = FALSE )
     {
         if( PHP_OS_FAMILY === 'Linux' )
         {
@@ -1383,15 +1392,15 @@ class PH
                 // flavor 0 = RUSAGE_INFO_V0
                 if( $f['ffi']->proc_pid_rusage(getmypid(), 0, FFI::addr($info)) !== 0 )
                     return null;
-                return $info->ri_resident_size;
+                return $resident ? $info->ri_resident_size : $info->ri_phys_footprint;
             }
             if( $f['os'] === 'windows' )
             {
-                $pmc = $f['ffi']->new("PROCESS_MEMORY_COUNTERS");
+                $pmc = $f['ffi']->new("PROCESS_MEMORY_COUNTERS_EX");
                 $pmc->cb = FFI::sizeof($pmc);
                 if( !$f['ffi']->K32GetProcessMemoryInfo($f['ffi']->GetCurrentProcess(), FFI::addr($pmc), $pmc->cb) )
                     return null;
-                return $pmc->WorkingSetSize;
+                return $resident ? $pmc->WorkingSetSize : $pmc->PrivateUsage;
             }
         }
         catch( Throwable $e )
@@ -1399,6 +1408,30 @@ class PH
             PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
         }
         return null;
+    }
+
+    static private function debugLoadtimeProcLabel()
+    {
+        if( PHP_OS_FAMILY === 'Darwin' )
+            return "Footprint";
+        if( PHP_OS_FAMILY === 'Windows' )
+            return "Private";
+        return "RSS";
+    }
+
+    /** ", Footprint x MB (resident y MB)" for start / end of load */
+    static private function debugLoadtimeProcText( $value )
+    {
+        if( $value === null )
+            return "";
+        $text = ", " . PH::debugLoadtimeProcLabel() . " " . PH::debugLoadtimeMB($value) . " MB";
+        if( PHP_OS_FAMILY === 'Darwin' || PHP_OS_FAMILY === 'Windows' )
+        {
+            $resident = PH::debugLoadtimeRss(TRUE);
+            if( $resident !== null )
+                $text .= " (" . (PHP_OS_FAMILY === 'Darwin' ? "resident" : "working set") . " " . PH::debugLoadtimeMB($resident) . " MB)";
+        }
+        return $text;
     }
 
     static private function debugLoadtimeNotAvailable()
