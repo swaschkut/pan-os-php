@@ -284,7 +284,12 @@ class PH
     public static $loadDebugSectionTime = null;
     public static $loadDebugSectionMem = null;
     public static $loadDebugSectionRss = null;
+    public static $loadDebugSectionXml = null;
     public static $loadDebugStartTime = null;
+    public static $loadDebugStartXml = null;
+    /** FFI handle to measure XML/C memory (see debugLoadtimeFFI), FALSE if not available */
+    public static $loadDebugMallinfo = null;
+    public static $loadDebugMemInfoReason = null;
     public static $loadDebugStartMem = null;
     public static $loadDebugStartRss = null;
 
@@ -1086,7 +1091,9 @@ class PH
      * followed by the totals since load start. The last section is closed by print_DEBUG_loadtime_end().
      *
      *   memory = memory_get_usage() (exact PHP memory, not the 2 MB chunks of memory_get_usage(TRUE))
-     *   RSS    = process resident memory, includes libxml2/DOM memory which is invisible to PHP (Linux only)
+     *   XML    = libxml2 / DOMDocument memory (C allocator, via FFI - Linux, macOS, Windows), NOT part of memory_get_usage()
+     *   RSS    = process resident memory / working set, includes the XML memory, does not drop when memory is freed
+     *   details: see debugLoadtimeFFI()
      *   all values in MB = 1024*1024 bytes, negative values = memory released
      */
     static public function print_DEBUG_loadtime( $type )
@@ -1094,6 +1101,7 @@ class PH
         $now = microtime(TRUE);
         $mem = memory_get_usage();
         $rss = PH::debugLoadtimeRss();
+        $xml = PH::debugLoadtimeXml();
 
         if( PH::$loadDebugStartTime === null )
         {
@@ -1101,12 +1109,14 @@ class PH
             PH::$loadDebugStartTime = $now;
             PH::$loadDebugStartMem = $mem;
             PH::$loadDebugStartRss = $rss;
+            PH::$loadDebugStartXml = $xml;
+            PH::debugLoadtimePrintStart();
         }
 
         if( PH::$loadDebugSection !== null )
-            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss);
+            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss, $xml);
         elseif( PH::$loadDebugStartTime < $now )
-            PH::debugLoadtimePrintSection("(before first section)", $now, $mem, $rss, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss);
+            PH::debugLoadtimePrintSection("(before first section)", $now, $mem, $rss, $xml, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss, PH::$loadDebugStartXml);
 
         // prefix the section with the object (DeviceGroup / Container / ...) it belongs to
         $owner = null;
@@ -1123,6 +1133,7 @@ class PH
         PH::$loadDebugSectionTime = microtime(TRUE);
         PH::$loadDebugSectionMem = memory_get_usage();
         PH::$loadDebugSectionRss = PH::debugLoadtimeRss();
+        PH::$loadDebugSectionXml = PH::debugLoadtimeXml();
     }
 
     /**
@@ -1136,13 +1147,15 @@ class PH
         $now = microtime(TRUE);
         $mem = memory_get_usage();
         $rss = PH::debugLoadtimeRss();
+        $xml = PH::debugLoadtimeXml();
 
         if( PH::$loadDebugSection !== null )
-            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss);
+            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss, $xml);
 
-        PH::debugLoadtimePrintSection("TOTAL load", $now, $mem, $rss, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss);
-        PH::print_stdout( "debugLoadTime - peak memory: " . PH::debugLoadtimeMB(memory_get_peak_usage()) . " MB"
-            . ($rss !== null ? ", RSS: " . PH::debugLoadtimeMB($rss) . " MB" : "") );
+        PH::debugLoadtimePrintSection("TOTAL load", $now, $mem, $rss, $xml, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss, PH::$loadDebugStartXml);
+        PH::print_stdout( "debugLoadTime - end of load: PHP " . PH::debugLoadtimeMB($mem) . " MB (peak " . PH::debugLoadtimeMB(memory_get_peak_usage()) . " MB)"
+            . ($xml !== null ? ", XML " . PH::debugLoadtimeMB($xml) . " MB" : PH::debugLoadtimeNotAvailable())
+            . ($rss !== null ? ", RSS " . PH::debugLoadtimeMB($rss) . " MB" : "") );
 
         PH::print_DEBUG_loadtime_reset();
     }
@@ -1154,6 +1167,16 @@ class PH
         PH::$loadDebugStartTime = microtime(TRUE);
         PH::$loadDebugStartMem = memory_get_usage();
         PH::$loadDebugStartRss = PH::debugLoadtimeRss();
+        PH::$loadDebugStartXml = PH::debugLoadtimeXml();
+        PH::debugLoadtimePrintStart();
+    }
+
+    /** absolute values before the load: config DOM (and predefined.xml) is already parsed at this point */
+    static private function debugLoadtimePrintStart()
+    {
+        PH::print_stdout( "debugLoadTime - start of load: PHP " . PH::debugLoadtimeMB(PH::$loadDebugStartMem) . " MB"
+            . (PH::$loadDebugStartXml !== null ? ", XML " . PH::debugLoadtimeMB(PH::$loadDebugStartXml) . " MB" : PH::debugLoadtimeNotAvailable())
+            . (PH::$loadDebugStartRss !== null ? ", RSS " . PH::debugLoadtimeMB(PH::$loadDebugStartRss) . " MB" : "") );
     }
 
     static public function print_DEBUG_loadtime_reset()
@@ -1162,28 +1185,35 @@ class PH
         PH::$loadDebugSectionTime = null;
         PH::$loadDebugSectionMem = null;
         PH::$loadDebugSectionRss = null;
+        PH::$loadDebugSectionXml = null;
+        PH::$loadDebugStartXml = null;
         PH::$loadDebugStartTime = null;
         PH::$loadDebugStartMem = null;
         PH::$loadDebugStartRss = null;
     }
 
-    static private function debugLoadtimePrintSection( $name, $now, $mem, $rss, $fromTime = null, $fromMem = null, $fromRss = null )
+    static private function debugLoadtimePrintSection( $name, $now, $mem, $rss, $xml, $fromTime = null, $fromMem = null, $fromRss = null, $fromXml = null )
     {
         if( $fromTime === null )
         {
             $fromTime = PH::$loadDebugSectionTime;
             $fromMem = PH::$loadDebugSectionMem;
             $fromRss = PH::$loadDebugSectionRss;
+            $fromXml = PH::$loadDebugSectionXml;
         }
 
         $line = "debugLoadTime - " . str_pad($name, 60)
             . " " . str_pad(PH::debugLoadtimeDelta($now - $fromTime, 3) . " s", 11, " ", STR_PAD_LEFT)
             . " " . str_pad(PH::debugLoadtimeDelta(($mem - $fromMem) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+        if( $xml !== null && $fromXml !== null )
+            $line .= "  XML " . str_pad(PH::debugLoadtimeDelta(($xml - $fromXml) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
         if( $rss !== null && $fromRss !== null )
             $line .= "  RSS " . str_pad(PH::debugLoadtimeDelta(($rss - $fromRss) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
 
         $line .= "   | total " . sprintf("%.3f s", $now - PH::$loadDebugStartTime)
             . ", " . PH::debugLoadtimeMB($mem - PH::$loadDebugStartMem) . " MB";
+        if( $xml !== null && PH::$loadDebugStartXml !== null )
+            $line .= ", XML " . PH::debugLoadtimeMB($xml - PH::$loadDebugStartXml) . " MB";
         if( $rss !== null )
             $line .= ", RSS " . PH::debugLoadtimeMB($rss) . " MB";
 
@@ -1204,18 +1234,176 @@ class PH
         return number_format($bytes / 1048576, 2, '.', '');
     }
 
-    /** resident set size in bytes, null if not available (non Linux) */
+    /**
+     * debugloadtime - memory outside of PHP's own memory manager, measured through FFI:
+     *
+     *   XML = memory allocated through the C allocator = libxml2 / DOMDocument
+     *         (+ small C allocations of other extensions like pcre/curl/openssl)
+     *         PHP's own memory (Zend MM) is allocated with mmap()/VirtualAlloc() and is NOT included,
+     *         so XML and memory_get_usage() do not overlap.
+     *         Linux (glibc):  mallinfo2()            (glibc >= 2.33, fallback mallinfo())
+     *         macOS:          mstats()               (all malloc zones)
+     *         Windows:        HeapSummary()          (process heap, used by the UCRT malloc)
+     *   RSS = resident memory of the process
+     *         Linux: /proc/self/status, macOS: proc_pid_rusage(), Windows: K32GetProcessMemoryInfo() (working set)
+     *
+     * requirements: extension "ffi" loaded (Windows: extension=ffi in php.ini), ffi.enable = "preload" (default, CLI allowed) or "1"
+     */
+    static private function debugLoadtimeFFI()
+    {
+        if( PH::$loadDebugMallinfo !== null )
+            return PH::$loadDebugMallinfo;
+
+        PH::$loadDebugMallinfo = FALSE;
+        PH::$loadDebugMemInfoReason = null;
+
+        if( !extension_loaded('ffi') )
+        {
+            PH::$loadDebugMemInfoReason = "PHP extension ffi not loaded" . (PHP_OS_FAMILY === 'Windows' ? " (php.ini: extension=ffi)" : "");
+            return FALSE;
+        }
+
+        try
+        {
+            if( PHP_OS_FAMILY === 'Linux' )
+            {
+                $cdef = "struct mallinfo2 { size_t arena; size_t ordblks; size_t smblks; size_t hblks; size_t hblkhd;
+                           size_t usmblks; size_t fsmblks; size_t uordblks; size_t fordblks; size_t keepcost; };
+                         struct mallinfo2 mallinfo2(void);";
+                try
+                {
+                    $ffi = FFI::cdef($cdef, "libc.so.6");
+                    $ffi->mallinfo2();
+                    PH::$loadDebugMallinfo = array('os' => 'linux', 'ffi' => $ffi, 'fn' => 'mallinfo2');
+                }
+                catch( Throwable $e )
+                {
+                    // glibc < 2.33: mallinfo() with int fields (wraps above 2 GB)
+                    $ffi = FFI::cdef("struct mallinfo { int arena; int ordblks; int smblks; int hblks; int hblkhd;
+                                       int usmblks; int fsmblks; int uordblks; int fordblks; int keepcost; };
+                                     struct mallinfo mallinfo(void);", "libc.so.6");
+                    $ffi->mallinfo();
+                    PH::$loadDebugMallinfo = array('os' => 'linux', 'ffi' => $ffi, 'fn' => 'mallinfo');
+                }
+            }
+            elseif( PHP_OS_FAMILY === 'Darwin' )
+            {
+                $ffi = FFI::cdef("struct mstats { size_t bytes_total; size_t chunks_used; size_t bytes_used; size_t chunks_free; size_t bytes_free; };
+                                 struct mstats mstats(void);
+                                 struct rusage_info_v0 { uint8_t ri_uuid[16]; uint64_t ri_user_time; uint64_t ri_system_time;
+                                     uint64_t ri_pkg_idle_wkups; uint64_t ri_interrupt_wkups; uint64_t ri_pageins; uint64_t ri_wired_size;
+                                     uint64_t ri_resident_size; uint64_t ri_phys_footprint; uint64_t ri_proc_start_abstime; uint64_t ri_proc_exit_abstime; };
+                                 int proc_pid_rusage(int pid, int flavor, void *buffer);",
+                                 "/usr/lib/libSystem.B.dylib");
+                $ffi->mstats();
+                PH::$loadDebugMallinfo = array('os' => 'darwin', 'ffi' => $ffi);
+            }
+            elseif( PHP_OS_FAMILY === 'Windows' )
+            {
+                $ffi = FFI::cdef("typedef struct { uint32_t cb; size_t cbAllocated; size_t cbCommitted; size_t cbReserved; size_t cbMaxReserve; } HEAP_SUMMARY;
+                                 typedef struct { uint32_t cb; uint32_t PageFaultCount; size_t PeakWorkingSetSize; size_t WorkingSetSize;
+                                     size_t QuotaPeakPagedPoolUsage; size_t QuotaPagedPoolUsage; size_t QuotaPeakNonPagedPoolUsage;
+                                     size_t QuotaNonPagedPoolUsage; size_t PagefileUsage; size_t PeakPagefileUsage; } PROCESS_MEMORY_COUNTERS;
+                                 void *GetProcessHeap(void);
+                                 void *GetCurrentProcess(void);
+                                 int HeapSummary(void *hHeap, uint32_t dwFlags, HEAP_SUMMARY *lpSummary);
+                                 int K32GetProcessMemoryInfo(void *Process, PROCESS_MEMORY_COUNTERS *ppsmemCounters, uint32_t cb);",
+                                 "kernel32.dll");
+                PH::$loadDebugMallinfo = array('os' => 'windows', 'ffi' => $ffi);
+            }
+            else
+                PH::$loadDebugMemInfoReason = "not supported on " . PHP_OS_FAMILY;
+        }
+        catch( Throwable $e )
+        {
+            PH::$loadDebugMallinfo = FALSE;
+            PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
+        }
+
+        return PH::$loadDebugMallinfo;
+    }
+
+    /** XML / C allocator memory in bytes, null if not available */
+    static private function debugLoadtimeXml()
+    {
+        $f = PH::debugLoadtimeFFI();
+        if( $f === FALSE )
+            return null;
+
+        try
+        {
+            if( $f['os'] === 'linux' )
+            {
+                $fn = $f['fn'];
+                $info = $f['ffi']->$fn();
+                // uordblks = in use in the heap, hblkhd = in use in large blocks malloc() allocated with mmap()
+                if( $fn === 'mallinfo' )
+                    return ($info->uordblks & 0xFFFFFFFF) + ($info->hblkhd & 0xFFFFFFFF);
+                return $info->uordblks + $info->hblkhd;
+            }
+            if( $f['os'] === 'darwin' )
+                return $f['ffi']->mstats()->bytes_used;
+
+            if( $f['os'] === 'windows' )
+            {
+                $summary = $f['ffi']->new("HEAP_SUMMARY");
+                $summary->cb = FFI::sizeof($summary);
+                if( !$f['ffi']->HeapSummary($f['ffi']->GetProcessHeap(), 0, FFI::addr($summary)) )
+                    return null;
+                return $summary->cbAllocated;
+            }
+        }
+        catch( Throwable $e )
+        {
+            PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
+        }
+        return null;
+    }
+
+    /** resident memory of the process in bytes, null if not available */
     static private function debugLoadtimeRss()
     {
-        if( !is_readable('/proc/self/statm') )
+        if( PHP_OS_FAMILY === 'Linux' )
+        {
+            $status = @file_get_contents('/proc/self/status');
+            if( $status !== FALSE && preg_match('/^VmRSS:\s+(\d+)\s+kB/m', $status, $m) )
+                return (int)$m[1] * 1024;
             return null;
-        $statm = @file_get_contents('/proc/self/statm');
-        if( $statm === FALSE )
+        }
+
+        $f = PH::debugLoadtimeFFI();
+        if( $f === FALSE )
             return null;
-        $parts = explode(' ', $statm);
-        if( !isset($parts[1]) )
-            return null;
-        return (int)$parts[1] * 4096;
+
+        try
+        {
+            if( $f['os'] === 'darwin' )
+            {
+                $info = $f['ffi']->new("struct rusage_info_v0");
+                // flavor 0 = RUSAGE_INFO_V0
+                if( $f['ffi']->proc_pid_rusage(getmypid(), 0, FFI::addr($info)) !== 0 )
+                    return null;
+                return $info->ri_resident_size;
+            }
+            if( $f['os'] === 'windows' )
+            {
+                $pmc = $f['ffi']->new("PROCESS_MEMORY_COUNTERS");
+                $pmc->cb = FFI::sizeof($pmc);
+                if( !$f['ffi']->K32GetProcessMemoryInfo($f['ffi']->GetCurrentProcess(), FFI::addr($pmc), $pmc->cb) )
+                    return null;
+                return $pmc->WorkingSetSize;
+            }
+        }
+        catch( Throwable $e )
+        {
+            PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
+        }
+        return null;
+    }
+
+    static private function debugLoadtimeNotAvailable()
+    {
+        return ", XML n/a (" . (PH::$loadDebugMemInfoReason !== null ? PH::$loadDebugMemInfoReason : "not available") . ")";
     }
 
     static public function ACTIONstatus( $context, $status, $string )
