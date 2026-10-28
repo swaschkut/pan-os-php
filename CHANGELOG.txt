@@ -25,6 +25,7 @@ BUGFIX:
 * type=rule actions=exporttohtml | bugfix for ruleusage information
 * class PH | fix predefinedStores for type=playbook if NOT subprocess
 * remove multiple times getPredefinedXML load part
+* class ZoneRuleContainer - optimsation to reduce memory usage
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

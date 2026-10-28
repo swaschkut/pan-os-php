@@ -74,6 +74,22 @@ class PanoramaConf
 
     public $version = null;
 
+    /**
+     * ZoneRuleContainer::resolveTargets(): "<template-stack>\0<vsys>\0<zone>" => resolved zone of that firewall vsys,
+     * '@shared-devices' => firewalls of all device groups. Filled on first use, see clearZoneResolveCache().
+     * @var array
+     */
+    public $zoneResolveCache = array();
+
+    /**
+     * Drops the cached per-firewall zone readings ('zone protection all-targets', '*-all-targets' columns, 'targets' filters).
+     * Call after changing zones, template-stacks, templates or device-group firewalls when these readings are used afterwards.
+     */
+    public function clearZoneResolveCache(): void
+    {
+        $this->zoneResolveCache = array();
+    }
+
     public $timezone = null;
 
     public $managedFirewallsSerials = array();
@@ -428,6 +444,8 @@ class PanoramaConf
      */
     public function cleanupMemory(): void
     {
+        $this->zoneResolveCache = array();
+
         // Clear DOM references first - these hold the most memory
         $this->xmldoc = null;
         $this->xmlroot = null;
