@@ -910,6 +910,8 @@ class PanoramaConf
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Todo: part6 - all other parts related to shared - keep it - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared service / application");
         //
         // Extract services
         //
@@ -951,6 +953,8 @@ class PanoramaConf
         // End of application groups extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared profiles / schedule / EDL / log-settings");
         // Extract SecurityProfiles objects
         //
         $this->securityProfilebaseroot = DH::findFirstElement('profiles', $this->sharedroot);
@@ -1189,6 +1193,8 @@ class PanoramaConf
         //
         // Extracting policies
         //
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared pre-/post-rulebase");
         $prerulebase = DH::findFirstElement('pre-rulebase', $this->sharedroot);
         $postrulebase = DH::findFirstElement('post-rulebase', $this->sharedroot);
 
