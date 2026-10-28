@@ -1544,6 +1544,8 @@ class UTIL
         if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" )
             $this->pan->load_from_domxml($this->xmlDoc, $this->debugLoadTime);
 
+        if( $this->debugLoadTime )
+            PH::print_DEBUG_loadtime_end();
 
         $this->loadEnd();
 
@@ -1633,6 +1635,7 @@ class UTIL
 
         PH::$loadStartTime = $this->loadStartTime;
         PH::$loadStartMem = $this->loadStartMem;
+        PH::print_DEBUG_loadtime_start();
     }
 
     public function loadEnd()

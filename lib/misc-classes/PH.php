@@ -279,6 +279,15 @@ class PH
 
     public static $loadArrayMem = array( "0", "b");
 
+    /** debugloadtime: currently open section and the values measured when it was opened */
+    public static $loadDebugSection = null;
+    public static $loadDebugSectionTime = null;
+    public static $loadDebugSectionMem = null;
+    public static $loadDebugSectionRss = null;
+    public static $loadDebugStartTime = null;
+    public static $loadDebugStartMem = null;
+    public static $loadDebugStartRss = null;
+
     static public function decrypt($ciphertext, $key)
     {
         $c = base64_decode($ciphertext);
@@ -725,6 +734,7 @@ class PH
         PH::$loadStartTime = null;
         PH::$loadStartMem = null;
         PH::$loadArrayMem = array( "0", "b");
+        PH::print_DEBUG_loadtime_reset();
 
         // Force garbage collection multiple times to handle circular references
         gc_collect_cycles();
@@ -1070,16 +1080,142 @@ class PH
 
     }
 
+    /**
+     * debugloadtime: called at the START of a load section.
+     * Closes the previously opened section and prints what THIS section cost (time / memory delta),
+     * followed by the totals since load start. The last section is closed by print_DEBUG_loadtime_end().
+     *
+     *   memory = memory_get_usage() (exact PHP memory, not the 2 MB chunks of memory_get_usage(TRUE))
+     *   RSS    = process resident memory, includes libxml2/DOM memory which is invisible to PHP (Linux only)
+     *   all values in MB = 1024*1024 bytes, negative values = memory released
+     */
     static public function print_DEBUG_loadtime( $type )
     {
-        $loadEndTime = microtime(TRUE);
-        $loadEndMem = memory_get_usage(TRUE);
-        $loadElapsedTime = number_format(($loadEndTime - PH::$loadStartTime), 2, '.', '');
-        $loadUsedMem = convert($loadEndMem - PH::$loadStartMem, PH::$loadArrayMem);
+        $now = microtime(TRUE);
+        $mem = memory_get_usage();
+        $rss = PH::debugLoadtimeRss();
 
-        PH::print_stdout( "debugLoadTime - start ". $type);
-        PH::print_stdout( "runtime: ".$loadElapsedTime );
-        PH::print_stdout( "memory allocated: ".$loadUsedMem );
+        if( PH::$loadDebugStartTime === null )
+        {
+            // load_from_domxml() called without UTIL::loadStart()
+            PH::$loadDebugStartTime = $now;
+            PH::$loadDebugStartMem = $mem;
+            PH::$loadDebugStartRss = $rss;
+        }
+
+        if( PH::$loadDebugSection !== null )
+            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss);
+        elseif( PH::$loadDebugStartTime < $now )
+            PH::debugLoadtimePrintSection("(before first section)", $now, $mem, $rss, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss);
+
+        // prefix the section with the object (DeviceGroup / Container / ...) it belongs to
+        $owner = null;
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
+        if( isset($trace[1]['object']) )
+        {
+            $obj = $trace[1]['object'];
+            if( !($obj instanceof PanoramaConf) && !($obj instanceof PANConf) && method_exists($obj, 'name') )
+                $owner = get_class($obj) . " '" . $obj->name() . "'";
+        }
+
+        PH::$loadDebugSection = ($owner !== null) ? $owner . " / " . $type : $type;
+        // measure again: the print above must not be counted in the next section
+        PH::$loadDebugSectionTime = microtime(TRUE);
+        PH::$loadDebugSectionMem = memory_get_usage();
+        PH::$loadDebugSectionRss = PH::debugLoadtimeRss();
+    }
+
+    /**
+     * debugloadtime: closes the last open section and prints the sum of all sections
+     */
+    static public function print_DEBUG_loadtime_end()
+    {
+        if( PH::$loadDebugStartTime === null )
+            return;
+
+        $now = microtime(TRUE);
+        $mem = memory_get_usage();
+        $rss = PH::debugLoadtimeRss();
+
+        if( PH::$loadDebugSection !== null )
+            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss);
+
+        PH::debugLoadtimePrintSection("TOTAL load", $now, $mem, $rss, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss);
+        PH::print_stdout( "debugLoadTime - peak memory: " . PH::debugLoadtimeMB(memory_get_peak_usage()) . " MB"
+            . ($rss !== null ? ", RSS: " . PH::debugLoadtimeMB($rss) . " MB" : "") );
+
+        PH::print_DEBUG_loadtime_reset();
+    }
+
+    /** debugloadtime: reference point = load start (called by UTIL::loadStart) */
+    static public function print_DEBUG_loadtime_start()
+    {
+        PH::print_DEBUG_loadtime_reset();
+        PH::$loadDebugStartTime = microtime(TRUE);
+        PH::$loadDebugStartMem = memory_get_usage();
+        PH::$loadDebugStartRss = PH::debugLoadtimeRss();
+    }
+
+    static public function print_DEBUG_loadtime_reset()
+    {
+        PH::$loadDebugSection = null;
+        PH::$loadDebugSectionTime = null;
+        PH::$loadDebugSectionMem = null;
+        PH::$loadDebugSectionRss = null;
+        PH::$loadDebugStartTime = null;
+        PH::$loadDebugStartMem = null;
+        PH::$loadDebugStartRss = null;
+    }
+
+    static private function debugLoadtimePrintSection( $name, $now, $mem, $rss, $fromTime = null, $fromMem = null, $fromRss = null )
+    {
+        if( $fromTime === null )
+        {
+            $fromTime = PH::$loadDebugSectionTime;
+            $fromMem = PH::$loadDebugSectionMem;
+            $fromRss = PH::$loadDebugSectionRss;
+        }
+
+        $line = "debugLoadTime - " . str_pad($name, 60)
+            . " " . str_pad(PH::debugLoadtimeDelta($now - $fromTime, 3) . " s", 11, " ", STR_PAD_LEFT)
+            . " " . str_pad(PH::debugLoadtimeDelta(($mem - $fromMem) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+        if( $rss !== null && $fromRss !== null )
+            $line .= "  RSS " . str_pad(PH::debugLoadtimeDelta(($rss - $fromRss) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+
+        $line .= "   | total " . sprintf("%.3f s", $now - PH::$loadDebugStartTime)
+            . ", " . PH::debugLoadtimeMB($mem - PH::$loadDebugStartMem) . " MB";
+        if( $rss !== null )
+            $line .= ", RSS " . PH::debugLoadtimeMB($rss) . " MB";
+
+        PH::print_stdout( $line );
+    }
+
+    /** signed value, without "-0.00" for tiny negative values */
+    static private function debugLoadtimeDelta( $value, $decimals )
+    {
+        $value = round($value, $decimals);
+        if( $value == 0 )
+            $value = 0.0;
+        return sprintf("%+." . $decimals . "f", $value);
+    }
+
+    static private function debugLoadtimeMB( $bytes )
+    {
+        return number_format($bytes / 1048576, 2, '.', '');
+    }
+
+    /** resident set size in bytes, null if not available (non Linux) */
+    static private function debugLoadtimeRss()
+    {
+        if( !is_readable('/proc/self/statm') )
+            return null;
+        $statm = @file_get_contents('/proc/self/statm');
+        if( $statm === FALSE )
+            return null;
+        $parts = explode(' ', $statm);
+        if( !isset($parts[1]) )
+            return null;
+        return (int)$parts[1] * 4096;
     }
 
     static public function ACTIONstatus( $context, $status, $string )
