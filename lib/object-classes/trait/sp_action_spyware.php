@@ -804,184 +804,67 @@ trait sp_action_spyware
 
         return TRUE;
     }
+    /**
+     * PAN-OS reads a profile's rules top-down; the first rule that matches a threat's severity and category
+     * decides its action. Rules naming a threat apply to that threat only and are skipped.
+     */
+    public function spyware_rules_first_match( $severity, $category )
+    {
+        foreach( $this->rules_obj as $rule )
+            if( !$rule->namesParticularThreats() && $rule->matchesThreat( $severity, null, $category ) )
+                return $rule;
+        return null;     // no rule matches: PAN-OS takes no action and logs nothing
+    }
+
     public function spyware_rules_best_practice(): ?bool
     {
-        $bp_set = null;
-        if (!empty($this->rules_obj))
+        if( empty( $this->rules_obj ) )
+            return null;
+        if( !$this->spyware_rules_visibility() )
+            return FALSE;
+        $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+        $exclude = $checkBP_array['category-exclude'] ?? array();
+
+        $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
+
+        foreach( $checkBP_array['severity'] as $severity )   // no rule.bp section: stops here, as before
         {
-            if( !$this->spyware_rules_visibility() )
-                return FALSE;
-
-            /*
-            //Todo: use ThreatPolicySpyware - swaschkut 20260620
-            //how to validate if a severity is missing
-            foreach( $this->rules_obj as $rulename => $rule )
+            if( $severity == "any" )
+                continue;       // a threat has one of the five severities; a severity-any rule is judged through them
+            foreach( $categories as $category )
             {
-                if( $rule->spyware_rule_best_practice() )
-                    return true;
+                if( in_array( $category, $exclude, TRUE ) )
+                    continue;   // the BP file leaves these categories out of best practice
+                $rule = $this->spyware_rules_first_match( $severity, $category );
+                if( $rule === null || !$rule->spyware_rule_best_practice() )
+                    return FALSE;
             }
-
-            return false;
-            */
-            //////// OLD start
-            $bp_set = false;
-
-            $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
-            $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
-            $this->spyware_rules_coverage();
-
-            foreach( $checkBP_array['severity'] as $bp_array )
-            {
-                if( isset($this->rule_coverage[$bp_array]) )
-                {
-                    $action_bp = FALSE;
-                    foreach( $checkBP_array['action'] as $action_check)
-                    {
-                        if( $action_check == $this->rule_coverage[$bp_array]['action']  )
-                        {
-                            $action_bp = TRUE;
-                            break;
-                        }
-                        else
-                            $action_bp = FALSE;
-                    }
-                    if( $action_bp == FALSE )
-                        return FALSE;
-
-                    $packet_bp = FALSE;
-                    foreach( $checkBP_array['packet-capture'] as $packet_check )
-                    {
-                        if( $packet_check == $this->rule_coverage[$bp_array]['packet-capture'] )
-                        {
-                            $packet_bp = TRUE;
-                            break;
-                        }
-                        else
-                            $packet_bp = FALSE;
-                    }
-                    if( $packet_bp == FALSE )
-                        return FALSE;
-
-                    if( $action_check && $packet_bp )
-                        $bp_set = true;
-                }
-                elseif( $bp_array !== "any" )
-                    return false;
-            }
-
-            foreach( $check_array['severity'] as $bp_array )
-            {
-                if( isset($this->rule_coverage[$bp_array]) )
-                {
-                    $action_bp = FALSE;
-                    foreach( $check_array['action'] as $action_check)
-                    {
-                        $negate_string = "";
-                        if( strpos( $action_check, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
-                        {
-                            $action_bp = FALSE;
-                            break;
-                        }
-                        else
-                            $action_bp = TRUE;
-                    }
-                    if( $action_bp == FALSE )
-                        return FALSE;
-                    else
-                    {
-                        $bp_set = true;
-                        if( $bp_array == "any" )
-                            break;
-                    }
-
-                }
-                elseif( $bp_array !== "any" )
-                    return false;
-            }
-            // OLD end
-            //////
         }
-        return $bp_set;
+        // an empty rule.bp.severity list gives the visibility verdict, as before
+        return TRUE;
     }
 
     public function spyware_rules_visibility(): ?bool
     {
-        $bp_set = null;
-        if (!empty($this->rules_obj))
+        if( empty( $this->rules_obj ) )
+            return null;
+        $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+
+        $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
+
+        foreach( $check_array['severity'] as $severity )
         {
-            /*
-            //Todo: use ThreatPolicySpyware - swaschkut 20260620
-            //how to validate if a severity is missing
-            foreach( $this->rules_obj as $rulename => $rule )
+            if( $severity == "any" )
+                continue;
+            foreach( $categories as $category )
             {
-                if( $rule->spyware_rule_visibility() )
-                    return true;
-            }
-
-            return false;
-            */
-            /////////////
-            /// OlD start
-            $bp_set = false;
-
-            $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
-            $this->spyware_rules_coverage();
-
-            foreach( $check_array['severity'] as $bp_array )
-            {
-                if( isset($this->rule_coverage[$bp_array]) )
-                {
-                    $action_bp = FALSE;
-                    foreach( $check_array['action'] as $action_check)
-                    {
-                        $negate_string = "";
-                        if( strpos( $action_check, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
-                        {
-                            $action_bp = FALSE;
-                            break;
-                        }
-                        else
-                        {
-                            $action_bp = TRUE;
-                            if( $bp_array == "any" )
-                                return true;
-                        }
-
-                    }
-                    if( $action_bp == FALSE )
-                        return FALSE;
-                    else
-                        $bp_set = true;
-                }
-                elseif( $bp_array !== "any" )
-                    return false;
-            }
-
-        }
-        return $bp_set;
-    }
-
-    public function spyware_rules_coverage(): void
-    {
-        if (!empty($this->rules_obj))
-        {
-            foreach ($this->rules_obj as $rulename => $rule)
-            {
-                /** @var ThreatPolicySpyware $rule */
-                foreach( $rule->severity() as $severity_detail )
-                {
-                    if( !isset($this->rule_coverage[$severity_detail]) )
-                    {
-                        $this->rule_coverage[$severity_detail]['action'] = $rule->action();
-                        $this->rule_coverage[$severity_detail]['packet-capture'] = $rule->packetCapture();
-                    }
-                }
+                $rule = $this->spyware_rules_first_match( $severity, $category );
+                if( $rule === null || !$rule->spyware_rule_visibility() )
+                    return FALSE;
             }
         }
+        // no severity judged - an empty list (FALSE, as before) or only 'any': FALSE
+        return count( array_diff( $check_array['severity'], array( 'any' ) ) ) > 0;
     }
 
 

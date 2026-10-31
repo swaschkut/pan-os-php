@@ -29,8 +29,6 @@ class AntiSpywareProfile extends SecurityProfile2
     public $lists_obj = array();
     public $additional = array();
 
-    public $rule_coverage = array();
-
     public $cloud_inline_analysis_enabled = false;
 
     /**

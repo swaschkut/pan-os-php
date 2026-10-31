@@ -64,9 +64,14 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
+        $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
+            ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
+            : $this->severity;
+
         foreach( $check_array['severity'] as $severity_check )
         {
-            if( in_array( $severity_check, $this->severity ) )
+            if( in_array( $severity_check, $severities ) )
             {
                 $action_bp = FALSE;
                 foreach( $check_array['action'] as $action_check)
@@ -110,9 +115,14 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function check_visibility_json( $check_array )
     {
+        // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
+        $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
+            ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
+            : $this->severity;
+
         foreach( $check_array['severity'] as $severity_check )
         {
-            if( in_array( $severity_check, $this->severity ) )
+            if( in_array( $severity_check, $severities ) )
             {
                 $action_bp = FALSE;
                 foreach( $check_array['action'] as $action_check)

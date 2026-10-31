@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <predefined>
-  <application-version>9165-10321</application-version>
+  <application-version>9167-10330</application-version>
   <history minver="7.0.0">
     <entry id="10162" name="104apci-unnumbered-startdt-act">
       <member>
@@ -332831,6 +332831,11 @@ Zwiki supports a number of wiki markup styles out of the box, including MoinMoin
               <entry name="metadata-change"/>
             </types>
           </entry>
+          <entry name="bitbucket">
+            <types>
+              <entry name="metadata-change"/>
+            </types>
+          </entry>
           <entry name="canva-uploading">
             <types>
               <entry name="expanded-coverage">
@@ -339274,7 +339279,7 @@ With the Application and Threats content update scheduled for April 15, 2025, we
       </entry>
     </profiles>
   </log-settings>
-  <threat-version>9165-10321</threat-version>
+  <threat-version>9167-10330</threat-version>
   <threats>
     <phone-home>
       <entry name="10001" p="yes">
@@ -405873,6 +405878,13 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <engine-version min="8.1"/>
         <default-action>reset-both</default-action>
       </entry>
+      <entry name="87182" p="yes">
+        <threatname>EtherRAT Command and Control Traffic Detection</threatname>
+        <category>command-and-control</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <default-action>reset-both</default-action>
+      </entry>
       <entry name="19859" p="yes">
         <threatname>Backdoor.BO.Rootme</threatname>
         <category>backdoor</category>
@@ -439666,7 +439678,7 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </cve>
         <category>overflow</category>
         <severity>high</severity>
-        <engine-version min="7.1"/>
+        <engine-version min="8.1"/>
         <affected-host>
           <client>yes</client>
         </affected-host>
@@ -440834,6 +440846,32 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <affected-host>
           <client>yes</client>
         </affected-host>
+      </entry>
+      <entry name="97236" p="yes">
+        <threatname>Microsoft Windows DNS Client Remote Code Execution Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-41096</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <client>yes</client>
+        </affected-host>
+        <default-action>reset-client</default-action>
+      </entry>
+      <entry name="97586" p="yes">
+        <threatname>ISC Bind BRID HHIT Records Parsing Denial-of-Service Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-13878</member>
+        </cve>
+        <category>dos</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <client>yes</client>
+        </affected-host>
+        <default-action>reset-client</default-action>
       </entry>
       <entry name="31777" p="yes">
         <threatname>Root User Information Retrieval using Fingerd</threatname>
@@ -456791,6 +456829,16 @@ With the Application and Threats content update scheduled for April 15, 2025, we
           <server>yes</server>
         </affected-host>
         <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97600" p="yes">
+        <threatname>Eicar File Detected</threatname>
+        <category>code-execution</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
       </entry>
       <entry name="91593" p="yes">
         <threatname>Palo Alto Networks PAN-OS Denial-of-Service Vulnerability</threatname>
@@ -542088,11 +542136,11 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </vendor>
         <category>code-execution</category>
         <severity>high</severity>
-        <engine-version min="8.1"/>
+        <engine-version min="10.2"/>
         <affected-host>
           <client>yes</client>
         </affected-host>
-        <default-action>alert</default-action>
+        <default-action>reset-both</default-action>
       </entry>
       <entry name="93318" p="yes">
         <threatname>Delta Industrial Automation DIAEnergie SQL Injection Vulnerability</threatname>
@@ -563275,6 +563323,16 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>alert</default-action>
       </entry>
+      <entry name="511277" p="yes">
+        <threatname>Malformed Gzip Evasion Detection</threatname>
+        <category>protocol-anomaly</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <client>yes</client>
+        </affected-host>
+        <default-action>alert</default-action>
+      </entry>
       <entry name="543004" p="yes">
         <threatname>PHP Memory Corruption Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -575186,6 +575244,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="96497" p="yes">
+        <threatname>Fortinet FortiWeb SQL Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-25257</member>
+        </cve>
+        <category>sql-injection</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="96498" p="yes">
         <threatname>Fortinet FortiSandbox HA Cluster Test Connection Command Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -578416,6 +578487,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>alert</default-action>
       </entry>
+      <entry name="96812" p="yes">
+        <threatname>Scada-LTS mailinglists Cross-Site Scripting Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-9143</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
+      </entry>
       <entry name="96813" p="yes">
         <threatname>Scada-LTS Cross-Site Scripting Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -579213,6 +579297,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
           <server>yes</server>
         </affected-host>
         <default-action>reset-server</default-action>
+      </entry>
+      <entry name="96888" p="yes">
+        <threatname>OpenPLC ScadaBR systemsettings Cross-Site Scripting Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2021-26829</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
       </entry>
       <entry name="96890" p="yes">
         <threatname>HTTP SQL Injection Attempt</threatname>
@@ -583167,6 +583264,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>alert</default-action>
       </entry>
+      <entry name="97255" p="yes">
+        <threatname>LiteLLM MCP stdio Authenticated Command Execution Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-42271</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97256" p="yes">
         <threatname>Microsoft Windows Graphics Component Remote Code Execution Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -585706,6 +585816,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97494" p="yes">
+        <threatname>ABB Cylon FLXeon 9.3.4 Password Endpoint Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2024-48841</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="12.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97495" p="yes">
         <threatname>ABB Cylon Aspect 3.07.00 networkDiagAjax Command Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586161,6 +586284,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97539" p="yes">
+        <threatname>OpenSSL CMS AuthEnvelopedData Buffer Overflow Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-15467</member>
+        </cve>
+        <category>overflow</category>
+        <severity>critical</severity>
+        <engine-version min="12.1"/>
+        <affected-host>
+          <client>yes</client>
+        </affected-host>
+        <default-action>reset-both</default-action>
+      </entry>
       <entry name="97540" p="yes">
         <threatname>Tenda AC1206 Router Buffer Overflow Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586316,6 +586452,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
           <client>yes</client>
         </affected-host>
         <default-action>reset-both</default-action>
+      </entry>
+      <entry name="97561" p="yes">
+        <threatname>Ivanti Endpoint Manager EFile CreateFile Arbitrary File Write Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-9712</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <engine-version min="12.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
       </entry>
       <entry name="97562" p="yes">
         <threatname>Citrix NetScaler Command Injection Vulnerability</threatname>
@@ -586473,6 +586622,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97587" p="yes">
+        <threatname>Lantronix PremierWave 2050 Firmware Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2021-21872</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97588" p="yes">
         <threatname>TOTOLINK N300RH Command Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586538,6 +586700,97 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97593" p="yes">
+        <threatname>Atlassian Crowd Remote Code Execution Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2019-11580</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-both</default-action>
+      </entry>
+      <entry name="97595" p="yes">
+        <threatname>TRENDnet TEW-713RE Firmware Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-5183</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97596" p="yes">
+        <threatname>TRENDnet TEW-713RE Firmware Overflow Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-5183</member>
+        </cve>
+        <category>overflow</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97597" p="yes">
+        <threatname>Fortinet FortiWeb cmfgetconfigfilepath Directory Traversal Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-53609</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
+      </entry>
+      <entry name="97598" p="yes">
+        <threatname>TOTOLINK A950RG Firmware Buffer Overflow Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-67189</member>
+        </cve>
+        <category>overflow</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
+      </entry>
+      <entry name="97599" p="yes">
+        <threatname>D-Link DI-8100 Buffer Overflow Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-7854</member>
+        </cve>
+        <category>overflow</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97601" p="yes">
+        <threatname>GL-iNet AR300M16 Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-26793</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97602" p="yes">
         <threatname>Danfoss AK-SM 8xxA Series Command Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586577,6 +586830,32 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>alert</default-action>
       </entry>
+      <entry name="97605" p="yes">
+        <threatname>Advantech WISE-6610 Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-79698</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97606" p="yes">
+        <threatname>Advantech WISE-6610 Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-79697</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97608" p="yes">
         <threatname>Zabbix API CApiService sortfield SQL Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586590,6 +586869,32 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97609" p="yes">
+        <threatname>ToToLink A3300R Firmware Command Execution Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-31178</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97611" p="yes">
+        <threatname>Lantronix PremierWave 2050 Firmware Path Traversal Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2021-21896</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
+      </entry>
       <entry name="97613" p="yes">
         <threatname>Langflow Command Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586597,6 +586902,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </cve>
         <category>code-execution</category>
         <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97618" p="yes">
+        <threatname>Netty DefaultSmtpRequest SMTP Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-59419</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
         <engine-version min="8.1"/>
         <affected-host>
           <server>yes</server>
@@ -586654,6 +586972,58 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <category>code-execution</category>
         <severity>critical</severity>
         <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97626" p="yes">
+        <threatname>Siemens MASTER MODULE UPLOADFILENAME Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2023-28489</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97628" p="yes">
+        <threatname>Advantech WISE Delete Operation Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-2670</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97630" p="yes">
+        <threatname>Moxa TN-5900 Firmware Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2021-46560</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97635" p="yes">
+        <threatname>Fast-jwt JWT Auth Bypass Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-44351</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="11.2"/>
         <affected-host>
           <server>yes</server>
         </affected-host>
@@ -704566,6 +704936,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97496" p="yes">
+        <threatname>Microsoft Internet Key Exchange Ike Protocol Denial-of-Service Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-35424</member>
+        </cve>
+        <category>overflow</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="31618" p="yes">
         <threatname>Gaim AIM-ICQ Protocol Handling Buffer Overflow</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -717468,6 +717851,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-both</default-action>
       </entry>
+      <entry name="93524" p="yes">
+        <threatname>Netdata Streaming Alert Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2023-22496</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="93627" p="yes">
         <threatname>Tarantool Out-of-Bounds Read Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -718518,6 +718914,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <category>code-execution</category>
         <severity>critical</severity>
         <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97579" p="yes">
+        <threatname>MongoDB Server Heap Memory Corruption Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-14847</member>
+        </cve>
+        <category>info-leak</category>
+        <severity>high</severity>
+        <engine-version min="12.1"/>
         <affected-host>
           <server>yes</server>
         </affected-host>
@@ -735185,19 +735594,6 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
-      <entry name="93524" p="yes">
-        <threatname>Netdata Streaming Alert Command Injection Vulnerability</threatname>
-        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-          <member>CVE-2023-22496</member>
-        </cve>
-        <category>code-execution</category>
-        <severity>critical</severity>
-        <engine-version min="8.1"/>
-        <affected-host>
-          <server>yes</server>
-        </affected-host>
-        <default-action>reset-server</default-action>
-      </entry>
       <entry name="93566" p="yes">
         <threatname>Oracle MySQL Cluster Data Node GSNSYNCPATHREQ Parsing Integer Underflow Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -736477,13 +736873,6 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <severity>high</severity>
         <test-signature>yes</test-signature>
       </entry>
-      <entry name="97236" p="yes">
-        <threatname>Microsoft Windows DNS Client Remote Code Execution Vulnerability</threatname>
-        <category>code-execution</category>
-        <severity>critical</severity>
-        <test-signature>yes</test-signature>
-        <default-action>reset-client</default-action>
-      </entry>
       <entry name="93311" p="yes">
         <threatname>HTTP Cross Site Scripting Vulnerability</threatname>
         <category>code-execution</category>
@@ -736617,13 +737006,6 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <test-signature>yes</test-signature>
         <default-action>reset-both</default-action>
       </entry>
-      <entry name="96526" p="yes">
-        <threatname>Adobe Experience Manager Arbitrary Code Execution Vulnerability</threatname>
-        <category>code-execution</category>
-        <severity>critical</severity>
-        <test-signature>yes</test-signature>
-        <default-action>reset-server</default-action>
-      </entry>
       <entry name="96588" p="yes">
         <threatname>Microsoft SharePoint Server-Side Request Forgery Vulnerability</threatname>
         <category>info-leak</category>
@@ -736740,13 +737122,6 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <test-signature>yes</test-signature>
         <default-action>reset-server</default-action>
       </entry>
-      <entry name="97065" p="yes">
-        <threatname>Wordpress AI Engine MCP Sensitive Information Exposure Vulnerability</threatname>
-        <category>info-leak</category>
-        <severity>high</severity>
-        <test-signature>yes</test-signature>
-        <default-action>reset-server</default-action>
-      </entry>
       <entry name="97105" p="yes">
         <threatname>PraisonAI Gateway Server Authentication Bypass Vulnerability</threatname>
         <category>code-execution</category>
@@ -736767,13 +737142,6 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <severity>informational</severity>
         <test-signature>yes</test-signature>
         <default-action>alert</default-action>
-      </entry>
-      <entry name="97255" p="yes">
-        <threatname>LiteLLM MCP stdio Authenticated Command Execution Vulnerability</threatname>
-        <category>code-execution</category>
-        <severity>high</severity>
-        <test-signature>yes</test-signature>
-        <default-action>reset-server</default-action>
       </entry>
       <entry name="97407" p="yes">
         <threatname>RabbitMQ Server-Side Request Forgery Vulnerability</threatname>
@@ -736809,6 +737177,20 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <severity>medium</severity>
         <test-signature>yes</test-signature>
         <default-action>alert</default-action>
+      </entry>
+      <entry name="97615" p="yes">
+        <threatname>Flexense SyncBreeze Enterprise ParseHttpHeader Stack Buffer Overflow Vulnerability</threatname>
+        <category>overflow</category>
+        <severity>high</severity>
+        <test-signature>yes</test-signature>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97636" p="yes">
+        <threatname>Adobe Experience Manager Forms Improper Access Control Vulnerability</threatname>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <test-signature>yes</test-signature>
+        <default-action>reset-server</default-action>
       </entry>
       <entry name="97665" p="yes">
         <threatname>PHP Remote Code Execution Vulnerability</threatname>
@@ -736851,6 +737233,13 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <test-signature>yes</test-signature>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97555" p="yes">
+        <threatname>open62541 Integer Overflow Vulnerability</threatname>
+        <category>overflow</category>
+        <severity>high</severity>
+        <test-signature>yes</test-signature>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="96151" p="yes">
         <threatname>Kamailio Heap Buffer Overflow Vulnerability</threatname>
         <category>code-execution</category>
@@ -736868,6 +737257,13 @@ With the Application and Threats content update scheduled for April 15, 2025, we
       <entry name="97568" p="yes">
         <threatname>Apache ActiveMQ Artemis Core Protocol Federation Bridge Injection Vulnerability</threatname>
         <category>insecure-credentials</category>
+        <severity>critical</severity>
+        <test-signature>yes</test-signature>
+        <default-action>alert</default-action>
+      </entry>
+      <entry name="97581" p="yes">
+        <threatname>Llama.cpp Remote Code Execution Vulnerability</threatname>
+        <category>code-execution</category>
         <severity>critical</severity>
         <test-signature>yes</test-signature>
         <default-action>alert</default-action>

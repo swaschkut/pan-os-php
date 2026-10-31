@@ -26,10 +26,12 @@ BUGFIX:
 * class PH | fix predefinedStores for type=playbook if NOT subprocess
 * remove multiple times getPredefinedXML load part
 * class ZoneRuleContainer - optimsation to reduce memory usage
+* class AntiSpyware-/VulnerabilityProfile and the relevant ThreatPolicy-/Spyware/Vulnerability - also actions-securityprofile | fix to cover new rules with existing name - CVE/Vendor-id
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
 * update Device App-ID to version: 9165-10321
+* update Device App-ID to version: 9167-10330
 
 
 2.1.60 (20261021)

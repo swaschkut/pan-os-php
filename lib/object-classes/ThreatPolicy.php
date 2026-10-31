@@ -43,10 +43,7 @@ class ThreatPolicy
     public $direction = null;
     public $analysis = null;
 
-    //Todo:
-    //add CVE / VEndorID for Vulnerability Profilte
-    public $cve = null;
-    public $vendorID = null;
+    const OTHER_CATEGORY = "**any-other-category**";   // stands for every category no rule names
 
     public function __construct($name, $owner)
     {
@@ -141,6 +138,60 @@ class ThreatPolicy
         {
             $this->threatname = $tmp->textContent;
         }
+    }
+
+    /**
+     * A rule naming a particular threat applies to that threat only.
+     * ThreatPolicyVulnerability extends this with CVE and vendor-id.
+     */
+    public function namesParticularThreats()
+    {
+        return ( $this->threatname ?? "any" ) !== "any";
+    }
+
+    /**
+     * PAN-OS's match: severity, host and category must all match; 'any' and an absent element match every value.
+     * $host is null for profiles without a host (anti-spyware): then the host is not checked.
+     */
+    /**
+     * The categories a first-match check must try for these rules: every category a rule names,
+     * plus OTHER_CATEGORY for all categories no rule names.
+     * @param ThreatPolicy[] $rules
+     * @return string[]
+     */
+    public static function categoriesOf( $rules )
+    {
+        $categories = array( self::OTHER_CATEGORY );
+        foreach( $rules as $rule )
+            if( ( $rule->category() ?? "any" ) !== "any" && !in_array( $rule->category(), $categories, TRUE ) )
+                $categories[] = $rule->category();
+        return $categories;
+    }
+
+    /**
+     * A rule name not yet used in this profile: $name, or $name_1, $name_2, ...
+     * newThreatPolicyXML() rewrites an existing rule of the same name, so new rules must get a free name.
+     */
+    public static function uniqueRuleName( DOMElement $profileXml, $name )
+    {
+        $rules = DH::findFirstElement( 'rules', $profileXml );
+        if( $rules === FALSE )
+            return $name;
+        $candidate = $name;
+        for( $i = 1; DH::findFirstElementByNameAttr( 'entry', $candidate, $rules ) !== null; $i++ )
+            $candidate = $name . "_" . $i;
+        return $candidate;
+    }
+
+    public function matchesThreat( $severity, $host, $category )
+    {
+        if( !empty( $this->severity ) && !in_array( 'any', $this->severity, TRUE ) && !in_array( $severity, $this->severity, TRUE ) )
+            return FALSE;
+        if( $host !== null && ( $this->host ?? "any" ) !== "any" && $this->host !== $host )
+            return FALSE;
+        if( ( $this->category ?? "any" ) !== "any" && $this->category !== $category )
+            return FALSE;
+        return TRUE;
     }
 
 
@@ -279,7 +330,6 @@ class ThreatPolicy
         $packet_capture = "disable";
         $threat_name = "any";
         $category = "any";
-        $vendorID = "any";
 
         $tmp_rules_xmlroot = DH::findFirstElementOrCreate('rules', $xmlroot);
         $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
@@ -309,22 +359,7 @@ class ThreatPolicy
         $tmp_packet_capture->textContent = $packet_capture;
         $this->packetCapture = $packet_capture;
 
-        if( $this->type == "ThreatPolicyVulnerability" )
-        {
-            $tmp_cve = DH::findFirstElementOrCreate('cve', $tmp_entry);
-            $tmp_cve_member = DH::findFirstElementOrCreate('member', $tmp_cve);
-            $tmp_cve_member->textContent = "any";
-
-            $tmp_vendorID = DH::findFirstElementOrCreate('vendor-id', $tmp_entry);
-            $tmp_vendorID_member = DH::findFirstElementOrCreate('member', $tmp_vendorID);
-            $tmp_vendorID_member->textContent = $vendorID;
-            $this->vendorID = $vendorID;
-
-            $tmp_host = DH::findFirstElementOrCreate('host', $tmp_entry);
-            $tmp_host->textContent = $host_type;
-            $this->host = $host_type;
-
-        }
+        return $tmp_entry;
     }
 
     public function getFullThreatPolicyText()
