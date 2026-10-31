@@ -174,6 +174,19 @@ class Template
         return TRUE;
     }
 
+    /**
+     * The firewalls this template reaches: those of every template stack that holds it.
+     * @return ManagedDevice[]  serial => ManagedDevice
+     */
+    public function managedDevices()
+    {
+        $devices = array();
+        foreach( $this->getReferences() as $ref )
+            if( get_class( $ref ) == "TemplateStack" )
+                $devices += $ref->managedDevices();
+        return $devices;
+    }
+
 
 
     public function load_from_templateXml()

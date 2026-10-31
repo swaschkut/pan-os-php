@@ -163,6 +163,19 @@ class TemplateStack
     }
 
     /**
+     * The firewalls this template stack is pushed to.
+     * @return ManagedDevice[]  serial => ManagedDevice
+     */
+    public function managedDevices()
+    {
+        $devices = array();
+        foreach( $this->getReferences() as $ref )
+            if( get_class( $ref ) == "ManagedDevice" )
+                $devices[$ref->name()] = $ref;
+        return $devices;
+    }
+
+    /**
      * Add a member to this group, it must be passed as an object
      * @param Template $newObject Object to be added
      * @param bool $rewriteXml

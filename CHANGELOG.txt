@@ -11,6 +11,7 @@ UTIL:
 * type=stats | introduce 'zone protection all-targets' (+ calc / percentage): from-zone protected on every serial/vsys the rule is pushed to, rule Target incl. negate honoured
 * type=rule actions=exporttoexcel:file,Visibility | introduce columns 'from-visible-all-targets' and 'from-zone-all-targets' (missing / ambiguous for templates with named vsys)
 * Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
+* type=zone/zone-protection-profile | correct/extend managed.device filter
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
