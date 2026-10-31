@@ -827,7 +827,7 @@ trait sp_action_spyware
 
         $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
 
-        foreach( $checkBP_array['severity'] as $severity )   // no rule.bp section: stops here, as before
+        foreach( $checkBP_array['severity'] ?? array() as $severity )
         {
             if( $severity == "any" )
                 continue;       // a threat has one of the five severities; a severity-any rule is judged through them
@@ -840,7 +840,7 @@ trait sp_action_spyware
                     return FALSE;
             }
         }
-        // an empty rule.bp.severity list gives the visibility verdict, as before
+        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
         return TRUE;
     }
 
@@ -852,7 +852,7 @@ trait sp_action_spyware
 
         $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
 
-        foreach( $check_array['severity'] as $severity )
+        foreach( $check_array['severity'] ?? array() as $severity )
         {
             if( $severity == "any" )
                 continue;
@@ -863,8 +863,8 @@ trait sp_action_spyware
                     return FALSE;
             }
         }
-        // no severity judged - an empty list (FALSE, as before) or only 'any': FALSE
-        return count( array_diff( $check_array['severity'], array( 'any' ) ) ) > 0;
+        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
+        return TRUE;
     }
 
 

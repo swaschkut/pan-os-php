@@ -58,6 +58,8 @@ class ThreatPolicySpyware extends ThreatPolicy
                     mwarning( "this JSON bp/visibility JSON file customised 'visibility' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
         }
+        else
+            mwarning( "this JSON bp/visibility JSON file has no '".$array_type."' section for: '".$secprof_type."'", null, FALSE );
 
         return $checkArray;
     }
@@ -69,12 +71,12 @@ class ThreatPolicySpyware extends ThreatPolicy
             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
             : $this->severity;
 
-        foreach( $check_array['severity'] as $severity_check )
+        foreach( $check_array['severity'] ?? array() as $severity_check )   // no severity listed: nothing to check
         {
             if( in_array( $severity_check, $severities ) )
             {
-                $action_bp = FALSE;
-                foreach( $check_array['action'] as $action_check)
+                $action_bp = empty( $check_array['action'] );   // no action listed: nothing to check
+                foreach( $check_array['action'] ?? array() as $action_check)
                 {
                     if( $this->action() == $action_check )
                     {
@@ -91,8 +93,8 @@ class ThreatPolicySpyware extends ThreatPolicy
                 if( $action_bp == FALSE )
                     return FALSE;
 
-                $packet_bp = FALSE;
-                foreach( $check_array['packet-capture'] as $packet_check )
+                $packet_bp = empty( $check_array['packet-capture'] );   // no packet capture listed: nothing to check
+                foreach( $check_array['packet-capture'] ?? array() as $packet_check )
                 {
                     if( $this->packetCapture() == $packet_check )
                     {
@@ -105,7 +107,7 @@ class ThreatPolicySpyware extends ThreatPolicy
                 if( $packet_bp == FALSE )
                     return FALSE;
 
-                if( $action_check && $packet_bp )
+                if( $action_bp && $packet_bp )
                     return true;
             }
         }
@@ -120,12 +122,12 @@ class ThreatPolicySpyware extends ThreatPolicy
             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
             : $this->severity;
 
-        foreach( $check_array['severity'] as $severity_check )
+        foreach( $check_array['severity'] ?? array() as $severity_check )   // no severity listed: nothing to check
         {
             if( in_array( $severity_check, $severities ) )
             {
-                $action_bp = FALSE;
-                foreach( $check_array['action'] as $action_check)
+                $action_bp = empty( $check_array['action'] );   // no action listed: nothing to check
+                foreach( $check_array['action'] ?? array() as $action_check)
                 {
                     $negate_string = "";
                     if( strpos( $action_check, "!" ) !== FALSE )
