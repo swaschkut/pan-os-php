@@ -1418,11 +1418,11 @@ class URLProfile extends SecurityProfile2
      * (iron-skillet templates/panorama/snippets/profiles_url_filtering.xml):
      * 'Outbound-URL', 'Alert-Only-URL', and 'Exception-URL' (same as Outbound) before iron-skillet 10.2.
      *
-     * Every profile lists every category of the version, in site access and in credential enforcement.
-     * - 8.1: custom categories Black-List / White-List, 'hacking' blocked, top-level action block
-     * - 9.1 and later: custom categories Block / Allow
+     * Every profile lists every URL category, in site access and in credential enforcement:
+     * the custom categories Block / Allow and every predefined category (see ironSkilletCategories()).
+     * The categories are the same for every version; they come with the dynamic updates, not with PAN-OS.
+     * - 8.1: top-level action block
      * - 10.0, 10.1: ML URL engines (Phishing Detection, Javascript Exploit Detection)
-     * - 10.1 and later: 'ransomware' blocked
      * - 10.2 and later: HTTP header logging also in Alert-Only, local and cloud inline categorization
      *
      * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
@@ -1438,12 +1438,10 @@ class URLProfile extends SecurityProfile2
 
         $categories = self::ironSkilletCategories( $version );
 
-        $customBlock = version_compare( $version, '9.1', '<' ) ? 'Black-List' : 'Block';
-        $block = array( $customBlock, 'command-and-control', 'compromised-website', 'grayware', 'malware', 'phishing' );
-        if( version_compare( $version, '9.1', '<' ) )
-            $block[] = 'hacking';
-        if( version_compare( $version, '10.1', '>=' ) )
-            $block[] = 'ransomware';
+        // blocked by Outbound-URL (and Exception-URL); every other category is alert
+        $block = array_values( array_intersect(
+            array( 'Block', 'command-and-control', 'compromised-website', 'grayware', 'malware', 'phishing', 'ransomware' ),
+            $categories ) );
         $alert = array_values( array_diff( $categories, $block ) );
 
         $profiles = array(
@@ -1493,51 +1491,37 @@ class URLProfile extends SecurityProfile2
     }
 
     /**
-     * URL categories of an iron-skillet version, including the custom categories Block / Allow.
-     * The newest list, minus what an older version does not have.
+     * URL categories of the iron-skillet URL filtering profiles: the custom categories Block and Allow
+     * (created by sp_spg-create-*-bp), then every predefined URL category of predefined.xml
+     * (<pan-url-categories>), the same source pan-os-php reads the categories of a URL profile from.
      *
-     * @param string $version iron-skillet PAN-OS version folder
+     * URL categories come with the dynamic updates, not with PAN-OS, so the list is the same for every version.
+     * An entry with 'minver' / 'maxver' in predefined.xml is listed only for the versions inside that range.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
      * @return string[]
      */
     public static function ironSkilletCategories( $version )
     {
-        $categories = array(
-            'Block', 'Allow', 'abortion', 'abused-drugs', 'adult', 'AI-code-assistant', 'AI-conversational-assistant',
-            'AI-data-and-workflow-optimizer', 'AI-media-service', 'AI-meeting-assistant', 'AI-platform-service',
-            'AI-website-generator', 'AI-writing-assistant', 'alcohol-and-tobacco', 'artificial-intelligence', 'auctions',
-            'browser-runtime-attack', 'business-and-economy', 'command-and-control', 'compromised-website',
-            'computer-and-internet-info', 'content-delivery-networks', 'copyright-infringement', 'cryptocurrency', 'dating',
-            'dynamic-dns', 'educational-institutions', 'encrypted-dns', 'entertainment-and-arts', 'extremism',
-            'file-converter', 'financial-services', 'gambling', 'games', 'government', 'grayware', 'hacking',
-            'health-and-medicine', 'high-risk', 'home-and-garden', 'hunting-and-fishing', 'insufficient-content',
-            'internet-communications-and-telephony', 'internet-portals', 'job-search', 'legal', 'low-risk', 'malware',
-            'marijuana', 'medium-risk', 'military', 'motor-vehicles', 'music', 'newly-registered-domain', 'news',
-            'not-resolved', 'nudity', 'online-storage-and-backup', 'parked', 'peer-to-peer', 'personal-sites-and-blogs',
-            'philosophy-and-political-advocacy', 'phishing', 'private-ip-addresses', 'proxy-avoidance-and-anonymizers',
-            'questionable', 'ransomware', 'real-estate', 'real-time-detection', 'recreation-and-hobbies',
-            'reference-and-research', 'religion', 'remote-access', 'scanning-activity', 'search-engines', 'sex-education',
-            'shareware-and-freeware', 'shopping', 'social-networking', 'society', 'sports', 'stock-advice-and-tools',
-            'streaming-media', 'swimsuits-and-intimate-apparel', 'training-and-tools', 'translation', 'travel', 'unknown',
-            'weapons', 'web-advertisements', 'web-based-email', 'web-hosting',
-        );
+        $categories = array( 'Block', 'Allow' );
 
-        $missing = array();
-        if( version_compare( $version, '9.1', '<' ) )
-            $missing = array_merge( $missing, array( 'cryptocurrency', 'high-risk', 'low-risk', 'medium-risk', 'newly-registered-domain' ) );
-        if( version_compare( $version, '10.0', '<' ) )
-            $missing[] = 'real-time-detection';
-        if( version_compare( $version, '10.1', '<' ) )
-            $missing = array_merge( $missing, array( 'encrypted-dns', 'ransomware' ) );
-        // URL categories come with content updates, not with PAN-OS: these three work from PAN-OS 9.1
-        // (content 8727 / 8729 / 8838, 2023-2024). iron-skillet lists them from 10.2; its 11.0 snippet
-        // missed them, they are added for 11.0 too.
-        if( version_compare( $version, '10.2', '<' ) )
-            $missing = array_merge( $missing, array( 'artificial-intelligence', 'marijuana', 'scanning-activity' ) );
+        $xmlDoc = PH::getPredefinedXmlDoc( null, array( 'pan-url-categories' ) );
+        $root = DH::findXPathSingleEntryOrDie( '/predefined/pan-url-categories', $xmlDoc );
 
-        $categories = array_values( array_diff( $categories, $missing ) );
+        foreach( $root->childNodes as $entry )
+        {
+            if( $entry->nodeType != XML_ELEMENT_NODE || $entry->nodeName != 'entry' )
+                continue;
 
-        if( version_compare( $version, '9.1', '<' ) )
-            $categories = str_replace( array( 'Block', 'Allow' ), array( 'Black-List', 'White-List' ), $categories );
+            $minver = $entry->getAttribute( 'minver' );
+            if( $minver !== '' && version_compare( $version, $minver, '<' ) )
+                continue;
+            $maxver = $entry->getAttribute( 'maxver' );
+            if( $maxver !== '' && version_compare( $version, $maxver, '>' ) )
+                continue;
+
+            $categories[] = $entry->getAttribute( 'name' );
+        }
 
         return $categories;
     }

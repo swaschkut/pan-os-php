@@ -43,7 +43,7 @@ foreach( $xpath->query( '/predefined/pan-url-categories/entry' ) as $entry )
 print "predefined URL categories: " . count( $predefined ) . " (" . $predefinedFile . ")\n\n";
 
 // custom URL categories created by sp_spg-create-*-bp, not predefined
-$customCategories = array( 'Block', 'Allow', 'Black-List', 'White-List' );
+$customCategories = array( 'Block', 'Allow' );
 
 $versions = array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' );
 $profiles = array( 'Outbound-URL', 'Alert-Only-URL' );

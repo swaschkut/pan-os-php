@@ -2916,10 +2916,7 @@ DeviceCallContext::$supportedActions['sp_spg-create-alert-only-BP'] = array(
 
                 foreach( $nameArray as $name)
                 {
-                    if( $context->object->owner->version < 90 )
-                        $customURLarray = array("Black-List", "White-List", "Custom-No-Decrypt");
-                    else
-                        $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
+                    $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
                     foreach( $customURLarray as $entry )
                     {
                         $block = $sharedStore->customURLProfileStore->find($entry);
@@ -3092,10 +3089,7 @@ DeviceCallContext::$supportedActions['sp_spg-create-BP'] = array(
                     }
 
 
-                    if( $context->object->owner->version < 90 )
-                        $customURLarray = array("Black-List", "White-List", "Custom-No-Decrypt");
-                    else
-                        $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
+                    $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
                     foreach( $customURLarray as $entry )
                     {
                         $block = $sharedStore->customURLProfileStore->find($entry);
