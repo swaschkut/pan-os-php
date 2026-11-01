@@ -135,6 +135,13 @@ class XMLISSUE extends UTIL
 
     public $countEmptyAddressGroup = 0;
     public $countEmptyServiceGroup = 0;
+    public $countAddressGroupsSubGroupManual = 0;
+    public $countServiceGroupsSubGroupManual = 0;
+
+    /** @var DOMElement[] location name => its node (shared, vsys, device group, container, cloud) */
+    public $locationNodesByName = array();
+    /** @var array cache: location name => object kind => object name => TRUE (address / service objects, not groups) */
+    public $objectNamesCache = array();
 
     public $service_app_default_available = false;
     public $countMissconfiguredSecRuleServiceAppDefaultObjects = 0;
@@ -384,6 +391,8 @@ class XMLISSUE extends UTIL
         foreach( $tmpNodes as $node )
             $locationNodes[$node->getAttribute('name')] = $node;
 
+        $this->locationNodesByName = $locationNodes;
+
         PH::print_stdout( " - Found " . count($locationNodes) . " locations (VSYS/DG/Container/DeviceCloud)");
         foreach( $locationNodes as $key => $tmpNode )
             PH::print_stdout( "   - ".$key);
@@ -578,7 +587,7 @@ class XMLISSUE extends UTIL
                 {
                     $staticNode = DH::findFirstElement('static', $node);
                     $dynamicNode = DH::findFirstElement('dynamic', $node);
-                    if( $staticNode === FALSE && $dynamicNode === FALSE )
+                    if( $dynamicNode === FALSE && ( $staticNode === FALSE || !$this->fullScanHasChildElements( $staticNode ) ) )
                     {
                         $objectType = "addressgroup";
                         $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
@@ -648,48 +657,7 @@ class XMLISSUE extends UTIL
             //
             //
             //
-            PH::print_stdout( " - Scanning for address groups with own membership as subgroup...");
-            foreach( $addressGroups as $objectName => $nodes )
-            {
-                foreach( $nodes as $node )
-                {
-                    $staticNode = DH::findFirstElement('static', $node);
-                    if( $staticNode === FALSE )
-                        continue;
-
-                    $membersIndex = array();
-                    /** @var DOMElement[] $nodesToRemove */
-                    $nodesToRemove = array();
-
-                    foreach( $staticNode->childNodes as $staticNodeMember )
-                    {
-                        /** @var DOMElement $staticNodeMember */
-                        if( $staticNodeMember->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $memberName = $staticNodeMember->textContent;
-
-                        if( strcmp( $objectName, $memberName) === 0 )
-                        {
-                            $staticNodeMember->parentNode->removeChild($staticNodeMember);
-
-                            $objectType = "addressgroup";
-                            $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
-                            $text1 = "has itself as member '{$memberName}'";
-
-                            $text2 = " ... *FIXED*";
-                            PH::print_stdout( "    - ".$text.$text1.$text2);
-
-                            $this->logFinding($locationName, $objectName, $objectType, $text1, true);
-
-                            $this->counters['fixed']['Address Group SubGroup'] = ($this->counters['fixed']['Address Group SubGroup'] ?? 0) + 1;
-                            $this->totalAddressGroupsSubGroupFixed++;
-
-                            continue;
-                        }
-                    }
-                }
-            }
+            $this->checkGroupSelfMember( $locationName, "address", $addressGroups );
 
 
             //
@@ -1190,7 +1158,7 @@ class XMLISSUE extends UTIL
                 foreach( $nodes as $node )
                 {
                     $staticNode = DH::findFirstElement('members', $node);
-                    if( $staticNode === FALSE )
+                    if( $staticNode === FALSE || !$this->fullScanHasChildElements( $staticNode ) )
                     {
                         $objectType = "servicegroup";
                         $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
@@ -1257,48 +1225,7 @@ class XMLISSUE extends UTIL
             //
             //
             //
-            PH::print_stdout( " - Scanning for service groups with own membership as subgroup...");
-            foreach( $serviceGroups as $objectName => $nodes )
-            {
-                foreach( $nodes as $node )
-                {
-                    $staticNode = DH::findFirstElement('members', $node);
-                    if( $staticNode === FALSE )
-                        continue;
-
-                    $membersIndex = array();
-                    /** @var DOMElement[] $nodesToRemove */
-                    $nodesToRemove = array();
-
-                    foreach( $staticNode->childNodes as $staticNodeMember )
-                    {
-                        /** @var DOMElement $staticNodeMember */
-                        if( $staticNodeMember->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $memberName = $staticNodeMember->textContent;
-
-                        if( strcmp( $objectName, $memberName) === 0 )
-                        {
-                            $staticNodeMember->parentNode->removeChild($staticNodeMember);
-
-                            $objectType = "servicegroup";
-                            $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
-                            $text1 = "has itself as member '{$memberName}'";
-
-                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
-
-                            $text2 = " ... *FIXED*";
-                            PH::print_stdout( "    - ".$text.$text1.$text2 );
-
-                            $this->counters['fixed']['Service Group SubGroup'] = ($this->counters['fixed']['Service Group SubGroup'] ?? 0) + 1;
-                            $this->totalServiceGroupsSubGroupFixed++;
-
-                            continue;
-                        }
-                    }
-                }
-            }
+            $this->checkGroupSelfMember( $locationName, "service", $serviceGroups );
 
 
             PH::print_stdout( " - Scanning for duplicate service objects...");
@@ -1827,6 +1754,8 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: address objects with same name as REGION: {$this->countMissconfiguredAddressRegionObjects} (look in the logs)");
         if( $this->countEmptyAddressGroup > 0 )
             PH::print_stdout( " - FIX_MANUALLY: empty address-group: {$this->countEmptyAddressGroup} (look in the logs)");
+        if( $this->countAddressGroupsSubGroupManual > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address-group with itself as member, where an address object of that name exists: {$this->countAddressGroupsSubGroupManual} (look in the logs)");
         PH::print_stdout( "----------");
 
         if( $this->countMissconfiguredServiceObjects > 0 )
@@ -1839,6 +1768,8 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: service objects with name 'application-default': {$this->countServiceObjectsWithNameappdefault} (look in the logs)");
         if( $this->countEmptyServiceGroup > 0 )
             PH::print_stdout( " - FIX_MANUALLY: empty service-group: {$this->countEmptyServiceGroup} (look in the logs)");
+        if( $this->countServiceGroupsSubGroupManual > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service-group with itself as member, where a service object of that name exists: {$this->countServiceGroupsSubGroupManual} (look in the logs)");
         PH::print_stdout( "----------");
 
         if( $this->countSecRuleObjectsWithDoubleSpaces > 0 )
@@ -2444,6 +2375,153 @@ class XMLISSUE extends UTIL
                 return $candidate;
         }
         return null;
+    }
+
+    /**
+     * A group that has itself as member (address-group <static>, service-group <members>).
+     *  - learn:    the group's members
+     *  - check:    a member with the group's own name
+     *  - fix:      when no address / service object of that name is visible from this location, the member is removed
+     *              (*FIXED*); when one is (this location, a parent device group, shared or predefined), the member
+     *              probably means that object: it is kept and reported (*FIX_MANUALLY*: rename the group)
+     *  - remember / output: logFinding(), counters, summary; a group left without member is reported (*FIX_MANUALLY*)
+     * @param string $kind 'address' or 'service'
+     * @param array $groups group name => DOMElement[]
+     */
+    private function checkGroupSelfMember( $locationName, $kind, $groups )
+    {
+        $objectType = $kind . "group";
+        $listTag = ( $kind == "address" ) ? "static" : "members";
+        $counterName = ( $kind == "address" ) ? "Address Group" : "Service Group";
+
+        PH::print_stdout( " - Scanning for {$kind} groups with own membership as subgroup..." );
+        foreach( $groups as $groupName => $nodes )
+        {
+            $groupName = (string)$groupName;
+            foreach( $nodes as $node )
+            {
+                /** @var DOMElement $node */
+                $listNode = DH::findFirstElement( $listTag, $node );
+                if( $listNode === FALSE )
+                    continue;
+
+                $selfMembers = array();
+                foreach( $listNode->childNodes as $member )
+                    if( $member->nodeType == XML_ELEMENT_NODE && $member->textContent === $groupName )
+                        $selfMembers[] = $member;
+                if( count( $selfMembers ) == 0 )
+                    continue;
+
+                $text = $objectType . " '{$groupName}' from DG/VSYS {$locationName} ";
+                $objectLocation = $this->locationWithObjectNamed( $locationName, $kind, $groupName );
+
+                if( $objectLocation !== null )
+                {
+                    $text1 = "has itself as member '{$groupName}' at XML line #{$node->getLineNo()}; the member probably means the {$kind} object '{$groupName}' in '{$objectLocation}': rename the group and keep the member";
+                    PH::print_stdout( "    - " . $text . $text1 . " ... (*FIX_MANUALLY*)" );
+                    $this->logFinding( $locationName, $groupName, $objectType, $text1, false );
+
+                    $this->counters['manual'][$counterName . ' SubGroup'] = ( $this->counters['manual'][$counterName . ' SubGroup'] ?? 0 ) + 1;
+                    if( $kind == "address" )
+                        $this->countAddressGroupsSubGroupManual++;
+                    else
+                        $this->countServiceGroupsSubGroupManual++;
+                    continue;
+                }
+
+                foreach( $selfMembers as $member )
+                {
+                    $listNode->removeChild( $member );
+
+                    $text1 = "has itself as member '{$groupName}' at XML line #{$node->getLineNo()} - removed";
+                    PH::print_stdout( "    - " . $text . $text1 . " ... *FIXED*" );
+                    $this->logFinding( $locationName, $groupName, $objectType, $text1, true );
+
+                    $this->counters['fixed'][$counterName . ' SubGroup'] = ( $this->counters['fixed'][$counterName . ' SubGroup'] ?? 0 ) + 1;
+                    if( $kind == "address" )
+                        $this->totalAddressGroupsSubGroupFixed++;
+                    else
+                        $this->totalServiceGroupsSubGroupFixed++;
+                }
+
+                if( !$this->fullScanHasChildElements( $listNode ) )
+                {
+                    $text1 = "has no member left after removing itself at XML line #{$node->getLineNo()}: PAN-OS does not accept an empty group";
+                    PH::print_stdout( "    - " . $text . $text1 . " ... (*FIX_MANUALLY*)" );
+                    $this->logFinding( $locationName, $groupName, $objectType, $text1, false );
+
+                    $this->counters['manual'][$counterName . ' empty'] = ( $this->counters['manual'][$counterName . ' empty'] ?? 0 ) + 1;
+                    if( $kind == "address" )
+                        $this->countEmptyAddressGroup++;
+                    else
+                        $this->countEmptyServiceGroup++;
+                }
+            }
+        }
+    }
+
+    /**
+     * Where an address / service object (not a group) named $name is visible from $locationName:
+     * the location itself, its parent device groups (Panorama), shared, predefined.
+     * @return string|null the location name, 'predefined', or null
+     */
+    private function locationWithObjectNamed( $locationName, $kind, $name )
+    {
+        foreach( $this->locationScope( $locationName ) as $scopeName )
+        {
+            $names = $this->objectNamesInLocation( $scopeName, $kind );
+            if( isset( $names[$name] ) )
+                return $scopeName;
+        }
+
+        if( $kind == "service" && ( $name === "service-http" || $name === "service-https" ) )
+            return "predefined";
+
+        return null;
+    }
+
+    /** the location, its parent device groups (from readonly parent-dg), then shared */
+    private function locationScope( $locationName )
+    {
+        $scope = array();
+        $seen = array();
+        $current = $locationName;
+        while( $current !== null && $current !== 'shared' && !isset( $seen[$current] ) )
+        {
+            $seen[$current] = TRUE;
+            $scope[] = $current;
+
+            $parent = null;
+            if( $this->configType == 'panorama' )
+            {
+                $nodes = DH::findXPath( "/config/readonly/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='" . $current . "']/parent-dg", $this->xmlDoc );
+                if( count( $nodes ) > 0 && trim( $nodes[0]->textContent ) !== '' )
+                    $parent = trim( $nodes[0]->textContent );
+            }
+            $current = $parent;
+        }
+        $scope[] = 'shared';
+        return $scope;
+    }
+
+    /** names of the address / service objects (not groups) of one location */
+    private function objectNamesInLocation( $locationName, $kind )
+    {
+        if( isset( $this->objectNamesCache[$locationName][$kind] ) )
+            return $this->objectNamesCache[$locationName][$kind];
+
+        $names = array();
+        $locationNode = $this->locationNodesByName[$locationName] ?? null;
+        if( $locationNode !== null )
+        {
+            $container = DH::findFirstElement( $kind, $locationNode );
+            if( $container !== FALSE )
+                foreach( $container->childNodes as $entry )
+                    if( $entry->nodeType == XML_ELEMENT_NODE && $entry->nodeName == 'entry' )
+                        $names[$entry->getAttribute( 'name' )] = TRUE;
+        }
+        $this->objectNamesCache[$locationName][$kind] = $names;
+        return $names;
     }
 
     function check_region( $name, $object, &$address_region )
