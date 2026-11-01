@@ -2,7 +2,7 @@
 
 **Status:** Vorschlag, nicht umgesetzt
 **Datum:** 2026-11-01
-**Code-Stand:** `beta` `cb9c2dc9` plus Patch `av-msoffice-shell-10.0` (Zeilennummern können sich verschieben)
+**Code-Stand:** `beta` `5575017d` (Zeilennummern können sich verschieben)
 **Englische Fassung:** `visibility-bp-json-driven-profiles.md`
 
 ## 1. Ziel
@@ -87,7 +87,7 @@ sie die Quelle sein (Abschnitt 6.1).
 | 1 | **WildFire Inline ML:** vor 11.1 nicht vorhanden; **11.1: Regel-Action kann nicht `alert` sein, nur `allow`**; `alert` ab 11.2 | 11.1 `wf_inline_allow` / `allow`; ab 11.2 `wf_inline_alert` / `alert`; Inbound/Internal `wf_inline_block` nur in 11.1 und 11.2 | ergänzt `cloud-inline-analysis` `no` ab 11.1 (`sp_action_wildfire.php:57`) | `wildfire.inline-ml.alert-only-set` nur ab 11.2, 11.1 auskommentiert (5721–5783); `wildfire.inline-ml.best-practice-set` ab 11.1 (5904, 5914) | vor 11.1 `null`, **11.1 immer TRUE** (`SecurityProfile2.php:238–240, 281–299`); `is_visibility` ab 11.2 (`sp_action_wildfire.php:278`) | nicht enthalten | CHANGELOG 2.1.57 „PAN-OS 11.1 - bugfix as wf mica-engine can not set for alerting“; 2.1.58 |
 | 2 | **Anti-Spyware Inline ML** (C2-Detektoren) | alle 5 Detektoren ab 10.2 | ergänzt fehlende Unknown-TCP/UDP-Detektoren ab 10.2 (`sp_action_spyware.php:111, 123`) | `spyware.inline-ml.alert-only-set` / `.best-practice-set` ab 10.2 (4680 / 4300) | vor 10.2 `null` (`SecurityProfile2.php:230`) | `mica-engine-anti-spyware minver="10.2.0"`; **HTTP, HTTP2, SSL `minver="11.1.0"`, Unknown-TCP/UDP `minver="11.0.0"`** (G8) | CHANGELOG 2.1.57 „add <cloud-inline-analysis> starting with PAN-OS 10.2“ |
 | 3 | **`local-deep-learning`** an den Spyware-Detektoren: ab 11.2 | `enable` ab 11.2 | ergänzt `disable` ab 11.2 (`sp_action_spyware.php:86, 113–132`) | nicht behandelt | **nicht geprüft** (`SecurityProfile2.php:218, 269` „todo: speciall now for LDL“), obwohl die JSON `enable` fordert | nicht enthalten | CHANGELOG 2.1.42 |
-| 4 | **DNS-Security-Kategorien:** keine Action `alert`, Sichtbarkeit nur über `log-level` | Alert-Only-AS: `allow` + `log-level default`; 10.0: 4 Kategorien, ab 10.1: 8 (ohne `pan-dns-sec-adtracking`) | ergänzt ab 10.0 die 9 Kategorien, inklusive `adtracking`, mit `default` (`sp_action_spyware.php:380–441`) | `spyware.dns.alert-only-set` (4761) | ab 10.2 (`spyware_dns_security_visibility`, `sp_action_spyware.php:906`) | `pan-dns-security-categories minver="10.0.0"`, alle Kategorien inklusive `adtracking` `minver="10.0.0"` | — |
+| 4 | **DNS-Security-Kategorien:** keine Action `alert`, Sichtbarkeit nur über `log-level` | Alert-Only-AS: `allow` + `log-level default`; 10.0: 4 Kategorien, ab 10.1: 8 (ohne `pan-dns-sec-adtracking`, G11) | ergänzt ab 10.0 die 9 Kategorien, inklusive `adtracking`, mit `default` (`sp_action_spyware.php:380–441`) | `spyware.dns.alert-only-set` (4761) | ab 10.2 (`spyware_dns_security_visibility`, `sp_action_spyware.php:906`) | `pan-dns-security-categories minver="10.0.0"`, alle Kategorien inklusive `adtracking` `minver="10.0.0"` | — |
 | 5 | **Advanced DNS Security** (`pan-adns-sec-*`): ab 11.2 | nicht in den Profilen | ergänzt beide mit `log-level default` ab 11.2 (`sp_action_spyware.php:500–519`) | — | ab 11.2 (`sp_action_spyware.php:948`) | nicht enthalten | CHANGELOG 2.1.28, 2.1.43, 2.1.57 |
 | 6 | **DNS-Security-Lizenz** | — | — | Argument `has-DNS-license`: ohne Lizenz `allow`, `packet-capture disable`, **`log-level none`** (4778–4880) | kennt die Lizenz nicht | — | — |
 | 7 | **SCM (Buckbeak):** Anti-Spyware ohne `botnet-domains` | `AntiSpywareProfile::ironSkilletXmlScm()` (11.1) | — | `spyware.dns.*-set`, `spyware.botnet.*-set` übersprungen (4375, 4473, 4775, 4919) | keine Sonderbehandlung | — | — |
@@ -111,6 +111,9 @@ sie die Quelle sein (Abschnitt 6.1).
 | G7 | Die Loader verändern das XML (Abschnitt 3) | `out=` enthält Elemente, die in der Eingabe nicht standen, auch wenn keine Action das Profil geändert hat |
 | G8 | Spyware-Detektoren: Erzeugen, Laden und Setzen legen alle 5 ab 10.2 an; `predefined.xml` nennt HTTP, HTTP2, SSL ab 11.1.0 und Unknown-TCP/UDP ab 11.0.0 (#2) | entweder hießen die Detektoren in 10.2 anders, oder pan-os-php legt in 10.2 / 11.0 Detektoren an, die PAN-OS nicht kennt; zu klären |
 | G9 | URL-ML-Engine `Phishing Detection` wird für 10.0 / 10.1 angelegt; `predefined.xml` nennt sie ab 10.2.0 (#12) | gleiche Frage wie G8 |
+| G10 | Die Classes bauen `Exception-*`-Profile, die keine Action anlegt: `Exception-AV` (8.1–10.1, `AntiVirusProfile.php:304`), `Exception-AS` (8.1–10.1, `AntiSpywareProfile.php:355`), `Exception-VP` mit leerem `<rules/>` (10.0, 10.1, `VulnerabilityProfile.php:684`), `Exception-URL` als Kopie von Outbound-URL (8.1–10.1, `URLProfile.php:1452`). `sp_spg-create-bp` legt nur `Alert-Only`, `Outbound`, `Inbound`, `Internal` an; `Exception` ist auskommentiert (`actions-device.php:3078/3079`) | aus iron-skillet übernommener toter Code; die `<description>`-Elemente sind bereits entfernt (`294f7379`, `5575017d`) |
+| G11 | DNS-Security-Kategorie `pan-dns-sec-adtracking`: Erzeugen (`AntiSpywareProfile::ironSkilletBotnetDomainsXml()`, `AntiSpywareProfile.php:279–312`) legt in 10.0 4 und ab 10.1 8 Kategorien an, ohne `adtracking`; `predefined.xml` nennt sie mit `minver="10.0.0"`; der Loader ergänzt sie mit `default` (`sp_action_spyware.php:380–441`); die JSON-`visibility` fordert sie (#4) | ein erzeugtes Profil ist erst nach dem Laden vollständig; Erzeugen und Laden stimmen nicht überein |
+| G12 | Alte iron-skillet-Werte für 8.1 / 9.1 in den Classes: Anti-Spyware 8.1 Sinkhole IPv4 `72.5.65.111` (später `sinkhole.paloaltonetworks.com`, `AntiSpywareProfile.php:282`); Anti-Spyware 9.1 Liste `default-paloalto-cloud` neben `default-paloalto-dns` (`AntiSpywareProfile.php:296`); URL 8.1 `<action>block</action>` direkt im Profil (`URLProfile.php:1474`) | für diese Versionen nach heutigem Wissen gültig; Hintergrund folgt |
 
 ## 6. Vorschlag: drei Ebenen
 
@@ -194,7 +197,7 @@ Best Practice funktioniert genauso, mit den `bp`-Abschnitten und den Profilen `O
 
 ## 7. Schritte
 
-1. **Abschnitt 4 prüfen:** jede Zeile bestätigen, vor allem G8 und G9 und welche Versionsgrenzen noch nötig sind.
+1. **Abschnitte 4 und 5 prüfen:** jede Zeile bestätigen, vor allem G8 bis G12 und welche Versionsgrenzen noch nötig sind.
    Fehlende Zeilen ergänzen (z. B. File Blocking, Data Filtering, Zone Protection, Log Forwarding).
 2. **Capabilities im Code** (6.1), zuerst aus `predefined.xml`, mit einem Test je Version, der sie mit dem heutigen
    Verhalten vergleicht.
@@ -224,3 +227,5 @@ also ein fehlender Abschnitt, ein strengerer Wert und ein Wert, den die Version 
    ältere Versionen dieselben Funktionen unter anderem Namen?
 4. G7: Sollen die Loader weiterhin PAN-OS-Standardwerte ins XML schreiben, oder nur in den Speicher?
 5. Wird 8.1 für diese Actions noch unterstützt?
+6. G10: Die ungenutzten `Exception-*`-Profile aus den Classes entfernen, oder für eine spätere Action behalten?
+7. G12: Hintergrund der 8.1- / 9.1-Werte (folgt).
