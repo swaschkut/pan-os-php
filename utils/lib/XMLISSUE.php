@@ -273,6 +273,21 @@ class XMLISSUE extends UTIL
     public $fullScanKeepDuplicateMembers = array( 'aspath-prepend' );
 
     /**
+     * Routing configuration xml-issue never changes on its own. A duplicate found there - by the full scan or a fixed
+     * check - is reported (*FIX_MANUALLY*), not removed or merged: repetition and order can be part of the routing
+     * policy, and a silent change to routing is riskier than a finding someone works through. Element names of the
+     * subtree roots:
+     *  - virtual-router: legacy routing engine (protocol bgp / ospf / ospfv3 / rip, routing-table, redist-profile, ...)
+     *  - logical-router: advanced routing engine (vrf bgp / ospf / ospfv3 / rip, routing-table, ecmp, multicast, ...)
+     *  - routing-profile: advanced routing profiles and filters (bgp, ospf, route-maps, as-path / community lists, ...)
+     *  - bgp (and bgp-...): BGP wherever else it occurs
+     */
+    public $protectedRoutingElements = array( 'virtual-router', 'logical-router', 'routing-profile', 'bgp' );
+    public $countProtectedRoutingDuplicates = 0;
+    /** remember: routing duplicates already reported (several steps see them, as nothing is changed there) */
+    public $reportedRoutingDuplicates = array();
+
+    /**
      * Containers whose duplicate <entry> names a dedicated check above already reports (renamed, or FIX_MANUALLY):
      * the full scan does not report them a second time. Patterns are matched against the parent's path without @name.
      */
@@ -1843,6 +1858,8 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: full scan - entries with the same name but different content: {$this->countFullScanEntries} (look in the logs )");
         if( $this->countFullScanElements > 0 )
             PH::print_stdout( " - FIX_MANUALLY: full scan - elements that occur twice with different content: {$this->countFullScanElements} (look in the logs )");
+        if( $this->countProtectedRoutingDuplicates > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: routing (virtual-router / logical-router / routing-profile / BGP) duplicates, not changed automatically: {$this->countProtectedRoutingDuplicates} (look in the logs )");
         PH::print_stdout( "----------");
 
         if( $this->service_app_default_available )
@@ -1923,6 +1940,14 @@ class XMLISSUE extends UTIL
                     continue;
                 if( $kind === 'member' && in_array( $parent->nodeName, $this->fullScanKeepDuplicateMembers, TRUE ) )
                     continue;   // repeated on purpose (e.g. AS path prepend)
+                if( $this->isProtectedRouting( $parent ) )
+                {
+                    $first = $nodes[0];
+                    $what = ( $kind === 'entry' ) ? "<entry name='{$identifier}'>" : ( ( $kind === 'member' ) ? "<member>{$identifier}</member>" : "<{$identifier}>" );
+                    foreach( array_slice( $nodes, 1 ) as $node )
+                        $this->reportProtectedRoutingDuplicate( $parent, $what, $identifier, $node, $first, "duplicate" );
+                    continue;
+                }
 
                 $this->fullScanHandleDuplicates( $parent, $kind, $identifier, $nodes );
             }
@@ -1981,6 +2006,12 @@ class XMLISSUE extends UTIL
                     continue;   // leaf elements (text values) are judged at the end by fullConfigDuplicateScan()
 
                 $first = array_shift( $containers );
+                if( $this->isProtectedRouting( $parent ) )
+                {
+                    foreach( $containers as $node )
+                        $this->reportProtectedRoutingDuplicate( $parent, "<{$tagName}>", $tagName, $node, $first, "occurs twice" );
+                    continue;
+                }
                 foreach( $containers as $node )
                 {
                     /** @var DOMElement $node */
@@ -2003,6 +2034,34 @@ class XMLISSUE extends UTIL
                 if( $child->nodeType === XML_ELEMENT_NODE )
                     $stack[] = $child;
         }
+    }
+
+    /** TRUE when the node is inside a routing subtree ($protectedRoutingElements) */
+    private function isProtectedRouting( DOMNode $node )
+    {
+        for( $n = $node; $n !== null && $n->nodeType === XML_ELEMENT_NODE; $n = $n->parentNode )
+        {
+            if( in_array( $n->nodeName, $this->protectedRoutingElements, TRUE ) || strpos( $n->nodeName, 'bgp-' ) === 0 )
+                return TRUE;
+        }
+        return FALSE;
+    }
+
+    /** a duplicate in routing configuration: reported, never changed */
+    private function reportProtectedRoutingDuplicate( DOMElement $parent, $what, $identifier, DOMElement $node, DOMElement $first, $verb )
+    {
+        $key = spl_object_hash( $node );
+        if( isset( $this->reportedRoutingDuplicates[$key] ) )
+            return;
+        $this->reportedRoutingDuplicates[$key] = $node;   // keeps the node alive, so the hash stays unique
+
+        $pattern = $this->fullScanPattern( $parent );
+        $text = "{$what} {$verb} under '{$pattern}' (XML line #{$first->getLineNo()} and #{$node->getLineNo()}): routing configuration is not changed automatically - please check";
+        $this->logFinding( $this->fullScanReadablePath( $parent ), $identifier, "routing", $text, false );
+
+        $counterKey = "routing duplicate {$pattern}";
+        $this->counters['manual'][$counterKey] = ( $this->counters['manual'][$counterKey] ?? 0 ) + 1;
+        $this->countProtectedRoutingDuplicates++;
     }
 
     private function fullScanHasChildElements( DOMElement $node )
@@ -2682,6 +2741,26 @@ class XMLISSUE extends UTIL
      */
     private function removeDuplicateChildNodes(DOMElement $parent, string $label): int
     {
+        if( $this->isProtectedRouting( $parent ) )
+        {
+            // routing configuration (e.g. bgp/redist-rules): report only
+            $seen = array();
+            foreach( $parent->childNodes as $node )
+            {
+                if( $node->nodeType !== XML_ELEMENT_NODE )
+                    continue;
+                /** @var DOMElement $node */
+                $identifier = $node->getAttribute( 'name' );
+                if( $identifier === '' )
+                    $identifier = trim( $node->textContent );
+                if( isset( $seen[$identifier] ) )
+                    $this->reportProtectedRoutingDuplicate( $parent, "{$label} '{$identifier}'", $identifier, $node, $seen[$identifier], "duplicate" );
+                else
+                    $seen[$identifier] = $node;
+            }
+            return 0;
+        }
+
         $seenValues = [];
         $toRemove = [];
         $removedCount = 0;
