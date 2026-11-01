@@ -265,6 +265,14 @@ class XMLISSUE extends UTIL
     public $countFullScanElements = 0;
 
     /**
+     * Member lists where the same value may occur more than once on purpose, so the full scan leaves their
+     * duplicate <member> alone:
+     *  - aspath-prepend (route-map set, advanced routing): every member prepends that AS number once more;
+     *    three times 135399 means prepend 135399 three times
+     */
+    public $fullScanKeepDuplicateMembers = array( 'aspath-prepend' );
+
+    /**
      * Containers whose duplicate <entry> names a dedicated check above already reports (renamed, or FIX_MANUALLY):
      * the full scan does not report them a second time. Patterns are matched against the parent's path without @name.
      */
@@ -1913,6 +1921,8 @@ class XMLISSUE extends UTIL
                 list( $kind, $identifier ) = explode( "\0", $key, 2 );
                 if( $kind === 'entry' && $this->fullScanIsSkippedContainer( $parent ) )
                     continue;
+                if( $kind === 'member' && in_array( $parent->nodeName, $this->fullScanKeepDuplicateMembers, TRUE ) )
+                    continue;   // repeated on purpose (e.g. AS path prepend)
 
                 $this->fullScanHandleDuplicates( $parent, $kind, $identifier, $nodes );
             }
