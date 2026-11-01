@@ -362,8 +362,6 @@ class AntiSpywareProfile extends SecurityProfile2
             list( $mode, $rules ) = $profile;
 
             $xml .= '<entry name="' . $name . '">';
-            if( $mode == 'exception' && version_compare( $version, '10.0', '>=' ) )
-                $xml .= '<description>Used for exception cases not part of the recommended practice</description>';
 
             if( $withBotnetDomains )
                 $xml .= self::ironSkilletBotnetDomainsXml( $version, $mode );
