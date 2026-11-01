@@ -2,7 +2,7 @@
 
 **Status:** proposal, not implemented
 **Date:** 2026-11-01
-**Code references:** `beta` `cb9c2dc9` plus patch `av-models-from-predefined` (line numbers may move)
+**Code references:** `beta` `cb9c2dc9` plus patch `av-msoffice-shell-10.0` (line numbers may move)
 **German version:** `visibility-bp-json-driven-profiles.de.md`
 
 ## 1. Goal
@@ -28,11 +28,11 @@ pan-os-php already encodes many such cases on purpose (section 4). They must be 
 - **URL categories** (`cb9c2dc9`): `URLProfile::ironSkilletCategories()` reads `predefined.xml` (`<pan-url-categories>`),
   the same source the check uses. Categories come with the dynamic updates, not with PAN-OS, so the list is the same
   for every version. Custom categories are `Block` / `Allow` for every version.
-- **Antivirus decoders and ML models** (patch `av-models-from-predefined`): `AntiVirusProfile::ironSkilletContentXml()`
-  reads the PAN-OS default antivirus profile in `predefined.xml` (`profiles/virus/entry[@name='default']`) with its
-  `minver` / `maxver`. MSOffice and Shell are therefore listed from 10.0 (before: from 10.2, see G3).
-- **Version comparison:** an iron-skillet version such as `"11.1"` is compared as `"11.1.0"`, as `version_compare()`
-  ranks `"11.1"` below `"11.1.0"`.
+- **Antivirus ML models** (patch `av-msoffice-shell-10.0`): `AntiVirusProfile::ironSkilletContentXml()` lists
+  MSOffice and Shell from 10.0 (before: from 10.2, see G3). The versions stay visible in the class; they match
+  `predefined.xml`.
+- **Version comparison:** `URLProfile::ironSkilletCategories()` compares an iron-skillet version such as `"11.1"` as
+  `"11.1.0"` against `minver` / `maxver`, as `version_compare()` ranks `"11.1"` below `"11.1.0"`.
 - **Check tool:** `utils/develop/ironskillet/url_categories_check.php` (read-only) reports, per iron-skillet version, the
   predefined URL categories the URL profiles do not list.
 
@@ -90,8 +90,8 @@ it can be the source (section 6.1).
 | 6 | **DNS security licence** | — | — | argument `has-DNS-license`: without a licence `allow`, `packet-capture disable`, **`log-level none`** (4778–4880) | does not know the licence | — | — |
 | 7 | **SCM (Buckbeak):** anti-spyware without `botnet-domains` | `AntiSpywareProfile::ironSkilletXmlScm()` (11.1) | — | `spyware.dns.*-set`, `spyware.botnet.*-set` skipped (4375, 4473, 4775, 4919) | no special case | — | — |
 | 8 | **Vulnerability inline ML:** from 11.0 | from 11.0 | — | `vulnerability.inline-ml.*-set` from 11.0 (5071/5081, 5195/5206) | before 11.0 `null` (`SecurityProfile2.php:200`) | `mica-engine-vulnerability minver="11.0.0"` | CHANGELOG 2.1.28 "only on PANOS version >=11.0" |
-| 9 | **Antivirus ML models** (`mlav-engine-filebased-enabled`): from 10.0; `MachO`, `OOXML` from 11.1 | from `predefined.xml` (patch `av-models-from-predefined`): from 10.0 6 models including MSOffice, Shell; `MachO`, `OOXML` from 11.1 | adds `MSOffice`, `Shell` (`disable`) from 10.0, `MachO`, `OOXML` from 11.1 (`sp_action_virus.php:191–212`) | `virus.inline-ml.alert-only-set` reads the JSON, no version check (4179) | **before 10.2 `null`** (`SecurityProfile2.php:335`), should check from 10.0 | `mlav-engine-filebased-enabled minver="9.2.0"` (= 10.0); MSOffice, Shell without `minver`; `OOXML`, `MachO` `minver="11.1.0"` | Palo Alto: MSOffice from content 8434, Shell from content 8543, PAN-OS 10.x and later |
-| 10 | **Antivirus decoders and `mlav-action`** | from `predefined.xml`: `http2` from 9.1, `mlav-action` from 10.0 | adds `mlav-action` `allow` from 11.1 when missing (`sp_action_virus.php:73`) | `virus.decoder.alert-only-set` reads the JSON (4159) | — | `http2 minver="9.0.0"`, `mlav-action minver="9.2.0"` | CHANGELOG 2.1.57 "virus.decoder.alert-only-set - bugfix for older PAN-OS version" |
+| 9 | **Antivirus ML models** (`mlav-engine-filebased-enabled`): from 10.0; `MachO`, `OOXML` from 11.1 | in the class (patch `av-msoffice-shell-10.0`): from 10.0 6 models including MSOffice, Shell; `MachO`, `OOXML` from 11.1 | adds `MSOffice`, `Shell` (`disable`) from 10.0, `MachO`, `OOXML` from 11.1 (`sp_action_virus.php:191–212`) | `virus.inline-ml.alert-only-set` reads the JSON, no version check (4179) | **before 10.2 `null`** (`SecurityProfile2.php:335`), should check from 10.0 | `mlav-engine-filebased-enabled minver="9.2.0"` (= 10.0); MSOffice, Shell without `minver`; `OOXML`, `MachO` `minver="11.1.0"` | Palo Alto: MSOffice from content 8434, Shell from content 8543, PAN-OS 10.x and later |
+| 10 | **Antivirus decoders and `mlav-action`** | in the class: `http2` from 9.1, `mlav-action` from 10.0 | adds `mlav-action` `allow` from 11.1 when missing (`sp_action_virus.php:73`) | `virus.decoder.alert-only-set` reads the JSON (4159) | — | `http2 minver="9.0.0"`, `mlav-action minver="9.2.0"` | CHANGELOG 2.1.57 "virus.decoder.alert-only-set - bugfix for older PAN-OS version" |
 | 11 | **URL inline categorisation** (`local-inline-cat`, `cloud-inline-cat`): from 10.2 | from 10.2 | adds `no` from 10.2 (`URLProfile.php:363, 373`) | from 10.2 (`URLProfile.php:884, 1145`) | — | `local-inline-cat minver="10.2.0"` | — |
 | 12 | **URL ML engines** (`mlav-engine-urlbased-enabled`) | in 10.0 and 10.1: `Phishing Detection`, `Javascript Exploit Detection` | — | — | — | `Phishing Detection minver="10.2.0"` (G9) | — |
 | 13 | **URL categories:** from the dynamic updates, not from PAN-OS | from `predefined.xml`, all versions (`cb9c2dc9`) | every predefined category starts as `allow` (`URLProfile.php:150–161`) | `url.*.alert-only-set` | against `predefined.xml` | `<pan-url-categories>` | Palo Alto: categories are visible on all PAN-OS versions and work from 9.1 |
@@ -102,7 +102,7 @@ it can be the source (section 6.1).
 |---|---|---|
 | G1 | `local-deep-learning` is created and loaded but not checked (#3) | a profile with `local-deep-learning disable` passes visibility, although the JSON asks for `enable` |
 | G2 | Without a DNS licence `spyware.dns.alert-only-set` sets `log-level none` (#6); the check asks for `!none` and does not know the licence | after the action, the profile is not visible; the check should treat it as not applicable |
-| G3 | **Done for create:** antivirus MSOffice / Shell exist from 10.0 (#9); create now reads `predefined.xml`. **Open:** the check returns `null` before 10.2 | before, Alert-Only-AV and the BP profiles for 10.0 / 10.1 had MSOffice and Shell on `disable` (added by the loader); the check did not notice |
+| G3 | **Done for create:** antivirus MSOffice / Shell exist from 10.0 (#9); the class now lists them from 10.0. **Open:** the check returns `null` before 10.2 | before, Alert-Only-AV and the BP profiles for 10.0 / 10.1 had MSOffice and Shell on `disable` (added by the loader); the check did not notice |
 | G4 | `virus.inline-ml.alert-only-set` compares `$type == $mlav_engine_entry`, a string with a `DOMElement` (`actions-securityprofile.php:4204`) | JSON entries for one model name never match; only type `any` works |
 | G5 | Most set actions do not read the JSON file (section 3) | a customised JSON file changes the verdict, not what the actions set |
 | G6 | Version knowledge is repeated in up to four places, e.g. WildFire 11.1 in create, set (commented out) and check (#1) | a correction in one place is easily missed in the others |
@@ -132,7 +132,10 @@ Create, load, set and check ask this method instead of comparing `$version` them
 
 **Source of the capabilities:** `predefined.xml` first, wherever the file gives a version (`minver` / `maxver`). It is
 the same file pan-os-php reads when loading and checking, and it is updated with the dynamic updates. This is already
-done for the URL categories and the antivirus decoders and models.
+done for the URL categories.
+
+Where the versions should stay visible in the class, as decided for the antivirus decoders and models, the class keeps
+them and `predefined.xml` is the reference a test compares them with.
 
 | From `predefined.xml` (has `minver`) | Stays in the code (not in `predefined.xml`) |
 |---|---|
@@ -142,7 +145,7 @@ done for the URL categories and the antivirus decoders and models.
 | Spyware inline ML and detectors (#2) | DNS licence (#6), SCM (#7) |
 | Vulnerability inline ML (#8) | |
 
-Versions are compared with three parts (`"11.1"` as `"11.1.0"`), as in patch `av-models-from-predefined`.
+Versions are compared with three parts (`"11.1"` as `"11.1.0"`), as in `URLProfile::ironSkilletCategories()`.
 
 ### 6.2 What is wanted (policy)
 
@@ -167,8 +170,8 @@ A function per profile type applies a JSON section to a profile, within the capa
 | credential `mode` `!disabled` | `ip-user` |
 | a fixed value (`yes`, `enable`, `alert`, `any`, `both`, `public-cloud`) | that value |
 
-4. Which entries must exist comes from the JSON `type` lists; for URL categories, antivirus models and DNS categories
-   from `predefined.xml`. It does not come from the base profile.
+4. Which entries must exist comes from the JSON `type` lists; for URL categories and DNS categories from
+   `predefined.xml`, for antivirus models from the class. It does not come from the base profile.
 5. A section missing in the JSON file: nothing is set and nothing is checked (as decided for the vulnerability and
    anti-spyware rules: what the file does not ask for is not checked).
 
