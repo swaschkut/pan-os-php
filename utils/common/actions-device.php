@@ -2714,58 +2714,56 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
         $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
         $panVersion = $f($context);
 
-        $pathString = dirname(__FILE__)."/../../iron-skillet";
-
-        $context->vp_xmlString = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/profiles_vulnerability.xml");
-        $context->fb_xmlString = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/profiles_file_blocking.xml");
-        $context->wf_xmlString = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+        $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "10.0" );
+        $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "10.0" );
+        $context->wf_xmlString = WildfireProfile::ironSkilletXml( "10.0" );
 
         if( $context->object->owner->version < 90 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v8.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v8.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v8.1/templates/panorama/snippets/profiles_url_filtering.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "8.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "8.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "8.1" );
         }
         elseif( $context->object->owner->version < 100 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_url_filtering.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "9.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "9.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "9.1" );
         }
         elseif( $context->object->owner->version >= 100 and $context->object->owner->version < 112 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_virus.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( $panVersion );
 
             if( $context->subSystem->isBuckbeak() )
-                $context->as_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_spyware_scm.xml");
+                $context->as_xmlString = AntiSpywareProfile::ironSkilletXmlScm( "11.1" );
             else
-                $context->as_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_spyware.xml");
+                $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( $panVersion );
 
-            $context->vp_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_vulnerability.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_url_filtering.xml");
-            $context->fb_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_file_blocking.xml");
-            $context->wf_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( $panVersion );
+            $context->url_xmlString = URLProfile::ironSkilletXml( $panVersion );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( $panVersion );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( $panVersion );
 
-            $context->avwf_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_virus_and_wildfire.xml");
-            $context->dnssec_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_dns_security.xml");
+            $context->avwf_xmlString = VirusAndWildfireProfile::ironSkilletXml( "11.1" );
+            $context->dnssec_xmlString = DNSSecurityProfile::ironSkilletXml( "11.1" );
         }
         elseif( $context->object->owner->version >= 112 and $context->object->owner->version < 121 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->vp_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_vulnerability.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_url_filtering.xml");
-            $context->fb_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_file_blocking.xml");
-            $context->wf_xmlString = file_get_contents( $pathString."/panos_v11.2/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "11.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "11.1" );
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "11.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "11.1" );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "11.1" );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( "11.2" );
         }
         elseif( $context->object->owner->version >= 121 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->vp_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_vulnerability.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_url_filtering.xml");
-            $context->fb_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_file_blocking.xml");
-            $context->wf_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "12.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "12.1" );
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "12.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "12.1" );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "12.1" );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( "12.1" );
         }
     },
     'function_panVersion' => function (DeviceCallContext $context) {
@@ -3209,14 +3207,13 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
 
         if( $context->first )
         {
-            $pathString = dirname(__FILE__)."/../../iron-skillet";
-            $lfp_bp_xmlstring = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/log_settings_profiles.xml");
+            $lfp_bp_xmlstring = LogProfile::ironSkilletXml( "10.0" );
             if( $context->util->pan->version >= 100 )
             {
                 $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
                 $panVersion = $f($context);
 
-                $lfp_bp_xmlstring = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/log_settings_profiles.xml");
+                $lfp_bp_xmlstring = LogProfile::ironSkilletXml( $panVersion );
             }
 
             if( $classtype == "VirtualSystem" || $classtype == "DeviceGroup" )
@@ -3290,15 +3287,13 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
 
         if( $context->first )
         {
-            $pathString = dirname(__FILE__) . "/../../iron-skillet";
-
             $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
             $panVersion = $f($context);
 
             if( $context->object->owner->version < 100 )
-                $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v10.0/templates/panorama/snippets/zone_protection_profile.xml");
+                $zpp_bp_xmlstring = ZoneProtectionProfile::ironSkilletXml( "10.0" );
             elseif( $context->util->pan->version >= 100 )
-                $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v" . $panVersion . "/templates/panorama/snippets/zone_protection_profile.xml");
+                $zpp_bp_xmlstring = ZoneProtectionProfile::ironSkilletXml( $panVersion );
 
             if( $classtype == "VirtualSystem" || $classtype == "Template" )
             {

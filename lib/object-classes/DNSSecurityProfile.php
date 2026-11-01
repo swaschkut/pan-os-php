@@ -159,5 +159,26 @@ class DNSSecurityProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet profile 'Alert-Only-DNSSEC'
+     * (iron-skillet panos_v11.1 templates/panorama/snippets/profiles_dns_security.xml):
+     * the 'botnet-domains' part of 'Alert-Only-AS'.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, only "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( $version !== '11.1' )
+        {
+            derr( "iron-skillet DNS security profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        return '<root><entry name="Alert-Only-DNSSEC">'
+            . AntiSpywareProfile::ironSkilletBotnetDomainsXml( $version, 'alert' )
+            . '</entry></root>';
+    }
 }
 

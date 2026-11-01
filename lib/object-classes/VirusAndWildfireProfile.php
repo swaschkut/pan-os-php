@@ -264,5 +264,27 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet profile 'Alert-Only-AVWF'
+     * (iron-skillet panos_v11.1 templates/panorama/snippets/profiles_virus_and_wildfire.xml):
+     * the antivirus part of 'Alert-Only-AV' and the WildFire rule 'Forward-All'.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, only "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( $version !== '11.1' )
+        {
+            derr( "iron-skillet antivirus and WildFire profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        return '<root><entry name="Alert-Only-AVWF">'
+            . AntiVirusProfile::ironSkilletContentXml( $version, 'alert' )
+            . '<rules>' . WildfireProfile::ironSkilletForwardAllRuleXml() . '</rules>'
+            . '</entry></root>';
+    }
 }
 

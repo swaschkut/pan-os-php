@@ -331,5 +331,46 @@ class LogProfile
         $this->type[$logType][$name]['send_to_panorama'] = $sendToPanorama;
 
     }
+
+    /**
+     * Base XML of the iron-skillet log forwarding profile 'default'
+     * (iron-skillet templates/panorama/snippets/log_settings_profiles.xml):
+     * every log type sent to Panorama.
+     * - 11.2 and later: also decryption
+     * - 12.1 and later: also dns-security
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( !in_array( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
+        {
+            derr( "iron-skillet log forwarding profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        // match list entry => log type
+        $logTypes = array(
+            'Traffic_Log_Forwarding' => 'traffic',
+            'Threat_Log_Forwarding' => 'threat',
+            'Wildfire_Log_Forwarding' => 'wildfire',
+            'URL_Log_Forwarding' => 'url',
+            'Data_Log_Forwarding' => 'data',
+            'Tunnel_Log_Forwarding' => 'tunnel',
+            'Auth_Log_Forwarding' => 'auth',
+        );
+        if( version_compare( $version, '11.2', '>=' ) )
+            $logTypes['Decryption_Log_Forwarding'] = 'decryption';
+        if( version_compare( $version, '12.1', '>=' ) )
+            $logTypes['DNSSecurity_Log_Forwarding'] = 'dns-security';
+
+        $xml = '<root><entry name="default"><match-list>';
+        foreach( $logTypes as $name => $logType )
+            $xml .= '<entry name="' . $name . '"><log-type>' . $logType . '</log-type><filter>All Logs</filter>'
+                . '<send-to-panorama>yes</send-to-panorama></entry>';
+
+        return $xml . '</match-list></entry></root>';
+    }
 }
 

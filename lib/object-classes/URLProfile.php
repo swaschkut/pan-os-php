@@ -1412,5 +1412,147 @@ class URLProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet URL filtering profiles
+     * (iron-skillet templates/panorama/snippets/profiles_url_filtering.xml):
+     * 'Outbound-URL', 'Alert-Only-URL', and 'Exception-URL' (same as Outbound) before iron-skillet 10.2.
+     *
+     * Every profile lists every category of the version, in site access and in credential enforcement.
+     * - 8.1: custom categories Black-List / White-List, 'hacking' blocked, top-level action block
+     * - 9.1 and later: custom categories Block / Allow
+     * - 10.0, 10.1: ML URL engines (Phishing Detection, Javascript Exploit Detection)
+     * - 10.1 and later: 'ransomware' blocked
+     * - 10.2 and later: HTTP header logging also in Alert-Only, local and cloud inline categorization
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( !in_array( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
+        {
+            derr( "iron-skillet URL filtering profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        $categories = self::ironSkilletCategories( $version );
+
+        $customBlock = version_compare( $version, '9.1', '<' ) ? 'Black-List' : 'Block';
+        $block = array( $customBlock, 'command-and-control', 'compromised-website', 'grayware', 'malware', 'phishing' );
+        if( version_compare( $version, '9.1', '<' ) )
+            $block[] = 'hacking';
+        if( version_compare( $version, '10.1', '>=' ) )
+            $block[] = 'ransomware';
+        $alert = array_values( array_diff( $categories, $block ) );
+
+        $profiles = array(
+            'Outbound-URL' => 'block',
+            'Alert-Only-URL' => 'alert',
+        );
+        if( version_compare( $version, '10.2', '<' ) )
+            $profiles['Exception-URL'] = 'block';
+
+        $xml = '<root>';
+        foreach( $profiles as $name => $mode )
+        {
+            $isAlertOnly = ( $mode == 'alert' );
+
+            $xml .= '<entry name="' . $name . '"><credential-enforcement><mode><ip-user/></mode>'
+                . '<log-severity>' . ( $isAlertOnly ? 'medium' : 'high' ) . '</log-severity>'
+                . self::ironSkilletMembers( $isAlertOnly ? 'alert' : 'block', $categories )
+                . '</credential-enforcement>';
+
+            if( !$isAlertOnly || version_compare( $version, '10.2', '>=' ) )
+                $xml .= '<log-http-hdr-user-agent>yes</log-http-hdr-user-agent><log-http-hdr-referer>yes</log-http-hdr-referer>'
+                    . '<log-http-hdr-xff>yes</log-http-hdr-xff>';
+
+            if( $isAlertOnly )
+                $xml .= self::ironSkilletMembers( 'alert', $categories );
+            else
+                $xml .= self::ironSkilletMembers( 'alert', $alert ) . self::ironSkilletMembers( 'block', $block );
+
+            if( version_compare( $version, '9.1', '<' ) )
+                $xml .= '<action>block</action>';
+
+            if( version_compare( $version, '10.0', '>=' ) && version_compare( $version, '10.2', '<' ) )
+            {
+                $xml .= '<mlav-engine-urlbased-enabled>';
+                foreach( array( 'Phishing Detection', 'Javascript Exploit Detection' ) as $engine )
+                    $xml .= '<entry name="' . $engine . '"><mlav-policy-action>' . $mode . '</mlav-policy-action></entry>';
+                $xml .= '</mlav-engine-urlbased-enabled>';
+            }
+
+            if( version_compare( $version, '10.2', '>=' ) )
+                $xml .= '<local-inline-cat>yes</local-inline-cat><cloud-inline-cat>yes</cloud-inline-cat>';
+
+            $xml .= '</entry>';
+        }
+
+        return $xml . '</root>';
+    }
+
+    /**
+     * URL categories of an iron-skillet version, including the custom categories Block / Allow.
+     * The newest list, minus what an older version does not have.
+     *
+     * @param string $version iron-skillet PAN-OS version folder
+     * @return string[]
+     */
+    public static function ironSkilletCategories( $version )
+    {
+        $categories = array(
+            'Block', 'Allow', 'abortion', 'abused-drugs', 'adult', 'AI-code-assistant', 'AI-conversational-assistant',
+            'AI-data-and-workflow-optimizer', 'AI-media-service', 'AI-meeting-assistant', 'AI-platform-service',
+            'AI-website-generator', 'AI-writing-assistant', 'alcohol-and-tobacco', 'artificial-intelligence', 'auctions',
+            'browser-runtime-attack', 'business-and-economy', 'command-and-control', 'compromised-website',
+            'computer-and-internet-info', 'content-delivery-networks', 'copyright-infringement', 'cryptocurrency', 'dating',
+            'dynamic-dns', 'educational-institutions', 'encrypted-dns', 'entertainment-and-arts', 'extremism',
+            'file-converter', 'financial-services', 'gambling', 'games', 'government', 'grayware', 'hacking',
+            'health-and-medicine', 'high-risk', 'home-and-garden', 'hunting-and-fishing', 'insufficient-content',
+            'internet-communications-and-telephony', 'internet-portals', 'job-search', 'legal', 'low-risk', 'malware',
+            'marijuana', 'medium-risk', 'military', 'motor-vehicles', 'music', 'newly-registered-domain', 'news',
+            'not-resolved', 'nudity', 'online-storage-and-backup', 'parked', 'peer-to-peer', 'personal-sites-and-blogs',
+            'philosophy-and-political-advocacy', 'phishing', 'private-ip-addresses', 'proxy-avoidance-and-anonymizers',
+            'questionable', 'ransomware', 'real-estate', 'real-time-detection', 'recreation-and-hobbies',
+            'reference-and-research', 'religion', 'remote-access', 'scanning-activity', 'search-engines', 'sex-education',
+            'shareware-and-freeware', 'shopping', 'social-networking', 'society', 'sports', 'stock-advice-and-tools',
+            'streaming-media', 'swimsuits-and-intimate-apparel', 'training-and-tools', 'translation', 'travel', 'unknown',
+            'weapons', 'web-advertisements', 'web-based-email', 'web-hosting',
+        );
+
+        $missing = array();
+        if( version_compare( $version, '9.1', '<' ) )
+            $missing = array_merge( $missing, array( 'cryptocurrency', 'high-risk', 'low-risk', 'medium-risk', 'newly-registered-domain' ) );
+        if( version_compare( $version, '10.0', '<' ) )
+            $missing[] = 'real-time-detection';
+        if( version_compare( $version, '10.1', '<' ) )
+            $missing = array_merge( $missing, array( 'encrypted-dns', 'ransomware' ) );
+        // URL categories come with content updates, not with PAN-OS: these three work from PAN-OS 9.1
+        // (content 8727 / 8729 / 8838, 2023-2024). iron-skillet lists them from 10.2; its 11.0 snippet
+        // missed them, they are added for 11.0 too.
+        if( version_compare( $version, '10.2', '<' ) )
+            $missing = array_merge( $missing, array( 'artificial-intelligence', 'marijuana', 'scanning-activity' ) );
+
+        $categories = array_values( array_diff( $categories, $missing ) );
+
+        if( version_compare( $version, '9.1', '<' ) )
+            $categories = str_replace( array( 'Block', 'Allow' ), array( 'Black-List', 'White-List' ), $categories );
+
+        return $categories;
+    }
+
+    /**
+     * @param string $tag
+     * @param string[] $members
+     * @return string
+     */
+    private static function ironSkilletMembers( $tag, $members )
+    {
+        $xml = '<' . $tag . '>';
+        foreach( $members as $member )
+            $xml .= '<member>' . $member . '</member>';
+        return $xml . '</' . $tag . '>';
+    }
 }
 

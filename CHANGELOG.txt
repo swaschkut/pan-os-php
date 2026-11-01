@@ -36,6 +36,7 @@ GENERAL:
 * update Device App-ID to version: 9161-10297
 * update Device App-ID to version: 9165-10321
 * update Device App-ID to version: 9167-10330
+* global change from iron-skillet files to XML snippets available in specific object classes
 
 
 2.1.60 (20261021)

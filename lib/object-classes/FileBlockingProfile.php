@@ -320,5 +320,50 @@ class FileBlockingProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet file blocking profiles
+     * (iron-skillet templates/panorama/snippets/profiles_file_blocking.xml):
+     * 'Outbound-FB', 'Inbound-FB', 'Internal-FB' (without dll), 'Alert-Only-FB'.
+     * The same for every version.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( !in_array( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
+        {
+            derr( "iron-skillet file blocking profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        $blocked = array( '7z', 'bat', 'chm', 'class', 'cpl', 'dll', 'hlp', 'hta', 'jar', 'ocx', 'pif', 'scr', 'torrent', 'vbe', 'wsf' );
+        $blockedInternal = array_values( array_diff( $blocked, array( 'dll' ) ) );
+
+        // profile => rule name => array( file types, action )
+        $profiles = array(
+            'Outbound-FB' => array( 'Alert-All' => array( array( 'any' ), 'alert' ), 'Block' => array( $blocked, 'block' ) ),
+            'Inbound-FB' => array( 'Alert-All' => array( array( 'any' ), 'alert' ), 'Block' => array( $blocked, 'block' ) ),
+            'Internal-FB' => array( 'Alert-All' => array( array( 'any' ), 'alert' ), 'Block' => array( $blockedInternal, 'block' ) ),
+            'Alert-Only-FB' => array( 'Alert-Only' => array( array( 'any' ), 'alert' ) ),
+        );
+
+        $xml = '<root>';
+        foreach( $profiles as $name => $rules )
+        {
+            $xml .= '<entry name="' . $name . '"><rules>';
+            foreach( $rules as $ruleName => $rule )
+            {
+                $xml .= '<entry name="' . $ruleName . '"><application><member>any</member></application><file-type>';
+                foreach( $rule[0] as $fileType )
+                    $xml .= '<member>' . $fileType . '</member>';
+                $xml .= '</file-type><direction>both</direction><action>' . $rule[1] . '</action></entry>';
+            }
+            $xml .= '</rules></entry>';
+        }
+
+        return $xml . '</root>';
+    }
 }
 
