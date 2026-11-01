@@ -302,7 +302,7 @@ class AntiVirusProfile extends SecurityProfile2
 
         if( version_compare( $version, '10.2', '<' ) )
             $xml .= '<entry name="Exception-AV">' . self::ironSkilletContentXml( $version, 'reset-both' )
-                . '<description>Use this profile for rules needing modifications to the standard</description></entry>';
+                . '</entry>';
 
         return $xml . '</root>';
     }
