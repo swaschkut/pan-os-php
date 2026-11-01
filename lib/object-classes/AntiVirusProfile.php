@@ -311,7 +311,9 @@ class AntiVirusProfile extends SecurityProfile2
      * Decoder and ML-AV part of an iron-skillet antivirus profile, all with one action.
      * Also used by VirusAndWildfireProfile.
      * - 9.1 and later: decoder http2
-     * - 10.0 and later: mlav-action, and ML-AV models (10.2: + MSOffice, Shell; 11.1: + MachO, OOXML)
+     * - 10.0 and later: mlav-action, and ML-AV models (11.1: + MachO, OOXML)
+     *   MSOffice and Shell come with the content updates (content 8434 / 8543) and work on PAN-OS 10.0 and later,
+     *   as the other models (predefined.xml: no minver); iron-skillet listed them in its 10.2 templates only.
      *
      * @param string $version iron-skillet PAN-OS version folder
      * @param string $action 'alert' or 'reset-both'
@@ -338,9 +340,8 @@ class AntiVirusProfile extends SecurityProfile2
         if( !$withMlav )
             return $xml;
 
-        $models = array( 'Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2', 'Executable Linked Format' );
-        if( version_compare( $version, '10.2', '>=' ) )
-            $models = array_merge( $models, array( 'MSOffice', 'Shell' ) );
+        $models = array( 'Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2', 'Executable Linked Format',
+            'MSOffice', 'Shell' );
         if( version_compare( $version, '11.1', '>=' ) )
             $models = array_merge( $models, array( 'MachO', 'OOXML' ) );
 

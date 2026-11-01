@@ -1505,6 +1505,10 @@ class URLProfile extends SecurityProfile2
     {
         $categories = array( 'Block', 'Allow' );
 
+        // "11.1" is lower than "11.1.0" for version_compare()
+        while( substr_count( $version, '.' ) < 2 )
+            $version .= '.0';
+
         $xmlDoc = PH::getPredefinedXmlDoc( null, array( 'pan-url-categories' ) );
         $root = DH::findXPathSingleEntryOrDie( '/predefined/pan-url-categories', $xmlDoc );
 
