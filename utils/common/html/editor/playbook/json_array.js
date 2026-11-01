@@ -4143,11 +4143,6 @@ var subjectObject =
             }
         }
     },
-    "ironskillet-update": {
-        "name": "ironskillet-update",
-        "action": [],
-        "filter": []
-    },
     "key-manager": {
         "name": "key-manager",
         "action": [],

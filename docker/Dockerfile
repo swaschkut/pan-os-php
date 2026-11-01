@@ -49,7 +49,6 @@ COPY phpseclib ./phpseclib
 COPY git-php ./git-php
 COPY utils ./utils
 COPY tests ./tests
-COPY iron-skillet ./iron-skillet
 COPY migration ./migration
 COPY CHANGELOG.txt .
 

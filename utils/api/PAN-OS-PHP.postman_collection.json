@@ -1086,47 +1086,12 @@
 							"response": []
 						},
 						{
-							"name": "ironskillet-update",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{SERVER}}/utils/api/{{VERSION}}/tool.php/ironskillet-update?&in={{INPUT}}&shadow-nojson",
-									"host": [
-										"{{SERVER}}"
-									],
-									"path": [
-										"utils",
-										"api",
-										"{{VERSION}}",
-										"tool.php",
-										"ironskillet-update"
-									],
-									"query": [
-										{
-											"key": null,
-											"value": null
-										},
-										{
-											"key": "in",
-											"value": "{{INPUT}}"
-										},
-										{
-											"key": "shadow-nojson",
-											"value": null
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "license",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{SERVER}}/utils/api/{{VERSION}}/tool.php/ironskillet-update?&in={{INPUT}}&shadow-nojson",
+									"raw": "{{SERVER}}/utils/api/{{VERSION}}/tool.php/license?&in={{INPUT}}&shadow-nojson",
 									"host": [
 										"{{SERVER}}"
 									],
@@ -1135,7 +1100,7 @@
 										"api",
 										"{{VERSION}}",
 										"tool.php",
-										"ironskillet-update"
+										"license"
 									],
 									"query": [
 										{
