@@ -156,6 +156,24 @@ class XMLISSUE extends UTIL
     public $address_region = array();
     public $address_name = array();
 
+    // full configuration scan (fullConfigDuplicateScan)
+    public $fixedFullScanMergedContainers = 0;
+    public $fixedFullScanEntries = 0;
+    public $countFullScanEntries = 0;
+    public $fixedFullScanMembers = 0;
+    public $fixedFullScanElements = 0;
+    public $countFullScanElements = 0;
+
+    /**
+     * Containers whose duplicate <entry> names a dedicated check above already reports (renamed, or FIX_MANUALLY):
+     * the full scan does not report them a second time. Patterns are matched against the parent's path without @name.
+     */
+    public $fullScanSkipEntryContainers = array(
+        '#^/config/shared/(address|address-group|service|service-group)$#',
+        '#^/config/devices/entry/(vsys|device-group|container|device/cloud)/entry/(address|address-group|service|service-group)$#',
+        '#^/config/(shared|devices/entry/(vsys|device-group|container|device/cloud)/entry)/(rulebase|pre-rulebase|post-rulebase)/(security|nat|decryption|application-override|authentication)/rules$#',
+    );
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
@@ -211,6 +229,10 @@ class XMLISSUE extends UTIL
         {
             $element->parentNode->removeChild($element);
         }
+        ///////////////////////////////////////////////////////////
+        //full configuration scan, part 1: a container element that occurs twice under the same parent
+        //(e.g. two <address> under one vsys) is merged first, so that every check below sees all of its content
+        $this->fullConfigMergeDuplicateContainers();
         ///////////////////////////////////////////////////////////
         
         //REGION objects
@@ -2948,6 +2970,12 @@ class XMLISSUE extends UTIL
             }
         }
         ////////////////////////////////////////////////////////////
+        ///full configuration scan: duplicates in every other part of the XML
+        PH::print_stdout( "");
+        PH::print_stdout( "#####     #####     #####     #####     #####     #####     #####     #####     #####     #####     #####");
+        $this->fullConfigDuplicateScan();
+
+        ////////////////////////////////////////////////////////////
         PH::print_stdout( "");
         PH::print_stdout( "#####     #####     #####     #####     #####     #####     #####     #####     #####     #####     #####");
         PH::print_stdout();
@@ -3055,6 +3083,15 @@ class XMLISSUE extends UTIL
         if( $this->fixedScheduleCount > 0 )
             PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$this->fixedScheduleCount}");
 
+        if( $this->fixedFullScanMergedContainers > 0 )
+            PH::print_stdout( "\n - FIXED: full scan - duplicate containers merged : {$this->fixedFullScanMergedContainers}");
+        if( $this->fixedFullScanEntries > 0 )
+            PH::print_stdout( " - FIXED: full scan - identical duplicate entries : {$this->fixedFullScanEntries}");
+        if( $this->fixedFullScanMembers > 0 )
+            PH::print_stdout( " - FIXED: full scan - duplicate members : {$this->fixedFullScanMembers}");
+        if( $this->fixedFullScanElements > 0 )
+            PH::print_stdout( " - FIXED: full scan - identical duplicate elements : {$this->fixedFullScanElements}");
+
         PH::print_stdout( "\n\nIssues that could not be fixed (look in logs for FIX_MANUALLY keyword):");
 
 
@@ -3147,6 +3184,12 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: misconfigured Destination Field in NAT Rules: {$this->countMissconfiguredNatRuleDestinationObjects} (look in the logs )");
         PH::print_stdout( "----------");
 
+        if( $this->countFullScanEntries > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: full scan - entries with the same name but different content: {$this->countFullScanEntries} (look in the logs )");
+        if( $this->countFullScanElements > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: full scan - elements that occur twice with different content: {$this->countFullScanElements} (look in the logs )");
+        PH::print_stdout( "----------");
+
         if( $this->service_app_default_available )
         {
             if( $this->countMissconfiguredSecRuleServiceAppDefaultObjects > 0 )
@@ -3163,6 +3206,245 @@ class XMLISSUE extends UTIL
         if( $this->configInput['type'] == 'api' )
             PH::print_stdout( "\n\nINPUT mode API detected: FIX is ONLY saved in offline file.");
 
+    }
+
+    /**
+     * Full configuration scan for duplicates the dedicated checks above do not cover.
+     *
+     * PAN-OS XML repeats a sibling element name only as a list item: <entry name="..."> (unique by name) or <member>
+     * (unique by value). Every other element occurs once under its parent (checked against the PAN-OS schema: every
+     * <array> holds 'entry' or 'member'). So no list of XPaths is needed:
+     *  - learn:    walk the whole document; group each parent's children by entry name, member value or element name
+     *  - check:    a group with more than one node is a duplicate
+     *  - fix:      a member, or an entry / element identical to the first one, is removed (*FIXED*);
+     *              an entry / element that differs from the first one is kept (*FIX_MANUALLY*)
+     *  - remember: logFinding() and counters per XPath pattern; containers whose duplicate entries a dedicated check
+     *              already reports ($fullScanSkipEntryContainers) are skipped
+     *  - output:   the summary lines and the HTML report
+     * It runs after the dedicated checks, so it only finds what they left. Containers that occur twice were already
+     * merged by fullConfigMergeDuplicateContainers() at the start.
+     */
+    private function fullConfigDuplicateScan()
+    {
+        PH::print_stdout( " - Scanning the full configuration for duplicate entries / members / elements ..." );
+
+        $root = $this->xmlDoc->documentElement;
+        if( $root === null )
+            return;
+
+        // learn + check + fix, parent by parent (iterative: configurations can be deep)
+        $stack = array( $root );
+        while( count( $stack ) > 0 )
+        {
+            /** @var DOMElement $parent */
+            $parent = array_pop( $stack );
+
+            $groups = array();
+            foreach( $parent->childNodes as $child )
+            {
+                if( $child->nodeType !== XML_ELEMENT_NODE )
+                    continue;
+                /** @var DOMElement $child */
+                if( $child->nodeName === 'entry' )
+                {
+                    if( !$child->hasAttribute( 'name' ) )
+                        continue;   // list item without a name: nothing to compare
+                    $key = "entry\0" . $child->getAttribute( 'name' );
+                }
+                elseif( $child->nodeName === 'member' )
+                    $key = "member\0" . trim( $child->textContent );
+                else
+                    $key = "element\0" . $child->nodeName;
+                $groups[$key][] = $child;
+            }
+
+            foreach( $groups as $key => $nodes )
+            {
+                if( count( $nodes ) < 2 )
+                    continue;
+
+                list( $kind, $identifier ) = explode( "\0", $key, 2 );
+                if( $kind === 'entry' && $this->fullScanIsSkippedContainer( $parent ) )
+                    continue;
+
+                $this->fullScanHandleDuplicates( $parent, $kind, $identifier, $nodes );
+            }
+
+            foreach( $parent->childNodes as $child )
+                if( $child->nodeType === XML_ELEMENT_NODE )
+                    $stack[] = $child;
+        }
+    }
+
+    /**
+     * Full configuration scan, part 1 - runs before every other check.
+     * A container (an element, other than entry / member, that has child elements) occurring twice under the same
+     * parent, e.g. two <address> under one vsys or two <layer3> under one interface, is merged into the first one:
+     * PAN-OS-PHP and the checks below read only the first. Its children are moved over in document order; duplicates
+     * this creates among them are handled by fullConfigDuplicateScan() at the end (or by the dedicated checks).
+     *  - learn: walk the document; group each parent's children by element name
+     *  - check: a group of two or more containers
+     *  - fix: move the later containers' children into the first, remove the later containers (*FIXED*)
+     *  - remember / output: logFinding(), counters, summary line
+     */
+    private function fullConfigMergeDuplicateContainers()
+    {
+        PH::print_stdout( " - Scanning the full configuration for container elements that occur twice (merge) ..." );
+
+        $root = $this->xmlDoc->documentElement;
+        if( $root === null )
+            return;
+
+        $stack = array( $root );
+        while( count( $stack ) > 0 )
+        {
+            /** @var DOMElement $parent */
+            $parent = array_pop( $stack );
+
+            $groups = array();
+            foreach( $parent->childNodes as $child )
+            {
+                if( $child->nodeType !== XML_ELEMENT_NODE )
+                    continue;
+                if( $child->nodeName === 'entry' || $child->nodeName === 'member' )
+                    continue;
+                $groups[$child->nodeName][] = $child;
+            }
+
+            foreach( $groups as $tagName => $nodes )
+            {
+                if( count( $nodes ) < 2 )
+                    continue;
+
+                $containers = array();
+                foreach( $nodes as $node )
+                    if( $this->fullScanHasChildElements( $node ) )
+                        $containers[] = $node;
+                if( count( $containers ) < 2 )
+                    continue;   // leaf elements (text values) are judged at the end by fullConfigDuplicateScan()
+
+                $first = array_shift( $containers );
+                foreach( $containers as $node )
+                {
+                    /** @var DOMElement $node */
+                    $line = $node->getLineNo();
+                    while( $node->firstChild !== null )
+                        $first->appendChild( $node->firstChild );
+                    $parent->removeChild( $node );
+
+                    $pattern = $this->fullScanPattern( $parent );
+                    $text = "<{$tagName}> occurs twice under '{$pattern}' (XML line #{$first->getLineNo()} and #{$line}): only the first is read - merged into the first";
+                    $this->logFinding( $this->fullScanReadablePath( $parent ), $tagName, "full scan container", $text, true );
+
+                    $counterKey = "full scan duplicate container {$pattern}/{$tagName}";
+                    $this->counters['fixed'][$counterKey] = ( $this->counters['fixed'][$counterKey] ?? 0 ) + 1;
+                    $this->fixedFullScanMergedContainers++;
+                }
+            }
+
+            foreach( $parent->childNodes as $child )
+                if( $child->nodeType === XML_ELEMENT_NODE )
+                    $stack[] = $child;
+        }
+    }
+
+    private function fullScanHasChildElements( DOMElement $node )
+    {
+        foreach( $node->childNodes as $child )
+            if( $child->nodeType === XML_ELEMENT_NODE )
+                return TRUE;
+        return FALSE;
+    }
+
+    private function fullScanHandleDuplicates( DOMElement $parent, $kind, $identifier, $nodes )
+    {
+        $pattern = $this->fullScanPattern( $parent );
+        $location = $this->fullScanReadablePath( $parent );
+        $first = array_shift( $nodes );
+        $firstCanonical = $this->fullScanCanonical( $first );
+
+        foreach( $nodes as $node )
+        {
+            /** @var DOMElement $node */
+            $line = $node->getLineNo();
+            if( $kind === 'entry' )
+                $what = "<entry name='{$identifier}'>";
+            elseif( $kind === 'member' )
+                $what = "<member>{$identifier}</member>";
+            else
+                $what = "<{$identifier}>";
+
+            $identical = ( $kind === 'member' ) || ( $this->fullScanCanonical( $node ) === $firstCanonical );
+
+            if( $identical )
+            {
+                $parent->removeChild( $node );
+                $text = "duplicate {$what} under '{$pattern}' at XML line #{$line}, identical to line #{$first->getLineNo()} - removed";
+                $this->logFinding( $location, $identifier, "full scan {$kind}", $text, true );
+
+                $counterKey = "full scan duplicate {$kind} {$pattern}";
+                $this->counters['fixed'][$counterKey] = ( $this->counters['fixed'][$counterKey] ?? 0 ) + 1;
+
+                if( $kind === 'entry' )
+                    $this->fixedFullScanEntries++;
+                elseif( $kind === 'member' )
+                    $this->fixedFullScanMembers++;
+                else
+                    $this->fixedFullScanElements++;
+            }
+            else
+            {
+                $text = "duplicate {$what} under '{$pattern}' at XML line #{$line} differs from line #{$first->getLineNo()} - which one is right?";
+                $this->logFinding( $location, $identifier, "full scan {$kind}", $text, false );
+
+                $counterKey = "full scan duplicate {$kind} {$pattern}";
+                $this->counters['manual'][$counterKey] = ( $this->counters['manual'][$counterKey] ?? 0 ) + 1;
+
+                if( $kind === 'entry' )
+                    $this->countFullScanEntries++;
+                else
+                    $this->countFullScanElements++;
+            }
+        }
+    }
+
+    private function fullScanIsSkippedContainer( DOMElement $parent )
+    {
+        $pattern = $this->fullScanPattern( $parent );
+        foreach( $this->fullScanSkipEntryContainers as $regex )
+            if( preg_match( $regex, $pattern ) )
+                return TRUE;
+        return FALSE;
+    }
+
+    /** the element's path without @name, e.g. /config/devices/entry/vsys/entry/zone */
+    private function fullScanPattern( DOMNode $node )
+    {
+        $parts = array();
+        for( $n = $node; $n !== null && $n->nodeType === XML_ELEMENT_NODE; $n = $n->parentNode )
+            $parts[] = $n->nodeName;
+        return '/' . implode( '/', array_reverse( $parts ) );
+    }
+
+    /** the element's path with @name, e.g. /config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/zone */
+    private function fullScanReadablePath( DOMNode $node )
+    {
+        $parts = array();
+        for( $n = $node; $n !== null && $n->nodeType === XML_ELEMENT_NODE; $n = $n->parentNode )
+        {
+            /** @var DOMElement $n */
+            $part = $n->nodeName;
+            if( $n->hasAttribute( 'name' ) )
+                $part .= "[@name='" . $n->getAttribute( 'name' ) . "']";
+            $parts[] = $part;
+        }
+        return '/' . implode( '/', array_reverse( $parts ) );
+    }
+
+    /** canonical XML of a node, whitespace between elements ignored */
+    private function fullScanCanonical( DOMElement $node )
+    {
+        return preg_replace( '/>\s+</', '><', trim( $node->C14N() ) );
     }
 
     public function supportedArguments()
