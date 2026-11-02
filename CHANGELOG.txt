@@ -13,6 +13,8 @@ UTIL:
 * Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
 * type=zone/zone-protection-profile | correct/extend managed.device filter
 * type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
+* type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
+* type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
 * type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
 
 BUGFIX:
@@ -31,7 +33,8 @@ BUGFIX:
 * class ZoneRuleContainer - optimsation to reduce memory usage
 * class AntiSpyware-/VulnerabilityProfile and the relevant ThreatPolicy-/Spyware/Vulnerability - also actions-securityprofile | fix to cover new rules with existing name - CVE/Vendor-id
 * class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
-* * xml-issue - fix to NOT remove any bgp related part - to avoid removing aspath-prepand - no clue if some more must not be removed
+* type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
+* xml-issue - fix to NOT remove any bgp related part - to avoid removing aspath-prepand - no clue if some more must not be removed
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

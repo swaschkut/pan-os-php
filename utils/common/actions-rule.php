@@ -4533,12 +4533,25 @@ RuleCallContext::$supportedActions[] = array(
 
             if( $addHitCountSummary && $context->isAPI)
             {
-                $rule_hitcount_array = $context->API_showRuleHitCount( $rule,false, false );
+                if( RuleHitCountCollector::supports($rule) )
+                    $rule_hitcount_array = RuleHitCountCollector::forRule( $rule );
+                else
+                    $rule_hitcount_array = $context->API_showRuleHitCount( $rule,false, false );
+                if( !is_array($rule_hitcount_array) )
+                    $rule_hitcount_array = array();
 
-                PH::$JSON_TMP['sub']['object'][$rule->name()]['first-hit'] = $rule_hitcount_array['first-hit'];
-                PH::$JSON_TMP['sub']['object'][$rule->name()]['last-hit'] = $rule_hitcount_array['last-hit'];
-                PH::$JSON_TMP['sub']['object'][$rule->name()]['hit-count'] = $rule_hitcount_array['hit-count'];
-                PH::$JSON_TMP['sub']['object'][$rule->name()]['rule-creation'] = $rule_hitcount_array['rule-creation'];
+                foreach( array('first-hit', 'last-hit', 'hit-count', 'rule-creation', 'rule-modification', 'last-reset') as $hitCountField )
+                    PH::$JSON_TMP['sub']['object'][$rule->name()][$hitCountField] = isset($rule_hitcount_array[$hitCountField]) ? $rule_hitcount_array[$hitCountField] : '';
+
+                $perFirewall = RuleHitCountCollector::perDeviceLines( $rule_hitcount_array );
+                PH::$JSON_TMP['sub']['object'][$rule->name()]['hit-count-per-firewall'] = $perFirewall;
+
+                $text = "    hit-count: ".(isset($rule_hitcount_array['hit-count']) ? $rule_hitcount_array['hit-count'] : '')
+                    ." | last-hit: ".(isset($rule_hitcount_array['last-hit']) ? $rule_hitcount_array['last-hit'] : '')
+                    ." | first-hit: ".(isset($rule_hitcount_array['first-hit']) ? $rule_hitcount_array['first-hit'] : '');
+                PH::print_stdout( $text );
+                foreach( $perFirewall as $line )
+                    PH::print_stdout( "      - ".$line );
             }
         }
     },
@@ -4556,7 +4569,7 @@ RuleCallContext::$supportedActions[] = array(
                 "  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n"  .
                 "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n" .
                 "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
-                "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed"
+                "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' - 'rule-modification' - 'last-reset' (aggregated over all firewalls) and 'hit-count-per-firewall' will be listed"
         )
     )
 );
@@ -5349,8 +5362,13 @@ RuleCallContext::$supportedActions[] = array(
             'first-hit' => 'first-hit',
             'last-hit' => 'last-hit',
             'hit-count' => 'hit-count',
-            'rule-creation' => 'rule-creation'
+            'rule-creation' => 'rule-creation',
+            'rule-modification' => 'rule-modification',
+            'last-reset' => 'last-reset',
+            'hit-count-per-firewall' => 'hit-count-per-firewall'
         );
+
+        $hitCountFields = array( 'first-hit', 'last-hit', 'hit-count', 'rule-creation', 'rule-modification', 'last-reset', 'hit-count-per-firewall' );
 
         $lines = '';
 
@@ -5368,6 +5386,19 @@ RuleCallContext::$supportedActions[] = array(
                     $lines .= "<tr bgcolor=\"#DDDDDD\">";
 
                 $lines .= $context->encloseFunction( (string)$count );
+
+                // hit count: once per rule (not once per column)
+                // security rules: RuleHitCountCollector asks every firewall/vsys once for all of its rules (cached for the whole run)
+                $rule_hitcount_array = array();
+                if( $addHitCountSummary && $context->isAPI )
+                {
+                    if( RuleHitCountCollector::supports($rule) )
+                        $rule_hitcount_array = RuleHitCountCollector::forRule($rule);
+                    else
+                        $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
+                    if( !is_array($rule_hitcount_array) )
+                        $rule_hitcount_array = array();
+                }
 
                 foreach( $fields as $fieldName => $fieldID )
                 {
@@ -5428,7 +5459,7 @@ RuleCallContext::$supportedActions[] = array(
                         $continue = true;
                     }
                     elseif(
-                        ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                        in_array($fieldName, $hitCountFields, TRUE)
                         && (!$addHitCountSummary || !$context->isAPI)
                     )
                     {
@@ -5627,12 +5658,6 @@ RuleCallContext::$supportedActions[] = array(
                         continue;
                     }
 
-                    $rule_hitcount_array = array();
-                    if(
-                        ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
-                        && $addHitCountSummary && $context->isAPI
-                    )
-                        $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
                     $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice, $visibility, $adoption);
                 }
 
@@ -5703,7 +5728,7 @@ RuleCallContext::$supportedActions[] = array(
                 $continue = true;
             }
             elseif(
-                ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                in_array($fieldName, $hitCountFields, TRUE)
                 && (!$addHitCountSummary || !$context->isAPI)
             )
             {
@@ -5925,7 +5950,8 @@ RuleCallContext::$supportedActions[] = array(
                     "  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n" .
                     "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n" .
                     "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
-                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n" .
+                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' - 'rule-modification' - 'last-reset' (aggregated over all firewalls)\n" .
+                    "               and 'hit-count-per-firewall' (one line per firewall/vsys) will be listed\n" .
                     "  - BestPractice : show if BestPractice is configured\n" .
                     "  - Visibility : show if Visibility is configured\n" .
                     "  - Adoption : show if Adoption is configured\n"
