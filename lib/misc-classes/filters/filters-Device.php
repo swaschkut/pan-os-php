@@ -413,4 +413,50 @@ RQuery::$defaultFilters['device']['devicegroup']['operators']['with-no-serial'] 
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.all.in.file'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $object */
+        $object = $context->object;
+
+        $class = get_class( $object );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+
+        $list = $context->cachedNameList( TRUE );
+        $devices = $object->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;   // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the template (through any template stack) or the template-stack is listed in the file, one serial per line, e.g. 'filter=(template manageddevice.all.in.file FILENAME)'"
+);
+
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.all.in.list'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $object */
+        $object = $context->object;
+
+        $class = get_class( $object );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+
+        $list = $context->cachedNameList( FALSE );
+        $devices = $object->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;   // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the template (through any template stack) or the template-stack is listed, e.g. 'filter=(template manageddevice.all.in.list serial1,serial2)'"
+);
 // </editor-fold>
