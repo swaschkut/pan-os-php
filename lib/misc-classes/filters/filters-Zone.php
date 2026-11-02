@@ -538,7 +538,7 @@ RQuery::$defaultFilters['zone']['template.owner']['operators']['is.unused.recurs
     'help' => "TRUE when no template stack holding the owning template (or the owning template stack itself) carries a firewall"
 );
 
-RQuery::$defaultFilters['zone']['manageddevice.owner']['operators']['is.in.file'] = array(
+RQuery::$defaultFilters['zone']['manageddevice']['operators']['is.in.file'] = array(
     'Function' => function (ZoneRQueryContext $context) {
         $list = $context->cachedNameList( TRUE );
         $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
@@ -557,7 +557,7 @@ RQuery::$defaultFilters['zone']['manageddevice.owner']['operators']['is.in.file'
     'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner is.in.file FILENAME)'"
 );
 
-RQuery::$defaultFilters['zone']['manageddevice.owner']['operators']['is.in.list'] = array(
+RQuery::$defaultFilters['zone']['manageddevice']['operators']['is.in.list'] = array(
     'Function' => function (ZoneRQueryContext $context) {
         $list = $context->cachedNameList( FALSE );
         $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
@@ -576,7 +576,7 @@ RQuery::$defaultFilters['zone']['manageddevice.owner']['operators']['is.in.list'
     'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner is.in.list serial1,serial2)'"
 );
 
-RQuery::$defaultFilters['zone']['manageddevice.owner.all']['operators']['is.in.file'] = array(
+RQuery::$defaultFilters['zone']['manageddevice.all']['operators']['is.in.file'] = array(
     'Function' => function (ZoneRQueryContext $context) {
         $list = $context->cachedNameList( TRUE );
         $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
@@ -595,7 +595,7 @@ RQuery::$defaultFilters['zone']['manageddevice.owner.all']['operators']['is.in.f
     'help' => "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner.all is.in.file FILENAME)'"
 );
 
-RQuery::$defaultFilters['zone']['manageddevice.owner.all']['operators']['is.in.list'] = array(
+RQuery::$defaultFilters['zone']['manageddevice.all']['operators']['is.in.list'] = array(
     'Function' => function (ZoneRQueryContext $context) {
         $list = $context->cachedNameList( FALSE );
         $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
