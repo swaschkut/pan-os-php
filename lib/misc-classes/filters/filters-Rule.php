@@ -4717,7 +4717,7 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators'][
         return $return;
     },
     'arg' => true,
-    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
+    'help' => 'returns TRUE if threat logs (severity >= medium) exist for this rule before (<) / since (>) the date: MM/DD/YYYY [american] / DD-MM-YYYY [european] / YYYY/MM/DD / -7 [days]; on Panorama only logs of the firewalls of the rule\'s DeviceGroup are used'
 );
 RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['operators']['>,<,=,!'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -4760,7 +4760,7 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['ope
         return $return;
     },
     'arg' => true,
-    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
+    'help' => 'same as threat-log.occurrence.date.fast, but with one log query per rule (slower, for rules with many logs)'
 );
 
 RQuery::$defaultFilters['rule']['nat']['operators']['find.dnat.sec.pair.beta'] = Array(

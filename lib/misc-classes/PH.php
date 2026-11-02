@@ -256,7 +256,7 @@ class PH
     private static $library_version_sub = 1;
 
     private static $library_version_bugfix = 61;
-    private static $library_version_release = "dev";
+    private static $library_version_release = "beta";
 
 
 
@@ -278,6 +278,20 @@ class PH
     public static $loadStartMem;
 
     public static $loadArrayMem = array( "0", "b");
+
+    /** debugloadtime: currently open section and the values measured when it was opened */
+    public static $loadDebugSection = null;
+    public static $loadDebugSectionTime = null;
+    public static $loadDebugSectionMem = null;
+    public static $loadDebugSectionRss = null;
+    public static $loadDebugSectionXml = null;
+    public static $loadDebugStartTime = null;
+    public static $loadDebugStartXml = null;
+    /** FFI handle to measure XML/C memory (see debugLoadtimeFFI), FALSE if not available */
+    public static $loadDebugMallinfo = null;
+    public static $loadDebugMemInfoReason = null;
+    public static $loadDebugStartMem = null;
+    public static $loadDebugStartRss = null;
 
     static public function decrypt($ciphertext, $key)
     {
@@ -463,6 +477,235 @@ class PH
         //print_r( $argv );
     }
 
+    /** @var DOMDocument|null small sections of lib/object-classes/predefined.xml, shared by all predefined stores */
+    private static $predefinedXmlDoc = null;
+
+    /**
+     * Top-level sections of predefined.xml that are large (application ~13 MB, threats ~15 MB of XML, together
+     * ~240 MB as DOM). They are parsed on request only, not cached; the stores build their objects from them and then
+     * drop their node pointers, so the DOM is freed again.
+     */
+    private static $predefinedLargeSections = array('application', 'application-container', 'application-version', 'threats');
+
+    /** sections of predefined.xml read by pan-os-php besides the large ones (together < 0.1 MB) */
+    private static $predefinedSmallSections = array('profiles', 'pan-url-categories', 'log-settings', 'region');
+
+    /**
+     * Returns predefined.xml as DOM, limited to the top-level $sections (e.g. array('threats')). Paths stay the same
+     * ('/predefined/threats/...'). The file is streamed with XMLReader, so the complete document (31 MB, ~280 MB as
+     * DOM) is never built:
+     *  - only small sections requested: one shared document holding all small sections, parsed once per process
+     *  - a large section requested: a new document with just the requested sections, not cached
+     * $sections === null or another $filename: the whole file, parsed on every call, as before.
+     * The returned document is read-only for the callers.
+     */
+    public static function getPredefinedXmlDoc( $filename = null, $sections = null ): DOMDocument
+    {
+        $default = dirname(__FILE__) . '/../object-classes/predefined.xml';
+        if( $filename === null )
+            $filename = $default;
+
+        $isDefault = realpath($filename) !== FALSE && realpath($filename) === realpath($default);
+
+        if( !$isDefault || $sections === null )
+        {
+            $xmlDoc = new DOMDocument();
+            if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
+                derr( "cannot load predefined file '".$filename."'", null, FALSE );
+            return $xmlDoc;
+        }
+
+        if( count(array_intersect($sections, self::$predefinedLargeSections)) == 0 )
+        {
+            if( self::$predefinedXmlDoc === null )
+                self::$predefinedXmlDoc = self::readPredefinedSections( $filename, self::$predefinedSmallSections );
+            return self::$predefinedXmlDoc;
+        }
+
+        return self::readPredefinedSections( $filename, $sections );
+    }
+
+    /**
+     * Streams the default predefined.xml and calls $callback( $name, DOMElement|null $entry ) for every <entry> below
+     * $path (e.g. array('threats', 'vulnerability')). With $expand each entry is copied into its own small document,
+     * so at most one entry is held as DOM at a time; without $expand only the name attribute is read.
+     * @return bool FALSE if the path does not exist
+     */
+    public static function eachPredefinedEntry( array $path, callable $callback, $expand = TRUE, $filename = null ): bool
+    {
+        if( $filename === null )
+            $filename = dirname(__FILE__) . '/../object-classes/predefined.xml';
+
+        $reader = new XMLReader();
+        if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
+            derr( "cannot load predefined file '".$filename."'", null, FALSE );
+
+        // <predefined>
+        while( $reader->read() && $reader->nodeType != XMLReader::ELEMENT );
+
+        // descend along $path
+        foreach( $path as $name )
+        {
+            if( !self::xmlReaderChildElement($reader, $name) )
+            {
+                $reader->close();
+                return FALSE;
+            }
+        }
+
+        if( !$reader->isEmptyElement )
+        {
+            $entryDepth = $reader->depth + 1;
+            $reader->read();
+            while( $reader->depth >= $entryDepth )
+            {
+                if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == $entryDepth && $reader->name == 'entry' )
+                {
+                    $node = null;
+                    if( $expand )
+                    {
+                        $tmpDoc = new DOMDocument();
+                        $node = $reader->expand($tmpDoc);
+                        if( $node === FALSE )
+                            derr( "cannot read predefined entry '".$reader->getAttribute('name')."'", null, FALSE );
+                    }
+                    $callback( $reader->getAttribute('name'), $node );
+                    if( !$reader->next() )
+                        break;
+                    continue;
+                }
+                if( !$reader->read() )
+                    break;
+            }
+        }
+
+        $reader->close();
+        return TRUE;
+    }
+
+    /**
+     * moves $reader from an element to its child element named $name
+     */
+    private static function xmlReaderChildElement( XMLReader $reader, $name ): bool
+    {
+        if( $reader->nodeType != XMLReader::ELEMENT || $reader->isEmptyElement )
+            return FALSE;
+
+        $parentDepth = $reader->depth;
+        if( !$reader->read() )
+            return FALSE;
+
+        while( $reader->depth > $parentDepth )
+        {
+            if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == $parentDepth + 1 && $reader->name == $name )
+                return TRUE;
+            if( !$reader->next() )
+                return FALSE;
+        }
+        return FALSE;
+    }
+
+    /**
+     * Streams $filename and returns a document <predefined> with only the given top-level sections.
+     */
+    private static function readPredefinedSections( $filename, array $sections ): DOMDocument
+    {
+        $wanted = array_flip($sections);
+
+        $xmlDoc = new DOMDocument();
+        $root = $xmlDoc->appendChild( $xmlDoc->createElement('predefined') );
+
+        $reader = new XMLReader();
+        if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
+            derr( "cannot load predefined file '".$filename."'", null, FALSE );
+
+        // move to <predefined>
+        while( $reader->read() && $reader->nodeType != XMLReader::ELEMENT );
+
+        $found = 0;
+        if( $reader->read() )
+        {
+            while( TRUE )
+            {
+                if( $reader->nodeType == XMLReader::ELEMENT && $reader->depth == 1 )
+                {
+                    if( isset($wanted[$reader->name]) )
+                    {
+                        $node = $reader->expand($xmlDoc);
+                        if( $node === FALSE )
+                            derr( "cannot read section '".$reader->name."' of predefined file '".$filename."'", null, FALSE );
+                        $root->appendChild($node);
+                        $found++;
+                    }
+                    if( !$reader->next() )
+                        break;
+                    continue;
+                }
+                if( !$reader->read() )
+                    break;
+            }
+        }
+        $reader->close();
+
+        return $xmlDoc;
+    }
+
+    /**
+     * Returns memory freed by PHP / libxml2 to the operating system (glibc malloc_trim via FFI).
+     * Without this, the process keeps the peak RSS of the largest config load although the memory is free and reused.
+     * Does nothing if FFI is not available or the C library has no malloc_trim (e.g. musl).
+     */
+    public static function releaseMemoryToOS(): bool
+    {
+        static $libc = FALSE;
+
+        if( $libc === FALSE )
+        {
+            $libc = null;
+            if( extension_loaded('ffi') && PHP_OS_FAMILY === 'Linux' )
+            {
+                try
+                {
+                    $libc = FFI::cdef("int malloc_trim(size_t pad);", "libc.so.6");
+                }
+                catch( Throwable $e )
+                {
+                    $libc = null;
+                }
+            }
+        }
+
+        if( $libc === null )
+            return FALSE;
+
+        $libc->malloc_trim(0);
+        return TRUE;
+    }
+
+    /**
+     * Drops the process-wide predefined stores (apps, threats, log profiles, security profiles).
+     * The next config load creates them again, so no object keeps references from a previously loaded config.
+     * Configs already loaded keep their own store objects.
+     */
+    public static function resetPredefinedStores(): void
+    {
+        SecurityProfileStore::$predefinedURLStore = null;
+        SecurityProfileStore::$predefinedVirusStore = null;
+        SecurityProfileStore::$predefinedSpywareStore = null;
+        SecurityProfileStore::$predefinedVulnerabilityStore = null;
+        SecurityProfileStore::$predefinedFileblockingStore = null;
+        SecurityProfileStore::$predefinedWildfireStore = null;
+        SecurityProfileStore::$predefinedUrlFitleringStore = null;
+        SecurityProfileStore::$predefinedDataFilteringStore = null;
+        SecurityProfileStore::$predefinedVirusAndWildfireStore = null;
+
+        AppStore::$predefinedStore = null;
+        ThreatStore::$predefinedStore = null;
+        LogProfileStore::$predefinedLogProfStore = null;
+
+        self::$predefinedXmlDoc = null;
+    }
+
     /**
      * Clears static variables and forces garbage collection to free memory.
      * This is particularly useful in playbook scenarios where multiple utilities
@@ -487,10 +730,16 @@ class PH
         PH::$args = array();
         PH::$argv = array();
 
+        // Predefined stores are process-wide singletons (static). Their objects collect references
+        // (SecurityProfileGroup, SecurityRule, ...) from every config loaded in this process; a playbook running
+        // its steps in-process would otherwise keep the references of all previous steps.
+        PH::resetPredefinedStores();
+
         // Clear load time tracking
         PH::$loadStartTime = null;
         PH::$loadStartMem = null;
         PH::$loadArrayMem = array( "0", "b");
+        PH::print_DEBUG_loadtime_reset();
 
         // Force garbage collection multiple times to handle circular references
         gc_collect_cycles();
@@ -502,6 +751,9 @@ class PH
         {
             gc_mem_caches();
         }
+
+        // memory freed by libxml2 (DOM) / PHP stays mapped in the process until malloc_trim
+        PH::releaseMemoryToOS();
 
         $memAfter = memory_get_usage(true);
         $memFreed = $memBefore - $memAfter;
@@ -833,16 +1085,358 @@ class PH
 
     }
 
+    /**
+     * debugloadtime: called at the START of a load section.
+     * Closes the previously opened section and prints what THIS section cost (time / memory delta),
+     * followed by the totals since load start. The last section is closed by print_DEBUG_loadtime_end().
+     *
+     *   memory = memory_get_usage() (exact PHP memory, not the 2 MB chunks of memory_get_usage(TRUE))
+     *   XML    = libxml2 / DOMDocument memory (C allocator, via FFI - Linux, macOS, Windows), NOT part of memory_get_usage()
+     *   process memory (includes the XML memory, does not drop when memory is freed):
+     *            Linux "RSS" (resident), macOS "Footprint" (like Activity Monitor, includes compressed memory),
+     *            Windows "Private" (private bytes / commit)
+     *   details: see debugLoadtimeFFI()
+     *   all values in MB = 1024*1024 bytes, negative values = memory released
+     */
     static public function print_DEBUG_loadtime( $type )
     {
-        $loadEndTime = microtime(TRUE);
-        $loadEndMem = memory_get_usage(TRUE);
-        $loadElapsedTime = number_format(($loadEndTime - PH::$loadStartTime), 2, '.', '');
-        $loadUsedMem = convert($loadEndMem - PH::$loadStartMem, PH::$loadArrayMem);
+        $now = microtime(TRUE);
+        $mem = memory_get_usage();
+        $rss = PH::debugLoadtimeRss();
+        $xml = PH::debugLoadtimeXml();
 
-        PH::print_stdout( "debugLoadTime - start ". $type);
-        PH::print_stdout( "runtime: ".$loadElapsedTime );
-        PH::print_stdout( "memory allocated: ".$loadUsedMem );
+        if( PH::$loadDebugStartTime === null )
+        {
+            // load_from_domxml() called without UTIL::loadStart()
+            PH::$loadDebugStartTime = $now;
+            PH::$loadDebugStartMem = $mem;
+            PH::$loadDebugStartRss = $rss;
+            PH::$loadDebugStartXml = $xml;
+            PH::debugLoadtimePrintStart();
+        }
+
+        if( PH::$loadDebugSection !== null )
+            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss, $xml);
+        elseif( PH::$loadDebugStartTime < $now )
+            PH::debugLoadtimePrintSection("(before first section)", $now, $mem, $rss, $xml, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss, PH::$loadDebugStartXml);
+
+        // prefix the section with the object (DeviceGroup / Container / ...) it belongs to
+        $owner = null;
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
+        if( isset($trace[1]['object']) )
+        {
+            $obj = $trace[1]['object'];
+            if( !($obj instanceof PanoramaConf) && !($obj instanceof PANConf) && method_exists($obj, 'name') )
+                $owner = get_class($obj) . " '" . $obj->name() . "'";
+        }
+
+        PH::$loadDebugSection = ($owner !== null) ? $owner . " / " . $type : $type;
+        // measure again: the print above must not be counted in the next section
+        PH::$loadDebugSectionTime = microtime(TRUE);
+        PH::$loadDebugSectionMem = memory_get_usage();
+        PH::$loadDebugSectionRss = PH::debugLoadtimeRss();
+        PH::$loadDebugSectionXml = PH::debugLoadtimeXml();
+    }
+
+    /**
+     * debugloadtime: closes the last open section and prints the sum of all sections
+     */
+    static public function print_DEBUG_loadtime_end()
+    {
+        if( PH::$loadDebugStartTime === null )
+            return;
+
+        $now = microtime(TRUE);
+        $mem = memory_get_usage();
+        $rss = PH::debugLoadtimeRss();
+        $xml = PH::debugLoadtimeXml();
+
+        if( PH::$loadDebugSection !== null )
+            PH::debugLoadtimePrintSection(PH::$loadDebugSection, $now, $mem, $rss, $xml);
+
+        PH::debugLoadtimePrintSection("TOTAL load", $now, $mem, $rss, $xml, PH::$loadDebugStartTime, PH::$loadDebugStartMem, PH::$loadDebugStartRss, PH::$loadDebugStartXml);
+        PH::print_stdout( "debugLoadTime - end of load: PHP " . PH::debugLoadtimeMB($mem) . " MB (peak " . PH::debugLoadtimeMB(memory_get_peak_usage()) . " MB)"
+            . ($xml !== null ? ", XML " . PH::debugLoadtimeMB($xml) . " MB" : PH::debugLoadtimeNotAvailable())
+            . PH::debugLoadtimeProcText($rss) );
+
+        PH::print_DEBUG_loadtime_reset();
+    }
+
+    /** debugloadtime: reference point = load start (called by UTIL::loadStart) */
+    static public function print_DEBUG_loadtime_start()
+    {
+        PH::print_DEBUG_loadtime_reset();
+        PH::$loadDebugStartTime = microtime(TRUE);
+        PH::$loadDebugStartMem = memory_get_usage();
+        PH::$loadDebugStartRss = PH::debugLoadtimeRss();
+        PH::$loadDebugStartXml = PH::debugLoadtimeXml();
+        PH::debugLoadtimePrintStart();
+    }
+
+    /** absolute values before the load: config DOM (and predefined.xml) is already parsed at this point */
+    static private function debugLoadtimePrintStart()
+    {
+        PH::print_stdout( "debugLoadTime - start of load: PHP " . PH::debugLoadtimeMB(PH::$loadDebugStartMem) . " MB"
+            . (PH::$loadDebugStartXml !== null ? ", XML " . PH::debugLoadtimeMB(PH::$loadDebugStartXml) . " MB" : PH::debugLoadtimeNotAvailable())
+            . PH::debugLoadtimeProcText(PH::$loadDebugStartRss) );
+    }
+
+    static public function print_DEBUG_loadtime_reset()
+    {
+        PH::$loadDebugSection = null;
+        PH::$loadDebugSectionTime = null;
+        PH::$loadDebugSectionMem = null;
+        PH::$loadDebugSectionRss = null;
+        PH::$loadDebugSectionXml = null;
+        PH::$loadDebugStartXml = null;
+        PH::$loadDebugStartTime = null;
+        PH::$loadDebugStartMem = null;
+        PH::$loadDebugStartRss = null;
+    }
+
+    static private function debugLoadtimePrintSection( $name, $now, $mem, $rss, $xml, $fromTime = null, $fromMem = null, $fromRss = null, $fromXml = null )
+    {
+        if( $fromTime === null )
+        {
+            $fromTime = PH::$loadDebugSectionTime;
+            $fromMem = PH::$loadDebugSectionMem;
+            $fromRss = PH::$loadDebugSectionRss;
+            $fromXml = PH::$loadDebugSectionXml;
+        }
+
+        $line = "debugLoadTime - " . str_pad($name, 60)
+            . " " . str_pad(PH::debugLoadtimeDelta($now - $fromTime, 3) . " s", 11, " ", STR_PAD_LEFT)
+            . " " . str_pad(PH::debugLoadtimeDelta(($mem - $fromMem) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+        if( $xml !== null && $fromXml !== null )
+            $line .= "  XML " . str_pad(PH::debugLoadtimeDelta(($xml - $fromXml) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+        if( $rss !== null && $fromRss !== null )
+            $line .= "  " . PH::debugLoadtimeProcLabel() . " " . str_pad(PH::debugLoadtimeDelta(($rss - $fromRss) / 1048576, 2) . " MB", 12, " ", STR_PAD_LEFT);
+
+        $line .= "   | total " . sprintf("%.3f s", $now - PH::$loadDebugStartTime)
+            . ", " . PH::debugLoadtimeMB($mem - PH::$loadDebugStartMem) . " MB";
+        if( $xml !== null && PH::$loadDebugStartXml !== null )
+            $line .= ", XML " . PH::debugLoadtimeMB($xml - PH::$loadDebugStartXml) . " MB";
+        if( $rss !== null )
+            $line .= ", " . PH::debugLoadtimeProcLabel() . " " . PH::debugLoadtimeMB($rss) . " MB";
+
+        PH::print_stdout( $line );
+    }
+
+    /** signed value, without "-0.00" for tiny negative values */
+    static private function debugLoadtimeDelta( $value, $decimals )
+    {
+        $value = round($value, $decimals);
+        if( $value == 0 )
+            $value = 0.0;
+        return sprintf("%+." . $decimals . "f", $value);
+    }
+
+    static private function debugLoadtimeMB( $bytes )
+    {
+        return number_format($bytes / 1048576, 2, '.', '');
+    }
+
+    /**
+     * debugloadtime - memory outside of PHP's own memory manager, measured through FFI:
+     *
+     *   XML = memory allocated through the C allocator = libxml2 / DOMDocument
+     *         (+ small C allocations of other extensions like pcre/curl/openssl)
+     *         PHP's own memory (Zend MM) is allocated with mmap()/VirtualAlloc() and is NOT included,
+     *         so XML and memory_get_usage() do not overlap.
+     *         Linux (glibc):  mallinfo2()            (glibc >= 2.33, fallback mallinfo())
+     *         macOS:          mstats()               (all malloc zones)
+     *         Windows:        HeapSummary()          (process heap, used by the UCRT malloc)
+     *   process memory:
+     *         Linux:   RSS        /proc/self/status VmRSS
+     *         macOS:   Footprint  proc_pid_rusage() ri_phys_footprint - resident size is NOT used, macOS compresses
+     *                             memory, so resident can be far below the memory the process really uses
+     *         Windows: Private    K32GetProcessMemoryInfo() PrivateUsage - the working set can be trimmed by Windows
+     *
+     * requirements: extension "ffi" loaded (Windows: extension=ffi in php.ini), ffi.enable = "preload" (default, CLI allowed) or "1"
+     */
+    static private function debugLoadtimeFFI()
+    {
+        if( PH::$loadDebugMallinfo !== null )
+            return PH::$loadDebugMallinfo;
+
+        PH::$loadDebugMallinfo = FALSE;
+        PH::$loadDebugMemInfoReason = null;
+
+        if( !extension_loaded('ffi') )
+        {
+            PH::$loadDebugMemInfoReason = "PHP extension ffi not loaded" . (PHP_OS_FAMILY === 'Windows' ? " (php.ini: extension=ffi)" : "");
+            return FALSE;
+        }
+
+        try
+        {
+            if( PHP_OS_FAMILY === 'Linux' )
+            {
+                $cdef = "struct mallinfo2 { size_t arena; size_t ordblks; size_t smblks; size_t hblks; size_t hblkhd;
+                           size_t usmblks; size_t fsmblks; size_t uordblks; size_t fordblks; size_t keepcost; };
+                         struct mallinfo2 mallinfo2(void);";
+                try
+                {
+                    $ffi = FFI::cdef($cdef, "libc.so.6");
+                    $ffi->mallinfo2();
+                    PH::$loadDebugMallinfo = array('os' => 'linux', 'ffi' => $ffi, 'fn' => 'mallinfo2');
+                }
+                catch( Throwable $e )
+                {
+                    // glibc < 2.33: mallinfo() with int fields (wraps above 2 GB)
+                    $ffi = FFI::cdef("struct mallinfo { int arena; int ordblks; int smblks; int hblks; int hblkhd;
+                                       int usmblks; int fsmblks; int uordblks; int fordblks; int keepcost; };
+                                     struct mallinfo mallinfo(void);", "libc.so.6");
+                    $ffi->mallinfo();
+                    PH::$loadDebugMallinfo = array('os' => 'linux', 'ffi' => $ffi, 'fn' => 'mallinfo');
+                }
+            }
+            elseif( PHP_OS_FAMILY === 'Darwin' )
+            {
+                $ffi = FFI::cdef("struct mstats { size_t bytes_total; size_t chunks_used; size_t bytes_used; size_t chunks_free; size_t bytes_free; };
+                                 struct mstats mstats(void);
+                                 struct rusage_info_v0 { uint8_t ri_uuid[16]; uint64_t ri_user_time; uint64_t ri_system_time;
+                                     uint64_t ri_pkg_idle_wkups; uint64_t ri_interrupt_wkups; uint64_t ri_pageins; uint64_t ri_wired_size;
+                                     uint64_t ri_resident_size; uint64_t ri_phys_footprint; uint64_t ri_proc_start_abstime; uint64_t ri_proc_exit_abstime; };
+                                 int proc_pid_rusage(int pid, int flavor, void *buffer);",
+                                 "/usr/lib/libSystem.B.dylib");
+                $ffi->mstats();
+                PH::$loadDebugMallinfo = array('os' => 'darwin', 'ffi' => $ffi);
+            }
+            elseif( PHP_OS_FAMILY === 'Windows' )
+            {
+                $ffi = FFI::cdef("typedef struct { uint32_t cb; size_t cbAllocated; size_t cbCommitted; size_t cbReserved; size_t cbMaxReserve; } HEAP_SUMMARY;
+                                 typedef struct { uint32_t cb; uint32_t PageFaultCount; size_t PeakWorkingSetSize; size_t WorkingSetSize;
+                                     size_t QuotaPeakPagedPoolUsage; size_t QuotaPagedPoolUsage; size_t QuotaPeakNonPagedPoolUsage;
+                                     size_t QuotaNonPagedPoolUsage; size_t PagefileUsage; size_t PeakPagefileUsage; size_t PrivateUsage; } PROCESS_MEMORY_COUNTERS_EX;
+                                 void *GetProcessHeap(void);
+                                 void *GetCurrentProcess(void);
+                                 int HeapSummary(void *hHeap, uint32_t dwFlags, HEAP_SUMMARY *lpSummary);
+                                 int K32GetProcessMemoryInfo(void *Process, PROCESS_MEMORY_COUNTERS_EX *ppsmemCounters, uint32_t cb);",
+                                 "kernel32.dll");
+                PH::$loadDebugMallinfo = array('os' => 'windows', 'ffi' => $ffi);
+            }
+            else
+                PH::$loadDebugMemInfoReason = "not supported on " . PHP_OS_FAMILY;
+        }
+        catch( Throwable $e )
+        {
+            PH::$loadDebugMallinfo = FALSE;
+            PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
+        }
+
+        return PH::$loadDebugMallinfo;
+    }
+
+    /** XML / C allocator memory in bytes, null if not available */
+    static private function debugLoadtimeXml()
+    {
+        $f = PH::debugLoadtimeFFI();
+        if( $f === FALSE )
+            return null;
+
+        try
+        {
+            if( $f['os'] === 'linux' )
+            {
+                $fn = $f['fn'];
+                $info = $f['ffi']->$fn();
+                // uordblks = in use in the heap, hblkhd = in use in large blocks malloc() allocated with mmap()
+                if( $fn === 'mallinfo' )
+                    return ($info->uordblks & 0xFFFFFFFF) + ($info->hblkhd & 0xFFFFFFFF);
+                return $info->uordblks + $info->hblkhd;
+            }
+            if( $f['os'] === 'darwin' )
+                return $f['ffi']->mstats()->bytes_used;
+
+            if( $f['os'] === 'windows' )
+            {
+                $summary = $f['ffi']->new("HEAP_SUMMARY");
+                $summary->cb = FFI::sizeof($summary);
+                if( !$f['ffi']->HeapSummary($f['ffi']->GetProcessHeap(), 0, FFI::addr($summary)) )
+                    return null;
+                return $summary->cbAllocated;
+            }
+        }
+        catch( Throwable $e )
+        {
+            PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
+        }
+        return null;
+    }
+
+    /**
+     * process memory in bytes, null if not available
+     * $resident = FALSE: Linux RSS / macOS footprint / Windows private bytes (see debugLoadtimeFFI)
+     * $resident = TRUE:  resident size (macOS) / working set (Windows), only for information
+     */
+    static private function debugLoadtimeRss( $resident = FALSE )
+    {
+        if( PHP_OS_FAMILY === 'Linux' )
+        {
+            $status = @file_get_contents('/proc/self/status');
+            if( $status !== FALSE && preg_match('/^VmRSS:\s+(\d+)\s+kB/m', $status, $m) )
+                return (int)$m[1] * 1024;
+            return null;
+        }
+
+        $f = PH::debugLoadtimeFFI();
+        if( $f === FALSE )
+            return null;
+
+        try
+        {
+            if( $f['os'] === 'darwin' )
+            {
+                $info = $f['ffi']->new("struct rusage_info_v0");
+                // flavor 0 = RUSAGE_INFO_V0
+                if( $f['ffi']->proc_pid_rusage(getmypid(), 0, FFI::addr($info)) !== 0 )
+                    return null;
+                return $resident ? $info->ri_resident_size : $info->ri_phys_footprint;
+            }
+            if( $f['os'] === 'windows' )
+            {
+                $pmc = $f['ffi']->new("PROCESS_MEMORY_COUNTERS_EX");
+                $pmc->cb = FFI::sizeof($pmc);
+                if( !$f['ffi']->K32GetProcessMemoryInfo($f['ffi']->GetCurrentProcess(), FFI::addr($pmc), $pmc->cb) )
+                    return null;
+                return $resident ? $pmc->WorkingSetSize : $pmc->PrivateUsage;
+            }
+        }
+        catch( Throwable $e )
+        {
+            PH::$loadDebugMemInfoReason = "FFI: " . $e->getMessage();
+        }
+        return null;
+    }
+
+    static private function debugLoadtimeProcLabel()
+    {
+        if( PHP_OS_FAMILY === 'Darwin' )
+            return "Footprint";
+        if( PHP_OS_FAMILY === 'Windows' )
+            return "Private";
+        return "RSS";
+    }
+
+    /** ", Footprint x MB (resident y MB)" for start / end of load */
+    static private function debugLoadtimeProcText( $value )
+    {
+        if( $value === null )
+            return "";
+        $text = ", " . PH::debugLoadtimeProcLabel() . " " . PH::debugLoadtimeMB($value) . " MB";
+        if( PHP_OS_FAMILY === 'Darwin' || PHP_OS_FAMILY === 'Windows' )
+        {
+            $resident = PH::debugLoadtimeRss(TRUE);
+            if( $resident !== null )
+                $text .= " (" . (PHP_OS_FAMILY === 'Darwin' ? "resident" : "working set") . " " . PH::debugLoadtimeMB($resident) . " MB)";
+        }
+        return $text;
+    }
+
+    static private function debugLoadtimeNotAvailable()
+    {
+        return ", XML n/a (" . (PH::$loadDebugMemInfoReason !== null ? PH::$loadDebugMemInfoReason : "not available") . ")";
     }
 
     static public function ACTIONstatus( $context, $status, $string )

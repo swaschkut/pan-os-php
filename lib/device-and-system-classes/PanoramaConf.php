@@ -74,6 +74,22 @@ class PanoramaConf
 
     public $version = null;
 
+    /**
+     * ZoneRuleContainer::resolveTargets(): "<template-stack>\0<vsys>\0<zone>" => resolved zone of that firewall vsys,
+     * '@shared-devices' => firewalls of all device groups. Filled on first use, see clearZoneResolveCache().
+     * @var array
+     */
+    public $zoneResolveCache = array();
+
+    /**
+     * Drops the cached per-firewall zone readings ('zone protection all-targets', '*-all-targets' columns, 'targets' filters).
+     * Call after changing zones, template-stacks, templates or device-group firewalls when these readings are used afterwards.
+     */
+    public function clearZoneResolveCache(): void
+    {
+        $this->zoneResolveCache = array();
+    }
+
     public $timezone = null;
 
     public $managedFirewallsSerials = array();
@@ -428,6 +444,8 @@ class PanoramaConf
      */
     public function cleanupMemory(): void
     {
+        $this->zoneResolveCache = array();
+
         // Clear DOM references first - these hold the most memory
         $this->xmldoc = null;
         $this->xmlroot = null;
@@ -870,21 +888,7 @@ class PanoramaConf
                         $ldv->parentDeviceGroup = $parentDG;
                         $parentDG->addReference($ldv);
 
-                        $storeType = array(
-                            'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                            'EDLStore', 'LogProfileStore',
-
-                            'securityProfileGroupStore',
-
-                            'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
-                            'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
-
-                        );
-
-                        foreach( $storeType as $type )
-                            $ldv->$type->parentCentralStore = $parentDG->$type;
+                        $ldv->linkStoresToParent( $parentDG );
                     }
                 }
 
@@ -906,6 +910,8 @@ class PanoramaConf
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Todo: part6 - all other parts related to shared - keep it - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared service / application");
         //
         // Extract services
         //
@@ -947,6 +953,8 @@ class PanoramaConf
         // End of application groups extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared profiles / schedule / EDL / log-settings");
         // Extract SecurityProfiles objects
         //
         $this->securityProfilebaseroot = DH::findFirstElement('profiles', $this->sharedroot);
@@ -1185,6 +1193,8 @@ class PanoramaConf
         //
         // Extracting policies
         //
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared pre-/post-rulebase");
         $prerulebase = DH::findFirstElement('pre-rulebase', $this->sharedroot);
         $postrulebase = DH::findFirstElement('post-rulebase', $this->sharedroot);
 
@@ -2323,26 +2333,7 @@ class PanoramaConf
             {
                 $parentDG->_childDeviceGroups[$name] = $newDG;
 
-                //Todo: swaschkut 20210505 - check if other Stores must be added
-                //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-                $storeType = array(
-                    'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                    'securityProfileGroupStore',
-
-                    'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore',
-                    'DataFilteringProfileStore',
-                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                    'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                    'LogProfileStore'
-
-                );
-
-                foreach( $storeType as $type )
-                    $newDG->$type->parentCentralStore = $parentDG->$type;
+                $newDG->linkStoresToParent( $parentDG );
             }
         }
 

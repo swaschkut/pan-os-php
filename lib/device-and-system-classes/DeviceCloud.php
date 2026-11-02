@@ -426,6 +426,26 @@ class DeviceCloud
         if( $this->name === FALSE )
             derr("DeviceCloud name not found\n", $xml);
 
+        //attached snippets (written by addSnippet() as <snippets><member>NAME</member></snippets>)
+        $tmp_snippets = DH::findFirstElement('snippets', $xml);
+        if( $tmp_snippets !== FALSE )
+        {
+            foreach( $tmp_snippets->childNodes as $member )
+            {
+                if( $member->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $snippetName = $member->textContent;
+                if( $member->nodeName == 'entry' && DH::findAttribute('name', $member) !== FALSE )
+                    $snippetName = DH::findAttribute('name', $member);
+
+                $snippetObj = $this->owner->findSnippet( $snippetName );
+                if( $snippetObj !== null && !isset($this->attachedSnippets[$snippetObj->name()]) )
+                    $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+            }
+        }
+
+
 
         $tmp_parentContainer = DH::findFirstElement('parent', $xml);
         if( $tmp_parentContainer !== FALSE )
@@ -440,34 +460,7 @@ class DeviceCloud
                 $parentContainer->_childContainers[$this->name] = $this;
                 $this->parentContainer = $parentContainer;
 
-                /*
-                $this->addressStore->parentCentralStore = $parentContainer->addressStore;
-                $this->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-                $this->tagStore->parentCentralStore = $parentContainer->tagStore;
-                $this->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-                $this->appStore->parentCentralStore = $parentContainer->appStore;
-                $this->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-                */
-                //Todo: swaschkut 20210505 - check if other Stores must be added
-                //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
-                $storeType = array(
-                    'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                    'securityProfileGroupStore',
-
-                    'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
-                    'DataFilteringProfileStore',
-                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
-                    //'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
-
-                    'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
-
-                );
-
-                foreach( $storeType as $type )
-                    $this->$type->parentCentralStore = $parentContainer->$type;
+                $this->linkStoresToParent( $parentContainer );
             }
         }
 
@@ -1145,7 +1138,7 @@ class DeviceCloud
         $name = array();
         foreach( $this->attachedSnippets as $snippet )
         {
-            $name[$snippet->name] = $snippet->name;
+            $name[$snippet->name()] = $snippet->name();
         }
 
         return $name;

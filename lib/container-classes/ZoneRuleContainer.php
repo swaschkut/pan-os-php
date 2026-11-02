@@ -31,17 +31,16 @@ class ZoneRuleContainer extends ObjRuleContainer
     public $parentCentralStore = null;
 
     /**
-     * zoneName => [ "serial/vsys" => Zone|null ]   (null = Zone dort nicht gefunden)
+     * Zone names loaded from XML on Panorama for which the per serial/vsys reading ('all-targets') is available:
+     * zoneName => 'dg' | 'shared'.
+     * The reading itself is NOT computed at load: targetsForZone() resolves it on first use, through
+     * PanoramaConf::$zoneResolveCache (one result per template-stack / vsys / zone, shared by all rules).
+     * Before, every rule stored one entry per zone x firewall x vsys at load (~1 KB each), also for 'to' zones
+     * and for every util type, although only 'zone protection all-targets', the '*-all-targets' export columns
+     * and the 'targets' filters read them.
      * @var array
      */
-    public $zonesPerTarget = array();
-
-    /**
-     * zoneName => [ "serial/vsys" => array('status' => ..., 'candidates' => array("<tpl>/<vsys>" => Zone)) ]
-     * status: found | protected-all | unprotected-all | ambiguous | missing
-     * @var array
-     */
-    public $zoneStatusPerTarget = array();
+    public $perTargetZones = array();
 
     public function __construct($owner)
     {
@@ -220,57 +219,10 @@ class ZoneRuleContainer extends ObjRuleContainer
             {
                 $zoneName   = $node->textContent;
 
-                if( $isDG )
-                {
-                    $actualDG = $this->owner->owner->owner;
-                    $panorama = $actualDG->owner;
-                    $devices  = $actualDG->getDevicesInGroup(true);
-                }
-                else
-                {
-                    // shared = parent of every top-level device group: union of the firewalls of all device groups
-                    $actualDG = null;
-                    $panorama = $this->owner->owner->owner;
-                    $devices  = $this->devicesOfAllDeviceGroups($panorama);
-                }
-                foreach( $devices as $deviceObj )
-                {
-                    $serial = $deviceObj['serial'];
-                    $managedFirewall = $panorama->managedFirewallsStore->find($serial);
+                $actualDG = $isDG ? $this->owner->owner->owner : null;
 
-                    $stack = null;
-                    if( $managedFirewall !== null && !empty($managedFirewall->template_stack) )
-                        $stack = $panorama->findTemplateStack($managedFirewall->template_stack);
-
-                    // vsys aus der DG-Zuweisung; ohne Angabe -> vsys1
-                    $vsysNames = !empty($deviceObj['vsyslist']) ? array_keys($deviceObj['vsyslist']) : array('vsys1');
-
-                    /*
-                    foreach( $vsysNames as $vsysName )
-                    {
-                        $zone = ($stack !== null) ? $this->findZoneInStack($stack, $vsysName, $zoneName) : null;
-                        $this->zonesPerTarget[$zoneName][$serial.'/'.$vsysName] = $zone;
-
-                        if( $representative === null && $zone !== null )
-                            $representative = $zone;
-                    }
-                    */
-                    foreach( $vsysNames as $vsysName )
-                    {
-                        if( $stack !== null )
-                            $res = $this->resolveZoneInStack($stack, $vsysName, $zoneName);
-                        else
-                            $res = array('status' => 'missing', 'zone' => null, 'candidates' => array());
-
-                        $target = $serial.'/'.$vsysName;
-                        $this->zonesPerTarget[$zoneName][$target] = $res['zone'];
-                        $this->zoneStatusPerTarget[$zoneName][$target] = array(
-                            'status'     => $res['status'],
-                            'candidates' => $res['candidates']
-                        );
-
-                    }
-                }
+                // per serial/vsys reading: resolved on first use, see targetsForZone()
+                $this->perTargetZones[$zoneName] = $isDG ? 'dg' : 'shared';
 
                 // $this->o keeps the 2.1.60 reading (first template-stack, templates before stack, first vsys
                 // holding the name). Used by 'zone protection', 'from-visible', 'from-zone-location', 'from has'.
@@ -632,6 +584,70 @@ class ZoneRuleContainer extends ObjRuleContainer
     }
 
     /**
+     * Per serial/vsys of the rule's device group (incl. child DGs; for shared: every DG) the resolved zone of $zoneName,
+     * Target not applied yet. Same order and result as the former load-time computation.
+     * The resolution only depends on template-stack, vsys and zone name and is cached on the PanoramaConf,
+     * so all rules share one result per combination.
+     *
+     * @return null|array  "serial/vsys" => array('status' => string, 'zone' => Zone|null, 'candidates' => array)
+     *                     null: no per-target reading (not loaded from Panorama XML, or no firewall)
+     */
+    private function resolveTargets($zoneName)
+    {
+        if( !isset($this->perTargetZones[$zoneName]) )
+            return null;
+
+        if( $this->perTargetZones[$zoneName] == 'dg' )
+        {
+            $actualDG = $this->owner->owner->owner;
+            $panorama = $actualDG->owner;
+            $devices  = $actualDG->getDevicesInGroup(true);
+        }
+        else
+        {
+            // shared = parent of every top-level device group: union of the firewalls of all device groups
+            $panorama = $this->owner->owner->owner;
+            if( !isset($panorama->zoneResolveCache['@shared-devices']) )
+                $panorama->zoneResolveCache['@shared-devices'] = $this->devicesOfAllDeviceGroups($panorama);
+            $devices = $panorama->zoneResolveCache['@shared-devices'];
+        }
+
+        if( count($devices) == 0 )
+            return null;
+
+        $ret = array();
+        foreach( $devices as $deviceObj )
+        {
+            $serial = $deviceObj['serial'];
+            $managedFirewall = $panorama->managedFirewallsStore->find($serial);
+
+            $stack = null;
+            if( $managedFirewall !== null && !empty($managedFirewall->template_stack) )
+                $stack = $panorama->findTemplateStack($managedFirewall->template_stack);
+
+            // vsys aus der DG-Zuweisung; ohne Angabe -> vsys1
+            $vsysNames = !empty($deviceObj['vsyslist']) ? array_keys($deviceObj['vsyslist']) : array('vsys1');
+
+            foreach( $vsysNames as $vsysName )
+            {
+                if( $stack === null )
+                {
+                    $ret[$serial.'/'.$vsysName] = array('status' => 'missing', 'zone' => null, 'candidates' => array());
+                    continue;
+                }
+
+                $key = $stack->name()."\0".$vsysName."\0".$zoneName;
+                if( !isset($panorama->zoneResolveCache[$key]) )
+                    $panorama->zoneResolveCache[$key] = $this->resolveZoneInStack($stack, $vsysName, $zoneName);
+
+                $ret[$serial.'/'.$vsysName] = $panorama->zoneResolveCache[$key];
+            }
+        }
+
+        return $ret;
+    }
+
+    /**
      * Is the rule pushed to this serial/vsys? (rule Target incl. negate; no Target = every DG firewall)
      * a Target entry without vsys covers every vsys of that serial
      */
@@ -660,24 +676,21 @@ class ZoneRuleContainer extends ObjRuleContainer
      */
     public function targetsForZone($zoneName)
     {
-        if( !isset($this->zonesPerTarget[$zoneName]) )
+        $resolved = $this->resolveTargets($zoneName);
+        if( $resolved === null )
             return null;
 
         $ret = array();
-        foreach( $this->zonesPerTarget[$zoneName] as $target => $z )
+        foreach( $resolved as $target => $res )
         {
             $ex = explode('/', $target, 2);
             if( !$this->isDeployedToTarget($ex[0], $ex[1]) )
                 continue;
 
-            $status = 'found';
-            $candidates = array();
-            if( isset($this->zoneStatusPerTarget[$zoneName][$target]) )
-            {
-                $status = $this->zoneStatusPerTarget[$zoneName][$target]['status'];
-                $candidates = $this->zoneStatusPerTarget[$zoneName][$target]['candidates'];
-            }
+            $status = $res['status'];
+            $candidates = $res['candidates'];
 
+            $z = $res['zone'];
             if( $z === null )
                 $z = $this->parentCentralStore->findOrCreate($zoneName);   // tmp-Zone
 

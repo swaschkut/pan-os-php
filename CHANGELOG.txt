@@ -10,6 +10,8 @@ UTIL:
 * type=rule 'filter=(from targets.has.from.query subquery1)' 'subquery1=!(zpp is.set)' - at least one serial/vsys
 * type=stats | introduce 'zone protection all-targets' (+ calc / percentage): from-zone protected on every serial/vsys the rule is pushed to, rule Target incl. negate honoured
 * type=rule actions=exporttoexcel:file,Visibility | introduce columns 'from-visible-all-targets' and 'from-zone-all-targets' (missing / ambiguous for templates with named vsys)
+* Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
+* type=zone/zone-protection-profile | correct/extend managed.device filter
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
@@ -18,9 +20,20 @@ BUGFIX:
 * class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
 * type=stats | 'zone protection' and export 'from-visible' / 'from-zone-location' keep the 2.1.60 reading (first template-stack) - transitional
 * class DH.php | bugfix to generate set commands
+* SCM-API related bugfixed
+* SCM-API - differnet class are not reading snippets correctly
+* type=rule 'filter=( {RULEUSAGE} )' - bugfix to correctly interpret log-data from different firewalls
+* type=rule actions=exporttohtml | bugfix for ruleusage information
+* class PH | fix predefinedStores for type=playbook if NOT subprocess
+* remove multiple times getPredefinedXML load part
+* class ZoneRuleContainer - optimsation to reduce memory usage
+* class AntiSpyware-/VulnerabilityProfile and the relevant ThreatPolicy-/Spyware/Vulnerability - also actions-securityprofile | fix to cover new rules with existing name - CVE/Vendor-id
+* class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
+* update Device App-ID to version: 9165-10321
+* update Device App-ID to version: 9167-10330
 
 
 2.1.60 (20261021)

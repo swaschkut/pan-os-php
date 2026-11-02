@@ -4710,12 +4710,8 @@ SecurityProfileCallContext::$supportedActions['spyware.rules.alert-only-set'] = 
             return null;
         }
 
-        $sp_severity = array();
         foreach( $object->rules_obj as $rule )
         {
-            /** @var ThreatPolicySpyware $rule */
-            $sp_severity = array_merge( $sp_severity, $rule->severity());
-
             /** @var ThreatPolicy $rule */
             if( $rule->action() == "allow" )
             {
@@ -4737,38 +4733,27 @@ SecurityProfileCallContext::$supportedActions['spyware.rules.alert-only-set'] = 
                 }
             }
         }
-        $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
-        $result = array_diff($sp_severity_default, $sp_severity);
-
-        if( !in_array("any", $sp_severity) )
+        // add a rule only for a severity no rule matches (PAN-OS first match); after the loop above every rule logs
+        foreach( array( "critical", "high", "medium", "low", "informational" ) as $rule )
         {
-            if( !empty($result) )
-            {
-                if( in_array("any", $result) )
-                {
-                    foreach( $result as $rule )
-                    {
-                        if( $rule == "any" )
-                            continue;
+            if( $object->spyware_rules_first_match( $rule, ThreatPolicy::OTHER_CATEGORY ) !== null )
+                continue;
 
+            $ruleName = ThreatPolicy::uniqueRuleName( $object->xmlroot, $rule );
+            $threadPolicy_obj = new ThreatPolicySpyware( $ruleName, $object);
+            $threadPolicy_obj->type = "ThreatPolicySpyware";
 
-                        $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
-                        $threadPolicy_obj->type = "ThreatPolicySpyware";
+            if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                $threadPolicy_obj->action = "alert";
+            elseif( $rule == "low" || $rule == "informational" )
+                $threadPolicy_obj->action = "default";
 
-                        if( $rule == "critical" || $rule == "high" || $rule == "medium" )
-                            $threadPolicy_obj->action = "alert";
-                        elseif( $rule == "low" || $rule == "informational" )
-                            $threadPolicy_obj->action = "default";
+            $object->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $object );
 
-                        $object->rules_obj[] = $threadPolicy_obj;
-                        $threadPolicy_obj->addReference( $object );
+            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
-                    }
-                }
-            }
+            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $ruleName, $rule, $threadPolicy_obj->action);
         }
     }
 );
@@ -5469,8 +5454,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
 
                     // Global layer validation: check threat-name, cve, and vendor-id safely
                     if (($cfg['threat-name'] ?? 'any') !== 'any' ||
-                        ($cfg['cve'] ?? 'any')         !== 'any' ||
-                        ($cfg['vendor-id'] ?? 'any')   !== 'any')
+                        !empty(array_diff($cfg['cve'] ?? [], ['any'])) ||
+                        !empty(array_diff($cfg['vendor-id'] ?? [], ['any'])))
                     {
                         $hasInvalidAnyThreat = true;
                         break;
@@ -5501,8 +5486,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
                 $anyHost = $coverage['any'] ?? null;
                 if ($anyHost !== null &&
                     ($anyHost['category'] ?? 'any')  === 'any' &&
-                    ($anyHost['cve'] ?? 'any')       === 'any' &&
-                    ($anyHost['vendor-id'] ?? 'any') === 'any')
+                    empty(array_diff($anyHost['cve'] ?? [], ['any'])) &&
+                    empty(array_diff($anyHost['vendor-id'] ?? [], ['any'])))
                 {
                     continue;
                 }
@@ -5516,8 +5501,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
                     // or if it exists but narrows down by category, cve, or vendor-id.
                     if ($hostCfg === null ||
                         ($hostCfg['category'] ?? 'any')  !== 'any' ||
-                        ($hostCfg['cve'] ?? 'any')       !== 'any' ||
-                        ($hostCfg['vendor-id'] ?? 'any') !== 'any')
+                        !empty(array_diff($hostCfg['cve'] ?? [], ['any'])) ||
+                        !empty(array_diff($hostCfg['vendor-id'] ?? [], ['any'])))
                     {
                         $ruleName = $severity . "_" . $host_type;
                         $action = $actionMap[$severity] ?? 'default';
@@ -5594,70 +5579,79 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
         // Calculate initial rule coverage once action normalizations are complete
         $object->vulnerability_rules_coverage();
 
-        // 2. Check if a valid global 'any' severity threat catch-all rule exists
-        $hasValidAnySeverity = false;
-        if (in_array("any", $sp_severity))
+        // 2. Process missing coverages: add a rule only for a severity and host that no rule matches
+        //    (PAN-OS first match), so a severity-'any' rule limited to one category or threat no longer hides a gap
+        $requiredSeverities = ["critical", "high", "medium", "low", "informational"];
+        $actionMap = [
+            "critical"      => "alert",
+            "high"          => "alert",
+            "medium"        => "alert",
+            "low"           => "default",
+            "informational" => "default"
+        ];
+
+        foreach ($requiredSeverities as $severity)
         {
-            $anyCoverage = $object->rule_coverage['any'] ?? [];
-            $hasInvalidAnyThreat = false;
+            if( $object->vulnerability_rules_first_match( $severity, "client", ThreatPolicy::OTHER_CATEGORY ) !== null
+                && $object->vulnerability_rules_first_match( $severity, "server", ThreatPolicy::OTHER_CATEGORY ) !== null )
+                continue;   // after step 1 every rule logs, so a matched severity is covered
+            $coverage = $object->rule_coverage[$severity] ?? [];
 
-            foreach (['any', 'client', 'server'] as $hostType)
+            // A. If a host 'any' rule already exists and passes all catch-all checks, skip entirely
+            $anyHost = $coverage['any'] ?? null;
+            if ($anyHost !== null &&
+                ($anyHost['category'] ?? 'any')  === 'any' &&
+                empty(array_diff($anyHost['cve'] ?? [], ['any'])) &&
+                empty(array_diff($anyHost['vendor-id'] ?? [], ['any'])))
             {
-                if (isset($anyCoverage[$hostType]))
-                {
-                    $cfg = $anyCoverage[$hostType];
-
-                    // Global layer validation: check threat-name, cve, and vendor-id safely
-                    if (($cfg['threat-name'] ?? 'any') !== 'any' ||
-                        ($cfg['cve'] ?? 'any')         !== 'any' ||
-                        ($cfg['vendor-id'] ?? 'any')   !== 'any')
-                    {
-                        $hasInvalidAnyThreat = true;
-                        break;
-                    }
-                }
+                continue;
             }
-            if (!$hasInvalidAnyThreat)
-                $hasValidAnySeverity = true;
-        }
 
-        // 3. Process missing coverages ONLY if a global 'any' catch-all doesn't already handle it
-        if (!$hasValidAnySeverity)
-        {
-            $requiredSeverities = ["critical", "high", "medium", "low", "informational"];
-            $actionMap = [
-                "critical"      => "alert",
-                "high"          => "alert",
-                "medium"        => "alert",
-                "low"           => "default",
-                "informational" => "default"
-            ];
-
-            foreach ($requiredSeverities as $severity)
+            // B. OPTIMIZATION: If this severity is completely missing,
+            // create ONE clean catch-all rule with host = any.
+            if (empty($coverage))
             {
-                $coverage = $object->rule_coverage[$severity] ?? [];
+                $ruleName = ThreatPolicy::uniqueRuleName( $object->xmlroot, $severity );
+                $action = $actionMap[$severity] ?? 'default';
 
-                // A. If a host 'any' rule already exists and passes all catch-all checks, skip entirely
-                $anyHost = $coverage['any'] ?? null;
-                if ($anyHost !== null &&
-                    ($anyHost['category'] ?? 'any')  === 'any' &&
-                    ($anyHost['cve'] ?? 'any')       === 'any' &&
-                    ($anyHost['vendor-id'] ?? 'any') === 'any')
-                {
-                    continue;
-                }
+                $threadPolicy_obj = new ThreatPolicyVulnerability($ruleName, $object);
+                $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+                $threadPolicy_obj->action = $action;
+                $threadPolicy_obj->host = "any";
 
-                // B. OPTIMIZATION: If this severity is completely missing,
-                // create ONE clean catch-all rule with host = any.
-                if (empty($coverage))
+                $object->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference($object);
+                $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                $threadPolicy_obj->newThreatPolicyXML(
+                    $object->xmlroot,
+                    $ruleName,
+                    $severity,
+                    $action,
+                    "any"
+                );
+
+                $sendAPI = true;
+                continue; // Skip the client/server split loop below
+            }
+
+            // C. Fallback: If partial custom rules exist, evaluate client/server individually
+            foreach (['client', 'server'] as $host_type)
+            {
+                $hostCfg = $coverage[$host_type] ?? null;
+
+                if ($hostCfg === null ||
+                    ($hostCfg['category'] ?? 'any')  !== 'any' ||
+                    !empty(array_diff($hostCfg['cve'] ?? [], ['any'])) ||
+                    !empty(array_diff($hostCfg['vendor-id'] ?? [], ['any'])))
                 {
-                    $ruleName = $severity;
+                    $ruleName = ThreatPolicy::uniqueRuleName( $object->xmlroot, $severity . "_" . $host_type );
                     $action = $actionMap[$severity] ?? 'default';
 
                     $threadPolicy_obj = new ThreatPolicyVulnerability($ruleName, $object);
                     $threadPolicy_obj->type = "ThreatPolicyVulnerability";
                     $threadPolicy_obj->action = $action;
-                    $threadPolicy_obj->host = "any";
+                    $threadPolicy_obj->host = $host_type;
 
                     $object->rules_obj[] = $threadPolicy_obj;
                     $threadPolicy_obj->addReference($object);
@@ -5668,54 +5662,19 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
                         $ruleName,
                         $severity,
                         $action,
-                        "any"
+                        $host_type
                     );
 
                     $sendAPI = true;
-                    continue; // Skip the client/server split loop below
-                }
-
-                // C. Fallback: If partial custom rules exist, evaluate client/server individually
-                foreach (['client', 'server'] as $host_type)
-                {
-                    $hostCfg = $coverage[$host_type] ?? null;
-
-                    if ($hostCfg === null ||
-                        ($hostCfg['category'] ?? 'any')  !== 'any' ||
-                        ($hostCfg['cve'] ?? 'any')       !== 'any' ||
-                        ($hostCfg['vendor-id'] ?? 'any') !== 'any')
-                    {
-                        $ruleName = $severity . "_" . $host_type;
-                        $action = $actionMap[$severity] ?? 'default';
-
-                        $threadPolicy_obj = new ThreatPolicyVulnerability($ruleName, $object);
-                        $threadPolicy_obj->type = "ThreatPolicyVulnerability";
-                        $threadPolicy_obj->action = $action;
-                        $threadPolicy_obj->host = $host_type;
-
-                        $object->rules_obj[] = $threadPolicy_obj;
-                        $threadPolicy_obj->addReference($object);
-                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-                        $threadPolicy_obj->newThreatPolicyXML(
-                            $object->xmlroot,
-                            $ruleName,
-                            $severity,
-                            $action,
-                            $host_type
-                        );
-
-                        $sendAPI = true;
-                    }
                 }
             }
-
-            // Refresh coverage mapping one final time to update cache state
-            $object->vulnerability_rules_coverage();
-
-            if( $sendAPI && $context->isAPI )
-                $object->API_sync();
         }
+
+        // Refresh coverage mapping one final time to update cache state
+        $object->vulnerability_rules_coverage();
+
+        if( $sendAPI && $context->isAPI )
+            $object->API_sync();
     }
 );
 

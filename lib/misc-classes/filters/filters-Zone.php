@@ -526,132 +526,91 @@ RQuery::$defaultFilters['zone']['template.owner']['operators']['is.unused'] = ar
 
 RQuery::$defaultFilters['zone']['template.owner']['operators']['is.unused.recursive'] = array(
     'Function' => function (ZoneRQueryContext $context) {
-        $object = $context->object;
+        $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
 
-        $template = $object->owner->owner->owner->owner;
-
-        if( count($template->getReferences()) > 0 )
-        {
-            foreach( $template->getReferences() as $ref )
-            {
-                if( get_class( $ref ) == "TemplateStack" )
-                {
-                    if( count($ref->getReferences()) == 0 )
-                        return true;
-                    else
-                        return false;
-                }
-            }
-        }
-
-        return null;
+        // unused when no template stack that holds the template carries a firewall
+        return count( $devices ) == 0;
     },
-    'arg' => FALSE
+    'arg' => FALSE,
+    'help' => "TRUE when no template stack holding the owning template (or the owning template stack itself) carries a firewall"
 );
 
 RQuery::$defaultFilters['zone']['manageddevice.owner']['operators']['is.in.file'] = array(
     'Function' => function (ZoneRQueryContext $context) {
-        $object = $context->object;
+        $list = $context->cachedNameList( TRUE );
+        $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
 
-
-        if( !isset($context->cachedList) )
-        {
-            if( !file_exists($context->value) )
-                derr("cannot find file '{$context->value}'", null, FALSE);
-
-            $text = file_get_contents($context->value);
-
-            if( $text === FALSE )
-                derr("cannot open file '{$context->value}");
-
-            $lines = explode("\n", $text);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-
-        $template = $object->owner->owner->owner->owner;
-
-        if( count($template->getReferences()) > 0 )
-        {
-            foreach( $template->getReferences() as $ref )
-            {
-                if( get_class( $ref ) == "TemplateStack" )
-                {
-                    if( count($ref->getReferences()) > 0 )
-                    {
-                        foreach( $ref->getReferences() as $ref2 )
-                        {
-                            if( get_class( $ref2 ) == "ManagedDevice" )
-                            {
-                                return isset($list[$ref2->name()]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
+        foreach( $devices as $serial => $device )
+            if( isset( $list[$serial] ) )
+                return TRUE;   // at least one firewall that receives the template is listed
+        return FALSE;
     },
-    'arg' => TRUE
+    'arg' => TRUE,
+    'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner is.in.file FILENAME)'"
 );
 
 RQuery::$defaultFilters['zone']['manageddevice.owner']['operators']['is.in.list'] = array(
     'Function' => function (ZoneRQueryContext $context) {
-        $object = $context->object;
+        $list = $context->cachedNameList( FALSE );
+        $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
 
-
-        if( !isset($context->cachedList) )
-        {
-            $lines = explode(",", $context->value);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-
-        $template = $object->owner->owner->owner->owner;
-
-        if( count($template->getReferences()) > 0 )
-        {
-            foreach( $template->getReferences() as $ref )
-            {
-                if( get_class( $ref ) == "TemplateStack" )
-                {
-                    if( count($ref->getReferences()) > 0 )
-                    {
-                        foreach( $ref->getReferences() as $ref2 )
-                        {
-                            if( get_class( $ref2 ) == "ManagedDevice" )
-                            {
-                                return isset($list[$ref2->name()]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
+        foreach( $devices as $serial => $device )
+            if( isset( $list[$serial] ) )
+                return TRUE;   // at least one firewall that receives the template is listed
+        return FALSE;
     },
-    'arg' => TRUE
+    'arg' => TRUE,
+    'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner is.in.list serial1,serial2)'"
+);
+
+RQuery::$defaultFilters['zone']['manageddevice.owner.all']['operators']['is.in.file'] = array(
+    'Function' => function (ZoneRQueryContext $context) {
+        $list = $context->cachedNameList( TRUE );
+        $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;  // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner.all is.in.file FILENAME)'"
+);
+
+RQuery::$defaultFilters['zone']['manageddevice.owner.all']['operators']['is.in.list'] = array(
+    'Function' => function (ZoneRQueryContext $context) {
+        $list = $context->cachedNameList( FALSE );
+        $owner = $context->object->owner->owner->owner->owner;   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;  // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.owner.all is.in.list serial1,serial2)'"
 );
 // </editor-fold>
