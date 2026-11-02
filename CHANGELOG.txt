@@ -14,6 +14,7 @@ UTIL:
 * type=zone/zone-protection-profile | correct/extend managed.device filter
 * type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
 * type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
+* type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

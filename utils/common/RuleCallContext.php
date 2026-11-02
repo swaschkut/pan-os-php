@@ -1669,6 +1669,15 @@ class RuleCallContext extends CallContext
             else
                 return self::enclose( "" );
         }
+        if( $fieldName == 'rule-modification' || $fieldName == 'last-reset' )
+        {
+            if( isset($rule_hitcount_array[$fieldName]) )
+                return self::enclose( $rule_hitcount_array[$fieldName] );
+            else
+                return self::enclose( "" );
+        }
+        if( $fieldName == 'hit-count-per-firewall' )
+            return self::enclose( RuleHitCountCollector::perDeviceLines( $rule_hitcount_array ) );
         return self::enclose("unsupported fieldname: '$fieldName'");
 
     }

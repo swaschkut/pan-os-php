@@ -2326,6 +2326,15 @@ class PanAPIConnector
             if( $swversionNode !== FALSE )
                 $fw['sw-version'] = $swversionNode->textContent;
 
+            //<ha><state>active|passive|active-primary|...</state>
+            $haNode = DH::findFirstElement('ha', $entryNode);
+            if( $haNode !== FALSE )
+            {
+                $haStateNode = DH::findFirstElement('state', $haNode);
+                if( $haStateNode !== FALSE )
+                    $fw['ha-state'] = $haStateNode->textContent;
+            }
+
             /*
             foreach( $entryNode->childNodes as $node )
             {
