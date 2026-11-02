@@ -148,8 +148,26 @@ class DEVICEUTIL extends UTIL
 
         if( isset(PH::$args['actions'] ) && $this->configType == 'panorama' )
         {
-            if( strpos( PH::$args['actions'], "zpp-create-" ) !== False )
-                $this->deviceTypes = array("template");
+            $actions = strtolower( PH::$args['actions'] );
+            if( strpos( $actions, "zpp-create-" ) !== False || strpos( $actions, "zoneprotectionprofile-create-" ) !== False )
+            {
+                // ZPP-create actions only work on Template and TemplateStack (zones can live in both)
+                $supported = array( 'template', 'templatestack' );
+                if( !isset(PH::$args['devicetype']) )
+                    $newTypes = array( 'template' );   // backwards compatible default
+                elseif( array_search('any', $this->deviceTypes) !== FALSE )
+                    $newTypes = $supported;
+                else
+                    $newTypes = array_values( array_intersect( $this->deviceTypes, $supported ) );
+
+                if( count($newTypes) == 0 )
+                    $newTypes = array( 'template' );
+
+                if( $newTypes !== array_values($this->deviceTypes) )
+                    PH::print_stdout( " - zpp-create actions only support deviceType 'template' / 'templatestack', deviceType changed from '".implode(",", $this->deviceTypes)."' to '".implode(",", $newTypes)."'" );
+
+                $this->deviceTypes = $newTypes;
+            }
         }
 
         PH::print_stdout( $this->deviceTypes, false, "devicetype");

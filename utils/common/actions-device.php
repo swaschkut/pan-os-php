@@ -3300,7 +3300,7 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
             elseif( $context->util->pan->version >= 100 )
                 $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v" . $panVersion . "/templates/panorama/snippets/zone_protection_profile.xml");
 
-            if( $classtype == "VirtualSystem" || $classtype == "Template" )
+            if( $classtype == "VirtualSystem" || $classtype == "Template" || $classtype == "TemplateStack" )
             {
                 $sub = $object;
 
@@ -3311,7 +3311,7 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
                     $allZones = $sharedStore->zoneStore->zones();
                 else
                 {
-                    /** @var Template $sharedStore */
+                    /** @var Template|TemplateStack $sharedStore */
 
                     $allVsys = $sharedStore->deviceConfiguration->getVirtualSystems();
                     foreach($allVsys as $vsys)
@@ -3335,10 +3335,14 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
                 }
 
                 if( $create) {
-                    if ($classtype == "Template") {
+                    if ($classtype == "Template" || $classtype == "TemplateStack") {
                         $xmlRoot = $sharedStore->deviceConfiguration->network->xmlroot;
                         if ($xmlRoot === null) {
-                            $xmlRoot = DH::findFirstElementOrCreate('devices', $sharedStore->deviceConfiguration->xmlroot);
+                            $configRoot = $sharedStore->deviceConfiguration->xmlroot;
+                            if( $configRoot === null )
+                                // a TemplateStack (or Template) without its own <config> node
+                                $configRoot = DH::findFirstElementOrCreate('config', $sharedStore->xmlroot);
+                            $xmlRoot = DH::findFirstElementOrCreate('devices', $configRoot);
 
                             #$xmlRoot = DH::findFirstElementByNameAttrOrCreate( 'entry', 'localhost.localdomain', $xmlRoot, $sharedStore->deviceConfiguration->xmlroot->ownerDocument);
                             $xmlRoot = DH::findFirstElementOrCreate('entry', $xmlRoot);
