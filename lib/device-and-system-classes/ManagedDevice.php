@@ -105,6 +105,22 @@ class ManagedDevice
         return $this->devicegroup;
     }
 
+    /**
+     * TRUE when this firewall is not assigned to any device group
+     * @return bool
+     */
+    public function hasNoDeviceGroup()
+    {
+        if( empty( $this->devicegroup ) )
+            return TRUE;
+
+        foreach( $this->devicegroup as $DG )
+            if( $DG === "" )
+                return TRUE;
+
+        return FALSE;
+    }
+
     public function getTemplate()
     {
         return $this->template;

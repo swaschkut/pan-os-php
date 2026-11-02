@@ -13,6 +13,7 @@ UTIL:
 * Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
 * type=zone/zone-protection-profile | correct/extend managed.device filter
 * type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
+* type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
