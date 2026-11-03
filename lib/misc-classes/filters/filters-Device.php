@@ -482,4 +482,26 @@ RQuery::$defaultFilters['device']['template']['operators']['manageddevice.all.wi
     'help' => "TRUE when the template (through any template stack) or the template-stack reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(template manageddevice.all.with-no-dg)'"
 );
 
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.with-no-dg'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $owner */
+        $owner = $context->object;
+        $class = get_class( $owner );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( $device->hasNoDeviceGroup() )
+                return TRUE;   // a firewall that receives the template is in no device group
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when at least one firewall that receives the template (through any template stack) or the template-stack is not assigned to a device group, e.g. 'filter=(template manageddevice.with-no-dg)'"
+);
+
 // </editor-fold>
