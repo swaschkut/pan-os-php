@@ -15,6 +15,7 @@ UTIL:
 * type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
 * type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
 * type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
+* type=zone actions=exporttohtml:file.html | extend with column template-stack
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
