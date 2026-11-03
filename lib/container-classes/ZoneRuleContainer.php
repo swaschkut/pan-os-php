@@ -668,7 +668,11 @@ class ZoneRuleContainer extends ObjRuleContainer
 
     /**
      * Per serial/vsys the rule is pushed to: the zone this target receives and how it was resolved.
-     * Returns null when there is no Panorama/DG per-target data (firewall config, shared, DG without firewalls).
+     * A shared rule is resolved over the firewalls of every device group (devicesOfAllDeviceGroups()),
+     * as far as its Target names them. This is the 'all-targets' reading only: the 2.1.60 reading
+     * ($this->o: 'zone protection', 'from-visible', ...) keeps the placeholder zone for shared rules.
+     * Returns null when there is no per-target data: firewall config, or no firewall in the rule's
+     * device group (for a shared rule: in any device group).
      *
      * @return null|array  "serial/vsys" => array('zone' => Zone, 'status' => string, 'candidates' => array("<tpl>/<vsys>" => Zone))
      *   status: found | protected-all | unprotected-all | ambiguous | missing | no-target

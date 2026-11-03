@@ -731,7 +731,7 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
         if( isset($optionalFields['NestedMembers']) )
             $addNestedMembers = TRUE;
 
-        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>type</th><th>interfaces</th><th>log-setting</th><th>lfp-location</th>><th>zone-protection-profile</th>';
+        $headers = '<th>ID</th><th>template</th><th>template-stack</th><th>location</th><th>name</th><th>type</th><th>interfaces</th><th>log-setting</th><th>lfp-location</th>><th>zone-protection-profile</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -760,17 +760,16 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                 //ID
                 $lines .= $context->encloseFunction( (string)$count );
 
-                //template / location
-                if( $object->owner->owner->owner->owner  !== null && get_class( $object->owner->owner->owner->owner ) == "Template" )
-                {
-                    $lines .= $context->encloseFunction($object->owner->owner->owner->owner->name());
-                    $lines .= $context->encloseFunction($object->owner->owner->name());
-                }
-                else
-                {
-                    $lines .= $context->encloseFunction( "" );
-                    $lines .= $context->encloseFunction($object->owner->owner->name());
-                }
+                //template / template-stack / location
+                $tmplOwner = $object->owner->owner->owner->owner ?? null;
+                $tmplOwnerClass = $tmplOwner !== null ? get_class( $tmplOwner ) : null;
+
+                //template
+                $lines .= $context->encloseFunction( $tmplOwnerClass == "Template" ? $tmplOwner->name() : "" );
+                //template-stack: only when the zone is defined in the stack's own configuration
+                $lines .= $context->encloseFunction( $tmplOwnerClass == "TemplateStack" ? $tmplOwner->name() : "" );
+                //location
+                $lines .= $context->encloseFunction($object->owner->owner->name());
 
                 //name
                 $lines .= $context->encloseFunction($object->name());

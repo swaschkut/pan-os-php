@@ -510,4 +510,22 @@ RQuery::$defaultFilters['zone-protection-profile']['manageddevice.all']['operato
     'help' => "TRUE when the owning template (through any template stack) reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(manageddevice.all with-no-dg)'"
 );
 
+RQuery::$defaultFilters['zone-protection-profile']['manageddevice']['operators']['with-no-dg'] = array(
+    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+        $owner = $context->object->owner->owner->owner;   // the Template, or the TemplateStack for a profile the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( $device->hasNoDeviceGroup() )
+                return TRUE;   // a firewall that receives the template is in no device group
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is not assigned to a device group, e.g. 'filter=(manageddevice with-no-dg)'"
+);
+
 // </editor-fold>
