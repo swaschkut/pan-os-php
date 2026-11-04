@@ -47,6 +47,7 @@ BUGFIX:
 * xml-issue - fix to NOT remove any bgp related part - to avoid removing aspath-prepand - no clue if some more must not be removed
 * bugfix class StatCollectorTrait - wrong value for av Inline ML
 * bugfix for filter missing GPGatewayTunnel / profile
+* type=profile | general bugfix to support profiletype argument | cleanup
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
