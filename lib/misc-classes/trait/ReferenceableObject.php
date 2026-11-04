@@ -909,6 +909,76 @@ trait ReferenceableObject
     }
 
     /**
+     * Recursive variant of isUsedViaSameNameOverride(), used by objectIsUnusedRecursive():
+     * a referencer of the ancestor copy that is a GROUP counts only when that group is itself in use
+     * on the firewalls concerned, i.e. named by a rule (or by a group in use, recursively) located in
+     * this device group's ancestor chain, the device group itself or one of its descendants.
+     * Rules in other branches do not count. Any other referencer counts as before.
+     */
+    public function isUsedViaSameNameOverrideRecursive(): bool
+    {
+        $info = $this->getSameNameOverrideInfo();
+        if( count($info['usedVia']) == 0 )
+            return FALSE;
+
+        if( $info['mode'] != 'panorama' )
+            return TRUE;   // SCM: previous behaviour
+
+        $location = self::findLocationOwner($this);
+        if( !($location instanceof DeviceGroup) )
+            return TRUE;
+
+        // locations whose firewalls resolve the name to this copy, or from which a rule reaches them
+        $scope = array( spl_object_id($location) => TRUE );
+        for( $dg = $location->parentDeviceGroup; $dg !== null; $dg = $dg->parentDeviceGroup )
+            $scope[spl_object_id($dg)] = TRUE;
+        $scope[spl_object_id($location->owner)] = TRUE;
+        foreach( $location->childDeviceGroups(TRUE) as $dg )
+            $scope[spl_object_id($dg)] = TRUE;
+
+        foreach( $info['usedVia'] as $entry )
+        {
+            $ref = $entry['ref'];
+            if( !self::isGroupReferencer($ref) )
+                return TRUE;
+            if( self::isUsedFromScope($ref, $scope) )
+                return TRUE;
+        }
+
+        return FALSE;
+    }
+
+    private static function isGroupReferencer($object): bool
+    {
+        return $object instanceof AddressGroup || $object instanceof ServiceGroup
+            || $object instanceof AppGroup || $object instanceof SecurityProfileGroup;
+    }
+
+    /**
+     * TRUE when $group is named by a non-group referencer located in $scope, directly or through
+     * further groups that are themselves named that way.
+     */
+    private static function isUsedFromScope($group, array $scope, int $depth = 0): bool
+    {
+        if( $depth > 25 )
+            return TRUE;   // unexpected nesting depth: count as used
+
+        foreach( $group->getReferences() as $ref )
+        {
+            $refLocation = self::findLocationOwner($ref);
+            if( $refLocation === null || !isset($scope[spl_object_id($refLocation)]) )
+                continue;
+
+            if( !self::isGroupReferencer($ref) )
+                return TRUE;
+            if( $ref !== $group && self::isUsedFromScope($ref, $scope, $depth + 1) )
+                return TRUE;
+        }
+
+        return FALSE;
+    }
+
+    /**
      * Like objectIsUnused(), and additionally an object whose only referencers are groups
      * that are themselves unused (recursively) is unused.
      */
@@ -938,7 +1008,7 @@ trait ReferenceableObject
             return null;
 
         if( $this->countReferences() == 0 )
-            return !$this->isUsedViaSameNameOverride();
+            return !$this->isUsedViaSameNameOverrideRecursive();
 
         $groups = $this->findReferencesWithClass($className);
 
