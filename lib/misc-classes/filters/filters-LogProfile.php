@@ -19,6 +19,61 @@ RQuery::$defaultFilters['log-profile']['object']['operators']['is.unused'] = arr
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['log-profile']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['log-profile']['object']['operators']['is.overriding'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['log-profile']['object']['operators']['is.overriden'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['log-profile']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['log-profile']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['log-profile']['name']['operators']['is.in.file'] = array(
     'Function' => function (LogProfileRQueryContext $context) {
         $object = $context->object;

@@ -725,7 +725,8 @@ trait ReferenceableObject
     public function getSameNameOverrideInfo(): array
     {
         $info = array( 'mode' => null, 'precedence' => FALSE, 'usedVia' => array(),
-            'overriddenIn' => array(), 'shadowedBy' => null, 'shadows' => array() );
+            'overriddenIn' => array(), 'shadowedBy' => null, 'shadows' => array(),
+            'ancestorCopies' => array(), 'descendantCopies' => array() );
 
         if( !isset($this->owner) || !is_object($this->owner) )
             return $info;
@@ -739,6 +740,13 @@ trait ReferenceableObject
         if( $locationClass == 'VirtualSystem' || $locationClass == 'PANConf' )
         {
             $info['mode'] = 'firewall';
+            // structural only (has.same-name.other.level): same-name copy in the firewall's shared
+            if( isset($this->owner->parentCentralStore) && $this->owner->parentCentralStore !== null )
+            {
+                $found = $this->owner->parentCentralStore->find($this->name(), null, FALSE);
+                if( $found !== null && $found !== $this )
+                    $info['ancestorCopies'][] = $found;
+            }
             return $info;
         }
 
@@ -750,8 +758,11 @@ trait ReferenceableObject
             {
                 $tmp_obj = $this->owner->parentCentralStore->find($this->name(), null, TRUE);
                 if( $tmp_obj !== null && $tmp_obj !== $this )
+                {
+                    $info['ancestorCopies'][] = $tmp_obj;
                     foreach( $tmp_obj->getReferences() as $ref )
                         $info['usedVia'][] = array('ref' => $ref, 'via' => $tmp_obj);
+                }
             }
             return $info;
         }
@@ -793,6 +804,9 @@ trait ReferenceableObject
             }
         }
 
+        $info['ancestorCopies'] = $ancestorCopies;
+        $info['descendantCopies'] = $descendantCopies;
+
         if( !$info['precedence'] )
         {
             // descendant copy wins
@@ -832,6 +846,54 @@ trait ReferenceableObject
                 $info['usedVia'][] = array('ref' => $ref, 'via' => $descendantObj);
 
         return $info;
+    }
+
+    /**
+     * Same-name status across device-group levels; ancestor-objects-take-precedence is evaluated here,
+     * so callers do not need to know the flag:
+     *  'isOverriding'           this copy is pushed instead of a same-name copy on another level
+     *  'isOverridden'           a same-name copy on another level is pushed instead of this copy
+     *  'overridesUpperLevel'    this copy wins over a same-name copy in Shared / an ancestor (only possible with flag no)
+     *  'overriddenAtLowerLevel' a same-name copy in a descendant wins over this copy (only possible with flag no)
+     *  'sameNameOtherLevel'     a same-name copy exists on another level, whichever wins
+     * Firewall: all FALSE. SCM: only the upper-level check, as before.
+     */
+    public function getSameNameLevelStatus(): array
+    {
+        $info = $this->getSameNameOverrideInfo();
+
+        $status = array( 'isOverriding' => FALSE, 'isOverridden' => FALSE,
+            'overridesUpperLevel' => FALSE, 'overriddenAtLowerLevel' => FALSE, 'sameNameOtherLevel' => FALSE );
+
+        $hasUpper = count($info['ancestorCopies']) > 0;
+        $hasLower = count($info['descendantCopies']) > 0;
+        $status['sameNameOtherLevel'] = $hasUpper || $hasLower;
+
+        if( $info['mode'] == 'scm' )
+        {
+            $status['overridesUpperLevel'] = $hasUpper;
+            $status['isOverriding'] = $hasUpper;
+            return $status;
+        }
+        if( $info['mode'] != 'panorama' )
+            return $status;
+
+        if( $info['precedence'] )
+        {
+            // highest copy wins
+            $status['isOverridden'] = $hasUpper;
+            $status['isOverriding'] = !$hasUpper && $hasLower;
+        }
+        else
+        {
+            // lowest copy wins; a middle copy overrides the upper one and is overridden by the lower one
+            $status['overridesUpperLevel'] = $hasUpper;
+            $status['overriddenAtLowerLevel'] = $hasLower;
+            $status['isOverriding'] = $hasUpper;
+            $status['isOverridden'] = $hasLower;
+        }
+
+        return $status;
     }
 
     /**

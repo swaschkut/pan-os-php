@@ -660,6 +660,71 @@ RQuery::$defaultFilters['application']['object']['operators']['is.unused'] = arr
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['application']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.overriding'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.overriden'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['application']['object']['operators']['is.unused.recursive'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $object = $context->object;

@@ -19,6 +19,61 @@ RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.unuse
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.overriding'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.overriden'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofilegroup']['name']['operators']['is.in.file'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
         $object = $context->object;

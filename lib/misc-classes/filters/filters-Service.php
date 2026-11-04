@@ -31,6 +31,39 @@ RQuery::$defaultFilters['service']['object']['operators']['is.unused'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['service']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['service']['object']['operators']['is.overriding'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['service']['object']['operators']['is.overriden'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['service']['object']['operators']['is.unused.recursive'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $object = $context->object;
@@ -1035,21 +1068,8 @@ RQuery::$defaultFilters['service']['value.length']['operators']['>,<,=,!'] = arr
 
 RQuery::$defaultFilters['service']['object']['operators']['overrides.upper.level'] = array(
     'Function' => function (ServiceRQueryContext $context) {
-        $location = PH::findLocationObjectOrDie($context->object);
-        if( $location->isFirewall() || $location->isPanorama() || $location->isVirtualSystem() )
-            return FALSE;
-
-        $store = $context->object->owner;
-
-        if( isset($store->parentCentralStore) && $store->parentCentralStore !== null )
-        {
-            $store = $store->parentCentralStore;
-            $find = $store->find($context->object->name());
-
-            return $find !== null;
-        }
-        else
-            return FALSE;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
     },
     'arg' => FALSE,
     'ci' => array(
@@ -1059,26 +1079,8 @@ RQuery::$defaultFilters['service']['object']['operators']['overrides.upper.level
 );
 RQuery::$defaultFilters['service']['object']['operators']['overriden.at.lower.level'] = array(
     'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        $location = PH::findLocationObjectOrDie($object);
-        if( $location->isFirewall() || $location->isVirtualSystem() )
-            return FALSE;
-
-        if( $location->isPanorama() )
-            $locations = $location->deviceGroups;
-        else
-        {
-            $locations = $location->childDeviceGroups(TRUE);
-        }
-
-        foreach( $locations as $deviceGroup )
-        {
-            if( $deviceGroup->serviceStore->find($object->name(), null, FALSE) !== null )
-                return TRUE;
-        }
-
-        return FALSE;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
     },
     'arg' => FALSE,
     'ci' => array(

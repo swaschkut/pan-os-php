@@ -20,6 +20,7 @@ UTIL:
 * introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
 * class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
 * type=device | introduce actions=display-ancestor-precedence-impact
+* introduce new filter regarding ancestor-objects-take-precedence | different object classes
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

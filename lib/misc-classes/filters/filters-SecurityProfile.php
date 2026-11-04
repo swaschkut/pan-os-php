@@ -32,6 +32,71 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofile']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object) == "PredefinedSecurityProfileURL" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofile']['object']['operators']['is.overriding'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object) == "PredefinedSecurityProfileURL" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofile']['object']['operators']['is.overriden'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object) == "PredefinedSecurityProfileURL" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofile']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object) == "PredefinedSecurityProfileURL" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofile']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object) == "PredefinedSecurityProfileURL" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused.recursive'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         if( get_class($context->object ) == "PredefinedSecurityProfileURL" )

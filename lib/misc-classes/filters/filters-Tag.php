@@ -19,6 +19,61 @@ RQuery::$defaultFilters['tag']['object']['operators']['is.unused'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['tag']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['tag']['object']['operators']['is.overriding'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['tag']['object']['operators']['is.overriden'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['tag']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['tag']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['tag']['name']['operators']['is.in.file'] = array(
     'Function' => function (TagRQueryContext $context) {
         $object = $context->object;
