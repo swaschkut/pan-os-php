@@ -291,6 +291,13 @@ class PanoramaConf
     public $_auditComment = false;
     public $_ancestorObjectsTakePrecedence = false;
 
+    /** object stores with device-group inheritance, as property names of PanoramaConf / DeviceGroup */
+    public static $sameNameStoreProperties = array( 'addressStore', 'serviceStore', 'tagStore', 'appStore',
+        'securityProfileGroupStore', 'scheduleStore', 'EDLStore', 'LogProfileStore',
+        'URLProfileStore', 'customURLProfileStore', 'AntiVirusProfileStore', 'VulnerabilityProfileStore',
+        'AntiSpywareProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
+        'WildfireProfileStore' );
+
     public $debugLoadTime = false;
 
     public $sizeArray = array();
@@ -2702,11 +2709,7 @@ class PanoramaConf
         if( !$this->_ancestorObjectsTakePrecedence )
             return;
 
-        $storeProperties = array( 'addressStore', 'serviceStore', 'tagStore', 'appStore',
-            'securityProfileGroupStore', 'scheduleStore', 'EDLStore', 'LogProfileStore',
-            'URLProfileStore', 'customURLProfileStore', 'AntiVirusProfileStore', 'VulnerabilityProfileStore',
-            'AntiSpywareProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
-            'WildfireProfileStore', 'DNSPolicyStore' );
+        $storeProperties = self::$sameNameStoreProperties;
 
         foreach( $this->getDeviceGroups() as $dg )
         {
@@ -2784,7 +2787,108 @@ class PanoramaConf
         for( $class = get_class($referencer); $class !== FALSE; $class = get_parent_class($class) )
             Closure::bind($swap, $referencer, $class)($old, $new);
     }
+
+    /**
+     * Offline impact analysis for switching 'ancestor-objects-take-precedence' (no -> yes or yes -> no)
+     * for the firewalls of device group $dg.
+     *
+     * For every object name defined at two or more levels of $dg's chain ($dg, its ancestors, Shared):
+     *   no  -> the nearest copy (lowest level) is pushed
+     *   yes -> the highest copy is pushed
+     * Returns one row per such name:
+     *   'store', 'name', 'copy_no', 'copy_yes' (location names), 'identical' (bool, same XML content),
+     *   'levels' (all locations holding the name), 'referencers' (toString() of rules / groups in the chain naming it)
+     */
+    public function ancestorPrecedenceImpact( DeviceGroup $dg ): array
+    {
+        $chain = array( $dg );
+        for( $parent = $dg->parentDeviceGroup; $parent !== null; $parent = $parent->parentDeviceGroup )
+            $chain[] = $parent;
+        $chain[] = $this;
+
+        $chainIds = array();
+        foreach( $chain as $loc )
+            $chainIds[spl_object_id($loc)] = TRUE;
+
+        $rows = array();
+        foreach( self::$sameNameStoreProperties as $prop )
+        {
+            $copiesByName = array();
+            $seenStores = array();
+            foreach( $chain as $loc )
+            {
+                if( !isset($loc->$prop) || $loc->$prop === null )
+                    continue;
+                $store = $loc->$prop;
+                // a device group may point to the Shared store itself: count each store once
+                if( isset($seenStores[spl_object_id($store)]) )
+                    continue;
+                $seenStores[spl_object_id($store)] = TRUE;
+                if( method_exists($store, 'all') )
+                    $objects = $store->all();
+                elseif( method_exists($store, 'getAll') )
+                    $objects = $store->getAll();
+                else
+                    continue;
+
+                foreach( $objects as $object )
+                {
+                    if( !is_object($object) || !method_exists($object, 'getReferences') )
+                        continue;
+                    if( method_exists($object, 'isTmp') && $object->isTmp() )
+                        continue;
+                    // one copy per name and level
+                    if( isset($copiesByName[$object->name()]) && end($copiesByName[$object->name()])['loc'] === $loc )
+                        continue;
+                    $copiesByName[$object->name()][] = array( 'loc' => $loc, 'obj' => $object );
+                }
+            }
+
+            foreach( $copiesByName as $name => $copies )
+            {
+                if( count($copies) < 2 )
+                    continue;
+
+                $nearest = $copies[0];
+                $highest = $copies[count($copies) - 1];
+
+                $identical = FALSE;
+                if( isset($nearest['obj']->xmlroot) && isset($highest['obj']->xmlroot)
+                    && $nearest['obj']->xmlroot !== null && $highest['obj']->xmlroot !== null )
+                    $identical = $nearest['obj']->xmlroot->C14N() === $highest['obj']->xmlroot->C14N();
+
+                $referencers = array();
+                foreach( $copies as $copy )
+                    foreach( $copy['obj']->getReferences() as $ref )
+                    {
+                        $refLocation = $copy['obj']::findLocationOwner($ref);
+                        if( $refLocation !== null && isset($chainIds[spl_object_id($refLocation)]) )
+                            $referencers[spl_object_id($ref)] = $ref->toString();
+                    }
+
+                $levels = array();
+                foreach( $copies as $copy )
+                    $levels[] = self::locationDisplayName($copy['loc']);
+
+                $rows[] = array(
+                    'store' => $prop,
+                    'name' => $name,
+                    'copy_no' => self::locationDisplayName($nearest['loc']),
+                    'copy_yes' => self::locationDisplayName($highest['loc']),
+                    'identical' => $identical,
+                    'levels' => $levels,
+                    'referencers' => array_values($referencers)
+                );
+            }
+        }
+
+        return $rows;
+    }
+
+    private static function locationDisplayName( $location ): string
+    {
+        if( $location instanceof PanoramaConf )
+            return 'shared';
+        return $location->name();
+    }
 }
-
-
-

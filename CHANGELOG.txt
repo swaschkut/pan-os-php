@@ -19,6 +19,7 @@ UTIL:
 * type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
 * introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
 * class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
+* type=device | introduce actions=display-ancestor-precedence-impact
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

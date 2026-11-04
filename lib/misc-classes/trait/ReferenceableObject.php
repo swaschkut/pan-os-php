@@ -150,6 +150,24 @@ trait ReferenceableObject
         {
             PH::print_stdout( $strpad . '  - ' . $o->toString() );
         }
+
+        // Panorama same-name / override: what the firewalls actually use
+        $info = $this->getSameNameOverrideInfo();
+        if( $info['mode'] != 'panorama' && $info['mode'] != 'scm' )
+            return;
+        if( count($info['usedVia']) == 0 && count($info['overriddenIn']) == 0 && $info['shadowedBy'] === null && count($info['shadows']) == 0 )
+            return;
+
+        $precedence = $info['precedence'] ? 'yes' : 'no';
+        PH::print_stdout( $strpad . "  * same-name override (ancestor-objects-take-precedence: " . $precedence . ")" );
+        foreach( $info['usedVia'] as $entry )
+            PH::print_stdout( $strpad . "    - used on firewalls via: " . $entry['ref']->toString() . "  [names " . $entry['via']->toString() . "]" );
+        if( count($info['overriddenIn']) > 0 )
+            PH::print_stdout( $strpad . "    - NOT used on firewalls of DG: " . implode(', ', $info['overriddenIn']) . "  [own same-name copy wins]" );
+        if( $info['shadowedBy'] !== null )
+            PH::print_stdout( $strpad . "    - shadowed: firewalls use " . $info['shadowedBy']->toString() . " instead" );
+        if( count($info['shadows']) > 0 )
+            PH::print_stdout( $strpad . "    - replaces the same-name copy on firewalls of DG: " . implode(', ', $info['shadows']) );
     }
 
     /**
@@ -689,70 +707,72 @@ trait ReferenceableObject
      */
     public function isUsedViaSameNameOverride(): bool
     {
+        $info = $this->getSameNameOverrideInfo();
+        return count($info['usedVia']) > 0;
+    }
+
+    /**
+     * Same-name / override analysis of this object, Panorama view. Returns:
+     *  'mode'         => 'firewall' | 'scm' | 'panorama'
+     *  'precedence'   => bool, ancestor-objects-take-precedence
+     *  'usedVia'      => list of array('ref' => referencer, 'via' => same-name copy it names):
+     *                    referencers that make THIS object used on firewalls without referencing it directly
+     *  'overriddenIn' => list of descendant DeviceGroup names holding their own same-name copy,
+     *                    precedence off: their firewalls use their own copy, not this one
+     *  'shadowedBy'   => precedence yes: the highest ancestor copy that firewalls use instead of this one
+     *  'shadows'      => precedence yes, this is the highest copy: descendant DeviceGroup names whose copy it replaces
+     */
+    public function getSameNameOverrideInfo(): array
+    {
+        $info = array( 'mode' => null, 'precedence' => FALSE, 'usedVia' => array(),
+            'overriddenIn' => array(), 'shadowedBy' => null, 'shadows' => array() );
+
         if( !isset($this->owner) || !is_object($this->owner) )
-            return FALSE;
+            return $info;
 
         $location = self::findLocationOwner($this);
         if( $location === null )
-            return FALSE;
+            return $info;
 
         $locationClass = get_class($location);
 
         if( $locationClass == 'VirtualSystem' || $locationClass == 'PANConf' )
-            return FALSE;
+        {
+            $info['mode'] = 'firewall';
+            return $info;
+        }
 
         if( $locationClass != 'DeviceGroup' && $locationClass != 'PanoramaConf' )
         {
             // SCM: keep previous behaviour
-            if( !isset($this->owner->parentCentralStore) || $this->owner->parentCentralStore === null )
-                return FALSE;
-            $tmp_obj = $this->owner->parentCentralStore->find($this->name(), null, TRUE);
-            return ( $tmp_obj !== null && $tmp_obj !== $this && $tmp_obj->countReferences() > 0 );
+            $info['mode'] = 'scm';
+            if( isset($this->owner->parentCentralStore) && $this->owner->parentCentralStore !== null )
+            {
+                $tmp_obj = $this->owner->parentCentralStore->find($this->name(), null, TRUE);
+                if( $tmp_obj !== null && $tmp_obj !== $this )
+                    foreach( $tmp_obj->getReferences() as $ref )
+                        $info['usedVia'][] = array('ref' => $ref, 'via' => $tmp_obj);
+            }
+            return $info;
         }
 
+        $info['mode'] = 'panorama';
         $panorama = ($locationClass == 'PanoramaConf') ? $location : $location->owner;
-        $ancestorPrecedence = is_object($panorama) && method_exists($panorama, 'ancestorObjectsTakePrecedence')
+        $info['precedence'] = is_object($panorama) && method_exists($panorama, 'ancestorObjectsTakePrecedence')
             && $panorama->ancestorObjectsTakePrecedence();
 
-        if( !$ancestorPrecedence )
-        {
-            // descendant copy wins
-            if( $locationClass == 'PanoramaConf' )
-                return FALSE;   // Shared has no ancestor
-
-            /** @var DeviceGroup $location */
-            $chain = array();
-            for( $dg = $location->parentDeviceGroup; $dg !== null; $dg = $dg->parentDeviceGroup )
-                $chain[spl_object_id($dg)] = TRUE;
-            $chain[spl_object_id($panorama)] = TRUE;
-
-            for( $store = $this->owner->parentCentralStore; $store !== null; $store = (isset($store->parentCentralStore) ? $store->parentCentralStore : null) )
-            {
-                $ancestorObj = $store->find($this->name(), null, FALSE);
-                if( $ancestorObj === null || $ancestorObj === $this )
-                    continue;
-
-                foreach( $ancestorObj->getReferences() as $ref )
-                {
-                    $refLocation = self::findLocationOwner($ref);
-                    if( $refLocation !== null && isset($chain[spl_object_id($refLocation)]) )
-                        return TRUE;
-                }
-            }
-
-            return FALSE;
-        }
-
-        // ancestor copy wins: only the highest copy can be used via override
+        // same-name copies above (nearest first)
+        $ancestorCopies = array();
         if( isset($this->owner->parentCentralStore) )
             for( $store = $this->owner->parentCentralStore; $store !== null; $store = (isset($store->parentCentralStore) ? $store->parentCentralStore : null) )
             {
-                $ancestorObj = $store->find($this->name(), null, FALSE);
-                if( $ancestorObj !== null && $ancestorObj !== $this )
-                    return FALSE;   // shadowed by an ancestor copy
+                $found = $store->find($this->name(), null, FALSE);
+                if( $found !== null && $found !== $this )
+                    $ancestorCopies[] = $found;
             }
 
-        // same store in each descendant device group
+        // same-name copies in descendant device groups
+        $descendantCopies = array();
         $storeProperty = null;
         foreach( get_object_vars($location) as $key => $value )
             if( $value === $this->owner )
@@ -760,20 +780,58 @@ trait ReferenceableObject
                 $storeProperty = $key;
                 break;
             }
-        if( $storeProperty === null )
-            return FALSE;
-
-        $descendants = ($locationClass == 'PanoramaConf') ? $location->getDeviceGroups() : $location->childDeviceGroups(TRUE);
-        foreach( $descendants as $dg )
+        if( $storeProperty !== null )
         {
-            if( !isset($dg->$storeProperty) || $dg->$storeProperty === null )
-                continue;
-            $descendantObj = $dg->$storeProperty->find($this->name(), null, FALSE);
-            if( $descendantObj !== null && $descendantObj !== $this && $descendantObj->countReferences() > 0 )
-                return TRUE;
+            $descendants = ($locationClass == 'PanoramaConf') ? $location->getDeviceGroups() : $location->childDeviceGroups(TRUE);
+            foreach( $descendants as $dg )
+            {
+                if( !isset($dg->$storeProperty) || $dg->$storeProperty === null )
+                    continue;
+                $found = $dg->$storeProperty->find($this->name(), null, FALSE);
+                if( $found !== null && $found !== $this )
+                    $descendantCopies[$dg->name()] = $found;
+            }
         }
 
-        return FALSE;
+        if( !$info['precedence'] )
+        {
+            // descendant copy wins
+            $info['overriddenIn'] = array_keys($descendantCopies);
+
+            if( $locationClass == 'PanoramaConf' )
+                return $info;   // Shared has no ancestor
+
+            /** @var DeviceGroup $location */
+            $chain = array();
+            for( $dg = $location->parentDeviceGroup; $dg !== null; $dg = $dg->parentDeviceGroup )
+                $chain[spl_object_id($dg)] = TRUE;
+            $chain[spl_object_id($panorama)] = TRUE;
+
+            foreach( $ancestorCopies as $ancestorObj )
+                foreach( $ancestorObj->getReferences() as $ref )
+                {
+                    // a referencer in this DG's ancestor chain reaches this DG's firewalls (groups count conservatively)
+                    $refLocation = self::findLocationOwner($ref);
+                    if( $refLocation !== null && isset($chain[spl_object_id($refLocation)]) )
+                        $info['usedVia'][] = array('ref' => $ref, 'via' => $ancestorObj);
+                }
+
+            return $info;
+        }
+
+        // ancestor copy wins: references were rebound to the highest copy at load time
+        if( count($ancestorCopies) > 0 )
+        {
+            $info['shadowedBy'] = end($ancestorCopies);
+            return $info;
+        }
+
+        $info['shadows'] = array_keys($descendantCopies);
+        foreach( $descendantCopies as $descendantObj )
+            foreach( $descendantObj->getReferences() as $ref )
+                $info['usedVia'][] = array('ref' => $ref, 'via' => $descendantObj);
+
+        return $info;
     }
 
     /**
