@@ -1644,20 +1644,6 @@ RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.a
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
 );
 
-RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined'] = array(
-    'Function' => function (SecurityProfileRQueryContext $context) {
-        $object = $context->object;
-
-        if( is_string($object) )
-            return null;
-
-        if( str_contains($object->owner->name(), "predefined"))
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE
-);
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;

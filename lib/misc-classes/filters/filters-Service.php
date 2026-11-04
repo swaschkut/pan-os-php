@@ -25,16 +25,6 @@ RQuery::$defaultFilters['service']['object']['operators']['is.recursive.member.o
         'input' => 'input/panorama-8.0-merger.xml'
     )
 );
-RQuery::$defaultFilters['service']['object']['operators']['is.group'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        return $context->object->isGroup();
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['service']['object']['operators']['is.tcp'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $object = $context->object;
@@ -111,26 +101,6 @@ RQuery::$defaultFilters['service']['object']['operators']['srcport.is.set'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['service']['name']['operators']['eq'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% tcp-80)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['name']['operators']['eq.nocase'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        return strtolower($context->object->name()) == strtolower($context->value);
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% udp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['service']['name']['operators']['regex'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $object = $context->object;
@@ -193,42 +163,6 @@ RQuery::$defaultFilters['service']['members.count']['operators']['>,<,=,!'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['service']['tag']['operators']['has'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        return $context->object->tags->hasTag($context->value) === TRUE;
-    },
-    'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');"
-);
-RQuery::$defaultFilters['service']['tag']['operators']['has.nocase'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        return $context->object->tags->hasTag($context->value, FALSE) === TRUE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% test )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['tag']['operators']['has.regex'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        foreach( $context->object->tags->tags() as $tag )
-        {
-            $matching = preg_match($context->value, $tag->name());
-            if( $matching === FALSE )
-                derr("regular expression error on '{$context->value}'");
-            if( $matching === 1 )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% /grp/)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['service']['description']['operators']['regex'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $object = $context->object;
@@ -276,101 +210,6 @@ RQuery::$defaultFilters['service']['description']['operators']['is.empty'] = arr
     'arg' => FALSE,
     'ci' => array(
         'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['reflocation']['operators']['is'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-        $owner = $context->object->owner->owner;
-
-        $reflocation_array = $object->getReferencesLocation();
-
-        if( $owner->isPanorama() )
-        {
-            $DG = $owner->findDeviceGroup($context->value);
-            if( $DG == null )
-            {
-                $test = new UTIL("custom", array(), 0,"");
-                $test->configType = "panorama";
-                $test->locationNotFound($context->value, null, $owner);
-            }
-        }
-
-        foreach( $reflocation_array as $reflocation )
-        {
-            if( strtolower($reflocation) == strtolower($context->value) )
-                return TRUE;
-        }
-
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['reflocation']['operators']['is.only'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $owner = $context->object->owner->owner;
-        $reflocations = $context->object->getReferencesLocation();
-
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-
-        $return = FALSE;
-        foreach( $reflocations as $reflocation )
-        {
-            if( strtolower($reflocation) == strtolower($context->value) )
-                $return = TRUE;
-        }
-
-        if( count($reflocations) == 1 && $return )
-            return TRUE;
-        else
-            return FALSE;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['refobject']['operators']['tag.has'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        $reference_array = $object->getReferences();
-
-        foreach( $reference_array as $refobject )
-        {
-            if( get_class( $refobject ) == "ServiceRuleContainer" )
-            {
-                /** @var ServiceRuleContainer $refobject */
-                $tmpTag = $refobject->owner->owner->owner->tagStore->find($context->value);
-                if( $tmpTag == null )
-                    return FALSE;
-                if( $refobject->owner->tags->hasTag($tmpTag) )
-                    return TRUE;
-            }
-        }
-
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object name matches refobjectname',
-    'ci' => array(
-        'fString' => '(%PROP% shared )',
         'input' => 'input/panorama-8.0.xml'
     )
 );

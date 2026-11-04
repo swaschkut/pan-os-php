@@ -1,0 +1,466 @@
+diff --git a/lib/misc-classes/filters/filters-Address.php b/lib/misc-classes/filters/filters-Address.php
+index 75ede29..1c31771 100644
+--- a/lib/misc-classes/filters/filters-Address.php
++++ b/lib/misc-classes/filters/filters-Address.php
+@@ -440,40 +440,6 @@ RQuery::$defaultFilters['address']['tag']['operators']['is.set'] = array(
+         'input' => 'input/panorama-8.0.xml'
+     )
+ );
+-RQuery::$defaultFilters['address']['reflocation']['operators']['is'] = array(
+-    'Function' => function (AddressRQueryContext $context) {
+-        $object = $context->object;
+-        $owner = $context->object->owner->owner;
+-
+-        $reflocation_array = $object->getReferencesLocation();
+-
+-        if( $owner->isPanorama() )
+-        {
+-            $DG = $owner->findDeviceGroup($context->value);
+-            if( $DG == null )
+-            {
+-                $test = new UTIL("custom", array(), 0, "");
+-                $test->configType = "panorama";
+-                $test->locationNotFound($context->value, null, $owner);
+-            }
+-        }
+-
+-        $return = FALSE;
+-        foreach( $reflocation_array as $reflocation )
+-        {
+-            if( strtolower($reflocation) == strtolower($context->value) )
+-                return TRUE;
+-        }
+-
+-        return FALSE;
+-    },
+-    'arg' => TRUE,
+-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches',
+-    'ci' => array(
+-        'fString' => '(%PROP% shared )',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.template'] = array(
+     'Function' => function (AddressRQueryContext $context) {
+         $object = $context->object;
+@@ -647,46 +613,6 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.only.virt
+         'input' => 'input/panorama-8.0.xml'
+     )
+ );
+-RQuery::$defaultFilters['address']['reflocation']['operators']['is.only'] = array(
+-    'Function' => function (AddressRQueryContext $context) {
+-        $owner = $context->object->owner->owner;
+-        $object = $context->object;
+-
+-        $reflocation_array = $object->getReferencesLocation();
+-
+-        /*
+-                $DG = $owner->findDeviceGroup( $context->value );
+-                if( $DG == null )
+-                {
+-                    $test = new UTIL( "custom", array(), 0, "" );
+-                    $test->locationNotFound( $context->value, null, $owner );
+-                }
+-        */
+-
+-
+-        $return = FALSE;
+-        foreach( $reflocation_array as $reflocation )
+-        {
+-            if( strtolower($reflocation) == strtolower($context->value) )
+-                $return = TRUE;
+-            else
+-                return FALSE;
+-        }
+-
+-        /*if( count($reflocation_array) == 1 && $return )
+-            return TRUE;
+-        else
+-            return FALSE;
+-        */
+-        return $return;
+-    },
+-    'arg' => TRUE,
+-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches',
+-    'ci' => array(
+-        'fString' => '(%PROP% shared )',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ RQuery::$defaultFilters['address']['refstore']['operators']['is.only.rulestore'] = array(
+     'Function' => function (AddressRQueryContext $context) {
+         #$value = $context->value;
+@@ -1792,7 +1718,7 @@ RQuery::$defaultFilters['address']['description']['operators']['regex'] = array(
+         $value = $context->value;
+ 
+         if( $object->isRegion() || $object->isEDL() )
+-            return FALSE;
++            return null;   // no description: not applicable
+ 
+         if( strlen($value) > 0 && $value[0] == '%' )
+         {
+@@ -1822,7 +1748,7 @@ RQuery::$defaultFilters['address']['description']['operators']['is.empty'] = arr
+         $value = $context->value;
+ 
+         if( $object->isRegion() || $object->isEDL() )
+-            return FALSE;
++            return null;   // no description: not applicable
+ 
+         if( strlen($object->description()) == 0 )
+             return TRUE;
+diff --git a/lib/misc-classes/filters/filters-Application.php b/lib/misc-classes/filters/filters-Application.php
+index 3462100..a05a17d 100644
+--- a/lib/misc-classes/filters/filters-Application.php
++++ b/lib/misc-classes/filters/filters-Application.php
+@@ -2,25 +2,6 @@
+ 
+ // <editor-fold desc=" ***** Application filters *****" defaultstate="collapsed" >
+ 
+-RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
+-    'Function' => function (ApplicationRQueryContext $context) {
+-        $app = $context->object;
+-
+-        if( $app->isContainer() )
+-            return null;
+-
+-        $sanitizedValue = strtolower($context->value);
+-        if( $app->_characteristics[$sanitizedValue] === TRUE )
+-            return TRUE;
+-
+-        return FALSE;
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% evasive) ',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ 
+ //Todo: introduce filter
+ //      app-id is.disabled
+@@ -30,7 +11,6 @@ RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
+         $object = $context->object;
+         $value = $context->value;
+ 
+-        /*
+         if( strlen($value) > 0 && $value[0] == '%' )
+         {
+             $value = substr($value, 1);
+@@ -38,7 +18,7 @@ RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
+                 derr("regular expression filter makes reference to unknown string alias '{$value}'");
+ 
+             $value = $context->nestedQueries[$value];
+-        }*/
++        }
+ 
+         $matching = preg_match($value, $object->name());
+         if( $matching === FALSE )
+diff --git a/lib/misc-classes/filters/filters-Common.php b/lib/misc-classes/filters/filters-Common.php
+index cc23a54..9d47e51 100644
+--- a/lib/misc-classes/filters/filters-Common.php
++++ b/lib/misc-classes/filters/filters-Common.php
+@@ -823,6 +823,8 @@ RQuery::registerFilter( array(
+ ) );
+ 
+ RQuery::registerFilter( array(
++    'address',
++    'service',
+     'dns-rule',
+     'edl',
+     'gp-gateway',
+@@ -840,7 +842,8 @@ RQuery::registerFilter( array(
+ ), 'reflocation', 'is', array(
+     'Function' => function (RQueryContext $context) {
+         $object = $context->object;
+-        $owner = $context->object->owner->owner;
++        // root config: works for every type (object->owner->owner is not the location for all types)
++        $owner = PH::findRootObjectOrDie($object);
+ 
+         $reflocation_array = $object->getReferencesLocation();
+ 
+@@ -866,96 +869,7 @@ RQuery::registerFilter( array(
+         return FALSE;
+     },
+     'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% shared )',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-) );
+-
+-RQuery::registerFilter( array(
+-    'dns-rule',
+-    'securityprofile',
+-    'threat-rule'
+-), 'reflocation', 'is.only', array(
+-    'Function' => function (RQueryContext $context) {
+-        $owner = $context->object->owner->owner;
+-        $reflocations = $context->object->getReferencesLocation();
+-
+-        $reftypes = $context->object->getReferencesType();
+-        $refstore = $context->object->getReferencesStore();
+-
+-        if( strtolower($context->value) == 'shared' )
+-        {
+-            if( $owner->isPanorama() )
+-                return TRUE;
+-            if( $owner->isFirewall() )
+-                return TRUE;
+-            return null;
+-        }
+-
+-        $return = FALSE;
+-        foreach( $reflocations as $reflocation )
+-        {
+-            if( strtolower($reflocation) == strtolower($context->value) )
+-                $return = TRUE;
+-        }
+-
+-        if( count($reflocations) == 1 && $return )
+-            return TRUE;
+-
+-        return NULL;
+-
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% shared )',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-) );
+-
+-RQuery::registerFilter( array(
+-    'edl',
+-    'gp-gateway',
+-    'gp-portal',
+-    'interface-management-profile',
+-    'log-profile',
+-    'profile',
+-    'schedule',
+-    'securityprofilegroup',
+-    'tag',
+-    'zone',
+-    'zone-protection-profile'
+-), 'reflocation', 'is.only', array(
+-    'Function' => function (RQueryContext $context) {
+-        $owner = $context->object->owner->owner;
+-        $reflocations = $context->object->getReferencesLocation();
+-
+-        $reftypes = $context->object->getReferencesType();
+-        $refstore = $context->object->getReferencesStore();
+-
+-        if( strtolower($context->value) == 'shared' )
+-        {
+-            if( $owner->isPanorama() )
+-                return TRUE;
+-            if( $owner->isFirewall() )
+-                return TRUE;
+-            return FALSE;
+-        }
+-
+-        $return = FALSE;
+-        foreach( $reflocations as $reflocation )
+-        {
+-            if( strtolower($reflocation) == strtolower($context->value) )
+-                $return = TRUE;
+-        }
+-
+-        if( count($reflocations) == 1 && $return )
+-            return TRUE;
+-        else
+-            return FALSE;
+-
+-    },
+-    'arg' => TRUE,
++    'help' => 'returns TRUE if the object is referenced from the location (shared/device-group/vsys name) specified in argument',
+     'ci' => array(
+         'fString' => '(%PROP% shared )',
+         'input' => 'input/panorama-8.0.xml'
+@@ -1267,4 +1181,45 @@ RQuery::registerFilter( array(
+     )
+ ) );
+ 
++// reflocation is.only: referenced at least once, and only from the location specified (one definition for all types)
++RQuery::registerFilter( array(
++    'address',
++    'dns-rule',
++    'edl',
++    'gp-gateway',
++    'gp-portal',
++    'interface-management-profile',
++    'log-profile',
++    'profile',
++    'schedule',
++    'securityprofile',
++    'securityprofilegroup',
++    'service',
++    'tag',
++    'threat-rule',
++    'zone',
++    'zone-protection-profile'
++), 'reflocation', 'is.only', array(
++    'Function' => function (RQueryContext $context) {
++        $reflocations = $context->object->getReferencesLocation();
++
++        if( count($reflocations) == 0 )
++            return FALSE;
++
++        foreach( $reflocations as $reflocation )
++        {
++            if( strtolower($reflocation) != strtolower($context->value) )
++                return FALSE;
++        }
++
++        return TRUE;
++    },
++    'arg' => TRUE,
++    'help' => 'returns TRUE if the object is referenced, and only from the location (shared/device-group/vsys name) specified in argument',
++    'ci' => array(
++        'fString' => '(%PROP% shared )',
++        'input' => 'input/panorama-8.0.xml'
++    )
++) );
++
+ // </editor-fold>
+diff --git a/lib/misc-classes/filters/filters-Interface.php b/lib/misc-classes/filters/filters-Interface.php
+index 53de7ae..d285c68 100644
+--- a/lib/misc-classes/filters/filters-Interface.php
++++ b/lib/misc-classes/filters/filters-Interface.php
+@@ -19,6 +19,14 @@ RQuery::$defaultFilters['interface']['name']['operators']['regex'] = array(
+         $object = $context->object;
+         $value = $context->value;
+ 
++        if( strlen($value) > 0 && $value[0] == '%' )
++        {
++            $value = substr($value, 1);
++            if( !isset($context->nestedQueries[$value]) )
++                derr("regular expression filter makes reference to unknown string alias '{$value}'");
++            $value = $context->nestedQueries[$value];
++        }
++
+         $matching = preg_match($value, $object->name());
+         if( $matching === FALSE )
+             derr("regular expression error on '{$value}'");
+diff --git a/lib/misc-classes/filters/filters-Rule.php b/lib/misc-classes/filters/filters-Rule.php
+index 9765beb..01cf9e4 100644
+--- a/lib/misc-classes/filters/filters-Rule.php
++++ b/lib/misc-classes/filters/filters-Rule.php
+@@ -3701,9 +3701,18 @@ RQuery::$defaultFilters['rule']['name']['operators']['eq'] = array(
+ );
+ RQuery::$defaultFilters['rule']['name']['operators']['regex'] = array(
+     'Function' => function (RuleRQueryContext $context) {
+-        $matching = preg_match($context->value, $context->object->name());
++        $value = $context->value;
++        if( strlen($value) > 0 && $value[0] == '%' )
++        {
++            $value = substr($value, 1);
++            if( !isset($context->nestedQueries[$value]) )
++                derr("regular expression filter makes reference to unknown string alias '{$value}'");
++            $value = $context->nestedQueries[$value];
++        }
++
++        $matching = preg_match($value, $context->object->name());
+         if( $matching === FALSE )
+-            derr("regular expression error on '{$context->value}'");
++            derr("regular expression error on '{$value}'");
+         if( $matching === 1 )
+             return TRUE;
+         return FALSE;
+@@ -4129,9 +4138,18 @@ RQuery::$defaultFilters['rule']['description']['operators']['is.empty'] = array(
+ 
+ RQuery::$defaultFilters['rule']['description']['operators']['regex'] = array(
+     'Function' => function (RuleRQueryContext $context) {
+-        $matching = preg_match($context->value, $context->object->description());
++        $value = $context->value;
++        if( strlen($value) > 0 && $value[0] == '%' )
++        {
++            $value = substr($value, 1);
++            if( !isset($context->nestedQueries[$value]) )
++                derr("regular expression filter makes reference to unknown string alias '{$value}'");
++            $value = $context->nestedQueries[$value];
++        }
++
++        $matching = preg_match($value, $context->object->description());
+         if( $matching === FALSE )
+-            derr("regular expression error on '{$context->value}'");
++            derr("regular expression error on '{$value}'");
+         if( $matching === 1 )
+             return TRUE;
+         return FALSE;
+diff --git a/lib/misc-classes/filters/filters-Service.php b/lib/misc-classes/filters/filters-Service.php
+index ecdfb48..c88441c 100644
+--- a/lib/misc-classes/filters/filters-Service.php
++++ b/lib/misc-classes/filters/filters-Service.php
+@@ -279,72 +279,6 @@ RQuery::$defaultFilters['service']['description']['operators']['is.empty'] = arr
+         'input' => 'input/panorama-8.0.xml'
+     )
+ );
+-RQuery::$defaultFilters['service']['reflocation']['operators']['is'] = array(
+-    'Function' => function (ServiceRQueryContext $context) {
+-        $object = $context->object;
+-        $owner = $context->object->owner->owner;
+-
+-        $reflocation_array = $object->getReferencesLocation();
+-
+-        if( $owner->isPanorama() )
+-        {
+-            $DG = $owner->findDeviceGroup($context->value);
+-            if( $DG == null )
+-            {
+-                $test = new UTIL("custom", array(), 0,"");
+-                $test->configType = "panorama";
+-                $test->locationNotFound($context->value, null, $owner);
+-            }
+-        }
+-
+-        foreach( $reflocation_array as $reflocation )
+-        {
+-            if( strtolower($reflocation) == strtolower($context->value) )
+-                return TRUE;
+-        }
+-
+-
+-        return FALSE;
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% shared )',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+-RQuery::$defaultFilters['service']['reflocation']['operators']['is.only'] = array(
+-    'Function' => function (ServiceRQueryContext $context) {
+-        $owner = $context->object->owner->owner;
+-        $reflocations = $context->object->getReferencesLocation();
+-
+-        if( strtolower($context->value) == 'shared' )
+-        {
+-            if( $owner->isPanorama() )
+-                return TRUE;
+-            if( $owner->isFirewall() )
+-                return TRUE;
+-            return FALSE;
+-        }
+-
+-        $return = FALSE;
+-        foreach( $reflocations as $reflocation )
+-        {
+-            if( strtolower($reflocation) == strtolower($context->value) )
+-                $return = TRUE;
+-        }
+-
+-        if( count($reflocations) == 1 && $return )
+-            return TRUE;
+-        else
+-            return FALSE;
+-
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% shared )',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ RQuery::$defaultFilters['service']['refobject']['operators']['tag.has'] = array(
+     'Function' => function (ServiceRQueryContext $context) {
+         $object = $context->object;

@@ -2,25 +2,6 @@
 
 // <editor-fold desc=" ***** Application filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        $app = $context->object;
-
-        if( $app->isContainer() )
-            return null;
-
-        $sanitizedValue = strtolower($context->value);
-        if( $app->_characteristics[$sanitizedValue] === TRUE )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% evasive) ',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 
 //Todo: introduce filter
 //      app-id is.disabled
@@ -30,7 +11,6 @@ RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
         $object = $context->object;
         $value = $context->value;
 
-        /*
         if( strlen($value) > 0 && $value[0] == '%' )
         {
             $value = substr($value, 1);
@@ -38,7 +18,7 @@ RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
                 derr("regular expression filter makes reference to unknown string alias '{$value}'");
 
             $value = $context->nestedQueries[$value];
-        }*/
+        }
 
         $matching = preg_match($value, $object->name());
         if( $matching === FALSE )
@@ -109,19 +89,6 @@ RQuery::$defaultFilters['application']['category']['operators']['eq'] = array(
     )
 );
 
-RQuery::$defaultFilters['application']['object']['operators']['is.predefined'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        if( $context->object->isPredefined() )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['application']['object']['operators']['is.application-group'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         if( $context->object->isApplicationGroup() )
@@ -151,19 +118,6 @@ RQuery::$defaultFilters['application']['object']['operators']['is.application-fi
 RQuery::$defaultFilters['application']['object']['operators']['is.application-custom'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         if( $context->object->isApplicationCustom() )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['application']['object']['operators']['is.tmp'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        if( $context->object->isTmp() )
             return TRUE;
 
         return FALSE;

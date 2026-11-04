@@ -19,6 +19,14 @@ RQuery::$defaultFilters['interface']['name']['operators']['regex'] = array(
         $object = $context->object;
         $value = $context->value;
 
+        if( strlen($value) > 0 && $value[0] == '%' )
+        {
+            $value = substr($value, 1);
+            if( !isset($context->nestedQueries[$value]) )
+                derr("regular expression filter makes reference to unknown string alias '{$value}'");
+            $value = $context->nestedQueries[$value];
+        }
+
         $matching = preg_match($value, $object->name());
         if( $matching === FALSE )
             derr("regular expression error on '{$value}'");

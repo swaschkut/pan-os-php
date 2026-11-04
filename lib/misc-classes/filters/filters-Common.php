@@ -66,6 +66,7 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'rule',
     'address',
     'service'
 ), 'location', 'is', array(
@@ -85,6 +86,7 @@ RQuery::registerFilter( array(
         return FALSE;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches the one specified in argument',
     'ci' => array(
         'fString' => '(%PROP% shared)',
         'input' => 'input/panorama-8.0.xml'
@@ -158,6 +160,7 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'rule',
     'address',
     'dns-rule',
     'edl',
@@ -185,6 +188,7 @@ RQuery::registerFilter( array(
         return FALSE;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches the regular expression specified in argument',
     'ci' => array(
         'fString' => '(%PROP% /shared/)',
         'input' => 'input/panorama-8.0.xml'
@@ -314,6 +318,8 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'rule',
+    'service',
     'address',
     'certificate'
 ), 'name', 'eq', array(
@@ -321,6 +327,7 @@ RQuery::registerFilter( array(
         return $context->object->name() == $context->value;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches the one specified in argument',
     'ci' => array(
         'fString' => '(%PROP% new test 1)',
         'input' => 'input/panorama-8.0.xml'
@@ -375,6 +382,8 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'rule',
+    'service',
     'address',
     'certificate'
 ), 'name', 'eq.nocase', array(
@@ -382,6 +391,7 @@ RQuery::registerFilter( array(
         return strtolower($context->object->name()) == strtolower($context->value);
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches the one specified in argument, ignoring upper / lower case',
     'ci' => array(
         'fString' => '(%PROP% new test 2)',
         'input' => 'input/panorama-8.0.xml'
@@ -438,6 +448,7 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'rule',
     'address',
     'dns-rule',
     'device',
@@ -626,6 +637,7 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'application',
     'dns-rule',
     'edl',
     'interface-management-profile',
@@ -823,6 +835,8 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'address',
+    'service',
     'dns-rule',
     'edl',
     'gp-gateway',
@@ -840,7 +854,8 @@ RQuery::registerFilter( array(
 ), 'reflocation', 'is', array(
     'Function' => function (RQueryContext $context) {
         $object = $context->object;
-        $owner = $context->object->owner->owner;
+        // root config: works for every type (object->owner->owner is not the location for all types)
+        $owner = PH::findRootObjectOrDie($object);
 
         $reflocation_array = $object->getReferencesLocation();
 
@@ -866,96 +881,7 @@ RQuery::registerFilter( array(
         return FALSE;
     },
     'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'dns-rule',
-    'securityprofile',
-    'threat-rule'
-), 'reflocation', 'is.only', array(
-    'Function' => function (RQueryContext $context) {
-        $owner = $context->object->owner->owner;
-        $reflocations = $context->object->getReferencesLocation();
-
-        $reftypes = $context->object->getReferencesType();
-        $refstore = $context->object->getReferencesStore();
-
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return null;
-        }
-
-        $return = FALSE;
-        foreach( $reflocations as $reflocation )
-        {
-            if( strtolower($reflocation) == strtolower($context->value) )
-                $return = TRUE;
-        }
-
-        if( count($reflocations) == 1 && $return )
-            return TRUE;
-
-        return NULL;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'edl',
-    'gp-gateway',
-    'gp-portal',
-    'interface-management-profile',
-    'log-profile',
-    'profile',
-    'schedule',
-    'securityprofilegroup',
-    'tag',
-    'zone',
-    'zone-protection-profile'
-), 'reflocation', 'is.only', array(
-    'Function' => function (RQueryContext $context) {
-        $owner = $context->object->owner->owner;
-        $reflocations = $context->object->getReferencesLocation();
-
-        $reftypes = $context->object->getReferencesType();
-        $refstore = $context->object->getReferencesStore();
-
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-
-        $return = FALSE;
-        foreach( $reflocations as $reflocation )
-        {
-            if( strtolower($reflocation) == strtolower($context->value) )
-                $return = TRUE;
-        }
-
-        if( count($reflocations) == 1 && $return )
-            return TRUE;
-        else
-            return FALSE;
-
-    },
-    'arg' => TRUE,
+    'help' => 'returns TRUE if the object is referenced from the location (shared/device-group/vsys name) specified in argument',
     'ci' => array(
         'fString' => '(%PROP% shared )',
         'input' => 'input/panorama-8.0.xml'
@@ -1263,6 +1189,354 @@ RQuery::registerFilter( array(
     'help' => 'returns TRUE if the object is a direct member of the group specified in argument (members of sub-groups: is.recursive.member.of)',
     'ci' => array(
         'fString' => '(%PROP% shared-group1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// reflocation is.only: referenced at least once, and only from the location specified (one definition for all types)
+RQuery::registerFilter( array(
+    'address',
+    'dns-rule',
+    'edl',
+    'gp-gateway',
+    'gp-portal',
+    'interface-management-profile',
+    'log-profile',
+    'profile',
+    'schedule',
+    'securityprofile',
+    'securityprofilegroup',
+    'service',
+    'tag',
+    'threat-rule',
+    'zone',
+    'zone-protection-profile'
+), 'reflocation', 'is.only', array(
+    'Function' => function (RQueryContext $context) {
+        $reflocations = $context->object->getReferencesLocation();
+
+        if( count($reflocations) == 0 )
+            return FALSE;
+
+        foreach( $reflocations as $reflocation )
+        {
+            if( strtolower($reflocation) != strtolower($context->value) )
+                return FALSE;
+        }
+
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if the object is referenced, and only from the location (shared/device-group/vsys name) specified in argument',
+    'ci' => array(
+        'fString' => '(%PROP% shared )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// template / managed-device filters for zone and zone-protection-profile: template found by PH::findTemplateOwner()
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'template.owner', 'is.unused', array(
+    'Function' => function (RQueryContext $context) {
+        $object = $context->object;
+
+        $template = PH::findTemplateOwner( $object );
+        if( $template === null )
+            return null;   // not inside a template / template-stack
+
+        if( count($template->getReferences()) == 0 )
+            return true;
+        else
+            return false;
+
+        return null;
+    },
+    'arg' => FALSE
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'template.owner', 'is.unused.recursive', array(
+    'Function' => function (RQueryContext $context) {
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+
+        // unused when no template stack that holds the template carries a firewall
+        return count( $devices ) == 0;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when no template stack holding the owning template (or the owning template stack itself) carries a firewall"
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'manageddevice', 'is.in.file', array(
+    'Function' => function (RQueryContext $context) {
+        $list = $context->cachedNameList( TRUE );
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
+
+        foreach( $devices as $serial => $device )
+            if( isset( $list[$serial] ) )
+                return TRUE;   // at least one firewall that receives the template is listed
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice is.in.file FILENAME)'"
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'manageddevice', 'is.in.list', array(
+    'Function' => function (RQueryContext $context) {
+        $list = $context->cachedNameList( FALSE );
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
+
+        foreach( $devices as $serial => $device )
+            if( isset( $list[$serial] ) )
+                return TRUE;   // at least one firewall that receives the template is listed
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice is.in.list serial1,serial2)'"
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'manageddevice.all', 'is.in.file', array(
+    'Function' => function (RQueryContext $context) {
+        $list = $context->cachedNameList( TRUE );
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;  // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.all is.in.file FILENAME)'"
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'manageddevice.all', 'is.in.list', array(
+    'Function' => function (RQueryContext $context) {
+        $list = $context->cachedNameList( FALSE );
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;  // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.all is.in.list serial1,serial2)'"
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'manageddevice.all', 'with-no-dg', array(
+    'Function' => function (RQueryContext $context) {
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( !$device->hasNoDeviceGroup() )
+                return FALSE;   // a firewall that receives the template is in a device group
+        return TRUE;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when the owning template (through any template stack) reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(manageddevice.all with-no-dg)'"
+) );
+
+RQuery::registerFilter( array(
+    'zone',
+    'zone-protection-profile'
+), 'manageddevice', 'with-no-dg', array(
+    'Function' => function (RQueryContext $context) {
+        $owner = PH::findTemplateOwner( $context->object );   // the Template, or the TemplateStack for a zone the stack defines itself
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( $device->hasNoDeviceGroup() )
+                return TRUE;   // a firewall that receives the template is in no device group
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when at least one firewall that receives the owning template (through any template stack) is not assigned to a device group, e.g. 'filter=(manageddevice with-no-dg)'"
+) );
+
+// is.group: address and service (isGroup() returns a bool, so '== TRUE' and the plain value are the same)
+RQuery::registerFilter( array(
+    'address',
+    'service'
+), 'object', 'is.group', array(
+    'Function' => function (RQueryContext $context) {
+        return $context->object->isGroup() == TRUE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// tag has: address and service (rule keeps its own definition)
+RQuery::registerFilter( array(
+    'address',
+    'service'
+), 'tag', 'has', array(
+    'Function' => function (RQueryContext $context) {
+        // address regions have no tags
+        if( method_exists($context->object, 'isRegion') && $context->object->isRegion() )
+            return FALSE;
+        return $context->object->tags->hasTag($context->value) === TRUE;
+    },
+    'arg' => TRUE,
+    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
+    'ci' => array(
+        'fString' => '(%PROP% grp.shared-group1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// tag has.nocase: address and service (rule keeps its own definition)
+RQuery::registerFilter( array(
+    'address',
+    'service'
+), 'tag', 'has.nocase', array(
+    'Function' => function (RQueryContext $context) {
+        // address regions have no tags
+        if( method_exists($context->object, 'isRegion') && $context->object->isRegion() )
+            return FALSE;
+        return $context->object->tags->hasTag($context->value, FALSE) === TRUE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% test)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// tag has.regex: address and service (rule keeps its own definition)
+RQuery::registerFilter( array(
+    'address',
+    'service'
+), 'tag', 'has.regex', array(
+    'Function' => function (RQueryContext $context) {
+        // address regions have no tags
+        if( method_exists($context->object, 'isRegion') && $context->object->isRegion() )
+            return FALSE;
+        foreach( $context->object->tags->tags() as $tag )
+        {
+            $matching = preg_match($context->value, $tag->name());
+            if( $matching === FALSE )
+                derr("regular expression error on '{$context->value}'");
+            if( $matching === 1 )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% /grp/)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// refobject tag.has: address / service / tag; the referencing container class decides
+RQuery::registerFilter( array(
+    'address',
+    'service',
+    'tag'
+), 'refobject', 'tag.has', array(
+    'Function' => function (RQueryContext $context) {
+        $object = $context->object;
+
+        $reference_array = $object->getReferences();
+
+        foreach( $reference_array as $refobject )
+        {
+            if( in_array( get_class( $refobject ), array( "AddressRuleContainer", "ServiceRuleContainer", "TagRuleContainer" ), TRUE ) )
+            {
+                /** @var AddressRuleContainer|ServiceRuleContainer|TagRuleContainer $refobject */
+                $tmpTag = $refobject->owner->owner->owner->tagStore->find($context->value);
+                if( $tmpTag == null )
+                    return FALSE;
+                if( $refobject->owner->tags->hasTag($tmpTag) )
+                    return TRUE;
+            }
+        }
+
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches refobjectname',
+    'ci' => array(
+        'fString' => '(%PROP% shared )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// is.predefined: application / log-profile / securityprofile
+RQuery::registerFilter( array(
+    'application',
+    'log-profile',
+    'securityprofile'
+), 'object', 'is.predefined', array(
+    'Function' => function (RQueryContext $context) {
+        $object = $context->object;
+        if( is_string($object) )
+            return null;
+
+        // application: own type information; log-profile / security profile: object lives in a predefined store
+        if( method_exists($object, 'isPredefined') )
+            return $object->isPredefined() == TRUE;
+
+        return str_contains($object->owner->name(), "predefined");
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 ) );

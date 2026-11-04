@@ -1,35 +1,6 @@
 <?php
 
 // <editor-fold desc=" ***** Tag filters *****" defaultstate="collapsed" >
-RQuery::$defaultFilters['tag']['refobject']['operators']['tag.has'] = array(
-    'Function' => function (TagRQueryContext $context) {
-        $object = $context->object;
-
-        $reference_array = $object->getReferences();
-
-        foreach( $reference_array as $refobject )
-        {
-            if( get_class( $refobject ) == "TagRuleContainer" )
-            {
-                /** @var TagRuleContainer $refobject */
-                $tmpTag = $refobject->owner->owner->owner->tagStore->find($context->value);
-                if( $tmpTag == null )
-                    return FALSE;
-                if( $refobject->owner->tags->hasTag($tmpTag) )
-                    return TRUE;
-            }
-        }
-
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object name matches refobjectname',
-    'ci' => array(
-        'fString' => '(%PROP% shared )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['tag']['color']['operators']['eq'] = array(
     'Function' => function (TagRQueryContext $context) {
         return $context->object->getColor() == strtolower($context->value);

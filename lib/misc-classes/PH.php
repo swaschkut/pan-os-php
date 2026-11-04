@@ -1710,6 +1710,23 @@ class PH
     }
 
     /**
+     * Template or TemplateStack that holds an object (zone, zone protection profile, ...),
+     * or null when the object is not inside a template / template-stack.
+     * @return Template|TemplateStack|null
+     */
+    public static function findTemplateOwner($object)
+    {
+        $cur = isset($object->owner) ? $object->owner : null;
+        for( $i = 0; $i < 25 && is_object($cur); $i++ )
+        {
+            if( $cur instanceof Template || $cur instanceof TemplateStack )
+                return $cur;
+            $cur = isset($cur->owner) ? $cur->owner : null;
+        }
+        return null;
+    }
+
+    /**
      * @param $panConfObject
      * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container
      * @throws Exception

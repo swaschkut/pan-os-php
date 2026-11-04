@@ -3467,29 +3467,6 @@ RQuery::$defaultFilters['rule']['rule']['operators']['is.interzone'] = array(
     )
 );
 
-RQuery::$defaultFilters['rule']['location']['operators']['is'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $owner = $context->object->owner->owner;
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-        if( strtolower($context->value) == strtolower($owner->name()) )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 
 RQuery::$defaultFilters['rule']['location']['operators']['is.type.snippet'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -3550,23 +3527,6 @@ RQuery::$defaultFilters['rule']['location']['operators']['is.type.deviceonprem']
     },
     'arg' => FALSE,
     'help' => 'returns TRUE if object location is DeviceOnPrem'
-);
-RQuery::$defaultFilters['rule']['location']['operators']['regex'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $name = $context->object->getLocationString();
-        $matching = preg_match($context->value, $name);
-        if( $matching === FALSE )
-            derr("regular expression error on '{$context->value}'");
-        if( $matching === 1 )
-            return TRUE;
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches the regular expression specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  /DC/)',
-        'input' => 'input/panorama-8.0.xml'
-    )
 );
 RQuery::$defaultFilters['rule']['rule']['operators']['is.unused.fast'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -3688,22 +3648,20 @@ RQuery::$defaultFilters['rule']['hit-count.fast']['operators']['>,<,=,!'] = arra
 );
 
 
-RQuery::$defaultFilters['rule']['name']['operators']['eq'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if rule name matches the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  rule1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['rule']['name']['operators']['regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
-        $matching = preg_match($context->value, $context->object->name());
+        $value = $context->value;
+        if( strlen($value) > 0 && $value[0] == '%' )
+        {
+            $value = substr($value, 1);
+            if( !isset($context->nestedQueries[$value]) )
+                derr("regular expression filter makes reference to unknown string alias '{$value}'");
+            $value = $context->nestedQueries[$value];
+        }
+
+        $matching = preg_match($value, $context->object->name());
         if( $matching === FALSE )
-            derr("regular expression error on '{$context->value}'");
+            derr("regular expression error on '{$value}'");
         if( $matching === 1 )
             return TRUE;
         return FALSE;
@@ -3715,50 +3673,7 @@ RQuery::$defaultFilters['rule']['name']['operators']['regex'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['rule']['name']['operators']['eq.nocase'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        return strtolower($context->object->name()) == strtolower($context->value);
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP%  rule1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 
-RQuery::$defaultFilters['rule']['name']['operators']['is.in.file'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $object = $context->object;
-
-        if( !isset($context->cachedList) )
-        {
-            if( !file_exists($context->value) )
-                derr("cannot find file '{$context->value}'", null, FALSE);
-
-            $text = file_get_contents($context->value);
-
-            if( $text === FALSE )
-                derr("cannot open file '{$context->value}");
-
-            $lines = explode("\n", $text);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-        return isset($list[$object->name()]);
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if rule name matches one of the names found in text file provided in argument'
-);
 
 RQuery::$defaultFilters['rule']['name']['operators']['is.in.csv-report-file'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -4129,9 +4044,18 @@ RQuery::$defaultFilters['rule']['description']['operators']['is.empty'] = array(
 
 RQuery::$defaultFilters['rule']['description']['operators']['regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
-        $matching = preg_match($context->value, $context->object->description());
+        $value = $context->value;
+        if( strlen($value) > 0 && $value[0] == '%' )
+        {
+            $value = substr($value, 1);
+            if( !isset($context->nestedQueries[$value]) )
+                derr("regular expression filter makes reference to unknown string alias '{$value}'");
+            $value = $context->nestedQueries[$value];
+        }
+
+        $matching = preg_match($value, $context->object->description());
         if( $matching === FALSE )
-            derr("regular expression error on '{$context->value}'");
+            derr("regular expression error on '{$value}'");
         if( $matching === 1 )
             return TRUE;
         return FALSE;
