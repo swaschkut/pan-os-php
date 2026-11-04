@@ -1565,7 +1565,7 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Antivirus Actions']['value'] = $stdoutarray['av best-practice actions percentage'];
         $percentageArray_best_practice['Antivirus Actions']['group'] = 'Threat Prevention';
-        $percentageArray_best_practice['Antivirus InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Antivirus InLine ML']['value'] = $stdoutarray['av best-practice mica-engine percentage'];
         $percentageArray_best_practice['Antivirus InLine ML']['group'] = 'Threat Prevention';
 
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];

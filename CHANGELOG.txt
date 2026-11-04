@@ -35,6 +35,7 @@ BUGFIX:
 * class AntiSpyware-/VulnerabilityProfile and the relevant ThreatPolicy-/Spyware/Vulnerability - also actions-securityprofile | fix to cover new rules with existing name - CVE/Vendor-id
 * class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
 * type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
+* bugfix class StatCollectorTrait - wrong value for av Inline ML
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
