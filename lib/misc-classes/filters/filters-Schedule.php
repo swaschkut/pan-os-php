@@ -457,14 +457,6 @@ RQuery::$defaultFilters['schedule']['reftype']['operators']['is'] = array(
     )
 );
 
-RQuery::$defaultFilters['schedule']['object']['operators']['is.expired'] = array(
-    'Function' => function (ScheduleRQueryContext $context) {
-        $value = $context->object;
-
-        return $value->isExpired();
-    },
-    'arg' => false,
-);
 RQuery::$defaultFilters['schedule']['expire.in.days']['operators']['>,<,=,!'] = array(
     'Function' => function (ScheduleRQueryContext $context) {
         $value = $context->object;
