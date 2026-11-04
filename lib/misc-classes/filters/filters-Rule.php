@@ -1706,14 +1706,6 @@ RQuery::$defaultFilters['rule']['tag']['operators']['has.regex'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['rule']['tag.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->tags->count() !operator! !value!",
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 //                                                //
 //                Group-Tag Based filters              //
 //                                              //
@@ -3877,24 +3869,6 @@ RQuery::$defaultFilters['rule']['name']['operators']['is.in.file'] = array(
     'arg' => TRUE,
     'help' => 'returns TRUE if rule name matches one of the names found in text file provided in argument'
 );
-RQuery::$defaultFilters['rule']['name']['operators']['has.wrong.characters'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $object = $context->object;
-
-        $newName = htmlspecialchars_decode( $object->name() );
-        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
-
-        if( count($matches) == 0 )
-            return FALSE;
-        else
-            return TRUE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 
 RQuery::$defaultFilters['rule']['name']['operators']['is.in.csv-report-file'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -4950,18 +4924,5 @@ RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['has.rege
     'arg' => TRUE
 );
 
-RQuery::$defaultFilters['rule']['device']['operators']['is.buckbeak'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $object = $context->object;
-
-        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
-
-        if ( $rootObject->isBuckbeak() )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE
-);
 // </editor-fold>
 

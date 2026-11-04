@@ -18,6 +18,12 @@ UTIL:
 * type=zone actions=exporttohtml:file.html | extend with column template-stack
 * type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
 * type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
+* introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
+* class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
+* type=device | introduce actions=display-ancestor-precedence-impact
+* introduce new filter regarding ancestor-objects-take-precedence | different object classes
+* delete wrong expired filters for EDL and profile
+* remove duplicate filters and start using filter-Common.php
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
@@ -37,6 +43,7 @@ BUGFIX:
 * class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
 * type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
 * xml-issue - fix to NOT remove any bgp related part - to avoid removing aspath-prepand - no clue if some more must not be removed
+* bugfix class StatCollectorTrait - wrong value for av Inline ML
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

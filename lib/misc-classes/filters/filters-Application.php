@@ -2,16 +2,6 @@
 
 // <editor-fold desc=" ***** Application filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['app']['name']['operators']['eq'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $app = $context->object;
@@ -35,16 +25,6 @@ RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
 //Todo: introduce filter
 //      app-id is.disabled
 
-RQuery::$defaultFilters['application']['name']['operators']['eq'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $object = $context->object;
@@ -653,6 +633,71 @@ RQuery::$defaultFilters['application']['object']['operators']['is.unused'] = arr
 
         return $object->objectIsUnused();
         #return $context->object->countReferences() == 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.overriding'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.overriden'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
     },
     'arg' => FALSE,
     'ci' => array(

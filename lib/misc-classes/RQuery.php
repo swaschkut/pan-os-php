@@ -39,6 +39,16 @@ class RQuery
 
     static public $defaultFilters = array();
 
+    /**
+     * Registers one filter definition for several object types (see filters/filters-Common.php).
+     * @param string[] $types  object types, e.g. 'address', 'service', 'tag'
+     */
+    static public function registerFilter( array $types, string $field, string $operator, array $definition )
+    {
+        foreach( $types as $type )
+            self::$defaultFilters[$type][$field]['operators'][$operator] = $definition;
+    }
+
     static public $commonFilters = array();
 
     static public $mathOps = array('>' => '>', '<' => '<', '=' => '==', '==' => '==', '!=' => '!=', '<=' => '<=', '>=' => '>=');
@@ -728,6 +738,7 @@ class RQuery
 }
 
 
+require_once 'filters/filters-Common.php';
 require_once 'filters/filters-Rule.php';
 require_once 'filters/filters-Address.php';
 require_once 'filters/filters-Service.php';

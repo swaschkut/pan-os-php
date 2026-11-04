@@ -332,6 +332,100 @@ DeviceCallContext::$supportedActions['display'] = array(
     )
 );
 
+DeviceCallContext::$supportedActions['display-ancestor-precedence-impact'] = array(
+    'name' => 'display-ancestor-precedence-impact',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->objectList['precedenceRows'] = array();
+        $context->objectList['precedenceDGs'] = 0;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+
+        if( get_class($object) !== 'DeviceGroup' )
+            return;
+
+        /** @var DeviceGroup $object */
+        $pan = $object->owner;
+        if( !($pan instanceof PanoramaConf) )
+            return;
+
+        $current = $pan->ancestorObjectsTakePrecedence() ? 'yes' : 'no';
+        $after = $pan->ancestorObjectsTakePrecedence() ? 'no' : 'yes';
+
+        $rows = $pan->ancestorPrecedenceImpact( $object );
+        $context->objectList['precedenceDGs']++;
+
+        PH::print_stdout( $context->padding . "* DG '" . $object->name() . "' - ancestor-objects-take-precedence now: " . $current . " -> after switch: " . $after );
+        if( count($rows) == 0 )
+        {
+            PH::print_stdout( $context->padding . "   no object name defined at more than one level - no impact" );
+            return;
+        }
+
+        foreach( $rows as $row )
+        {
+            $copyNow = ($current == 'yes') ? $row['copy_yes'] : $row['copy_no'];
+            $copyAfter = ($current == 'yes') ? $row['copy_no'] : $row['copy_yes'];
+
+            if( count($row['referencers']) == 0 )
+                $severity = 'INFO - no rule or group in the chain names it';
+            elseif( $row['identical'] )
+                $severity = 'INFO - identical content at both levels';
+            else
+                $severity = 'CHANGE';
+
+            PH::print_stdout( $context->padding . "   - [" . $severity . "] " . $row['store'] . " '" . $row['name'] . "' : firewalls use copy of '" . $copyNow . "' -> after switch '" . $copyAfter . "'   (defined in: " . implode(', ', $row['levels']) . ")" );
+            foreach( $row['referencers'] as $ref )
+                PH::print_stdout( $context->padding . "        used by: " . $ref );
+
+            $row['dg'] = $object->name();
+            $row['now'] = $current;
+            $row['after'] = $after;
+            $row['copy_now'] = $copyNow;
+            $row['copy_after'] = $copyAfter;
+            $row['severity'] = $severity;
+            $context->objectList['precedenceRows'][] = $row;
+        }
+        PH::print_stdout();
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        $change = 0;
+        $info = 0;
+        foreach( $context->objectList['precedenceRows'] as $row )
+        {
+            if( $row['severity'] == 'CHANGE' )
+                $change++;
+            else
+                $info++;
+        }
+
+        PH::print_stdout();
+        PH::print_stdout( "* ancestor-objects-take-precedence impact summary: " . $context->objectList['precedenceDGs'] . " device group(s), "
+            . $change . " CHANGE, " . $info . " INFO" );
+        PH::print_stdout( "  CHANGE = after the switch the firewalls of that device group get a different object content for a name that rules / groups use" );
+
+        $filename = $context->arguments['filename'];
+        if( $filename !== '*none*' )
+        {
+            $fh = fopen($filename, 'w');
+            if( $fh === FALSE )
+                derr("cannot open file '{$filename}'");
+            fputcsv($fh, array('device-group', 'precedence-now', 'precedence-after', 'store', 'name', 'copy-now', 'copy-after', 'defined-in', 'identical-content', 'severity', 'used-by'));
+            foreach( $context->objectList['precedenceRows'] as $row )
+                fputcsv($fh, array($row['dg'], $row['now'], $row['after'], $row['store'], $row['name'], $row['copy_now'], $row['copy_after'],
+                    implode(' | ', $row['levels']), $row['identical'] ? 'yes' : 'no', $row['severity'], implode(' | ', $row['referencers'])));
+            fclose($fh);
+            PH::print_stdout( "  report written to '" . $filename . "'" );
+        }
+    },
+    'args' => array(
+        'filename' => array('type' => 'string', 'default' => '*none*')
+    ),
+    'help' => "offline report: what changes on the firewalls of each device group when Panorama setting\n"
+        . "'ancestor-objects-take-precedence' is switched (no -> yes or yes -> no, depending on the current value)\n"
+        . "optional: filename=report.csv"
+);
+
 DeviceCallContext::$supportedActions['displayreferences'] = array(
     'name' => 'displayReferences',
     'MainFunction' => function (DeviceCallContext $context) {
