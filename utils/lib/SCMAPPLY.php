@@ -27,7 +27,10 @@
  *  - POST    body as written
  *  - PUT     "merge": true -> GET the live object, apply the fields of body (null removes a field), PUT the result
  *  - DELETE  as written
- *  - a request without id is resolved through its "lookup" (GET ?name=...&folder=...)
+ *  - a request without id is resolved through its "lookup" (GET ?name=...&folder=...);
+ *    "skip_if_missing": true (devices, which cannot be created) is skipped when the object is not in SCM
+ *  - "merge_lists": {"snippets": "keep-others"}: the listed snippets go on top in this order,
+ *    snippets the live folder / device has besides them stay below
  *  - "review": true requests are skipped unless include-review is given
  *  - a request whose dependency did not succeed is skipped
  *  - by default the run stops at the first failed request (continue-on-error to go on)
@@ -150,7 +153,8 @@ class SCMAPPLY extends UTIL
         $s = $out['summary'];
         $line = " * " . ($this->dryRun ? "dry-run: " : "") . "ok " . $s['ok'] . ", failed " . $s['failed']
             . ", skipped (review) " . $s['skipped-review'] . ", skipped (dependency) " . $s['skipped-dependency']
-            . ", not run " . $s['not-run'] . ($s['skipped-from'] > 0 ? ", before from= " . $s['skipped-from'] : "");
+            . ", not run " . $s['not-run'] . ($s['skipped-missing'] > 0 ? ", not in SCM " . $s['skipped-missing'] : "")
+            . ($s['skipped-from'] > 0 ? ", before from= " . $s['skipped-from'] : "");
         PH::print_stdout($line);
         PH::print_stdout(" * result file: " . $this->resultFile);
         if( !$this->dryRun && $s['ok'] > 0 )
@@ -162,7 +166,7 @@ class SCMAPPLY extends UTIL
 
     private function summary(array $results)
     {
-        $s = array('ok' => 0, 'failed' => 0, 'skipped-review' => 0, 'skipped-dependency' => 0, 'skipped-from' => 0, 'not-run' => 0);
+        $s = array('ok' => 0, 'failed' => 0, 'skipped-review' => 0, 'skipped-dependency' => 0, 'skipped-missing' => 0, 'skipped-from' => 0, 'not-run' => 0);
         foreach( $results as $r )
             $s[$r['status']]++;
         return $s;
@@ -223,9 +227,19 @@ class SCMAPPLY extends UTIL
             try
             {
                 $done = $this->send($req);
-                $result = array_merge($result, $done);
-                $result['status'] = $status[$seq] = 'ok';
-                PH::print_stdout("   - " . $label . ": " . ($this->dryRun ? "would send " . $done['url'] : "OK " . $done['http_code']));
+                if( !empty($done['skipped_missing']) )
+                {
+                    unset($done['skipped_missing']);
+                    $result = array_merge($result, $done);
+                    $result['status'] = $status[$seq] = 'skipped-missing';
+                    PH::print_stdout("   - " . $label . ": skipped, " . $done['message']);
+                }
+                else
+                {
+                    $result = array_merge($result, $done);
+                    $result['status'] = $status[$seq] = 'ok';
+                    PH::print_stdout("   - " . $label . ": " . ($this->dryRun ? "would send " . $done['url'] : "OK " . $done['http_code']));
+                }
             }
             catch( SCMApplyException $e )
             {
@@ -254,7 +268,11 @@ class SCMAPPLY extends UTIL
             if( $this->dryRun )
                 $id = "{id of " . http_build_query($req['lookup']) . "}";
             else
+            {
                 $id = $this->lookupId($req);
+                if( $id === null )
+                    return array('skipped_missing' => TRUE, 'url' => $path, 'message' => "not in SCM: " . http_build_query($req['lookup']));
+            }
             $path = preg_replace('#/\{id\}$#', '/' . $id, $path);
         }
 
@@ -275,10 +293,20 @@ class SCMAPPLY extends UTIL
             $merged = $live['response'];
             if( !is_array($merged) )
                 throw new SCMApplyException("GET " . $url . " returned no object", $live);
+            $lists = $req['merge_lists'] ?? array();
             foreach( $body as $k => $v )
             {
                 if( $v === null )
                     unset($merged[$k]);
+                elseif( ($lists[$k] ?? null) === 'keep-others' && is_array($v) )
+                {
+                    // the listed entries on top in this order, entries the live object has besides them below
+                    $others = array();
+                    foreach( (array)($merged[$k] ?? array()) as $e )
+                        if( !in_array($e, $v, TRUE) )
+                            $others[] = $e;
+                    $merged[$k] = array_merge($v, $others);
+                }
                 else
                     $merged[$k] = $v;
             }
@@ -308,6 +336,8 @@ class SCMAPPLY extends UTIL
         foreach( $data as $obj )
             if( ($obj['name'] ?? null) === $req['lookup']['name'] && isset($obj['id']) )
                 return $obj['id'];
+        if( !empty($req['skip_if_missing']) )
+            return null;
         throw new SCMApplyException("object not found: GET " . $url, $res);
     }
 

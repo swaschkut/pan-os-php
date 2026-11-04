@@ -76,6 +76,7 @@ class SCMChangeGenerator
 
     /** order of POST / PUT (referenced objects first); DELETE runs in reverse order */
     static public $resourceRank = array(
+        'snippets' => 1, 'folders' => 2, 'devices' => 200,
         'tags' => 10, 'addresses' => 20, 'address-groups' => 30, 'services' => 40, 'service-groups' => 50,
         'schedules' => 55, 'log-forwarding-profiles' => 60, 'url-categories' => 65,
         'anti-spyware-profiles' => 70, 'vulnerability-protection-profiles' => 70, 'wildfire-anti-virus-profiles' => 70,
@@ -108,6 +109,10 @@ class SCMChangeGenerator
     public $warnings = array();
     /** resource => name => TRUE, every object of file2 in any folder / snippet / device */
     public $existing = array();
+    /** folder => parent folder in file2 */
+    private $folderParents = array();
+    /** snippet name => TRUE, snippets of file2 */
+    private $existingSnippets = array();
     public $file1 = null;
     public $file2 = null;
 
@@ -143,6 +148,11 @@ class SCMChangeGenerator
         $origScopes = $this->collectScopes($orig);
         $newScopes = $this->collectScopes($new);
 
+        $this->folderParents = array();
+        foreach( $newScopes as $scope )
+            if( $scope['scope_type'] == 'folder' )
+                $this->folderParents[$scope['scope']] = $scope['parent'];
+
         $origObjects = array();
         $newObjects = array();
         foreach( $origScopes as $key => $scope )
@@ -153,6 +163,10 @@ class SCMChangeGenerator
         $this->existing = array();
         foreach( $newObjects as $obj )
             $this->existing[$obj['resource']][$obj['name']] = TRUE;
+        $this->existingSnippets = array();
+        foreach( $newScopes as $scope )
+            if( $scope['scope_type'] == 'snippet' )
+                $this->existingSnippets[$scope['scope']] = TRUE;
 
         // an object is the same object when its SCM id matches (renamed objects), otherwise when its name matches
         $origByUuid = array();
@@ -184,15 +198,9 @@ class SCMChangeGenerator
         }
 
         foreach( $newScopes as $key => $scope )
-        {
             if( isset($origScopes[$key]) )
                 $this->checkUntranslatedChanges($origScopes[$key], $scope);
-            else
-                $this->warnings[] = "new " . $scope['scope_type'] . " '" . $scope['scope'] . "': creating folders, snippets or devices is not supported, its objects are sent";
-        }
-        foreach( $origScopes as $key => $scope )
-            if( !isset($newScopes[$key]) )
-                $this->warnings[] = $scope['scope_type'] . " '" . $scope['scope'] . "' was removed: deleting folders, snippets or devices is not supported";
+        $this->addScopeRequests($origScopes, $newScopes);
 
         $this->sortRequests();
         $this->resolveDependencies();
@@ -255,8 +263,23 @@ class SCMChangeGenerator
             {
                 /** @var DOMElement $node */
                 $name = $node->getAttribute('name');
+                $parent = null;
+                $snippets = array();
+                foreach( $node->childNodes as $c )
+                {
+                    if( $c->nodeType != XML_ELEMENT_NODE )
+                        continue;
+                    if( $c->tagName == 'parent' )
+                        $parent = trim($c->textContent);
+                    elseif( $c->tagName == 'snippets' )
+                        foreach( $c->childNodes as $m )
+                            if( $m->nodeType == XML_ELEMENT_NODE && $m->textContent !== 'predefined-snippet' && !in_array($m->textContent, $snippets) )
+                                $snippets[] = $m->textContent;
+                }
                 $scopes[$scopeType . "|" . $name] = array(
-                    'scope_type' => $scopeType, 'scope' => $name, 'node' => $node, 'xpath' => $this->xpathOf($node));
+                    'scope_type' => $scopeType, 'scope' => $name, 'node' => $node, 'xpath' => $this->xpathOf($node),
+                    'parent' => $parent, 'snippets' => $snippets,
+                    'uuid' => $node->hasAttribute('uuid') ? $node->getAttribute('uuid') : null);
             }
         }
         return $scopes;
@@ -265,6 +288,7 @@ class SCMChangeGenerator
     private function collectObjects(array $scope)
     {
         $objects = array();
+        $order = 0;
         $xp = new DOMXPath($scope['node']->ownerDocument);
         foreach( self::$resourcePaths as $rel => $resource )
         {
@@ -287,6 +311,7 @@ class SCMChangeGenerator
                     'uuid' => $node->hasAttribute('uuid') ? $node->getAttribute('uuid') : null,
                     'node' => $node,
                     'xpath' => $this->xpathOf($node),
+                    'order' => $order++,
                 );
             }
         }
@@ -364,18 +389,9 @@ class SCMChangeGenerator
         {
             if( $c->nodeType != XML_ELEMENT_NODE )
                 continue;
-            if( $c->tagName == 'snippets' )
-            {
-                // attached snippets as a set; pan-os-php attaches predefined-snippet itself when it loads the XML
-                $names = array();
-                foreach( $c->childNodes as $m )
-                    if( $m->nodeType == XML_ELEMENT_NODE && $m->textContent !== 'predefined-snippet' )
-                        $names[$m->textContent] = TRUE;
-                ksort($names);
-                if( !empty($names) )
-                    $map['snippets'] = implode(",", array_keys($names));
+            // attached snippets and the parent folder are translated by addScopeRequests()
+            if( $c->tagName == 'snippets' || $c->tagName == 'parent' )
                 continue;
-            }
             $map[$c->tagName] = ($map[$c->tagName] ?? "") . $this->canonical($c);
         }
         return $map;
@@ -413,6 +429,7 @@ class SCMChangeGenerator
             'depends_on' => array(),
             'review' => FALSE,
             'warnings' => array(),
+            '_order' => $obj['order'] ?? 0,
         );
     }
 
@@ -506,6 +523,142 @@ class SCMChangeGenerator
         $this->requests[] = $r;
     }
 
+    // ------------------------------------------------------------------------------------------------
+    // folders / snippets / devices (/config/setup/v1)
+    // ------------------------------------------------------------------------------------------------
+
+    /**
+     *  new snippet  -> POST snippets {name}
+     *  new folder   -> POST folders {name, parent, snippets}
+     *  new device   -> PUT devices (the firewall must be onboarded): folder and snippets; skipped if it is not in SCM
+     *  changed snippet list or parent of a folder / device -> PUT with "merge_lists": the listed snippets go on top
+     *  in this order, snippets the live object has besides them stay below (so predefined snippets are kept)
+     */
+    private function addScopeRequests(array $origScopes, array $newScopes)
+    {
+        $resources = array('folder' => 'folders', 'snippet' => 'snippets', 'device' => 'devices');
+
+        foreach( $newScopes as $key => $scope )
+        {
+            $resource = $resources[$scope['scope_type']];
+            $orig = $origScopes[$key] ?? null;
+
+            if( $orig === null )
+            {
+                if( $scope['scope_type'] == 'snippet' )
+                {
+                    $r = $this->newSetupRequest('POST', $resource, $scope);
+                    $r['body'] = array('name' => $scope['scope']);
+                }
+                elseif( $scope['scope_type'] == 'folder' )
+                {
+                    $r = $this->newSetupRequest('POST', $resource, $scope);
+                    $r['body'] = array('name' => $scope['scope'], 'parent' => $scope['parent']);
+                    if( !empty($scope['snippets']) )
+                        $r['body']['snippets'] = $scope['snippets'];
+                    if( $scope['parent'] === null )
+                    {
+                        $r['review'] = TRUE;
+                        $r['warnings'][] = "folder has no parent in the XML";
+                    }
+                }
+                else
+                {
+                    $r = $this->newSetupRequest('PUT', $resource, $scope);
+                    $r['merge'] = TRUE;
+                    $r['merge_lists'] = array('snippets' => 'keep-others');
+                    $r['skip_if_missing'] = TRUE;
+                    $r['body'] = array('folder' => $scope['parent'], 'snippets' => $scope['snippets']);
+                    $r['before'] = new stdClass();
+                    $r['warnings'][] = "devices cannot be created through the API: the firewall must be onboarded in SCM, otherwise this request is skipped";
+                }
+                $this->requests[] = $r;
+                continue;
+            }
+
+            if( $scope['scope_type'] == 'snippet' )
+                continue;
+
+            $changed = array();
+            $before = array();
+            if( $orig['snippets'] !== $scope['snippets'] )
+            {
+                $changed['snippets'] = $scope['snippets'];
+                $before['snippets'] = $orig['snippets'];
+                $detached = array_diff($orig['snippets'], $scope['snippets']);
+                if( !empty($detached) )
+                    $this->warnings[] = $scope['scope_type'] . " '" . $scope['scope'] . "': detaching snippets (" . implode(", ", $detached) . ") is not translated";
+            }
+            if( $orig['parent'] !== $scope['parent'] )
+            {
+                $field = $scope['scope_type'] == 'folder' ? 'parent' : 'folder';
+                $changed[$field] = $scope['parent'];
+                $before[$field] = $orig['parent'];
+            }
+            if( empty($changed) )
+                continue;
+
+            $r = $this->newSetupRequest('PUT', $resource, $scope);
+            $r['merge'] = TRUE;
+            $r['merge_lists'] = array('snippets' => 'keep-others');
+            $r['body'] = $changed;
+            $r['before'] = $before;
+            if( $scope['scope_type'] == 'device' )
+                $r['skip_if_missing'] = TRUE;
+            $this->requests[] = $r;
+        }
+
+        foreach( $origScopes as $key => $scope )
+            if( !isset($newScopes[$key]) )
+                $this->warnings[] = $scope['scope_type'] . " '" . $scope['scope'] . "' was removed: deleting folders, snippets or devices is not translated";
+    }
+
+    private function newSetupRequest($method, $resource, array $scope)
+    {
+        $res = $this->schema[$resource];
+        $id = $method == 'POST' ? null : $scope['uuid'];
+        return array(
+            'seq' => 0,
+            'method' => $method,
+            'path' => $method == 'POST' ? $res['path'] : $res['path'] . "/" . ($id ?? "{id}"),
+            'id' => $id,
+            'query' => new stdClass(),
+            'merge' => FALSE,
+            'body' => new stdClass(),
+            'before' => null,
+            'object' => array(
+                'resource' => $resource,
+                'name' => $scope['scope'],
+                'scope_type' => 'setup',
+                'scope' => $scope['parent'],
+                'position' => null,
+                'xpath' => $scope['xpath'],
+            ),
+            'lookup' => array('name' => $scope['scope']),
+            'depends_on' => array(),
+            'review' => FALSE,
+            'warnings' => array(),
+            '_depth' => $this->scopeDepth($scope),
+        );
+    }
+
+    /** folders below their parents: depth in the folder tree of file2 */
+    private function scopeDepth(array $scope)
+    {
+        if( $scope['scope_type'] != 'folder' )
+            return 0;
+        $depth = 0;
+        $parent = $scope['parent'];
+        $seen = array();
+        while( $parent !== null && $parent !== "" && !isset($seen[$parent]) && isset($this->folderParents[$parent]) )
+        {
+            $seen[$parent] = TRUE;
+            $depth++;
+            $parent = $this->folderParents[$parent];
+        }
+        return $depth;
+    }
+
     private function addDroppedWarnings(array &$r, array $dropped, $review)
     {
         if( empty($dropped) )
@@ -537,72 +690,122 @@ class SCMChangeGenerator
             $r = ($x['method'] == 'DELETE') ? ($ry <=> $rx) : ($rx <=> $ry);
             if( $r !== 0 )
                 return $r;
-            return strcmp($x['object']['scope'] . "|" . $x['object']['name'], $y['object']['scope'] . "|" . $y['object']['name']);
+            $d = ($x['_depth'] ?? 0) <=> ($y['_depth'] ?? 0);
+            if( $d !== 0 )
+                return $d;
+            $sc = strcmp($x['object']['scope_type'] . "|" . $x['object']['scope'], $y['object']['scope_type'] . "|" . $y['object']['scope']);
+            if( $sc !== 0 )
+                return $sc;
+            // rules keep their order: SCM appends a new rule at the end of its rulebase
+            return ($x['_order'] ?? 0) <=> ($y['_order'] ?? 0);
         });
         foreach( $this->requests as $i => &$req )
+        {
             $req['seq'] = $i + 1;
+            unset($req['_depth'], $req['_order']);
+        }
     }
 
     /**
-     * A request that names an object created in this change set depends on that POST.
-     * If the POST needs review, the dependent request needs it too: it would fail or reference nothing.
+     * depends_on: a request depends on the POST that creates
+     *  - the folder / snippet it is in (objects), its parent folder (folders),
+     *  - the folder and snippets it is attached to (folders, devices),
+     *  - an object it names (profile groups, rules, zones, url profiles).
+     * A reference to an object that is neither created nor in the configuration marks the request for review.
+     * A request that depends on a request for review needs review too: it would fail or reference nothing.
      */
     private function resolveDependencies()
     {
         $created = array();
+        $createdScope = array();
         foreach( $this->requests as $req )
             if( $req['method'] == 'POST' )
+            {
                 $created[$req['object']['resource'] . "|" . $req['object']['name']][] = $req['seq'];
+                if( $req['object']['resource'] == 'folders' )
+                    $createdScope['folder|' . $req['object']['name']] = $req['seq'];
+                elseif( $req['object']['resource'] == 'snippets' )
+                    $createdScope['snippet|' . $req['object']['name']] = $req['seq'];
+            }
 
+        foreach( $this->requests as &$req )
+        {
+            $body = is_array($req['body']) ? $req['body'] : array();
+            $deps = array();
+            $res = $req['object']['resource'];
+
+            if( $req['object']['scope_type'] != 'setup' )
+            {
+                $k = $req['object']['scope_type'] . "|" . $req['object']['scope'];
+                if( isset($createdScope[$k]) )
+                    $deps[] = $createdScope[$k];
+            }
+            if( $res == 'folders' && isset($body['parent']) && isset($createdScope['folder|' . $body['parent']]) )
+                $deps[] = $createdScope['folder|' . $body['parent']];
+            if( $res == 'devices' && isset($body['folder']) && isset($createdScope['folder|' . $body['folder']]) )
+                $deps[] = $createdScope['folder|' . $body['folder']];
+            if( in_array($res, array('folders', 'devices')) && isset($body['snippets']) )
+                foreach( $body['snippets'] as $sn )
+                {
+                    if( isset($createdScope['snippet|' . $sn]) )
+                        $deps[] = $createdScope['snippet|' . $sn];
+                    elseif( !isset($this->existingSnippets[$sn]) )
+                        $this->markReview($req, "attaches snippet '" . $sn . "', which is not in the configuration");
+                }
+
+            if( $req['method'] != 'DELETE' && isset(self::$references[$res]) )
+            {
+                foreach( self::$references[$res] as $field => $targetResource )
+                {
+                    foreach( $this->namesAt($body, $field) as $refName )
+                    {
+                        $k = $targetResource . "|" . $refName;
+                        if( isset($created[$k]) )
+                        {
+                            foreach( $created[$k] as $seq )
+                                $deps[] = $seq;
+                        }
+                        elseif( !isset($this->existing[$targetResource][$refName]) && $this->isChangedReference($req, $field, $refName) )
+                            $this->markReview($req, "references " . $targetResource . " '" . $refName . "', which is not in the configuration");
+                    }
+                }
+            }
+
+            $deps = array_values(array_unique(array_filter($deps, function ($s) use ($req) { return $s != $req['seq']; })));
+            sort($deps);
+            $req['depends_on'] = $deps;
+        }
+        unset($req);
+
+        // pass "review" on to every request that depends on one (requests are in seq order: one pass per level)
         $changed = TRUE;
         while( $changed )
         {
             $changed = FALSE;
             foreach( $this->requests as &$req )
             {
-                if( $req['method'] == 'DELETE' || !isset(self::$references[$req['object']['resource']]) )
+                if( $req['review'] )
                     continue;
-                $body = is_array($req['body']) ? $req['body'] : array();
-                foreach( self::$references[$req['object']['resource']] as $field => $targetResource )
+                foreach( $req['depends_on'] as $seq )
                 {
-                    foreach( $this->namesAt($body, $field) as $refName )
+                    $dep = $this->requests[$seq - 1];
+                    if( $dep['review'] )
                     {
-                        $k = $targetResource . "|" . $refName;
-                        if( !isset($created[$k]) )
-                        {
-                            if( !isset($this->existing[$targetResource][$refName]) && $this->isChangedReference($req, $field, $refName) )
-                            {
-                                $msg = "references " . $targetResource . " '" . $refName . "', which is not in the configuration";
-                                if( !in_array($msg, $req['warnings']) )
-                                {
-                                    $req['warnings'][] = $msg;
-                                    if( !$req['review'] )
-                                    {
-                                        $req['review'] = TRUE;
-                                        $changed = TRUE;
-                                    }
-                                }
-                            }
-                            continue;
-                        }
-                        foreach( $created[$k] as $seq )
-                        {
-                            if( !in_array($seq, $req['depends_on']) && $seq != $req['seq'] )
-                                $req['depends_on'][] = $seq;
-                            $dep = $this->requests[$seq - 1];
-                            if( $dep['review'] && !$req['review'] )
-                            {
-                                $req['review'] = TRUE;
-                                $req['warnings'][] = "depends on request " . $seq . " (" . $targetResource . " '" . $refName . "'), which needs review";
-                                $changed = TRUE;
-                            }
-                        }
+                        $this->markReview($req, "depends on request " . $seq . " (" . $dep['object']['resource'] . " '" . $dep['object']['name'] . "'), which needs review");
+                        $changed = TRUE;
+                        break;
                     }
                 }
-                sort($req['depends_on']);
             }
             unset($req);
         }
+    }
+
+    private function markReview(array &$req, $msg)
+    {
+        $req['review'] = TRUE;
+        if( !in_array($msg, $req['warnings']) )
+            $req['warnings'][] = $msg;
     }
 
     /**

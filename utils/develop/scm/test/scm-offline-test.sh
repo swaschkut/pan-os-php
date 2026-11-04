@@ -8,6 +8,7 @@
 # 2. run the visibility playbook on it with outputformatscmjson=
 # 3. single util changes (zone, rule, rename, delete, snippet) and type=scm-changes
 # 4. type=scm-apply dry-run, then against a local SCM mock server (scm-mock-server.php)
+# 5. type=scm-import of a Panorama (tests/input) and a firewall configuration (appid-toolbox), sent to the mock
 # Each step checks its result; the script exits non-zero on the first failed check.
 
 set -u
@@ -68,14 +69,7 @@ echo "4) scm-apply"
 (cd "$REPO" && $P type=scm-apply changes="$S" dry-run > "$W/apply-dry.log" 2>&1)
 check "dry-run: 6 ok" "grep -q 'dry-run: ok 6, failed 0' '$W/apply-dry.log'"
 
-python3 - "$HERE/scm-fixtures.json" "$W/mock-state.json" <<'EOF'
-import json, sys
-fx = json.load(open(sys.argv[1])); st = {}
-for key, objs in fx['res'].items():
-    for o in objs:
-        st.setdefault(key.split('|')[0], {})[o['id']] = o
-json.dump(st, open(sys.argv[2], 'w'))
-EOF
+python3 "$HERE/scm-mock-state.py" "$HERE/scm-fixtures.json" "$W/mock-state.json" 007100000290 0111222333
 SCM_MOCK_STATE="$W/mock-state.json" SCM_MOCK_LOG="$W/mock-requests.log" php -S 127.0.0.1:$PORT "$HERE/scm-mock-server.php" > "$W/mock-server.log" 2>&1 &
 SRV=$!
 trap 'kill $SRV 2>/dev/null' EXIT
@@ -93,6 +87,31 @@ check "address deleted on the server" "[ \"\$(jq_ $W/mock-state.json \"'a-2' in 
 check "visibility: review requests skipped, rest ok" "grep -qE 'ok [0-9]+, failed 0, skipped \(review\) [1-9]' '$W/apply-visibility.log'"
 (cd "$REPO" && HOME="$W/home" $P $A changes="$C" > "$W/apply-again.log" 2>&1)
 check "second run stops at the first 409" "grep -q 'HTTP 409' '$W/apply-again.log' && grep -q 'stopped; resume with from=1' '$W/apply-again.log'"
+
+echo "5) import Panorama and firewall"
+(cd "$REPO" && $P type=scm-import in=tests/input/panorama-10.0-manageddevice-nodg.xml scm="$W/scm.xml" out="$W/pano-import.xml" changes="$W/pano-import.json" > "$W/pano-import.log" 2>&1)
+I="$W/pano-import.json"
+check "Panorama: 5 folders, 15 snippets, 8 firewalls" "grep -q '\"folders\":5,\"snippets\":15,\"devices\":8' '$W/pano-import.log'"
+check "DG hierarchy: folder 'DE-Berlin Office' below 'Perimeter-FWs'" "[ \"\$(jq_ $I \"[r['body']['parent'] for r in d['requests'] if r['object']['resource']=='folders' and r['method']=='POST' and r['object']['name']=='DE-Berlin Office'][0]\")\" = Perimeter-FWs ]"
+check "parent folder created first" "[ \"\$(jq_ $I \"[r['depends_on'] for r in d['requests'] if r['object']['name']=='DE-Berlin Office' and r['method']=='POST'][0] == [r['seq'] for r in d['requests'] if r['object']['name']=='Perimeter-FWs' and r['method']=='POST']\")\" = True ]"
+check "snippets, then folders, then objects" "[ \"\$(jq_ $I \"''.join({'snippets':'s','folders':'f'}.get(r['object']['resource'],'o') for r in d['requests'] if r['method']=='POST')\" | grep -cE '^s+f+o+$')\" = 1 ]"
+check "firewall: stack snippet on top, then its templates" "[ \"\$(jq_ $I \"[r['body']['snippets'] for r in d['requests'] if r['object']['name']=='007100000290'][0]\")\" = \"['Paris_Datacenter_Stack', 'Datacenter Master Template', 'Paris Datacenter']\" ]"
+check "shared snippet attached to All" "[ \"\$(jq_ $I \"[r['body'] for r in d['requests'] if r['object']['resource']=='folders' and r['object']['name']=='All'][0]\")\" = \"{'snippets': ['Panorama-Shared']}\" ]"
+(cd "$REPO" && HOME="$W/home" $P $A changes="$I" continue-on-error > "$W/apply-pano.log" 2>&1)
+check "Panorama import sent: nothing failed, 7 firewalls not onboarded" "grep -qE 'failed 0, .*not in SCM 7' '$W/apply-pano.log'"
+check "All keeps its predefined snippet below the new one" "[ \"\$(jq_ $W/mock-state.json \"[f['snippets'] for f in d['folders'].values() if f['name']=='All'][0]\")\" = \"['Panorama-Shared', 'predefined-snippet']\" ]"
+check "onboarded firewall moved to its folder with its snippets" "[ \"\$(jq_ $W/mock-state.json \"[(x['folder'], len(x['snippets'])) for x in d['devices'].values() if x['name']=='007100000290'][0]\")\" = \"('testDG', 3)\" ]"
+
+(cd "$REPO" && $P type=scm-import in=appid-toolbox/tests/orig/stage00.xml target=folder serial=0111222333 scm="$W/scm.xml" out="$W/fw-import.xml" changes="$W/fw-import.json" > "$W/fw-import.log" 2>&1)
+F="$W/fw-import.json"
+check "firewall: folder PA-200 below the firewall folder" "[ \"\$(jq_ $F \"[r['body']['parent'] for r in d['requests'] if r['object']['resource']=='folders'][0]\")\" = ngfw-shared ]"
+check "firewall: zone protection profile translated (no review)" "[ \"\$(jq_ $F \"[r['review'] for r in d['requests'] if r['object']['resource']=='zone-protection-profiles'][0]\")\" = False ]"
+check "firewall: rules keep their order" "[ \"\$(jq_ $F \"[r['object']['name'] for r in d['requests'] if r['object']['resource']=='security-rules'][:2]\")\" = \"\$(python3 -c \"import xml.etree.ElementTree as E; r=E.parse('$REPO/appid-toolbox/tests/orig/stage00.xml').getroot(); print([e.get('name') for e in r.findall('./devices/entry/vsys/entry/rulebase/security/rules/entry')][:2])\")\" ]"
+(cd "$REPO" && HOME="$W/home" $P $A changes="$F" > "$W/apply-fw.log" 2>&1)
+check "firewall import sent: nothing failed" "grep -qE 'ok [0-9]+, failed 0' '$W/apply-fw.log'"
+check "firewall attached to folder PA-200" "[ \"\$(jq_ $W/mock-state.json \"[x['folder'] for x in d['devices'].values() if x['name']=='0111222333'][0]\")\" = PA-200 ]"
+(cd "$REPO" && $P type=scm-import in=appid-toolbox/tests/orig/stage00.xml target=snippet name=PA-200-snippet scm="$W/scm.xml" out="$W/fw-snippet.xml" changes="$W/fw-snippet.json" > "$W/fw-snippet.log" 2>&1)
+check "firewall as snippet: objects in snippet PA-200-snippet" "[ \"\$(jq_ $W/fw-snippet.json \"sorted(set(r['body'].get('snippet','-') for r in d['requests'] if r['method']=='POST' and r['object']['scope_type']!='setup'))\")\" = \"['PA-200-snippet']\" ]"
 
 echo
 if [ $FAILED = 0 ]; then echo "all checks passed"; else echo "some checks FAILED (logs in $W)"; fi

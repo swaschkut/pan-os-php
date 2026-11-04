@@ -21,6 +21,7 @@ FILES = {
     'objects': 'objects/objects_R3.yaml',
     'security': 'security/security-services.yaml',
     'network': 'network/network-services.yaml',
+    'setup': 'setup/config-setup_R3.yaml',
 }
 WANT = {
     'objects': ['addresses', 'address-groups', 'services', 'service-groups', 'tags', 'schedules',
@@ -29,6 +30,8 @@ WANT = {
                  'vulnerability-protection-profiles', 'url-access-profiles', 'file-blocking-profiles',
                  'dns-security-profiles', 'url-categories'],
     'network': ['zones', 'zone-protection-profiles'],
+    # folders and snippets are created (POST), devices only updated (PUT: folder, snippets)
+    'setup': ['folders', 'snippets', 'devices'],
 }
 
 
@@ -60,15 +63,20 @@ def conv(doc, s, depth=0):
         for part in s.get(comb, []):
             part_r = res(doc, part)
             c = conv(doc, part_r, depth + 1)
-            if c.get('type') == 'object' and c.get('properties'):
+            title = part_r.get('title')
+            # a variant without type of its own that only groups alternatives (address_type, container_type) is merged
+            wrapper = 'type' not in part_r and 'properties' not in part_r
+            if title and objlike and comb != 'allOf' and not wrapper and title not in c.get('properties', {}):
+                # the specs describe alternatives (zone types layer3 / tap / ..., flood red / syn_cookies, ...)
+                # as oneOf variants named by 'title': the variant is the value of a field of that name
+                props.setdefault(title, c)
+            elif c.get('type') == 'object' and c.get('properties'):
+                # a variant that holds the field itself (e.g. title 'folder' with property 'folder')
                 objlike = True
                 for n, p in c['properties'].items():
                     props.setdefault(n, p)
                 if comb == 'allOf':
                     req += c.get('required', [])
-            elif 'title' in part_r and objlike:
-                # the specs describe e.g. zone types (layer3, tap, ...) as oneOf variants named by 'title'
-                props.setdefault(part_r['title'], c)
             elif not objlike:
                 scalar = c
 
@@ -99,12 +107,19 @@ def main(pandev, out):
         doc = yaml.safe_load(open(base_dir + fname))
         base = doc['servers'][0]['url'].replace('https://api.strata.paloaltonetworks.com', '')
         for r in WANT[group]:
-            post = doc['paths']['/' + r]['post']
-            body = res(doc, post['requestBody'])
+            ops = doc['paths'].get('/' + r, {})
+            if 'post' in ops:
+                op = ops['post']
+                methods = ['POST', 'PUT', 'DELETE']
+            else:
+                op = doc['paths']['/' + r + '/{id}']['put']
+                methods = ['PUT']
+            body = res(doc, op['requestBody'])
             sch = res(doc, body['content']['application/json']['schema'])
             api[r] = {
                 'path': base + '/' + r,
-                'post_query': [res(doc, p).get('name') for p in post.get('parameters', [])],
+                'methods': methods,
+                'post_query': [res(doc, p).get('name') for p in op.get('parameters', [])] if 'post' in ops else [],
                 'schema': conv(doc, sch),
             }
 

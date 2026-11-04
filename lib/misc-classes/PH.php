@@ -1716,6 +1716,7 @@ class PH
         "diff",
         "scm-changes",
         "scm-apply",
+        "scm-import",
         "upload",
         "xml-issue",
         "appid-enabler",
@@ -1850,6 +1851,8 @@ class PH
             $util = new SCMCHANGES($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "scm-apply" )
             $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-import" )
+            $util = new SCMIMPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "upload" )
             $util = new UPLOAD($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "xml-issue" )

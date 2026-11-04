@@ -2,6 +2,11 @@
  "api_base": "https://api.strata.paloaltonetworks.com",
  "resources": {
   "address-groups": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/address-groups",
    "post_query": [],
    "schema": {
@@ -57,6 +62,11 @@
    }
   },
   "addresses": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/addresses",
    "post_query": [],
    "schema": {
@@ -107,6 +117,11 @@
    }
   },
   "anti-spyware-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/anti-spyware-profiles",
    "post_query": [],
    "schema": {
@@ -383,7 +398,45 @@
     "type": "object"
    }
   },
+  "devices": {
+   "methods": [
+    "PUT"
+   ],
+   "path": "/config/setup/v1/devices",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "display_name": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "labels": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "snippets": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "type": "object"
+   }
+  },
   "dns-security-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/dns-security-profiles",
    "post_query": [],
    "schema": {
@@ -535,6 +588,11 @@
    }
   },
   "file-blocking-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/file-blocking-profiles",
    "post_query": [],
    "schema": {
@@ -800,7 +858,541 @@
     "type": "object"
    }
   },
+  "folders": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
+   "path": "/config/setup/v1/folders",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "children": {
+      "items": {
+       "properties": {
+        "children": {
+         "items": {
+          "properties": {
+           "children": {
+            "items": {
+             "properties": {
+              "children": {
+               "items": {
+                "properties": {
+                 "children": {
+                  "items": {
+                   "properties": {
+                    "children": {
+                     "items": {
+                      "properties": {
+                       "children": {
+                        "items": {
+                         "properties": {
+                          "children": {
+                           "type": "any"
+                          },
+                          "cluster_folder": {
+                           "type": "any"
+                          },
+                          "cluster_type": {
+                           "type": "any"
+                          },
+                          "description": {
+                           "type": "any"
+                          },
+                          "device_only": {
+                           "type": "any"
+                          },
+                          "display_name": {
+                           "type": "any"
+                          },
+                          "id": {
+                           "type": "any"
+                          },
+                          "labels": {
+                           "type": "any"
+                          },
+                          "model": {
+                           "type": "any"
+                          },
+                          "name": {
+                           "type": "any"
+                          },
+                          "parent": {
+                           "type": "any"
+                          },
+                          "serial_number": {
+                           "type": "any"
+                          },
+                          "snippets": {
+                           "type": "any"
+                          },
+                          "type": {
+                           "type": "any"
+                          }
+                         },
+                         "required": [
+                          "name",
+                          "parent"
+                         ],
+                         "type": "object"
+                        },
+                        "type": "array"
+                       },
+                       "cluster_folder": {
+                        "type": "boolean"
+                       },
+                       "cluster_type": {
+                        "enum": [
+                         "PA",
+                         "VM"
+                        ],
+                        "type": "string"
+                       },
+                       "description": {
+                        "type": "string"
+                       },
+                       "device_only": {
+                        "type": "boolean"
+                       },
+                       "display_name": {
+                        "type": "string"
+                       },
+                       "id": {
+                        "readOnly": true,
+                        "type": "string"
+                       },
+                       "labels": {
+                        "items": {
+                         "type": "string"
+                        },
+                        "type": "array"
+                       },
+                       "model": {
+                        "type": "string"
+                       },
+                       "name": {
+                        "type": "string"
+                       },
+                       "parent": {
+                        "type": "string"
+                       },
+                       "serial_number": {
+                        "type": "string"
+                       },
+                       "snippets": {
+                        "items": {
+                         "type": "string"
+                        },
+                        "type": "array"
+                       },
+                       "type": {
+                        "enum": [
+                         "container",
+                         "on-prem",
+                         "cloud"
+                        ],
+                        "type": "string"
+                       }
+                      },
+                      "required": [
+                       "name",
+                       "parent"
+                      ],
+                      "type": "object"
+                     },
+                     "type": "array"
+                    },
+                    "cluster_folder": {
+                     "type": "boolean"
+                    },
+                    "cluster_type": {
+                     "enum": [
+                      "PA",
+                      "VM"
+                     ],
+                     "type": "string"
+                    },
+                    "description": {
+                     "type": "string"
+                    },
+                    "device_only": {
+                     "type": "boolean"
+                    },
+                    "display_name": {
+                     "type": "string"
+                    },
+                    "id": {
+                     "readOnly": true,
+                     "type": "string"
+                    },
+                    "labels": {
+                     "items": {
+                      "type": "string"
+                     },
+                     "type": "array"
+                    },
+                    "model": {
+                     "type": "string"
+                    },
+                    "name": {
+                     "type": "string"
+                    },
+                    "parent": {
+                     "type": "string"
+                    },
+                    "serial_number": {
+                     "type": "string"
+                    },
+                    "snippets": {
+                     "items": {
+                      "type": "string"
+                     },
+                     "type": "array"
+                    },
+                    "type": {
+                     "enum": [
+                      "container",
+                      "on-prem",
+                      "cloud"
+                     ],
+                     "type": "string"
+                    }
+                   },
+                   "required": [
+                    "name",
+                    "parent"
+                   ],
+                   "type": "object"
+                  },
+                  "type": "array"
+                 },
+                 "cluster_folder": {
+                  "type": "boolean"
+                 },
+                 "cluster_type": {
+                  "enum": [
+                   "PA",
+                   "VM"
+                  ],
+                  "type": "string"
+                 },
+                 "description": {
+                  "type": "string"
+                 },
+                 "device_only": {
+                  "type": "boolean"
+                 },
+                 "display_name": {
+                  "type": "string"
+                 },
+                 "id": {
+                  "readOnly": true,
+                  "type": "string"
+                 },
+                 "labels": {
+                  "items": {
+                   "type": "string"
+                  },
+                  "type": "array"
+                 },
+                 "model": {
+                  "type": "string"
+                 },
+                 "name": {
+                  "type": "string"
+                 },
+                 "parent": {
+                  "type": "string"
+                 },
+                 "serial_number": {
+                  "type": "string"
+                 },
+                 "snippets": {
+                  "items": {
+                   "type": "string"
+                  },
+                  "type": "array"
+                 },
+                 "type": {
+                  "enum": [
+                   "container",
+                   "on-prem",
+                   "cloud"
+                  ],
+                  "type": "string"
+                 }
+                },
+                "required": [
+                 "name",
+                 "parent"
+                ],
+                "type": "object"
+               },
+               "type": "array"
+              },
+              "cluster_folder": {
+               "type": "boolean"
+              },
+              "cluster_type": {
+               "enum": [
+                "PA",
+                "VM"
+               ],
+               "type": "string"
+              },
+              "description": {
+               "type": "string"
+              },
+              "device_only": {
+               "type": "boolean"
+              },
+              "display_name": {
+               "type": "string"
+              },
+              "id": {
+               "readOnly": true,
+               "type": "string"
+              },
+              "labels": {
+               "items": {
+                "type": "string"
+               },
+               "type": "array"
+              },
+              "model": {
+               "type": "string"
+              },
+              "name": {
+               "type": "string"
+              },
+              "parent": {
+               "type": "string"
+              },
+              "serial_number": {
+               "type": "string"
+              },
+              "snippets": {
+               "items": {
+                "type": "string"
+               },
+               "type": "array"
+              },
+              "type": {
+               "enum": [
+                "container",
+                "on-prem",
+                "cloud"
+               ],
+               "type": "string"
+              }
+             },
+             "required": [
+              "name",
+              "parent"
+             ],
+             "type": "object"
+            },
+            "type": "array"
+           },
+           "cluster_folder": {
+            "type": "boolean"
+           },
+           "cluster_type": {
+            "enum": [
+             "PA",
+             "VM"
+            ],
+            "type": "string"
+           },
+           "description": {
+            "type": "string"
+           },
+           "device_only": {
+            "type": "boolean"
+           },
+           "display_name": {
+            "type": "string"
+           },
+           "id": {
+            "readOnly": true,
+            "type": "string"
+           },
+           "labels": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "model": {
+            "type": "string"
+           },
+           "name": {
+            "type": "string"
+           },
+           "parent": {
+            "type": "string"
+           },
+           "serial_number": {
+            "type": "string"
+           },
+           "snippets": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "type": {
+            "enum": [
+             "container",
+             "on-prem",
+             "cloud"
+            ],
+            "type": "string"
+           }
+          },
+          "required": [
+           "name",
+           "parent"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "cluster_folder": {
+         "type": "boolean"
+        },
+        "cluster_type": {
+         "enum": [
+          "PA",
+          "VM"
+         ],
+         "type": "string"
+        },
+        "description": {
+         "type": "string"
+        },
+        "device_only": {
+         "type": "boolean"
+        },
+        "display_name": {
+         "type": "string"
+        },
+        "id": {
+         "readOnly": true,
+         "type": "string"
+        },
+        "labels": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "model": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        },
+        "parent": {
+         "type": "string"
+        },
+        "serial_number": {
+         "type": "string"
+        },
+        "snippets": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "type": {
+         "enum": [
+          "container",
+          "on-prem",
+          "cloud"
+         ],
+         "type": "string"
+        }
+       },
+       "required": [
+        "name",
+        "parent"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "cluster_folder": {
+      "type": "boolean"
+     },
+     "cluster_type": {
+      "enum": [
+       "PA",
+       "VM"
+      ],
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "device_only": {
+      "type": "boolean"
+     },
+     "display_name": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "labels": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "model": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "parent": {
+      "type": "string"
+     },
+     "serial_number": {
+      "type": "string"
+     },
+     "snippets": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "type": {
+      "enum": [
+       "container",
+       "on-prem",
+       "cloud"
+      ],
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "parent"
+    ],
+    "type": "object"
+   }
+  },
   "log-forwarding-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/log-forwarding-profiles",
    "post_query": [],
    "schema": {
@@ -895,6 +1487,11 @@
    }
   },
   "profile-groups": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/profile-groups",
    "post_query": [],
    "schema": {
@@ -977,6 +1574,11 @@
    }
   },
   "schedules": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/schedules",
    "post_query": [],
    "schema": {
@@ -1076,6 +1678,11 @@
    }
   },
   "security-rules": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/security-rules",
    "post_query": [
     "position"
@@ -1500,6 +2107,11 @@
    }
   },
   "service-groups": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/service-groups",
    "post_query": [],
    "schema": {
@@ -1542,6 +2154,11 @@
    }
   },
   "services": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/services",
    "post_query": [],
    "schema": {
@@ -1633,7 +2250,55 @@
     "type": "object"
    }
   },
+  "snippets": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
+   "path": "/config/setup/v1/snippets",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "labels": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "type": {
+      "enum": [
+       "predefined",
+       "custom",
+       "readonly"
+      ],
+      "readOnly": true,
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "type": "object"
+   }
+  },
   "tags": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/objects/v1/tags",
    "post_query": [],
    "schema": {
@@ -1711,6 +2376,11 @@
    }
   },
   "url-access-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/url-access-profiles",
    "post_query": [],
    "schema": {
@@ -1851,6 +2521,11 @@
    }
   },
   "url-categories": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/url-categories",
    "post_query": [],
    "schema": {
@@ -1895,6 +2570,11 @@
    }
   },
   "vulnerability-protection-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/vulnerability-protection-profiles",
    "post_query": [],
    "schema": {
@@ -2141,6 +2821,11 @@
    }
   },
   "wildfire-anti-virus-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/security/v1/wildfire-anti-virus-profiles",
    "post_query": [],
    "schema": {
@@ -2244,6 +2929,11 @@
    }
   },
   "zone-protection-profiles": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/network/v1/zone-protection-profiles",
    "post_query": [],
    "schema": {
@@ -2377,17 +3067,46 @@
        },
        "tcp_syn": {
         "properties": {
-         "activate_rate": {
-          "type": "integer"
-         },
-         "alarm_rate": {
-          "type": "integer"
-         },
          "enable": {
           "type": "boolean"
          },
-         "maximal_rate": {
-          "type": "integer"
+         "red": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
+         },
+         "syn_cookies": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
          }
         },
         "type": "object"
@@ -2626,15 +3345,24 @@
            "properties": {},
            "type": "object"
           },
-          "duration": {
-           "type": "integer"
-          },
-          "track_by": {
-           "enum": [
-            "source-and-destination",
-            "source"
+          "block_ip": {
+           "properties": {
+            "duration": {
+             "type": "integer"
+            },
+            "track_by": {
+             "enum": [
+              "source-and-destination",
+              "source"
+             ],
+             "type": "string"
+            }
+           },
+           "required": [
+            "duration",
+            "track_by"
            ],
-           "type": "string"
+           "type": "object"
           }
          },
          "type": "object"
@@ -2735,6 +3463,11 @@
    }
   },
   "zones": {
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
    "path": "/config/network/v1/zones",
    "post_query": [],
    "schema": {
@@ -2851,5 +3584,5 @@
    }
   }
  },
- "source": "github.com/PaloAltoNetworks/pan.dev @32260be 2026-11-03 openapi-specs/scm/config/ngfw: objects/objects_R3.yaml, security/security-services.yaml, network/network-services.yaml"
+ "source": "github.com/PaloAltoNetworks/pan.dev @32260be 2026-11-03 openapi-specs/scm/config/ngfw: objects/objects_R3.yaml, security/security-services.yaml, network/network-services.yaml, setup/config-setup_R3.yaml"
 }

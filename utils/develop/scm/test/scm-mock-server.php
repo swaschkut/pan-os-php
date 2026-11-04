@@ -5,7 +5,8 @@
  *
  * state.json: {"<resource>": {"<id>": {object}, ...}, ...}; it is updated by POST / PUT / DELETE.
  * Checks like SCM: bearer token, JSON content type, exactly one of folder / snippet / device,
- * id not writable, 409 for a name that exists in the same location, profile-group references.
+ * the folder / snippet must exist, id not writable, 409 for a name that exists in the same location,
+ * profile-group references; setup: folder parent and attached snippets must exist, devices cannot be created.
  */
 $STATE = getenv('SCM_MOCK_STATE');
 $LOG = getenv('SCM_MOCK_LOG') ?: '/dev/null';
@@ -33,10 +34,12 @@ if( ($_SERVER['HTTP_AUTHORIZATION'] ?? '') !== 'Bearer mock-token' )
     err(401, 'missing or wrong token');
 
 $st = json_decode(file_get_contents($STATE), TRUE);
-if( !preg_match('#^/config/(objects|security|network)/v1/([a-z-]+)(?:/([^/]+))?$#', $path, $m) )
+if( !preg_match('#^/config/(objects|security|network|setup)/v1/([a-z-]+)(?:/([^/]+))?$#', $path, $m) )
     err(404, 'unknown path ' . $path);
 $res = $m[2];
 $id = $m[3] ?? null;
+$setup = $m[1] == 'setup';
+$exists = function ($res, $name) use (&$st) { foreach( $st[$res] ?? array() as $o ) if( $o['name'] === $name ) return TRUE; return FALSE; };
 
 $scopeOf = function ($o) { foreach( array('folder', 'snippet', 'device') as $s ) if( isset($o[$s]) ) return array($s, $o[$s]); return array(null, null); };
 
@@ -45,13 +48,33 @@ if( in_array($method, array('POST', 'PUT')) )
     if( stripos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') === FALSE )
         err(415, 'Content-Type must be application/json');
     $body = json_decode($raw, TRUE);
-    if( !is_array($body) || !isset($body['name']) )
+    if( !is_array($body) || (!isset($body['name']) && !($setup && $res == 'devices')) )
         err(400, 'body must be an object with name');
-    $scopes = array_intersect(array('folder', 'snippet', 'device'), array_keys($body));
-    if( count($scopes) != 1 )
-        err(400, 'exactly one of folder, snippet, device is required');
     if( isset($body['id']) )
         err(400, 'id is read-only');
+    if( $setup )
+    {
+        if( $res == 'devices' && $method == 'POST' )
+            err(405, 'devices cannot be created, onboard the firewall');
+        $unchangedRoot = $method == 'PUT' && isset($st[$res][$id]) && ($st[$res][$id]['parent'] ?? '') === ($body['parent'] ?? '');
+        if( $res == 'folders' && !$unchangedRoot && (!isset($body['parent']) || !$exists('folders', $body['parent'])) )
+            err(400, "folder parent '" . ($body['parent'] ?? '') . "' does not exist");
+        if( $res == 'devices' && isset($body['folder']) && !$exists('folders', $body['folder']) )
+            err(400, "folder '" . $body['folder'] . "' does not exist");
+        foreach( $body['snippets'] ?? array() as $sn )
+            if( !$exists('snippets', $sn) )
+                err(400, "snippet '$sn' does not exist");
+    }
+    else
+    {
+        $scopes = array_intersect(array('folder', 'snippet', 'device'), array_keys($body));
+        if( count($scopes) != 1 )
+            err(400, 'exactly one of folder, snippet, device is required');
+        if( isset($body['folder']) && !$exists('folders', $body['folder']) )
+            err(400, "folder '" . $body['folder'] . "' does not exist");
+        if( isset($body['snippet']) && !$exists('snippets', $body['snippet']) )
+            err(400, "snippet '" . $body['snippet'] . "' does not exist");
+    }
     if( $res == 'profile-groups' )
         foreach( array('spyware' => 'anti-spyware-profiles', 'vulnerability' => 'vulnerability-protection-profiles',
                      'file_blocking' => 'file-blocking-profiles', 'url_filtering' => 'url-access-profiles',
@@ -71,7 +94,7 @@ if( $method == 'GET' && $id === null )
     {
         list($s, $n) = $scopeOf($o);
         if( isset($q['name']) && $o['name'] !== $q['name'] ) continue;
-        if( isset($q[$s]) ? $q[$s] !== $n : (isset($q['folder']) || isset($q['snippet']) || isset($q['device'])) ) continue;
+        if( !$setup && (isset($q[$s]) ? $q[$s] !== $n : (isset($q['folder']) || isset($q['snippet']) || isset($q['device']))) ) continue;
         $data[] = $o;
     }
     out(200, array('data' => $data, 'total' => count($data), 'limit' => 200, 'offset' => 0));
@@ -87,7 +110,7 @@ if( $method == 'POST' )
     foreach( $st[$res] ?? array() as $o )
     {
         list($s2, $n2) = $scopeOf($o);
-        if( $o['name'] === $body['name'] && $s2 === $s && $n2 === $n ) err(409, "$res '" . $body['name'] . "' exists");
+        if( $o['name'] === $body['name'] && ($setup || ($s2 === $s && $n2 === $n)) ) err(409, "$res '" . $body['name'] . "' exists");
     }
     $body = array('id' => 'new-' . substr(md5($res . $body['name'] . $n), 0, 8)) + $body;
     if( $res == 'security-rules' ) $body['position'] = $q['position'] ?? 'pre';

@@ -43,6 +43,7 @@ require_once(dirname(__FILE__)."/XMLISSUE.php");
 require_once(dirname(__FILE__)."/DIFF.php");
 require_once(dirname(__FILE__)."/SCMCHANGES.php");
 require_once(dirname(__FILE__)."/SCMAPPLY.php");
+require_once(dirname(__FILE__)."/SCMIMPORT.php");
 require_once(dirname(__FILE__)."/OVERRIDEFINDER.php");
 require_once(dirname(__FILE__)."/APPIDENABLER.php");
 require_once(dirname(__FILE__)."/CONFIGSIZE.php");
