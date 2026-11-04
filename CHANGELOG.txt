@@ -27,6 +27,7 @@ UTIL:
 * filter location optimistation only one single part
 * threatRule Filter - correction of copy past issue
 * MERGER.php - introduce MERGERENGINE.php - combined for tag-/customer-url
+* MERGER | MERGERENGINE - address/service move to unique approach
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
