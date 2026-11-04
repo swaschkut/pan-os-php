@@ -2,81 +2,6 @@
 
 // <editor-fold desc=" ***** Service filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['service']['refcount']['operators']['>,<,=,!'] = array(
-    'eval' => '$object->countReferences() !operator! !value!',
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['reflocationcount']['operators']['>,<,=,!'] = array(
-    'eval' => '$object->countLocationReferences() !operator! !value!',
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['object']['operators']['is.unused'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        return $object->objectIsUnused();
-        #return $context->object->countReferences() == 0;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['object']['operators']['has.same-name.other.level'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['sameNameOtherLevel'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['object']['operators']['is.overriding'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['isOverriding'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['object']['operators']['is.overriden'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['isOverridden'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['object']['operators']['is.unused.recursive'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        return $object->objectIsUnusedRecursive();
-
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['service']['object']['operators']['is.member.of'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $serviceGroup = $context->object->owner->find($context->value);
@@ -111,56 +36,6 @@ RQuery::$defaultFilters['service']['object']['operators']['is.recursive.member.o
     'ci' => array(
         'fString' => '(%PROP% grp-in-grp-srv)',
         'input' => 'input/panorama-8.0-merger.xml'
-    )
-);
-RQuery::$defaultFilters['service']['name']['operators']['is.in.file'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        if( !isset($context->cachedList) )
-        {
-            if( !file_exists($context->value) )
-                derr("cannot find file '{$context->value}'", null, FALSE);
-
-            $text = file_get_contents($context->value);
-
-            if( $text === FALSE )
-                derr("cannot open file '{$context->value}");
-
-            $lines = explode("\n", $text);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-        return isset($list[$object->name()]);
-    },
-    'arg' => TRUE
-);
-RQuery::$defaultFilters['service']['name']['operators']['has.wrong.characters'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        $newName = htmlspecialchars_decode( $object->name() );
-        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
-
-        if( count($matches) == 0 )
-            return FALSE;
-        else
-            return TRUE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
     )
 );
 RQuery::$defaultFilters['service']['object']['operators']['is.group'] = array(
@@ -248,23 +123,6 @@ RQuery::$defaultFilters['service']['object']['operators']['srcport.is.set'] = ar
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
-);
-RQuery::$defaultFilters['service']['object']['operators']['has.group.as.member'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-
-
-        if( !$context->object->isGroup() )
-            return FALSE;
-
-        foreach( $context->object->members() as $objectMember )
-        {
-            if( $objectMember->isGroup() )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => FALSE
 );
 RQuery::$defaultFilters['service']['name']['operators']['eq'] = array(
     'Function' => function (ServiceRQueryContext $context) {
@@ -358,79 +216,6 @@ RQuery::$defaultFilters['service']['members.count']['operators']['>,<,=,!'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['service']['member.name']['operators']['is.in.file'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        if( !$object->isGroup() )
-            return FALSE;
-
-        if( !isset($context->cachedList) )
-        {
-            if( !file_exists($context->value) )
-                derr("cannot find file '{$context->value}'", null, FALSE);
-
-            $text = file_get_contents($context->value);
-
-            if( $text === FALSE )
-                derr("cannot open file '{$context->value}");
-
-            $lines = explode("\n", $text);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-        $member_name_array = array();
-        foreach( $context->object->members() as $member_obj )
-        {
-            $member_name_array[$member_obj->name()] = $member_obj->name();
-        }
-
-
-        foreach( $list as $file_membername => $truefalse )
-        {
-            if( isset($member_name_array[$file_membername]) ) {
-                return TRUE;
-            }
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE
-);
-RQuery::$defaultFilters['service']['member.name']['operators']['is'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $object = $context->object;
-
-        if( !$object->isGroup() )
-            return FALSE;
-
-
-
-        $member_name_array = array();
-        foreach( $context->object->members() as $member_obj )
-        {
-            $member_name_array[$member_obj->name()] = $member_obj->name();
-        }
-
-
-        if( isset($member_name_array[$context->value]) )
-            return TRUE;
-
-
-        return FALSE;
-    },
-    'arg' => TRUE
-);
 RQuery::$defaultFilters['service']['tag']['operators']['has'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         return $context->object->tags->hasTag($context->value) === TRUE;
@@ -464,14 +249,6 @@ RQuery::$defaultFilters['service']['tag']['operators']['has.regex'] = array(
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% /grp/)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['tag.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->tags->count() !operator! !value!",
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 1)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -522,44 +299,6 @@ RQuery::$defaultFilters['service']['description']['operators']['is.empty'] = arr
     'arg' => FALSE,
     'ci' => array(
         'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['location']['operators']['is'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $owner = $context->object->owner->owner;
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-        if( strtolower($context->value) == strtolower($owner->name()) )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['location']['operators']['regex'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $name = $context->object->getLocationString();
-        $matching = preg_match($context->value, $name);
-        if( $matching === FALSE )
-            derr("regular expression error on '{$context->value}'");
-        if( $matching === 1 )
-            return TRUE;
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% /shared/)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -726,70 +465,6 @@ RQuery::$defaultFilters['service']['reflocation']['operators']['is.only'] = arra
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% shared )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['refstore']['operators']['is'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $value = $context->value;
-        $value = strtolower($value);
-
-        $context->object->ReferencesStoreValidation($value);
-
-        $refstore = $context->object->getReferencesStore();
-
-        if( array_key_exists($value, $refstore) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% rulestore )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['refstore']['operators']['is.rulestore'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        #$value = $context->value;
-        #$value = strtolower($value);
-        $value = "rulestore";
-
-        $context->object->ReferencesStoreValidation($value);
-
-        $refstore = $context->object->getReferencesStore();
-
-        if( array_key_exists($value, $refstore) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => false,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['reftype']['operators']['is'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $value = $context->value;
-        $value = strtolower($value);
-
-        $context->object->ReferencesTypeValidation($value);
-
-        $reftype = $context->object->getReferencesType();
-
-        if( array_key_exists($value, $reftype) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -1066,28 +741,6 @@ RQuery::$defaultFilters['service']['value.length']['operators']['>,<,=,!'] = arr
     )
 );
 
-RQuery::$defaultFilters['service']['object']['operators']['overrides.upper.level'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['overridesUpperLevel'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['object']['operators']['overriden.at.lower.level'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['overriddenAtLowerLevel'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['service']['timeout']['operators']['is.set'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $object = $context->object;

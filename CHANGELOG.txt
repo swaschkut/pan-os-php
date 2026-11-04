@@ -22,6 +22,7 @@ UTIL:
 * type=device | introduce actions=display-ancestor-precedence-impact
 * introduce new filter regarding ancestor-objects-take-precedence | different object classes
 * delete wrong expired filters for EDL and profile
+* remove duplicate filters and start using filter-Common.php
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

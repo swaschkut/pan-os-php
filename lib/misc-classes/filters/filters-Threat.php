@@ -2,26 +2,6 @@
 
 // <editor-fold desc=" ***** Threat filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['threat']['name']['operators']['eq'] = array(
-    'Function' => function (ThreatRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['threat']['name']['operators']['contains'] = array(
-    'Function' => function (ThreatRQueryContext $context) {
-        return strpos($context->object->name(), $context->value) !== FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% -)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['threat']['threatname']['operators']['eq'] = array(
     'Function' => function (ThreatRQueryContext $context) {
         return $context->object->threatname() == $context->value;

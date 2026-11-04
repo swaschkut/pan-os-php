@@ -2,16 +2,6 @@
 
 // <editor-fold desc=" ***** Application filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['app']['name']['operators']['eq'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $app = $context->object;
@@ -35,16 +25,6 @@ RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
 //Todo: introduce filter
 //      app-id is.disabled
 
-RQuery::$defaultFilters['application']['name']['operators']['eq'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $object = $context->object;

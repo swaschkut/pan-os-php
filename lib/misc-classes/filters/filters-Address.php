@@ -2,80 +2,6 @@
 
 // <editor-fold desc=" ***** Address filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['address']['refcount']['operators']['>,<,=,!'] = array(
-    'eval' => '$object->countReferences() !operator! !value!',
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['reflocationcount']['operators']['>,<,=,!'] = array(
-    'eval' => '$object->countLocationReferences() !operator! !value!',
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['is.unused'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $object = $context->object;
-
-        return $object->objectIsUnused();
-        #return $context->object->countReferences() == 0;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['has.same-name.other.level'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['sameNameOtherLevel'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['is.overriding'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['isOverriding'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['is.overriden'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['isOverridden'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['is.unused.recursive'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $object = $context->object;
-
-        return $object->objectIsUnusedRecursive();
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['address']['object']['operators']['is.group'] = array(
     'Function' => function (AddressRQueryContext $context) {
         return $context->object->isGroup() == TRUE;
@@ -280,28 +206,6 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
     },
     'arg' => false
 );
-RQuery::$defaultFilters['address']['object']['operators']['overrides.upper.level'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['overridesUpperLevel'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['overriden.at.lower.level'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $status = $context->object->getSameNameLevelStatus();
-        return $status['overriddenAtLowerLevel'];
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['address']['object']['operators']['is.member.of'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $addressGroup = $context->object->owner->find($context->value);
@@ -340,53 +244,6 @@ RQuery::$defaultFilters['address']['object']['operators']['is.recursive.member.o
     'ci' => array(
         'fString' => '(%PROP% grp-in-grp-test-1)',
         'input' => 'input/panorama-8.0-merger.xml'
-    )
-);
-RQuery::$defaultFilters['address']['object']['operators']['has.group.as.member'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-
-
-        if( !$context->object->isGroup() )
-            return FALSE;
-
-        foreach( $context->object->members() as $objectMember )
-        {
-            if( $objectMember->isGroup() )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => FALSE
-);
-RQuery::$defaultFilters['address']['name']['operators']['eq'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% new test 1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['name']['operators']['eq.nocase'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        return strtolower($context->object->name()) == strtolower($context->value);
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% new test 2)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['name']['operators']['contains'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        return strpos($context->object->name(), $context->value) !== FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% -)',
-        'input' => 'input/panorama-8.0.xml'
     )
 );
 RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
@@ -482,38 +339,6 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['address']['name']['operators']['is.in.file'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $object = $context->object;
-
-        if( !isset($context->cachedList) )
-        {
-            if( !file_exists($context->value) )
-                derr("cannot find file '{$context->value}'", null, FALSE);
-
-            $text = file_get_contents($context->value);
-
-            if( $text === FALSE )
-                derr("cannot open file '{$context->value}");
-
-            $lines = explode("\n", $text);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-        return isset($list[$object->name()]);
-    },
-    'arg' => TRUE
-);
 RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefined'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
@@ -549,32 +374,6 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $object = $context->object;
-
-        $newName = htmlspecialchars_decode( $object->name() );
-        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
-
-        if( count($matches) == 0 )
-            return FALSE;
-        else
-            return TRUE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['name.length']['operators']['>,<,=,!'] = array(
-    'eval' => "strlen(\$object->name()) !operator! !value!",
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% 63)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
     'eval' => "!\$object->isGroup() && !\$object->isRegion() && !\$object->isEDL() && \$object->isType_ipNetmask() && \$object->getNetworkMask() !operator! !value!",
     'arg' => TRUE,
@@ -590,79 +389,6 @@ RQuery::$defaultFilters['address']['members.count']['operators']['>,<,=,!'] = ar
         'fString' => '(%PROP% 1)',
         'input' => 'input/panorama-8.0.xml'
     )
-);
-RQuery::$defaultFilters['address']['member.name']['operators']['is.in.file'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $object = $context->object;
-
-        if( !$object->isGroup() )
-            return FALSE;
-
-        if( !isset($context->cachedList) )
-        {
-            if( !file_exists($context->value) )
-                derr("cannot find file '{$context->value}'", null, FALSE);
-
-            $text = file_get_contents($context->value);
-
-            if( $text === FALSE )
-                derr("cannot open file '{$context->value}");
-
-            $lines = explode("\n", $text);
-            foreach( $lines as $line )
-            {
-                $line = trim($line);
-                if( strlen($line) == 0 )
-                    continue;
-                $list[$line] = TRUE;
-            }
-
-            $context->cachedList = &$list;
-        }
-        else
-            $list = &$context->cachedList;
-
-        $member_name_array = array();
-        foreach( $context->object->members() as $member_obj )
-        {
-            $member_name_array[$member_obj->name()] = $member_obj->name();
-        }
-
-
-        foreach( $list as $file_membername => $truefalse )
-        {
-            if( isset($member_name_array[$file_membername]) ) {
-                return TRUE;
-            }
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE
-);
-RQuery::$defaultFilters['address']['member.name']['operators']['is'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $object = $context->object;
-
-        if( !$object->isGroup() )
-            return FALSE;
-
-
-
-        $member_name_array = array();
-        foreach( $context->object->members() as $member_obj )
-        {
-            $member_name_array[$member_obj->name()] = $member_obj->name();
-        }
-
-
-        if( isset($member_name_array[$context->value]) )
-            return TRUE;
-
-
-        return FALSE;
-    },
-    'arg' => TRUE
 );
 RQuery::$defaultFilters['address']['tag.count']['operators']['>,<,=,!'] = array(
     'eval' => "!\$object->isRegion() && !\$object->isEDL() && \$object->tags->count() !operator! !value!",
@@ -728,44 +454,6 @@ RQuery::$defaultFilters['address']['tag']['operators']['is.set'] = array(
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
     'ci' => array(
         'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['location']['operators']['is'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $owner = $context->object->owner->owner;
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-        if( strtolower($context->value) == strtolower($owner->name()) )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['location']['operators']['regex'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $name = $context->object->getLocationString();
-        $matching = preg_match($context->value, $name);
-        if( $matching === FALSE )
-            derr("regular expression error on '{$context->value}'");
-        if( $matching === 1 )
-            return TRUE;
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% /shared/)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -1116,49 +804,6 @@ RQuery::$defaultFilters['address']['reflocation']['operators']['is.only'] = arra
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['address']['refstore']['operators']['is'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $value = $context->value;
-        $value = strtolower($value);
-
-        $context->object->ReferencesStoreValidation($value);
-
-        $refstore = $context->object->getReferencesStore();
-
-        if( array_key_exists($value, $refstore) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% rulestore )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['refstore']['operators']['is.rulestore'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        #$value = $context->value;
-        #$value = strtolower($value);
-        $value = "rulestore";
-
-        $context->object->ReferencesStoreValidation($value);
-
-        $refstore = $context->object->getReferencesStore();
-
-        if( array_key_exists($value, $refstore) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => false,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['address']['refstore']['operators']['is.only.rulestore'] = array(
     'Function' => function (AddressRQueryContext $context) {
         #$value = $context->value;
@@ -1505,27 +1150,6 @@ RQuery::$defaultFilters['address']['refstore']['operators']['all.interfacestore'
     'arg' => false,
     'ci' => array(
         'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['address']['reftype']['operators']['is'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $value = $context->value;
-        $value = strtolower($value);
-
-        $context->object->ReferencesTypeValidation($value);
-
-        $reftype = $context->object->getReferencesType();
-
-        if( array_key_exists($value, $reftype) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
     )
 );
