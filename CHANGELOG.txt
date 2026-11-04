@@ -24,6 +24,7 @@ UTIL:
 * introduce new filter regarding ancestor-objects-take-precedence | different object classes
 * delete wrong expired filters for EDL and profile
 * remove duplicate filters and start using filter-Common.php
+* filter location optimistation only one single part
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

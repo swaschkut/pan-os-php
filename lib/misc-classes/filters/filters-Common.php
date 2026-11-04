@@ -158,344 +158,6 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
-    'dns-rule',
-    'securityprofile',
-    'threat-rule'
-), 'location', 'is.child.of', array(
-    'Function' => function (RQueryContext $context) {
-        $secprof_location = $context->object->getLocationString();
-
-        $sub = $context->object->owner;
-        while( get_class($sub) == "SecurityProfileStore" || get_class($sub) == "DeviceGroup" || get_class($sub) == "VirtualSystem" )
-            $sub = $sub->owner;
-
-        if( get_class($sub) == "PANConf" )
-            derr("filter location is.child.of is not working against a firewall configuration");
-
-        if( strtolower($context->value) == 'shared' )
-            return TRUE;
-
-        $DG = $sub->findDeviceGroup($context->value);
-        if( $DG == null )
-        {
-            PH::print_stdout( "ERROR: location '$context->value' was not found. Here is a list of available ones:" );
-            PH::print_stdout( " - shared" );
-            foreach( $sub->getDeviceGroups() as $sub1 )
-            {
-                PH::print_stdout( " - " . $sub1->name() . "" );
-            }
-            PH::print_stdout();
-            exit(1);
-        }
-
-        $childDeviceGroups = $DG->childDeviceGroups(TRUE);
-
-        if( strtolower($context->value) == strtolower($secprof_location) )
-            return TRUE;
-
-        foreach( $childDeviceGroups as $childDeviceGroup )
-        {
-            if( $childDeviceGroup->name() == $secprof_location )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches / is child the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter-Firewalls)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'edl',
-    'profile'
-), 'location', 'is.child.of', array(
-    'Function' => function (RQueryContext $context) {
-        $edl_location = $context->object->getLocationString();
-
-        $sub = $context->object->owner;
-        while( get_class($sub) == "ScheduleStore" || get_class($sub) == "DeviceGroup" || get_class($sub) == "VirtualSystem" )
-            $sub = $sub->owner;
-
-        if( get_class($sub) == "PANConf" )
-            derr("filter location is.child.of is not working against a firewall configuration");
-
-        if( strtolower($context->value) == 'shared' )
-            return TRUE;
-
-        $DG = $sub->findDeviceGroup($context->value);
-        if( $DG == null )
-        {
-            PH::print_stdout("ERROR: location '$context->value' was not found. Here is a list of available ones:" );
-            PH::print_stdout( " - shared" );
-            foreach( $sub->getDeviceGroups() as $sub1 )
-            {
-                PH::print_stdout( " - " . $sub1->name() );
-            }
-            PH::print_stdout();
-            exit(1);
-        }
-
-        $childDeviceGroups = $DG->childDeviceGroups(TRUE);
-
-        if( strtolower($context->value) == strtolower($edl_location) )
-            return TRUE;
-
-        foreach( $childDeviceGroups as $childDeviceGroup )
-        {
-            if( $childDeviceGroup->name() == $edl_location )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches / is child the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter-Firewalls)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'gp-gateway',
-    'gp-portal',
-    'interface-management-profile',
-    'log-profile',
-    'zone',
-    'zone-protection-profile'
-), 'location', 'is.child.of', array(
-    'Function' => function (RQueryContext $context) {
-        $zone_location = $context->object->getLocationString();
-
-        $sub = $context->object->owner;
-        while( get_class($sub) == "ZoneStore" || get_class($sub) == "DeviceGroup" || get_class($sub) == "VirtualSystem" )
-            $sub = $sub->owner;
-
-        if( get_class($sub) == "PANConf" )
-        {
-            PH::print_stdout( "ERROR: filter location is.child.of is not working against a firewall configuration");
-            return FALSE;
-        }
-
-
-        if( strtolower($context->value) == 'shared' )
-            return TRUE;
-
-        $DG = $sub->findDeviceGroup($context->value);
-        if( $DG == null )
-        {
-            PH::print_stdout( "ERROR: location '$context->value' was not found. Here is a list of available ones:" );
-            PH::print_stdout( " - shared" );
-            foreach( $sub->getDeviceGroups() as $sub1 )
-            {
-                PH::print_stdout( " - " . $sub1->name() . "" );
-            }
-            PH::print_stdout( "\n" );
-            exit(1);
-        }
-
-        $childDeviceGroups = $DG->childDeviceGroups(TRUE);
-
-        if( strtolower($context->value) == strtolower($zone_location) )
-            return TRUE;
-
-        foreach( $childDeviceGroups as $childDeviceGroup )
-        {
-            if( $childDeviceGroup->name() == $zone_location )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches / is child the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter-Firewalls)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'dns-rule',
-    'securityprofile',
-    'threat-rule'
-), 'location', 'is.parent.of', array(
-    'Function' => function (RQueryContext $context) {
-        $secprof_location = $context->object->getLocationString();
-
-        $sub = $context->object->owner;
-        while( get_class($sub) == "SecurityProfileStore" || get_class($sub) == "DeviceGroup" || get_class($sub) == "VirtualSystem" )
-            $sub = $sub->owner;
-
-        if( get_class($sub) == "PANConf" )
-        {
-            PH::print_stdout( "ERROR: filter location is.child.of is not working against a firewall configuration");
-            return FALSE;
-        }
-
-        if( strtolower($context->value) == 'shared' )
-            return TRUE;
-
-        $DG = $sub->findDeviceGroup($context->value);
-        if( $DG == null )
-        {
-            PH::print_stdout( "ERROR: location '$context->value' was not found. Here is a list of available ones:" );
-            PH::print_stdout( " - shared" );
-            foreach( $sub->getDeviceGroups() as $sub1 )
-            {
-                PH::print_stdout( " - " . $sub1->name() . "" );
-            }
-            PH::print_stdout();
-            exit(1);
-        }
-
-        $parentDeviceGroups = $DG->parentDeviceGroups();
-
-        if( strtolower($context->value) == strtolower($secprof_location) )
-            return TRUE;
-
-        if( $secprof_location == 'shared' )
-            return TRUE;
-
-        foreach( $parentDeviceGroups as $childDeviceGroup )
-        {
-            if( $childDeviceGroup->name() == $secprof_location )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches / is parent the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter-Firewalls)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'edl',
-    'profile'
-), 'location', 'is.parent.of', array(
-    'Function' => function (RQueryContext $context) {
-        $edl_location = $context->object->getLocationString();
-
-        $sub = $context->object->owner;
-        while( get_class($sub) == "ScheduleStore" || get_class($sub) == "DeviceGroup" || get_class($sub) == "VirtualSystem" )
-            $sub = $sub->owner;
-
-        if( get_class($sub) == "PANConf" )
-        {
-            PH::print_stdout( "ERROR: filter location is.child.of is not working against a firewall configuration" );
-            return FALSE;
-        }
-
-        if( strtolower($context->value) == 'shared' )
-            return TRUE;
-
-        $DG = $sub->findDeviceGroup($context->value);
-        if( $DG == null )
-        {
-            PH::print_stdout( "ERROR: location '$context->value' was not found. Here is a list of available ones:" );
-            PH::print_stdout( " - shared" );
-            foreach( $sub->getDeviceGroups() as $sub1 )
-            {
-                PH::print_stdout( " - " . $sub1->name() );
-            }
-            PH::print_stdout();
-            exit(1);
-        }
-
-        $parentDeviceGroups = $DG->parentDeviceGroups();
-
-        if( strtolower($context->value) == strtolower($edl_location) )
-            return TRUE;
-
-        if( $edl_location == 'shared' )
-            return TRUE;
-
-        foreach( $parentDeviceGroups as $childDeviceGroup )
-        {
-            if( $childDeviceGroup->name() == $edl_location )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches / is parent the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter-Firewalls)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
-    'gp-gateway',
-    'gp-portal',
-    'interface-management-profile',
-    'log-profile',
-    'zone',
-    'zone-protection-profile'
-), 'location', 'is.parent.of', array(
-    'Function' => function (RQueryContext $context) {
-        $zone_location = $context->object->getLocationString();
-
-        $sub = $context->object->owner;
-        while( get_class($sub) == "ZoneStore" || get_class($sub) == "DeviceGroup" || get_class($sub) == "VirtualSystem" )
-            $sub = $sub->owner;
-
-        if( get_class($sub) == "PANConf" )
-        {
-            PH::print_stdout( "ERROR: filter location is.child.of is not working against a firewall configuration");
-            return FALSE;
-        }
-
-        if( strtolower($context->value) == 'shared' )
-            return TRUE;
-
-        $DG = $sub->findDeviceGroup($context->value);
-        if( $DG == null )
-        {
-            PH::print_stdout( "ERROR: location '$context->value' was not found. Here is a list of available ones:" );
-            PH::print_stdout( " - shared" );
-            foreach( $sub->getDeviceGroups() as $sub1 )
-            {
-                PH::print_stdout( " - " . $sub1->name() . "" );
-            }
-            PH::print_stdout( "\n" );
-            exit(1);
-        }
-
-        $parentDeviceGroups = $DG->parentDeviceGroups();
-
-        if( strtolower($context->value) == strtolower($zone_location) )
-            return TRUE;
-
-        if( $zone_location == 'shared' )
-            return TRUE;
-
-        foreach( $parentDeviceGroups as $childDeviceGroup )
-        {
-            if( $childDeviceGroup->name() == $zone_location )
-                return TRUE;
-        }
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches / is parent the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  Datacenter-Firewalls)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-) );
-
-RQuery::registerFilter( array(
     'address',
     'dns-rule',
     'edl',
@@ -1471,6 +1133,65 @@ RQuery::registerFilter( array(
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// location hierarchy: one definition for every type with a location; logic in PH::locationIsChildOf() / PH::locationIsParentOf()
+RQuery::registerFilter( array(
+    'address',
+    'dns-rule',
+    'edl',
+    'gp-gateway',
+    'gp-portal',
+    'interface-management-profile',
+    'log-profile',
+    'rule',
+    'schedule',
+    'securityprofile',
+    'securityprofilegroup',
+    'service',
+    'tag',
+    'threat-rule',
+    'zone',
+    'zone-protection-profile'
+), 'location', 'is.child.of', array(
+    'Function' => function (RQueryContext $context) {
+        return PH::locationIsChildOf( $context->object, $context->value );
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if object location (shared/device-group/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.',
+    'ci' => array(
+        'fString' => '(%PROP%  Datacenter-Firewalls)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+RQuery::registerFilter( array(
+    'address',
+    'dns-rule',
+    'edl',
+    'gp-gateway',
+    'gp-portal',
+    'interface-management-profile',
+    'log-profile',
+    'rule',
+    'schedule',
+    'securityprofile',
+    'securityprofilegroup',
+    'service',
+    'tag',
+    'threat-rule',
+    'zone',
+    'zone-protection-profile'
+), 'location', 'is.parent.of', array(
+    'Function' => function (RQueryContext $context) {
+        return PH::locationIsParentOf( $context->object, $context->value );
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if object location (shared/device-group/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.',
+    'ci' => array(
+        'fString' => '(%PROP%  Datacenter-Firewalls)',
         'input' => 'input/panorama-8.0.xml'
     )
 ) );

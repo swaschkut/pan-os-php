@@ -202,6 +202,10 @@ class PH
 
     public static $UseDomXML = TRUE;
 
+    /** cache for the location filters: resolved argument chains, per root config object */
+    private static $locationFilterCache = array();
+    private static $locationFilterTemplateHintShown = FALSE;
+
     /**
      * @var null|mixed[]
      */
@@ -1586,6 +1590,123 @@ class PH
 
         derr("cannot find PanoramaConf or PANConf object");
         return null;
+    }
+
+    /**
+     * Location chain of an object for the location filters (is.child.of / is.parent.of):
+     * its own location first, then every ancestor up to 'shared'.
+     *  Panorama:  object in DG 'dg-child'  -> array('dg-child', 'dg-mid', 'shared')
+     *             object in Shared         -> array('shared')
+     *  Firewall:  object in 'vsys1'        -> array('vsys1', 'shared')
+     *             object in shared         -> array('shared')
+     * Returns null when the device-group hierarchy does not apply: objects inside a Template /
+     * TemplateStack, SCM containers / snippets, or no location found.
+     *
+     * @return array|null  array( 'root' => PanoramaConf|PANConf, 'chain' => string[] )
+     */
+    public static function locationChain($object)
+    {
+        $location = self::findLocationObject($object);
+        if( $location === null )
+            return null;
+
+        $class = get_class($location);
+
+        if( $class == 'PanoramaConf' )
+            return array('root' => $location, 'chain' => array('shared'));
+
+        if( $class == 'DeviceGroup' )
+        {
+            $chain = array();
+            for( $dg = $location; $dg !== null; $dg = $dg->parentDeviceGroup )
+                $chain[] = $dg->name();
+            $chain[] = 'shared';
+            return array('root' => $location->owner, 'chain' => $chain);
+        }
+
+        if( $class == 'PANConf' || $class == 'VirtualSystem' )
+        {
+            $root = ($class == 'PANConf') ? $location : self::findRootObjectOrDie($location);
+
+            // PANConf inside a Template / TemplateStack: not part of the device-group hierarchy
+            if( isset($root->owner) && is_object($root->owner) )
+            {
+                if( !self::$locationFilterTemplateHintShown )
+                {
+                    self::$locationFilterTemplateHintShown = TRUE;
+                    PH::print_stdout( "   * location filters is.child.of / is.parent.of do not apply to objects inside a template / template-stack: these objects are not listed" );
+                }
+                return null;
+            }
+
+            if( $class == 'PANConf' )
+                return array('root' => $root, 'chain' => array('shared'));
+            return array('root' => $root, 'chain' => array($location->name(), 'shared'));
+        }
+
+        return null;
+    }
+
+    /**
+     * Chain (see locationChain) of the location NAMED in a filter argument, resolved once per root
+     * config and cached. An unknown name stops with the list of available locations.
+     */
+    private static function locationChainByName($root, $name)
+    {
+        $key = spl_object_id($root) . '|' . $name;
+        if( isset(self::$locationFilterCache[$key]) )
+            return self::$locationFilterCache[$key];
+
+        if( strtolower($name) == 'shared' )
+            return self::$locationFilterCache[$key] = array('shared');
+
+        $available = array('shared');
+        $found = null;
+        if( get_class($root) == 'PanoramaConf' )
+        {
+            $found = $root->findDeviceGroup($name);
+            foreach( $root->getDeviceGroups() as $dg )
+                $available[] = $dg->name();
+        }
+        elseif( get_class($root) == 'PANConf' )
+        {
+            $found = $root->findVirtualSystem($name);
+            foreach( $root->getVirtualSystems() as $vsys )
+                $available[] = $vsys->name();
+        }
+
+        if( $found === null )
+            derr( "location '" . $name . "' was not found. Available locations: " . implode(', ', $available), null, FALSE );
+
+        return self::$locationFilterCache[$key] = self::locationChain($found)['chain'];
+    }
+
+    /**
+     * Filter 'location is.child.of X': TRUE when the object's location is X or a descendant of X.
+     * X = shared: TRUE for every object. NULL when the hierarchy does not apply (see locationChain).
+     */
+    public static function locationIsChildOf($object, $name): ?bool
+    {
+        $info = self::locationChain($object);
+        if( $info === null )
+            return null;
+
+        $argChain = self::locationChainByName($info['root'], $name);
+        return in_array($argChain[0], $info['chain'], TRUE);
+    }
+
+    /**
+     * Filter 'location is.parent.of X': TRUE when the object's location is X or an ancestor of X.
+     * X = shared: TRUE only for objects in shared. NULL when the hierarchy does not apply (see locationChain).
+     */
+    public static function locationIsParentOf($object, $name): ?bool
+    {
+        $info = self::locationChain($object);
+        if( $info === null )
+            return null;
+
+        $argChain = self::locationChainByName($info['root'], $name);
+        return in_array($info['chain'][0], $argChain, TRUE);
     }
 
     /**
