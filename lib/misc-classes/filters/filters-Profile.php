@@ -19,29 +19,6 @@ RQuery::$defaultFilters['profile']['object']['operators']['is.unused'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-/*
-RQuery::$defaultFilters['profile']['object']['operators']['is.expired'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        return $value->isExpired();
-    },
-    'arg' => false,
-);
-
-RQuery::$defaultFilters['profile']['object']['operators']['expire.in.days'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        $operator = $context->operator;
-        if( $operator == '=' )
-            $operator = '==';
-
-        return $value->isExpired( $context->value, $operator );
-    },
-    'arg' => true,
-);
-*/
 RQuery::$defaultFilters['profile']['name']['operators']['is.in.file'] = array(
     'Function' => function (EDLRQueryContext $context) {
         $object = $context->object;
@@ -391,27 +368,5 @@ RQuery::$defaultFilters['profile']['reftype']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-/*
-RQuery::$defaultFilters['profile']['object']['operators']['is.expired'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        return $value->isExpired();
-    },
-    'arg' => false,
-);
-RQuery::$defaultFilters['profile']['expire.in.days']['operators']['>,<,=,!'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        $operator = $context->operator;
-        if( $operator == '=' )
-            $operator = '==';
-
-        return $value->isExpired( $context->value, $operator );
-    },
-    'arg' => true,
-);
-*/
 
 // </editor-fold>

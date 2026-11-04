@@ -75,26 +75,6 @@ RQuery::$defaultFilters['edl']['object']['operators']['overrides.upper.level'] =
     )
 );
 
-RQuery::$defaultFilters['edl']['object']['operators']['is.expired'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        return $value->isExpired();
-    },
-    'arg' => false,
-);
-RQuery::$defaultFilters['edl']['object']['operators']['expire.in.days'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        $operator = $context->operator;
-        if( $operator == '=' )
-            $operator = '==';
-
-        return $value->isExpired( $context->value, $operator );
-    },
-    'arg' => true,
-);
 RQuery::$defaultFilters['edl']['name']['operators']['is.in.file'] = array(
     'Function' => function (EDLRQueryContext $context) {
         $object = $context->object;
@@ -445,26 +425,6 @@ RQuery::$defaultFilters['edl']['reftype']['operators']['is'] = array(
     )
 );
 
-RQuery::$defaultFilters['edl']['object']['operators']['is.expired'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        return $value->isExpired();
-    },
-    'arg' => false,
-);
-RQuery::$defaultFilters['edl']['expire.in.days']['operators']['>,<,=,!'] = array(
-    'Function' => function (EDLRQueryContext $context) {
-        $value = $context->object;
-
-        $operator = $context->operator;
-        if( $operator == '=' )
-            $operator = '==';
-
-        return $value->isExpired( $context->value, $operator );
-    },
-    'arg' => true,
-);
 
 RQuery::$defaultFilters['edl']['type']['operators']['is.ip'] = array(
     'Function' => function (EDLRQueryContext $context) {

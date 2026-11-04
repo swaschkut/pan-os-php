@@ -21,6 +21,7 @@ UTIL:
 * class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
 * type=device | introduce actions=display-ancestor-precedence-impact
 * introduce new filter regarding ancestor-objects-take-precedence | different object classes
+* delete wrong expired filters for EDL and profile
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
