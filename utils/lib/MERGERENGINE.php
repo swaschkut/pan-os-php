@@ -419,8 +419,17 @@ trait MergerEngine
             'eligible' => function( $object ) {
                 return $object->isTag() && !$object->isTmp();
             },
-            // tags are compared by name; the color decides through sameValue() / equals()
+            // samecolor: tags with the same color are merged, whatever their name; tags without a color
+            //            are never merged by color (they keep a hash of their own name)
+            // identical / samename: tags are compared by name; the color decides through sameValue() / equals()
             'hash' => function( $object ) {
+                if( $this->dupAlg == 'samecolor' )
+                {
+                    $color = $object->getColor();
+                    if( $color !== '' && $color !== 'none' )
+                        return 'color:' . $color;
+                    return 'name:' . $object->name();
+                }
                 return $object->name();
             },
             'eligibleWhereUsed' => function( $object ) {
