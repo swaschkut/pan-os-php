@@ -289,6 +289,7 @@ class PanoramaConf
 
     public $_public_cloud_server = null;
     public $_auditComment = false;
+    public $_ancestorObjectsTakePrecedence = false;
 
     public $debugLoadTime = false;
 
@@ -1820,6 +1821,10 @@ class PanoramaConf
                     if( $auditComment != FALSE )
                         if( $auditComment->textContent === "yes" )
                             $this->_auditComment = TRUE;
+
+                    $ancestorPrecedence = DH::findFirstElement('ancestor-objects-take-precedence', $managementroot);
+                    if( $ancestorPrecedence !== FALSE && $ancestorPrecedence->textContent === "yes" )
+                        $this->_ancestorObjectsTakePrecedence = TRUE;
                 }
             }
 
@@ -2665,6 +2670,15 @@ class PanoramaConf
     public function childDeviceGroups()
     {
         return $this->getDeviceGroups();
+    }
+
+    /**
+     * Panorama setting 'deviceconfig setting management ancestor-objects-take-precedence'.
+     * TRUE: values of Shared / ancestor device groups win over same-name objects in descendant device groups.
+     */
+    public function ancestorObjectsTakePrecedence(): bool
+    {
+        return $this->_ancestorObjectsTakePrecedence;
     }
 }
 

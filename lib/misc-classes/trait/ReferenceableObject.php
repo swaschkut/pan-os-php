@@ -645,41 +645,153 @@ trait ReferenceableObject
         return $this->name;
     }
 
-    public function objectIsUnused(): ?bool
+    /**
+     * Returns the location an object (or a referencer such as a rule, rule container or group) lives in:
+     * DeviceGroup, PanoramaConf (Shared), VirtualSystem, PANConf, or an SCM container type.
+     * Returns null if no such owner is found.
+     */
+    public static function findLocationOwner($object)
     {
-        $className = "";
+        $locationClasses = array('DeviceGroup', 'PanoramaConf', 'VirtualSystem', 'PANConf',
+            'Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet', 'FawkesConf', 'BuckbeakConf');
 
-        if( get_class($this) == 'Service' || get_class($this) == 'ServiceGroup' )
-            $className = 'ServiceGroup';
-        elseif( get_class($this) == 'Address' || get_class($this) == 'AddressGroup' )
-            $className = 'AddressGroup';
-        elseif( get_class($this) == 'App' || get_class($this) == 'AppFilter' || get_class($this) == 'AppGroup')
-            $className = 'AppGroup';
-        else
-            return null;
-
-        /** @var Address|AddressGroup|Service|ServiceGroup $this */
-        if( $this->countReferences() == 0 )
+        $cur = $object;
+        for( $i = 0; $i < 25 && $cur !== null && is_object($cur); $i++ )
         {
-            //- check if higher DG has same name and only if it is also unused return TRUE
-            //Todo: 2024117 swaschkut - compare how it is done in MERGER class - findAncestor / findChildAncestor
-            if( isset($this->owner->parentCentralStore) && $this->owner->parentCentralStore !== null )
-            {
-                $tmp_obj = $this->owner->parentCentralStore->find($this->name());
-                if ($tmp_obj === null || $tmp_obj->countReferences() == 0)
-                    return TRUE;
-                else
-                    return FALSE;
-            }
-
-            //Todo: check also childDg if same name is available,
-            //for shared level, as this has no parentStore
-            return TRUE;
+            if( in_array(get_class($cur), $locationClasses, TRUE) )
+                return $cur;
+            $cur = isset($cur->owner) ? $cur->owner : null;
         }
 
-        return false;
+        return null;
     }
 
+    /**
+     * Same-name / override check, Panorama view.
+     *
+     * Panorama pushes ONE object per name to a firewall. When Shared / ancestor device groups and a
+     * descendant device group hold objects with the same name, the setting
+     * "deviceconfig setting management ancestor-objects-take-precedence" decides which one:
+     *
+     * off (default): the descendant's copy wins. A rule in D's ancestor chain naming the ancestor copy
+     *   uses D's copy on D's firewalls. -> D's copy is used when an ancestor copy (any level up to
+     *   Shared, not just the nearest) is referenced by something located in D's ancestor chain.
+     *   Referencers in other branches do not count.
+     *
+     * yes: the highest ancestor's copy wins. Rules of a descendant naming its own copy use the
+     *   ancestor's copy on the firewalls. -> this copy is used when it is the highest copy and a
+     *   same-name copy in a descendant device group is referenced. A copy shadowed by an ancestor copy
+     *   is never used via override.
+     *
+     * Firewall (vsys / shared): no override across levels -> FALSE.
+     * SCM (Container / DeviceCloud / DeviceOnPrem / Snippet): previous behaviour (nearest copy up).
+     * Referencers that are groups count conservatively, without checking whether the group is in use.
+     */
+    public function isUsedViaSameNameOverride(): bool
+    {
+        if( !isset($this->owner) || !is_object($this->owner) )
+            return FALSE;
+
+        $location = self::findLocationOwner($this);
+        if( $location === null )
+            return FALSE;
+
+        $locationClass = get_class($location);
+
+        if( $locationClass == 'VirtualSystem' || $locationClass == 'PANConf' )
+            return FALSE;
+
+        if( $locationClass != 'DeviceGroup' && $locationClass != 'PanoramaConf' )
+        {
+            // SCM: keep previous behaviour
+            if( !isset($this->owner->parentCentralStore) || $this->owner->parentCentralStore === null )
+                return FALSE;
+            $tmp_obj = $this->owner->parentCentralStore->find($this->name(), null, TRUE);
+            return ( $tmp_obj !== null && $tmp_obj !== $this && $tmp_obj->countReferences() > 0 );
+        }
+
+        $panorama = ($locationClass == 'PanoramaConf') ? $location : $location->owner;
+        $ancestorPrecedence = is_object($panorama) && method_exists($panorama, 'ancestorObjectsTakePrecedence')
+            && $panorama->ancestorObjectsTakePrecedence();
+
+        if( !$ancestorPrecedence )
+        {
+            // descendant copy wins
+            if( $locationClass == 'PanoramaConf' )
+                return FALSE;   // Shared has no ancestor
+
+            /** @var DeviceGroup $location */
+            $chain = array();
+            for( $dg = $location->parentDeviceGroup; $dg !== null; $dg = $dg->parentDeviceGroup )
+                $chain[spl_object_id($dg)] = TRUE;
+            $chain[spl_object_id($panorama)] = TRUE;
+
+            for( $store = $this->owner->parentCentralStore; $store !== null; $store = (isset($store->parentCentralStore) ? $store->parentCentralStore : null) )
+            {
+                $ancestorObj = $store->find($this->name(), null, FALSE);
+                if( $ancestorObj === null || $ancestorObj === $this )
+                    continue;
+
+                foreach( $ancestorObj->getReferences() as $ref )
+                {
+                    $refLocation = self::findLocationOwner($ref);
+                    if( $refLocation !== null && isset($chain[spl_object_id($refLocation)]) )
+                        return TRUE;
+                }
+            }
+
+            return FALSE;
+        }
+
+        // ancestor copy wins: only the highest copy can be used via override
+        if( isset($this->owner->parentCentralStore) )
+            for( $store = $this->owner->parentCentralStore; $store !== null; $store = (isset($store->parentCentralStore) ? $store->parentCentralStore : null) )
+            {
+                $ancestorObj = $store->find($this->name(), null, FALSE);
+                if( $ancestorObj !== null && $ancestorObj !== $this )
+                    return FALSE;   // shadowed by an ancestor copy
+            }
+
+        // same store in each descendant device group
+        $storeProperty = null;
+        foreach( get_object_vars($location) as $key => $value )
+            if( $value === $this->owner )
+            {
+                $storeProperty = $key;
+                break;
+            }
+        if( $storeProperty === null )
+            return FALSE;
+
+        $descendants = ($locationClass == 'PanoramaConf') ? $location->getDeviceGroups() : $location->childDeviceGroups(TRUE);
+        foreach( $descendants as $dg )
+        {
+            if( !isset($dg->$storeProperty) || $dg->$storeProperty === null )
+                continue;
+            $descendantObj = $dg->$storeProperty->find($this->name(), null, FALSE);
+            if( $descendantObj !== null && $descendantObj !== $this && $descendantObj->countReferences() > 0 )
+                return TRUE;
+        }
+
+        return FALSE;
+    }
+
+    /**
+     * Unused = no direct reference AND not used via a same-name copy in an ancestor (Panorama view).
+     * Valid for all object types.
+     */
+    public function objectIsUnused(): ?bool
+    {
+        if( $this->countReferences() > 0 )
+            return FALSE;
+
+        return !$this->isUsedViaSameNameOverride();
+    }
+
+    /**
+     * Like objectIsUnused(), and additionally an object whose only referencers are groups
+     * that are themselves unused (recursively) is unused.
+     */
     public function objectIsUnusedRecursive(): ?bool
     {
         $className = "";
@@ -705,33 +817,19 @@ trait ReferenceableObject
         else
             return null;
 
-        /** @var Address|AddressGroup|Service|ServiceGroup $this */
         if( $this->countReferences() == 0 )
-        {
-            //- check if higher DG has same name and only if it is also unused return TRUE
-            //Todo: 2024117 swaschkut - compare how it is done in MERGER class - findAncestor / findChildAncestor
-            if( isset($this->owner->parentCentralStore) && $this->owner->parentCentralStore !== null )
-            {
-                $tmp_obj = $this->owner->parentCentralStore->find($this->name());
-                if( $tmp_obj === null || $tmp_obj->countReferences() == 0 )
-                    return TRUE;
-                else
-                    return FALSE;
-            }
-        }
+            return !$this->isUsedViaSameNameOverride();
 
         $groups = $this->findReferencesWithClass($className);
 
         if( count($groups) != $this->countReferences() )
             return FALSE;
 
-        if( count($groups) == 0 )
-            return TRUE;
-
         foreach( $groups as $group )
         {
-            /** @var ServiceGroup $group */
-            if(!$group->objectIsUnusedRecursive())
+            if( $group === $this )
+                continue;
+            if( !$group->objectIsUnusedRecursive() )
                 return FALSE;
         }
 

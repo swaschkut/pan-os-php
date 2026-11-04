@@ -11,7 +11,7 @@ RQuery::$defaultFilters['log-profile']['refcount']['operators']['>,<,=,!'] = arr
 );
 RQuery::$defaultFilters['log-profile']['object']['operators']['is.unused'] = array(
     'Function' => function (LogProfileRQueryContext $context) {
-        return $context->object->countReferences() == 0;
+        return $context->object->objectIsUnused();
     },
     'arg' => FALSE,
     'ci' => array(

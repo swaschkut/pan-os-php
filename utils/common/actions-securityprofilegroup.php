@@ -19,6 +19,63 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+SecurityProfileGroupCallContext::$supportedActions['delete'] = array(
+    'name' => 'delete',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object is used by other objects and cannot be deleted (use delete-Force to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "this object has no direct reference, but through a same-name object in another device-group level (Shared / ancestor / descendant) Panorama pushes this object and firewalls use it (use delete-Force to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        // release the references this group holds on its member profiles
+        foreach( $object->securityProfiles() as $profile )
+            if( is_object($profile) )
+                $profile->removeReference($object);
+
+        if( $context->isAPI )
+            $object->owner->API_removeSecurityProfileGroup($object);
+        else
+            $object->owner->removeSecurityProfileGroup($object);
+    },
+);
+
+SecurityProfileGroupCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object seems to be used so deletion may fail.";
+            PH::ACTIONstatus( $context, "WARNING", $string );
+        }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "firewalls use this object through a same-name object in another device-group level: deleting it changes what Panorama pushes";
+            PH::ACTIONstatus( $context, "WARNING", $string );
+        }
+
+        foreach( $object->securityProfiles() as $profile )
+            if( is_object($profile) )
+                $profile->removeReference($object);
+
+        if( $context->isAPI )
+            $object->owner->API_removeSecurityProfileGroup($object);
+        else
+            $object->owner->removeSecurityProfileGroup($object);
+    },
+);
+
 SecurityProfileGroupCallContext::$supportedActions['displayreferences'] = array(
     'name' => 'displayReferences',
     'MainFunction' => function (SecurityProfileGroupCallContext $context) {

@@ -11,7 +11,7 @@ RQuery::$defaultFilters['securityprofilegroup']['refcount']['operators']['>,<,=,
 );
 RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.unused'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
-        return $context->object->countReferences() == 0;
+        return $context->object->objectIsUnused();
     },
     'arg' => FALSE,
     'ci' => array(

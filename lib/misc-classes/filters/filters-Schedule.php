@@ -11,7 +11,7 @@ RQuery::$defaultFilters['schedule']['refcount']['operators']['>,<,=,!'] = array(
 );
 RQuery::$defaultFilters['schedule']['object']['operators']['is.unused'] = array(
     'Function' => function (ScheduleRQueryContext $context) {
-        return $context->object->countReferences() == 0;
+        return $context->object->objectIsUnused();
     },
     'arg' => FALSE,
     'ci' => array(

@@ -11,7 +11,7 @@ RQuery::$defaultFilters['tag']['refcount']['operators']['>,<,=,!'] = array(
 );
 RQuery::$defaultFilters['tag']['object']['operators']['is.unused'] = array(
     'Function' => function (TagRQueryContext $context) {
-        return $context->object->countReferences() == 0;
+        return $context->object->objectIsUnused();
     },
     'arg' => FALSE,
     'ci' => array(

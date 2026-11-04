@@ -30,6 +30,12 @@ SecurityProfileCallContext::$supportedActions['delete'] = array(
             PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
         }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "this object has no direct reference, but through a same-name object in another device-group level (Shared / ancestor / descendant) Panorama pushes this object and firewalls use it (use delete-Force to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
         //Todo: continue improvement for SecProf
 
         if( get_class($object) == "customURLProfile" )
@@ -61,6 +67,11 @@ SecurityProfileCallContext::$supportedActions['delete-force'] = array(
         {
             $string = "this object seems to be used so deletion may fail.";
             PH::ACTIONstatus($context, "WARNING", $string);
+        }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "firewalls use this object through a same-name object in another device-group level: deleting it changes what Panorama pushes";
+            PH::ACTIONstatus( $context, "WARNING", $string );
         }
         //Todo: continue improvement for SecProf
 

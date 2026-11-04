@@ -17,6 +17,7 @@ UTIL:
 * type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
 * type=zone actions=exporttohtml:file.html | extend with column template-stack
 * type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
+* introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

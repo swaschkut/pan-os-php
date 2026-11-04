@@ -24,7 +24,7 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused'] =
     'Function' => function (SecurityProfileRQueryContext $context) {
         if( get_class($context->object ) == "PredefinedSecurityProfileURL" )
             return null;
-        return $context->object->countReferences() == 0;
+        return $context->object->objectIsUnused();
     },
     'arg' => FALSE,
     'ci' => array(

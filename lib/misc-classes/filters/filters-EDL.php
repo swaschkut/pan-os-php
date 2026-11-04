@@ -11,7 +11,7 @@ RQuery::$defaultFilters['edl']['refcount']['operators']['>,<,=,!'] = array(
 );
 RQuery::$defaultFilters['edl']['object']['operators']['is.unused'] = array(
     'Function' => function (EDLRQueryContext $context) {
-        return $context->object->countReferences() == 0;
+        return $context->object->objectIsUnused();
     },
     'arg' => FALSE,
     'ci' => array(
