@@ -2,27 +2,14 @@
 
 // <editor-fold desc=" ***** Service filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['service']['object']['operators']['is.member.of'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        $serviceGroup = $context->object->owner->find($context->value);
-
-        if( $serviceGroup === null )
-            return FALSE;
-
-        if( $serviceGroup->hasObjectRecursive($context->object) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => TRUE
-);
 RQuery::$defaultFilters['service']['object']['operators']['is.recursive.member.of'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         $serviceGroup = $context->object->owner->find($context->value);
 
         if( $serviceGroup === null )
             return FALSE;
+        if( !$serviceGroup->isGroup() )
+            derr( "'" . $context->value . "' is not a group", null, FALSE );
 
         if( !$context->object->isGroup() )
         {
@@ -137,16 +124,6 @@ RQuery::$defaultFilters['service']['name']['operators']['eq'] = array(
 RQuery::$defaultFilters['service']['name']['operators']['eq.nocase'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         return strtolower($context->object->name()) == strtolower($context->value);
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% udp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['service']['name']['operators']['contains'] = array(
-    'Function' => function (ServiceRQueryContext $context) {
-        return strpos($context->object->name(), $context->value) !== FALSE;
     },
     'arg' => TRUE,
     'ci' => array(

@@ -1196,4 +1196,75 @@ RQuery::registerFilter( array(
     )
 ) );
 
+// name contains: case-sensitive for every type (rule used to compare case-insensitively); case-insensitive variant: contains.nocase
+RQuery::registerFilter( array(
+    'rule',
+    'service'
+), 'name', 'contains', array(
+    'Function' => function (RQueryContext $context) {
+        return strpos($context->object->name(), $context->value) !== FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)',
+    'ci' => array(
+        'fString' => '(%PROP% udp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+RQuery::registerFilter( array(
+    'address',
+    'certificate',
+    'dns-rule',
+    'edl',
+    'gp-gateway',
+    'gp-portal',
+    'interface-management-profile',
+    'log-profile',
+    'profile',
+    'rule',
+    'schedule',
+    'securityprofile',
+    'securityprofilegroup',
+    'service',
+    'tag',
+    'threat',
+    'threat-rule',
+    'zone',
+    'zone-protection-profile'
+), 'name', 'contains.nocase', array(
+    'Function' => function (RQueryContext $context) {
+        return stripos($context->object->name(), $context->value) !== FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if object name contains the string specified in argument, ignoring upper / lower case',
+    'ci' => array(
+        'fString' => '(%PROP% grp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+// is.member.of: DIRECT membership for address and service (recursive: is.recursive.member.of)
+RQuery::registerFilter( array(
+    'address',
+    'service'
+), 'object', 'is.member.of', array(
+    'Function' => function (RQueryContext $context) {
+        $group = $context->object->owner->find($context->value);
+
+        if( $group === null )
+            return FALSE;
+        if( !$group->isGroup() )
+            derr( "'" . $context->value . "' is not a group", null, FALSE );
+
+        return $group->has($context->object) === TRUE;
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if the object is a direct member of the group specified in argument (members of sub-groups: is.recursive.member.of)',
+    'ci' => array(
+        'fString' => '(%PROP% shared-group1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
 // </editor-fold>

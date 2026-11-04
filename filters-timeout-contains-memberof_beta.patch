@@ -1,0 +1,214 @@
+diff --git a/lib/misc-classes/filters/filters-Address.php b/lib/misc-classes/filters/filters-Address.php
+index d4eec53..75ede29 100644
+--- a/lib/misc-classes/filters/filters-Address.php
++++ b/lib/misc-classes/filters/filters-Address.php
+@@ -206,31 +206,14 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
+     },
+     'arg' => false
+ );
+-RQuery::$defaultFilters['address']['object']['operators']['is.member.of'] = array(
+-    'Function' => function (AddressRQueryContext $context) {
+-        $addressGroup = $context->object->owner->find($context->value);
+-
+-        if( $addressGroup === null )
+-            return FALSE;
+-
+-        if( $addressGroup->has($context->object) )
+-            return TRUE;
+-
+-        return FALSE;
+-
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% shared-group1)',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ RQuery::$defaultFilters['address']['object']['operators']['is.recursive.member.of'] = array(
+     'Function' => function (AddressRQueryContext $context) {
+         $addressGroup = $context->object->owner->find($context->value);
+ 
+         if( $addressGroup === null )
+             return FALSE;
++        if( !$addressGroup->isGroup() )
++            derr( "'" . $context->value . "' is not a group", null, FALSE );
+ 
+         if( !$context->object->isGroup() && !$context->object->isRegion() )
+         {
+diff --git a/lib/misc-classes/filters/filters-Application.php b/lib/misc-classes/filters/filters-Application.php
+index 399cfa3..3462100 100644
+--- a/lib/misc-classes/filters/filters-Application.php
++++ b/lib/misc-classes/filters/filters-Application.php
+@@ -375,19 +375,6 @@ RQuery::$defaultFilters['application']['udp']['operators']['has'] = array(
+         'input' => 'input/panorama-8.0.xml'
+     )
+ );
+-RQuery::$defaultFilters['application']['timeout']['operators']['is.set'] = array(
+-    'Function' => function (ApplicationRQueryContext $context) {
+-        if( isset( $context->object->udp) )
+-            return TRUE;
+-
+-        return FALSE;
+-    },
+-    'arg' => FALSE,
+-    'ci' => array(
+-        'fString' => '(%PROP%)',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ RQuery::$defaultFilters['application']['timeout']['operators']['is.set'] = array(
+     'Function' => function (ApplicationRQueryContext $context) {
+         if( isset( $context->object->timeout) )
+diff --git a/lib/misc-classes/filters/filters-Common.php b/lib/misc-classes/filters/filters-Common.php
+index bf313d3..cc23a54 100644
+--- a/lib/misc-classes/filters/filters-Common.php
++++ b/lib/misc-classes/filters/filters-Common.php
+@@ -1196,4 +1196,75 @@ RQuery::registerFilter( array(
+     )
+ ) );
+ 
++// name contains: case-sensitive for every type (rule used to compare case-insensitively); case-insensitive variant: contains.nocase
++RQuery::registerFilter( array(
++    'rule',
++    'service'
++), 'name', 'contains', array(
++    'Function' => function (RQueryContext $context) {
++        return strpos($context->object->name(), $context->value) !== FALSE;
++    },
++    'arg' => TRUE,
++    'help' => 'returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)',
++    'ci' => array(
++        'fString' => '(%PROP% udp)',
++        'input' => 'input/panorama-8.0.xml'
++    )
++) );
++
++RQuery::registerFilter( array(
++    'address',
++    'certificate',
++    'dns-rule',
++    'edl',
++    'gp-gateway',
++    'gp-portal',
++    'interface-management-profile',
++    'log-profile',
++    'profile',
++    'rule',
++    'schedule',
++    'securityprofile',
++    'securityprofilegroup',
++    'service',
++    'tag',
++    'threat',
++    'threat-rule',
++    'zone',
++    'zone-protection-profile'
++), 'name', 'contains.nocase', array(
++    'Function' => function (RQueryContext $context) {
++        return stripos($context->object->name(), $context->value) !== FALSE;
++    },
++    'arg' => TRUE,
++    'help' => 'returns TRUE if object name contains the string specified in argument, ignoring upper / lower case',
++    'ci' => array(
++        'fString' => '(%PROP% grp)',
++        'input' => 'input/panorama-8.0.xml'
++    )
++) );
++
++// is.member.of: DIRECT membership for address and service (recursive: is.recursive.member.of)
++RQuery::registerFilter( array(
++    'address',
++    'service'
++), 'object', 'is.member.of', array(
++    'Function' => function (RQueryContext $context) {
++        $group = $context->object->owner->find($context->value);
++
++        if( $group === null )
++            return FALSE;
++        if( !$group->isGroup() )
++            derr( "'" . $context->value . "' is not a group", null, FALSE );
++
++        return $group->has($context->object) === TRUE;
++    },
++    'arg' => TRUE,
++    'help' => 'returns TRUE if the object is a direct member of the group specified in argument (members of sub-groups: is.recursive.member.of)',
++    'ci' => array(
++        'fString' => '(%PROP% shared-group1)',
++        'input' => 'input/panorama-8.0.xml'
++    )
++) );
++
+ // </editor-fold>
+diff --git a/lib/misc-classes/filters/filters-Rule.php b/lib/misc-classes/filters/filters-Rule.php
+index aef0ce2..9765beb 100644
+--- a/lib/misc-classes/filters/filters-Rule.php
++++ b/lib/misc-classes/filters/filters-Rule.php
+@@ -3725,16 +3725,6 @@ RQuery::$defaultFilters['rule']['name']['operators']['eq.nocase'] = array(
+         'input' => 'input/panorama-8.0.xml'
+     )
+ );
+-RQuery::$defaultFilters['rule']['name']['operators']['contains'] = array(
+-    'Function' => function (RuleRQueryContext $context) {
+-        return stripos($context->object->name(), $context->value) !== FALSE;
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP%  searchME)',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ 
+ RQuery::$defaultFilters['rule']['name']['operators']['is.in.file'] = array(
+     'Function' => function (RuleRQueryContext $context) {
+diff --git a/lib/misc-classes/filters/filters-Service.php b/lib/misc-classes/filters/filters-Service.php
+index c3abd44..ecdfb48 100644
+--- a/lib/misc-classes/filters/filters-Service.php
++++ b/lib/misc-classes/filters/filters-Service.php
+@@ -2,27 +2,14 @@
+ 
+ // <editor-fold desc=" ***** Service filters *****" defaultstate="collapsed" >
+ 
+-RQuery::$defaultFilters['service']['object']['operators']['is.member.of'] = array(
+-    'Function' => function (ServiceRQueryContext $context) {
+-        $serviceGroup = $context->object->owner->find($context->value);
+-
+-        if( $serviceGroup === null )
+-            return FALSE;
+-
+-        if( $serviceGroup->hasObjectRecursive($context->object) )
+-            return TRUE;
+-
+-        return FALSE;
+-
+-    },
+-    'arg' => TRUE
+-);
+ RQuery::$defaultFilters['service']['object']['operators']['is.recursive.member.of'] = array(
+     'Function' => function (ServiceRQueryContext $context) {
+         $serviceGroup = $context->object->owner->find($context->value);
+ 
+         if( $serviceGroup === null )
+             return FALSE;
++        if( !$serviceGroup->isGroup() )
++            derr( "'" . $context->value . "' is not a group", null, FALSE );
+ 
+         if( !$context->object->isGroup() )
+         {
+@@ -144,16 +131,6 @@ RQuery::$defaultFilters['service']['name']['operators']['eq.nocase'] = array(
+         'input' => 'input/panorama-8.0.xml'
+     )
+ );
+-RQuery::$defaultFilters['service']['name']['operators']['contains'] = array(
+-    'Function' => function (ServiceRQueryContext $context) {
+-        return strpos($context->object->name(), $context->value) !== FALSE;
+-    },
+-    'arg' => TRUE,
+-    'ci' => array(
+-        'fString' => '(%PROP% udp)',
+-        'input' => 'input/panorama-8.0.xml'
+-    )
+-);
+ RQuery::$defaultFilters['service']['name']['operators']['regex'] = array(
+     'Function' => function (ServiceRQueryContext $context) {
+         $object = $context->object;

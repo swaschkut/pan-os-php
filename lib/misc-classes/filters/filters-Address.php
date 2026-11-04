@@ -206,31 +206,14 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
     },
     'arg' => false
 );
-RQuery::$defaultFilters['address']['object']['operators']['is.member.of'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        $addressGroup = $context->object->owner->find($context->value);
-
-        if( $addressGroup === null )
-            return FALSE;
-
-        if( $addressGroup->has($context->object) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% shared-group1)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['address']['object']['operators']['is.recursive.member.of'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $addressGroup = $context->object->owner->find($context->value);
 
         if( $addressGroup === null )
             return FALSE;
+        if( !$addressGroup->isGroup() )
+            derr( "'" . $context->value . "' is not a group", null, FALSE );
 
         if( !$context->object->isGroup() && !$context->object->isRegion() )
         {

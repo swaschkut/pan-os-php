@@ -377,19 +377,6 @@ RQuery::$defaultFilters['application']['udp']['operators']['has'] = array(
 );
 RQuery::$defaultFilters['application']['timeout']['operators']['is.set'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
-        if( isset( $context->object->udp) )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['application']['timeout']['operators']['is.set'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
         if( isset( $context->object->timeout) )
             return TRUE;
 

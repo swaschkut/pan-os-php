@@ -3725,16 +3725,6 @@ RQuery::$defaultFilters['rule']['name']['operators']['eq.nocase'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['rule']['name']['operators']['contains'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        return stripos($context->object->name(), $context->value) !== FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP%  searchME)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 
 RQuery::$defaultFilters['rule']['name']['operators']['is.in.file'] = array(
     'Function' => function (RuleRQueryContext $context) {
