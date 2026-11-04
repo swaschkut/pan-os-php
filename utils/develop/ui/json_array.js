@@ -670,11 +670,11 @@ var subjectObject =
             },
             "member.name": {
                 "operators": {
-                    "is.in.file": {
+                    "is": {
                         "Function": {},
                         "arg": true
                     },
-                    "is": {
+                    "is.in.file": {
                         "Function": {},
                         "arg": true
                     }
@@ -694,6 +694,14 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% -)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "eq": {
                         "Function": {},
                         "arg": true,
@@ -710,13 +718,17 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "has.wrong.characters": {
                         "Function": {},
-                        "arg": true,
+                        "arg": false,
                         "ci": {
-                            "fString": "(%PROP% -)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -727,19 +739,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.in.file": {
-                        "Function": {},
-                        "arg": true
-                    },
                     "same.as.region.predefined": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "has.wrong.characters": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -775,6 +775,34 @@ var subjectObject =
             },
             "object": {
                 "operators": {
+                    "has.group.as.member": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.unused": {
                         "Function": {},
                         "arg": false,
@@ -784,6 +812,22 @@ var subjectObject =
                         }
                     },
                     "is.unused.recursive": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -871,22 +915,6 @@ var subjectObject =
                         "Function": {},
                         "arg": false
                     },
-                    "overrides.upper.level": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "overriden.at.lower.level": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.member.of": {
                         "Function": {},
                         "arg": true,
@@ -902,10 +930,6 @@ var subjectObject =
                             "fString": "(%PROP% grp-in-grp-test-1)",
                             "input": "input\/panorama-8.0-merger.xml"
                         }
-                    },
-                    "has.group.as.member": {
-                        "Function": {},
-                        "arg": false
                     }
                 }
             },
@@ -1635,6 +1659,46 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.unused.recursive": {
                         "Function": {},
                         "arg": false,
@@ -1900,6 +1964,14 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% -)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "eq": {
                         "Function": {},
                         "arg": true,
@@ -1913,14 +1985,6 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% new test 2)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "contains": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% -)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2192,6 +2256,19 @@ var subjectObject =
                         "default": "false"
                     }
                 }
+            },
+            "display-ancestor-precedence-impact": {
+                "name": "display-ancestor-precedence-impact",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*none*"
+                    }
+                },
+                "help": "offline report: what changes on the firewalls of each device group when Panorama setting\n'ancestor-objects-take-precedence' is switched (no -> yes or yes -> no, depending on the current value)\noptional: filename=report.csv"
             },
             "display-shadowrule": {
                 "name": "display-shadowrule",
@@ -2690,6 +2767,10 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
                     "regex": {
                         "Function": {},
                         "arg": true,
@@ -2697,10 +2778,6 @@ var subjectObject =
                             "fString": "(%PROP% \/-group\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
-                    },
-                    "is.in.file": {
-                        "Function": {},
-                        "arg": true
                     },
                     "is.child.of": {
                         "Function": {},
@@ -2738,6 +2815,26 @@ var subjectObject =
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "manageddevice.all.in.file": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when every firewall that receives the template (through any template stack) or the template-stack is listed in the file, one serial per line, e.g. 'filter=(template manageddevice.all.in.file FILENAME)'"
+                    },
+                    "manageddevice.all.in.list": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when every firewall that receives the template (through any template stack) or the template-stack is listed, e.g. 'filter=(template manageddevice.all.in.list serial1,serial2)'"
+                    },
+                    "manageddevice.all.with-no-dg": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "TRUE when the template (through any template stack) or the template-stack reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(template manageddevice.all.with-no-dg)'"
+                    },
+                    "manageddevice.with-no-dg": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "TRUE when at least one firewall that receives the template (through any template stack) or the template-stack is not assigned to a device group, e.g. 'filter=(template manageddevice.with-no-dg)'"
                     }
                 }
             },
@@ -2941,14 +3038,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -2964,6 +3053,14 @@ var subjectObject =
                         "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2983,9 +3080,13 @@ var subjectObject =
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -3003,13 +3104,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -3023,7 +3120,7 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -3031,7 +3128,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.unused": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -3257,14 +3354,6 @@ var subjectObject =
             }
         },
         "filter": {
-            "expire.in.days": {
-                "operators": {
-                    ">,<,=,!": {
-                        "Function": {},
-                        "arg": true
-                    }
-                }
-            },
             "location": {
                 "operators": {
                     "is": {
@@ -3272,14 +3361,6 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% shared )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3300,14 +3381,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -3325,13 +3418,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -3345,6 +3434,38 @@ var subjectObject =
             },
             "object": {
                 "operators": {
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.unused": {
                         "Function": {},
                         "arg": false,
@@ -3353,15 +3474,15 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.expired": {
+                    "overriden.at.lower.level": {
                         "Function": {},
-                        "arg": false
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
-                    "expire.in.days": {
-                        "Function": {},
-                        "arg": true
-                    },
-                    "is.tmp": {
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -3497,14 +3618,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -3522,14 +3635,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -3547,13 +3672,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -3654,14 +3775,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -3679,14 +3792,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -3704,13 +3829,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -4407,14 +4528,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -4432,14 +4545,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -4457,13 +4582,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -4477,7 +4598,7 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -4485,7 +4606,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.unused": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -4881,14 +5002,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -4906,14 +5019,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -4931,13 +5056,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -4951,7 +5072,23 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -4960,6 +5097,30 @@ var subjectObject =
                         }
                     },
                     "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -5228,14 +5389,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -5253,14 +5406,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -5278,13 +5443,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -5298,7 +5459,7 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -5306,7 +5467,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.unused": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -5713,7 +5874,7 @@ var subjectObject =
                             "ApplicationSeen",
                             "HitCount"
                         ],
-                        "help": "example: 'actions=display:HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed"
+                        "help": "example: 'actions=display:HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' - 'rule-modification' - 'last-reset' (aggregated over all firewalls) and 'hit-count-per-firewall' will be listed"
                     }
                 }
             },
@@ -5925,7 +6086,7 @@ var subjectObject =
                             "Visibility-from-ZPP",
                             "Visibility-from-LFP"
                         ],
-                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
+                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' - 'rule-modification' - 'last-reset' (aggregated over all firewalls)\n               and 'hit-count-per-firewall' (one line per firewall\/vsys) will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
                     }
                 }
             },
@@ -5957,7 +6118,7 @@ var subjectObject =
                             "Visibility-from-ZPP",
                             "Visibility-from-LFP"
                         ],
-                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
+                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' - 'rule-modification' - 'last-reset' (aggregated over all firewalls)\n               and 'hit-count-per-firewall' (one line per firewall\/vsys) will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
                     }
                 }
             },
@@ -7879,6 +8040,14 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "has.wrong.characters": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "eq": {
                         "Function": {},
                         "arg": true,
@@ -7917,14 +8086,6 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "help": "returns TRUE if rule name matches one of the names found in text file provided in argument"
-                    },
-                    "has.wrong.characters": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
                     },
                     "is.in.csv-report-file": {
                         "Function": {},
@@ -9172,9 +9333,13 @@ var subjectObject =
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -9192,13 +9357,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -9212,7 +9373,55 @@ var subjectObject =
             },
             "object": {
                 "operators": {
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -9231,14 +9440,6 @@ var subjectObject =
                     "expired.at.date": {
                         "Function": {},
                         "arg": true
-                    },
-                    "is.tmp": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
                     }
                 }
             },
@@ -10173,14 +10374,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -10198,14 +10391,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -10223,13 +10428,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -10255,6 +10456,14 @@ var subjectObject =
             },
             "object": {
                 "operators": {
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.unused": {
                         "Function": {},
                         "arg": false,
@@ -10263,7 +10472,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.unused.recursive": {
+                    "has.same-name.other.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -10271,7 +10480,39 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.overriding": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused.recursive": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -10646,6 +10887,14 @@ var subjectObject =
                     }
                 }
             },
+            "delete": {
+                "name": "delete",
+                "MainFunction": {}
+            },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -10841,9 +11090,13 @@ var subjectObject =
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -10861,13 +11114,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -10881,7 +11130,23 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -10890,6 +11155,30 @@ var subjectObject =
                         }
                     },
                     "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -11629,11 +11918,11 @@ var subjectObject =
             },
             "member.name": {
                 "operators": {
-                    "is.in.file": {
+                    "is": {
                         "Function": {},
                         "arg": true
                     },
-                    "is": {
+                    "is.in.file": {
                         "Function": {},
                         "arg": true
                     }
@@ -11653,10 +11942,6 @@ var subjectObject =
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
-                        "Function": {},
-                        "arg": true
-                    },
                     "has.wrong.characters": {
                         "Function": {},
                         "arg": false,
@@ -11664,6 +11949,10 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
                     },
                     "eq": {
                         "Function": {},
@@ -11702,6 +11991,34 @@ var subjectObject =
             },
             "object": {
                 "operators": {
+                    "has.group.as.member": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.unused": {
                         "Function": {},
                         "arg": false,
@@ -11711,6 +12028,22 @@ var subjectObject =
                         }
                     },
                     "is.unused.recursive": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -11771,26 +12104,6 @@ var subjectObject =
                         }
                     },
                     "srcport.is.set": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "has.group.as.member": {
-                        "Function": {},
-                        "arg": false
-                    },
-                    "overrides.upper.level": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "overriden.at.lower.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -12651,9 +12964,13 @@ var subjectObject =
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -12671,13 +12988,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -12691,7 +13004,23 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "has.same-name.other.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -12700,6 +13029,30 @@ var subjectObject =
                         }
                     },
                     "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overriden.at.lower.level": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -12926,19 +13279,19 @@ var subjectObject =
             },
             "name": {
                 "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% ftp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "contains": {
                         "Function": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% -)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% ftp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13230,14 +13583,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -13255,14 +13600,26 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -13280,13 +13637,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -13300,7 +13653,7 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -13308,7 +13661,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.unused": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -13719,14 +14072,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -13742,6 +14087,14 @@ var subjectObject =
                         "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13768,23 +14121,53 @@ var subjectObject =
                     }
                 }
             },
-            "manageddevice.owner": {
+            "manageddevice": {
                 "operators": {
                     "is.in.file": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "help": "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice is.in.file FILENAME)'"
                     },
                     "is.in.list": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "help": "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice is.in.list serial1,serial2)'"
+                    },
+                    "with-no-dg": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "TRUE when at least one firewall that receives the owning template (through any template stack) is not assigned to a device group, e.g. 'filter=(manageddevice with-no-dg)'"
+                    }
+                }
+            },
+            "manageddevice.all": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.all is.in.file FILENAME)'"
+                    },
+                    "is.in.list": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.all is.in.list serial1,serial2)'"
+                    },
+                    "with-no-dg": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "TRUE when the owning template (through any template stack) reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(manageddevice.all with-no-dg)'"
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -13802,13 +14185,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -13822,7 +14201,7 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -13830,7 +14209,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.unused": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -13912,7 +14291,8 @@ var subjectObject =
                     },
                     "is.unused.recursive": {
                         "Function": {},
-                        "arg": false
+                        "arg": false,
+                        "help": "TRUE when no template stack holding the owning template (or the owning template stack itself) carries a firewall"
                     }
                 }
             },
@@ -14054,14 +14434,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
@@ -14079,26 +14451,64 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
-            "manageddevice.owner": {
+            "manageddevice": {
                 "operators": {
                     "is.in.file": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "help": "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice is.in.file FILENAME)'"
                     },
                     "is.in.list": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "help": "TRUE when at least one firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice is.in.list serial1,serial2)'"
+                    },
+                    "with-no-dg": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "TRUE when at least one firewall that receives the owning template (through any template stack) is not assigned to a device group, e.g. 'filter=(manageddevice with-no-dg)'"
+                    }
+                }
+            },
+            "manageddevice.all": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.all is.in.file FILENAME)'"
+                    },
+                    "is.in.list": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when every firewall that receives the owning template (through any template stack) is listed, e.g. 'filter=(manageddevice.all is.in.list serial1,serial2)'"
+                    },
+                    "with-no-dg": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "TRUE when the owning template (through any template stack) reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(manageddevice.all with-no-dg)'"
                     }
                 }
             },
             "name": {
                 "operators": {
-                    "is.in.file": {
+                    "contains": {
                         "Function": {},
-                        "arg": true
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},
@@ -14116,13 +14526,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "contains": {
+                    "is.in.file": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% grp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
@@ -14136,7 +14542,7 @@ var subjectObject =
             },
             "object": {
                 "operators": {
-                    "is.unused": {
+                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -14144,7 +14550,7 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.tmp": {
+                    "is.unused": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -14222,7 +14628,8 @@ var subjectObject =
                     },
                     "is.unused.recursive": {
                         "Function": {},
-                        "arg": false
+                        "arg": false,
+                        "help": "TRUE when no template stack holding the owning template (or the owning template stack itself) carries a firewall"
                     }
                 }
             }
