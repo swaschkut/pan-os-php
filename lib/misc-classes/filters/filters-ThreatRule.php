@@ -107,9 +107,9 @@ RQuery::$defaultFilters['threat-rule']['host']['operators']['is.any'] = array(
 
         return FALSE;
     },
-    'arg' => TRUE,
+    'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

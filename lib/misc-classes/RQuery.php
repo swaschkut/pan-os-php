@@ -153,6 +153,8 @@ class RQuery
             $this->contextObject = new InterfaceManagementProfileRQueryContext($this);
         elseif( $this->objectType == 'log-profile' )
             $this->contextObject = new LogProfileRQueryContext($this);
+        elseif( $this->objectType == 'profile' )
+            $this->contextObject = new ProfileRQueryContext($this);
 
         else
             derr("unsupported object type '$objectType'");
@@ -760,6 +762,7 @@ require_once 'filters/filters-Static-Route.php';
 require_once 'filters/filters-ThreatRule.php';
 require_once 'filters/filters-DNSRule.php';
 require_once 'filters/filters-GPGateway.php';
+require_once 'filters/filters-GPGatewaytunnel.php';
 require_once 'filters/filters-GPPortal.php';
 
 require_once 'filters/filters-IKEgateway.php';

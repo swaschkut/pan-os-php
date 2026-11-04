@@ -197,10 +197,13 @@ require_once $basedir . '/misc-classes/StaticRouteRQueryContext.php';
 
 require_once $basedir . '/misc-classes/GPGatewayRQueryContext.php';
 require_once $basedir . '/misc-classes/GPPortalRQueryContext.php';
+require_once $basedir . '/misc-classes/GPGatewaytunnelRQueryContext.php';
+require_once $basedir . '/misc-classes/GREtunnelRQueryContext.php';
 
 require_once $basedir . '/misc-classes/ZoneProtectionProfileRQueryContext.php';
 require_once $basedir . '/misc-classes/InterfaceManagementProfileRQueryContext.php';
 require_once $basedir . '/misc-classes/LogProfileRQueryContext.php';
+require_once $basedir . '/misc-classes/ProfileRQueryContext.php';
 
 require_once $basedir . '/misc-classes/CsvParser.php';
 require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';

@@ -285,6 +285,7 @@ RQuery::registerFilter( array(
         return strpos($context->object->name(), $context->value) !== FALSE;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)',
     'ci' => array(
         'fString' => '(%PROP% -)',
         'input' => 'input/panorama-8.0.xml'
@@ -311,6 +312,7 @@ RQuery::registerFilter( array(
         return strpos($context->object->name(), $context->value) !== FALSE;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)',
     'ci' => array(
         'fString' => '(%PROP% grp)',
         'input' => 'input/panorama-8.0.xml'
@@ -343,6 +345,7 @@ RQuery::registerFilter( array(
         return $context->object->name() == $context->value;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches the one specified in argument',
     'ci' => array(
         'fString' => '(%PROP% ftp)',
         'input' => 'input/panorama-8.0.xml'
@@ -375,6 +378,7 @@ RQuery::registerFilter( array(
         return $context->object->name() == $context->value;
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches the one specified in argument',
     'ci' => array(
         'fString' => '(%PROP% grp.shared-group1)',
         'input' => 'input/panorama-8.0.xml'
@@ -418,6 +422,7 @@ RQuery::registerFilter( array(
         return strtolower($context->object->name()) == strtolower($context->value);
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches the one specified in argument, ignoring upper / lower case',
     'ci' => array(
         'fString' => '(%PROP% grp.shared-group1)',
         'input' => 'input/panorama-8.0.xml'
@@ -500,6 +505,8 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'application',
+    'interface',
     'dns-rule',
     'device',
     'edl',
@@ -1065,6 +1072,7 @@ RQuery::registerFilter( array(
 
 // location hierarchy: one definition for every type with a location; logic in PH::locationIsChildOf() / PH::locationIsParentOf()
 RQuery::registerFilter( array(
+    'profile',
     'address',
     'dns-rule',
     'edl',
@@ -1094,6 +1102,7 @@ RQuery::registerFilter( array(
 ) );
 
 RQuery::registerFilter( array(
+    'profile',
     'address',
     'dns-rule',
     'edl',

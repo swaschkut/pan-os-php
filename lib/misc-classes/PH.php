@@ -1599,13 +1599,18 @@ class PH
      *             object in Shared         -> array('shared')
      *  Firewall:  object in 'vsys1'        -> array('vsys1', 'shared')
      *             object in shared         -> array('shared')
-     * Returns null when the device-group hierarchy does not apply: objects inside a Template /
-     * TemplateStack, SCM containers / snippets, or no location found.
+     *  SCM:       object in container / cloud or on-prem device 'X' -> array('X', parent container, ..., 'All')
+     *             object in snippet 'S'                              -> array('S')  (snippets are attached, not nested)
+     * Returns null when the hierarchy does not apply: objects inside a Template / TemplateStack, or no location found.
      *
      * @return array|null  array( 'root' => PanoramaConf|PANConf, 'chain' => string[] )
      */
     public static function locationChain($object)
     {
+        $scm = self::scmLocationChain($object);
+        if( $scm !== null )
+            return $scm;
+
         $location = self::findLocationObject($object);
         if( $location === null )
             return null;
@@ -1648,6 +1653,46 @@ class PH
     }
 
     /**
+     * SCM (Fawkes / Buckbeak) part of locationChain(): location = Container, DeviceCloud, DeviceOnPrem or Snippet.
+     * Containers and devices follow parentContainer up to the top container ('All'); a snippet stands alone.
+     * Returns null when the object is not in an SCM configuration.
+     */
+    private static function scmLocationChain($object)
+    {
+        $scmClasses = array('Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet');
+
+        $location = null;
+        $cur = $object;
+        for( $i = 0; $i < 25 && is_object($cur); $i++ )
+        {
+            $class = get_class($cur);
+            if( in_array($class, $scmClasses, TRUE) )
+            {
+                $location = $cur;
+                break;
+            }
+            if( $class == 'PanoramaConf' || $class == 'PANConf' || $class == 'FawkesConf' || $class == 'BuckbeakConf' )
+                return null;
+            $cur = isset($cur->owner) ? $cur->owner : null;
+        }
+        if( $location === null )
+            return null;
+
+        $chain = array( $location->name() );
+        if( get_class($location) != 'Snippet' )
+        {
+            $parent = isset($location->parentContainer) ? $location->parentContainer : null;
+            for( $i = 0; $i < 25 && is_object($parent); $i++ )
+            {
+                $chain[] = $parent->name();
+                $parent = isset($parent->parentContainer) ? $parent->parentContainer : null;
+            }
+        }
+
+        return array('root' => self::findRootObjectOrDie($location), 'chain' => $chain);
+    }
+
+    /**
      * Chain (see locationChain) of the location NAMED in a filter argument, resolved once per root
      * config and cached. An unknown name stops with the list of available locations.
      */
@@ -1657,22 +1702,37 @@ class PH
         if( isset(self::$locationFilterCache[$key]) )
             return self::$locationFilterCache[$key];
 
-        if( strtolower($name) == 'shared' )
+        $rootClass = get_class($root);
+        if( strtolower($name) == 'shared' && ($rootClass == 'PanoramaConf' || $rootClass == 'PANConf') )
             return self::$locationFilterCache[$key] = array('shared');
 
         $available = array('shared');
         $found = null;
-        if( get_class($root) == 'PanoramaConf' )
+        if( $rootClass == 'PanoramaConf' )
         {
             $found = $root->findDeviceGroup($name);
             foreach( $root->getDeviceGroups() as $dg )
                 $available[] = $dg->name();
         }
-        elseif( get_class($root) == 'PANConf' )
+        elseif( $rootClass == 'PANConf' )
         {
             $found = $root->findVirtualSystem($name);
             foreach( $root->getVirtualSystems() as $vsys )
                 $available[] = $vsys->name();
+        }
+        elseif( $rootClass == 'FawkesConf' || $rootClass == 'BuckbeakConf' )
+        {
+            $available = array();
+            foreach( array('Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet') as $kind )
+            {
+                $findMethod = 'find' . $kind;
+                $listMethod = 'get' . $kind . 's';
+                if( $found === null && method_exists($root, $findMethod) )
+                    $found = $root->$findMethod($name);
+                if( method_exists($root, $listMethod) )
+                    foreach( $root->$listMethod() as $loc )
+                        $available[] = $loc->name();
+            }
         }
 
         if( $found === null )
