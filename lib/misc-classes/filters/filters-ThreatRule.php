@@ -122,14 +122,14 @@ RQuery::$defaultFilters['threat-rule']['threatname']['operators']['eq'] = array(
         if( $value == "any" )
             return TRUE;
 
-        if( $object->host == $value )
+        if( $object->threatname() == $value )
             return TRUE;
 
         return FALSE;
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP% any )',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -138,14 +138,14 @@ RQuery::$defaultFilters['threat-rule']['threatname']['operators']['is.any'] = ar
     'Function' => function (ThreatRuleRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->host == "any" )
+        if( $object->threatname() == "any" )
             return TRUE;
 
         return FALSE;
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

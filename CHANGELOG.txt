@@ -25,6 +25,7 @@ UTIL:
 * delete wrong expired filters for EDL and profile
 * remove duplicate filters and start using filter-Common.php
 * filter location optimistation only one single part
+* threatRule Filter - correction of copy past issue
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
