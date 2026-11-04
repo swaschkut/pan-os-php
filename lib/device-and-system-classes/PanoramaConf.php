@@ -1858,6 +1858,9 @@ class PanoramaConf
             }
         }
         //
+
+        // with "ancestor-objects-take-precedence yes" rebind references to the highest same-name copy
+        $this->applyAncestorObjectsPrecedence();
     }
 
 
@@ -2679,6 +2682,107 @@ class PanoramaConf
     public function ancestorObjectsTakePrecedence(): bool
     {
         return $this->_ancestorObjectsTakePrecedence;
+    }
+
+    /**
+     * Panorama setting 'ancestor-objects-take-precedence yes': for objects with the same name in
+     * Shared / ancestor and descendant device groups, Panorama pushes the copy of the HIGHEST ancestor
+     * that holds the name. Rules and groups in a descendant device group that name their own copy
+     * therefore use the ancestor copy on the firewalls; the descendant copy is overridden (shadowed).
+     *
+     * At load time every reference is bound to the nearest copy (default behaviour). This moves the
+     * references of each shadowed copy to the highest copy, so that countReferences(), displayreferences,
+     * the unused filters and the delete actions reflect what the firewalls use.
+     *
+     * The referencer's in-memory link (rule container, group member, profile-group setting) is swapped to
+     * the highest copy as well; the XML is unchanged, as all copies carry the same name.
+     */
+    public function applyAncestorObjectsPrecedence()
+    {
+        if( !$this->_ancestorObjectsTakePrecedence )
+            return;
+
+        $storeProperties = array( 'addressStore', 'serviceStore', 'tagStore', 'appStore',
+            'securityProfileGroupStore', 'scheduleStore', 'EDLStore', 'LogProfileStore',
+            'URLProfileStore', 'customURLProfileStore', 'AntiVirusProfileStore', 'VulnerabilityProfileStore',
+            'AntiSpywareProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
+            'WildfireProfileStore', 'DNSPolicyStore' );
+
+        foreach( $this->getDeviceGroups() as $dg )
+        {
+            foreach( $storeProperties as $prop )
+            {
+                if( !isset($dg->$prop) || $dg->$prop === null )
+                    continue;
+                $store = $dg->$prop;
+
+                if( method_exists($store, 'all') )
+                    $objects = $store->all();
+                elseif( method_exists($store, 'getAll') )
+                    $objects = $store->getAll();
+                else
+                    continue;
+
+                foreach( $objects as $object )
+                {
+                    if( !is_object($object) || !method_exists($object, 'getReferences') )
+                        continue;
+                    if( method_exists($object, 'isTmp') && $object->isTmp() )
+                        continue;
+
+                    // highest same-name copy above this device group
+                    $highest = null;
+                    for( $parentStore = (isset($store->parentCentralStore) ? $store->parentCentralStore : null);
+                         $parentStore !== null;
+                         $parentStore = (isset($parentStore->parentCentralStore) ? $parentStore->parentCentralStore : null) )
+                    {
+                        $found = $parentStore->find($object->name(), null, FALSE);
+                        if( $found !== null && $found !== $object )
+                            $highest = $found;
+                    }
+                    if( $highest === null )
+                        continue;
+
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        self::swapReferencedObjectInMemory($ref, $object, $highest);
+                        $object->removeReference($ref);
+                        $highest->addReference($ref);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Replaces, inside $referencer, every in-memory link to $old by $new (direct properties and arrays,
+     * strict identity only). No XML is touched: used only where $old and $new carry the same name.
+     */
+    private static function swapReferencedObjectInMemory($referencer, $old, $new)
+    {
+        $swap = function( $old, $new ) {
+            foreach( get_object_vars($this) as $key => $value )
+            {
+                if( $value === $old )
+                    $this->$key = $new;
+                elseif( is_array($value) )
+                {
+                    $changed = FALSE;
+                    foreach( $value as $k => $v )
+                        if( $v === $old )
+                        {
+                            $value[$k] = $new;
+                            $changed = TRUE;
+                        }
+                    if( $changed )
+                        $this->$key = $value;
+                }
+            }
+        };
+
+        // walk the class hierarchy so that private properties of parent classes are reached too
+        for( $class = get_class($referencer); $class !== FALSE; $class = get_parent_class($class) )
+            Closure::bind($swap, $referencer, $class)($old, $new);
     }
 }
 

@@ -18,6 +18,7 @@ UTIL:
 * type=zone actions=exporttohtml:file.html | extend with column template-stack
 * type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
 * introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
+* class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
