@@ -25,6 +25,7 @@ class PLAYBOOK__
     public $debugAPI = false;
     public $debugMemory = false;
     public $outputformatset = false;
+    public $outputformatscmjsonFile = null;
     public $subprocessMode = false;
     public $memoryThreshold = 0;
 
@@ -53,6 +54,7 @@ class PLAYBOOK__
         $this->supportedArguments['subprocess'] = array('niceName' => 'subprocess', 'shortHelp' => 'run each playbook step as a separate PHP process (slower but uses less memory)');
         $this->supportedArguments['memorythreshold'] = array('niceName' => 'memorythreshold', 'shortHelp' => 'memory threshold in MB before switching to subprocess mode (e.g., memorythreshold=512)', 'argDesc' => 'memorythreshold=MB');
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
+        $this->supportedArguments['outputformatscmjson'] = array('niceName' => 'outputformatscmjson', 'shortHelp' => 'SCM only (in= is an SCM XML from in=scm-api://): store one SCM API request per changed object in FILENAME, see type=scm-changes / type=scm-apply', 'argDesc' => 'FILENAME');
 
 
         $in_exclude = array(
@@ -177,6 +179,18 @@ class PLAYBOOK__
         }
 
 
+
+        if( isset(PH::$args['outputformatscmjson']) )
+        {
+            if( is_bool(PH::$args['outputformatscmjson']) )
+                derr("'outputformatscmjson' needs a file name: outputformatscmjson=FILENAME", null, FALSE);
+            if( !isset(PH::$args['out']) )
+                derr("'outputformatscmjson' needs 'out=': the SCM API requests are calculated from in= and out=", null, FALSE);
+
+            $this->outputformatscmjsonFile = PH::$args['outputformatscmjson'];
+            if( $this->projectFolder !== null && strpos($this->outputformatscmjsonFile, $this->projectFolder) === FALSE )
+                $this->outputformatscmjsonFile = $this->projectFolder."/".$this->outputformatscmjsonFile;
+        }
 
         if( isset(PH::$args['json']) )
         {
@@ -658,6 +672,17 @@ class PLAYBOOK__
             }
 
             copy( $out, $output );
+        }
+
+        if( $this->outputformatscmjsonFile !== null && $finaloutput != null && $finaloutput !== "/dev/null" && !$this->isAPI )
+        {
+            PH::print_stdout();
+            PH::print_stdout( PH::boldText( "[ pan-os-php type=scm-changes file1=".$input." file2=".$output." out=".$this->outputformatscmjsonFile." ]" ) );
+            PH::print_stdout();
+            SCMCHANGES::generate( $input, $output, $this->outputformatscmjsonFile );
+            PH::print_stdout( "send them with: pan-os-php type=scm-apply changes=".$this->outputformatscmjsonFile." tsg=TSG_ID [dry-run]" );
+            PH::print_stdout();
+            PH::print_stdout( "############################################################################");
         }
 
 

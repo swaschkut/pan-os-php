@@ -1,0 +1,5406 @@
+diff --git a/lib/device-and-system-classes/Container.php b/lib/device-and-system-classes/Container.php
+index b0b214e6..30c5f387 100644
+--- a/lib/device-and-system-classes/Container.php
++++ b/lib/device-and-system-classes/Container.php
+@@ -784,6 +784,16 @@ class Container
+         // End of SSL_TLSServiceProfile objects extraction
+ 
+ 
++        //
++        // Extract Zone objects (SCM: zones are folder / snippet configuration; load them before the rules
++        // reference them, otherwise every zone becomes a temporary placeholder)
++        //
++        $tmp = DH::findFirstElement('zone', $xml);
++        if( $tmp !== FALSE )
++            $this->zoneStore->load_from_domxml($tmp);
++        // End of Zone objects extraction
++
++
+         if( $debugLoadTime )
+             PH::print_DEBUG_loadtime("pre-/post-rulebase");
+         //
+@@ -1298,8 +1308,19 @@ class Container
+         {
+             $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+ 
++            // loading from XML calls this for members that are already there: add each name once
+             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+-            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
++            $memberExists = FALSE;
++            foreach( $snippetsXMLNode->childNodes as $member )
++            {
++                if( $member->nodeType == XML_ELEMENT_NODE && $member->textContent === $snippetObj->name() )
++                {
++                    $memberExists = TRUE;
++                    break;
++                }
++            }
++            if( !$memberExists )
++                DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+ 
+             $snippetObj->addReference($this);
+         }
+diff --git a/lib/device-and-system-classes/DeviceCloud.php b/lib/device-and-system-classes/DeviceCloud.php
+index 773df867..4cbd0bd3 100644
+--- a/lib/device-and-system-classes/DeviceCloud.php
++++ b/lib/device-and-system-classes/DeviceCloud.php
+@@ -1121,8 +1121,19 @@ class DeviceCloud
+         {
+             $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+ 
++            // loading from XML calls this for members that are already there: add each name once
+             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+-            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
++            $memberExists = FALSE;
++            foreach( $snippetsXMLNode->childNodes as $member )
++            {
++                if( $member->nodeType == XML_ELEMENT_NODE && $member->textContent === $snippetObj->name() )
++                {
++                    $memberExists = TRUE;
++                    break;
++                }
++            }
++            if( !$memberExists )
++                DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+ 
+             $snippetObj->addReference($this);
+         }
+diff --git a/lib/device-and-system-classes/DeviceOnPrem.php b/lib/device-and-system-classes/DeviceOnPrem.php
+index 6afdbdc9..698b2205 100644
+--- a/lib/device-and-system-classes/DeviceOnPrem.php
++++ b/lib/device-and-system-classes/DeviceOnPrem.php
+@@ -1078,8 +1078,19 @@ class DeviceOnPrem
+         {
+             $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+ 
++            // loading from XML calls this for members that are already there: add each name once
+             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+-            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
++            $memberExists = FALSE;
++            foreach( $snippetsXMLNode->childNodes as $member )
++            {
++                if( $member->nodeType == XML_ELEMENT_NODE && $member->textContent === $snippetObj->name() )
++                {
++                    $memberExists = TRUE;
++                    break;
++                }
++            }
++            if( !$memberExists )
++                DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+ 
+             $snippetObj->addReference($this);
+         }
+diff --git a/lib/device-and-system-classes/Snippet.php b/lib/device-and-system-classes/Snippet.php
+index 5dbc5d2e..65f2e5cc 100644
+--- a/lib/device-and-system-classes/Snippet.php
++++ b/lib/device-and-system-classes/Snippet.php
+@@ -771,6 +771,16 @@ class Snippet
+         // End of SSL_TLSServiceProfile objects extraction
+ 
+ 
++        //
++        // Extract Zone objects (SCM: zones are folder / snippet configuration; load them before the rules
++        // reference them, otherwise every zone becomes a temporary placeholder)
++        //
++        $tmp = DH::findFirstElement('zone', $xml);
++        if( $tmp !== FALSE )
++            $this->zoneStore->load_from_domxml($tmp);
++        // End of Zone objects extraction
++
++
+         //
+         // Extracting policies
+         //
+diff --git a/lib/misc-classes/PH.php b/lib/misc-classes/PH.php
+index b4bbeaa2..4c997dee 100644
+--- a/lib/misc-classes/PH.php
++++ b/lib/misc-classes/PH.php
+@@ -1714,6 +1714,8 @@ class PH
+         "rule-merger",
+         "override-finder",
+         "diff",
++        "scm-changes",
++        "scm-apply",
+         "upload",
+         "xml-issue",
+         "appid-enabler",
+@@ -1844,6 +1846,10 @@ class PH
+             $util = new OVERRIDEFINDER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+         elseif( $type == "diff" )
+             $util = new DIFF($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
++        elseif( $type == "scm-changes" )
++            $util = new SCMCHANGES($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
++        elseif( $type == "scm-apply" )
++            $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+         elseif( $type == "upload" )
+             $util = new UPLOAD($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+         elseif( $type == "xml-issue" )
+diff --git a/lib/misc-classes/SCMChangeGenerator.php b/lib/misc-classes/SCMChangeGenerator.php
+new file mode 100644
+index 00000000..bde9b298
+--- /dev/null
++++ b/lib/misc-classes/SCMChangeGenerator.php
+@@ -0,0 +1,795 @@
++<?php
++/**
++ * ISC License
++ *
++ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
++ * Copyright (c) 2019, Palo Alto Networks Inc.
++ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++/**
++ * Translates the difference between two SCM configurations (XML as written by pan-os-php for in=scm-api://)
++ * into Strata Cloud Manager API requests.
++ *
++ * The XML is the original download (file1) and the same configuration after pan-os-php changed it (file2),
++ * e.g. by a playbook. For every object that was added, changed or deleted, one request is produced:
++ *
++ *   POST   <path>          new object, full body incl. folder / snippet / device
++ *   PUT    <path>/<id>     changed object, "merge": true, body holds only the changed top-level fields
++ *   DELETE <path>/<id>     deleted object
++ *
++ * A PUT in SCM replaces the whole object, while the XML does not hold every field SCM returns
++ * (e.g. the description of security profiles is not imported). The sender therefore reads the live
++ * object (GET <path>/<id>), applies the changed fields of "body" (null removes a field) and sends that.
++ *
++ * Bodies are built and checked against the official SCM OpenAPI request schema
++ * (lib/resources/scm/scm-ngfw-config-schema.json). A field the schema does not know is not sent;
++ * if such a field carries configuration, the request is marked "review": true with a warning,
++ * because sending it without that field would not do what the change intended.
++ */
++class SCMChangeGenerator
++{
++    const FORMAT = "pan-os-php-scm-changes";
++    const VERSION = 1;
++
++    /** XML path below a folder / snippet / device entry => SCM resource */
++    static public $resourcePaths = array(
++        'tag' => 'tags',
++        'address' => 'addresses',
++        'address-group' => 'address-groups',
++        'service' => 'services',
++        'service-group' => 'service-groups',
++        'schedule' => 'schedules',
++        'log-settings/profiles' => 'log-forwarding-profiles',
++        'profiles/custom-url-category' => 'url-categories',
++        'profiles/spyware' => 'anti-spyware-profiles',
++        'profiles/vulnerability' => 'vulnerability-protection-profiles',
++        'profiles/virus-and-wildfire-analysis' => 'wildfire-anti-virus-profiles',
++        'profiles/url-filtering' => 'url-access-profiles',
++        'profiles/file-blocking' => 'file-blocking-profiles',
++        'profiles/dns-security' => 'dns-security-profiles',
++        'profile-group' => 'profile-groups',
++        'devices/entry/network/profiles/zone-protection-profiles' => 'zone-protection-profiles',
++        'devices/entry/network/profiles/zone-protection-profile' => 'zone-protection-profiles',
++        'zone' => 'zones',
++        'pre-rulebase/security/rules' => 'security-rules',
++        'post-rulebase/security/rules' => 'security-rules',
++    );
++
++    /** PAN-OS paths that exist in the XML but have no SCM resource of their own */
++    static public $unsupportedPaths = array(
++        'profiles/virus' => 'SCM combines antivirus and WildFire in wildfire-anti-virus-profiles',
++        'profiles/wildfire-analysis' => 'SCM combines antivirus and WildFire in wildfire-anti-virus-profiles',
++    );
++
++    /** order of POST / PUT (referenced objects first); DELETE runs in reverse order */
++    static public $resourceRank = array(
++        'tags' => 10, 'addresses' => 20, 'address-groups' => 30, 'services' => 40, 'service-groups' => 50,
++        'schedules' => 55, 'log-forwarding-profiles' => 60, 'url-categories' => 65,
++        'anti-spyware-profiles' => 70, 'vulnerability-protection-profiles' => 70, 'wildfire-anti-virus-profiles' => 70,
++        'url-access-profiles' => 70, 'file-blocking-profiles' => 70, 'dns-security-profiles' => 70,
++        'profile-groups' => 80, 'zone-protection-profiles' => 85, 'zones' => 90, 'security-rules' => 100,
++    );
++
++    /** XML children pan-os-php writes by default that have no SCM field and carry no configuration of their own */
++    static public $ignoredFields = array(
++        'security-rules' => array('option'),
++    );
++
++    /** fields of a body that name other objects; used to order requests and to pass on "review" */
++    static public $references = array(
++        'profile-groups' => array(
++            'spyware' => 'anti-spyware-profiles', 'vulnerability' => 'vulnerability-protection-profiles',
++            'virus_and_wildfire_analysis' => 'wildfire-anti-virus-profiles', 'url_filtering' => 'url-access-profiles',
++            'file_blocking' => 'file-blocking-profiles', 'dns_security' => 'dns-security-profiles'),
++        'security-rules' => array('profile_setting.group' => 'profile-groups', 'log_setting' => 'log-forwarding-profiles'),
++        'zones' => array('network.zone_protection_profile' => 'zone-protection-profiles', 'network.log_setting' => 'log-forwarding-profiles'),
++        'url-access-profiles' => array('alert' => 'url-categories', 'allow' => 'url-categories', 'block' => 'url-categories',
++            'continue' => 'url-categories'),
++    );
++
++    public $schema = array();
++    public $schemaSource = "";
++    public $apiBase = "https://api.strata.paloaltonetworks.com";
++
++    public $requests = array();
++    public $warnings = array();
++    /** resource => name => TRUE, every object of file2 in any folder / snippet / device */
++    public $existing = array();
++    public $file1 = null;
++    public $file2 = null;
++
++    public function __construct($schemaFile = null)
++    {
++        if( $schemaFile === null )
++            $schemaFile = dirname(__FILE__) . "/../resources/scm/scm-ngfw-config-schema.json";
++
++        $data = json_decode(file_get_contents($schemaFile), TRUE);
++        if( !is_array($data) || !isset($data['resources']) )
++            derr("SCM schema file '" . $schemaFile . "' could not be read", null, FALSE);
++
++        $this->schema = $data['resources'];
++        $this->schemaSource = $data['source'] ?? "";
++        if( isset($data['api_base']) )
++            $this->apiBase = $data['api_base'];
++    }
++
++    // ------------------------------------------------------------------------------------------------
++    // main
++    // ------------------------------------------------------------------------------------------------
++
++    /**
++     * @param DOMDocument $orig configuration as downloaded from SCM (file1)
++     * @param DOMDocument $new same configuration after the changes (file2)
++     * @return array change document, see toJSON()
++     */
++    public function run(DOMDocument $orig, DOMDocument $new)
++    {
++        $this->requests = array();
++        $this->warnings = array();
++
++        $origScopes = $this->collectScopes($orig);
++        $newScopes = $this->collectScopes($new);
++
++        $origObjects = array();
++        $newObjects = array();
++        foreach( $origScopes as $key => $scope )
++            $origObjects += $this->collectObjects($scope);
++        foreach( $newScopes as $key => $scope )
++            $newObjects += $this->collectObjects($scope);
++
++        $this->existing = array();
++        foreach( $newObjects as $obj )
++            $this->existing[$obj['resource']][$obj['name']] = TRUE;
++
++        // an object is the same object when its SCM id matches (renamed objects), otherwise when its name matches
++        $origByUuid = array();
++        foreach( $origObjects as $key => $obj )
++            if( $obj['uuid'] !== null )
++                $origByUuid[$obj['resource'] . "|" . $obj['uuid']] = $key;
++
++        $matched = array();
++        foreach( $newObjects as $key => $obj )
++        {
++            $origKey = null;
++            if( $obj['uuid'] !== null && isset($origByUuid[$obj['resource'] . "|" . $obj['uuid']]) )
++                $origKey = $origByUuid[$obj['resource'] . "|" . $obj['uuid']];
++            elseif( isset($origObjects[$key]) && !isset($matched[$key]) )
++                $origKey = $key;
++
++            if( $origKey === null || isset($matched[$origKey]) )
++                $this->addCreate($obj);
++            else
++            {
++                $matched[$origKey] = TRUE;
++                $this->addUpdate($origObjects[$origKey], $obj);
++            }
++        }
++        foreach( $origObjects as $key => $obj )
++        {
++            if( !isset($matched[$key]) )
++                $this->addDelete($obj);
++        }
++
++        foreach( $newScopes as $key => $scope )
++        {
++            if( isset($origScopes[$key]) )
++                $this->checkUntranslatedChanges($origScopes[$key], $scope);
++            else
++                $this->warnings[] = "new " . $scope['scope_type'] . " '" . $scope['scope'] . "': creating folders, snippets or devices is not supported, its objects are sent";
++        }
++        foreach( $origScopes as $key => $scope )
++            if( !isset($newScopes[$key]) )
++                $this->warnings[] = $scope['scope_type'] . " '" . $scope['scope'] . "' was removed: deleting folders, snippets or devices is not supported";
++
++        $this->sortRequests();
++        $this->resolveDependencies();
++
++        return $this->result();
++    }
++
++    public function result()
++    {
++        $summary = array('POST' => 0, 'PUT' => 0, 'DELETE' => 0, 'review' => 0);
++        foreach( $this->requests as $r )
++        {
++            $summary[$r['method']]++;
++            if( $r['review'] )
++                $summary['review']++;
++        }
++
++        return array(
++            'format' => self::FORMAT,
++            'version' => self::VERSION,
++            'generated' => date('c'),
++            'generator' => "pan-os-php " . PH::frameworkVersion() . " type=scm-changes",
++            'source' => array('file1' => $this->file1, 'file2' => $this->file2),
++            'api_base' => $this->apiBase,
++            'schema_source' => $this->schemaSource,
++            'notes' => array(
++                "PUT requests carry \"merge\": true: GET the object, apply the fields of body (null removes a field), PUT the result.",
++                "Requests with \"review\": true could not be translated completely; see their warnings.",
++                "Changes go to the SCM candidate configuration; pushing it is a separate step.",
++            ),
++            'summary' => $summary,
++            'warnings' => $this->warnings,
++            'requests' => array_values($this->requests),
++        );
++    }
++
++    public function toJSON()
++    {
++        return json_encode($this->result(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
++    }
++
++    // ------------------------------------------------------------------------------------------------
++    // collect folders / snippets / devices and their objects
++    // ------------------------------------------------------------------------------------------------
++
++    private function collectScopes(DOMDocument $doc)
++    {
++        $xp = new DOMXPath($doc);
++        $base = "/config/devices/entry[@name='localhost.localdomain']";
++        $scopes = array();
++        $types = array(
++            'folder' => "container/entry",
++            'snippet' => "snippet/entry",
++            'device' => "device/on-prem/entry|$base/device/cloud/entry",
++        );
++        foreach( $types as $scopeType => $rel )
++        {
++            $nodes = $xp->query("$base/" . $rel);
++            foreach( $nodes as $node )
++            {
++                /** @var DOMElement $node */
++                $name = $node->getAttribute('name');
++                $scopes[$scopeType . "|" . $name] = array(
++                    'scope_type' => $scopeType, 'scope' => $name, 'node' => $node, 'xpath' => $this->xpathOf($node));
++            }
++        }
++        return $scopes;
++    }
++
++    private function collectObjects(array $scope)
++    {
++        $objects = array();
++        $xp = new DOMXPath($scope['node']->ownerDocument);
++        foreach( self::$resourcePaths as $rel => $resource )
++        {
++            foreach( $xp->query($rel . "/entry", $scope['node']) as $node )
++            {
++                /** @var DOMElement $node */
++                $name = $node->getAttribute('name');
++                $position = null;
++                if( $resource == 'security-rules' )
++                    $position = strpos($rel, 'post-') === 0 ? 'post' : 'pre';
++
++                // one name per resource and location (pre and post rules share the name space)
++                $key = $scope['scope_type'] . "|" . $scope['scope'] . "|" . $resource . "|" . $name;
++                $objects[$key] = array(
++                    'resource' => $resource,
++                    'name' => $name,
++                    'scope_type' => $scope['scope_type'],
++                    'scope' => $scope['scope'],
++                    'position' => $position,
++                    'uuid' => $node->hasAttribute('uuid') ? $node->getAttribute('uuid') : null,
++                    'node' => $node,
++                    'xpath' => $this->xpathOf($node),
++                );
++            }
++        }
++        return $objects;
++    }
++
++    /**
++     * Changes inside a folder / snippet / device that are not part of an object of a known resource
++     * cannot be sent; report them so they are not lost silently.
++     */
++    private function checkUntranslatedChanges(array $origScope, array $newScope)
++    {
++        $a = $this->stripObjects($origScope['node']);
++        $b = $this->stripObjects($newScope['node']);
++
++        $childrenA = $this->childMap($a);
++        $childrenB = $this->childMap($b);
++        $tags = array_unique(array_merge(array_keys($childrenA), array_keys($childrenB)));
++        sort($tags);
++        foreach( $tags as $tag )
++        {
++            $ca = $childrenA[$tag] ?? "";
++            $cb = $childrenB[$tag] ?? "";
++            if( $ca === $cb )
++                continue;
++
++            $reason = "";
++            foreach( self::$unsupportedPaths as $rel => $why )
++                if( strpos($rel, $tag . "/") === 0 || $rel === $tag )
++                    $reason = " (" . $why . ")";
++
++            $this->warnings[] = $newScope['scope_type'] . " '" . $newScope['scope'] . "': changes below <" . $tag . "> are not translated to SCM API requests" . $reason;
++        }
++    }
++
++    private function stripObjects(DOMElement $scopeNode)
++    {
++        $doc = new DOMDocument();
++        $clone = $doc->importNode($scopeNode, TRUE);
++        $doc->appendChild($clone);
++        $xp = new DOMXPath($doc);
++        foreach( array_keys(self::$resourcePaths) as $rel )
++            foreach( $xp->query("/entry/" . $rel . "/entry") as $n )
++                $n->parentNode->removeChild($n);
++        $this->removeEmptyElements($clone);
++        return $clone;
++    }
++
++    /** containers left empty once the objects are taken out (e.g. <profile-group/>) are no change */
++    private function removeEmptyElements(DOMElement $node)
++    {
++        for( $i = $node->childNodes->length - 1; $i >= 0; $i-- )
++        {
++            $c = $node->childNodes->item($i);
++            if( $c->nodeType != XML_ELEMENT_NODE )
++                continue;
++            $this->removeEmptyElements($c);
++            if( $c->attributes->length == 0 && trim($c->textContent) === "" && !$this->hasElementChild($c) )
++                $node->removeChild($c);
++        }
++    }
++
++    private function hasElementChild(DOMElement $node)
++    {
++        foreach( $node->childNodes as $c )
++            if( $c->nodeType == XML_ELEMENT_NODE )
++                return TRUE;
++        return FALSE;
++    }
++
++    private function childMap(DOMElement $node)
++    {
++        $map = array();
++        foreach( $node->childNodes as $c )
++        {
++            if( $c->nodeType != XML_ELEMENT_NODE )
++                continue;
++            if( $c->tagName == 'snippets' )
++            {
++                // attached snippets as a set; pan-os-php attaches predefined-snippet itself when it loads the XML
++                $names = array();
++                foreach( $c->childNodes as $m )
++                    if( $m->nodeType == XML_ELEMENT_NODE && $m->textContent !== 'predefined-snippet' )
++                        $names[$m->textContent] = TRUE;
++                ksort($names);
++                if( !empty($names) )
++                    $map['snippets'] = implode(",", array_keys($names));
++                continue;
++            }
++            $map[$c->tagName] = ($map[$c->tagName] ?? "") . $this->canonical($c);
++        }
++        return $map;
++    }
++
++    // ------------------------------------------------------------------------------------------------
++    // requests
++    // ------------------------------------------------------------------------------------------------
++
++    private function newRequest($method, array $obj)
++    {
++        $res = $this->schema[$obj['resource']];
++        $lookup = array('name' => $obj['name'], $obj['scope_type'] => $obj['scope']);
++        if( $obj['position'] !== null )
++            $lookup['position'] = $obj['position'];
++
++        return array(
++            'seq' => 0,
++            'method' => $method,
++            'path' => $method == 'POST' ? $res['path'] : $res['path'] . "/" . ($obj['uuid'] ?? "{id}"),
++            'id' => $method == 'POST' ? null : $obj['uuid'],
++            'query' => new stdClass(),
++            'merge' => FALSE,
++            'body' => new stdClass(),
++            'before' => null,
++            'object' => array(
++                'resource' => $obj['resource'],
++                'name' => $obj['name'],
++                'scope_type' => $obj['scope_type'],
++                'scope' => $obj['scope'],
++                'position' => $obj['position'],
++                'xpath' => $obj['xpath'],
++            ),
++            'lookup' => $lookup,
++            'depends_on' => array(),
++            'review' => FALSE,
++            'warnings' => array(),
++        );
++    }
++
++    private function addCreate(array $obj)
++    {
++        $r = $this->newRequest('POST', $obj);
++        $dropped = array();
++        $body = $this->toBody($obj, $dropped);
++        unset($body['id']);
++
++        $ordered = array('name' => $obj['name'], $obj['scope_type'] => $obj['scope']);
++        foreach( $body as $k => $v )
++            if( !isset($ordered[$k]) )
++                $ordered[$k] = $v;
++        $r['body'] = $ordered;
++
++        if( $obj['resource'] == 'security-rules' )
++            $r['query'] = array('position' => $obj['position']);
++
++        $this->addDroppedWarnings($r, $dropped, TRUE);
++        $this->checkScope($r, $obj);
++        $this->requests[] = $r;
++    }
++
++    private function addUpdate(array $old, array $new)
++    {
++        $droppedOld = array();
++        $droppedNew = array();
++        $a = $this->toBody($old, $droppedOld);
++        $b = $this->toBody($new, $droppedNew);
++
++        $changed = array();
++        $before = array();
++        if( $old['name'] !== $new['name'] )
++        {
++            $changed['name'] = $new['name'];
++            $before['name'] = $old['name'];
++        }
++        $keys = array_unique(array_merge(array_keys($a), array_keys($b)));
++        foreach( $keys as $k )
++        {
++            if( in_array($k, array('id', 'name', 'folder', 'snippet', 'device')) )
++                continue;
++            $va = array_key_exists($k, $a) ? json_encode($a[$k]) : null;
++            $vb = array_key_exists($k, $b) ? json_encode($b[$k]) : null;
++            if( $va === $vb )
++                continue;
++            $changed[$k] = array_key_exists($k, $b) ? $b[$k] : null;
++            $before[$k] = array_key_exists($k, $a) ? $a[$k] : null;
++        }
++
++        // dropped fields only matter where they changed
++        $droppedChanged = array_diff($droppedNew, $droppedOld);
++
++        if( empty($changed) && empty($droppedChanged) )
++        {
++            if( $this->canonical($old['node']) !== $this->canonical($new['node']) )
++                $this->warnings[] = $new['resource'] . " '" . $new['name'] . "' (" . $new['scope_type'] . " '" . $new['scope'] . "'): changed only in fields SCM does not have, no request";
++            return;
++        }
++
++        $r = $this->newRequest('PUT', $new);
++        $r['merge'] = TRUE;
++        $r['body'] = empty($changed) ? new stdClass() : $changed;
++        $r['before'] = empty($before) ? new stdClass() : $before;
++
++        if( $new['uuid'] === null )
++            $r['warnings'][] = "no SCM id in the XML: resolve the object by name (see lookup)";
++        if( $old['uuid'] !== null && $new['uuid'] !== null && $old['uuid'] !== $new['uuid'] )
++            $r['warnings'][] = "SCM id differs between file1 (" . $old['uuid'] . ") and file2 (" . $new['uuid'] . ")";
++        if( $old['position'] !== $new['position'] )
++            $r['warnings'][] = "rule moved from " . $old['position'] . " to " . $new['position'] . " rulebase: moving rules is not translated";
++
++        $this->addDroppedWarnings($r, $droppedChanged, TRUE);
++        if( empty($changed) )
++        {
++            $r['review'] = TRUE;
++            $r['warnings'][] = "all changed fields are unknown to SCM";
++        }
++        $this->checkScope($r, $new);
++        $this->requests[] = $r;
++    }
++
++    private function addDelete(array $obj)
++    {
++        $r = $this->newRequest('DELETE', $obj);
++        $r['body'] = null;
++        if( $obj['uuid'] === null )
++            $r['warnings'][] = "no SCM id in the XML: resolve the object by name (see lookup)";
++        $this->checkScope($r, $obj);
++        $this->requests[] = $r;
++    }
++
++    private function addDroppedWarnings(array &$r, array $dropped, $review)
++    {
++        if( empty($dropped) )
++            return;
++        $dropped = array_values(array_unique($dropped));
++        $r['warnings'][] = "not sent, unknown to the SCM schema of " . $r['object']['resource'] . ": " . implode(", ", $dropped);
++        if( $review )
++            $r['review'] = TRUE;
++    }
++
++    private function checkScope(array &$r, array $obj)
++    {
++        if( $obj['scope_type'] == 'snippet' && $obj['scope'] == 'predefined-snippet' )
++        {
++            $r['review'] = TRUE;
++            $r['warnings'][] = "object of the predefined snippet: it cannot be changed through the API";
++        }
++    }
++
++    private function sortRequests()
++    {
++        $methodRank = array('POST' => 1, 'PUT' => 2, 'DELETE' => 3);
++        usort($this->requests, function ($x, $y) use ($methodRank) {
++            $m = $methodRank[$x['method']] <=> $methodRank[$y['method']];
++            if( $m !== 0 )
++                return $m;
++            $rx = self::$resourceRank[$x['object']['resource']] ?? 999;
++            $ry = self::$resourceRank[$y['object']['resource']] ?? 999;
++            $r = ($x['method'] == 'DELETE') ? ($ry <=> $rx) : ($rx <=> $ry);
++            if( $r !== 0 )
++                return $r;
++            return strcmp($x['object']['scope'] . "|" . $x['object']['name'], $y['object']['scope'] . "|" . $y['object']['name']);
++        });
++        foreach( $this->requests as $i => &$req )
++            $req['seq'] = $i + 1;
++    }
++
++    /**
++     * A request that names an object created in this change set depends on that POST.
++     * If the POST needs review, the dependent request needs it too: it would fail or reference nothing.
++     */
++    private function resolveDependencies()
++    {
++        $created = array();
++        foreach( $this->requests as $req )
++            if( $req['method'] == 'POST' )
++                $created[$req['object']['resource'] . "|" . $req['object']['name']][] = $req['seq'];
++
++        $changed = TRUE;
++        while( $changed )
++        {
++            $changed = FALSE;
++            foreach( $this->requests as &$req )
++            {
++                if( $req['method'] == 'DELETE' || !isset(self::$references[$req['object']['resource']]) )
++                    continue;
++                $body = is_array($req['body']) ? $req['body'] : array();
++                foreach( self::$references[$req['object']['resource']] as $field => $targetResource )
++                {
++                    foreach( $this->namesAt($body, $field) as $refName )
++                    {
++                        $k = $targetResource . "|" . $refName;
++                        if( !isset($created[$k]) )
++                        {
++                            if( !isset($this->existing[$targetResource][$refName]) && $this->isChangedReference($req, $field, $refName) )
++                            {
++                                $msg = "references " . $targetResource . " '" . $refName . "', which is not in the configuration";
++                                if( !in_array($msg, $req['warnings']) )
++                                {
++                                    $req['warnings'][] = $msg;
++                                    if( !$req['review'] )
++                                    {
++                                        $req['review'] = TRUE;
++                                        $changed = TRUE;
++                                    }
++                                }
++                            }
++                            continue;
++                        }
++                        foreach( $created[$k] as $seq )
++                        {
++                            if( !in_array($seq, $req['depends_on']) && $seq != $req['seq'] )
++                                $req['depends_on'][] = $seq;
++                            $dep = $this->requests[$seq - 1];
++                            if( $dep['review'] && !$req['review'] )
++                            {
++                                $req['review'] = TRUE;
++                                $req['warnings'][] = "depends on request " . $seq . " (" . $targetResource . " '" . $refName . "'), which needs review";
++                                $changed = TRUE;
++                            }
++                        }
++                    }
++                }
++                sort($req['depends_on']);
++            }
++            unset($req);
++        }
++    }
++
++    /**
++     * Predefined objects (e.g. url categories) are not objects of the configuration; only a name
++     * the change adds is checked, a name that was referenced before was accepted by SCM already.
++     */
++    private function isChangedReference(array $req, $field, $refName)
++    {
++        if( $req['method'] == 'POST' )
++            return !in_array($field, array('alert', 'allow', 'block', 'continue'));
++        $before = is_array($req['before']) ? $req['before'] : array();
++        return !in_array($refName, $this->namesAt($before, $field));
++    }
++
++    private function namesAt(array $body, $field)
++    {
++        $v = $body;
++        foreach( explode('.', $field) as $part )
++        {
++            if( !is_array($v) || !array_key_exists($part, $v) )
++                return array();
++            $v = $v[$part];
++        }
++        if( is_string($v) )
++            return array($v);
++        if( is_array($v) )
++            return array_values(array_filter($v, 'is_string'));
++        return array();
++    }
++
++    // ------------------------------------------------------------------------------------------------
++    // XML -> SCM JSON
++    // ------------------------------------------------------------------------------------------------
++
++    /**
++     * @param array $obj
++     * @param array $dropped XML paths not sent because the SCM schema does not know them
++     * @return array body without folder / snippet / device
++     */
++    public function toBody(array $obj, array &$dropped)
++    {
++        $schema = $this->schema[$obj['resource']]['schema'];
++        $ignored = self::$ignoredFields[$obj['resource']] ?? array();
++        $body = $this->convertElement($obj['node'], $schema, "", $dropped, $ignored);
++        if( !is_array($body) )
++            $body = array();
++        $body = array('name' => $obj['name']) + $body;
++        return $body;
++    }
++
++    private function convertElement(DOMElement $node, array $schema, $path, array &$dropped, array $ignored = array())
++    {
++        $type = $schema['type'] ?? 'any';
++
++        if( $type == 'object' )
++        {
++            $out = array();
++            foreach( $node->childNodes as $child )
++            {
++                if( $child->nodeType != XML_ELEMENT_NODE )
++                    continue;
++                /** @var DOMElement $child */
++                if( $path === "" && in_array($child->tagName, $ignored) )
++                    continue;
++
++                $key = str_replace('-', '_', $child->tagName);
++                if( !isset($schema['properties'][$key]) )
++                {
++                    $dropped[] = ltrim($path . "/" . $child->tagName, "/");
++                    continue;
++                }
++                $out[$key] = $this->convertElement($child, $schema['properties'][$key], $path . "/" . $child->tagName, $dropped);
++            }
++            if( empty($out) )
++                return new stdClass();
++            return $out;
++        }
++
++        if( $type == 'array' )
++        {
++            $items = $schema['items'] ?? array('type' => 'string');
++            $out = array();
++            if( ($items['type'] ?? 'any') == 'object' )
++            {
++                foreach( $node->childNodes as $child )
++                {
++                    if( $child->nodeType != XML_ELEMENT_NODE )
++                        continue;
++                    if( $child->tagName != 'entry' )
++                    {
++                        $dropped[] = ltrim($path . "/" . $child->tagName, "/");
++                        continue;
++                    }
++                    $entry = array();
++                    if( $child->hasAttribute('name') )
++                        $entry['name'] = $child->getAttribute('name');
++                    $converted = $this->convertElement($child, $items, $path . "/entry", $dropped);
++                    if( is_array($converted) )
++                        $entry += $converted;
++                    $out[] = $entry;
++                }
++                return $out;
++            }
++
++            $members = 0;
++            foreach( $node->childNodes as $child )
++            {
++                if( $child->nodeType != XML_ELEMENT_NODE )
++                    continue;
++                $members++;
++                $out[] = $this->convertScalar($child->textContent, $items);
++            }
++            if( $members == 0 && trim($node->textContent) !== "" )
++                $out[] = $this->convertScalar(trim($node->textContent), $items);
++            return $out;
++        }
++
++        // scalar
++        foreach( $node->childNodes as $child )
++            if( $child->nodeType == XML_ELEMENT_NODE )
++            {
++                // SCM expects a value, the XML has a structure: keep its first element name (e.g. <mode><ip-user/></mode>)
++                if( isset($schema['enum']) && in_array($child->tagName, $schema['enum']) )
++                    return $child->tagName;
++                $dropped[] = ltrim($path . "/" . $child->tagName, "/");
++                return null;
++            }
++        return $this->convertScalar($node->textContent, $schema);
++    }
++
++    private function convertScalar($text, array $schema)
++    {
++        $text = trim($text);
++        $type = $schema['type'] ?? 'any';
++        if( $type == 'boolean' )
++        {
++            if( $text === 'yes' || $text === 'true' )
++                return TRUE;
++            if( $text === 'no' || $text === 'false' )
++                return FALSE;
++        }
++        if( $type == 'integer' && is_numeric($text) )
++            return (int)$text;
++        if( $type == 'number' && is_numeric($text) )
++            return $text + 0;
++        return $text;
++    }
++
++    // ------------------------------------------------------------------------------------------------
++    // helpers
++    // ------------------------------------------------------------------------------------------------
++
++    private function canonical(DOMElement $node)
++    {
++        $doc = new DOMDocument();
++        $doc->preserveWhiteSpace = FALSE;
++        $clone = $doc->importNode($node, TRUE);
++        $doc->appendChild($clone);
++        $this->removeWhitespace($clone);
++        return $clone->C14N();
++    }
++
++    private function removeWhitespace(DOMNode $node)
++    {
++        for( $i = $node->childNodes->length - 1; $i >= 0; $i-- )
++        {
++            $c = $node->childNodes->item($i);
++            if( $c->nodeType == XML_TEXT_NODE && trim($c->textContent) === "" && $node->childNodes->length > 1 )
++                $node->removeChild($c);
++            elseif( $c->nodeType == XML_ELEMENT_NODE )
++                $this->removeWhitespace($c);
++        }
++    }
++
++    private function xpathOf(DOMElement $node)
++    {
++        $parts = array();
++        $n = $node;
++        while( $n !== null && $n->nodeType == XML_ELEMENT_NODE )
++        {
++            /** @var DOMElement $n */
++            $p = $n->tagName;
++            if( $n->hasAttribute('name') )
++                $p .= "[@name='" . $n->getAttribute('name') . "']";
++            $parts[] = $p;
++            $n = $n->parentNode;
++        }
++        return "/" . implode("/", array_reverse($parts));
++    }
++}
+diff --git a/lib/object-classes/ObjStore.php b/lib/object-classes/ObjStore.php
+index 2afb4258..a6851560 100644
+--- a/lib/object-classes/ObjStore.php
++++ b/lib/object-classes/ObjStore.php
+@@ -129,6 +129,7 @@ class ObjStore
+                 }
+                 else
+                 {
++                    $f = null;
+                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
+                     if ($snippet !== null)
+                         $f = $snippet->$storeType->findbyName($name, $ref, false);
+diff --git a/lib/pan_php_framework.php b/lib/pan_php_framework.php
+index 1e38699f..4ad6f69b 100644
+--- a/lib/pan_php_framework.php
++++ b/lib/pan_php_framework.php
+@@ -207,6 +207,7 @@ require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
+ require_once $basedir . '/misc-classes/PanAPIConnector.php';
+ require_once $basedir . '/misc-classes/PanSaseAPIConnector.php';
+ require_once $basedir . '/misc-classes/PanSCMAPIConnector.php';
++require_once $basedir . '/misc-classes/SCMChangeGenerator.php';
+ require_once $basedir . '/misc-classes/trait/StatCollectorTrait.php';
+ 
+ 
+diff --git a/lib/resources/scm/scm-ngfw-config-schema.json b/lib/resources/scm/scm-ngfw-config-schema.json
+new file mode 100644
+index 00000000..56c0dca0
+--- /dev/null
++++ b/lib/resources/scm/scm-ngfw-config-schema.json
+@@ -0,0 +1,2855 @@
++{
++ "api_base": "https://api.strata.paloaltonetworks.com",
++ "resources": {
++  "address-groups": {
++   "path": "/config/objects/v1/address-groups",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "dynamic": {
++      "properties": {
++       "filter": {
++        "type": "string"
++       }
++      },
++      "required": [
++       "filter"
++      ],
++      "type": "object"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "static": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "tag": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "id",
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "addresses": {
++   "path": "/config/objects/v1/addresses",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "fqdn": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "ip_netmask": {
++      "type": "string"
++     },
++     "ip_range": {
++      "type": "string"
++     },
++     "ip_wildcard": {
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "tag": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "id",
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "anti-spyware-profiles": {
++   "path": "/config/security/v1/anti-spyware-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "cloud_inline_analysis": {
++      "type": "boolean"
++     },
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "inline_exception_edl_url": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "inline_exception_ip_address": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "mica_engine_spyware_enabled": {
++      "items": {
++       "properties": {
++        "inline_policy_action": {
++         "enum": [
++          "alert",
++          "allow",
++          "drop",
++          "reset-both",
++          "reset-client",
++          "reset-server"
++         ],
++         "type": "any"
++        },
++        "name": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "name": {
++      "type": "string"
++     },
++     "rules": {
++      "items": {
++       "properties": {
++        "action": {
++         "properties": {
++          "alert": {
++           "properties": {},
++           "type": "object"
++          },
++          "allow": {
++           "properties": {},
++           "type": "object"
++          },
++          "block_ip": {
++           "properties": {
++            "duration": {
++             "type": "integer"
++            },
++            "track_by": {
++             "enum": [
++              "source-and-destination",
++              "source"
++             ],
++             "type": "any"
++            }
++           },
++           "type": "object"
++          },
++          "drop": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_both": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_client": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_server": {
++           "properties": {},
++           "type": "object"
++          }
++         },
++         "type": "object"
++        },
++        "category": {
++         "enum": [
++          "adns-adtracking",
++          "adns-benign",
++          "adns-c2",
++          "adns-ddns",
++          "adns-dnsmisconfig",
++          "adns-grayware",
++          "adns-hijacking",
++          "adns-malware",
++          "adns-new-domain",
++          "adns-parked",
++          "adns-phishing",
++          "adns-proxy",
++          "adware",
++          "any",
++          "autogen",
++          "backdoor",
++          "botnet",
++          "browser-hijack",
++          "command-and-control",
++          "cryptominer",
++          "data-theft",
++          "dns",
++          "dns-adtracking",
++          "dns-benign",
++          "dns-c2",
++          "dns-ddns",
++          "dns-grayware",
++          "dns-malware",
++          "dns-new-domain",
++          "dns-parked",
++          "dns-phishing",
++          "dns-proxy",
++          "dns-security",
++          "dns-wildfire",
++          "domain-edl",
++          "downloader",
++          "fraud",
++          "hacktool",
++          "inline-cloud-c2",
++          "keylogger",
++          "net-worm",
++          "p2p-communication",
++          "phishing-kit",
++          "post-exploitation",
++          "spyware",
++          "tls-fingerprint",
++          "webshell"
++         ],
++         "type": "any"
++        },
++        "name": {
++         "type": "string"
++        },
++        "packet_capture": {
++         "enum": [
++          "disable",
++          "single-packet",
++          "extended-capture"
++         ],
++         "type": "any"
++        },
++        "severity": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "threat_name": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "threat_exception": {
++      "items": {
++       "properties": {
++        "action": {
++         "properties": {
++          "alert": {
++           "properties": {},
++           "type": "object"
++          },
++          "allow": {
++           "properties": {},
++           "type": "object"
++          },
++          "block_ip": {
++           "properties": {
++            "duration": {
++             "type": "integer"
++            },
++            "track_by": {
++             "enum": [
++              "source-and-destination",
++              "source"
++             ],
++             "type": "any"
++            }
++           },
++           "type": "object"
++          },
++          "default": {
++           "properties": {},
++           "type": "object"
++          },
++          "drop": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_both": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_client": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_server": {
++           "properties": {},
++           "type": "object"
++          }
++         },
++         "type": "object"
++        },
++        "exempt_ip": {
++         "items": {
++          "properties": {
++           "name": {
++            "type": "string"
++           }
++          },
++          "required": [
++           "name"
++          ],
++          "type": "object"
++         },
++         "type": "array"
++        },
++        "name": {
++         "type": "string"
++        },
++        "notes": {
++         "type": "string"
++        },
++        "packet_capture": {
++         "enum": [
++          "disable",
++          "single-packet",
++          "extended-capture"
++         ],
++         "type": "any"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "id",
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "dns-security-profiles": {
++   "path": "/config/security/v1/dns-security-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "botnet_domains": {
++      "properties": {
++       "dns_security_categories": {
++        "items": {
++         "properties": {
++          "action": {
++           "enum": [
++            "default",
++            "allow",
++            "block",
++            "sinkhole"
++           ],
++           "type": "any"
++          },
++          "log_level": {
++           "enum": [
++            "default",
++            "none",
++            "low",
++            "informational",
++            "medium",
++            "high",
++            "critical"
++           ],
++           "type": "any"
++          },
++          "name": {
++           "type": "string"
++          },
++          "packet_capture": {
++           "enum": [
++            "disable",
++            "single-packet",
++            "extended-capture"
++           ],
++           "type": "any"
++          }
++         },
++         "type": "object"
++        },
++        "type": "array"
++       },
++       "lists": {
++        "items": {
++         "properties": {
++          "action": {
++           "properties": {
++            "alert": {
++             "properties": {},
++             "type": "object"
++            },
++            "allow": {
++             "properties": {},
++             "type": "object"
++            },
++            "block": {
++             "properties": {},
++             "type": "object"
++            },
++            "sinkhole": {
++             "properties": {},
++             "type": "object"
++            }
++           },
++           "type": "object"
++          },
++          "name": {
++           "type": "string"
++          },
++          "packet_capture": {
++           "enum": [
++            "disable",
++            "single-packet",
++            "extended-capture"
++           ],
++           "type": "any"
++          }
++         },
++         "required": [
++          "name"
++         ],
++         "type": "object"
++        },
++        "type": "array"
++       },
++       "sinkhole": {
++        "properties": {
++         "ipv4_address": {
++          "enum": [
++           "127.0.0.1",
++           "pan-sinkhole-default-ip"
++          ],
++          "type": "any"
++         },
++         "ipv6_address": {
++          "enum": [
++           "::1"
++          ],
++          "type": "any"
++         }
++        },
++        "type": "object"
++       },
++       "whitelist": {
++        "items": {
++         "properties": {
++          "description": {
++           "type": "string"
++          },
++          "name": {
++           "type": "string"
++          }
++         },
++         "required": [
++          "name"
++         ],
++         "type": "object"
++        },
++        "type": "array"
++       }
++      },
++      "type": "object"
++     },
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     }
++    },
++    "type": "object"
++   }
++  },
++  "file-blocking-profiles": {
++   "path": "/config/security/v1/file-blocking-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "rules": {
++      "items": {
++       "properties": {
++        "action": {
++         "enum": [
++          "alert",
++          "block",
++          "continue"
++         ],
++         "type": "any"
++        },
++        "application": {
++         "items": {
++          "enum": [
++           "any",
++           "axifile",
++           "dl-free",
++           "facebook-mail",
++           "file.io",
++           "giphy-base",
++           "glassdoor-uploading",
++           "http-proxy",
++           "redbooth",
++           "send-anywhere",
++           "zoho-mail"
++          ],
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "direction": {
++         "enum": [
++          "download",
++          "upload",
++          "both"
++         ],
++         "type": "any"
++        },
++        "file_type": {
++         "items": {
++          "enum": [
++           "7z",
++           "Multi-Level-Encoding",
++           "PE",
++           "access-shortcut",
++           "ace",
++           "ade",
++           "adp",
++           "ai",
++           "aip-encrypted-docx",
++           "aip-encrypted-pptx",
++           "aip-encrypted-xlsx",
++           "any",
++           "apk",
++           "arj",
++           "asp",
++           "avi",
++           "avi-divx",
++           "avi-xvid",
++           "bas",
++           "bat",
++           "bmp",
++           "bmp-upload",
++           "bzip2",
++           "cab",
++           "catpart",
++           "cdr",
++           "chm",
++           "cin",
++           "class",
++           "cmd",
++           "com",
++           "cpl",
++           "csv",
++           "deflate64-zip",
++           "der",
++           "dll",
++           "dmg",
++           "doc",
++           "docm",
++           "docx",
++           "dpx",
++           "dsn",
++           "dwf",
++           "dwg",
++           "dxf",
++           "edif",
++           "elf",
++           "emf",
++           "encrypted-7z",
++           "encrypted-doc",
++           "encrypted-docx",
++           "encrypted-office2007",
++           "encrypted-pdf",
++           "encrypted-ppt",
++           "encrypted-pptx",
++           "encrypted-rar",
++           "encrypted-xls",
++           "encrypted-xlsx",
++           "encrypted-zip",
++           "eps",
++           "exe",
++           "exr",
++           "flash",
++           "flv",
++           "gds",
++           "gif",
++           "gif-upload",
++           "gzip",
++           "hlp",
++           "hta",
++           "hwp",
++           "hwpx",
++           "ichitaro",
++           "iff",
++           "inf",
++           "ins",
++           "iqy",
++           "iso",
++           "its",
++           "iwork-keynote",
++           "iwork-numbers",
++           "iwork-pages",
++           "jar",
++           "jpeg",
++           "jpeg-upload",
++           "js",
++           "jse",
++           "lnk",
++           "lzh",
++           "ma",
++           "macapp",
++           "mach-o",
++           "mb",
++           "mda",
++           "mdb",
++           "mdi",
++           "mdt",
++           "mdw",
++           "mdz",
++           "mht",
++           "microsoft-shell",
++           "mif",
++           "mkv",
++           "mov",
++           "mp3",
++           "mp4",
++           "mpeg",
++           "mpeg-ts",
++           "mpkg",
++           "msc",
++           "msi",
++           "msoffice",
++           "msp",
++           "ocx",
++           "pbix",
++           "pbm",
++           "pcl",
++           "pdf",
++           "pem",
++           "pgp",
++           "pif",
++           "pkg",
++           "pl",
++           "png",
++           "png-upload",
++           "powershell",
++           "ppt",
++           "pptx",
++           "prg",
++           "psd",
++           "py",
++           "rar",
++           "reg",
++           "renamed-zip",
++           "rla",
++           "rm",
++           "rpf",
++           "rtf",
++           "scf",
++           "scr",
++           "sgi",
++           "sh",
++           "shk",
++           "shs",
++           "slk",
++           "softimg",
++           "split-cab",
++           "split-rar",
++           "stp",
++           "svg",
++           "sys",
++           "tar",
++           "tdb",
++           "tif",
++           "tiff",
++           "tmp",
++           "torrent",
++           "url",
++           "vb",
++           "vbe",
++           "vbs",
++           "vxd",
++           "webm",
++           "wmf",
++           "wmv",
++           "wri",
++           "wsf",
++           "wsh",
++           "xll",
++           "xls",
++           "xlsx",
++           "xpm",
++           "zcompressed",
++           "zip"
++          ],
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "name": {
++         "type": "string"
++        }
++       },
++       "required": [
++        "action",
++        "application",
++        "direction",
++        "file_type",
++        "name"
++       ],
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "snippet": {
++      "type": "string"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "log-forwarding-profiles": {
++   "path": "/config/objects/v1/log-forwarding-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "match_list": {
++      "items": {
++       "properties": {
++        "action_desc": {
++         "type": "string"
++        },
++        "filter": {
++         "type": "string"
++        },
++        "log_type": {
++         "enum": [
++          "traffic",
++          "threat",
++          "wildfire",
++          "url",
++          "data",
++          "tunnel",
++          "auth",
++          "decryption",
++          "dns-security",
++          "gtp",
++          "sctp"
++         ],
++         "type": "string"
++        },
++        "name": {
++         "type": "string"
++        },
++        "send_email": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "send_http": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "send_snmptrap": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "send_syslog": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        }
++       },
++       "required": [
++        "filter",
++        "log_type",
++        "name"
++       ],
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     }
++    },
++    "required": [
++     "match_list",
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "profile-groups": {
++   "path": "/config/security/v1/profile-groups",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "ai_security": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "data_filtering": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "device": {
++      "type": "string"
++     },
++     "dns_security": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "file_blocking": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "saas_security": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "spyware": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "url_filtering": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "virus_and_wildfire_analysis": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "vulnerability": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "schedules": {
++   "path": "/config/objects/v1/schedules",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "schedule_type": {
++      "properties": {
++       "non_recurring": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "recurring": {
++        "properties": {
++         "daily": {
++          "items": {
++           "type": "string"
++          },
++          "type": "array"
++         },
++         "weekly": {
++          "properties": {
++           "friday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           },
++           "monday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           },
++           "saturday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           },
++           "sunday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           },
++           "thursday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           },
++           "tuesday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           },
++           "wednesday": {
++            "items": {
++             "type": "string"
++            },
++            "type": "array"
++           }
++          },
++          "type": "object"
++         }
++        },
++        "type": "object"
++       }
++      },
++      "type": "object"
++     },
++     "snippet": {
++      "type": "string"
++     }
++    },
++    "required": [
++     "id",
++     "name",
++     "schedule_type"
++    ],
++    "type": "object"
++   }
++  },
++  "security-rules": {
++   "path": "/config/security/v1/security-rules",
++   "post_query": [
++    "position"
++   ],
++   "schema": {
++    "properties": {
++     "action": {
++      "enum": [
++       "allow",
++       "deny",
++       "drop",
++       "reset-client",
++       "reset-server",
++       "reset-both"
++      ],
++      "type": "any"
++     },
++     "allow_url_category": {
++      "items": {
++       "properties": {
++        "additional_action": {
++         "enum": [
++          "none",
++          "continue",
++          "redirect",
++          "isolate"
++         ],
++         "type": "string"
++        },
++        "credential_enforcement": {
++         "enum": [
++          "enabled",
++          "disabled"
++         ],
++         "type": "string"
++        },
++        "decryption": {
++         "enum": [
++          "enabled",
++          "disabled"
++         ],
++         "type": "string"
++        },
++        "dlp": {
++         "type": "string"
++        },
++        "file_control": {
++         "properties": {
++          "download": {
++           "enum": [
++            "allow-all-file-types",
++            "best-practice",
++            "block-all-file-types"
++           ],
++           "type": "string"
++          },
++          "upload": {
++           "enum": [
++            "allow-all-file-types",
++            "best-practice",
++            "block-all-file-types"
++           ],
++           "type": "string"
++          }
++         },
++         "type": "object"
++        },
++        "isolation_profiles": {
++         "type": "string"
++        },
++        "name": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "allow_web_application": {
++      "items": {
++       "properties": {
++        "application_function": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "dlp": {
++         "type": "string"
++        },
++        "file_control": {
++         "properties": {
++          "download": {
++           "enum": [
++            "allow-all-file-types",
++            "best-practice",
++            "block-all-file-types"
++           ],
++           "type": "string"
++          },
++          "upload": {
++           "enum": [
++            "allow-all-file-types",
++            "best-practice",
++            "block-all-file-types"
++           ],
++           "type": "string"
++          }
++         },
++         "type": "object"
++        },
++        "name": {
++         "type": "string"
++        },
++        "saas_enterprise_control": {
++         "properties": {
++          "consumer_access": {
++           "properties": {
++            "enable": {
++             "enum": [
++              true,
++              false
++             ],
++             "type": "string"
++            }
++           },
++           "type": "object"
++          },
++          "enterprise_access": {
++           "properties": {
++            "enable": {
++             "enum": [
++              true,
++              false
++             ],
++             "type": "string"
++            },
++            "tenant_restrictions": {
++             "items": {
++              "type": "string"
++             },
++             "type": "array"
++            }
++           },
++           "type": "object"
++          }
++         },
++         "type": "object"
++        },
++        "saas_tenant_list": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "saas_user_list": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "tenant_control": {
++         "properties": {
++          "allowed_activities": {
++           "items": {
++            "type": "string"
++           },
++           "type": "array"
++          },
++          "blocked_activities": {
++           "items": {
++            "type": "string"
++           },
++           "type": "array"
++          },
++          "parent_application": {
++           "type": "string"
++          },
++          "tenants": {
++           "items": {
++            "type": "string"
++           },
++           "type": "array"
++          }
++         },
++         "type": "object"
++        },
++        "type": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "application": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "block_url_category": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "block_web_application": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "category": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "default_profile_settings": {
++      "properties": {
++       "dlp": {
++        "type": "string"
++       },
++       "file_control": {
++        "properties": {
++         "download": {
++          "enum": [
++           "allow-all-file-types",
++           "best-practice",
++           "block-all-file-types"
++          ],
++          "type": "string"
++         },
++         "upload": {
++          "enum": [
++           "allow-all-file-types",
++           "best-practice",
++           "block-all-file-types"
++          ],
++          "type": "string"
++         }
++        },
++        "type": "object"
++       }
++      },
++      "type": "object"
++     },
++     "description": {
++      "type": "string"
++     },
++     "destination": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "destination_hip": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "device": {
++      "type": "string"
++     },
++     "devices": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "disabled": {
++      "type": "boolean"
++     },
++     "enabled_devices": {
++      "items": {
++       "properties": {
++        "name": {
++         "type": "string"
++        }
++       },
++       "required": [
++        "name"
++       ],
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "from": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "log_end": {
++      "type": "boolean"
++     },
++     "log_setting": {
++      "type": "string"
++     },
++     "log_settings": {
++      "properties": {
++       "log_sessions": {
++        "type": "boolean"
++       }
++      },
++      "type": "object"
++     },
++     "log_start": {
++      "type": "boolean"
++     },
++     "name": {
++      "type": "string"
++     },
++     "negate_destination": {
++      "type": "boolean"
++     },
++     "negate_source": {
++      "type": "boolean"
++     },
++     "negate_user": {
++      "type": "boolean"
++     },
++     "policy_type": {
++      "type": "string"
++     },
++     "profile_setting": {
++      "properties": {
++       "group": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       }
++      },
++      "type": "object"
++     },
++     "schedule": {
++      "type": "string"
++     },
++     "security_settings": {
++      "properties": {
++       "anti_spyware": {
++        "enum": [
++         true,
++         false
++        ],
++        "type": "string"
++       },
++       "virus_and_wildfire_analysis": {
++        "enum": [
++         true,
++         false
++        ],
++        "type": "string"
++       },
++       "vulnerability": {
++        "enum": [
++         true,
++         false
++        ],
++        "type": "string"
++       }
++      },
++      "type": "object"
++     },
++     "service": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "source": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "source_hip": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "source_user": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "tag": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "tenant_restrictions": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "to": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     }
++    },
++    "type": "object"
++   }
++  },
++  "service-groups": {
++   "path": "/config/objects/v1/service-groups",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "members": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "tag": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "id",
++     "members",
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "services": {
++   "path": "/config/objects/v1/services",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "protocol": {
++      "properties": {
++       "tcp": {
++        "properties": {
++         "override": {
++          "properties": {
++           "halfclose_timeout": {
++            "type": "integer"
++           },
++           "timeout": {
++            "type": "integer"
++           },
++           "timewait_timeout": {
++            "type": "integer"
++           }
++          },
++          "type": "object"
++         },
++         "port": {
++          "type": "string"
++         },
++         "source_port": {
++          "type": "string"
++         }
++        },
++        "required": [
++         "port"
++        ],
++        "type": "object"
++       },
++       "udp": {
++        "properties": {
++         "override": {
++          "properties": {
++           "timeout": {
++            "type": "integer"
++           }
++          },
++          "type": "object"
++         },
++         "port": {
++          "type": "string"
++         },
++         "source_port": {
++          "type": "string"
++         }
++        },
++        "required": [
++         "port"
++        ],
++        "type": "object"
++       }
++      },
++      "type": "object"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "tag": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "tags": {
++   "path": "/config/objects/v1/tags",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "color": {
++      "enum": [
++       "Red",
++       "Green",
++       "Blue",
++       "Yellow",
++       "Copper",
++       "Orange",
++       "Purple",
++       "Gray",
++       "Light Green",
++       "Cyan",
++       "Light Gray",
++       "Blue Gray",
++       "Lime",
++       "Black",
++       "Gold",
++       "Brown",
++       "Olive",
++       "Maroon",
++       "Red-Orange",
++       "Yellow-Orange",
++       "Forest Green",
++       "Turquoise Blue",
++       "Azure Blue",
++       "Cerulean Blue",
++       "Midnight Blue",
++       "Medium Blue",
++       "Cobalt Blue",
++       "Violet Blue",
++       "Blue Violet",
++       "Medium Violet",
++       "Medium Rose",
++       "Lavender",
++       "Orchid",
++       "Thistle",
++       "Peach",
++       "Salmon",
++       "Magenta",
++       "Red Violet",
++       "Mahogany",
++       "Burnt Sienna",
++       "Chestnut"
++      ],
++      "type": "string"
++     },
++     "comments": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "url-access-profiles": {
++   "path": "/config/security/v1/url-access-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "alert": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "allow": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "block": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "cloud_inline_cat": {
++      "type": "boolean"
++     },
++     "continue": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "credential_enforcement": {
++      "properties": {
++       "alert": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "allow": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "block": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "continue": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "log_severity": {
++        "type": "string"
++       },
++       "mode": {
++        "properties": {
++         "disabled": {
++          "properties": {},
++          "type": "object"
++         },
++         "domain_credentials": {
++          "properties": {},
++          "type": "object"
++         },
++         "group_mapping": {
++          "type": "string"
++         },
++         "ip_user": {
++          "properties": {},
++          "type": "object"
++         }
++        },
++        "type": "object"
++       }
++      },
++      "type": "object"
++     },
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "local_inline_cat": {
++      "type": "boolean"
++     },
++     "log_container_page_only": {
++      "type": "boolean"
++     },
++     "log_http_hdr_referer": {
++      "type": "boolean"
++     },
++     "log_http_hdr_user_agent": {
++      "type": "boolean"
++     },
++     "log_http_hdr_xff": {
++      "type": "boolean"
++     },
++     "mlav_category_exception": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "name": {
++      "type": "string"
++     },
++     "redirect": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "safe_search_enforcement": {
++      "type": "boolean"
++     },
++     "snippet": {
++      "type": "string"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "url-categories": {
++   "path": "/config/security/v1/url-categories",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "list": {
++      "items": {
++       "type": "string"
++      },
++      "type": "array"
++     },
++     "name": {
++      "type": "string"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "type": {
++      "enum": [
++       "URL List",
++       "Category Match"
++      ],
++      "type": "any"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "vulnerability-protection-profiles": {
++   "path": "/config/security/v1/vulnerability-protection-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "rules": {
++      "items": {
++       "properties": {
++        "action": {
++         "properties": {
++          "alert": {
++           "properties": {},
++           "type": "object"
++          },
++          "allow": {
++           "properties": {},
++           "type": "object"
++          },
++          "block_ip": {
++           "properties": {
++            "duration": {
++             "type": "integer"
++            },
++            "track_by": {
++             "enum": [
++              "source-and-destination",
++              "source"
++             ],
++             "type": "any"
++            }
++           },
++           "type": "object"
++          },
++          "default": {
++           "properties": {},
++           "type": "object"
++          },
++          "drop": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_both": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_client": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_server": {
++           "properties": {},
++           "type": "object"
++          }
++         },
++         "type": "object"
++        },
++        "category": {
++         "enum": [
++          "any",
++          "app-id-change",
++          "brute-force",
++          "code-execution",
++          "code-obfuscation",
++          "command-execution",
++          "dos",
++          "exploit-kit",
++          "info-leak",
++          "inline-cloud-exploit",
++          "insecure-credentials",
++          "overflow",
++          "phishing",
++          "protocol-anomaly",
++          "scan",
++          "sql-injection"
++         ],
++         "type": "any"
++        },
++        "cve": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "host": {
++         "type": "string"
++        },
++        "name": {
++         "type": "string"
++        },
++        "packet_capture": {
++         "enum": [
++          "disable",
++          "single-packet",
++          "extended-capture"
++         ],
++         "type": "any"
++        },
++        "severity": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "threat_name": {
++         "type": "string"
++        },
++        "vendor_id": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "threat_exception": {
++      "items": {
++       "properties": {
++        "action": {
++         "properties": {
++          "alert": {
++           "properties": {},
++           "type": "object"
++          },
++          "allow": {
++           "properties": {},
++           "type": "object"
++          },
++          "block_ip": {
++           "properties": {
++            "duration": {
++             "type": "integer"
++            },
++            "track_by": {
++             "enum": [
++              "source-and-destination",
++              "source"
++             ],
++             "type": "any"
++            }
++           },
++           "type": "object"
++          },
++          "default": {
++           "properties": {},
++           "type": "object"
++          },
++          "drop": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_both": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_client": {
++           "properties": {},
++           "type": "object"
++          },
++          "reset_server": {
++           "properties": {},
++           "type": "object"
++          }
++         },
++         "type": "object"
++        },
++        "exempt_ip": {
++         "items": {
++          "properties": {
++           "name": {
++            "type": "string"
++           }
++          },
++          "required": [
++           "name"
++          ],
++          "type": "object"
++         },
++         "type": "array"
++        },
++        "name": {
++         "type": "string"
++        },
++        "notes": {
++         "type": "string"
++        },
++        "packet_capture": {
++         "enum": [
++          "disable",
++          "single-packet",
++          "extended-capture"
++         ],
++         "type": "any"
++        },
++        "time_attribute": {
++         "properties": {
++          "interval": {
++           "type": "integer"
++          },
++          "threshold": {
++           "type": "integer"
++          },
++          "track_by": {
++           "enum": [
++            "source",
++            "destination",
++            "source-and-destination"
++           ],
++           "type": "any"
++          }
++         },
++         "type": "object"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "wildfire-anti-virus-profiles": {
++   "path": "/config/security/v1/wildfire-anti-virus-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "mlav_exception": {
++      "items": {
++       "properties": {
++        "description": {
++         "type": "string"
++        },
++        "filename": {
++         "type": "string"
++        },
++        "name": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "name": {
++      "type": "string"
++     },
++     "packet_capture": {
++      "type": "boolean"
++     },
++     "rules": {
++      "items": {
++       "properties": {
++        "analysis": {
++         "enum": [
++          "public-cloud",
++          "private-cloud"
++         ],
++         "type": "any"
++        },
++        "application": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "direction": {
++         "enum": [
++          "download",
++          "upload",
++          "both"
++         ],
++         "type": "any"
++        },
++        "file_type": {
++         "items": {
++          "type": "string"
++         },
++         "type": "array"
++        },
++        "name": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "threat_exception": {
++      "items": {
++       "properties": {
++        "name": {
++         "type": "string"
++        },
++        "notes": {
++         "type": "string"
++        }
++       },
++       "type": "object"
++      },
++      "type": "array"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "zone-protection-profiles": {
++   "path": "/config/network/v1/zone-protection-profiles",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "asymmetric_path": {
++      "enum": [
++       "global",
++       "drop",
++       "bypass"
++      ],
++      "type": "string"
++     },
++     "description": {
++      "type": "string"
++     },
++     "device": {
++      "type": "string"
++     },
++     "discard_icmp_embedded_error": {
++      "type": "boolean"
++     },
++     "flood": {
++      "properties": {
++       "icmp": {
++        "properties": {
++         "enable": {
++          "type": "boolean"
++         },
++         "red": {
++          "properties": {
++           "activate_rate": {
++            "type": "integer"
++           },
++           "alarm_rate": {
++            "type": "integer"
++           },
++           "maximal_rate": {
++            "type": "integer"
++           }
++          },
++          "required": [
++           "activate_rate",
++           "alarm_rate",
++           "maximal_rate"
++          ],
++          "type": "object"
++         }
++        },
++        "type": "object"
++       },
++       "icmpv6": {
++        "properties": {
++         "enable": {
++          "type": "boolean"
++         },
++         "red": {
++          "properties": {
++           "activate_rate": {
++            "type": "integer"
++           },
++           "alarm_rate": {
++            "type": "integer"
++           },
++           "maximal_rate": {
++            "type": "integer"
++           }
++          },
++          "required": [
++           "activate_rate",
++           "alarm_rate",
++           "maximal_rate"
++          ],
++          "type": "object"
++         }
++        },
++        "type": "object"
++       },
++       "other_ip": {
++        "properties": {
++         "enable": {
++          "type": "boolean"
++         },
++         "red": {
++          "properties": {
++           "activate_rate": {
++            "type": "integer"
++           },
++           "alarm_rate": {
++            "type": "integer"
++           },
++           "maximal_rate": {
++            "type": "integer"
++           }
++          },
++          "required": [
++           "activate_rate",
++           "alarm_rate",
++           "maximal_rate"
++          ],
++          "type": "object"
++         }
++        },
++        "type": "object"
++       },
++       "sctp_init": {
++        "properties": {
++         "enable": {
++          "type": "boolean"
++         },
++         "red": {
++          "properties": {
++           "activate_rate": {
++            "type": "integer"
++           },
++           "alarm_rate": {
++            "type": "integer"
++           },
++           "maximal_rate": {
++            "type": "integer"
++           }
++          },
++          "required": [
++           "activate_rate",
++           "alarm_rate",
++           "maximal_rate"
++          ],
++          "type": "object"
++         }
++        },
++        "type": "object"
++       },
++       "tcp_syn": {
++        "properties": {
++         "activate_rate": {
++          "type": "integer"
++         },
++         "alarm_rate": {
++          "type": "integer"
++         },
++         "enable": {
++          "type": "boolean"
++         },
++         "maximal_rate": {
++          "type": "integer"
++         }
++        },
++        "type": "object"
++       },
++       "udp": {
++        "properties": {
++         "enable": {
++          "type": "boolean"
++         },
++         "red": {
++          "properties": {
++           "activate_rate": {
++            "type": "integer"
++           },
++           "alarm_rate": {
++            "type": "integer"
++           },
++           "maximal_rate": {
++            "type": "integer"
++           }
++          },
++          "required": [
++           "activate_rate",
++           "alarm_rate",
++           "maximal_rate"
++          ],
++          "type": "object"
++         }
++        },
++        "type": "object"
++       }
++      },
++      "type": "object"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "fragmented_traffic_discard": {
++      "type": "boolean"
++     },
++     "icmp_frag_discard": {
++      "type": "boolean"
++     },
++     "icmp_large_packet_discard": {
++      "type": "boolean"
++     },
++     "icmp_ping_zero_id_discard": {
++      "type": "boolean"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "ipv6": {
++      "properties": {
++       "anycast_source": {
++        "type": "boolean"
++       },
++       "filter_ext_hdr": {
++        "properties": {
++         "dest_option_hdr": {
++          "type": "boolean"
++         },
++         "hop_by_hop_hdr": {
++          "type": "boolean"
++         },
++         "routing_hdr": {
++          "type": "boolean"
++         }
++        },
++        "type": "object"
++       },
++       "icmpv6_too_big_small_mtu_discard": {
++        "type": "boolean"
++       },
++       "ignore_inv_pkt": {
++        "properties": {
++         "dest_unreach": {
++          "type": "boolean"
++         },
++         "param_problem": {
++          "type": "boolean"
++         },
++         "pkt_too_big": {
++          "type": "boolean"
++         },
++         "redirect": {
++          "type": "boolean"
++         },
++         "time_exceeded": {
++          "type": "boolean"
++         }
++        },
++        "type": "object"
++       },
++       "ipv4_compatible_address": {
++        "type": "boolean"
++       },
++       "needless_fragment_hdr": {
++        "type": "boolean"
++       },
++       "options_invalid_ipv6_discard": {
++        "type": "boolean"
++       },
++       "reserved_field_set_discard": {
++        "type": "boolean"
++       },
++       "routing_header_0": {
++        "type": "boolean"
++       },
++       "routing_header_1": {
++        "type": "boolean"
++       },
++       "routing_header_253": {
++        "type": "boolean"
++       },
++       "routing_header_254": {
++        "type": "boolean"
++       },
++       "routing_header_255": {
++        "type": "boolean"
++       },
++       "routing_header_3": {
++        "type": "boolean"
++       },
++       "routing_header_4_252": {
++        "type": "boolean"
++       }
++      },
++      "type": "object"
++     },
++     "l2_sec_group_tag_protection": {
++      "properties": {
++       "tags": {
++        "items": {
++         "properties": {
++          "enable": {
++           "type": "boolean"
++          },
++          "name": {
++           "type": "string"
++          },
++          "tag": {
++           "type": "string"
++          }
++         },
++         "required": [
++          "name",
++          "tag"
++         ],
++         "type": "object"
++        },
++        "type": "array"
++       }
++      },
++      "type": "object"
++     },
++     "loose_source_routing_discard": {
++      "type": "boolean"
++     },
++     "malformed_option_discard": {
++      "type": "boolean"
++     },
++     "mismatched_overlapping_tcp_segment_discard": {
++      "type": "boolean"
++     },
++     "mptcp_option_strip": {
++      "enum": [
++       false,
++       true,
++       "global"
++      ],
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "non_ip_protocol": {
++      "properties": {
++       "list_type": {
++        "enum": [
++         "exclude",
++         "include"
++        ],
++        "type": "string"
++       },
++       "protocol": {
++        "items": {
++         "properties": {
++          "enable": {
++           "type": "boolean"
++          },
++          "ether_type": {
++           "type": "string"
++          },
++          "name": {
++           "type": "string"
++          }
++         },
++         "required": [
++          "ether_type",
++          "name"
++         ],
++         "type": "object"
++        },
++        "type": "array"
++       }
++      },
++      "type": "object"
++     },
++     "record_route_discard": {
++      "type": "boolean"
++     },
++     "reject_non_syn_tcp": {
++      "enum": [
++       "global",
++       true,
++       false
++      ],
++      "type": "string"
++     },
++     "scan": {
++      "items": {
++       "properties": {
++        "action": {
++         "properties": {
++          "alert": {
++           "properties": {},
++           "type": "object"
++          },
++          "allow": {
++           "properties": {},
++           "type": "object"
++          },
++          "block": {
++           "properties": {},
++           "type": "object"
++          },
++          "duration": {
++           "type": "integer"
++          },
++          "track_by": {
++           "enum": [
++            "source-and-destination",
++            "source"
++           ],
++           "type": "string"
++          }
++         },
++         "type": "object"
++        },
++        "interval": {
++         "type": "integer"
++        },
++        "name": {
++         "enum": [
++          "8001",
++          "8002",
++          "8003",
++          "8006"
++         ],
++         "type": "string"
++        },
++        "threshold": {
++         "type": "integer"
++        }
++       },
++       "required": [
++        "name"
++       ],
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "scan_white_list": {
++      "items": {
++       "properties": {
++        "ipv4": {
++         "type": "string"
++        },
++        "ipv6": {
++         "type": "string"
++        },
++        "name": {
++         "type": "string"
++        }
++       },
++       "required": [
++        "name"
++       ],
++       "type": "object"
++      },
++      "type": "array"
++     },
++     "security_discard": {
++      "type": "boolean"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "spoofed_ip_discard": {
++      "type": "boolean"
++     },
++     "stream_id_discard": {
++      "type": "boolean"
++     },
++     "strict_ip_check": {
++      "type": "boolean"
++     },
++     "strict_source_routing_discard": {
++      "type": "boolean"
++     },
++     "suppress_icmp_needfrag": {
++      "type": "boolean"
++     },
++     "suppress_icmp_timeexceeded": {
++      "type": "boolean"
++     },
++     "tcp_fast_open_and_data_strip": {
++      "type": "boolean"
++     },
++     "tcp_handshake_discard": {
++      "type": "boolean"
++     },
++     "tcp_syn_with_data_discard": {
++      "type": "boolean"
++     },
++     "tcp_synack_with_data_discard": {
++      "type": "boolean"
++     },
++     "tcp_timestamp_strip": {
++      "type": "boolean"
++     },
++     "timestamp_discard": {
++      "type": "boolean"
++     },
++     "unknown_option_discard": {
++      "type": "boolean"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  },
++  "zones": {
++   "path": "/config/network/v1/zones",
++   "post_query": [],
++   "schema": {
++    "properties": {
++     "device": {
++      "type": "string"
++     },
++     "device_acl": {
++      "properties": {
++       "exclude_list": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "include_list": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       }
++      },
++      "type": "object"
++     },
++     "enable_device_identification": {
++      "type": "boolean"
++     },
++     "enable_user_identification": {
++      "type": "boolean"
++     },
++     "folder": {
++      "type": "string"
++     },
++     "id": {
++      "readOnly": true,
++      "type": "string"
++     },
++     "name": {
++      "type": "string"
++     },
++     "network": {
++      "properties": {
++       "enable_packet_buffer_protection": {
++        "type": "boolean"
++       },
++       "external": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "layer2": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "layer3": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "log_setting": {
++        "type": "string"
++       },
++       "tap": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "tunnel": {
++        "properties": {},
++        "type": "object"
++       },
++       "virtual_wire": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "zone_protection_profile": {
++        "type": "string"
++       }
++      },
++      "type": "object"
++     },
++     "snippet": {
++      "type": "string"
++     },
++     "user_acl": {
++      "properties": {
++       "exclude_list": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       },
++       "include_list": {
++        "items": {
++         "type": "string"
++        },
++        "type": "array"
++       }
++      },
++      "type": "object"
++     }
++    },
++    "required": [
++     "name"
++    ],
++    "type": "object"
++   }
++  }
++ },
++ "source": "github.com/PaloAltoNetworks/pan.dev @32260be 2026-11-03 openapi-specs/scm/config/ngfw: objects/objects_R3.yaml, security/security-services.yaml, network/network-services.yaml"
++}
+diff --git a/utils/develop/scm/README.md b/utils/develop/scm/README.md
+new file mode 100644
+index 00000000..218f23e5
+--- /dev/null
++++ b/utils/develop/scm/README.md
+@@ -0,0 +1,96 @@
++# Changes from pan-os-php to Strata Cloud Manager (SCM API)
++
++For Panorama and firewalls, pan-os-php writes its changes as set commands (`outputformatset=`).
++For SCM it writes one SCM API request per changed object into a JSON file, and `type=scm-apply` sends that file.
++
++## Workflow
++
++```bash
++# 1. download the SCM configuration as XML
++pan-os-php type=address in=scm-api://<TSG_ID> location=any out=scm.xml
++
++# 2. change it offline, e.g. with a playbook; outputformatscmjson= writes the SCM API requests at the end
++pan-os-php type=playbook json=visibility.json in=scm.xml out=scm-visibility.xml outputformatscmjson=changes.json
++#    or compare any two SCM XML files yourself
++pan-os-php type=scm-changes file1=scm.xml file2=scm-visibility.xml out=changes.json
++
++# 3. check, then send to the SCM candidate configuration
++pan-os-php type=scm-apply changes=changes.json dry-run
++pan-os-php type=scm-apply changes=changes.json tsg=<TSG_ID>
++
++# 4. push the candidate configuration in SCM
++```
++
++`type=scm-apply` uses the `client_id` / `client_secret` that `in=scm-api://<TSG_ID>` stored in `~/.panconfkeystore`.
++
++## The changes file
++
++```json
++{
++  "format": "pan-os-php-scm-changes",
++  "version": 1,
++  "api_base": "https://api.strata.paloaltonetworks.com",
++  "summary": { "POST": 10, "PUT": 7, "DELETE": 0, "review": 8 },
++  "warnings": [ "..." ],
++  "requests": [
++    {
++      "seq": 13,
++      "method": "PUT",
++      "path": "/config/security/v1/profile-groups/pg-1",
++      "id": "pg-1",
++      "query": {},
++      "merge": true,
++      "body": { "file_blocking": ["Alert-Only-FB"], "url_filtering": ["Alert-Only-URL"] },
++      "before": { "file_blocking": null, "url_filtering": null },
++      "object": { "resource": "profile-groups", "name": "best-practice", "scope_type": "folder",
++                  "scope": "ngfw-shared", "position": null,
++                  "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='ngfw-shared']/profile-group/entry[@name='best-practice']" },
++      "lookup": { "name": "best-practice", "folder": "ngfw-shared" },
++      "depends_on": [7, 8],
++      "review": false,
++      "warnings": []
++    }
++  ]
++}
++```
++
++| Field | Meaning |
++|---|---|
++| `seq` | order to send in: POST, then PUT, then DELETE; referenced objects before the objects that use them, deletes in reverse |
++| `method`, `path`, `query` | the SCM API call. `folder` / `snippet` / `device` is part of the POST body, as the SCM API expects |
++| `id` | SCM id, taken from the `uuid` attribute the download writes into the XML. `null`: resolve it through `lookup` |
++| `merge` | PUT only. An SCM PUT replaces the whole object, and the XML does not hold every field SCM has (e.g. the description of security profiles). So: GET the object, apply the fields of `body` (`null` removes a field), PUT the result |
++| `body` | POST: the full new object. PUT: only the changed top-level fields |
++| `before` | the old values of the changed fields, for review only |
++| `object.xpath` | where the object is in the XML |
++| `depends_on` | `seq` of POSTs this request needs; `type=scm-apply` skips the request if one of them did not succeed |
++| `review` | the change could not be translated completely, see `warnings`; `type=scm-apply` skips it unless `include-review` |
++
++## How bodies are built
++
++`lib/resources/scm/scm-ngfw-config-schema.json` holds the request schema of each resource, generated from the official
++SCM OpenAPI specs with `utils/develop/scm/build-scm-schema.py`. An XML element becomes a JSON field when the schema has
++it (`-` becomes `_`, `yes`/`no` booleans, `<member>` lists, `<entry name=>` lists of objects). A field the schema does
++not have is not sent; when it carries configuration, the request is marked `review`.
++
++A request is also marked `review` when it references an object (profile group, security profile, log forwarding
++profile, zone protection profile) that is neither in the configuration nor created by this change set, or when it
++depends on a POST that needs review.
++
++## Supported resources
++
++tags, addresses, address-groups, services, service-groups, schedules, log-forwarding-profiles, url-categories,
++anti-spyware-profiles, vulnerability-protection-profiles, wildfire-anti-virus-profiles, url-access-profiles,
++file-blocking-profiles, dns-security-profiles, profile-groups, zone-protection-profiles, zones, security-rules.
++
++Changes in other parts of a folder, snippet or device are reported in `warnings`, not sent. Creating or deleting
++folders, snippets or devices and moving rules are not translated.
++
++## Offline test
++
++```bash
++utils/develop/scm/test/scm-offline-test.sh
++```
++
++Builds an SCM XML from `test/scm-fixtures.json` with the real import code, runs the visibility playbook and single
++util changes, and sends the result to a local SCM mock server (`test/scm-mock-server.php`).
+diff --git a/utils/develop/scm/build-scm-schema.py b/utils/develop/scm/build-scm-schema.py
+new file mode 100755
+index 00000000..1e657974
+--- /dev/null
++++ b/utils/develop/scm/build-scm-schema.py
+@@ -0,0 +1,125 @@
++#!/usr/bin/env python3
++"""
++Build lib/resources/scm/scm-ngfw-config-schema.json from the official SCM OpenAPI specs.
++
++The specs live in https://github.com/PaloAltoNetworks/pan.dev under openapi-specs/scm/config/ngfw.
++
++  git clone --depth 1 --filter=blob:none --sparse https://github.com/PaloAltoNetworks/pan.dev.git
++  cd pan.dev && git sparse-checkout set openapi-specs/scm
++  python3 build-scm-schema.py /path/to/pan.dev /path/to/pan-os-php/lib/resources/scm/scm-ngfw-config-schema.json
++
++The result is a compact field tree per resource (API path, POST query parameters, request body schema).
++pan-os-php uses it to build and validate the JSON bodies of SCM API requests.
++"""
++import json
++import subprocess
++import sys
++
++import yaml
++
++FILES = {
++    'objects': 'objects/objects_R3.yaml',
++    'security': 'security/security-services.yaml',
++    'network': 'network/network-services.yaml',
++}
++WANT = {
++    'objects': ['addresses', 'address-groups', 'services', 'service-groups', 'tags', 'schedules',
++                'log-forwarding-profiles'],
++    'security': ['security-rules', 'profile-groups', 'anti-spyware-profiles', 'wildfire-anti-virus-profiles',
++                 'vulnerability-protection-profiles', 'url-access-profiles', 'file-blocking-profiles',
++                 'dns-security-profiles', 'url-categories'],
++    'network': ['zones', 'zone-protection-profiles'],
++}
++
++
++def res(doc, x):
++    while isinstance(x, dict) and '$ref' in x:
++        y = doc
++        for p in x['$ref'].split('/')[1:]:
++            y = y[p]
++        x = y
++    return x
++
++
++def conv(doc, s, depth=0):
++    s = res(doc, s)
++    if depth > 14:
++        return {'type': 'any'}
++    t = s.get('type')
++    if t == 'array':
++        return {'type': 'array', 'items': conv(doc, s.get('items', {}), depth + 1)}
++
++    props = {}
++    req = list(s.get('required', []))
++    objlike = t == 'object' or 'properties' in s
++    for n, p in s.get('properties', {}).items():
++        props[n] = conv(doc, p, depth + 1)
++
++    scalar = None
++    for comb in ('allOf', 'oneOf', 'anyOf'):
++        for part in s.get(comb, []):
++            part_r = res(doc, part)
++            c = conv(doc, part_r, depth + 1)
++            if c.get('type') == 'object' and c.get('properties'):
++                objlike = True
++                for n, p in c['properties'].items():
++                    props.setdefault(n, p)
++                if comb == 'allOf':
++                    req += c.get('required', [])
++            elif 'title' in part_r and objlike:
++                # the specs describe e.g. zone types (layer3, tap, ...) as oneOf variants named by 'title'
++                props.setdefault(part_r['title'], c)
++            elif not objlike:
++                scalar = c
++
++    if objlike:
++        o = {'type': 'object', 'properties': props}
++        if req:
++            o['required'] = sorted(set(req))
++        return o
++    if scalar:
++        return scalar
++    out = {'type': t or 'any'}
++    if 'enum' in s:
++        out['enum'] = s['enum']
++    if s.get('readOnly'):
++        out['readOnly'] = True
++    return out
++
++
++def main(pandev, out):
++    base_dir = pandev.rstrip('/') + '/openapi-specs/scm/config/ngfw/'
++    try:
++        rev = subprocess.check_output(['git', '-C', pandev, 'log', '-1', '--format=%h %cs'], text=True).strip()
++    except Exception:
++        rev = 'unknown'
++
++    api = {}
++    for group, fname in FILES.items():
++        doc = yaml.safe_load(open(base_dir + fname))
++        base = doc['servers'][0]['url'].replace('https://api.strata.paloaltonetworks.com', '')
++        for r in WANT[group]:
++            post = doc['paths']['/' + r]['post']
++            body = res(doc, post['requestBody'])
++            sch = res(doc, body['content']['application/json']['schema'])
++            api[r] = {
++                'path': base + '/' + r,
++                'post_query': [res(doc, p).get('name') for p in post.get('parameters', [])],
++                'schema': conv(doc, sch),
++            }
++
++    data = {
++        'source': 'github.com/PaloAltoNetworks/pan.dev @' + rev + ' openapi-specs/scm/config/ngfw: '
++                  + ', '.join(FILES.values()),
++        'api_base': 'https://api.strata.paloaltonetworks.com',
++        'resources': api,
++    }
++    with open(out, 'w') as fh:
++        json.dump(data, fh, indent=1, sort_keys=True)
++        fh.write('\n')
++
++
++if __name__ == '__main__':
++    if len(sys.argv) != 3:
++        sys.exit(__doc__)
++    main(sys.argv[1], sys.argv[2])
+diff --git a/utils/develop/scm/test/make-scm-fixtures.py b/utils/develop/scm/test/make-scm-fixtures.py
+new file mode 100644
+index 00000000..4c7fe988
+--- /dev/null
++++ b/utils/develop/scm/test/make-scm-fixtures.py
+@@ -0,0 +1,60 @@
++import json
++F={}
++def put(kind,scope,name,data,pos=None):
++    F[f"{kind}|{scope}|{name}|{pos or ''}"]=data
++setup={
++ "folders":[
++  {"id":"f-all","name":"All","parent":"","type":"container"},
++  {"id":"f-ngfw","name":"ngfw-shared","parent":"All","type":"container"},
++  {"id":"f-br","name":"Branches","parent":"ngfw-shared","type":"container","snippets":["branch-snippet"]},
++  {"id":"d-1","name":"012345678901","parent":"Branches","type":"on-prem"},
++ ],
++ "snippets":[
++  {"id":"s-br","name":"branch-snippet","type":"custom"},
++ ]}
++# ngfw-shared
++put("addresses","folder","ngfw-shared",[{"id":"a-1","name":"web-srv","folder":"ngfw-shared","ip_netmask":"10.1.1.10/32","description":"web server"},{"id":"a-2","name":"unused-addr","folder":"ngfw-shared","ip_netmask":"10.9.9.9/32"}])
++put("zones","folder","ngfw-shared",[
++ {"id":"z-1","name":"trust","folder":"ngfw-shared","network":{"layer3":["$trust-if"]},"enable_user_identification":True},
++ {"id":"z-2","name":"untrust","folder":"ngfw-shared","network":{"layer3":["$untrust-if"],"zone_protection_profile":"zpp-existing"}}])
++put("zone-protection-profiles","folder","ngfw-shared",[
++ {"id":"zp-1","name":"zpp-existing","folder":"ngfw-shared",
++  "scan":[{"name":"8001","action":{"block":{}},"interval":2,"threshold":100},
++          {"name":"8002","action":{"block-ip":{"track_by":"source","duration":300}},"interval":10,"threshold":100}],
++  "flood":{"tcp_syn":{"enable":True,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}}}}])
++put("profile-groups","folder","ngfw-shared",[
++ {"id":"pg-1","name":"best-practice","folder":"ngfw-shared","spyware":["strict-as"],"vulnerability":["strict-vp"]}])
++put("anti-spyware-profiles","folder","ngfw-shared",[
++ {"id":"as-1","name":"strict-as","folder":"ngfw-shared","description":"strict",
++  "rules":[{"name":"crit","severity":["critical","high"],"category":"any","threat_name":"any","packet_capture":"disable","action":{"reset_both":{}}}],
++  "cloud_inline_analysis":False}])
++put("vulnerability-protection-profiles","folder","ngfw-shared",[
++ {"id":"vp-1","name":"strict-vp","folder":"ngfw-shared",
++  "rules":[{"name":"crit","severity":["critical","high"],"category":"any","threat_name":"any","host":"any","cve":["any"],"vendor_id":["any"],"packet_capture":"disable","action":{"reset_both":{}}}]}])
++put("security-rules","folder","ngfw-shared",[
++ {"id":"r-1","name":"allow-web","folder":"ngfw-shared","position":"pre","action":"allow","from":["trust"],"to":["untrust"],
++  "source":["any"],"destination":["web-srv"],"source_user":["any"],"category":["any"],"application":["web-browsing"],
++  "service":["application-default"],"log_end":True,"log_start":False,"disabled":False,"tag":[]},
++ {"id":"r-2","name":"deny-all","folder":"ngfw-shared","position":"pre","action":"deny","from":["any"],"to":["any"],
++  "source":["any"],"destination":["any"],"source_user":["any"],"category":["any"],"application":["any"],
++  "service":["any"],"log_end":True,"disabled":False},
++ {"id":"r-3","name":"allow-bp","folder":"ngfw-shared","position":"pre","action":"allow","from":["trust"],"to":["untrust"],
++  "source":["any"],"destination":["any"],"source_user":["any"],"category":["any"],"application":["ssl"],
++  "service":["application-default"],"log_setting":"lfp-existing","log_end":True,"disabled":False,
++  "profile_setting":{"group":["best-practice"]}}],pos="pre")
++put("log-forwarding-profiles","folder","ngfw-shared",[
++ {"id":"lf-1","name":"lfp-existing","folder":"ngfw-shared","match_list":[{"name":"traffic","log_type":"traffic","filter":"All Logs","send_http":[],"send_syslog":[]}]}])
++# Branches
++put("security-rules","folder","Branches",[
++ {"id":"r-10","name":"branch-allow","folder":"Branches","position":"pre","action":"allow","from":["trust"],"to":["untrust"],
++  "source":["any"],"destination":["any"],"source_user":["any"],"category":["any"],"application":["dns"],
++  "service":["application-default"],"log_end":False,"disabled":False}],pos="pre")
++# snippet
++put("addresses","snippet","branch-snippet",[{"id":"a-20","name":"snip-addr","snippet":"branch-snippet","ip_netmask":"192.168.20.0/24"}])
++put("security-rules","snippet","branch-snippet",[
++ {"id":"r-20","name":"snip-allow","snippet":"branch-snippet","position":"pre","action":"allow","from":["trust"],"to":["untrust"],
++  "source":["snip-addr"],"destination":["any"],"source_user":["any"],"category":["any"],"application":["ntp"],
++  "service":["application-default"],"log_end":True,"disabled":False}],pos="pre")
++setup["snippets"].insert(0,{"id":"s-pre","name":"predefined-snippet","type":"predefined"})
++json.dump({"setup":setup,"res":F},open("scm-fixtures.json","w"),indent=1)
++print(len(F),"resource fixtures")
+diff --git a/utils/develop/scm/test/scm-fixtures.json b/utils/develop/scm/test/scm-fixtures.json
+new file mode 100644
+index 00000000..b867c499
+--- /dev/null
++++ b/utils/develop/scm/test/scm-fixtures.json
+@@ -0,0 +1,393 @@
++{
++ "setup": {
++  "folders": [
++   {
++    "id": "f-all",
++    "name": "All",
++    "parent": "",
++    "type": "container"
++   },
++   {
++    "id": "f-ngfw",
++    "name": "ngfw-shared",
++    "parent": "All",
++    "type": "container"
++   },
++   {
++    "id": "f-br",
++    "name": "Branches",
++    "parent": "ngfw-shared",
++    "type": "container",
++    "snippets": [
++     "branch-snippet"
++    ]
++   },
++   {
++    "id": "d-1",
++    "name": "012345678901",
++    "parent": "Branches",
++    "type": "on-prem"
++   }
++  ],
++  "snippets": [
++   {
++    "id": "s-pre",
++    "name": "predefined-snippet",
++    "type": "predefined"
++   },
++   {
++    "id": "s-br",
++    "name": "branch-snippet",
++    "type": "custom"
++   }
++  ]
++ },
++ "res": {
++  "addresses|folder|ngfw-shared|": [
++   {
++    "id": "a-1",
++    "name": "web-srv",
++    "folder": "ngfw-shared",
++    "ip_netmask": "10.1.1.10/32",
++    "description": "web server"
++   },
++   {
++    "id": "a-2",
++    "name": "unused-addr",
++    "folder": "ngfw-shared",
++    "ip_netmask": "10.9.9.9/32"
++   }
++  ],
++  "zones|folder|ngfw-shared|": [
++   {
++    "id": "z-1",
++    "name": "trust",
++    "folder": "ngfw-shared",
++    "network": {
++     "layer3": [
++      "$trust-if"
++     ]
++    },
++    "enable_user_identification": true
++   },
++   {
++    "id": "z-2",
++    "name": "untrust",
++    "folder": "ngfw-shared",
++    "network": {
++     "layer3": [
++      "$untrust-if"
++     ],
++     "zone_protection_profile": "zpp-existing"
++    }
++   }
++  ],
++  "zone-protection-profiles|folder|ngfw-shared|": [
++   {
++    "id": "zp-1",
++    "name": "zpp-existing",
++    "folder": "ngfw-shared",
++    "scan": [
++     {
++      "name": "8001",
++      "action": {
++       "block": {}
++      },
++      "interval": 2,
++      "threshold": 100
++     },
++     {
++      "name": "8002",
++      "action": {
++       "block-ip": {
++        "track_by": "source",
++        "duration": 300
++       }
++      },
++      "interval": 10,
++      "threshold": 100
++     }
++    ],
++    "flood": {
++     "tcp_syn": {
++      "enable": true,
++      "red": {
++       "alarm_rate": 10000,
++       "activate_rate": 10000,
++       "maximal_rate": 40000
++      }
++     }
++    }
++   }
++  ],
++  "profile-groups|folder|ngfw-shared|": [
++   {
++    "id": "pg-1",
++    "name": "best-practice",
++    "folder": "ngfw-shared",
++    "spyware": [
++     "strict-as"
++    ],
++    "vulnerability": [
++     "strict-vp"
++    ]
++   }
++  ],
++  "anti-spyware-profiles|folder|ngfw-shared|": [
++   {
++    "id": "as-1",
++    "name": "strict-as",
++    "folder": "ngfw-shared",
++    "description": "strict",
++    "rules": [
++     {
++      "name": "crit",
++      "severity": [
++       "critical",
++       "high"
++      ],
++      "category": "any",
++      "threat_name": "any",
++      "packet_capture": "disable",
++      "action": {
++       "reset_both": {}
++      }
++     }
++    ],
++    "cloud_inline_analysis": false
++   }
++  ],
++  "vulnerability-protection-profiles|folder|ngfw-shared|": [
++   {
++    "id": "vp-1",
++    "name": "strict-vp",
++    "folder": "ngfw-shared",
++    "rules": [
++     {
++      "name": "crit",
++      "severity": [
++       "critical",
++       "high"
++      ],
++      "category": "any",
++      "threat_name": "any",
++      "host": "any",
++      "cve": [
++       "any"
++      ],
++      "vendor_id": [
++       "any"
++      ],
++      "packet_capture": "disable",
++      "action": {
++       "reset_both": {}
++      }
++     }
++    ]
++   }
++  ],
++  "security-rules|folder|ngfw-shared|pre": [
++   {
++    "id": "r-1",
++    "name": "allow-web",
++    "folder": "ngfw-shared",
++    "position": "pre",
++    "action": "allow",
++    "from": [
++     "trust"
++    ],
++    "to": [
++     "untrust"
++    ],
++    "source": [
++     "any"
++    ],
++    "destination": [
++     "web-srv"
++    ],
++    "source_user": [
++     "any"
++    ],
++    "category": [
++     "any"
++    ],
++    "application": [
++     "web-browsing"
++    ],
++    "service": [
++     "application-default"
++    ],
++    "log_end": true,
++    "log_start": false,
++    "disabled": false,
++    "tag": []
++   },
++   {
++    "id": "r-2",
++    "name": "deny-all",
++    "folder": "ngfw-shared",
++    "position": "pre",
++    "action": "deny",
++    "from": [
++     "any"
++    ],
++    "to": [
++     "any"
++    ],
++    "source": [
++     "any"
++    ],
++    "destination": [
++     "any"
++    ],
++    "source_user": [
++     "any"
++    ],
++    "category": [
++     "any"
++    ],
++    "application": [
++     "any"
++    ],
++    "service": [
++     "any"
++    ],
++    "log_end": true,
++    "disabled": false
++   },
++   {
++    "id": "r-3",
++    "name": "allow-bp",
++    "folder": "ngfw-shared",
++    "position": "pre",
++    "action": "allow",
++    "from": [
++     "trust"
++    ],
++    "to": [
++     "untrust"
++    ],
++    "source": [
++     "any"
++    ],
++    "destination": [
++     "any"
++    ],
++    "source_user": [
++     "any"
++    ],
++    "category": [
++     "any"
++    ],
++    "application": [
++     "ssl"
++    ],
++    "service": [
++     "application-default"
++    ],
++    "log_setting": "lfp-existing",
++    "log_end": true,
++    "disabled": false,
++    "profile_setting": {
++     "group": [
++      "best-practice"
++     ]
++    }
++   }
++  ],
++  "log-forwarding-profiles|folder|ngfw-shared|": [
++   {
++    "id": "lf-1",
++    "name": "lfp-existing",
++    "folder": "ngfw-shared",
++    "match_list": [
++     {
++      "name": "traffic",
++      "log_type": "traffic",
++      "filter": "All Logs",
++      "send_http": [],
++      "send_syslog": []
++     }
++    ]
++   }
++  ],
++  "security-rules|folder|Branches|pre": [
++   {
++    "id": "r-10",
++    "name": "branch-allow",
++    "folder": "Branches",
++    "position": "pre",
++    "action": "allow",
++    "from": [
++     "trust"
++    ],
++    "to": [
++     "untrust"
++    ],
++    "source": [
++     "any"
++    ],
++    "destination": [
++     "any"
++    ],
++    "source_user": [
++     "any"
++    ],
++    "category": [
++     "any"
++    ],
++    "application": [
++     "dns"
++    ],
++    "service": [
++     "application-default"
++    ],
++    "log_end": false,
++    "disabled": false
++   }
++  ],
++  "addresses|snippet|branch-snippet|": [
++   {
++    "id": "a-20",
++    "name": "snip-addr",
++    "snippet": "branch-snippet",
++    "ip_netmask": "192.168.20.0/24"
++   }
++  ],
++  "security-rules|snippet|branch-snippet|pre": [
++   {
++    "id": "r-20",
++    "name": "snip-allow",
++    "snippet": "branch-snippet",
++    "position": "pre",
++    "action": "allow",
++    "from": [
++     "trust"
++    ],
++    "to": [
++     "untrust"
++    ],
++    "source": [
++     "snip-addr"
++    ],
++    "destination": [
++     "any"
++    ],
++    "source_user": [
++     "any"
++    ],
++    "category": [
++     "any"
++    ],
++    "application": [
++     "ntp"
++    ],
++    "service": [
++     "application-default"
++    ],
++    "log_end": true,
++    "disabled": false
++   }
++  ]
++ }
++}
+\ No newline at end of file
+diff --git a/utils/develop/scm/test/scm-mock-download.php b/utils/develop/scm/test/scm-mock-download.php
+new file mode 100644
+index 00000000..a9eca4f8
+--- /dev/null
++++ b/utils/develop/scm/test/scm-mock-download.php
+@@ -0,0 +1,51 @@
++<?php
++/**
++ * Offline "download" of an SCM configuration: runs the real PanSCMAPIConnector import
++ * (getSnippetsavailable, getFolderavailable, loadSCMConfig, importConfig) against fixture
++ * responses instead of the SCM API and writes the XML that in=scm-api://... out=... would write.
++ *
++ *   php scm-mock-download.php <pan-os-php repo> <scm-fixtures.json> <out.xml>
++ */
++$repo = $argv[1];
++require_once $repo . "/lib/pan_php_framework.php";
++require_once $repo . "/utils/lib/UTIL.php";
++PH::processCliArgs();
++
++class MockSCMConnector extends PanSCMAPIConnector
++{
++    public $fx; public $calls = array();
++    public function getAccessToken() { $this->access_token = "mock"; }
++    function curl_request_SCM( $url )
++    {
++        $this->calls[] = $url;
++        $p = parse_url($url); parse_str($p['query'] ?? '', $q);
++        $type = basename($p['path']);
++        if( strpos($p['path'], '/config/setup/') !== FALSE )
++            return array('data' => $this->fx['setup'][$type] ?? array(), 'total' => count($this->fx['setup'][$type] ?? array()), 'limit' => 10000);
++        foreach( array('folder','snippet','device') as $s )
++            if( isset($q[$s]) ) { $scope = $s; $name = $q[$s]; }
++        $pos = $q['position'] ?? '';
++        $data = $this->fx['res']["$type|$scope|$name|$pos"] ?? array();
++        return array('data' => $data, 'total' => count($data), 'limit' => 10000, 'offset' => 0);
++    }
++}
++
++$fx = json_decode(file_get_contents($argv[2]), TRUE);
++$xmlDoc = new DOMDocument();
++$xmlDoc->load($repo . "/utils/develop/buckbeak_baseconfig.xml", XML_PARSE_BIG_LINES);
++$pan = new BuckbeakConf();
++$pan->load_from_domxml($xmlDoc);
++
++$c = new MockSCMConnector("1234567890");
++$c->fx = $fx;
++$folders = array_merge(PanSCMAPIConnector::$folderArray, $c->getSnippetsavailable($pan), $c->getFolderavailable($pan));
++$folders = array_values(array_unique($folders));
++foreach( array('stats') as $utilType )
++    foreach( $folders as $folder )
++    {
++        $sub = $pan->findContainer($folder) ?? $pan->findSnippet($folder) ?? $pan->findDeviceCloud($folder) ?? $pan->findDeviceOnPrem($folder);
++        if( $sub === null ) continue;
++        $c->loadSCMConfig($folder, $sub, $utilType);
++    }
++$pan->save_to_file($argv[3]);
++fwrite(STDERR, "calls: " . count($c->calls) . "\n");
+diff --git a/utils/develop/scm/test/scm-mock-server.php b/utils/develop/scm/test/scm-mock-server.php
+new file mode 100644
+index 00000000..75fbbed7
+--- /dev/null
++++ b/utils/develop/scm/test/scm-mock-server.php
+@@ -0,0 +1,113 @@
++<?php
++/**
++ * Minimal Strata Cloud Manager API mock for tests, run with the PHP built-in server:
++ *   SCM_MOCK_STATE=state.json SCM_MOCK_LOG=requests.log php -S 127.0.0.1:8099 scm-mock-server.php
++ *
++ * state.json: {"<resource>": {"<id>": {object}, ...}, ...}; it is updated by POST / PUT / DELETE.
++ * Checks like SCM: bearer token, JSON content type, exactly one of folder / snippet / device,
++ * id not writable, 409 for a name that exists in the same location, profile-group references.
++ */
++$STATE = getenv('SCM_MOCK_STATE');
++$LOG = getenv('SCM_MOCK_LOG') ?: '/dev/null';
++if( !$STATE )
++{
++    http_response_code(500);
++    echo "SCM_MOCK_STATE not set";
++    exit;
++}
++
++function out($code, $data) { http_response_code($code); header('Content-Type: application/json'); echo json_encode($data); exit; }
++function err($code, $msg) { out($code, array('_errors' => array(array('code' => "E$code", 'message' => $msg)), '_request_id' => 'mock')); }
++
++$method = $_SERVER['REQUEST_METHOD'];
++$uri = parse_url($_SERVER['REQUEST_URI']);
++$path = $uri['path'];
++parse_str($uri['query'] ?? '', $q);
++$raw = file_get_contents('php://input');
++file_put_contents($LOG, $method . " " . $_SERVER['REQUEST_URI'] . ($raw !== '' ? " " . $raw : "") . "\n", FILE_APPEND);
++
++if( $path == '/oauth2/access_token' )
++    out(200, array('access_token' => 'mock-token', 'expires_in' => 899, 'token_type' => 'Bearer'));
++
++if( ($_SERVER['HTTP_AUTHORIZATION'] ?? '') !== 'Bearer mock-token' )
++    err(401, 'missing or wrong token');
++
++$st = json_decode(file_get_contents($STATE), TRUE);
++if( !preg_match('#^/config/(objects|security|network)/v1/([a-z-]+)(?:/([^/]+))?$#', $path, $m) )
++    err(404, 'unknown path ' . $path);
++$res = $m[2];
++$id = $m[3] ?? null;
++
++$scopeOf = function ($o) { foreach( array('folder', 'snippet', 'device') as $s ) if( isset($o[$s]) ) return array($s, $o[$s]); return array(null, null); };
++
++if( in_array($method, array('POST', 'PUT')) )
++{
++    if( stripos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') === FALSE )
++        err(415, 'Content-Type must be application/json');
++    $body = json_decode($raw, TRUE);
++    if( !is_array($body) || !isset($body['name']) )
++        err(400, 'body must be an object with name');
++    $scopes = array_intersect(array('folder', 'snippet', 'device'), array_keys($body));
++    if( count($scopes) != 1 )
++        err(400, 'exactly one of folder, snippet, device is required');
++    if( isset($body['id']) )
++        err(400, 'id is read-only');
++    if( $res == 'profile-groups' )
++        foreach( array('spyware' => 'anti-spyware-profiles', 'vulnerability' => 'vulnerability-protection-profiles',
++                     'file_blocking' => 'file-blocking-profiles', 'url_filtering' => 'url-access-profiles',
++                     'dns_security' => 'dns-security-profiles', 'virus_and_wildfire_analysis' => 'wildfire-anti-virus-profiles') as $f => $r )
++            foreach( $body[$f] ?? array() as $ref )
++            {
++                $found = FALSE;
++                foreach( $st[$r] ?? array() as $o ) if( $o['name'] === $ref ) $found = TRUE;
++                if( !$found ) err(400, "profile-group references unknown $r '$ref'");
++            }
++}
++
++if( $method == 'GET' && $id === null )
++{
++    $data = array();
++    foreach( $st[$res] ?? array() as $o )
++    {
++        list($s, $n) = $scopeOf($o);
++        if( isset($q['name']) && $o['name'] !== $q['name'] ) continue;
++        if( isset($q[$s]) ? $q[$s] !== $n : (isset($q['folder']) || isset($q['snippet']) || isset($q['device'])) ) continue;
++        $data[] = $o;
++    }
++    out(200, array('data' => $data, 'total' => count($data), 'limit' => 200, 'offset' => 0));
++}
++if( $method == 'GET' )
++{
++    if( !isset($st[$res][$id]) ) err(404, "$res $id not found");
++    out(200, $st[$res][$id]);
++}
++if( $method == 'POST' )
++{
++    list($s, $n) = $scopeOf($body);
++    foreach( $st[$res] ?? array() as $o )
++    {
++        list($s2, $n2) = $scopeOf($o);
++        if( $o['name'] === $body['name'] && $s2 === $s && $n2 === $n ) err(409, "$res '" . $body['name'] . "' exists");
++    }
++    $body = array('id' => 'new-' . substr(md5($res . $body['name'] . $n), 0, 8)) + $body;
++    if( $res == 'security-rules' ) $body['position'] = $q['position'] ?? 'pre';
++    $st[$res][$body['id']] = $body;
++    file_put_contents($STATE, json_encode($st));
++    out(201, $body);
++}
++if( $method == 'PUT' )
++{
++    if( !isset($st[$res][$id]) ) err(404, "$res $id not found");
++    $body = array('id' => $id) + $body;
++    $st[$res][$id] = $body;
++    file_put_contents($STATE, json_encode($st));
++    out(200, $body);
++}
++if( $method == 'DELETE' )
++{
++    if( !isset($st[$res][$id]) ) err(404, "$res $id not found");
++    unset($st[$res][$id]);
++    file_put_contents($STATE, json_encode($st));
++    out(200, array('id' => $id));
++}
++err(405, 'method not allowed');
+diff --git a/utils/develop/scm/test/scm-offline-test.sh b/utils/develop/scm/test/scm-offline-test.sh
+new file mode 100755
+index 00000000..554f35c1
+--- /dev/null
++++ b/utils/develop/scm/test/scm-offline-test.sh
+@@ -0,0 +1,99 @@
++#!/bin/bash
++#
++# Offline test of type=scm-changes and type=scm-apply, no SCM tenant needed.
++#
++#   utils/develop/scm/test/scm-offline-test.sh [workdir]
++#
++# 1. "download" an SCM configuration from fixtures with the real import code (scm-mock-download.php)
++# 2. run the visibility playbook on it with outputformatscmjson=
++# 3. single util changes (zone, rule, rename, delete, snippet) and type=scm-changes
++# 4. type=scm-apply dry-run, then against a local SCM mock server (scm-mock-server.php)
++# Each step checks its result; the script exits non-zero on the first failed check.
++
++set -u
++HERE=$(cd "$(dirname "$0")" && pwd)
++REPO=$(cd "$HERE/../../../.." && pwd)
++W=${1:-$(mktemp -d /tmp/scm-offline-test.XXXX)}
++mkdir -p "$W"
++P="php $REPO/utils/pan-os-php.php"
++PORT=${SCM_MOCK_PORT:-8099}
++FAILED=0
++
++check() { # description, condition
++    if eval "$2"; then echo "  ok    $1"; else echo "  FAIL  $1"; FAILED=1; fi
++}
++jq_() { python3 -c "import json,sys; d=json.load(open('$1')); print($2)"; }
++
++echo "workdir: $W"
++
++echo "1) offline download"
++php "$HERE/scm-mock-download.php" "$REPO" "$HERE/scm-fixtures.json" "$W/scm.xml" > "$W/download.log" 2>&1
++check "SCM XML written" "[ -s '$W/scm.xml' ]"
++check "SCM ids stored as uuid" "grep -q 'uuid=\"r-1\"' '$W/scm.xml'"
++
++echo "2) visibility playbook with outputformatscmjson="
++mkdir -p "$W/pb"
++(cd "$REPO" && $P type=playbook json=utils/api/v1/playbook/visibility.json in="$W/scm.xml" out="$W/scm-visibility.xml" projectfolder="$W/pb" outputformatscmjson=changes-visibility.json > "$W/playbook.log" 2>&1)
++C="$W/pb/changes-visibility.json"
++check "changes file written" "[ -s '$C' ]"
++check "format pan-os-php-scm-changes" "[ \"\$(jq_ $C \"d['format']\")\" = pan-os-php-scm-changes ]"
++check "POST before PUT before DELETE" "[ \"\$(jq_ $C \"''.join(r['method'][0] for r in d['requests'])\" | grep -cE '^P*$|^P+U*D*$')\" = 1 ]"
++check "folder in the POST body, not in the query" "[ \"\$(jq_ $C \"all(('folder' in r['body'] or 'snippet' in r['body'] or 'device' in r['body']) and 'folder' not in r['query'] for r in d['requests'] if r['method']=='POST')\")\" = True ]"
++check "AV profile with PAN-OS decoder needs review" "[ \"\$(jq_ $C \"[r['review'] for r in d['requests'] if r['object']['name']=='Alert-Only-AVWF'][0]\")\" = True ]"
++check "profile group depending on it needs review" "[ \"\$(jq_ $C \"[r['review'] for r in d['requests'] if r['object']['name']=='Alert-Only'][0]\")\" = True ]"
++check "zone referencing a missing ZPP needs review" "[ \"\$(jq_ $C \"[r['review'] for r in d['requests'] if r['object']['name']=='trust'][0]\")\" = True ]"
++check "snippet members not duplicated" "[ \$(grep -c '<member>branch-snippet</member>' '$W/scm-visibility.xml') = 1 ]"
++
++echo "3) single util changes"
++cp "$W/scm.xml" "$W/s0.xml"
++(cd "$REPO"
++ $P type=zone location=ngfw-shared in="$W/s0.xml" out="$W/s1.xml" actions=zpp-set:zpp-existing 'filter=(name eq trust)'
++ $P type=zone location=ngfw-shared in="$W/s1.xml" out="$W/s2.xml" actions=logsetting-set:lfp-existing 'filter=(name eq trust)'
++ $P type=rule location=ngfw-shared in="$W/s2.xml" out="$W/s3.xml" actions=logsetting-set:lfp-existing 'filter=(name eq allow-web)'
++ $P type=address location=ngfw-shared in="$W/s3.xml" out="$W/s4.xml" actions=name-rename:web-server-01 'filter=(name eq web-srv)'
++ $P type=address location=ngfw-shared in="$W/s4.xml" out="$W/s5.xml" actions=delete 'filter=(name eq unused-addr)'
++ $P type=rule location=Branches in="$W/s5.xml" out="$W/s6.xml" actions=disabled-set:true 'filter=(name eq branch-allow)'
++ $P type=rule location=branch-snippet in="$W/s6.xml" out="$W/s7.xml" actions=description-append:changed-in-snippet 'filter=(name eq snip-allow)'
++ $P type=scm-changes file1="$W/scm.xml" file2="$W/s7.xml" out="$W/changes-single.json"
++) > "$W/single.log" 2>&1
++S="$W/changes-single.json"
++check "5 PUT, 1 DELETE, nothing to review" "[ \"\$(jq_ $S \"(d['summary']['PUT'],d['summary']['DELETE'],d['summary']['review'])\")\" = '(5, 1, 0)' ]"
++check "rename is a PUT on the same id" "[ \"\$(jq_ $S \"[(r['method'],r['id'],r['body']['name']) for r in d['requests'] if r['object']['resource']=='addresses' and r['method']=='PUT'][0]\")\" = \"('PUT', 'a-1', 'web-server-01')\" ]"
++check "zone PUT on /config/network/v1/zones/z-1" "grep -q '/config/network/v1/zones/z-1' '$S'"
++check "rule follows the renamed address" "[ \"\$(jq_ $S \"[r['body'].get('destination') for r in d['requests'] if r['object']['name']=='allow-web'][0]\")\" = \"['web-server-01']\" ]"
++check "snippet rule PUT" "grep -q '/config/security/v1/security-rules/r-20' '$S'"
++check "DELETE last" "[ \"\$(jq_ $S \"d['requests'][-1]['method']\")\" = DELETE ]"
++
++echo "4) scm-apply"
++(cd "$REPO" && $P type=scm-apply changes="$S" dry-run > "$W/apply-dry.log" 2>&1)
++check "dry-run: 6 ok" "grep -q 'dry-run: ok 6, failed 0' '$W/apply-dry.log'"
++
++python3 - "$HERE/scm-fixtures.json" "$W/mock-state.json" <<'EOF'
++import json, sys
++fx = json.load(open(sys.argv[1])); st = {}
++for key, objs in fx['res'].items():
++    for o in objs:
++        st.setdefault(key.split('|')[0], {})[o['id']] = o
++json.dump(st, open(sys.argv[2], 'w'))
++EOF
++SCM_MOCK_STATE="$W/mock-state.json" SCM_MOCK_LOG="$W/mock-requests.log" php -S 127.0.0.1:$PORT "$HERE/scm-mock-server.php" > "$W/mock-server.log" 2>&1 &
++SRV=$!
++trap 'kill $SRV 2>/dev/null' EXIT
++sleep 1
++
++mkdir -p "$W/home"
++A="type=scm-apply tsg=1234567890 apiurl=http://127.0.0.1:$PORT tokenurl=http://127.0.0.1:$PORT/oauth2/access_token"
++(cd "$REPO" && printf 'test-client-id\ntest-client-secret\n' | HOME="$W/home" $P $A changes="$S" > "$W/apply.log" 2>&1)
++check "apply: 6 ok" "grep -q 'ok 6, failed 0' '$W/apply.log'"
++check "PUT merged with the live object (description kept)" "grep -q '\"description\":\"web server\"' '$W/mock-requests.log'"
++check "address renamed on the server" "[ \"\$(jq_ $W/mock-state.json \"d['addresses']['a-1']['name']\")\" = web-server-01 ]"
++check "address deleted on the server" "[ \"\$(jq_ $W/mock-state.json \"'a-2' in d['addresses']\")\" = False ]"
++
++(cd "$REPO" && HOME="$W/home" $P $A changes="$C" > "$W/apply-visibility.log" 2>&1)
++check "visibility: review requests skipped, rest ok" "grep -qE 'ok [0-9]+, failed 0, skipped \(review\) [1-9]' '$W/apply-visibility.log'"
++(cd "$REPO" && HOME="$W/home" $P $A changes="$C" > "$W/apply-again.log" 2>&1)
++check "second run stops at the first 409" "grep -q 'HTTP 409' '$W/apply-again.log' && grep -q 'stopped; resume with from=1' '$W/apply-again.log'"
++
++echo
++if [ $FAILED = 0 ]; then echo "all checks passed"; else echo "some checks FAILED (logs in $W)"; fi
++exit $FAILED
+diff --git a/utils/lib/PLAYBOOK__.php b/utils/lib/PLAYBOOK__.php
+index 3e399208..d3dd0107 100644
+--- a/utils/lib/PLAYBOOK__.php
++++ b/utils/lib/PLAYBOOK__.php
+@@ -25,6 +25,7 @@ class PLAYBOOK__
+     public $debugAPI = false;
+     public $debugMemory = false;
+     public $outputformatset = false;
++    public $outputformatscmjsonFile = null;
+     public $subprocessMode = false;
+     public $memoryThreshold = 0;
+ 
+@@ -53,6 +54,7 @@ class PLAYBOOK__
+         $this->supportedArguments['subprocess'] = array('niceName' => 'subprocess', 'shortHelp' => 'run each playbook step as a separate PHP process (slower but uses less memory)');
+         $this->supportedArguments['memorythreshold'] = array('niceName' => 'memorythreshold', 'shortHelp' => 'memory threshold in MB before switching to subprocess mode (e.g., memorythreshold=512)', 'argDesc' => 'memorythreshold=MB');
+         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
++        $this->supportedArguments['outputformatscmjson'] = array('niceName' => 'outputformatscmjson', 'shortHelp' => 'SCM only (in= is an SCM XML from in=scm-api://): store one SCM API request per changed object in FILENAME, see type=scm-changes / type=scm-apply', 'argDesc' => 'FILENAME');
+ 
+ 
+         $in_exclude = array(
+@@ -178,6 +180,18 @@ class PLAYBOOK__
+ 
+ 
+ 
++        if( isset(PH::$args['outputformatscmjson']) )
++        {
++            if( is_bool(PH::$args['outputformatscmjson']) )
++                derr("'outputformatscmjson' needs a file name: outputformatscmjson=FILENAME", null, FALSE);
++            if( !isset(PH::$args['out']) )
++                derr("'outputformatscmjson' needs 'out=': the SCM API requests are calculated from in= and out=", null, FALSE);
++
++            $this->outputformatscmjsonFile = PH::$args['outputformatscmjson'];
++            if( $this->projectFolder !== null && strpos($this->outputformatscmjsonFile, $this->projectFolder) === FALSE )
++                $this->outputformatscmjsonFile = $this->projectFolder."/".$this->outputformatscmjsonFile;
++        }
++
+         if( isset(PH::$args['json']) )
+         {
+             $jsonFile = PH::$args['json'];
+@@ -660,6 +674,17 @@ class PLAYBOOK__
+             copy( $out, $output );
+         }
+ 
++        if( $this->outputformatscmjsonFile !== null && $finaloutput != null && $finaloutput !== "/dev/null" && !$this->isAPI )
++        {
++            PH::print_stdout();
++            PH::print_stdout( PH::boldText( "[ pan-os-php type=scm-changes file1=".$input." file2=".$output." out=".$this->outputformatscmjsonFile." ]" ) );
++            PH::print_stdout();
++            SCMCHANGES::generate( $input, $output, $this->outputformatscmjsonFile );
++            PH::print_stdout( "send them with: pan-os-php type=scm-apply changes=".$this->outputformatscmjsonFile." tsg=TSG_ID [dry-run]" );
++            PH::print_stdout();
++            PH::print_stdout( "############################################################################");
++        }
++
+ 
+         if( isset($details['footer-comment']) && !empty($details['footer-comment']) )
+         {
+diff --git a/utils/lib/SCMAPPLY.php b/utils/lib/SCMAPPLY.php
+new file mode 100644
+index 00000000..a4bae8de
+--- /dev/null
++++ b/utils/lib/SCMAPPLY.php
+@@ -0,0 +1,383 @@
++<?php
++/**
++ * ISC License
++ *
++ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
++ * Copyright (c) 2019, Palo Alto Networks Inc.
++ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++/**
++ * type=scm-apply
++ *
++ * Sends the requests of a type=scm-changes file to Strata Cloud Manager, in the order of "seq".
++ *
++ *  - POST    body as written
++ *  - PUT     "merge": true -> GET the live object, apply the fields of body (null removes a field), PUT the result
++ *  - DELETE  as written
++ *  - a request without id is resolved through its "lookup" (GET ?name=...&folder=...)
++ *  - "review": true requests are skipped unless include-review is given
++ *  - a request whose dependency did not succeed is skipped
++ *  - by default the run stops at the first failed request (continue-on-error to go on)
++ *
++ * The changes land in the SCM candidate configuration; nothing is pushed.
++ * Every request and its result are written to a result file (default: <changes>.result.json).
++ */
++class SCMAPPLY extends UTIL
++{
++    public $changesFile = null;
++    public $resultFile = null;
++    public $tsg = null;
++    public $dryRun = FALSE;
++    public $includeReview = FALSE;
++    public $continueOnError = FALSE;
++    public $fromSeq = 1;
++
++    /** @var PanSCMAPIConnector */
++    public $scm = null;
++    public $apiBase = null;
++    private $curl = null;
++
++    public function utilStart()
++    {
++        $this->usageMsg = PH::boldText('USAGE: ') . "\n" .
++            "  - php " . basename(__FILE__) . " type=scm-apply changes=changes.json tsg=TSG_ID [dry-run]\n" .
++            "\n" .
++            "  changes            file written by type=scm-changes\n" .
++            "  tsg                TSG ID of the tenant; client_id / client_secret come from ~/.panconfkeystore\n" .
++            "                     (the same entry in=scm-api://TSG_ID uses; asked for and stored when missing)\n" .
++            "  dry-run            print what would be sent, no connection to SCM\n" .
++            "  include-review     also send requests marked \"review\": true\n" .
++            "  continue-on-error  do not stop at the first failed request (its dependents are skipped)\n" .
++            "  from=SEQ           start at request SEQ (e.g. to resume a run)\n" .
++            "  result=FILE        result file (default: <changes>.result.json)\n" .
++            "\n" .
++            "  Changes go to the candidate configuration. Push them in SCM afterwards.\n";
++
++        PH::processCliArgs();
++
++        if( isset(PH::$args['help']) )
++        {
++            PH::print_stdout($this->usageMsg);
++            exit(0);
++        }
++
++        $this->main();
++    }
++
++    public function supportedArguments()
++    {
++        $this->supportedArguments = array();
++        $this->supportedArguments['changes'] = array('niceName' => 'changes', 'shortHelp' => 'file written by type=scm-changes', 'argDesc' => '[filename]');
++        $this->supportedArguments['tsg'] = array('niceName' => 'tsg', 'shortHelp' => 'TSG ID of the tenant', 'argDesc' => '[TSG_ID]');
++        $this->supportedArguments['dry-run'] = array('niceName' => 'dry-run', 'shortHelp' => 'print what would be sent');
++        $this->supportedArguments['include-review'] = array('niceName' => 'include-review', 'shortHelp' => 'also send requests marked review');
++        $this->supportedArguments['continue-on-error'] = array('niceName' => 'continue-on-error', 'shortHelp' => 'do not stop at the first failed request');
++        $this->supportedArguments['from'] = array('niceName' => 'from', 'shortHelp' => 'start at request SEQ', 'argDesc' => '[SEQ]');
++        $this->supportedArguments['result'] = array('niceName' => 'result', 'shortHelp' => 'result file', 'argDesc' => '[filename]');
++        $this->supportedArguments['apiurl'] = array('niceName' => 'apiurl', 'shortHelp' => 'testing only: other API base URL', 'argDesc' => '[url]');
++        $this->supportedArguments['tokenurl'] = array('niceName' => 'tokenurl', 'shortHelp' => 'testing only: other token URL', 'argDesc' => '[url]');
++        $this->supportedArguments['debugapi'] = array('niceName' => 'debugapi', 'shortHelp' => 'print every request and response');
++        $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
++    }
++
++    public function main()
++    {
++        if( !isset(PH::$args['changes']) )
++            $this->display_error_usage_exit('"changes" is required');
++        $this->changesFile = PH::$args['changes'];
++        $this->dryRun = isset(PH::$args['dry-run']);
++        $this->includeReview = isset(PH::$args['include-review']);
++        $this->continueOnError = isset(PH::$args['continue-on-error']);
++        $this->debugAPI = isset(PH::$args['debugapi']);
++        if( isset(PH::$args['from']) )
++            $this->fromSeq = (int)PH::$args['from'];
++        $this->resultFile = PH::$args['result'] ?? preg_replace('/\.json$/', '', $this->changesFile) . ".result.json";
++
++        if( !file_exists($this->changesFile) )
++            derr("file '" . $this->changesFile . "' not found", null, FALSE);
++        $changes = json_decode(file_get_contents($this->changesFile), TRUE);
++        if( !is_array($changes) || ($changes['format'] ?? '') !== SCMChangeGenerator::FORMAT )
++            derr("'" . $this->changesFile . "' is not a type=scm-changes file", null, FALSE);
++        if( (int)$changes['version'] > SCMChangeGenerator::VERSION )
++            derr("'" . $this->changesFile . "' has version " . $changes['version'] . ", this pan-os-php reads up to " . SCMChangeGenerator::VERSION, null, FALSE);
++
++        $this->apiBase = rtrim(PH::$args['apiurl'] ?? $changes['api_base'], "/");
++
++        if( !$this->dryRun )
++        {
++            if( !isset(PH::$args['tsg']) )
++                $this->display_error_usage_exit('"tsg" is required (or use dry-run)');
++            $this->tsg = PH::$args['tsg'];
++
++            PanAPIConnector::loadConnectorsFromUserHome();
++            $this->scm = new PanSCMAPIConnector($this->tsg);
++            $this->scm->findOrCreateConnectorFromHost($this->tsg);
++            if( isset(PH::$args['tokenurl']) )
++                $this->scm->url_token = PH::$args['tokenurl'];
++            if( !isset(PH::$args['apiurl']) && $this->scm->url_api !== "https://api.strata.paloaltonetworks.com" )
++                $this->apiBase = $this->scm->url_api;
++            $this->scm->getAccessToken();
++        }
++
++        $results = $this->apply($changes['requests']);
++
++        $out = array(
++            'changes' => $this->changesFile,
++            'tsg' => $this->tsg,
++            'api_base' => $this->apiBase,
++            'dry_run' => $this->dryRun,
++            'started' => date('c', (int)$this->runStartTime),
++            'finished' => date('c'),
++            'summary' => $this->summary($results),
++            'results' => $results,
++        );
++        file_put_contents($this->resultFile, json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
++
++        PH::print_stdout();
++        $s = $out['summary'];
++        $line = " * " . ($this->dryRun ? "dry-run: " : "") . "ok " . $s['ok'] . ", failed " . $s['failed']
++            . ", skipped (review) " . $s['skipped-review'] . ", skipped (dependency) " . $s['skipped-dependency']
++            . ", not run " . $s['not-run'] . ($s['skipped-from'] > 0 ? ", before from= " . $s['skipped-from'] : "");
++        PH::print_stdout($line);
++        PH::print_stdout(" * result file: " . $this->resultFile);
++        if( !$this->dryRun && $s['ok'] > 0 )
++            PH::print_stdout(" * the changes are in the SCM candidate configuration - push them in SCM");
++
++        if( $s['failed'] > 0 )
++            exit(1);
++    }
++
++    private function summary(array $results)
++    {
++        $s = array('ok' => 0, 'failed' => 0, 'skipped-review' => 0, 'skipped-dependency' => 0, 'skipped-from' => 0, 'not-run' => 0);
++        foreach( $results as $r )
++            $s[$r['status']]++;
++        return $s;
++    }
++
++    // ------------------------------------------------------------------------------------------------
++
++    public function apply(array $requests)
++    {
++        usort($requests, function ($a, $b) { return $a['seq'] <=> $b['seq']; });
++
++        $status = array();
++        $results = array();
++        $stopped = FALSE;
++
++        foreach( $requests as $req )
++        {
++            $seq = $req['seq'];
++            $label = $seq . " " . $req['method'] . " " . $req['object']['resource'] . " '" . $req['object']['name'] . "' (" . $req['object']['scope_type'] . " '" . $req['object']['scope'] . "')";
++            $result = array('seq' => $seq, 'method' => $req['method'], 'object' => $req['object'], 'status' => 'not-run');
++
++            if( $seq < $this->fromSeq )
++            {
++                $result['status'] = 'skipped-from';
++                $result['message'] = "before from=" . $this->fromSeq . ", assumed done";
++                $status[$seq] = 'ok';      // assumed done by an earlier run
++                $results[] = $result;
++                continue;
++            }
++            if( $stopped )
++            {
++                $results[] = $result;
++                continue;
++            }
++
++            if( $req['review'] && !$this->includeReview )
++            {
++                $result['status'] = $status[$seq] = 'skipped-review';
++                $result['message'] = implode(" | ", $req['warnings']);
++                PH::print_stdout("   - " . $label . ": skipped, needs review");
++                $results[] = $result;
++                continue;
++            }
++
++            $blocking = array();
++            foreach( $req['depends_on'] as $dep )
++                if( ($status[$dep] ?? 'not-run') !== 'ok' )
++                    $blocking[] = $dep;
++            if( !empty($blocking) )
++            {
++                $result['status'] = $status[$seq] = 'skipped-dependency';
++                $result['message'] = "request(s) " . implode(", ", $blocking) . " did not succeed";
++                PH::print_stdout("   - " . $label . ": skipped, depends on " . implode(", ", $blocking));
++                $results[] = $result;
++                continue;
++            }
++
++            try
++            {
++                $done = $this->send($req);
++                $result = array_merge($result, $done);
++                $result['status'] = $status[$seq] = 'ok';
++                PH::print_stdout("   - " . $label . ": " . ($this->dryRun ? "would send " . $done['url'] : "OK " . $done['http_code']));
++            }
++            catch( SCMApplyException $e )
++            {
++                $result = array_merge($result, $e->details);
++                $result['status'] = $status[$seq] = 'failed';
++                $result['message'] = $e->getMessage();
++                PH::print_stdout("   - " . $label . ": " . PH::boldText("FAILED") . " " . $e->getMessage());
++                if( !$this->continueOnError )
++                {
++                    $stopped = TRUE;
++                    PH::print_stdout("   * stopped; resume with from=" . $seq . " after fixing it, or use continue-on-error");
++                }
++            }
++            $results[] = $result;
++        }
++        return $results;
++    }
++
++    private function send(array $req)
++    {
++        $path = $req['path'];
++        $id = $req['id'];
++
++        if( $req['method'] != 'POST' && $id === null )
++        {
++            if( $this->dryRun )
++                $id = "{id of " . http_build_query($req['lookup']) . "}";
++            else
++                $id = $this->lookupId($req);
++            $path = preg_replace('#/\{id\}$#', '/' . $id, $path);
++        }
++
++        $query = (array)$req['query'];
++        $url = $this->apiBase . $path . (empty($query) ? "" : "?" . http_build_query($query));
++
++        if( $req['method'] == 'DELETE' )
++            return $this->dryRun ? array('url' => $url) : $this->call('DELETE', $url);
++
++        $body = (array)$req['body'];
++
++        if( $req['method'] == 'PUT' && $req['merge'] )
++        {
++            if( $this->dryRun )
++                return array('url' => $url, 'body' => $body, 'note' => 'merged with the live object (GET ' . $url . ')');
++
++            $live = $this->call('GET', $url);
++            $merged = $live['response'];
++            if( !is_array($merged) )
++                throw new SCMApplyException("GET " . $url . " returned no object", $live);
++            foreach( $body as $k => $v )
++            {
++                if( $v === null )
++                    unset($merged[$k]);
++                else
++                    $merged[$k] = $v;
++            }
++            unset($merged['id']);
++            $body = $merged;
++        }
++
++        if( $this->dryRun )
++            return array('url' => $url, 'body' => $body);
++
++        $res = $this->call($req['method'], $url, $body);
++        if( $req['method'] == 'POST' && isset($res['response']['id']) )
++            $res['id'] = $res['response']['id'];
++        return $res;
++    }
++
++    private function lookupId(array $req)
++    {
++        $base = preg_replace('#/\{id\}$#', '', $req['path']);
++        $query = $req['lookup'];
++        unset($query['position']);
++        if( isset($req['lookup']['position']) )
++            $query['position'] = $req['lookup']['position'];
++        $url = $this->apiBase . $base . "?" . http_build_query($query);
++        $res = $this->call('GET', $url);
++        $data = $res['response']['data'] ?? array();
++        foreach( $data as $obj )
++            if( ($obj['name'] ?? null) === $req['lookup']['name'] && isset($obj['id']) )
++                return $obj['id'];
++        throw new SCMApplyException("object not found: GET " . $url, $res);
++    }
++
++    private function call($method, $url, $body = null)
++    {
++        $this->scm->getAccessToken();
++
++        if( $this->curl === null )
++            $this->curl = curl_init();
++        else
++            curl_reset($this->curl);
++
++        $header = array("Authorization: Bearer " . $this->scm->access_token, "Accept: application/json");
++        $payload = null;
++        if( $body !== null )
++        {
++            $payload = json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
++            $header[] = "Content-Type: application/json";
++        }
++
++        curl_setopt($this->curl, CURLOPT_URL, str_replace(' ', '%20', $url));
++        curl_setopt($this->curl, CURLOPT_HTTPHEADER, $header);
++        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, TRUE);
++        curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $method);
++        curl_setopt($this->curl, CURLOPT_TIMEOUT, 120);
++        if( $payload !== null )
++            curl_setopt($this->curl, CURLOPT_POSTFIELDS, $payload);
++
++        if( $this->debugAPI )
++        {
++            PH::print_stdout("     " . $method . " " . $url);
++            if( $payload !== null )
++                PH::print_stdout("     BODY: " . $payload);
++        }
++
++        $raw = curl_exec($this->curl);
++        $code = (int)curl_getinfo($this->curl, CURLINFO_RESPONSE_CODE);
++        $details = array('url' => $url, 'http_code' => $code);
++        if( $payload !== null )
++            $details['body'] = $body;
++
++        if( $raw === FALSE )
++            throw new SCMApplyException("connection error: " . curl_error($this->curl), $details);
++
++        $json = json_decode($raw, TRUE);
++        $details['response'] = $json ?? $raw;
++
++        if( $this->debugAPI )
++            PH::print_stdout("     HTTP " . $code . ": " . (is_string($raw) ? substr($raw, 0, 2000) : ''));
++
++        if( $code < 200 || $code >= 300 )
++        {
++            $msg = "HTTP " . $code;
++            if( isset($json['_errors'][0]['message']) )
++                $msg .= ": " . $json['_errors'][0]['message'];
++            if( isset($json['_errors'][0]['details']) )
++                $msg .= " " . json_encode($json['_errors'][0]['details'], JSON_UNESCAPED_SLASHES);
++            throw new SCMApplyException($msg, $details);
++        }
++        return $details;
++    }
++}
++
++class SCMApplyException extends Exception
++{
++    public $details = array();
++
++    public function __construct($message, array $details = array())
++    {
++        parent::__construct($message);
++        $this->details = $details;
++    }
++}
+diff --git a/utils/lib/SCMCHANGES.php b/utils/lib/SCMCHANGES.php
+new file mode 100644
+index 00000000..3d735c26
+--- /dev/null
++++ b/utils/lib/SCMCHANGES.php
+@@ -0,0 +1,138 @@
++<?php
++/**
++ * ISC License
++ *
++ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
++ * Copyright (c) 2019, Palo Alto Networks Inc.
++ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++/**
++ * type=scm-changes
++ *
++ * Compares an SCM configuration as downloaded by pan-os-php (file1) with the same configuration after
++ * pan-os-php changed it (file2) and writes one SCM API request per added, changed or deleted object
++ * into a JSON file. type=scm-apply sends that file to Strata Cloud Manager.
++ */
++class SCMCHANGES extends UTIL
++{
++    public $file1 = null;
++    public $file2 = null;
++    public $outFile = null;
++    public $schemaFile = null;
++
++    public function utilStart()
++    {
++        $this->usageMsg = PH::boldText('USAGE: ') . "\n" .
++            "  - php " . basename(__FILE__) . " type=scm-changes file1=ORIGINAL_SCM.xml file2=CHANGED_SCM.xml out=changes.json\n" .
++            "\n" .
++            "  file1   configuration as downloaded with in=scm-api://TSG_ID out=ORIGINAL_SCM.xml\n" .
++            "  file2   the same configuration after pan-os-php changed it (e.g. a playbook with out=CHANGED_SCM.xml)\n" .
++            "  out     JSON file with one SCM API request per changed object; without out= it is printed\n" .
++            "  schema  optional, SCM schema file (default lib/resources/scm/scm-ngfw-config-schema.json)\n" .
++            "\n" .
++            "  send it with: pan-os-php type=scm-apply changes=changes.json tsg=TSG_ID [dry-run]\n";
++
++        PH::processCliArgs();
++
++        if( isset(PH::$args['help']) )
++        {
++            PH::print_stdout($this->usageMsg);
++            exit(0);
++        }
++
++        $this->main();
++    }
++
++    public function supportedArguments()
++    {
++        $this->supportedArguments = array();
++        $this->supportedArguments['file1'] = array('niceName' => 'file1', 'shortHelp' => 'SCM configuration as downloaded (XML)', 'argDesc' => '[filename]');
++        $this->supportedArguments['file2'] = array('niceName' => 'file2', 'shortHelp' => 'the same SCM configuration after the changes (XML)', 'argDesc' => '[filename]');
++        $this->supportedArguments['out'] = array('niceName' => 'out', 'shortHelp' => 'JSON file for the SCM API requests', 'argDesc' => '[filename]');
++        $this->supportedArguments['schema'] = array('niceName' => 'schema', 'shortHelp' => 'SCM schema file', 'argDesc' => '[filename]');
++        $this->supportedArguments['projectfolder'] = array('niceName' => 'projectfolder', 'shortHelp' => 'folder for the output file', 'argDesc' => '[folder]');
++        $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
++    }
++
++    public function main()
++    {
++        if( !isset(PH::$args['file1']) || !isset(PH::$args['file2']) )
++            $this->display_error_usage_exit('"file1" and "file2" are required');
++
++        $this->file1 = PH::$args['file1'];
++        $this->file2 = PH::$args['file2'];
++        if( isset(PH::$args['out']) )
++            $this->outFile = PH::$args['out'];
++        if( isset(PH::$args['schema']) )
++            $this->schemaFile = PH::$args['schema'];
++
++        if( isset(PH::$args['projectfolder']) && $this->outFile !== null )
++        {
++            $this->projectFolder = PH::$args['projectfolder'];
++            if( !file_exists($this->projectFolder) )
++                mkdir($this->projectFolder, 0777, TRUE);
++            if( strpos($this->outFile, $this->projectFolder) === FALSE )
++                $this->outFile = $this->projectFolder . "/" . $this->outFile;
++        }
++
++        $json = self::generate($this->file1, $this->file2, $this->outFile, $this->schemaFile);
++
++        if( $this->outFile === null )
++            PH::print_stdout($json);
++    }
++
++    /**
++     * Also used by the playbook (argument outputformatscmjson=).
++     * @return string the JSON document
++     */
++    static public function generate($file1, $file2, $outFile = null, $schemaFile = null)
++    {
++        $docs = array();
++        foreach( array($file1, $file2) as $file )
++        {
++            if( !file_exists($file) )
++                derr("file '" . $file . "' not found", null, FALSE);
++            $doc = new DOMDocument();
++            if( !$doc->load($file, XML_PARSE_BIG_LINES) )
++                derr("error while reading xml file '" . $file . "'", null, FALSE);
++            if( !$doc->documentElement->hasAttribute('buckbeak') )
++                derr("'" . $file . "' is not an SCM configuration (in=scm-api://)", null, FALSE);
++            $docs[] = $doc;
++        }
++
++        $gen = new SCMChangeGenerator($schemaFile);
++        $gen->file1 = $file1;
++        $gen->file2 = $file2;
++        $result = $gen->run($docs[0], $docs[1]);
++        $json = $gen->toJSON();
++
++        $s = $result['summary'];
++        PH::print_stdout(" * SCM API requests: POST " . $s['POST'] . ", PUT " . $s['PUT'] . ", DELETE " . $s['DELETE'] . " (to review: " . $s['review'] . ")");
++        foreach( $result['warnings'] as $w )
++            PH::print_stdout("   - WARNING: " . $w);
++        foreach( $result['requests'] as $r )
++            if( $r['review'] )
++                PH::print_stdout("   - REVIEW request " . $r['seq'] . " " . $r['method'] . " " . $r['object']['resource'] . " '" . $r['object']['name'] . "': " . implode(" | ", $r['warnings']));
++
++        if( $outFile !== null )
++        {
++            file_put_contents($outFile, $json);
++            PH::print_stdout(" * SCM API requests are stored in FILE: " . $outFile);
++        }
++
++        return $json;
++    }
++}
+diff --git a/utils/lib/UTIL.php b/utils/lib/UTIL.php
+index bd0ed95e..6da146f0 100644
+--- a/utils/lib/UTIL.php
++++ b/utils/lib/UTIL.php
+@@ -41,6 +41,8 @@ require_once(dirname(__FILE__)."/PREDEFINED.php");
+ require_once(dirname(__FILE__)."/UPLOAD.php");
+ require_once(dirname(__FILE__)."/XMLISSUE.php");
+ require_once(dirname(__FILE__)."/DIFF.php");
++require_once(dirname(__FILE__)."/SCMCHANGES.php");
++require_once(dirname(__FILE__)."/SCMAPPLY.php");
+ require_once(dirname(__FILE__)."/OVERRIDEFINDER.php");
+ require_once(dirname(__FILE__)."/APPIDENABLER.php");
+ require_once(dirname(__FILE__)."/CONFIGSIZE.php");

@@ -1714,6 +1714,8 @@ class PH
         "rule-merger",
         "override-finder",
         "diff",
+        "scm-changes",
+        "scm-apply",
         "upload",
         "xml-issue",
         "appid-enabler",
@@ -1844,6 +1846,10 @@ class PH
             $util = new OVERRIDEFINDER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "diff" )
             $util = new DIFF($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-changes" )
+            $util = new SCMCHANGES($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-apply" )
+            $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "upload" )
             $util = new UPLOAD($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "xml-issue" )

@@ -784,6 +784,16 @@ class Container
         // End of SSL_TLSServiceProfile objects extraction
 
 
+        //
+        // Extract Zone objects (SCM: zones are folder / snippet configuration; load them before the rules
+        // reference them, otherwise every zone becomes a temporary placeholder)
+        //
+        $tmp = DH::findFirstElement('zone', $xml);
+        if( $tmp !== FALSE )
+            $this->zoneStore->load_from_domxml($tmp);
+        // End of Zone objects extraction
+
+
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("pre-/post-rulebase");
         //
@@ -1298,8 +1308,19 @@ class Container
         {
             $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
 
+            // loading from XML calls this for members that are already there: add each name once
             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
-            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+            $memberExists = FALSE;
+            foreach( $snippetsXMLNode->childNodes as $member )
+            {
+                if( $member->nodeType == XML_ELEMENT_NODE && $member->textContent === $snippetObj->name() )
+                {
+                    $memberExists = TRUE;
+                    break;
+                }
+            }
+            if( !$memberExists )
+                DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
 
             $snippetObj->addReference($this);
         }

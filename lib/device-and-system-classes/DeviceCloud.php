@@ -1121,8 +1121,19 @@ class DeviceCloud
         {
             $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
 
+            // loading from XML calls this for members that are already there: add each name once
             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
-            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+            $memberExists = FALSE;
+            foreach( $snippetsXMLNode->childNodes as $member )
+            {
+                if( $member->nodeType == XML_ELEMENT_NODE && $member->textContent === $snippetObj->name() )
+                {
+                    $memberExists = TRUE;
+                    break;
+                }
+            }
+            if( !$memberExists )
+                DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
 
             $snippetObj->addReference($this);
         }

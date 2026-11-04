@@ -772,6 +772,16 @@ class Snippet
 
 
         //
+        // Extract Zone objects (SCM: zones are folder / snippet configuration; load them before the rules
+        // reference them, otherwise every zone becomes a temporary placeholder)
+        //
+        $tmp = DH::findFirstElement('zone', $xml);
+        if( $tmp !== FALSE )
+            $this->zoneStore->load_from_domxml($tmp);
+        // End of Zone objects extraction
+
+
+        //
         // Extracting policies
         //
         $prerulebase = DH::findFirstElement('pre-rulebase', $xml);

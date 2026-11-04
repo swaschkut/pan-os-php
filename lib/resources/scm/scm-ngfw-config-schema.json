@@ -1,0 +1,2855 @@
+{
+ "api_base": "https://api.strata.paloaltonetworks.com",
+ "resources": {
+  "address-groups": {
+   "path": "/config/objects/v1/address-groups",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "dynamic": {
+      "properties": {
+       "filter": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "filter"
+      ],
+      "type": "object"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "static": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "tag": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "addresses": {
+   "path": "/config/objects/v1/addresses",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "fqdn": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "ip_netmask": {
+      "type": "string"
+     },
+     "ip_range": {
+      "type": "string"
+     },
+     "ip_wildcard": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "tag": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "anti-spyware-profiles": {
+   "path": "/config/security/v1/anti-spyware-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "cloud_inline_analysis": {
+      "type": "boolean"
+     },
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "inline_exception_edl_url": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "inline_exception_ip_address": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "mica_engine_spyware_enabled": {
+      "items": {
+       "properties": {
+        "inline_policy_action": {
+         "enum": [
+          "alert",
+          "allow",
+          "drop",
+          "reset-both",
+          "reset-client",
+          "reset-server"
+         ],
+         "type": "any"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "rules": {
+      "items": {
+       "properties": {
+        "action": {
+         "properties": {
+          "alert": {
+           "properties": {},
+           "type": "object"
+          },
+          "allow": {
+           "properties": {},
+           "type": "object"
+          },
+          "block_ip": {
+           "properties": {
+            "duration": {
+             "type": "integer"
+            },
+            "track_by": {
+             "enum": [
+              "source-and-destination",
+              "source"
+             ],
+             "type": "any"
+            }
+           },
+           "type": "object"
+          },
+          "drop": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_both": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_client": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_server": {
+           "properties": {},
+           "type": "object"
+          }
+         },
+         "type": "object"
+        },
+        "category": {
+         "enum": [
+          "adns-adtracking",
+          "adns-benign",
+          "adns-c2",
+          "adns-ddns",
+          "adns-dnsmisconfig",
+          "adns-grayware",
+          "adns-hijacking",
+          "adns-malware",
+          "adns-new-domain",
+          "adns-parked",
+          "adns-phishing",
+          "adns-proxy",
+          "adware",
+          "any",
+          "autogen",
+          "backdoor",
+          "botnet",
+          "browser-hijack",
+          "command-and-control",
+          "cryptominer",
+          "data-theft",
+          "dns",
+          "dns-adtracking",
+          "dns-benign",
+          "dns-c2",
+          "dns-ddns",
+          "dns-grayware",
+          "dns-malware",
+          "dns-new-domain",
+          "dns-parked",
+          "dns-phishing",
+          "dns-proxy",
+          "dns-security",
+          "dns-wildfire",
+          "domain-edl",
+          "downloader",
+          "fraud",
+          "hacktool",
+          "inline-cloud-c2",
+          "keylogger",
+          "net-worm",
+          "p2p-communication",
+          "phishing-kit",
+          "post-exploitation",
+          "spyware",
+          "tls-fingerprint",
+          "webshell"
+         ],
+         "type": "any"
+        },
+        "name": {
+         "type": "string"
+        },
+        "packet_capture": {
+         "enum": [
+          "disable",
+          "single-packet",
+          "extended-capture"
+         ],
+         "type": "any"
+        },
+        "severity": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "threat_name": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "threat_exception": {
+      "items": {
+       "properties": {
+        "action": {
+         "properties": {
+          "alert": {
+           "properties": {},
+           "type": "object"
+          },
+          "allow": {
+           "properties": {},
+           "type": "object"
+          },
+          "block_ip": {
+           "properties": {
+            "duration": {
+             "type": "integer"
+            },
+            "track_by": {
+             "enum": [
+              "source-and-destination",
+              "source"
+             ],
+             "type": "any"
+            }
+           },
+           "type": "object"
+          },
+          "default": {
+           "properties": {},
+           "type": "object"
+          },
+          "drop": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_both": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_client": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_server": {
+           "properties": {},
+           "type": "object"
+          }
+         },
+         "type": "object"
+        },
+        "exempt_ip": {
+         "items": {
+          "properties": {
+           "name": {
+            "type": "string"
+           }
+          },
+          "required": [
+           "name"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "name": {
+         "type": "string"
+        },
+        "notes": {
+         "type": "string"
+        },
+        "packet_capture": {
+         "enum": [
+          "disable",
+          "single-packet",
+          "extended-capture"
+         ],
+         "type": "any"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "dns-security-profiles": {
+   "path": "/config/security/v1/dns-security-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "botnet_domains": {
+      "properties": {
+       "dns_security_categories": {
+        "items": {
+         "properties": {
+          "action": {
+           "enum": [
+            "default",
+            "allow",
+            "block",
+            "sinkhole"
+           ],
+           "type": "any"
+          },
+          "log_level": {
+           "enum": [
+            "default",
+            "none",
+            "low",
+            "informational",
+            "medium",
+            "high",
+            "critical"
+           ],
+           "type": "any"
+          },
+          "name": {
+           "type": "string"
+          },
+          "packet_capture": {
+           "enum": [
+            "disable",
+            "single-packet",
+            "extended-capture"
+           ],
+           "type": "any"
+          }
+         },
+         "type": "object"
+        },
+        "type": "array"
+       },
+       "lists": {
+        "items": {
+         "properties": {
+          "action": {
+           "properties": {
+            "alert": {
+             "properties": {},
+             "type": "object"
+            },
+            "allow": {
+             "properties": {},
+             "type": "object"
+            },
+            "block": {
+             "properties": {},
+             "type": "object"
+            },
+            "sinkhole": {
+             "properties": {},
+             "type": "object"
+            }
+           },
+           "type": "object"
+          },
+          "name": {
+           "type": "string"
+          },
+          "packet_capture": {
+           "enum": [
+            "disable",
+            "single-packet",
+            "extended-capture"
+           ],
+           "type": "any"
+          }
+         },
+         "required": [
+          "name"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       },
+       "sinkhole": {
+        "properties": {
+         "ipv4_address": {
+          "enum": [
+           "127.0.0.1",
+           "pan-sinkhole-default-ip"
+          ],
+          "type": "any"
+         },
+         "ipv6_address": {
+          "enum": [
+           "::1"
+          ],
+          "type": "any"
+         }
+        },
+        "type": "object"
+       },
+       "whitelist": {
+        "items": {
+         "properties": {
+          "description": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "name"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "type": "object"
+     },
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     }
+    },
+    "type": "object"
+   }
+  },
+  "file-blocking-profiles": {
+   "path": "/config/security/v1/file-blocking-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "rules": {
+      "items": {
+       "properties": {
+        "action": {
+         "enum": [
+          "alert",
+          "block",
+          "continue"
+         ],
+         "type": "any"
+        },
+        "application": {
+         "items": {
+          "enum": [
+           "any",
+           "axifile",
+           "dl-free",
+           "facebook-mail",
+           "file.io",
+           "giphy-base",
+           "glassdoor-uploading",
+           "http-proxy",
+           "redbooth",
+           "send-anywhere",
+           "zoho-mail"
+          ],
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "direction": {
+         "enum": [
+          "download",
+          "upload",
+          "both"
+         ],
+         "type": "any"
+        },
+        "file_type": {
+         "items": {
+          "enum": [
+           "7z",
+           "Multi-Level-Encoding",
+           "PE",
+           "access-shortcut",
+           "ace",
+           "ade",
+           "adp",
+           "ai",
+           "aip-encrypted-docx",
+           "aip-encrypted-pptx",
+           "aip-encrypted-xlsx",
+           "any",
+           "apk",
+           "arj",
+           "asp",
+           "avi",
+           "avi-divx",
+           "avi-xvid",
+           "bas",
+           "bat",
+           "bmp",
+           "bmp-upload",
+           "bzip2",
+           "cab",
+           "catpart",
+           "cdr",
+           "chm",
+           "cin",
+           "class",
+           "cmd",
+           "com",
+           "cpl",
+           "csv",
+           "deflate64-zip",
+           "der",
+           "dll",
+           "dmg",
+           "doc",
+           "docm",
+           "docx",
+           "dpx",
+           "dsn",
+           "dwf",
+           "dwg",
+           "dxf",
+           "edif",
+           "elf",
+           "emf",
+           "encrypted-7z",
+           "encrypted-doc",
+           "encrypted-docx",
+           "encrypted-office2007",
+           "encrypted-pdf",
+           "encrypted-ppt",
+           "encrypted-pptx",
+           "encrypted-rar",
+           "encrypted-xls",
+           "encrypted-xlsx",
+           "encrypted-zip",
+           "eps",
+           "exe",
+           "exr",
+           "flash",
+           "flv",
+           "gds",
+           "gif",
+           "gif-upload",
+           "gzip",
+           "hlp",
+           "hta",
+           "hwp",
+           "hwpx",
+           "ichitaro",
+           "iff",
+           "inf",
+           "ins",
+           "iqy",
+           "iso",
+           "its",
+           "iwork-keynote",
+           "iwork-numbers",
+           "iwork-pages",
+           "jar",
+           "jpeg",
+           "jpeg-upload",
+           "js",
+           "jse",
+           "lnk",
+           "lzh",
+           "ma",
+           "macapp",
+           "mach-o",
+           "mb",
+           "mda",
+           "mdb",
+           "mdi",
+           "mdt",
+           "mdw",
+           "mdz",
+           "mht",
+           "microsoft-shell",
+           "mif",
+           "mkv",
+           "mov",
+           "mp3",
+           "mp4",
+           "mpeg",
+           "mpeg-ts",
+           "mpkg",
+           "msc",
+           "msi",
+           "msoffice",
+           "msp",
+           "ocx",
+           "pbix",
+           "pbm",
+           "pcl",
+           "pdf",
+           "pem",
+           "pgp",
+           "pif",
+           "pkg",
+           "pl",
+           "png",
+           "png-upload",
+           "powershell",
+           "ppt",
+           "pptx",
+           "prg",
+           "psd",
+           "py",
+           "rar",
+           "reg",
+           "renamed-zip",
+           "rla",
+           "rm",
+           "rpf",
+           "rtf",
+           "scf",
+           "scr",
+           "sgi",
+           "sh",
+           "shk",
+           "shs",
+           "slk",
+           "softimg",
+           "split-cab",
+           "split-rar",
+           "stp",
+           "svg",
+           "sys",
+           "tar",
+           "tdb",
+           "tif",
+           "tiff",
+           "tmp",
+           "torrent",
+           "url",
+           "vb",
+           "vbe",
+           "vbs",
+           "vxd",
+           "webm",
+           "wmf",
+           "wmv",
+           "wri",
+           "wsf",
+           "wsh",
+           "xll",
+           "xls",
+           "xlsx",
+           "xpm",
+           "zcompressed",
+           "zip"
+          ],
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "action",
+        "application",
+        "direction",
+        "file_type",
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "snippet": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "log-forwarding-profiles": {
+   "path": "/config/objects/v1/log-forwarding-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "match_list": {
+      "items": {
+       "properties": {
+        "action_desc": {
+         "type": "string"
+        },
+        "filter": {
+         "type": "string"
+        },
+        "log_type": {
+         "enum": [
+          "traffic",
+          "threat",
+          "wildfire",
+          "url",
+          "data",
+          "tunnel",
+          "auth",
+          "decryption",
+          "dns-security",
+          "gtp",
+          "sctp"
+         ],
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        },
+        "send_email": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "send_http": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "send_snmptrap": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "send_syslog": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        }
+       },
+       "required": [
+        "filter",
+        "log_type",
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "match_list",
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "profile-groups": {
+   "path": "/config/security/v1/profile-groups",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "ai_security": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "data_filtering": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "device": {
+      "type": "string"
+     },
+     "dns_security": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "file_blocking": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "saas_security": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "spyware": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "url_filtering": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "virus_and_wildfire_analysis": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "vulnerability": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "schedules": {
+   "path": "/config/objects/v1/schedules",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "schedule_type": {
+      "properties": {
+       "non_recurring": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "recurring": {
+        "properties": {
+         "daily": {
+          "items": {
+           "type": "string"
+          },
+          "type": "array"
+         },
+         "weekly": {
+          "properties": {
+           "friday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "monday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "saturday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "sunday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "thursday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "tuesday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "wednesday": {
+            "items": {
+             "type": "string"
+            },
+            "type": "array"
+           }
+          },
+          "type": "object"
+         }
+        },
+        "type": "object"
+       }
+      },
+      "type": "object"
+     },
+     "snippet": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "schedule_type"
+    ],
+    "type": "object"
+   }
+  },
+  "security-rules": {
+   "path": "/config/security/v1/security-rules",
+   "post_query": [
+    "position"
+   ],
+   "schema": {
+    "properties": {
+     "action": {
+      "enum": [
+       "allow",
+       "deny",
+       "drop",
+       "reset-client",
+       "reset-server",
+       "reset-both"
+      ],
+      "type": "any"
+     },
+     "allow_url_category": {
+      "items": {
+       "properties": {
+        "additional_action": {
+         "enum": [
+          "none",
+          "continue",
+          "redirect",
+          "isolate"
+         ],
+         "type": "string"
+        },
+        "credential_enforcement": {
+         "enum": [
+          "enabled",
+          "disabled"
+         ],
+         "type": "string"
+        },
+        "decryption": {
+         "enum": [
+          "enabled",
+          "disabled"
+         ],
+         "type": "string"
+        },
+        "dlp": {
+         "type": "string"
+        },
+        "file_control": {
+         "properties": {
+          "download": {
+           "enum": [
+            "allow-all-file-types",
+            "best-practice",
+            "block-all-file-types"
+           ],
+           "type": "string"
+          },
+          "upload": {
+           "enum": [
+            "allow-all-file-types",
+            "best-practice",
+            "block-all-file-types"
+           ],
+           "type": "string"
+          }
+         },
+         "type": "object"
+        },
+        "isolation_profiles": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "allow_web_application": {
+      "items": {
+       "properties": {
+        "application_function": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "dlp": {
+         "type": "string"
+        },
+        "file_control": {
+         "properties": {
+          "download": {
+           "enum": [
+            "allow-all-file-types",
+            "best-practice",
+            "block-all-file-types"
+           ],
+           "type": "string"
+          },
+          "upload": {
+           "enum": [
+            "allow-all-file-types",
+            "best-practice",
+            "block-all-file-types"
+           ],
+           "type": "string"
+          }
+         },
+         "type": "object"
+        },
+        "name": {
+         "type": "string"
+        },
+        "saas_enterprise_control": {
+         "properties": {
+          "consumer_access": {
+           "properties": {
+            "enable": {
+             "enum": [
+              true,
+              false
+             ],
+             "type": "string"
+            }
+           },
+           "type": "object"
+          },
+          "enterprise_access": {
+           "properties": {
+            "enable": {
+             "enum": [
+              true,
+              false
+             ],
+             "type": "string"
+            },
+            "tenant_restrictions": {
+             "items": {
+              "type": "string"
+             },
+             "type": "array"
+            }
+           },
+           "type": "object"
+          }
+         },
+         "type": "object"
+        },
+        "saas_tenant_list": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "saas_user_list": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "tenant_control": {
+         "properties": {
+          "allowed_activities": {
+           "items": {
+            "type": "string"
+           },
+           "type": "array"
+          },
+          "blocked_activities": {
+           "items": {
+            "type": "string"
+           },
+           "type": "array"
+          },
+          "parent_application": {
+           "type": "string"
+          },
+          "tenants": {
+           "items": {
+            "type": "string"
+           },
+           "type": "array"
+          }
+         },
+         "type": "object"
+        },
+        "type": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "application": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "block_url_category": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "block_web_application": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "category": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "default_profile_settings": {
+      "properties": {
+       "dlp": {
+        "type": "string"
+       },
+       "file_control": {
+        "properties": {
+         "download": {
+          "enum": [
+           "allow-all-file-types",
+           "best-practice",
+           "block-all-file-types"
+          ],
+          "type": "string"
+         },
+         "upload": {
+          "enum": [
+           "allow-all-file-types",
+           "best-practice",
+           "block-all-file-types"
+          ],
+          "type": "string"
+         }
+        },
+        "type": "object"
+       }
+      },
+      "type": "object"
+     },
+     "description": {
+      "type": "string"
+     },
+     "destination": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "destination_hip": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "device": {
+      "type": "string"
+     },
+     "devices": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "disabled": {
+      "type": "boolean"
+     },
+     "enabled_devices": {
+      "items": {
+       "properties": {
+        "name": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "from": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "log_end": {
+      "type": "boolean"
+     },
+     "log_setting": {
+      "type": "string"
+     },
+     "log_settings": {
+      "properties": {
+       "log_sessions": {
+        "type": "boolean"
+       }
+      },
+      "type": "object"
+     },
+     "log_start": {
+      "type": "boolean"
+     },
+     "name": {
+      "type": "string"
+     },
+     "negate_destination": {
+      "type": "boolean"
+     },
+     "negate_source": {
+      "type": "boolean"
+     },
+     "negate_user": {
+      "type": "boolean"
+     },
+     "policy_type": {
+      "type": "string"
+     },
+     "profile_setting": {
+      "properties": {
+       "group": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       }
+      },
+      "type": "object"
+     },
+     "schedule": {
+      "type": "string"
+     },
+     "security_settings": {
+      "properties": {
+       "anti_spyware": {
+        "enum": [
+         true,
+         false
+        ],
+        "type": "string"
+       },
+       "virus_and_wildfire_analysis": {
+        "enum": [
+         true,
+         false
+        ],
+        "type": "string"
+       },
+       "vulnerability": {
+        "enum": [
+         true,
+         false
+        ],
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "service": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "source": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "source_hip": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "source_user": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "tag": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "tenant_restrictions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "to": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "type": "object"
+   }
+  },
+  "service-groups": {
+   "path": "/config/objects/v1/service-groups",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "members": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "tag": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "members",
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "services": {
+   "path": "/config/objects/v1/services",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "protocol": {
+      "properties": {
+       "tcp": {
+        "properties": {
+         "override": {
+          "properties": {
+           "halfclose_timeout": {
+            "type": "integer"
+           },
+           "timeout": {
+            "type": "integer"
+           },
+           "timewait_timeout": {
+            "type": "integer"
+           }
+          },
+          "type": "object"
+         },
+         "port": {
+          "type": "string"
+         },
+         "source_port": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "port"
+        ],
+        "type": "object"
+       },
+       "udp": {
+        "properties": {
+         "override": {
+          "properties": {
+           "timeout": {
+            "type": "integer"
+           }
+          },
+          "type": "object"
+         },
+         "port": {
+          "type": "string"
+         },
+         "source_port": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "port"
+        ],
+        "type": "object"
+       }
+      },
+      "type": "object"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "tag": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "tags": {
+   "path": "/config/objects/v1/tags",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "color": {
+      "enum": [
+       "Red",
+       "Green",
+       "Blue",
+       "Yellow",
+       "Copper",
+       "Orange",
+       "Purple",
+       "Gray",
+       "Light Green",
+       "Cyan",
+       "Light Gray",
+       "Blue Gray",
+       "Lime",
+       "Black",
+       "Gold",
+       "Brown",
+       "Olive",
+       "Maroon",
+       "Red-Orange",
+       "Yellow-Orange",
+       "Forest Green",
+       "Turquoise Blue",
+       "Azure Blue",
+       "Cerulean Blue",
+       "Midnight Blue",
+       "Medium Blue",
+       "Cobalt Blue",
+       "Violet Blue",
+       "Blue Violet",
+       "Medium Violet",
+       "Medium Rose",
+       "Lavender",
+       "Orchid",
+       "Thistle",
+       "Peach",
+       "Salmon",
+       "Magenta",
+       "Red Violet",
+       "Mahogany",
+       "Burnt Sienna",
+       "Chestnut"
+      ],
+      "type": "string"
+     },
+     "comments": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "url-access-profiles": {
+   "path": "/config/security/v1/url-access-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "alert": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "allow": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "block": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "cloud_inline_cat": {
+      "type": "boolean"
+     },
+     "continue": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "credential_enforcement": {
+      "properties": {
+       "alert": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "allow": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "block": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "continue": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "log_severity": {
+        "type": "string"
+       },
+       "mode": {
+        "properties": {
+         "disabled": {
+          "properties": {},
+          "type": "object"
+         },
+         "domain_credentials": {
+          "properties": {},
+          "type": "object"
+         },
+         "group_mapping": {
+          "type": "string"
+         },
+         "ip_user": {
+          "properties": {},
+          "type": "object"
+         }
+        },
+        "type": "object"
+       }
+      },
+      "type": "object"
+     },
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "local_inline_cat": {
+      "type": "boolean"
+     },
+     "log_container_page_only": {
+      "type": "boolean"
+     },
+     "log_http_hdr_referer": {
+      "type": "boolean"
+     },
+     "log_http_hdr_user_agent": {
+      "type": "boolean"
+     },
+     "log_http_hdr_xff": {
+      "type": "boolean"
+     },
+     "mlav_category_exception": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "redirect": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "safe_search_enforcement": {
+      "type": "boolean"
+     },
+     "snippet": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "url-categories": {
+   "path": "/config/security/v1/url-categories",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "list": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "type": {
+      "enum": [
+       "URL List",
+       "Category Match"
+      ],
+      "type": "any"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "vulnerability-protection-profiles": {
+   "path": "/config/security/v1/vulnerability-protection-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "rules": {
+      "items": {
+       "properties": {
+        "action": {
+         "properties": {
+          "alert": {
+           "properties": {},
+           "type": "object"
+          },
+          "allow": {
+           "properties": {},
+           "type": "object"
+          },
+          "block_ip": {
+           "properties": {
+            "duration": {
+             "type": "integer"
+            },
+            "track_by": {
+             "enum": [
+              "source-and-destination",
+              "source"
+             ],
+             "type": "any"
+            }
+           },
+           "type": "object"
+          },
+          "default": {
+           "properties": {},
+           "type": "object"
+          },
+          "drop": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_both": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_client": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_server": {
+           "properties": {},
+           "type": "object"
+          }
+         },
+         "type": "object"
+        },
+        "category": {
+         "enum": [
+          "any",
+          "app-id-change",
+          "brute-force",
+          "code-execution",
+          "code-obfuscation",
+          "command-execution",
+          "dos",
+          "exploit-kit",
+          "info-leak",
+          "inline-cloud-exploit",
+          "insecure-credentials",
+          "overflow",
+          "phishing",
+          "protocol-anomaly",
+          "scan",
+          "sql-injection"
+         ],
+         "type": "any"
+        },
+        "cve": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "host": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        },
+        "packet_capture": {
+         "enum": [
+          "disable",
+          "single-packet",
+          "extended-capture"
+         ],
+         "type": "any"
+        },
+        "severity": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "threat_name": {
+         "type": "string"
+        },
+        "vendor_id": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "threat_exception": {
+      "items": {
+       "properties": {
+        "action": {
+         "properties": {
+          "alert": {
+           "properties": {},
+           "type": "object"
+          },
+          "allow": {
+           "properties": {},
+           "type": "object"
+          },
+          "block_ip": {
+           "properties": {
+            "duration": {
+             "type": "integer"
+            },
+            "track_by": {
+             "enum": [
+              "source-and-destination",
+              "source"
+             ],
+             "type": "any"
+            }
+           },
+           "type": "object"
+          },
+          "default": {
+           "properties": {},
+           "type": "object"
+          },
+          "drop": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_both": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_client": {
+           "properties": {},
+           "type": "object"
+          },
+          "reset_server": {
+           "properties": {},
+           "type": "object"
+          }
+         },
+         "type": "object"
+        },
+        "exempt_ip": {
+         "items": {
+          "properties": {
+           "name": {
+            "type": "string"
+           }
+          },
+          "required": [
+           "name"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "name": {
+         "type": "string"
+        },
+        "notes": {
+         "type": "string"
+        },
+        "packet_capture": {
+         "enum": [
+          "disable",
+          "single-packet",
+          "extended-capture"
+         ],
+         "type": "any"
+        },
+        "time_attribute": {
+         "properties": {
+          "interval": {
+           "type": "integer"
+          },
+          "threshold": {
+           "type": "integer"
+          },
+          "track_by": {
+           "enum": [
+            "source",
+            "destination",
+            "source-and-destination"
+           ],
+           "type": "any"
+          }
+         },
+         "type": "object"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "wildfire-anti-virus-profiles": {
+   "path": "/config/security/v1/wildfire-anti-virus-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "mlav_exception": {
+      "items": {
+       "properties": {
+        "description": {
+         "type": "string"
+        },
+        "filename": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "packet_capture": {
+      "type": "boolean"
+     },
+     "rules": {
+      "items": {
+       "properties": {
+        "analysis": {
+         "enum": [
+          "public-cloud",
+          "private-cloud"
+         ],
+         "type": "any"
+        },
+        "application": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "direction": {
+         "enum": [
+          "download",
+          "upload",
+          "both"
+         ],
+         "type": "any"
+        },
+        "file_type": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "threat_exception": {
+      "items": {
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "notes": {
+         "type": "string"
+        }
+       },
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "zone-protection-profiles": {
+   "path": "/config/network/v1/zone-protection-profiles",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "asymmetric_path": {
+      "enum": [
+       "global",
+       "drop",
+       "bypass"
+      ],
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "device": {
+      "type": "string"
+     },
+     "discard_icmp_embedded_error": {
+      "type": "boolean"
+     },
+     "flood": {
+      "properties": {
+       "icmp": {
+        "properties": {
+         "enable": {
+          "type": "boolean"
+         },
+         "red": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
+         }
+        },
+        "type": "object"
+       },
+       "icmpv6": {
+        "properties": {
+         "enable": {
+          "type": "boolean"
+         },
+         "red": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
+         }
+        },
+        "type": "object"
+       },
+       "other_ip": {
+        "properties": {
+         "enable": {
+          "type": "boolean"
+         },
+         "red": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
+         }
+        },
+        "type": "object"
+       },
+       "sctp_init": {
+        "properties": {
+         "enable": {
+          "type": "boolean"
+         },
+         "red": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
+         }
+        },
+        "type": "object"
+       },
+       "tcp_syn": {
+        "properties": {
+         "activate_rate": {
+          "type": "integer"
+         },
+         "alarm_rate": {
+          "type": "integer"
+         },
+         "enable": {
+          "type": "boolean"
+         },
+         "maximal_rate": {
+          "type": "integer"
+         }
+        },
+        "type": "object"
+       },
+       "udp": {
+        "properties": {
+         "enable": {
+          "type": "boolean"
+         },
+         "red": {
+          "properties": {
+           "activate_rate": {
+            "type": "integer"
+           },
+           "alarm_rate": {
+            "type": "integer"
+           },
+           "maximal_rate": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "activate_rate",
+           "alarm_rate",
+           "maximal_rate"
+          ],
+          "type": "object"
+         }
+        },
+        "type": "object"
+       }
+      },
+      "type": "object"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "fragmented_traffic_discard": {
+      "type": "boolean"
+     },
+     "icmp_frag_discard": {
+      "type": "boolean"
+     },
+     "icmp_large_packet_discard": {
+      "type": "boolean"
+     },
+     "icmp_ping_zero_id_discard": {
+      "type": "boolean"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "ipv6": {
+      "properties": {
+       "anycast_source": {
+        "type": "boolean"
+       },
+       "filter_ext_hdr": {
+        "properties": {
+         "dest_option_hdr": {
+          "type": "boolean"
+         },
+         "hop_by_hop_hdr": {
+          "type": "boolean"
+         },
+         "routing_hdr": {
+          "type": "boolean"
+         }
+        },
+        "type": "object"
+       },
+       "icmpv6_too_big_small_mtu_discard": {
+        "type": "boolean"
+       },
+       "ignore_inv_pkt": {
+        "properties": {
+         "dest_unreach": {
+          "type": "boolean"
+         },
+         "param_problem": {
+          "type": "boolean"
+         },
+         "pkt_too_big": {
+          "type": "boolean"
+         },
+         "redirect": {
+          "type": "boolean"
+         },
+         "time_exceeded": {
+          "type": "boolean"
+         }
+        },
+        "type": "object"
+       },
+       "ipv4_compatible_address": {
+        "type": "boolean"
+       },
+       "needless_fragment_hdr": {
+        "type": "boolean"
+       },
+       "options_invalid_ipv6_discard": {
+        "type": "boolean"
+       },
+       "reserved_field_set_discard": {
+        "type": "boolean"
+       },
+       "routing_header_0": {
+        "type": "boolean"
+       },
+       "routing_header_1": {
+        "type": "boolean"
+       },
+       "routing_header_253": {
+        "type": "boolean"
+       },
+       "routing_header_254": {
+        "type": "boolean"
+       },
+       "routing_header_255": {
+        "type": "boolean"
+       },
+       "routing_header_3": {
+        "type": "boolean"
+       },
+       "routing_header_4_252": {
+        "type": "boolean"
+       }
+      },
+      "type": "object"
+     },
+     "l2_sec_group_tag_protection": {
+      "properties": {
+       "tags": {
+        "items": {
+         "properties": {
+          "enable": {
+           "type": "boolean"
+          },
+          "name": {
+           "type": "string"
+          },
+          "tag": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "name",
+          "tag"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "type": "object"
+     },
+     "loose_source_routing_discard": {
+      "type": "boolean"
+     },
+     "malformed_option_discard": {
+      "type": "boolean"
+     },
+     "mismatched_overlapping_tcp_segment_discard": {
+      "type": "boolean"
+     },
+     "mptcp_option_strip": {
+      "enum": [
+       false,
+       true,
+       "global"
+      ],
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "non_ip_protocol": {
+      "properties": {
+       "list_type": {
+        "enum": [
+         "exclude",
+         "include"
+        ],
+        "type": "string"
+       },
+       "protocol": {
+        "items": {
+         "properties": {
+          "enable": {
+           "type": "boolean"
+          },
+          "ether_type": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "ether_type",
+          "name"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "type": "object"
+     },
+     "record_route_discard": {
+      "type": "boolean"
+     },
+     "reject_non_syn_tcp": {
+      "enum": [
+       "global",
+       true,
+       false
+      ],
+      "type": "string"
+     },
+     "scan": {
+      "items": {
+       "properties": {
+        "action": {
+         "properties": {
+          "alert": {
+           "properties": {},
+           "type": "object"
+          },
+          "allow": {
+           "properties": {},
+           "type": "object"
+          },
+          "block": {
+           "properties": {},
+           "type": "object"
+          },
+          "duration": {
+           "type": "integer"
+          },
+          "track_by": {
+           "enum": [
+            "source-and-destination",
+            "source"
+           ],
+           "type": "string"
+          }
+         },
+         "type": "object"
+        },
+        "interval": {
+         "type": "integer"
+        },
+        "name": {
+         "enum": [
+          "8001",
+          "8002",
+          "8003",
+          "8006"
+         ],
+         "type": "string"
+        },
+        "threshold": {
+         "type": "integer"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "scan_white_list": {
+      "items": {
+       "properties": {
+        "ipv4": {
+         "type": "string"
+        },
+        "ipv6": {
+         "type": "string"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "security_discard": {
+      "type": "boolean"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "spoofed_ip_discard": {
+      "type": "boolean"
+     },
+     "stream_id_discard": {
+      "type": "boolean"
+     },
+     "strict_ip_check": {
+      "type": "boolean"
+     },
+     "strict_source_routing_discard": {
+      "type": "boolean"
+     },
+     "suppress_icmp_needfrag": {
+      "type": "boolean"
+     },
+     "suppress_icmp_timeexceeded": {
+      "type": "boolean"
+     },
+     "tcp_fast_open_and_data_strip": {
+      "type": "boolean"
+     },
+     "tcp_handshake_discard": {
+      "type": "boolean"
+     },
+     "tcp_syn_with_data_discard": {
+      "type": "boolean"
+     },
+     "tcp_synack_with_data_discard": {
+      "type": "boolean"
+     },
+     "tcp_timestamp_strip": {
+      "type": "boolean"
+     },
+     "timestamp_discard": {
+      "type": "boolean"
+     },
+     "unknown_option_discard": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  },
+  "zones": {
+   "path": "/config/network/v1/zones",
+   "post_query": [],
+   "schema": {
+    "properties": {
+     "device": {
+      "type": "string"
+     },
+     "device_acl": {
+      "properties": {
+       "exclude_list": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "include_list": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       }
+      },
+      "type": "object"
+     },
+     "enable_device_identification": {
+      "type": "boolean"
+     },
+     "enable_user_identification": {
+      "type": "boolean"
+     },
+     "folder": {
+      "type": "string"
+     },
+     "id": {
+      "readOnly": true,
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "network": {
+      "properties": {
+       "enable_packet_buffer_protection": {
+        "type": "boolean"
+       },
+       "external": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "layer2": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "layer3": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "log_setting": {
+        "type": "string"
+       },
+       "tap": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "tunnel": {
+        "properties": {},
+        "type": "object"
+       },
+       "virtual_wire": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "zone_protection_profile": {
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "snippet": {
+      "type": "string"
+     },
+     "user_acl": {
+      "properties": {
+       "exclude_list": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "include_list": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       }
+      },
+      "type": "object"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object"
+   }
+  }
+ },
+ "source": "github.com/PaloAltoNetworks/pan.dev @32260be 2026-11-03 openapi-specs/scm/config/ngfw: objects/objects_R3.yaml, security/security-services.yaml, network/network-services.yaml"
+}
