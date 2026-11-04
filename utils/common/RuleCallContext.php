@@ -2057,8 +2057,16 @@ class RuleCallContext extends CallContext
         return $strMapping;
     }
 
-    public function AddressResolveSummaryNEW( $rule, $typeSrcDst, &$unresolvedArray = array() )
+    /**
+     * IP summary of a rule's source / destination as the firewalls of $location receive it
+     * (default: the rule's own location). Every name is resolved with PH::resolveNameForFirewalls(),
+     * so same-name copies and 'ancestor-objects-take-precedence' are honoured.
+     */
+    public static function AddressResolveSummaryNEW( $rule, $typeSrcDst, &$unresolvedArray = array(), $location = null )
     {
+        if( $location === null )
+            $location = $rule->owner->owner;
+
         $mapObject = new IP4Map();
         if( $rule->$typeSrcDst->isAny() )
         {
@@ -2069,32 +2077,21 @@ class RuleCallContext extends CallContext
         }
 
         $allMembers = $rule->$typeSrcDst->getAll();
-        $strMapping = array();
         foreach($allMembers as $member)
         {
-            if( $member->isGroup() )
-            {
-                /** @var AddressGroup $member */
-                $tmp_array = array();
-                $members = $member->expand(FALSE, $tmp_array, $rule->owner->owner);
-                foreach( $members as $member )
-                {
-                    $tmp_member = $rule->owner->owner->addressStore->find($member->name());
-                    $localMap = $tmp_member->getIP4Mapping();
-                    $mapObject->addMap($localMap, TRUE);
-                }
-            }
-            elseif( $member->isEDL() )
-            {
+            if( !$member->isGroup() && $member->isEDL() )
+                continue;
 
-            }
-            else
-            {
-                $tmp_member = $rule->owner->owner->addressStore->find($member->name());
-                $localMap = $tmp_member->getIP4Mapping();
-                $mapObject->addMap($localMap, TRUE);
-            }
+            $resolved = PH::resolveNameForFirewalls('addressStore', $member->name(), $location);
+            if( $resolved === null )
+                $resolved = $member;
 
+            foreach( PH::expandForFirewalls('addressStore', $resolved, $location) as $leaf )
+            {
+                if( !method_exists($leaf, 'getIP4Mapping') )
+                    continue;
+                $mapObject->addMap($leaf->getIP4Mapping(), TRUE);
+            }
         }
 
         $mapObject->sortAndRecalculate();
@@ -2262,8 +2259,15 @@ class RuleCallContext extends CallContext
         return $calculatedCounter;
     }
 
-    public function ServiceResolveSummary( $rule )
+    /**
+     * Port summary of a rule's services as the firewalls of $location receive them
+     * (default: the rule's own location); names resolved with PH::resolveNameForFirewalls().
+     */
+    public static function ServiceResolveSummary( $rule, $location = null )
     {
+        if( $location === null )
+            $location = $rule->owner->owner;
+
         $mapObject = new ServiceDstPortMapping();
         $mapObjectSrc = new ServiceSrcPortMapping();
         $timeoutSet = false;
@@ -2275,47 +2279,34 @@ class RuleCallContext extends CallContext
             $mapObject->mergeWithMapping($localMap);
         }
 
-
         if( $rule->services !== null )
             $allMembers = $rule->services->getAll();
         else
             $allMembers = array();
 
-        $strMapping = array();
         foreach($allMembers as $member)
         {
-            if( $member->isGroup() )
+            $resolved = PH::resolveNameForFirewalls('serviceStore', $member->name(), $location);
+            if( $resolved === null )
+                $resolved = $member;
+            $isGroup = $resolved->isGroup();
+
+            foreach( PH::expandForFirewalls('serviceStore', $resolved, $location) as $leaf )
             {
-                $tmp_array = array();
-                $members = $member->expand(FALSE, $tmp_array, $rule->owner->owner);
-                foreach( $members as $member )
-                {
-                    $tmp_member = $rule->owner->owner->serviceStore->find($member->name());
+                if( !method_exists($leaf, 'dstPortMapping') )
+                    continue;
 
-                    $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
-                    $mapObject->mergeWithMapping($localMap);
-
-                    $localMapSrc = $tmp_member->srcPortMapping( array(), $rule->owner->owner );
-                    $mapObjectSrc->mergeWithMapping($localMapSrc);
-
-                    /* @var Service $tmp_member */
-                    if( $tmp_member->getTimeout() != '' )
-                        $timeoutSet = true;
-                }
-            }
-            else
-            {
-                $tmp_member = $rule->owner->owner->serviceStore->find($member->name());
-
-                $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
+                $localMap = $leaf->dstPortMapping( array(), $location );
                 $mapObject->mergeWithMapping($localMap);
 
-                $localMapSrc = $tmp_member->srcPortMapping( array(), $rule->owner->owner );
+                $localMapSrc = $leaf->srcPortMapping( array(), $location );
                 $mapObjectSrc->mergeWithMapping($localMapSrc);
+
+                /* @var Service $leaf */
+                if( $isGroup && method_exists($leaf, 'getTimeout') && $leaf->getTimeout() != '' )
+                    $timeoutSet = true;
             }
-
         }
-
 
         $strMapping = explode(',', $mapObject->mappingToText());
         if( !empty($mapObjectSrc->mappingToText()) )

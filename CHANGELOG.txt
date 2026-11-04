@@ -48,6 +48,7 @@ BUGFIX:
 * bugfix class StatCollectorTrait - wrong value for av Inline ML
 * bugfix for filter missing GPGatewayTunnel / profile
 * type=profile | general bugfix to support profiletype argument | cleanup
+* type=rule-compare | bugfix related to ancestor-objects-take-precedence yes
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

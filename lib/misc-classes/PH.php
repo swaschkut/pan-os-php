@@ -1770,6 +1770,101 @@ class PH
     }
 
     /**
+     * Locations whose stores are searched, lowest first, when the firewalls of $location resolve a name:
+     *  DeviceGroup -> the device group, its parent device groups, Shared
+     *  PanoramaConf -> Shared;  VirtualSystem -> the vsys, the firewall's shared;  PANConf -> shared
+     */
+    public static function firewallResolutionLevels($location): array
+    {
+        $class = get_class($location);
+        if( $class == 'DeviceGroup' )
+        {
+            $levels = array();
+            for( $dg = $location; $dg !== null; $dg = $dg->parentDeviceGroup )
+                $levels[] = $dg;
+            $levels[] = $location->owner;
+            return $levels;
+        }
+        if( $class == 'VirtualSystem' )
+            return array( $location, self::findRootObjectOrDie($location) );
+
+        return array( $location );
+    }
+
+    /**
+     * The object the firewalls of $location receive for $name (store e.g. 'addressStore', 'serviceStore').
+     * Panorama: of all same-name copies from the device group up to Shared, the LOWEST one wins, or the
+     * HIGHEST one with 'ancestor-objects-take-precedence yes'. Firewall: vsys before shared.
+     * Names outside the hierarchy (predefined objects, ...) fall back to the normal lookup.
+     */
+    public static function resolveNameForFirewalls( string $storeProperty, string $name, $location )
+    {
+        $levels = self::firewallResolutionLevels($location);
+
+        $copies = array();
+        $seen = array();
+        foreach( $levels as $level )
+        {
+            if( !isset($level->$storeProperty) || $level->$storeProperty === null )
+                continue;
+            $store = $level->$storeProperty;
+            if( isset($seen[spl_object_id($store)]) )
+                continue;
+            $seen[spl_object_id($store)] = TRUE;
+
+            $found = $store->find($name, null, FALSE);
+            if( $found !== null )
+                $copies[] = $found;
+        }
+
+        if( count($copies) == 0 )
+        {
+            $first = $levels[0];
+            if( isset($first->$storeProperty) && $first->$storeProperty !== null )
+                return $first->$storeProperty->find($name);
+            return null;
+        }
+
+        $root = end($levels);
+        $ancestorPrecedence = ( $root instanceof PanoramaConf ) && $root->ancestorObjectsTakePrecedence();
+
+        return $ancestorPrecedence ? end($copies) : $copies[0];
+    }
+
+    /**
+     * Leaf objects of $object as the firewalls of $location see them: every group member is resolved
+     * again by name with resolveNameForFirewalls(). Dynamic address groups use their own expansion.
+     */
+    public static function expandForFirewalls( string $storeProperty, $object, $location, array &$visited = array() ): array
+    {
+        if( $object === null )
+            return array();
+        if( !method_exists($object, 'isGroup') || !$object->isGroup() )
+            return array( $object );
+
+        if( isset($visited[spl_object_id($object)]) )
+            return array();
+        $visited[spl_object_id($object)] = TRUE;
+
+        if( method_exists($object, 'isDynamic') && $object->isDynamic() )
+        {
+            $tmp = array();
+            return $object->expand(FALSE, $tmp, $location);
+        }
+
+        $leaves = array();
+        foreach( $object->members() as $member )
+        {
+            $resolved = self::resolveNameForFirewalls($storeProperty, $member->name(), $location);
+            if( $resolved === null )
+                $resolved = $member;
+            foreach( self::expandForFirewalls($storeProperty, $resolved, $location, $visited) as $leaf )
+                $leaves[] = $leaf;
+        }
+        return $leaves;
+    }
+
+    /**
      * Template or TemplateStack that holds an object (zone, zone protection profile, ...),
      * or null when the object is not inside a template / template-stack.
      * @return Template|TemplateStack|null
