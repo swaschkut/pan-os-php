@@ -1100,6 +1100,48 @@ class SecurityProfileGroup
         $this->rewriteXML();
     }
 
+    /**
+     * Replaces the security profile $old by $new in every profile type slot that holds it
+     * (used by ReferenceableObject::replaceMeGlobally()).
+     * @return bool TRUE if $old was used by this group
+     */
+    public function replaceReferencedObject($old, $new)
+    {
+        if( $old === $new || !is_object($new) )
+            return FALSE;
+
+        $replaced = FALSE;
+        foreach( $this->secprofProfiles_obj as $type => $profile )
+        {
+            if( $profile !== $old )
+                continue;
+            $this->secprofProfiles_obj[$type] = $new;
+            if( array_key_exists($type, $this->secprofiles) )
+                $this->secprofiles[$type] = $new->name();
+            $replaced = TRUE;
+        }
+        if( !$replaced )
+            return FALSE;
+
+        $old->removeReference($this);
+        $new->addReference($this);
+        $this->rewriteXML();
+
+        return TRUE;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+        if( $ret )
+        {
+            $con = findConnectorOrDie($this);
+            if( $con->isAPI() )
+                $con->sendEditRequest($this->getXPath(), DH::dom_to_xml($this->xmlroot, -1, FALSE));
+        }
+        return $ret;
+    }
+
     public function rewriteXML()
     {
         if( $this->xmlroot !== null )

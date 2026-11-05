@@ -405,6 +405,7 @@ require_once $basedir . '/rule-classes/Rule.php';
 require_once $basedir . '/rule-classes/RuleHitCountCollector.php';
 require_once $basedir . '/rule-classes/trait/NegatableRule.php';
 require_once $basedir . '/rule-classes/trait/RulewithLogging.php';
+require_once $basedir . '/rule-classes/trait/RuleDirectReferences.php';
 require_once $basedir . '/rule-classes/RuleWithUserID.php';
 require_once $basedir . '/rule-classes/RuleWithSchedule.php';
 

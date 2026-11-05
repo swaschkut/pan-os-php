@@ -2241,7 +2241,7 @@ trait MergerEngine
                 return FALSE;
             },
             'checkParent' => function ($hash) {
-                return $this->checkParentServicePickObject( $hash );
+                return $this->checkParentPickObject( $hash, 'serviceStore' );
             },
             'moveMessage' => function ($tmp_DG_name, $pickedObject) {
                 return "   * move object to DG: '" . $tmp_DG_name . "' : '" . $pickedObject->name() . "' from DG: '".$pickedObject->owner->owner->name()."'";
@@ -2322,5 +2322,632 @@ trait MergerEngine
                 return $store->countServiceGroups();
             },
         );
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // helpers used by the merge specs (moved from MERGER.php)
+    // ------------------------------------------------------------------------------------------
+
+    // ---- picking the object to keep
+
+    function hashMapPickfilter( $upperHashMap, $index, &$hash)
+    {
+        $pickedObject = null;
+        if( $this->dupAlg == 'identical' )
+            $this->pickFilter = 'identical';
+
+        if( $this->pickFilter !== null )
+        {
+            if( isset($upperHashMap[$index]) )
+            {
+                $hashArray = $upperHashMap[$index];
+                $printString = "   * using object from upper level : ";
+            }
+            else
+            {
+                $hashArray = $hash;
+                $printString = "   * keeping object : ";
+            }
+
+            foreach( $hashArray as $object )
+            {
+                if( $this->dupAlg == 'identical' )
+                {
+                    if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                    {
+                        $pickedObject = $this->parentSameNameObject( $object );
+                        if( $pickedObject !== null )
+                            break;
+                    }
+                }
+                elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                {
+                    $pickedObject = $object;
+                    break;
+                }
+            }
+
+            if( $pickedObject === null )
+            {
+                if( isset($upperHashMap[$index]) )
+                {
+                    $hashArray = $hash;
+                    $printString = "   * keeping object :";
+
+                    foreach( $hashArray as $object )
+                    {
+                        if( $this->dupAlg == 'identical' )
+                        {
+                            if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                            {
+                                $pickedObject = $this->parentSameNameObject( $object );
+                                if( $pickedObject !== null )
+                                    break;
+                            }
+                        }
+                        elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                        {
+                            $pickedObject = $object;
+                            break;
+                        }
+                    }
+                }
+                if( $pickedObject === null )
+                    $pickedObject = reset($hash);
+            }
+
+            PH::print_stdout($printString . "'{$pickedObject->_PANC_shortName()}'");
+        }
+        else
+        {
+            if( isset($upperHashMap[$index]) )
+            {
+                $pickedObject = reset($upperHashMap[$index]);
+                /** @var Address $pickedObject */
+                if( get_class($pickedObject) === "Address" && $pickedObject->isType_TMP() )
+                {
+                    $pickedObject = reset($hash);
+                    PH::print_stdout( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
+                }
+                else
+                    PH::print_stdout( "   * using object from upper level : '{$pickedObject->_PANC_shortName()}'" );
+            }
+            else
+            {
+                $pickedObject = reset($hash);
+                PH::print_stdout( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
+            }
+        }
+
+        return $pickedObject;
+    }
+
+    /**
+     * dupAlgorithm=identical: address / address-group with the same name in the parent device group.
+     * Other object types: null (the former lookup in the addressStore could pick an address
+     * for a service, service-group or tag with the same name).
+     */
+    private function parentSameNameObject( $object )
+    {
+        if( !($object->owner instanceof AddressStore) )
+            return null;
+
+        return $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+    }
+
+    function PickObject(&$hash)
+    {
+        $pickedObject = null;
+        if( $this->pickFilter !== null )
+        {
+            foreach( $hash as $object )
+            {
+                if( $this->dupAlg == 'identical' )
+                {
+                    if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                    {
+                        $pickedObject = $this->parentSameNameObject( $object );
+                        if( $pickedObject !== null )
+                            break;
+                    }
+                }
+                elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                {
+                    $pickedObject = $object;
+                    break;
+                }
+            }
+            if( $pickedObject === null )
+                $pickedObject = reset($hash);
+            if( get_class($pickedObject) == "Address" && $pickedObject->isType_TMP() )
+                $pickedObject = reset($hash);
+        }
+        else
+            $pickedObject = reset($hash);
+
+        return $pickedObject;
+    }
+
+    /**
+     * Child-device-group phase of the group mergers: TRUE if one group of $hash can not be moved up,
+     * because the parent device group already holds an object with the same name and a different
+     * value, membership or object type.
+     */
+    function checkParentPickObject( $hash, $storeProp = 'addressStore' )
+    {
+        $isService = ( $storeProp === 'serviceStore' );
+        $break = False;
+        foreach( $hash as $pickedObject )
+        {
+            /** @var DeviceGroup $pickedObject_DG */
+            $pickedObject_DG = $pickedObject->owner->owner;
+            if( $pickedObject_DG->parentDeviceGroup !== null )
+            {
+                $tmp_DG_name = $pickedObject_DG->parentDeviceGroup->name();
+
+                $nextFindObject = $pickedObject_DG->parentDeviceGroup->$storeProp->find( $pickedObject->name(), null, True );
+                if( $nextFindObject !== null )
+                {
+                    if( $isService && $pickedObject->isService() && $nextFindObject->isService() )
+                    {
+                        if( $pickedObject->getDestPort() !== $nextFindObject->getDestPort() || $pickedObject->getSourcePort() !== $nextFindObject->getSourcePort() || $pickedObject->protocol() !== $nextFindObject->protocol() )
+                        {
+                            PH::print_stdout("   * SKIPPED : this group has an object named '{$pickedObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol");
+                            $break = TRUE;
+                        }
+                    }
+                    elseif( !$isService && $pickedObject->isAddress() && $nextFindObject->isAddress() )
+                    {
+                        if( $pickedObject->value() !== $nextFindObject->value() )
+                        {
+                            PH::print_stdout("   * SKIPPED : this group has an object named '{$pickedObject->name()} that does exist in target location '{$tmp_DG_name}' with different value");
+                            $break = TRUE;
+                        }
+                    }
+                    elseif( $pickedObject->isGroup() && $nextFindObject->isGroup() )
+                    {
+                        //todo 20230518 check deeper if this group group part must be validate more
+                        $diff = $pickedObject->getValueDiff($nextFindObject);
+                        if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
+                        {
+                            if( $isService )
+                                PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
+                            else
+                                PH::print_stdout("   * SKIPPED : this group has different membership compare to upperlevel");
+                            $break = TRUE;
+                        }
+                    }
+                    else
+                    {
+                        PH::print_stdout("   * SKIPPED : this group has an object named '{$pickedObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
+                        $break = TRUE;
+                    }
+                }
+            }
+        }
+        return $break;
+    }
+
+    // ---- address / address-group
+
+    function address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap, $checkNamehashMap = false, $checkUpperhashMap = false, $checkChildhashMap = false )
+    {
+        $array_hashMap = array( "name"=>$NamehashMap, "upper"=>$upper_NamehashMap, "child"=>$child_NamehashMap );
+        foreach( $array_hashMap as $key => $MainHashMap )
+        {
+            if( $key == "name" && !$checkNamehashMap )
+                continue;
+            elseif( $key == "upper" && !$checkUpperhashMap )
+                continue;
+            elseif( $key == "child" && !$checkChildhashMap )
+                continue;
+
+
+            if( isset($MainHashMap[$object->name()]) )
+            {
+                $skip2 = FALSE;
+                $skip3 = FALSE;
+                $skippedOBJ = null;
+
+                $tmp_string_obj_type = "";
+                foreach( $MainHashMap[$object->name()] as $key => $overridenOBJ )
+                {
+                    if( get_class($object) == "Address" )
+                    {
+                        if (!$overridenOBJ->isAddress())
+                        {
+                            $skip2 = TRUE;
+                            $tmp_string_obj_type = "addressgroup";
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                        if( $this->allowMergingObjectWith_m32 && ($overridenOBJ->getNetworkMask() == '32' && $object->getNetworkMask() == '32') )
+                        {
+                            if( $overridenOBJ->getNetworkValue() !== $object->getNetworkValue())
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                        }
+                        elseif ($overridenOBJ->value() !== $object->value())
+                        {
+                            $skip3 = TRUE;
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                    }
+                    elseif( get_class($object) == "Service" )
+                    {
+                        if (!$overridenOBJ->isService())
+                        {
+                            $skip2 = TRUE;
+                            $tmp_string_obj_type = "servicegroup";
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                        if( $overridenOBJ->getDestPort() !== $object->getDestPort() || $overridenOBJ->getSourcePort() !== $object->getSourcePort() || $overridenOBJ->protocol() !== $object->protocol() )
+                        {
+                            $skip3 = TRUE;
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                    }
+                }
+
+                if ($skip2)
+                {
+
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type ".$tmp_string_obj_type);
+                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type ".$tmp_string_obj_type);
+
+                    return FALSE;//continue
+                }
+                if ($skip3)
+                {
+                    PH::print_stdout("    - SKIP3: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                    $this->skippedObject($index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                    return FALSE;//continue
+                }
+            }
+        }
+
+        return TRUE;
+    }
+
+    function address_tag_DAG_check( $pickedObject, $ancestor, $index)
+    {
+        /** @var Address $pickedObject */
+        $pickedObjReferences = $pickedObject->refrules;
+
+        $pickedObjPartOfDAG = false;
+        foreach( $pickedObjReferences as $objReference)
+        {
+            /** @var AddressGroup $objReference */
+            if( get_class($objReference) == "AddressGroup" && $objReference->isDynamic() )
+            {
+                $pickedObjPartOfDAG = true;
+                break;
+            }
+        }
+
+        $ancestorRef = $ancestor->refrules;
+        $ancestorPartOfDAG = false;
+        foreach( $ancestorRef as $objReference)
+        {
+            /** @var AddressGroup $objReference */
+            if( get_class($objReference) == "AddressGroup" && $objReference->isDynamic() )
+            {
+                $ancestorPartOfDAG = true;
+                break;
+            }
+        }
+
+        if( $pickedObjPartOfDAG || $ancestorPartOfDAG )
+        {
+            /** @var Address $pickedObject */
+            /** @var Address $ancestor */
+            foreach( $pickedObject->tags->getAll() as $objTag )
+            {
+                if( !$ancestor->tags->hasTag($objTag) )
+                {
+                    //todo: check if both objects are at same level
+                    if( $pickedObject->owner->owner !== $ancestor->owner->owner )
+                    {
+                        if( is_object($objTag) )
+                            $tmp_string = "    - SKIP1: '{$pickedObject->_PANC_shortName()}' [has a tag '{$objTag->name()}'] which is not part of address object: ".$ancestor->_PANC_shortName();
+                        else
+                            $tmp_string = "    - SKIP1: '{$pickedObject->_PANC_shortName()}' [has a tag '{$objTag}'] which is not part of address object: ".$ancestor->_PANC_shortName();
+                        PH::print_stdout( $tmp_string );
+                        $this->skippedObject( $index, $pickedObject, $ancestor, $tmp_string );
+
+                        return true;
+                    }
+                }
+            }
+            foreach( $ancestor->tags->getAll() as $objTag )
+            {
+                if( !$pickedObject->tags->hasTag($objTag) )
+                {
+                    if( $pickedObject->owner->owner !== $ancestor->owner->owner )
+                    {
+                        #if (is_object($objTag))
+                        #    $tmp_string = "    - SKIP2: '{$ancestor->_PANC_shortName()}' [has a tag '{$objTag->name()}'] which is not part of address object: " . $pickedObject->_PANC_shortName();
+                        #else
+                        #    $tmp_string = "    - SKIP2: '{$ancestor->_PANC_shortName()}' [has a tag '{$objTag}'] which is not part of address object: " . $pickedObject->_PANC_shortName();
+                        #PH::print_stdout($tmp_string);
+                        #$this->skippedObject($index, $pickedObject, $ancestor, $tmp_string);
+
+                        #return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function address_tag_merge_check( $pickedObject, $ancestor, $index)
+    {
+        $arrayPicked = array();
+        foreach( $pickedObject->tags->getAll() as $key => $tagObj )
+            $arrayPicked[] = $tagObj->name();
+
+        $arrayAncestor = array();
+        foreach( $ancestor->tags->getAll() as $key => $tagObj )
+            $arrayAncestor[] = $tagObj->name();
+
+        $mergeArray = array_unique( array_merge($arrayPicked, $arrayAncestor) );
+
+        if( count($mergeArray) > $pickedObject->tagLimit )
+        {
+            PH::print_stdout( "    - SKIP: tag count of name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] added with object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] exceed PAN-OS limit ".$pickedObject->tagLimit." with unique tag count: ".count($mergeArray) );
+            $this->skippedObject( $index, $pickedObject, $ancestor, "tag object count exceed PAN-OS limit ".$pickedObject->tagLimit." with unique tag count: ".count($mergeArray) );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    function address_get_value_string( $object )
+    {
+        /** @var Address $object */
+        $value = $object->value();
+        #if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/32') !== FALSE )
+        #    $value = substr($value, 0, strlen($value) - 3);
+        if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/') == FALSE )
+            $value = $value . "/32";
+
+        if( $object->type() === "tmp" )
+            $value = "ip-netmask" . '-' . $value;
+        else
+            $value = $object->type() . '-' . $value;
+
+        return $value;
+    }
+
+    function addressgroupGetValueDiff( $ancestor, $object, $display = false)
+    {
+        if( $display )
+            $ancestor->displayValueDiff($object, 7);
+
+        if( $this->addMissingObjects )
+        {
+            $diff = $ancestor->getValueDiff($object);
+            if( count($diff['minus']) != 0 )
+            {
+                $store = $ancestor->owner;
+                if( $store !== null )
+                {
+                    foreach( $diff['minus'] as $d )
+                    {
+                        /** @var Address|AddressGroup $d */
+
+                        if( $store->find($d->name()) !== null )
+                        {
+                            $text = "      - adding objects to group: ";
+                            $text .= $d->name();
+                            PH::print_stdout($text);
+                            if( $this->action === "merge" )
+                            {
+                                if( $this->apiMode )
+                                    $ancestor->API_addMember($d);
+                                else
+                                    $ancestor->addMember($d);
+                            }
+                        }
+                        else
+                        {
+                            #PH::print_stdout("      - object not found: " . $d->name() . "");
+                            if( $this->mergeSafety !== null )
+                            {
+                                $reason = $this->mergeSafety->checkMove( $d, $store );
+                                if( $reason !== null )
+                                {
+                                    PH::print_stdout( "      - SKIP: object '{$d->name()}' not moved to '" . $store->owner->_PANC_shortName() . "', " . $reason );
+                                    continue;
+                                }
+                            }
+                            $text = "      - adding object: ";
+                            $text .= $d->name();
+                            $text .= " from DG '".$d->owner->owner->_PANC_shortName()."' to '".$store->owner->_PANC_shortName()."'";
+                            $text .= " to group";
+                            PH::print_stdout($text);
+                            if( $this->action === "merge" )
+                            {
+                                /** @var AddressStore $store */
+                                if( $this->apiMode )
+                                {
+                                    $oldXpath = $d->getXPath();
+                                    $d->owner->remove($d);
+                                    $store->add($d);
+                                    $d->API_sync();
+                                    $this->pan->connector->sendDeleteRequest($oldXpath);
+                                    $ancestor->API_addMember($d);
+                                }
+                                else
+                                {
+                                    $d->owner->remove($d);
+                                    $store->add($d);
+                                    $ancestor->addMember($d);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. minus", null, FALSE );
+                    return FALSE;
+                }
+            }
+
+
+            if( count($diff['plus']) != 0 )
+            {
+                $store = $ancestor->owner;
+                if( $store !== null )
+                {
+                    foreach( $diff['plus'] as $d )
+                    {
+                        /** @var Address|AddressGroup $d */
+                        //TMP usage to clean DG level ADDRESSgroup up
+                        $object->addMember($d);
+                    }
+                }
+                else
+                {
+                    mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. plus", null, FALSE );
+                    return FALSE;
+                }
+            }
+        }
+
+        return TRUE;
+    }
+
+    // ---- service / service-group
+
+    function servicePickedObjectValidation( $index, $object, $pickedObject )
+    {
+        /** @var Service $object */
+        /** @var Service $pickedObject */
+
+        $skipped = false;
+        if( $object->protocol() != $pickedObject->protocol() )
+        {
+            $text = "    - object '{$object->name()}' cannot be merged because of different service protocol";
+            $text .="  object protocol value: " . $object->protocol() . " | pickedObject protocol value: " . $pickedObject->protocol();
+            PH::print_stdout( $text );
+            $this->skippedObject( $index, $object, $pickedObject);
+            $skipped = true;
+        }
+        elseif( !$object->srcPortMapping()->equals($pickedObject->srcPortMapping()) && $this->dupAlg == 'samedstsrcports' )
+        {
+            $text = "    - object '{$object->name()}' cannot be merged because of different SRC port information";
+            $text .= "  object value: " . $object->srcPortMapping()->mappingToText() . " | pickedObject value: " . $pickedObject->srcPortMapping()->mappingToText();
+            PH::print_stdout( $text );
+            $this->skippedObject( $index, $object, $pickedObject);
+            $skipped = true;
+        }
+        elseif( $object->getOverride() != $pickedObject->getOverride() )
+        {
+            $text = "    - object '{$object->name()}' cannot be merged because of different timeout Override information";
+            $text .="  object timeout value: " . $object->getOverride() . " | pickedObject timeout value: " . $pickedObject->getOverride();
+            PH::print_stdout( $text );
+            $this->skippedObject( $index, $object, $pickedObject);
+            $skipped = true;
+        }
+
+        return $skipped;
+    }
+
+    function servicegroupGetValueDiff( $ancestor, $object, $display = false)
+    {
+        /* @var ServiceGroup $ancestor */
+        if( $display )
+            $ancestor->displayValueDiff($object, 7);
+
+        if( $this->addMissingObjects )
+        {
+            $diff = $ancestor->getValueDiff($object);
+
+            if( count($diff['minus']) != 0 )
+                foreach( $diff['minus'] as $d )
+                {
+                    /** @var Service|ServiceGroup $d */
+
+                    if( $ancestor->owner->find($d->name()) !== null )
+                    {
+                        PH::print_stdout("      - adding objects to group: " . $d->name() . "");
+                        if( $this->action === "merge" )
+                        {
+                            if( $this->apiMode )
+                                $ancestor->API_addMember($d);
+                            else
+                                $ancestor->addMember($d);
+                        }
+                    }
+                    else
+                    {
+                        PH::print_stdout("      - object not found: " . $d->name() . "");
+                    }
+                }
+
+            if( count($diff['plus']) != 0 )
+                foreach( $diff['plus'] as $d )
+                {
+                    /** @var Service|ServiceGroup $d */
+                    //TMP usage to clean DG level SERVICEgroup up
+                    if( $this->action === "merge" )
+                        $object->addMember($d);
+                }
+        }
+    }
+
+    // ---- custom URL category
+
+    /**
+     * @param customURLProfile $ancestor
+     * @param customURLProfile $object
+     */
+    function customURLcategoryGetValueDiff( $ancestor, $object, $display = false)
+    {
+        if( $display )
+            $ancestor->displayValueDiff($object, 7);
+
+        if( $this->addMissingObjects )
+        {
+            $diff = $ancestor->getValueDiff($object);
+
+            if( count($diff['minus']) != 0 )
+                foreach( $diff['minus'] as $d )
+                {
+                    /** @var string $d */
+
+                    PH::print_stdout("      - adding objects to group: " . $d . "");
+                    if( $this->action === "merge" )
+                    {
+                        if( $this->apiMode )
+                        {
+                            //
+                            mwarning("API mode not implemented yet");
+                            #$ancestor->API_addMember($d);
+                        }
+                        else
+                            $ancestor->addMember($d);
+                    }
+                }
+
+            if( count($diff['plus']) != 0 )
+                foreach( $diff['plus'] as $d )
+                {
+                    /** @var Service|ServiceGroup $d */
+                    //TMP usage to clean DG level customURLcategory up
+                    if( $this->action === "merge" )
+                        $object->addMember($d);
+                }
+        }
     }
 }

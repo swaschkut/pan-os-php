@@ -24,6 +24,7 @@ class AuthenticationRule extends RuleWithUserID
 {
     use NegatableRule;
     use RulewithLogging;
+    use RuleDirectReferences;
 
     static public $templatexml = '<entry name="**temporarynamechangeme**"><from><member>any</member></from><to><member>any</member></to>
 <source><member>any</member></source><destination><member>any</member></destination><service><member>any</member></service></entry></entry>';

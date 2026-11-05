@@ -24,6 +24,7 @@ class DecryptionRule extends RuleWithUserID
 {
     use NegatableRule;
     use RulewithLogging;
+    use RuleDirectReferences;
 
     protected $_profile = null;
 

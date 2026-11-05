@@ -23,6 +23,7 @@
 class DefaultSecurityRule extends Rule
 {
     use RulewithLogging;
+    use RuleDirectReferences;
 
     protected $action = self::ActionAllow;
 
