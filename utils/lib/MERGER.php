@@ -732,12 +732,14 @@ class MERGER extends UTIL
                                     $d->owner->remove($d);
                                     $store->add($d);
                                     $d->API_sync();
-                                    $this->pan->connector->sendDeleteRequest($d);
+                                    $this->pan->connector->sendDeleteRequest($oldXpath);
+                                    $ancestor->API_addMember($d);
                                 }
                                 else
                                 {
                                     $d->owner->remove($d);
                                     $store->add($d);
+                                    $ancestor->addMember($d);
                                 }
                             }
                         }
@@ -1000,7 +1002,7 @@ class MERGER extends UTIL
                 {
                     if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
                     {
-                        $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                        $pickedObject = $this->parentSameNameObject( $object );
                         if( $pickedObject !== null )
                             break;
                     }
@@ -1025,7 +1027,7 @@ class MERGER extends UTIL
                         {
                             if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
                             {
-                                $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                                $pickedObject = $this->parentSameNameObject( $object );
                                 if( $pickedObject !== null )
                                     break;
                             }
@@ -1067,6 +1069,19 @@ class MERGER extends UTIL
         return $pickedObject;
     }
 
+    /**
+     * dupAlgorithm=identical: address / address-group with the same name in the parent device group.
+     * Other object types: null (the former lookup in the addressStore could pick an address
+     * for a service, service-group or tag with the same name).
+     */
+    private function parentSameNameObject( $object )
+    {
+        if( !($object->owner instanceof AddressStore) )
+            return null;
+
+        return $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+    }
+
     function PickObject(&$hash)
     {
         $pickedObject = null;
@@ -1078,7 +1093,7 @@ class MERGER extends UTIL
                 {
                     if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
                     {
-                        $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                        $pickedObject = $this->parentSameNameObject( $object );
                         if( $pickedObject !== null )
                             break;
                     }

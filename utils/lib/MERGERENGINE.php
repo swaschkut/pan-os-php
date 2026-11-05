@@ -1428,7 +1428,7 @@ trait MergerEngine
      *  moveMessage(dgName, picked)    "move object to DG" line
      *  memberCheck(index, picked, store, dgName)        TRUE: a member blocks the move
      *  targetNotGroup(index, picked, target)            prints / logs: existing object is no group
-     *  targetMismatch(index, picked, target, pickedValue, targetValue, ancestor, ancestorSet, object)
+     *  targetMismatch(index, picked, target, pickedValue, targetValue)
      *                                 existing group has another value; TRUE: skip this hash
      *  childPhaseChildAncestorCheck   TRUE: check childancestor in the child merge loop as well
      *  valueDiff(ancestor, object, display)              FALSE: skip ("was delete earlier")
@@ -1443,9 +1443,6 @@ trait MergerEngine
      */
     function genericGroupMerging( array $g )
     {
-        // NOTE: $object / $ancestor are deliberately not reset per location: as in the former
-        // implementation targetMismatch still receives the values of an earlier iteration.
-
         foreach( $this->location_array as $tmp_location )
         {
             $store = null;
@@ -1541,7 +1538,7 @@ trait MergerEngine
 
             PH::print_stdout( " - found " . count($hashMap) . " duplicate values totalling {$countConcernedObjects} groups which are duplicate" );
 
-            PH::print_stdout( " - found " . count($child_hashMap) . " duplicates childDG values totalling {$countConcernedChildObjects} address objects which are duplicate" );
+            PH::print_stdout( " - found " . count($child_hashMap) . " duplicates childDG values totalling {$countConcernedChildObjects} groups which are duplicate" );
 
 
             PH::print_stdout( "\n\nNow going after each duplicates for a replacement" );
@@ -1614,8 +1611,15 @@ trait MergerEngine
 
                     if( $pickedObject_value == $target_value )
                         PH::print_stdout( "   * keeping object '{$target->_PANC_shortName()}'" );
-                    elseif( $g['targetMismatch']( $index, $pickedObject, $target, $pickedObject_value, $target_value, $ancestor ?? null, isset($ancestor), $object ) )
+                    elseif( $g['targetMismatch']( $index, $pickedObject, $target, $pickedObject_value, $target_value ) )
                         continue;
+                    elseif( $this->action === "merge" && $hashGenerator($pickedObject) != $hashGenerator($target) )
+                    {
+                        // missing members could not be added: merging would change the group content
+                        PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' still differs from '{$target->_PANC_shortName()}' after adding the missing members" );
+                        $this->skippedObject( $index, $pickedObject, $target, 'still different after adding missing members');
+                        continue;
+                    }
                 }
 
 
@@ -1627,7 +1631,7 @@ trait MergerEngine
 
                     if( $g['childPhaseChildAncestorCheck'] )
                     {
-                        $check = $this->groupChildAncestorCheck( $g, $index, $object, $ancestor ?? null, isset($ancestor) );
+                        $check = $this->groupChildAncestorCheck( $g, $index, $object );
                         if( $check === 'break' )
                             break;
                         if( $check === 'continue' )
@@ -1766,7 +1770,7 @@ trait MergerEngine
                             continue;
                     }
 
-                    $check = $this->groupChildAncestorCheck( $g, $index, $object, null, TRUE );
+                    $check = $this->groupChildAncestorCheck( $g, $index, $object );
                     if( $check === 'break' )
                         break;
                     if( $check === 'continue' )
@@ -1871,10 +1875,8 @@ trait MergerEngine
     /**
      * A group with a same-name object in a child device group can not be merged.
      * Returns 'break', 'continue' or null (no childancestor).
-     * $skipObject: object used in the "was delete earlier" message (null: the childancestor)
-     * $skipObjectSet: FALSE if the caller's variable was not set yet (former behaviour: PHP notice)
      */
-    private function groupChildAncestorCheck( array $g, $index, $object, $skipObject, $skipObjectSet )
+    private function groupChildAncestorCheck( array $g, $index, $object )
     {
         if( !isset( $object->childancestor ) )
             return null;
@@ -1894,12 +1896,8 @@ trait MergerEngine
         if( $g['valueDiff']( $childancestor, $object, true ) === FALSE )
         {
             //if delete earlier, why not replacing this reference???
-            if( $skipObject === null && !$skipObjectSet )
-                $skipObject = $ancestor; // not set: same PHP notice as the former implementation
-            if( $skipObject === null )
-                $skipObject = $childancestor;
-            PH::print_stdout("    - SKIP: object name '{$skipObject->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
-            $this->skippedObject( $index, $object, $skipObject, 'was delete earlier');
+            PH::print_stdout("    - SKIP: object name '{$childancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+            $this->skippedObject( $index, $object, $childancestor, 'was delete earlier');
             return 'continue';
         }
 
@@ -2053,16 +2051,14 @@ trait MergerEngine
                 PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' of type ".get_class($pickedObject)." can not be merged with object name: '{$target->_PANC_shortName()}' of type ".get_class($target). " value: ".$target->value() );
                 $this->skippedObject( $index, $pickedObject, $target, get_class($pickedObject)." can not be merged with ".get_class($target));
             },
-            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value, $ancestor, $ancestorSet, $object) {
+            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value) {
                 if( $this->addMissingObjects )
                 {
-                    if( !$ancestorSet )
-                        unset($ancestor);
-                    // NOTE: $ancestor / $object are not related to this hash (values of an earlier iteration)
-                    if( $this->addressgroupGetValueDiff($ancestor, $object, true) === FALSE )
+                    // the existing group in the target location takes the missing members
+                    if( $this->addressgroupGetValueDiff($target, $pickedObject, true) === FALSE )
                     {
-                        PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
-                        $this->skippedObject( $index, $object, $ancestor, 'was delete earlier');
+                        PH::print_stdout("    - SKIP: object name '{$target->_PANC_shortName()}' was delete earlier. upperlevel '{$pickedObject->_PANC_shortName()}'");
+                        $this->skippedObject( $index, $pickedObject, $target, 'was delete earlier');
                         return TRUE;
                     }
                     return FALSE;
@@ -2080,7 +2076,7 @@ trait MergerEngine
                 return $this->upperLevelSearch && $ancestor->isGroup() && !$ancestor->isDynamic() && $this->dupAlg != 'whereused';
             },
             'ancestorMergedText' => function ($object, $tmp_ancestor_DGname) {
-                return "    - group '{$object->name()} DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
+                return "    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
             },
             'removeAfterAncestorMerge' => function ($object) {
                 if( $this->apiMode )
@@ -2222,7 +2218,7 @@ trait MergerEngine
                 PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' of type ".get_class($pickedObject)." can not be merged with object name: '{$target->_PANC_shortName()}' of type ".get_class($target) );
                 $this->skippedObject( $index, $pickedObject, $target, "object type is not service-group");
             },
-            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value, $ancestor, $ancestorSet, $object) {
+            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value) {
                 PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject_value}'] is not IDENTICAL to object name: '{$target->_PANC_shortName()}' [with value '{$target_value}']" );
                 $this->skippedObject( $index, $pickedObject, $target, "not identical");
                 return TRUE;
