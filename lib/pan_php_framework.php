@@ -222,6 +222,7 @@ require_once $basedir . '/helper-classes/cidr.php';
 require_once $basedir . '/helper-classes/ConsoleTable.php';
 require_once $basedir . '/helper-classes/PanosCrypto.php';
 require_once $basedir . '/helper-classes/PanosHasher.php';
+require_once $basedir . '/helper-classes/XmlCompare.php';
 
 require_once $basedir . '/container-classes/ObjRuleContainer.php';
 require_once $basedir . '/container-classes/ZoneRuleContainer.php';
