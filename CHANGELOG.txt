@@ -37,6 +37,7 @@ BUGFIX:
 * class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
 * type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
 * bugfix class StatCollectorTrait - wrong value for av Inline ML
+* class UTIL | related to outputformatset - Run the diff on the saved document, not on a third copy.
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
