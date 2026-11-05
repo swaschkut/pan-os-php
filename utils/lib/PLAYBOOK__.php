@@ -466,6 +466,7 @@ class PLAYBOOK__
             }
 
 
+            $outSupplied = FALSE;   // the playbook gives this step its stage file as out=: the next step reads it
             if( !in_array( $script, $out_exclude ) && !$this->isAPI )
             {
                 $OUT_inarray = false;
@@ -480,7 +481,11 @@ class PLAYBOOK__
                     }
                 }
                 if( !$OUT_inarray && !$IN_API_inarray )
+                {
                     $arguments[] = "out=".$out;
+                    // with out=/dev/null every step reads the input, so no later step reads this one's output
+                    $outSupplied = ( $out !== "/dev/null" );
+                }
             }
 
             //validate if arguments include "sleep"
@@ -535,7 +540,17 @@ class PLAYBOOK__
             if( $useSubprocess )
             {
                 // Run this step as a subprocess to get clean memory
-                $stepOK = ( $this->runStepAsSubprocess($script, PH::$argv, $argc, $PHP_FILE) === 0 );
+                $returnCode = $this->runStepAsSubprocess($script, PH::$argv, $argc, $PHP_FILE);
+                $stepOK = ( $returnCode === 0 );
+
+                // a failed step whose out= the playbook gave leaves the next step without its input: end the run here,
+                // as a failed in-process step does (derr), instead of running every later step on a missing file
+                // (137 = the process was killed). A step naming its own out=, and every step of an out=/dev/null run,
+                // keep today's warning.
+                if( !$stepOK && $outSupplied )
+                    derr( "playbook step type=".$script." (in=".$in.", out=".$out.") ended with exit code ".$returnCode
+                        .( $returnCode === 137 ? " - the process was killed, most likely out of memory" : "" )
+                        ." - the playbook stops here", null, FALSE );
             }
             else
             {
