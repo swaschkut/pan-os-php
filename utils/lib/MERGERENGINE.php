@@ -1401,4 +1401,857 @@ trait MergerEngine
             },
         );
     }
+
+
+    /*
+     * ------------------------------------------------------------------------------------------
+     * Group merger (address-group, service-group)
+     *
+     * Groups are merged differently from plain objects: a group from a child device group is
+     * moved (not copied) to the target location, its members are checked there, and with
+     * dupAlgorithm=whereused the members of the duplicates are merged into the picked group.
+     *
+     * Flow per location (identical to the former addressgroup_merging() / servicegroup_merging()):
+     *  1. hash tables: child device groups, own location, upper levels
+     *  2. drop hashes with a single entry
+     *  3. child device groups -> own location (move the picked group here if needed, replace, delete)
+     *  4. own location (and ancestors with allowMergingWithUpperLevel): replace, delete or skip
+     *
+     * Group spec keys:
+     *  locationType, storeProp, childDoneLabel           strings
+     *  hashGenerator()                returns the hash closure for $this->dupAlg (derr if unsupported)
+     *  listGroups(store)              groups of one store
+     *  eligible(object)               object takes part
+     *  mainSkip(object, store, childDeviceGroups)       TRUE: ignore this object (own / upper level)
+     *  childPhase                     FALSE: child device group duplicates are not processed
+     *  checkParent(hash)              TRUE: the picked group can not be moved
+     *  moveMessage(dgName, picked)    "move object to DG" line
+     *  memberCheck(index, picked, store, dgName)        TRUE: a member blocks the move
+     *  targetNotGroup(index, picked, target)            prints / logs: existing object is no group
+     *  targetMismatch(index, picked, target, pickedValue, targetValue, ancestor, ancestorSet, object)
+     *                                 existing group has another value; TRUE: skip this hash
+     *  childPhaseChildAncestorCheck   TRUE: check childancestor in the child merge loop as well
+     *  valueDiff(ancestor, object, display)              FALSE: skip ("was delete earlier")
+     *  ancestorNonGroupSkip           TRUE: an ancestor that is no group is skipped right away
+     *  ancestorMergeable(ancestor)    the object can be merged into its ancestor
+     *  ancestorMergedText(object, dgName)
+     *  removeAfterAncestorMerge(object)
+     *  ancestorNotMerged(index, object, ancestor, dgName)  TRUE: skip this object
+     *  notIdenticalReason, notIdenticalPickedReason     exportCSV reasons
+     *  reportWithoutMerge             TRUE: "deleting" is reported without actions=merge as well
+     *  countGroups(store)
+     */
+    function genericGroupMerging( array $g )
+    {
+        // NOTE: $object / $ancestor are deliberately not reset per location: as in the former
+        // implementation targetMismatch still receives the values of an earlier iteration.
+
+        foreach( $this->location_array as $tmp_location )
+        {
+            $store = null;
+            $findLocation = null;
+            $parentStore = null;
+            $childDeviceGroups = null;
+            $this->locationSettings( $tmp_location, $g['locationType'], $store, $findLocation, $parentStore, $childDeviceGroups);
+
+            $hashGenerator = $g['hashGenerator']();
+
+            //
+            // Building a hash table of all group objects with same value
+            //
+            if( $this->upperLevelSearch )
+                $objectsToSearchThrough = $store->nestedPointOfView();
+            else
+                $objectsToSearchThrough = $g['listGroups']( $store );
+
+            $hashMap = array();
+            $child_hashMap = array();
+            $upperHashMap = array();
+
+            //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
+            foreach( $childDeviceGroups as $dg )
+            {
+                /** @var DeviceGroup $dg */
+                foreach( $g['listGroups']( $dg->{$g['storeProp']} ) as $object )
+                {
+                    if( !$g['eligible']( $object ) )
+                        continue;
+
+                    if( $this->excludeFilter !== null && $this->excludeFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                        continue;
+
+                    $value = $hashGenerator($object);
+                    if( $value === null )
+                        continue;
+
+                    $child_hashMap[$value][] = $object;
+                }
+            }
+            if( !$g['childPhase'] )
+                $child_hashMap = array();
+
+            foreach( $objectsToSearchThrough as $object )
+            {
+                if( !$g['eligible']( $object ) )
+                    continue;
+
+                if( $this->excludeFilter !== null && $this->excludeFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                    continue;
+
+                if( $g['mainSkip']( $object, $store, $childDeviceGroups ) )
+                    continue;
+
+                $value = $hashGenerator($object);
+                if( $value === null )
+                    continue;
+
+                if( $object->owner === $store )
+                {
+                    $hashMap[$value][] = $object;
+                    if( $parentStore !== null )
+                        $object->ancestor = self::findAncestor( $parentStore, $object, $g['storeProp']);
+
+                    $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, $g['storeProp']);
+                }
+                else
+                    $upperHashMap[$value][] = $object;
+            }
+
+            //
+            // Hashes with single entries have no duplicate, let's remove them
+            //
+            $countConcernedObjects = 0;
+            foreach( $hashMap as $index => &$hash )
+            {
+                if( count($hash) == 1 && !isset($upperHashMap[$index]) && !isset(reset($hash)->ancestor) )
+                    unset($hashMap[$index]);
+                else
+                    $countConcernedObjects += count($hash);
+            }
+            unset($hash);
+            $countConcernedChildObjects = 0;
+            foreach( $child_hashMap as $index => &$hash )
+            {
+                if( count($hash) == 1 && !isset($upperHashMap[$index]) && !isset(reset($hash)->ancestor) )
+                    unset($child_hashMap[$index]);
+                else
+                    $countConcernedChildObjects += count($hash);
+            }
+            unset($hash);
+
+            PH::print_stdout( " - found " . count($hashMap) . " duplicate values totalling {$countConcernedObjects} groups which are duplicate" );
+
+            PH::print_stdout( " - found " . count($child_hashMap) . " duplicates childDG values totalling {$countConcernedChildObjects} address objects which are duplicate" );
+
+
+            PH::print_stdout( "\n\nNow going after each duplicates for a replacement" );
+
+            //
+            // child device groups -> this location
+            //
+            $countChildRemoved = 0;
+            $countChildCreated = 0;
+            foreach( $child_hashMap as $index => &$hash )
+            {
+                PH::print_stdout();
+                PH::print_stdout( " - value '{$index}'" );
+
+                $pickedObject = $this->PickObject( $hash );
+
+                $tmp_DG_name = $store->owner->name();
+                if( $tmp_DG_name == "" )
+                    $tmp_DG_name = 'shared';
+
+                $target = $store->find( $pickedObject->name() );
+                if( $target == null && $this->dupAlg != "identical" )
+                {
+                    PH::print_stdout( $g['moveMessage']( $tmp_DG_name, $pickedObject ) );
+
+                    if( $g['checkParent']( $hash ) )
+                    {
+                        PH::print_stdout("     this object can not be created" );
+                        continue;
+                    }
+
+                    if( $g['memberCheck']( $index, $pickedObject, $store, $tmp_DG_name ) )
+                        continue;
+
+                    if( $this->action === "merge" )
+                    {
+                        self::deletedObject($index, $pickedObject, $pickedObject);
+                        if( $this->apiMode )
+                        {
+                            $oldXpath = $pickedObject->getXPath();
+                            $pickedObject->owner->remove($pickedObject);
+                            $store->add($pickedObject);
+                            $pickedObject->API_sync();
+                            $this->pan->connector->sendDeleteRequest($oldXpath);
+                        }
+                        else
+                        {
+                            $pickedObject->owner->remove($pickedObject);
+                            $store->add($pickedObject);
+                        }
+                        $target = $store->find( $pickedObject->name() );
+                        $value = $hashGenerator($target);
+                        $hashMap[$value][] = $target;
+                    }
+
+                    $countChildCreated++;
+                }
+                elseif( $target === null )
+                    continue;
+                else
+                {
+                    if( !$target->isGroup() )
+                    {
+                        $g['targetNotGroup']( $index, $pickedObject, $target );
+                        continue;
+                    }
+
+                    $pickedObject_value = $hashGenerator($pickedObject);
+                    $target_value = $hashGenerator($target);
+
+                    if( $pickedObject_value == $target_value )
+                        PH::print_stdout( "   * keeping object '{$target->_PANC_shortName()}'" );
+                    elseif( $g['targetMismatch']( $index, $pickedObject, $target, $pickedObject_value, $target_value, $ancestor ?? null, isset($ancestor), $object ) )
+                        continue;
+                }
+
+
+                // Merging loop finally!
+                foreach( $hash as $objectIndex => $object )
+                {
+                    if( $target === null )
+                        continue;
+
+                    if( $g['childPhaseChildAncestorCheck'] )
+                    {
+                        $check = $this->groupChildAncestorCheck( $g, $index, $object, $ancestor ?? null, isset($ancestor) );
+                        if( $check === 'break' )
+                            break;
+                        if( $check === 'continue' )
+                            continue;
+                    }
+
+                    if( $this->dupAlg == 'identical' )
+                        if( $object->name() != $target->name() )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$target->_PANC_shortName()}'");
+                            $this->skippedObject( $index, $target, $object, $g['notIdenticalReason']);
+                            continue;
+                        }
+
+                    if( $object !== $target )
+                    {
+                        PH::print_stdout("    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $target->owner->owner->name() . "', deleting: " . $object->_PANC_shortName());
+                        self::deletedObject($index, $target, $object);
+                        PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
+                        if( $this->action === "merge" )
+                        {
+                            $success = $object->__replaceWhereIamUsed($this->apiMode, $target, TRUE, 5);
+
+                            if( $success )
+                            {
+                                if( $this->apiMode )
+                                    $object->owner->API_remove($object, TRUE);
+                                else
+                                    $object->owner->remove($object, TRUE);
+
+                                $countChildRemoved++;
+                            }
+                        }
+                    }
+                }
+            }
+            if( count( $child_hashMap ) > 0 )
+            {
+                $tmpCount = $g['countGroups']( $store );
+                PH::print_stdout( "\n\nDuplicates ChildDG removal is now done. Number of objects after cleanup: '{$tmpCount}' (removed/created {$countChildRemoved}/{$countChildCreated} {$g['childDoneLabel']})\n" );
+            }
+
+            //
+            // this location (and upper levels)
+            //
+            $countRemoved = 0;
+            foreach( $hashMap as $index => &$hash )
+            {
+                PH::print_stdout();
+                PH::print_stdout( " - value '{$index}'" );
+
+                if( $g['printDuplicateSet'] )
+                {
+                    $setList = array();
+                    foreach( $hash as $object )
+                        $setList[] = PH::getLocationString($object->owner->owner) . '/' . $object->name();
+                    PH::print_stdout(" - duplicate set : '" . PH::list_to_string($setList) . "'");
+                }
+
+                $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
+
+                // Merging loop finally!
+                foreach( $hash as $object )
+                {
+                    if( isset($object->ancestor) )
+                    {
+                        $ancestor = $object->ancestor;
+
+                        if( $g['ancestorNonGroupSkip'] && !$ancestor->isGroup() )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type: ". get_class( $ancestor )." '{$ancestor->_PANC_shortName()}' value: ".$ancestor->value());
+                            $this->skippedObject( $index, $object, $ancestor, 'ancestor of type: '.get_class( $ancestor ));
+                            continue;
+                        }
+
+                        if( $g['ancestorMergeable']( $ancestor ) )
+                        {
+                            if( $this->dupAlg == 'identical' )
+                                if( $object->name() != $ancestor->name() )
+                                {
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $g['notIdenticalReason']);
+                                    continue;
+                                }
+
+                            if( $hashGenerator($object) != $hashGenerator($ancestor) )
+                            {
+                                if( $g['valueDiff']( $ancestor, $object, true ) === FALSE )
+                                {
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, 'was delete earlier');
+                                    continue;
+                                }
+                            }
+
+                            if( $hashGenerator($object) == $hashGenerator($ancestor) )
+                            {
+                                if( $this->dupAlg == 'samename' )
+                                {
+                                    if( $g['valueDiff']( $ancestor, $object, false ) === FALSE )
+                                    {
+                                        PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                        $this->skippedObject( $index, $object, $ancestor, 'was delete earlier');
+                                        continue;
+                                    }
+                                }
+
+                                $tmp_ancestor_DGname = $this->groupOwnerDGName( $ancestor );
+
+                                $text = $g['ancestorMergedText']( $object, $tmp_ancestor_DGname );
+                                self::deletedObject($index, $ancestor, $object);
+                                if( $this->action === "merge" )
+                                {
+                                    $object->replaceMeGlobally($ancestor);
+                                    $g['removeAfterAncestorMerge']( $object );
+                                }
+
+                                PH::print_stdout($text);
+
+                                if( $pickedObject === $object )
+                                    $pickedObject = $ancestor;
+
+                                $countRemoved++;
+                                if( $this->mergeCountLimit !== FALSE && $countRemoved >= $this->mergeCountLimit )
+                                {
+                                    PH::print_stdout("\n *** STOPPING MERGE OPERATIONS NOW SINCE WE REACHED mergeCountLimit ({$this->mergeCountLimit})");
+                                    break 2;
+                                }
+                                continue;
+                            }
+                        }
+
+                        $tmp_ancestor_DGname = $this->groupOwnerDGName( $ancestor );
+
+                        if( $g['ancestorNotMerged']( $index, $object, $ancestor, $tmp_ancestor_DGname ) )
+                            continue;
+                    }
+
+                    $check = $this->groupChildAncestorCheck( $g, $index, $object, null, TRUE );
+                    if( $check === 'break' )
+                        break;
+                    if( $check === 'continue' )
+                        continue;
+
+                    if( $object === $pickedObject )
+                        continue;
+
+                    if( $this->dupAlg == 'whereused' )
+                    {
+                        PH::print_stdout("    - merging '{$object->name()}' members into '{$pickedObject->name()}': ");
+                        foreach( $object->members() as $member )
+                        {
+                            $text = "     - adding member '{$member->name()}'... ";
+                            if( $this->action === "merge" )
+                            {
+                                if( $this->apiMode )
+                                    $pickedObject->API_addMember($member);
+                                else
+                                    $pickedObject->addMember($member);
+                            }
+                            PH::print_stdout($text);
+                        }
+                        PH::print_stdout("    - now removing '{$object->name()} from where it's used");
+                        $text = "    - deleting '{$object->name()}'... ";
+                        self::deletedObject($index, $pickedObject, $object);
+                        if( $this->action === "merge" )
+                        {
+                            if( $this->apiMode )
+                            {
+                                $object->API_removeWhereIamUsed(TRUE, 6);
+                                $object->owner->API_remove($object);
+                            }
+                            else
+                            {
+                                $object->removeWhereIamUsed(TRUE, 6);
+                                $object->owner->remove($object);
+                            }
+                        }
+                        PH::print_stdout($text);
+                    }
+                    else
+                    {
+                        if( $this->dupAlg == 'identical' )
+                            if( $object->name() != $pickedObject->name() )
+                            {
+                                PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$object->_PANC_shortName()}'");
+                                $this->skippedObject( $index, $object, $pickedObject, $g['notIdenticalPickedReason']);
+                                continue;
+                            }
+
+                        PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
+                        $success = $g['reportWithoutMerge'];
+                        if( $this->action === "merge" )
+                            $success = $object->__replaceWhereIamUsed($this->apiMode, $pickedObject, TRUE, 5);
+
+                        if( $success )
+                        {
+                            PH::print_stdout("    - deleting '{$object->_PANC_shortName()}'");
+                            self::deletedObject($index, $pickedObject, $object);
+                            if( $this->action === "merge" )
+                            {
+                                if( $this->apiMode )
+                                    //true flag needed for nested groups in a specific constellation
+                                    $object->owner->API_remove($object, TRUE);
+                                else
+                                    $object->owner->remove($object, TRUE);
+                            }
+                        }
+                    }
+
+                    $countRemoved++;
+
+                    if( $this->mergeCountLimit !== FALSE && $countRemoved >= $this->mergeCountLimit )
+                    {
+                        PH::print_stdout("\n *** STOPPING MERGE OPERATIONS NOW SINCE WE REACHED mergeCountLimit ({$this->mergeCountLimit})");
+                        break 2;
+                    }
+                }
+            }
+
+            $tmpCount = $g['countGroups']( $store );
+            PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$tmpCount}' (removed {$countRemoved} groups)\n" );
+        }
+    }
+
+    /** DG name of an object's owner, "shared" for shared / no owner */
+    private function groupOwnerDGName( $object )
+    {
+        if( isset($object->owner) )
+        {
+            $name = $object->owner->owner->name();
+            if( $name === "" )
+                $name = "shared";
+        }
+        else
+            $name = "shared";
+
+        return $name;
+    }
+
+    /**
+     * A group with a same-name object in a child device group can not be merged.
+     * Returns 'break', 'continue' or null (no childancestor).
+     * $skipObject: object used in the "was delete earlier" message (null: the childancestor)
+     * $skipObjectSet: FALSE if the caller's variable was not set yet (former behaviour: PHP notice)
+     */
+    private function groupChildAncestorCheck( array $g, $index, $object, $skipObject, $skipObjectSet )
+    {
+        if( !isset( $object->childancestor ) )
+            return null;
+
+        $childancestor = $object->childancestor;
+        if( $childancestor === null )
+            return null;
+
+        if( !$childancestor->isGroup() )
+        {
+            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type: ". get_class( $childancestor )." '{$childancestor->_PANC_shortName()}' value: ".$childancestor->value());
+            $this->skippedObject( $index, $object, $childancestor, 'childancestor of type: '.get_class( $childancestor ));
+            return 'break';
+        }
+
+        //Todo check ip4mapping of $childancestor and $object
+        if( $g['valueDiff']( $childancestor, $object, true ) === FALSE )
+        {
+            //if delete earlier, why not replacing this reference???
+            if( $skipObject === null && !$skipObjectSet )
+                $skipObject = $ancestor; // not set: same PHP notice as the former implementation
+            if( $skipObject === null )
+                $skipObject = $childancestor;
+            PH::print_stdout("    - SKIP: object name '{$skipObject->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+            $this->skippedObject( $index, $object, $skipObject, 'was delete earlier');
+            return 'continue';
+        }
+
+        $tmp_ancestor_DGname = $this->groupOwnerDGName( $childancestor );
+
+        PH::print_stdout("    - group '{$object->name()}' cannot be merged because it has an ancestor at DG: ".$tmp_ancestor_DGname );
+        PH::print_stdout( "    - ancestor type: ".get_class( $childancestor ) );
+        $this->skippedObject( $index, $object, $childancestor, 'childancestor at DG: '.$tmp_ancestor_DGname);
+
+        return 'break';
+    }
+
+    function addressGroupMergeSpec(): array
+    {
+        return array(
+            'locationType' => "AddressGroup",
+            'storeProp' => "addressStore",
+            'childDoneLabel' => "addressgroups",
+            'childPhase' => TRUE,
+            'childPhaseChildAncestorCheck' => TRUE,
+            'printDuplicateSet' => FALSE,
+            'ancestorNonGroupSkip' => TRUE,
+            'reportWithoutMerge' => FALSE,
+            'notIdenticalReason' => 'name is not IDENTICAL',
+            'notIdenticalPickedReason' => 'object name not IDENTICAL',
+
+            'hashGenerator' => function () {
+                if( $this->dupAlg == 'samemembers' || $this->dupAlg == 'identical' )
+                    return function ($object) {
+                        /** @var AddressGroup $object */
+                        $value = '';
+                        $members = $object->members();
+                        usort($members, '__CmpObjName');
+                        foreach( $members as $member )
+                            $value .= './.' . $member->name();
+                        return $value;
+                    };
+                elseif( $this->dupAlg == 'sameip4mapping' )
+                    return function ($object) {
+                        /** @var AddressGroup $object */
+                        $mapping = $object->getFullMapping();
+                        $value = $mapping['ip4']->dumpToString();
+                        if( count($mapping['unresolved']) > 0 )
+                        {
+                            ksort($mapping['unresolved']);
+                            $value .= '//unresolved:/';
+                            foreach( $mapping['unresolved'] as $unresolvedEntry )
+                                $value .= $unresolvedEntry->name() . '.%.';
+                        }
+                        return $value;
+                    };
+                elseif( $this->dupAlg == 'whereused' )
+                    return function ($object) {
+                        if( $object->countReferences() == 0 )
+                            return null;
+                        /** @var AddressGroup $object */
+                        return $object->getRefHashComp() . '//dynamic:' . boolYesNo($object->isDynamic());
+                    };
+                elseif( $this->dupAlg == 'samename' )
+                    return function ($object) {
+                        /** @var AddressGroup $object */
+                        return $object->name();
+                    };
+                else
+                    derr("unsupported dupAlgorithm");
+            },
+            'listGroups' => function ($store) {
+                return $store->addressGroups();
+            },
+            'eligible' => function ($object) {
+                return $object->isGroup() && !$object->isDynamic();
+            },
+            'mainSkip' => function ($object, $store, $childDeviceGroups) {
+                return FALSE;
+            },
+            'checkParent' => function ($hash) {
+                return $this->checkParentPickObject( $hash );
+            },
+            'moveMessage' => function ($tmp_DG_name, $pickedObject) {
+                return "   * move object to DG: '".$tmp_DG_name."' : '".$pickedObject->name()."'";
+            },
+            'memberCheck' => function ($index, $pickedObject, $store, $tmp_DG_name) {
+                foreach( $pickedObject->members() as $memberObject )
+                {
+                    /** @var Address|AddressGroup $memberObject */
+                    $memberFound = $store->find($memberObject->name());
+                    if( $memberFound === null )
+                    {
+                        if( $this->addMissingObjects )
+                        {
+                            PH::print_stdout("      - object: " . $memberObject->name() . " from DG: '" . $memberObject->owner->owner->name() . "' move to: '" . $tmp_DG_name . "'");
+                            if( $this->action === "merge" )
+                            {
+                                self::deletedObject($index, $pickedObject, $pickedObject);
+                                /** @var AddressStore $store */
+                                if( $this->apiMode )
+                                {
+                                    $oldXpath = $memberObject->getXPath();
+                                    $memberObject->owner->remove($memberObject);
+                                    $store->add($memberObject);
+                                    $memberObject->API_sync();
+                                    $this->pan->connector->sendDeleteRequest($oldXpath);
+                                }
+                                else
+                                {
+                                    $memberObject->owner->remove($memberObject);
+                                    $store->add($memberObject);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'");
+                            $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
+                            return TRUE;
+                        }
+                    }
+                    else
+                    {
+                        /** @var Address|AddressGroup $memberFound */
+                        if( $memberFound->isAddress() && $memberObject->isAddress() )
+                        {
+                            if( $memberFound->value() !== $memberObject->value() )
+                            {
+                                PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value");
+                                $this->skippedObject( $index, $memberFound, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value" );
+                                return TRUE;
+                            }
+                        }
+                        elseif( $memberFound->isGroup() && $memberObject->isGroup() )
+                        {
+                            $diff = $memberObject->getValueDiff($memberFound);
+                            if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
+                            {
+                                PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
+                                $this->skippedObject( $index, $memberFound, $memberObject, "this group has different member ship compare to upperlevel" );
+                                return TRUE;
+                            }
+                        }
+                        else
+                        {
+                            PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
+                            $this->skippedObject( $index, $memberFound, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
+                            return TRUE;
+                        }
+                    }
+                }
+                return FALSE;
+            },
+            'targetNotGroup' => function ($index, $pickedObject, $target) {
+                PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' of type ".get_class($pickedObject)." can not be merged with object name: '{$target->_PANC_shortName()}' of type ".get_class($target). " value: ".$target->value() );
+                $this->skippedObject( $index, $pickedObject, $target, get_class($pickedObject)." can not be merged with ".get_class($target));
+            },
+            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value, $ancestor, $ancestorSet, $object) {
+                if( $this->addMissingObjects )
+                {
+                    if( !$ancestorSet )
+                        unset($ancestor);
+                    // NOTE: $ancestor / $object are not related to this hash (values of an earlier iteration)
+                    if( $this->addressgroupGetValueDiff($ancestor, $object, true) === FALSE )
+                    {
+                        PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                        $this->skippedObject( $index, $object, $ancestor, 'was delete earlier');
+                        return TRUE;
+                    }
+                    return FALSE;
+                }
+
+                $stringSkippedReason = $pickedObject->displayValueDiff($target, 7, true);
+                PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject_value}'] is not IDENTICAL to object name: '{$target->_PANC_shortName()}' [with value '{$target_value}']" );
+                $this->skippedObject( $index, $pickedObject, $target, $stringSkippedReason);
+                return TRUE;
+            },
+            'valueDiff' => function ($ancestor, $object, $display) {
+                return $this->addressgroupGetValueDiff($ancestor, $object, $display);
+            },
+            'ancestorMergeable' => function ($ancestor) {
+                return $this->upperLevelSearch && $ancestor->isGroup() && !$ancestor->isDynamic() && $this->dupAlg != 'whereused';
+            },
+            'ancestorMergedText' => function ($object, $tmp_ancestor_DGname) {
+                return "    - group '{$object->name()} DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
+            },
+            'removeAfterAncestorMerge' => function ($object) {
+                if( $this->apiMode )
+                    $object->owner->API_remove($object, TRUE);
+                else
+                    $object->owner->remove($object, TRUE);
+            },
+            'ancestorNotMerged' => function ($index, $object, $ancestor, $tmp_ancestor_DGname) {
+                if( $this->addMissingObjects )
+                    return FALSE;
+
+                PH::print_stdout("    - group '{$object->name()}' cannot be merged because it has an ancestor at DG: ".$tmp_ancestor_DGname );
+                PH::print_stdout( "    - ancestor type: ".get_class( $ancestor ) );
+                $this->skippedObject( $index, $object, $ancestor, 'ancestor at DG: '.$tmp_ancestor_DGname);
+                return TRUE;
+            },
+            'countGroups' => function ($store) {
+                return $store->countAddressGroups();
+            },
+        );
+    }
+
+    function serviceGroupMergeSpec(): array
+    {
+        return array(
+            'locationType' => "ServiceGroup",
+            'storeProp' => "serviceStore",
+            'childDoneLabel' => "servicegroups",
+            // the former servicegroup_merging() emptied the child hash table before using it
+            'childPhase' => FALSE,
+            'childPhaseChildAncestorCheck' => FALSE,
+            'printDuplicateSet' => TRUE,
+            'ancestorNonGroupSkip' => FALSE,
+            'reportWithoutMerge' => TRUE,
+            'notIdenticalReason' => "not identical",
+            'notIdenticalPickedReason' => "not identical",
+
+            'hashGenerator' => function () {
+                if( $this->dupAlg == 'samemembers' || $this->dupAlg == 'identical' )
+                    return function ($object) {
+                        /** @var ServiceGroup $object */
+                        $value = '';
+                        $members = $object->members();
+                        usort($members, '__CmpObjName');
+                        foreach( $members as $member )
+                            $value .= './.' . $member->name();
+                        return $value;
+                    };
+                elseif( $this->dupAlg == 'sameportmapping' )
+                    return function ($object) {
+                        /** @var ServiceGroup $object */
+                        $mapping = $object->dstPortMapping();
+                        $value = $mapping->mappingToText();
+                        if( count($mapping->unresolved) > 0 )
+                        {
+                            ksort($mapping->unresolved);
+                            $value .= '//unresolved:/';
+                            foreach( $mapping->unresolved as $unresolvedEntry )
+                                $value .= $unresolvedEntry->name() . '.%.';
+                        }
+                        return $value;
+                    };
+                elseif( $this->dupAlg == 'whereused' )
+                    return function ($object) {
+                        if( $object->countReferences() == 0 )
+                            return null;
+                        /** @var ServiceGroup $object */
+                        return $object->getRefHashComp();
+                    };
+                else
+                    derr("unsupported dupAlgorithm");
+            },
+            'listGroups' => function ($store) {
+                return $store->serviceGroups();
+            },
+            'eligible' => function ($object) {
+                return $object->isGroup();
+            },
+            'mainSkip' => function ($object, $store, $childDeviceGroups) {
+                // Object with descendants in lower device groups should be excluded
+                if( $this->pan->isPanorama() )
+                {
+                    foreach( $childDeviceGroups as $dg )
+                    {
+                        if( $dg->serviceStore->find($object->name(), null, FALSE) !== null )
+                            return TRUE;
+                    }
+                }
+                return FALSE;
+            },
+            'checkParent' => function ($hash) {
+                return $this->checkParentServicePickObject( $hash );
+            },
+            'moveMessage' => function ($tmp_DG_name, $pickedObject) {
+                return "   * move object to DG: '" . $tmp_DG_name . "' : '" . $pickedObject->name() . "' from DG: '".$pickedObject->owner->owner->name()."'";
+            },
+            'memberCheck' => function ($index, $pickedObject, $store, $tmp_DG_name) {
+                $skip = FALSE;
+                foreach( $pickedObject->members() as $memberObject )
+                {
+                    $memberFound = $store->find($memberObject->name());
+                    if( $memberFound === null )
+                    {
+                        PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'");
+                        $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
+                        return TRUE;
+                    }
+
+                    /** @var Service|ServiceGroup $memberFound */
+                    if( $memberFound->isService() && $memberObject->isService() )
+                    {
+                        if( $memberFound->getDestPort() !== $memberObject->getDestPort() || $memberFound->getSourcePort() !== $memberObject->getSourcePort() || $memberFound->protocol() !== $memberObject->protocol() )
+                        {
+                            PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol");
+                            $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol" );
+                            return TRUE;
+                        }
+                    }
+                    elseif( $memberFound->isGroup() && $memberObject->isGroup() )
+                    {
+                        $diff = $memberObject->getValueDiff($memberFound);
+                        if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
+                        {
+                            PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
+                            $this->skippedObject( $index, $pickedObject, $memberObject, "this group has different member ship compare to upperlevel" );
+                            $skip = TRUE;
+                        }
+                    }
+                    else
+                    {
+                        PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
+                        $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type" );
+                        return TRUE;
+                    }
+                }
+                return $skip;
+            },
+            'targetNotGroup' => function ($index, $pickedObject, $target) {
+                PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' of type ".get_class($pickedObject)." can not be merged with object name: '{$target->_PANC_shortName()}' of type ".get_class($target) );
+                $this->skippedObject( $index, $pickedObject, $target, "object type is not service-group");
+            },
+            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value, $ancestor, $ancestorSet, $object) {
+                PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject_value}'] is not IDENTICAL to object name: '{$target->_PANC_shortName()}' [with value '{$target_value}']" );
+                $this->skippedObject( $index, $pickedObject, $target, "not identical");
+                return TRUE;
+            },
+            'valueDiff' => function ($ancestor, $object, $display) {
+                // returns nothing: never "was delete earlier"
+                return $this->servicegroupGetValueDiff($ancestor, $object, $display);
+            },
+            'ancestorMergeable' => function ($ancestor) {
+                return $this->upperLevelSearch && $ancestor->isGroup();
+            },
+            'ancestorMergedText' => function ($object, $tmp_ancestor_DGname) {
+                return "    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
+            },
+            'removeAfterAncestorMerge' => function ($object) {
+                if( $this->apiMode )
+                    $object->owner->API_remove($object);
+                else
+                    $object->owner->remove($object);
+            },
+            'ancestorNotMerged' => function ($index, $object, $ancestor, $tmp_ancestor_DGname) {
+                PH::print_stdout("    - group '{$object->name()}' cannot be merged because it has an ancestor at DG: ".$tmp_ancestor_DGname );
+                PH::print_stdout( "    - ancestor type: ".get_class( $ancestor ) );
+                $this->skippedObject( $index, $object, $ancestor, "ancestor type: ".get_class( $ancestor ));
+                return TRUE;
+            },
+            'countGroups' => function ($store) {
+                return $store->countServiceGroups();
+            },
+        );
+    }
 }
