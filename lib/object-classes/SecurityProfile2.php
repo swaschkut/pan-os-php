@@ -2,6 +2,10 @@
 
 class SecurityProfile2
 {
+    /** set by the mergers: same-name profile in a parent / child device group */
+    public $ancestor;
+    public $childancestor;
+
     const TypeTmp = 0;
     const TypeVirus = 1;
     const TypeSpyware = 2;

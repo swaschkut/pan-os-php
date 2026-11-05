@@ -1142,6 +1142,22 @@ class SecurityProfileStore extends ObjStore
     {
         $ret = $this->remove($tag);
 
+        // remove() of ObjStore does not know the indexes of this store: without this, find() still
+        // returned the removed profile (owner null)
+        if( $ret )
+        {
+            $name = $tag->name();
+            if( isset($this->_SecurityProfiles[$name]) && $this->_SecurityProfiles[$name] === $tag )
+            {
+                unset($this->_SecurityProfiles[$name]);
+                unset($this->fastNameToIndex[$name]);
+            }
+            unset($this->fastMemToIndex[spl_object_hash($tag)]);
+            $pos = array_search($tag, $this->_all, TRUE);
+            if( $pos !== FALSE )
+                unset($this->_all[$pos]);
+        }
+
         #if( $ret && !$tag->isTmpSecProf() && $this->xmlroot !== null )
         if( $ret && $this->xmlroot !== null )
         {

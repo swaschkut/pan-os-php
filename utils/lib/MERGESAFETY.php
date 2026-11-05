@@ -72,8 +72,12 @@ class MergeSafety
     /** whether this check applies (address / service objects and groups) */
     public static function supports( string $storeProp ): bool
     {
-        return $storeProp === 'addressStore' || $storeProp === 'serviceStore';
+        return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || in_array( $storeProp, self::$profileStores, TRUE );
     }
+
+    /** security profile stores: content of a profile = its XML compared like type=diff (XmlCompare) */
+    public static $profileStores = array( 'AntiVirusProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore',
+        'URLProfileStore', 'FileBlockingProfileStore', 'WildfireProfileStore', 'DataFilteringProfileStore' );
 
     /** the configuration was changed: drop cached contents */
     public function changed()
@@ -102,7 +106,7 @@ class MergeSafety
             if( $isGroup )
                 $overlay['memberRename'][spl_object_id($ref)][$old->name()] = $new->name();
             $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $old->name() ), 'after' => array( $new->name() ),
-                'via' => $isGroup ? $ref : null, 'ref' => $ref, 'only' => null );
+                'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
         }
 
         return $this->check( $overlay, $units );
@@ -148,12 +152,12 @@ class MergeSafety
             if( $isGroup )
                 $overlay['memberRemove'][spl_object_id($ref)][$old->name()] = TRUE;
             $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $old->name(), $new->name() ), 'after' => array( $new->name() ),
-                'via' => $isGroup ? $ref : null, 'ref' => $ref, 'only' => null );
+                'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
         }
         // every other user of $new sees the added members
         foreach( $this->referencers( $new ) as $ref )
             $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $new->name() ), 'after' => array( $new->name() ),
-                'via' => $this->isGroupObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
+                'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
 
         return $this->check( $overlay, $units );
     }
@@ -185,11 +189,11 @@ class MergeSafety
             if( $isGroup )
                 $overlay['memberRemove'][spl_object_id($ref)][$old->name()] = TRUE;
             $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $old->name(), $new->name() ), 'after' => array( $new->name() ),
-                'via' => $isGroup ? $ref : null, 'ref' => $ref, 'only' => null );
+                'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
         }
         foreach( $this->referencers( $new ) as $ref )
             $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $new->name() ), 'after' => array( $new->name() ),
-                'via' => $this->isGroupObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
+                'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => null );
 
         return $this->check( $overlay, $units );
     }
@@ -235,7 +239,7 @@ class MergeSafety
                     continue;
 
                 // a group referencer only matters where its name resolves to this group
-                if( $unit['via'] !== null && $this->resolve( $unit['via']->name(), $fw, array() ) !== $unit['via'] )
+                if( $unit['via'] !== null && $this->resolve( $unit['via']->name(), $fw, array(), $this->viaStoreProp( $unit['via'] ) ) !== $unit['via'] )
                     continue;
 
                 $before = $this->namesContent( $unit['before'], $fw, array(), $this->cache );
@@ -274,7 +278,7 @@ class MergeSafety
                 foreach( $this->copiesOfName( $name ) as $copy )
                     foreach( $this->referencers( $copy ) as $ref )
                         $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $name ), 'after' => array( $name ),
-                            'via' => $this->isGroupObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => $only );
+                            'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => $only );
             }
         return $units;
     }
@@ -300,7 +304,7 @@ class MergeSafety
                     continue;
                 foreach( $this->referencers( $copy ) as $ref )
                     $units[] = array( 'loc' => $this->locationOf( $ref ), 'before' => array( $object->name() ), 'after' => array( $object->name() ),
-                        'via' => $this->isGroupObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => $only );
+                        'via' => $this->isViaObject( $ref ) ? $ref : null, 'ref' => $ref, 'only' => $only );
             }
         }
         return $units;
@@ -373,7 +377,23 @@ class MergeSafety
 
     private function locationOf( $ref )
     {
-        return ReferenceableObject::findLocationOwner( $ref );
+        // static method of the trait ReferenceableObject, called through a class that uses it
+        return Address::findLocationOwner( $ref );
+    }
+
+    /** a referencer that is itself referenced by name (address / service group, security profile group) */
+    private function isViaObject( $ref ): bool
+    {
+        return $this->isGroupObject( $ref ) || ( $ref instanceof SecurityProfileGroup );
+    }
+
+    private function viaStoreProp( $via ): string
+    {
+        if( $via instanceof SecurityProfileGroup )
+            return 'securityProfileGroupStore';
+        if( $via instanceof ServiceGroup )
+            return 'serviceStore';
+        return 'addressStore';
     }
 
     private function isGroupObject( $ref ): bool
@@ -409,9 +429,9 @@ class MergeSafety
     // ------------------------------------------------------------------------------------------
 
     /** the object the firewalls of $fw receive for $name */
-    private function resolve( $name, $fw, array $overlay )
+    private function resolve( $name, $fw, array $overlay, $storeProp = null )
     {
-        $prop = $this->storeProp;
+        $prop = ( $storeProp === null ) ? $this->storeProp : $storeProp;
         $copies = array();
         $seen = array();
         $levels = PH::firewallResolutionLevels( $fw );
@@ -535,6 +555,12 @@ class MergeSafety
     public function leafContent( $object ): array
     {
         $c = self::emptyContent();
+
+        if( isset($object->owner) && $object->owner instanceof SecurityProfileStore && isset($object->xmlroot) && $object->xmlroot !== null )
+        {
+            $c['other']['profile:' . substr( md5( XmlCompare::canonical( $object->xmlroot, array( 'rules' => TRUE ) ) ), 0, 12 )] = TRUE;
+            return $c;
+        }
 
         if( $object instanceof AddressGroup )
         {

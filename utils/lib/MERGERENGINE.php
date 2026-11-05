@@ -762,6 +762,140 @@ trait MergerEngine
         );
     }
 
+    /**
+     * type=securityprofile-merger profiletype=...
+     *  samename (default): same profile name across the device-group hierarchy, merged only with the same content
+     *  samevalue:          same content, also with different names
+     * Content = profile XML compared like type=diff (XmlCompare), the profile name is ignored;
+     * in vulnerability / spyware profiles the order of the rules counts.
+     */
+    function securityProfileMergeSpec( string $profileType, string $storeProp ): array
+    {
+        $ordered = array( 'rules' => TRUE );
+        $content = function( $object ) use ( $ordered ) {
+            return XmlCompare::canonical( $object->xmlroot, $ordered );
+        };
+        $sameContent = function( $a, $b ) use ( $content ) {
+            return $content( $a ) === $content( $b );
+        };
+        $diffText = function( $a, $b ) use ( $ordered ) {
+            return "different content: " . XmlCompare::differencesText( XmlCompare::differences( $a->xmlroot, $b->xmlroot, $ordered ) );
+        };
+        $short = function( $object ) use ( $content ) {
+            return "content#" . substr( md5( $content( $object ) ), 0, 8 );
+        };
+        $sameClass = function( $object, $store ) {
+            return is_object($object) && isset($object->xmlroot) && $object->xmlroot !== null && get_class($object) === $store->type;
+        };
+
+        return array(
+            'label' => "SecurityProfile-" . $profileType,
+            'objectTxt' => "security-profile",
+            'pluralTxt' => "security-profiles",
+            'storeProp' => $storeProp,
+            'ancestorTypeLabel' => "security-profile '" . $profileType . "'",
+            'differentValueTxt' => "with different content",
+            'valueAlgs' => array( 'samename', 'samevalue' ),
+
+            'listObjects' => function( $store ) {
+                /** @var SecurityProfileStore $store */
+                return $store->getAll();
+            },
+            'eligible' => function( $object ) use ( $sameClass ) {
+                return $sameClass( $object, $object->owner );
+            },
+            'hash' => function( $object ) use ( $content ) {
+                if( $this->dupAlg == 'samevalue' )
+                    return md5( $content( $object ) );
+                return $object->name();
+            },
+            'mainIndexLabel' => 'value',
+            'eligibleWhereUsed' => null,
+            'whereUsedHash' => null,
+
+            'lookupName' => function( $picked ) {
+                return $picked->name();
+            },
+            // same name at child level with other content: no creation
+            'childConflict' => function( $other, $picked ) use ( $sameContent ) {
+                return !$sameContent( $other, $picked );
+            },
+            'skipReason' => function( $picked, $other ) use ( $diffText ) {
+                return $diffText( $picked, $other );
+            },
+            'createCopy' => function( $store, $picked, $name ) {
+                /** @var SecurityProfileStore $store */
+                $created = $store->cloneSecurityProfile( $picked, $name );
+                if( $this->apiMode && method_exists($created, 'API_sync') )
+                    $created->API_sync();
+                return $created;
+            },
+            'createdHashKey' => function( $created ) use ( $content ) {
+                if( $this->dupAlg == 'samevalue' )
+                    return md5( $content( $created ) );
+                return $created->name();
+            },
+            'existingKeep' => function( $existing, $picked ) use ( $sameContent ) {
+                return $sameContent( $existing, $picked );
+            },
+            'allowExistingMismatch' => function() {
+                return FALSE;
+            },
+            'valueText' => function( $object ) use ( $short ) {
+                return $short( $object );
+            },
+            // child copies with other content than the kept object are not replaced
+            'childBeforeReplace' => function( $index, $object, $target, $picked ) use ( $sameContent, $diffText ) {
+                $compareWith = is_object($target) ? $target : $picked;
+                if( $object === $compareWith || $sameContent( $object, $compareWith ) )
+                    return TRUE;
+                PH::print_stdout( "    - SKIP: '{$object->_PANC_shortName()}' has " . $diffText( $compareWith, $object ) );
+                $this->skippedObject( $index, $compareWith, $object, $diffText( $compareWith, $object ) );
+                return FALSE;
+            },
+            'remove' => function( $object ) {
+                if( $this->apiMode )
+                    $object->owner->API_removeSecurityProfile( $object );
+                else
+                    $object->owner->removeSecurityProfile( $object );
+            },
+
+            'ancestorTypeOk' => function( $ancestor ) use ( $sameClass ) {
+                return $sameClass( $ancestor, $ancestor->owner );
+            },
+            'ancestorMergeable' => function( $ancestor ) use ( $sameClass ) {
+                return $sameClass( $ancestor, $ancestor->owner );
+            },
+            'beforeAncestorCompare' => function( $object, $ancestor ) {
+            },
+            'ancestorSameValue' => function( $object, $ancestor ) use ( $sameContent ) {
+                return $sameContent( $object, $ancestor );
+            },
+            'ancestorValueText' => function( $ancestor ) use ( $short ) {
+                return $short( $ancestor );
+            },
+            'ancestorDiffReason' => function( $ancestor, $object ) use ( $diffText, $sameContent ) {
+                if( $sameContent( $ancestor, $object ) )
+                    $reason = "same content as the ancestor, merging with upper level not allowed (allowMergingWithUpperLevel)";
+                else
+                    $reason = $diffText( $ancestor, $object );
+                PH::print_stdout( "         " . $reason );
+                return $reason;
+            },
+            'errorValueText' => function( $object, $ancestor ) use ( $short ) {
+                return $short( $ancestor );
+            },
+            // own location: only objects with the same content as the kept one
+            'beforePickedCheck' => function( $index, $object, $picked ) use ( $sameContent, $diffText ) {
+                if( $object === $picked || $sameContent( $object, $picked ) )
+                    return TRUE;
+                PH::print_stdout( "    - SKIP: '{$object->_PANC_shortName()}' has " . $diffText( $picked, $object ) );
+                $this->skippedObject( $index, $picked, $object, $diffText( $picked, $object ) );
+                return FALSE;
+            },
+        );
+    }
+
     function addressMergeSpec(): array
     {
         $hashCheck = function( $index, $object ) {

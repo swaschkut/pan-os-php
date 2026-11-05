@@ -23,6 +23,20 @@ require_once(dirname(__FILE__)."/MERGERENGINE.php");
 
 class MERGER extends UTIL
 {
+    /** type=securityprofile-merger: profiletype argument => store property of a device group / vsys / shared */
+    public static $securityProfileMergerStores = array(
+        'virus' => 'AntiVirusProfileStore',
+        'spyware' => 'AntiSpywareProfileStore',
+        'vulnerability' => 'VulnerabilityProfileStore',
+        'url-filtering' => 'URLProfileStore',
+        'file-blocking' => 'FileBlockingProfileStore',
+        'wildfire-analysis' => 'WildfireProfileStore',
+        'data-filtering' => 'DataFilteringProfileStore',
+    );
+    /** type=securityprofile-merger: selected profile type and its store property */
+    public $spProfileType = null;
+    public $spStoreProp = null;
+
     use MergerEngine;
 
     public $utilType = null;
@@ -171,6 +185,8 @@ class MERGER extends UTIL
         {
             $this->custom_url_category_merging();
         }
+        elseif( $this->utilType == "securityprofile-merger" )
+            $this->securityprofile_merging();
         #elseif( $this->utilType == "object-merger" )
         #    $this->object_merging( "Application" );
 
@@ -256,6 +272,19 @@ class MERGER extends UTIL
                     else
                         $parentStore = $findLocation->owner->customURLProfileStore;
                 }
+                elseif( $this->utilType == "securityprofile-merger" )
+                {
+                    $this->securityProfileMergerType();
+                    $storeProp = $this->spStoreProp;
+                    $store = $findLocation->$storeProp;
+
+                    if( $pan->isPanorama() && isset($findLocation->parentDeviceGroup) && $findLocation->parentDeviceGroup !== null )
+                        $parentStore = $findLocation->parentDeviceGroup->$storeProp;
+                    elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
+                        $parentStore = $findLocation->parentContainer->$storeProp;
+                    else
+                        $parentStore = $findLocation->owner->$storeProp;
+                }
 
                 if( get_class( $findLocation->owner ) == "FawkesConf" || get_class( $findLocation->owner ) == "BuckbeakConf" )
                     $parentStore = null;
@@ -293,6 +322,12 @@ class MERGER extends UTIL
                     $location_array[$key + 1]['store'] = $pan->tagStore;
                 elseif( $this->utilType == "custom-url-category-merger" )
                     $location_array[$key + 1]['store'] = $pan->customURLProfileStore;
+                elseif( $this->utilType == "securityprofile-merger" )
+                {
+                    $this->securityProfileMergerType();
+                    $storeProp = $this->spStoreProp;
+                    $location_array[$key + 1]['store'] = $pan->$storeProp;
+                }
 
                 $location_array[$key + 1]['parentStore'] = null;
                 $location_array[$key + 1]['childDeviceGroups'] = $alldevicegroup;
@@ -316,6 +351,12 @@ class MERGER extends UTIL
                             $store = $pan->tagStore;
                         elseif( $this->utilType == "custom-url-category-merger" )
                             $store = $pan->customURLProfileStore;
+                        elseif( $this->utilType == "securityprofile-merger" )
+                        {
+                            $this->securityProfileMergerType();
+                            $storeProp = $this->spStoreProp;
+                            $store = $pan->$storeProp;
+                        }
 
                         $parentStore = null;
                         $location_array[$key]['findLocation'] = $objectsLocation;
@@ -371,6 +412,19 @@ class MERGER extends UTIL
                                 $parentStore = $findLocation->parentContainer->customURLProfileStore;
                             else
                                 $parentStore = $findLocation->owner->customURLProfileStore;
+                        }
+                        elseif( $this->utilType == "securityprofile-merger" )
+                        {
+                            $this->securityProfileMergerType();
+                            $storeProp = $this->spStoreProp;
+                            $store = $findLocation->$storeProp;
+
+                            if( $pan->isPanorama() && isset($findLocation->parentDeviceGroup) && $findLocation->parentDeviceGroup !== null )
+                                $parentStore = $findLocation->parentDeviceGroup->$storeProp;
+                            elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
+                                $parentStore = $findLocation->parentContainer->$storeProp;
+                            else
+                                $parentStore = $findLocation->owner->$storeProp;
                         }
                         if( get_class($findLocation->owner) == "FawkesConf" )
                             $parentStore = null;
@@ -553,6 +607,20 @@ class MERGER extends UTIL
                     "  - SameName: objects with same Name\n",
                 'argDesc' => 'SameColor|Identical|WhereUsed|SameName');
         }
+        elseif( $this->utilType == "securityprofile-merger" )
+        {
+            $this->supportedArguments[] = array(
+                'niceName' => 'ProfileType',
+                'shortHelp' => "security profile type to merge (required)",
+                'argDesc' => implode('|', array_keys(self::$securityProfileMergerStores)));
+            $this->supportedArguments[] = array(
+                'niceName' => 'DupAlgorithm',
+                'shortHelp' => "Specifies how to detect duplicates:\n" .
+                    "  - SameName: profiles with the same name (across the device-group hierarchy) and the same content (default)\n" .
+                    "  - SameValue: profiles with the same content, also with different names\n" .
+                    "  content = profile XML compared like type=diff, the profile name is ignored\n",
+                'argDesc' => 'SameName|SameValue');
+        }
         elseif( $this->utilType == "custom-url-category-merger" )
         {
             $this->supportedArguments[] = array(
@@ -637,6 +705,14 @@ class MERGER extends UTIL
 
             $defaultDupAlg = 'samevalue';
         }
+        elseif( $this->utilType == "securityprofile-merger" )
+        {
+            $this->securityProfileMergerType();
+            if( $this->dupAlg != 'samename' && $this->dupAlg != 'samevalue' )
+                $display_error = true;
+
+            $defaultDupAlg = 'samename';
+        }
         /*
         elseif( $this->utilType == "object-merger" )
         {
@@ -657,6 +733,28 @@ class MERGER extends UTIL
         else
             $this->dupAlg = $defaultDupAlg;
 
+    }
+
+    /** type=securityprofile-merger: reads and checks the profiletype argument */
+    function securityProfileMergerType()
+    {
+        if( $this->spStoreProp !== null )
+            return;
+
+        if( !isset(PH::$args['profiletype']) )
+            $this->display_error_usage_exit('argument profiletype= is required: ' . implode('|', array_keys(self::$securityProfileMergerStores)));
+
+        $type = strtolower(PH::$args['profiletype']);
+        if( !isset(self::$securityProfileMergerStores[$type]) )
+            $this->display_error_usage_exit('unsupported value for profiletype: ' . PH::$args['profiletype'] . ' - supported: ' . implode('|', array_keys(self::$securityProfileMergerStores)));
+
+        $this->spProfileType = $type;
+        $this->spStoreProp = self::$securityProfileMergerStores[$type];
+    }
+
+    function securityprofile_merging()
+    {
+        $this->genericObjectMerging( $this->securityProfileMergeSpec( $this->spProfileType, $this->spStoreProp ) );
     }
 
     function locationSettings( $tmp_location, $type, &$store, &$findLocation, &$parentStore, &$childDeviceGroups)

@@ -359,7 +359,7 @@ class UTIL
                 $tmp_utilType = "service";
             elseif( $tmp_utilType == "tag-merger" )
                 $tmp_utilType = "tag";
-            elseif( $tmp_utilType == "custom-url-category-merger" )
+            elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                 $tmp_utilType = "securityprofile";
             elseif( $tmp_utilType == "rule-merger" )
                 $tmp_utilType = "rule";
@@ -619,7 +619,7 @@ class UTIL
                     $tmp_utilType = "service";
                 elseif( $tmp_utilType == "tag-merger" )
                     $tmp_utilType = "tag";
-                elseif( $tmp_utilType == "custom-url-category-merger" )
+                elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                     $tmp_utilType = "securityprofile";
                 elseif( $tmp_utilType == "rule-merger" )
                     $tmp_utilType = "rule";

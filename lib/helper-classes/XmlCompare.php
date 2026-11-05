@@ -92,6 +92,62 @@ class XmlCompare
         return implode( ' | ', $lines );
     }
 
+    /**
+     * Canonical text of an element: two elements have the same canonical text exactly when
+     * XmlCompare finds no difference between them (the name attribute of $el itself is ignored).
+     * Used as hash key, e.g. by the security profile merger (dupAlgorithm=samevalue).
+     */
+    public static function canonical( DOMElement $el, array $orderedParents = array() ): string
+    {
+        $byTag = array();
+        foreach( $el->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $byTag[$node->tagName][] = $node;
+        }
+        if( count($byTag) == 0 )
+            return 'T(' . trim($el->textContent) . ')';
+
+        ksort($byTag);
+        $parts = array();
+        foreach( $byTag as $tag => $nodes )
+        {
+            $named = array();
+            $unnamed = array();
+            foreach( $nodes as $node )
+            {
+                if( $node->hasAttribute('name') )
+                    $named[$node->getAttribute('name')] = $node;
+                else
+                    $unnamed[] = $node;
+            }
+
+            if( count($unnamed) == 1 && count($named) == 0 )
+                $parts[] = $tag . '{' . self::canonical( $unnamed[0], $orderedParents ) . '}';
+            elseif( count($unnamed) > 1 )
+            {
+                $texts = array();
+                foreach( $unnamed as $node )
+                    $texts[$node->textContent] = TRUE;
+                $texts = array_keys($texts);
+                sort($texts, SORT_STRING);
+                $parts[] = $tag . '[' . implode('|', $texts) . ']';
+            }
+            if( count($named) > 0 )
+            {
+                if( !isset($orderedParents[$el->tagName]) )
+                    ksort($named, SORT_STRING);
+                $entries = array();
+                foreach( $named as $name => $node )
+                    $entries[] = $name . '=' . self::canonical( $node, $orderedParents );
+                $parts[] = $tag . '<' . implode(';', $entries) . '>';
+            }
+        }
+
+        return implode(',', $parts);
+    }
+
     private function hook( $name )
     {
         return isset($this->hooks[$name]) ? $this->hooks[$name] : null;
