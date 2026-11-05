@@ -875,6 +875,28 @@ class AddressGroup
     }
 
     /**
+     * Members as the firewalls of $location see them: every member is resolved again by name in
+     * $location (same-name copies and ancestor-objects-take-precedence honoured, see
+     * PH::resolveNameForFirewalls). The member list of the group is NOT changed.
+     * $location null: the members as loaded.
+     * @return Address[]|AddressGroup[]
+     */
+    public function membersForLocation( $location = null ): array
+    {
+        if( $location === null )
+            return $this->members;
+
+        $ret = array();
+        foreach( $this->members as $key => $member )
+        {
+            $resolved = PH::resolveNameForFirewalls('addressStore', $member->name(), $location);
+            $ret[$key] = ( $resolved !== null ) ? $resolved : $member;
+        }
+
+        return $ret;
+    }
+
+    /**
      * @param bool $keepGroupsInList keep groups in the the list on top of just expanding them
      * @return Address[]|AddressGroup[] list of all member objects, if some of them are groups, they are exploded and their members inserted
      */
@@ -884,13 +906,7 @@ class AddressGroup
 
         $grpArray[$this->name()] = $this;
 
-        if( $RuleReferenceLocation !== null )
-        {
-            foreach( $this->members as $key => $member )
-                $this->members[$key] = $RuleReferenceLocation->addressStore->find($member->name());
-        }
-
-        foreach( $this->members as $object )
+        foreach( $this->membersForLocation($RuleReferenceLocation) as $object )
         {
             $serial = spl_object_hash($object);
             $serial = $object->name();
@@ -1159,13 +1175,7 @@ class AddressGroup
         }
         */
 
-        if( $RuleReferenceLocation !== null )
-        {
-            foreach( $this->members as $key => $member )
-                $this->members[$key] = $RuleReferenceLocation->addressStore->find($member->name());
-        }
-
-        foreach( $this->members as $member )
+        foreach( $this->membersForLocation($RuleReferenceLocation) as $member )
         {
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
@@ -1186,7 +1196,7 @@ class AddressGroup
             }
             elseif( $member->isGroup() )
             {
-                $localMap = $member->getIP4Mapping();
+                $localMap = $member->getIP4Mapping( $RuleReferenceLocation );
                 $mapObject->addMap($localMap, TRUE);
             }
             else
@@ -1212,13 +1222,7 @@ class AddressGroup
         }
         */
 
-        if( $RuleReferenceLocation !== null )
-        {
-            foreach( $this->members as $key => $member )
-                $this->members[$key] = $RuleReferenceLocation->addressStore->find($member->name());
-        }
-
-        foreach( $this->members as $member )
+        foreach( $this->membersForLocation($RuleReferenceLocation) as $member )
         {
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
@@ -1239,7 +1243,7 @@ class AddressGroup
             }
             elseif( $member->isGroup() )
             {
-                $localMap6 = $member->getIP6Mapping();
+                $localMap6 = $member->getIP6Mapping( $RuleReferenceLocation );
                 $mapObject6->addMap($localMap6, TRUE);
             }
             else

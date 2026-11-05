@@ -18,6 +18,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+require_once(dirname(__FILE__)."/MERGESAFETY.php");
 require_once(dirname(__FILE__)."/MERGERENGINE.php");
 
 class MERGER extends UTIL
@@ -718,6 +719,15 @@ class MERGER extends UTIL
                         else
                         {
                             #PH::print_stdout("      - object not found: " . $d->name() . "");
+                            if( $this->mergeSafety !== null )
+                            {
+                                $reason = $this->mergeSafety->checkMove( $d, $store );
+                                if( $reason !== null )
+                                {
+                                    PH::print_stdout( "      - SKIP: object '{$d->name()}' not moved to '" . $store->owner->_PANC_shortName() . "', " . $reason );
+                                    continue;
+                                }
+                            }
                             $text = "      - adding object: ";
                             $text .= $d->name();
                             $text .= " from DG '".$d->owner->owner->_PANC_shortName()."' to '".$store->owner->_PANC_shortName()."'";

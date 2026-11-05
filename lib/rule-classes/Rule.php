@@ -2549,7 +2549,11 @@ class Rule
         if( $RuleReferenceLocation !== null )
         {
             foreach( $objects as $key => $member )
-                $objects[$key] = $RuleReferenceLocation->serviceStore->find($member->name());
+            {
+                $resolved = PH::resolveNameForFirewalls('serviceStore', $member->name(), $RuleReferenceLocation);
+                if( $resolved !== null )
+                    $objects[$key] = $resolved;
+            }
         }
 
         $array = array();

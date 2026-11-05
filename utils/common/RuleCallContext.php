@@ -2232,8 +2232,20 @@ class RuleCallContext extends CallContext
 
             if( count($objects  ) > 0 )
             {
+                // services as the firewalls of the rule's location receive them
+                $location = $rule->owner->owner;
+                $leaves = array();
+                foreach( $objects as $object )
+                {
+                    $resolved = PH::resolveNameForFirewalls('serviceStore', $object->name(), $location);
+                    if( $resolved === null )
+                        $resolved = $object;
+                    foreach( PH::expandForFirewalls('serviceStore', $resolved, $location) as $leaf )
+                        $leaves[] = $leaf;
+                }
+
                 $dst_port_mapping = new ServiceDstPortMapping();
-                $dst_port_mapping->mergeWithArrayOfServiceObjects( $objects);
+                $dst_port_mapping->mergeWithArrayOfServiceObjects( $leaves );
 
                 $dst_port_mapping->countPortmapping();
                 if( $type === "both" )

@@ -60,6 +60,28 @@ trait MergerEngine
     /** hash maps of the location being merged, for spec hooks (e.g. address_service_hash_map_check) */
     public $mergeCtx = array();
 
+    /** @var MergeSafety|null effective-policy check of the running merger (address / service objects and groups) */
+    public $mergeSafety = null;
+
+    private function startMergeSafety( string $storeProp )
+    {
+        $this->mergeSafety = MergeSafety::supports( $storeProp ) ? new MergeSafety( $this->pan, $storeProp, (bool)$this->addMissingObjects ) : null;
+    }
+
+    /**
+     * TRUE (and the skip is printed / logged for exportCSV) when the effective-policy check refused an operation.
+     * $reason: result of a MergeSafety check (null: allowed)
+     */
+    private function mergeSafetyBlocks( $reason, $index, $kept, $removed ): bool
+    {
+        if( $reason === null )
+            return FALSE;
+
+        PH::print_stdout( "    - SKIP: '{$removed->_PANC_shortName()}' not merged, " . $reason );
+        $this->skippedObject( $index, $kept, $removed, $reason );
+        return TRUE;
+    }
+
     /** spec hook or null */
     private function mergeHook( array $spec, string $key )
     {
@@ -79,6 +101,9 @@ trait MergerEngine
         $check = function( $index, $object ) use ( $hashCheck ) {
             return $hashCheck === null || $hashCheck( $index, $object );
         };
+
+        $this->startMergeSafety( $spec['storeProp'] );
+        $safety = $this->mergeSafety;
 
         foreach( $this->location_array as $tmp_location )
         {
@@ -249,6 +274,9 @@ trait MergerEngine
                             continue;
                         }
                     }
+                    if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkPlace( $pickedObject, $store ), $index, $pickedObject, $pickedObject ) )
+                        continue;
+
                     $suffixHook = $this->mergeHook($spec, 'createMessageSuffix');
                     PH::print_stdout( "   * create object in DG: '".$tmp_DG_name."' : '".$tmpPickedName."'" . ( $suffixHook !== null ? $suffixHook( $pickedObject ) : "" ) );
 
@@ -302,6 +330,17 @@ trait MergerEngine
                 {
                     if( $beforeReplace !== null && !$beforeReplace( $index, $object, $tmp_object, $pickedObject ) )
                         continue;
+
+                    if( $safety !== null )
+                    {
+                        // without actions=merge the created object exists only as text: simulate it
+                        if( is_object($tmp_object) )
+                            $reason = $safety->checkReplace( $object, $tmp_object );
+                        else
+                            $reason = $safety->checkReplace( $object, $pickedObject, MergeSafety::placeOverlay( $pickedObject, $store ) );
+                        if( $this->mergeSafetyBlocks( $reason, $index, is_object($tmp_object) ? $tmp_object : $pickedObject, $object ) )
+                            continue;
+                    }
 
                     PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                     $success = true;
@@ -392,6 +431,9 @@ trait MergerEngine
                                         PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$pickedObject->_PANC_shortName()}' ");
                                         continue;
                                     }
+
+                                if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkReplace( $object, $ancestor ), $index, $ancestor, $object ) )
+                                    continue;
 
                                 $mergedTextHook = $this->mergeHook($spec, 'ancestorMergedText');
                                 if( $mergedTextHook !== null )
@@ -485,6 +527,9 @@ trait MergerEngine
 
                     if( $this->dupAlg != 'identical' || !empty($spec['mergeIntoPickedAllAlgs']) )
                     {
+                        if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkReplace( $object, $pickedObject ), $index, $pickedObject, $object ) )
+                            continue;
+
                         $intoPickedHook = $this->mergeHook($spec, 'mergeIntoPicked');
                         if( $intoPickedHook !== null )
                         {
@@ -1359,6 +1404,9 @@ trait MergerEngine
                         if( $object === $pickedObject )
                             continue;
 
+                        if( $this->mergeSafety !== null && $this->mergeSafetyBlocks( $this->mergeSafety->checkWhereUsedServiceMerge( $object, $pickedObject ), $index, $pickedObject, $object ) )
+                            continue;
+
                         $localMapping = $object->dstPortMapping();
                         PH::print_stdout( "    - adding the following ports to first service: " . $localMapping->mappingToText() . "" );
                         if( $this->action === "merge" )
@@ -1443,6 +1491,9 @@ trait MergerEngine
      */
     function genericGroupMerging( array $g )
     {
+        $this->startMergeSafety( $g['storeProp'] );
+        $safety = $this->mergeSafety;
+
         foreach( $this->location_array as $tmp_location )
         {
             $store = null;
@@ -1573,6 +1624,9 @@ trait MergerEngine
                     if( $g['memberCheck']( $index, $pickedObject, $store, $tmp_DG_name ) )
                         continue;
 
+                    if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkMove( $pickedObject, $store ), $index, $pickedObject, $pickedObject ) )
+                        continue;
+
                     if( $this->action === "merge" )
                     {
                         self::deletedObject($index, $pickedObject, $pickedObject);
@@ -1648,6 +1702,9 @@ trait MergerEngine
 
                     if( $object !== $target )
                     {
+                        if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkReplace( $object, $target ), $index, $target, $object ) )
+                            continue;
+
                         PH::print_stdout("    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $target->owner->owner->name() . "', deleting: " . $object->_PANC_shortName());
                         self::deletedObject($index, $target, $object);
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
@@ -1739,6 +1796,9 @@ trait MergerEngine
                                     }
                                 }
 
+                                if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkReplace( $object, $ancestor ), $index, $ancestor, $object ) )
+                                    continue;
+
                                 $tmp_ancestor_DGname = $this->groupOwnerDGName( $ancestor );
 
                                 $text = $g['ancestorMergedText']( $object, $tmp_ancestor_DGname );
@@ -1781,6 +1841,9 @@ trait MergerEngine
 
                     if( $this->dupAlg == 'whereused' )
                     {
+                        if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkWhereUsedGroupMerge( $object, $pickedObject ), $index, $pickedObject, $object ) )
+                            continue;
+
                         PH::print_stdout("    - merging '{$object->name()}' members into '{$pickedObject->name()}': ");
                         foreach( $object->members() as $member )
                         {
@@ -1821,6 +1884,9 @@ trait MergerEngine
                                 $this->skippedObject( $index, $object, $pickedObject, $g['notIdenticalPickedReason']);
                                 continue;
                             }
+
+                        if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkReplace( $object, $pickedObject ), $index, $pickedObject, $object ) )
+                            continue;
 
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                         $success = $g['reportWithoutMerge'];
@@ -1939,6 +2005,9 @@ trait MergerEngine
                     return function ($object) {
                         /** @var AddressGroup $object */
                         $mapping = $object->getFullMapping();
+                        // IPv4 only: groups with IPv6 content are not compared
+                        if( $mapping['ip6']->count() > 0 )
+                            return null;
                         $value = $mapping['ip4']->dumpToString();
                         if( count($mapping['unresolved']) > 0 )
                         {
@@ -1988,6 +2057,9 @@ trait MergerEngine
                     {
                         if( $this->addMissingObjects )
                         {
+                            if( $this->mergeSafety !== null && $this->mergeSafetyBlocks( $this->mergeSafety->checkMove( $memberObject, $store ), $index, $pickedObject, $memberObject ) )
+                                return TRUE;
+
                             PH::print_stdout("      - object: " . $memberObject->name() . " from DG: '" . $memberObject->owner->owner->name() . "' move to: '" . $tmp_DG_name . "'");
                             if( $this->action === "merge" )
                             {
@@ -2105,9 +2177,8 @@ trait MergerEngine
             'locationType' => "ServiceGroup",
             'storeProp' => "serviceStore",
             'childDoneLabel' => "servicegroups",
-            // the former servicegroup_merging() emptied the child hash table before using it
-            'childPhase' => FALSE,
-            'childPhaseChildAncestorCheck' => FALSE,
+            'childPhase' => TRUE,
+            'childPhaseChildAncestorCheck' => TRUE,
             'printDuplicateSet' => TRUE,
             'ancestorNonGroupSkip' => FALSE,
             'reportWithoutMerge' => TRUE,
