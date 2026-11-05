@@ -617,54 +617,8 @@ class PLAYBOOK__
 
                 unset( $util );
 
-                // Drop the references this step's configuration added to the predefined objects. The predefined stores
-                // are static, one set per PHP process, so the next in-process step adds its own references to the same
-                // objects: a predefined profile's 'where used' would then list each referrer once for every earlier
-                // in-process step ('total use' and 'count disabled Rules' multiplied with it), and this step's
-                // configuration would stay reachable through them, so clearGlobalMemory() below could not free it.
-                // The stores stay (no reload of the predefined content), and so do the references between predefined
-                // objects (an application container's applications, the predefined URL-filtering profile's categories):
-                // a reference is dropped only when no predefined store owns its referrer, directly or further up. It is
-                // dropped as ReferenceableObject::removeReference() does it, in the object's own scope, not through the
-                // class's removeReference(): 2.1.60's URLProfile overrides it with a call to super_removeReference(),
-                // an alias 2.1.60 does not declare.
-                $dropReference = function( $serial )
-                {
-                    unset( $this->refrules[$serial] );
-                    $this->refcomphash = null;
-                };
-                $predefinedStores = array();
-                foreach( array( 'SecurityProfileStore', 'ThreatStore', 'AppStore', 'LogProfileStore' ) as $storeClass )
-                {
-                    foreach( (new ReflectionClass( $storeClass ))->getStaticProperties() as $property => $store )
-                    {
-                        if( strpos( $property, 'predefined' ) === 0 && is_object( $store ) )
-                            $predefinedStores[spl_object_id( $store )] = $store;
-                    }
-                }
-                foreach( $predefinedStores as $store )
-                {
-                    foreach( $store->o as $object )
-                    {
-                        if( !is_object( $object ) || !property_exists( $object, 'refrules' ) )
-                            continue;
-                        $drop = Closure::bind( $dropReference, $object, get_class( $object ) );
-                        foreach( $object->getReferences() as $serial => $ref )
-                        {
-                            $owner = $ref;
-                            for( $depth = 0; is_object( $owner ) && $depth < 20; $depth++ )
-                            {
-                                if( isset( $predefinedStores[spl_object_id( $owner )] ) )
-                                    continue 2;
-                                $owner = isset( $owner->owner ) ? $owner->owner : null;
-                            }
-                            $drop( $serial );
-                        }
-                    }
-                }
-                unset( $dropReference, $predefinedStores, $store, $object, $drop, $serial, $ref, $owner );
-
-                // Use enhanced memory cleanup with verbose output if debugMemory is enabled
+                // Use enhanced memory cleanup with verbose output if debugMemory is enabled. It also drops the references
+                // this step's configuration added to the predefined objects (PH::dropPredefinedReferences()).
                 PH::clearGlobalMemory( true, $this->debugMemory );
             }
 

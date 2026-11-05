@@ -707,6 +707,64 @@ class PH
     }
 
     /**
+     * Drops the references that configurations loaded earlier in this process added to the predefined objects.
+     *
+     * The predefined stores are static, one set per PHP process, so every configuration loaded in the process adds its
+     * references to the same objects: a predefined profile's 'where used' would list each referrer once for every
+     * earlier configuration ('total use' and 'count disabled Rules' multiplied with it), and those configurations would
+     * stay reachable through them, so their memory could not be freed.
+     *
+     * The stores stay (no reload of the predefined content), and so do the references between predefined objects (an
+     * application container's applications, the predefined URL-filtering profile's categories): a reference is dropped
+     * only when no predefined store owns its referrer, directly or further up. It is dropped as
+     * ReferenceableObject::removeReference() does it, in the object's own scope, not through the class's
+     * removeReference(): 2.1.60's URLProfile overrides it with a call to super_removeReference(), an alias 2.1.60 does
+     * not declare.
+     *
+     * Call it only when no configuration that should keep its references is still loaded in the process: it drops the
+     * references of every configuration, not only of the one that was released.
+     */
+    public static function dropPredefinedReferences(): void
+    {
+        $dropReference = function( $serial )
+        {
+            unset( $this->refrules[$serial] );
+            $this->refcomphash = null;
+        };
+
+        $predefinedStores = array();
+        foreach( array( 'SecurityProfileStore', 'ThreatStore', 'AppStore', 'LogProfileStore' ) as $storeClass )
+        {
+            foreach( (new ReflectionClass( $storeClass ))->getStaticProperties() as $property => $store )
+            {
+                if( strpos( $property, 'predefined' ) === 0 && is_object( $store ) )
+                    $predefinedStores[spl_object_id( $store )] = $store;
+            }
+        }
+
+        foreach( $predefinedStores as $store )
+        {
+            foreach( $store->o as $object )
+            {
+                if( !is_object( $object ) || !property_exists( $object, 'refrules' ) )
+                    continue;
+                $drop = Closure::bind( $dropReference, $object, get_class( $object ) );
+                foreach( $object->getReferences() as $serial => $ref )
+                {
+                    $owner = $ref;
+                    for( $depth = 0; is_object( $owner ) && $depth < 20; $depth++ )
+                    {
+                        if( isset( $predefinedStores[spl_object_id( $owner )] ) )
+                            continue 2;
+                        $owner = isset( $owner->owner ) ? $owner->owner : null;
+                    }
+                    $drop( $serial );
+                }
+            }
+        }
+    }
+
+    /**
      * Clears static variables and forces garbage collection to free memory.
      * This is particularly useful in playbook scenarios where multiple utilities
      * are executed sequentially and memory accumulates between steps.
@@ -730,10 +788,9 @@ class PH
         PH::$args = array();
         PH::$argv = array();
 
-        // Predefined stores are process-wide singletons (static). Their objects collect references
-        // (SecurityProfileGroup, SecurityRule, ...) from every config loaded in this process; a playbook running
-        // its steps in-process would otherwise keep the references of all previous steps.
-        PH::resetPredefinedStores();
+        // Predefined stores are process-wide singletons (static). They stay loaded for the next configuration;
+        // only the references the released configurations added to their objects are dropped.
+        PH::dropPredefinedReferences();
 
         // Clear load time tracking
         PH::$loadStartTime = null;
