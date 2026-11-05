@@ -2006,8 +2006,10 @@ trait MergerEngine
                         /** @var AddressGroup $object */
                         $mapping = $object->getFullMapping();
                         // IPv4 only: groups with IPv6 content are not compared
-                        if( $mapping['ip6']->count() > 0 )
-                            return null;
+                        // (the maps hold both families, IPv6 entries are recognised by their text)
+                        foreach( $mapping['ip4']->getMapArray() as $entry )
+                            if( isset($entry['network']) && strpos($entry['network'], ':') !== FALSE )
+                                return null;
                         $value = $mapping['ip4']->dumpToString();
                         if( count($mapping['unresolved']) > 0 )
                         {
