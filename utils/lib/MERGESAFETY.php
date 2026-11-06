@@ -74,7 +74,7 @@ class MergeSafety
     {
         return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || $storeProp === 'securityProfileGroupStore'
             || in_array( $storeProp, self::$profileStores, TRUE ) || in_array( $storeProp, self::$xmlObjectStores, TRUE )
-            || $storeProp === 'EDLStore';
+            || $storeProp === 'EDLStore' || $storeProp === 'appStore';
     }
 
     /**
@@ -405,7 +405,7 @@ class MergeSafety
     /** a referencer that is itself referenced by name (address / service group, security profile group) */
     private function isViaObject( $ref ): bool
     {
-        return $this->isGroupObject( $ref ) || ( $ref instanceof SecurityProfileGroup );
+        return $this->isGroupObject( $ref ) || ( $ref instanceof SecurityProfileGroup ) || ( $ref instanceof AppGroup );
     }
 
     private function viaStoreProp( $via ): string
@@ -414,6 +414,8 @@ class MergeSafety
             return 'securityProfileGroupStore';
         if( $via instanceof ServiceGroup )
             return 'serviceStore';
+        if( $via instanceof AppGroup )
+            return 'appStore';
         return 'addressStore';
     }
 
@@ -422,6 +424,8 @@ class MergeSafety
     {
         if( $this->storeProp === 'EDLStore' )
             return $this->unreplaceableEdlUser( $object );
+        if( $this->storeProp === 'appStore' )
+            return $this->unreplaceableAppUser( $object );
 
         if( !in_array( $this->storeProp, self::$xmlObjectStores, TRUE ) )
             return null;
@@ -491,6 +495,22 @@ class MergeSafety
         return $units;
     }
 
+    /**
+     * applications: users are rule application fields (AppRuleContainer), application groups and application
+     * override rules; any other user blocks the replacement
+     */
+    private function unreplaceableAppUser( $object )
+    {
+        foreach( $this->referencers( $object ) as $ref )
+        {
+            if( method_exists( $ref, 'replaceReferencedObject' ) )
+                continue;
+            $name = method_exists( $ref, 'name' ) ? $ref->name() : '';
+            return "used by " . get_class($ref) . " '" . $name . "' which cannot be pointed to another object";
+        }
+        return null;
+    }
+
     private static function xpathLiteral( $text ): string
     {
         if( strpos( $text, "'" ) === FALSE )
@@ -502,7 +522,7 @@ class MergeSafety
 
     private function isGroupObject( $ref ): bool
     {
-        return ( $ref instanceof AddressGroup ) || ( $ref instanceof ServiceGroup );
+        return ( $ref instanceof AddressGroup ) || ( $ref instanceof ServiceGroup ) || ( $ref instanceof AppGroup );
     }
 
     private function referencers( $object ): array
@@ -703,6 +723,15 @@ class MergeSafety
         {
             // dynamic group: its own identity (tag based membership is not evaluated)
             $c['other']['dag:' . spl_object_id($object)] = TRUE;
+            return $c;
+        }
+        if( $object instanceof App )
+        {
+            // application merger: custom applications / filters by content (description ignored); others by name
+            if( $this->storeProp === 'appStore' && ( $object->isApplicationCustom() || $object->isApplicationFilter() ) && $object->xmlroot !== null )
+                $c['other']['app:' . $object->type . ':' . substr( md5( XmlCompare::canonical( MERGER::xmlWithoutTags( $object->xmlroot, array( 'description' ) ), array( 'rules' => TRUE ) ) ), 0, 12 )] = TRUE;
+            else
+                $c['other']['app:' . $object->name()] = TRUE;
             return $c;
         }
         if( $object instanceof EDL )

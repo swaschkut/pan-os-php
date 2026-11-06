@@ -42,8 +42,11 @@ class MERGER extends UTIL
         'address' => 'address-merger',
         'service' => 'service-merger',
         'edl' => 'edl-merger',
+        'application-custom' => 'appcustom-merger',
+        'application-filter' => 'appfilter-merger',
         'addressgroup' => 'addressgroup-merger',
         'servicegroup' => 'servicegroup-merger',
+        'application-group' => 'appgroup-merger',
         'custom-url-category' => 'custom-url-category-merger',
         'schedule' => 'schedule-merger',
         'log-profile' => 'logprofile-merger',
@@ -57,6 +60,9 @@ class MERGER extends UTIL
         'logprofile-merger' => 'LogProfileStore',
         'decryptionprofile-merger' => 'DecryptionProfileStore',
         'edl-merger' => 'EDLStore',
+        'appcustom-merger' => 'appStore',
+        'appfilter-merger' => 'appStore',
+        'appgroup-merger' => 'appStore',
     );
     /** type=object-merger: selected objecttype values */
     public $objectMergerSelected = array();
@@ -630,6 +636,8 @@ class MERGER extends UTIL
             $type = 'securityprofile';
         elseif( $this->utilType == "edl-merger" )
             $type = 'edl';
+        elseif( $this->utilType == "appcustom-merger" || $this->utilType == "appfilter-merger" || $this->utilType == "appgroup-merger" )
+            $type = 'application';
 
         if( isset(PH::$args['pickfilter']) )
         {
@@ -802,7 +810,7 @@ class MERGER extends UTIL
                     "  - servicegroup: SameMembers (default) | SamePortMapping | Identical | WhereUsed\n" .
                     "  - tag: Identical (default) | SameColor | WhereUsed | SameName\n" .
                     "  - custom-url-category: SameValue (default) | Identical | SameName\n" .
-                    "  - schedule / log-profile / decryption-profile / edl / securityprofile: SameName (default) | SameValue\n" .
+                    "  - schedule / log-profile / decryption-profile / edl / application-custom / application-filter / application-group / securityprofile: SameName (default) | SameValue\n" .
                     "  - securityprofilegroup: SameMembers (default) | SameValue\n" .
                     "  with several object types the value must be valid for all of them\n",
                 'argDesc' => 'SameName|SameValue|...');

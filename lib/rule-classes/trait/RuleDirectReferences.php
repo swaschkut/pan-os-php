@@ -22,7 +22,7 @@
 /**
  * Objects a rule references directly (not through a rule container):
  *   security profile group, security profiles (profile-setting), schedule,
- *   log forwarding profile (log-setting), decryption profile.
+ *   log forwarding profile (log-setting), decryption profile, application of an application override rule.
  *
  * replaceReferencedObject() / API_replaceReferencedObject() let ReferenceableObject::replaceMeGlobally()
  * swap such an object for another one of the same kind (used by the mergers). References are moved
@@ -109,6 +109,16 @@ trait RuleDirectReferences
             $this->setDecryptionProfile( $new->name() );
             $replaced = TRUE;
             $xpathSuffix = 'profile';
+        }
+
+        // ---- application override rule: its (custom) application
+        if( !$replaced && $old instanceof App && $new instanceof App && $this instanceof AppOverrideRule && $this->_app === $old )
+        {
+            // like setApplication(), the references are moved below
+            $this->_app = $new;
+            DH::setDomNodeText( DH::findFirstElementOrCreate('application', $this->xmlroot), $new->name() );
+            $replaced = TRUE;
+            $xpathSuffix = 'application';
         }
 
         if( !$replaced )

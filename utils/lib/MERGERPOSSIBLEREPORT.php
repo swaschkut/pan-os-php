@@ -57,7 +57,7 @@ class MERGERPOSSIBLEREPORT extends MERGER
             'shortHelp' => "object type(s) to report, comma separated; default any",
             'argDesc' => 'any|' . implode('|', array_keys($this->reportTypes)));
         $this->supportedArguments['mergecheck'] = array('niceName' => 'MergeCheck',
-            'shortHelp' => "for address / service / their groups / EDL / schedule / log forwarding and decryption profiles / security profiles / security profile groups: check with the effective-policy check whether a merge into the copy in the highest location would change what a firewall receives (slower)");
+            'shortHelp' => "for address / service / their groups / EDL / applications (custom, filter, group) / schedule / log forwarding and decryption profiles / security profiles / security profile groups: check with the effective-policy check whether a merge into the copy in the highest location would change what a firewall receives (slower)");
         $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCSV',
             'shortHelp' => 'write the findings as HTML table', 'argDesc' => 'report.html');
 
@@ -181,13 +181,13 @@ class MERGERPOSSIBLEREPORT extends MERGER
             // descriptions (also inside <type><ip>…) ignored, as in the EDL merger
             'value' => function( $o ) { return $this->canonicalValue( MERGER::xmlWithoutTags( $o->xmlroot, array( 'description' ) ) ); } );
         $this->reportTypes['log-profile'] = array( 'scope' => 'dg', 'store' => 'LogProfileStore', 'safety' => 'LogProfileStore', 'list' => $all, 'eligible' => null, 'value' => $strip );
-        $this->reportTypes['application-group'] = array( 'scope' => 'dg', 'store' => 'appStore', 'list' => $all,
+        $this->reportTypes['application-group'] = array( 'scope' => 'dg', 'store' => 'appStore', 'safety' => 'appStore', 'list' => $all,
             'eligible' => function( $o ) { return !$o->isTmp() && !$o->isPredefined() && $o->isApplicationGroup(); },
             'value' => function( $o ) use ( $strip ) { return $strip( $o ); } );
-        $this->reportTypes['application-filter'] = array( 'scope' => 'dg', 'store' => 'appStore', 'list' => $all,
+        $this->reportTypes['application-filter'] = array( 'scope' => 'dg', 'store' => 'appStore', 'safety' => 'appStore', 'list' => $all,
             'eligible' => function( $o ) { return !$o->isTmp() && !$o->isPredefined() && $o->isApplicationFilter(); },
             'value' => $strip );
-        $this->reportTypes['application-custom'] = array( 'scope' => 'dg', 'store' => 'appStore', 'list' => $all,
+        $this->reportTypes['application-custom'] = array( 'scope' => 'dg', 'store' => 'appStore', 'safety' => 'appStore', 'list' => $all,
             'eligible' => function( $o ) { return !$o->isTmp() && !$o->isPredefined() && $o->isApplicationCustom(); },
             'value' => $strip );
 

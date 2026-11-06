@@ -39,6 +39,7 @@ UTIL:
 * type=certificate-profile | introduction with actions/filter
 * type=object-merger | introduction
 * type=object-merger | extend for EDL
+* type=object-merger | extend with appcustomer/group/filter
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

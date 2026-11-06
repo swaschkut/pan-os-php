@@ -861,6 +861,36 @@ trait MergerEngine
                 },
             ) );
 
+        if( $storeProp === 'appStore' )
+        {
+            $appTypes = array( 'appcustom-merger' => 'application-custom', 'appfilter-merger' => 'application-filter', 'appgroup-merger' => 'application-group' );
+            $appType = $appTypes[$objectType];
+            $label = array( 'application-custom' => 'ApplicationCustom', 'application-filter' => 'ApplicationFilter', 'application-group' => 'ApplicationGroup' )[$appType];
+
+            return $this->xmlObjectMergeSpec( array(
+                'label' => $label,
+                'objectTxt' => $appType,
+                'pluralTxt' => $appType . "s",
+                'storeProp' => $storeProp,
+                'ancestorTypeLabel' => $appType,
+                // group: its members as a set (XmlCompare compares unnamed lists as sets); description ignored
+                'ignoreTags' => array( 'description' ),
+                'sameClass' => function( $object, $store ) use ( $appType ) {
+                    return ( $object instanceof App ) && $object->type === $appType && $object->xmlroot !== null;
+                },
+                'createCopy' => function( $store, $picked, $name ) {
+                    /** @var AppStore $store */
+                    return $this->cloneApp( $store, $picked, $name );
+                },
+                'remove' => function( $object ) {
+                    if( $this->apiMode )
+                        $object->owner->API_remove( $object );
+                    else
+                        $object->owner->remove( $object );
+                },
+            ) );
+        }
+
         if( $storeProp === 'LogProfileStore' )
             return $this->xmlObjectMergeSpec( array(
                 'label' => "LogProfile",
@@ -885,6 +915,38 @@ trait MergerEngine
             ) );
 
         derr( "unsupported objecttype '{$objectType}' for the object merger" );
+    }
+
+    /** copy of a custom application / application filter / application group in $store */
+    private function cloneApp( $store, $picked, $name )
+    {
+        $node = $picked->xmlroot->cloneNode( TRUE );
+        $node->setAttribute( 'name', $name );
+
+        $class = get_class( $picked );
+        $created = new $class( $name, $store );
+        $created->type = $picked->type;
+        $created->xmlroot = $node;
+        // members of a group are looked up from the target location
+        $created->load_from_domxml( $node );
+        $store->addApp( $created );
+
+        if( $this->apiMode )
+        {
+            $con = findConnectorOrDie( $store );
+            if( $con->isAPI() )
+            {
+                if( $created->isApplicationCustom() )
+                    $xpath = $store->getAppCustomStoreXPath();
+                elseif( $created->isApplicationFilter() )
+                    $xpath = $store->getAppFilterStoreXPath();
+                else
+                    $xpath = $store->getAppGroupStoreXPath();
+                $con->sendSetRequest( $xpath, $created->getXmlText_inline() );
+            }
+        }
+
+        return $created;
     }
 
     /**

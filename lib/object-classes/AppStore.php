@@ -959,25 +959,29 @@ class AppStore extends ObjStore
             derr('You cannot add object with same name in a store');
         }
 
+        // shared (Panorama / firewall): /config/shared, otherwise the device group / vsys entry
+        $locationRoot = ( ( $this->owner instanceof PanoramaConf || $this->owner instanceof PANConf ) && isset($this->owner->sharedroot) && $this->owner->sharedroot !== null )
+            ? $this->owner->sharedroot : $this->owner->xmlroot;
+
         if( $Obj->isApplicationCustom() )
         {
             $this->apps_custom[$objectName] = $Obj;
             if( $this->appCustomRoot === null )
-                $this->appCustomRoot = DH::findFirstElementOrCreate("application", $this->owner->xmlroot);
+                $this->appCustomRoot = DH::findFirstElementOrCreate("application", $locationRoot);
             $this->appCustomRoot->appendChild($Obj->xmlroot);
         }
         elseif( $Obj->isApplicationFilter() )
         {
             $this->app_filters[$objectName] = $Obj;
             if( $this->appFilterRoot === null )
-                $this->appFilterRoot = DH::findFirstElementOrCreate("application-filter", $this->owner->xmlroot);
+                $this->appFilterRoot = DH::findFirstElementOrCreate("application-filter", $locationRoot);
             $this->appFilterRoot->appendChild($Obj->xmlroot);
         }
         elseif( $Obj->isApplicationGroup() )
         {
             $this->app_groups[$objectName] = $Obj;
             if( $this->appGroupRoot === null )
-                $this->appGroupRoot = DH::findFirstElementOrCreate("application-group", $this->owner->xmlroot);
+                $this->appGroupRoot = DH::findFirstElementOrCreate("application-group", $locationRoot);
 
             $this->appGroupRoot->appendChild($Obj->xmlroot);
         }
@@ -1034,16 +1038,19 @@ class AppStore extends ObjStore
             $tmp_count = 0;
             if( $Obj->isApplicationCustom() )
             {
+                unset( $this->apps_custom[$Obj->name()] );
                 $tmp_xmlroot = $this->appCustomRoot;
                 $tmp_count = count($this->apps_custom);
             }
             elseif( $Obj->isApplicationFilter() )
             {
+                unset( $this->app_filters[$Obj->name()] );
                 $tmp_xmlroot = $this->appFilterRoot;
                 $tmp_count = count($this->app_filters);
             }
             elseif( $Obj->isApplicationGroup() )
             {
+                unset( $this->app_groups[$Obj->name()] );
                 $tmp_xmlroot = $this->appGroupRoot;
                 $tmp_count = count($this->app_groups);
             }
@@ -1051,7 +1058,10 @@ class AppStore extends ObjStore
             if( $ret && !$Obj->isTmp() && $tmp_xmlroot !== null )
             {
                 if( $tmp_count > 0 )
-                    $tmp_xmlroot->removeChild($Obj->xmlroot);
+                {
+                    if( $Obj->xmlroot !== null && $Obj->xmlroot->parentNode === $tmp_xmlroot )
+                        $tmp_xmlroot->removeChild($Obj->xmlroot);
+                }
                 else
                     DH::clearDomNodeChilds($tmp_xmlroot);
             }
