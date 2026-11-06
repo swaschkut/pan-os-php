@@ -73,8 +73,15 @@ class MergeSafety
     public static function supports( string $storeProp ): bool
     {
         return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || $storeProp === 'securityProfileGroupStore'
-            || in_array( $storeProp, self::$profileStores, TRUE );
+            || in_array( $storeProp, self::$profileStores, TRUE ) || in_array( $storeProp, self::$xmlObjectStores, TRUE );
     }
+
+    /**
+     * objects used directly by rules (schedule, log forwarding profile, decryption profile): content = XML (XmlCompare);
+     * only rules can be pointed to another object, any other user (e.g. a zone in a template using a log forwarding
+     * profile of a device group) blocks the replacement
+     */
+    public static $xmlObjectStores = array( 'scheduleStore', 'LogProfileStore', 'DecryptionProfileStore' );
 
     /** security profile stores: content of a profile = its XML compared like type=diff (XmlCompare) */
     public static $profileStores = array( 'AntiVirusProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore',
@@ -102,6 +109,10 @@ class MergeSafety
      */
     public function checkReplace( $old, $new, array $extraOverlay = array() )
     {
+        $reason = $this->unreplaceableUser( $old );
+        if( $reason !== null )
+            return $reason;
+
         $overlay = $extraOverlay;
         self::markRemoved( $overlay, $old );
 
@@ -402,6 +413,22 @@ class MergeSafety
         return 'addressStore';
     }
 
+    /** for the object stores in $xmlObjectStores: a user of $object the merger cannot point to another object */
+    private function unreplaceableUser( $object )
+    {
+        if( !in_array( $this->storeProp, self::$xmlObjectStores, TRUE ) )
+            return null;
+
+        foreach( $this->referencers( $object ) as $ref )
+        {
+            if( method_exists( $ref, 'replaceDirectReference' ) )
+                continue;
+            $name = method_exists( $ref, 'name' ) ? $ref->name() : '';
+            return "used by " . get_class($ref) . " '" . $name . "' which cannot be pointed to another object";
+        }
+        return null;
+    }
+
     private function isGroupObject( $ref ): bool
     {
         return ( $ref instanceof AddressGroup ) || ( $ref instanceof ServiceGroup );
@@ -588,6 +615,12 @@ class MergeSafety
     public function leafContent( $object ): array
     {
         $c = self::emptyContent();
+
+        if( ( $object instanceof Schedule || $object instanceof LogProfile ) && isset($object->xmlroot) && $object->xmlroot !== null )
+        {
+            $c['other'][get_class($object) . ':' . substr( md5( XmlCompare::canonical( $object->xmlroot, array( 'rules' => TRUE ) ) ), 0, 12 )] = TRUE;
+            return $c;
+        }
 
         if( isset($object->owner) && $object->owner instanceof SecurityProfileStore && isset($object->xmlroot) && $object->xmlroot !== null )
         {

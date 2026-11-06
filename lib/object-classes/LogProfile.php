@@ -29,6 +29,10 @@ class LogProfile
     /** @var LogProfileStore|null */
     public $owner = null;
 
+    /** set by the mergers (type=object-merger) */
+    public $ancestor;
+    public $childancestor;
+
     public $type = null;
     public $type_available = null;
 

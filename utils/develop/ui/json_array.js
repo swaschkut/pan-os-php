@@ -5523,6 +5523,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "object-merger": {
+        "name": "object-merger",
+        "action": [],
+        "filter": []
+    },
     "override-finder": {
         "name": "override-finder",
         "action": [],

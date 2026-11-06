@@ -771,6 +771,128 @@ trait MergerEngine
      */
     function securityProfileMergeSpec( string $profileType, string $storeProp ): array
     {
+        return $this->xmlObjectMergeSpec( array(
+            'label' => "SecurityProfile-" . $profileType,
+            'objectTxt' => "security-profile",
+            'pluralTxt' => "security-profiles",
+            'storeProp' => $storeProp,
+            'ancestorTypeLabel' => "security-profile '" . $profileType . "'",
+            'sameClass' => function( $object, $store ) {
+                return is_object($object) && isset($object->xmlroot) && $object->xmlroot !== null && get_class($object) === $store->type;
+            },
+            'createCopy' => function( $store, $picked, $name ) {
+                /** @var SecurityProfileStore $store */
+                $created = $store->cloneSecurityProfile( $picked, $name );
+                if( $this->apiMode && method_exists($created, 'API_sync') )
+                    $created->API_sync();
+                return $created;
+            },
+            'remove' => function( $object ) {
+                if( $this->apiMode )
+                    $object->owner->API_removeSecurityProfile( $object );
+                else
+                    $object->owner->removeSecurityProfile( $object );
+            },
+        ) );
+    }
+
+    /**
+     * type=object-merger objecttype=schedule|log-profile|decryption-profile
+     * same rules as the security profile merger: samename (default) / samevalue, content = XML (XmlCompare)
+     */
+    function objectXmlMergeSpec( string $objectType, string $storeProp ): array
+    {
+        if( $storeProp === 'DecryptionProfileStore' )
+        {
+            $spec = $this->securityProfileMergeSpec( 'decryption', $storeProp );
+            $spec['label'] = "DecryptionProfile";
+            $spec['objectTxt'] = "decryption-profile";
+            $spec['pluralTxt'] = "decryption-profiles";
+            $spec['ancestorTypeLabel'] = "decryption-profile";
+            return $spec;
+        }
+
+        if( $storeProp === 'scheduleStore' )
+            return $this->xmlObjectMergeSpec( array(
+                'label' => "Schedule",
+                'objectTxt' => "schedule",
+                'pluralTxt' => "schedules",
+                'storeProp' => $storeProp,
+                'ancestorTypeLabel' => "schedule",
+                'sameClass' => function( $object, $store ) {
+                    return ( $object instanceof Schedule ) && !$object->isTmp() && $object->xmlroot !== null;
+                },
+                'createCopy' => function( $store, $picked, $name ) {
+                    /** @var ScheduleStore $store */
+                    return $this->cloneXmlObject( $store, $picked, $name,
+                        function( $store, $object ) { $store->addSchedule( $object ); } );
+                },
+                'remove' => function( $object ) {
+                    if( $this->apiMode )
+                        $object->owner->API_removeSchedule( $object );
+                    else
+                        $object->owner->removeSchedule( $object );
+                },
+            ) );
+
+        if( $storeProp === 'LogProfileStore' )
+            return $this->xmlObjectMergeSpec( array(
+                'label' => "LogProfile",
+                'objectTxt' => "log-profile",
+                'pluralTxt' => "log-profiles",
+                'storeProp' => $storeProp,
+                'ancestorTypeLabel' => "log-profile",
+                'sameClass' => function( $object, $store ) {
+                    return ( $object instanceof LogProfile ) && !$object->isTmp() && $object->xmlroot !== null;
+                },
+                'createCopy' => function( $store, $picked, $name ) {
+                    /** @var LogProfileStore $store */
+                    return $this->cloneXmlObject( $store, $picked, $name,
+                        function( $store, $object ) { $store->addLogProfile( $object ); } );
+                },
+                'remove' => function( $object ) {
+                    if( $this->apiMode )
+                        $object->owner->API_removeLogProfile( $object );
+                    else
+                        $object->owner->removeLogProfile( $object );
+                },
+            ) );
+
+        derr( "unsupported objecttype '{$objectType}' for the object merger" );
+    }
+
+    /**
+     * copy of $picked named $name in $store, built from a copy of the picked object's XML;
+     * $add puts it into the store (and creates the store's XML root if needed)
+     */
+    private function cloneXmlObject( $store, $picked, $name, callable $add )
+    {
+        $node = $picked->xmlroot->cloneNode( TRUE );
+        $node->setAttribute( 'name', $name );
+
+        $class = get_class( $picked );
+        $created = new $class( $name, $store );
+        $created->load_from_domxml( $node );
+        $add( $store, $created );
+
+        if( $this->apiMode )
+        {
+            $con = findConnectorOrDie( $store );
+            if( $con->isAPI() )
+                $con->sendSetRequest( $store->getXPath(), $created->getXmlText_inline() );
+        }
+
+        return $created;
+    }
+
+    /**
+     * objects compared by their XML content (XmlCompare, name ignored):
+     *  samename (default): same name across the device-group hierarchy, merged only with the same content
+     *  samevalue:          same content, also with different names
+     * $def: label, objectTxt, pluralTxt, storeProp, ancestorTypeLabel, sameClass( $object, $store ), createCopy, remove
+     */
+    function xmlObjectMergeSpec( array $def ): array
+    {
         $ordered = array( 'rules' => TRUE );
         $content = function( $object ) use ( $ordered ) {
             return XmlCompare::canonical( $object->xmlroot, $ordered );
@@ -784,21 +906,18 @@ trait MergerEngine
         $short = function( $object ) use ( $content ) {
             return "content#" . substr( md5( $content( $object ) ), 0, 8 );
         };
-        $sameClass = function( $object, $store ) {
-            return is_object($object) && isset($object->xmlroot) && $object->xmlroot !== null && get_class($object) === $store->type;
-        };
+        $sameClass = $def['sameClass'];
 
         return array(
-            'label' => "SecurityProfile-" . $profileType,
-            'objectTxt' => "security-profile",
-            'pluralTxt' => "security-profiles",
-            'storeProp' => $storeProp,
-            'ancestorTypeLabel' => "security-profile '" . $profileType . "'",
+            'label' => $def['label'],
+            'objectTxt' => $def['objectTxt'],
+            'pluralTxt' => $def['pluralTxt'],
+            'storeProp' => $def['storeProp'],
+            'ancestorTypeLabel' => $def['ancestorTypeLabel'],
             'differentValueTxt' => "with different content",
             'valueAlgs' => array( 'samename', 'samevalue' ),
 
             'listObjects' => function( $store ) {
-                /** @var SecurityProfileStore $store */
                 return $store->getAll();
             },
             'eligible' => function( $object ) use ( $sameClass ) {
@@ -823,13 +942,7 @@ trait MergerEngine
             'skipReason' => function( $picked, $other ) use ( $diffText ) {
                 return $diffText( $picked, $other );
             },
-            'createCopy' => function( $store, $picked, $name ) {
-                /** @var SecurityProfileStore $store */
-                $created = $store->cloneSecurityProfile( $picked, $name );
-                if( $this->apiMode && method_exists($created, 'API_sync') )
-                    $created->API_sync();
-                return $created;
-            },
+            'createCopy' => $def['createCopy'],
             'createdHashKey' => function( $created ) use ( $content ) {
                 if( $this->dupAlg == 'samevalue' )
                     return md5( $content( $created ) );
@@ -853,12 +966,7 @@ trait MergerEngine
                 $this->skippedObject( $index, $compareWith, $object, $diffText( $compareWith, $object ) );
                 return FALSE;
             },
-            'remove' => function( $object ) {
-                if( $this->apiMode )
-                    $object->owner->API_removeSecurityProfile( $object );
-                else
-                    $object->owner->removeSecurityProfile( $object );
-            },
+            'remove' => $def['remove'],
 
             'ancestorTypeOk' => function( $ancestor ) use ( $sameClass ) {
                 return $sameClass( $ancestor, $ancestor->owner );

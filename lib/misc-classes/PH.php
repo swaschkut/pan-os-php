@@ -2102,6 +2102,7 @@ class PH
         "custom-url-category-merger",
         "securityprofile-merger",
         "securityprofilegroup-merger",
+        "object-merger",
         "merger-possible-report",
         "device-config-bundle"
         );
@@ -2190,6 +2191,7 @@ class PH
             || $type == "custom-url-category-merger"
             || $type == "securityprofile-merger"
             || $type == "securityprofilegroup-merger"
+            || $type == "object-merger"
         )
             $util = new MERGER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

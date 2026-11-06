@@ -33,6 +33,32 @@ class MERGER extends UTIL
         'wildfire-analysis' => 'WildfireProfileStore',
         'data-filtering' => 'DataFilteringProfileStore',
     );
+    /**
+     * type=object-merger: objecttype argument => merger run for it (in this order for objecttype=any:
+     * objects before groups, profiles before security profile groups)
+     */
+    public static $objectMergerTypes = array(
+        'tag' => 'tag-merger',
+        'address' => 'address-merger',
+        'service' => 'service-merger',
+        'addressgroup' => 'addressgroup-merger',
+        'servicegroup' => 'servicegroup-merger',
+        'custom-url-category' => 'custom-url-category-merger',
+        'schedule' => 'schedule-merger',
+        'log-profile' => 'logprofile-merger',
+        'decryption-profile' => 'decryptionprofile-merger',
+        'securityprofile' => 'securityprofile-merger',
+        'securityprofilegroup' => 'securityprofilegroup-merger',
+    );
+    /** type=object-merger: merger runs that only exist inside the object merger => store property */
+    public static $xmlObjectMergerStores = array(
+        'schedule-merger' => 'scheduleStore',
+        'logprofile-merger' => 'LogProfileStore',
+        'decryptionprofile-merger' => 'DecryptionProfileStore',
+    );
+    /** type=object-merger: selected objecttype values */
+    public $objectMergerSelected = array();
+
     /** type=securityprofile-merger: selected profile type and its store property */
     public $spProfileType = null;
     public $spStoreProp = null;
@@ -161,6 +187,24 @@ class MERGER extends UTIL
 
         $this->location_filter();
 
+        if( $this->action === "display" )
+        {
+            $this->apiMode = FALSE;
+            $this->action = "merge";
+        }
+
+        if( $this->utilType == "object-merger" )
+            $this->object_merging();
+        else
+            $this->runMerger();
+
+        $this->merger_final_step();
+
+    }
+
+    /** location / filter / argument handling and the merge run for $this->utilType */
+    function runMerger()
+    {
         $this->location_array = $this->merger_location_array($this->utilType, $this->objectsLocation, $this->pan);
 
 
@@ -168,12 +212,6 @@ class MERGER extends UTIL
 
 
         $this->merger_arguments( );
-
-        if( $this->action === "display" )
-        {
-            $this->apiMode = FALSE;
-            $this->action = "merge";
-        }
 
         if( $this->utilType == "address-merger" )
             $this->address_merging();
@@ -208,11 +246,96 @@ class MERGER extends UTIL
         }
         elseif( $this->utilType == "securityprofilegroup-merger" )
             $this->securityprofilegroup_merging();
-        #elseif( $this->utilType == "object-merger" )
-        #    $this->object_merging( "Application" );
+        elseif( isset(self::$xmlObjectMergerStores[$this->utilType]) )
+            $this->genericObjectMerging( $this->objectXmlMergeSpec( $this->utilType, self::$xmlObjectMergerStores[$this->utilType] ) );
+    }
 
-        $this->merger_final_step();
+    /** type=object-merger: reads objecttype= (any or a comma separated list) */
+    function objectMergerTypes()
+    {
+        if( !isset(PH::$args['objecttype']) )
+            $this->display_error_usage_exit('argument objecttype= is required: any|' . implode('|', array_keys(self::$objectMergerTypes)));
 
+        $selected = array();
+        foreach( explode(',', strtolower(PH::$args['objecttype'])) as $type )
+        {
+            $type = trim($type);
+            if( $type === 'any' )
+                $selected = array_merge( $selected, array_keys(self::$objectMergerTypes) );
+            elseif( isset(self::$objectMergerTypes[$type]) )
+                $selected[] = $type;
+            else
+                $this->display_error_usage_exit('unsupported value for objecttype: ' . PH::$args['objecttype'] . ' - supported: any|' . implode('|', array_keys(self::$objectMergerTypes)));
+        }
+
+        // always in the order of $objectMergerTypes
+        $ordered = array();
+        foreach( array_keys(self::$objectMergerTypes) as $type )
+            if( in_array($type, $selected, TRUE) )
+                $ordered[] = $type;
+
+        return $ordered;
+    }
+
+    /** puts the merger back into its start state before the next objecttype is processed */
+    private function resetMergerRun( $utilType )
+    {
+        $this->utilType = $utilType;
+        $this->spStoreProp = null;
+        $this->spProfileType = null;
+        $this->spProfileTypes = array();
+        $this->pickFilter = null;
+        $this->excludeFilter = null;
+        $this->dupAlg = null;
+        $this->mergeSafety = null;
+        $this->addMissingObjects = FALSE;
+    }
+
+    /**
+     * type=object-merger objecttype=...: runs the merger of every selected object type, one after the other,
+     * on the same configuration; the result is saved once at the end
+     */
+    function object_merging()
+    {
+        $this->objectMergerSelected = $this->objectMergerTypes();
+
+        // security profiles inside the object merger: all profile types unless profiletype= is given
+        if( in_array('securityprofile', $this->objectMergerSelected, TRUE) && !isset(PH::$args['profiletype']) )
+            PH::$args['profiletype'] = 'any';
+
+        // check DupAlgorithm (and the other arguments) for every object type before anything is changed
+        foreach( $this->objectMergerSelected as $type )
+        {
+            $this->resetMergerRun( self::$objectMergerTypes[$type] );
+            $this->merger_arguments();
+        }
+
+        foreach( $this->objectMergerSelected as $type )
+        {
+            PH::print_stdout( "\n\n######################## objecttype: {$type} ########################" );
+            $this->resetMergerRun( self::$objectMergerTypes[$type] );
+            $this->mergeIndexPrefix = $type . ": ";
+
+            if( $this->utilType == "securityprofile-merger" )
+            {
+                $this->securityProfileMergerType();
+                foreach( $this->spProfileTypes as $profileType )
+                {
+                    PH::print_stdout( "\n\n######################## profiletype: {$profileType} ########################" );
+                    $this->selectSecurityProfileMergerType( $profileType );
+                    $this->mergeIndexPrefix = $type . "-" . $profileType . ": ";
+                    $this->location_array = $this->merger_location_array($this->utilType, $this->objectsLocation, $this->pan);
+                    $this->filterArgument( );
+                    $this->merger_arguments( );
+                    $this->securityprofile_merging();
+                }
+            }
+            else
+                $this->runMerger();
+        }
+
+        $this->mergeIndexPrefix = '';
+        $this->utilType = "object-merger";
     }
 
     function merger_location_array($utilType, $objectsLocation, $pan)
@@ -293,10 +416,9 @@ class MERGER extends UTIL
                     else
                         $parentStore = $findLocation->owner->customURLProfileStore;
                 }
-                elseif( $this->utilType == "securityprofile-merger" || $this->utilType == "securityprofilegroup-merger" )
+                elseif( $this->genericStoreProp() !== null )
                 {
-                    $this->securityProfileMergerType();
-                    $storeProp = $this->spStoreProp;
+                    $storeProp = $this->genericStoreProp();
                     $store = $findLocation->$storeProp;
 
                     if( $pan->isPanorama() && isset($findLocation->parentDeviceGroup) && $findLocation->parentDeviceGroup !== null )
@@ -343,10 +465,9 @@ class MERGER extends UTIL
                     $location_array[$key + 1]['store'] = $pan->tagStore;
                 elseif( $this->utilType == "custom-url-category-merger" )
                     $location_array[$key + 1]['store'] = $pan->customURLProfileStore;
-                elseif( $this->utilType == "securityprofile-merger" || $this->utilType == "securityprofilegroup-merger" )
+                elseif( $this->genericStoreProp() !== null )
                 {
-                    $this->securityProfileMergerType();
-                    $storeProp = $this->spStoreProp;
+                    $storeProp = $this->genericStoreProp();
                     $location_array[$key + 1]['store'] = $pan->$storeProp;
                 }
 
@@ -372,10 +493,9 @@ class MERGER extends UTIL
                             $store = $pan->tagStore;
                         elseif( $this->utilType == "custom-url-category-merger" )
                             $store = $pan->customURLProfileStore;
-                        elseif( $this->utilType == "securityprofile-merger" || $this->utilType == "securityprofilegroup-merger" )
+                        elseif( $this->genericStoreProp() !== null )
                         {
-                            $this->securityProfileMergerType();
-                            $storeProp = $this->spStoreProp;
+                            $storeProp = $this->genericStoreProp();
                             $store = $pan->$storeProp;
                         }
 
@@ -434,10 +554,9 @@ class MERGER extends UTIL
                             else
                                 $parentStore = $findLocation->owner->customURLProfileStore;
                         }
-                        elseif( $this->utilType == "securityprofile-merger" || $this->utilType == "securityprofilegroup-merger" )
+                        elseif( $this->genericStoreProp() !== null )
                         {
-                            $this->securityProfileMergerType();
-                            $storeProp = $this->spStoreProp;
+                            $storeProp = $this->genericStoreProp();
                             $store = $findLocation->$storeProp;
 
                             if( $pan->isPanorama() && isset($findLocation->parentDeviceGroup) && $findLocation->parentDeviceGroup !== null )
@@ -501,6 +620,12 @@ class MERGER extends UTIL
             $type = 'securityprofile';
         elseif( $this->utilType == "securityprofilegroup-merger" )
             $type = 'securityprofilegroup';
+        elseif( $this->utilType == "schedule-merger" )
+            $type = 'schedule';
+        elseif( $this->utilType == "logprofile-merger" )
+            $type = 'log-profile';
+        elseif( $this->utilType == "decryptionprofile-merger" )
+            $type = 'securityprofile';
 
         if( isset(PH::$args['pickfilter']) )
         {
@@ -654,6 +779,30 @@ class MERGER extends UTIL
                     "  content = profile XML compared like type=diff, the profile name is ignored\n",
                 'argDesc' => 'SameName|SameValue');
         }
+        elseif( $this->utilType == "object-merger" )
+        {
+            $this->supportedArguments[] = array(
+                'niceName' => 'ObjectType',
+                'shortHelp' => "object type(s) to merge (required); any = all types in this order, or a comma separated list",
+                'argDesc' => 'any|' . implode('|', array_keys(self::$objectMergerTypes)));
+            $this->supportedArguments[] = array(
+                'niceName' => 'ProfileType',
+                'shortHelp' => "objecttype=securityprofile: security profile type(s), default any",
+                'argDesc' => 'any|' . implode('|', array_keys(self::$securityProfileMergerStores)));
+            $this->supportedArguments[] = array(
+                'niceName' => 'DupAlgorithm',
+                'shortHelp' => "Specifies how to detect duplicates; leave it out to use the default of each object type:\n" .
+                    "  - address: SameAddress (default) | Identical | WhereUsed\n" .
+                    "  - addressgroup: SameMembers (default) | SameIP4Mapping | Identical | WhereUsed\n" .
+                    "  - service: SameDstSrcPorts (default) | SamePorts | Identical | WhereUsed\n" .
+                    "  - servicegroup: SameMembers (default) | SamePortMapping | Identical | WhereUsed\n" .
+                    "  - tag: Identical (default) | SameColor | WhereUsed | SameName\n" .
+                    "  - custom-url-category: SameValue (default) | Identical | SameName\n" .
+                    "  - schedule / log-profile / decryption-profile / securityprofile: SameName (default) | SameValue\n" .
+                    "  - securityprofilegroup: SameMembers (default) | SameValue\n" .
+                    "  with several object types the value must be valid for all of them\n",
+                'argDesc' => 'SameName|SameValue|...');
+        }
         elseif( $this->utilType == "custom-url-category-merger" )
         {
             $this->supportedArguments[] = array(
@@ -753,6 +902,13 @@ class MERGER extends UTIL
 
             $defaultDupAlg = 'samemembers';
         }
+        elseif( isset(self::$xmlObjectMergerStores[$this->utilType]) )
+        {
+            if( $this->dupAlg != 'samename' && $this->dupAlg != 'samevalue' )
+                $display_error = true;
+
+            $defaultDupAlg = 'samename';
+        }
         /*
         elseif( $this->utilType == "object-merger" )
         {
@@ -768,7 +924,8 @@ class MERGER extends UTIL
         {
             #$this->dupAlg = strtolower(PH::$args['dupalgorithm']);
             if( $display_error )
-                $this->display_error_usage_exit('unsupported value for dupAlgorithm: ' . PH::$args['dupalgorithm']);
+                $this->display_error_usage_exit('unsupported value for dupAlgorithm: ' . PH::$args['dupalgorithm']
+                    . ( count($this->objectMergerSelected) > 0 ? ' (objecttype ' . array_search($this->utilType, self::$objectMergerTypes) . ') - with several object types leave DupAlgorithm out to use the default of each type' : '' ) );
         }
         else
             $this->dupAlg = $defaultDupAlg;
@@ -804,6 +961,21 @@ class MERGER extends UTIL
         $this->spProfileTypes = array_values( array_unique($types) );
 
         $this->selectSecurityProfileMergerType( $this->spProfileTypes[0] );
+    }
+
+    /** store property of the security profile / security profile group / object merger runs, null for the others */
+    function genericStoreProp()
+    {
+        if( isset(self::$xmlObjectMergerStores[$this->utilType]) )
+            return self::$xmlObjectMergerStores[$this->utilType];
+
+        if( $this->utilType == "securityprofile-merger" || $this->utilType == "securityprofilegroup-merger" )
+        {
+            $this->securityProfileMergerType();
+            return $this->spStoreProp;
+        }
+
+        return null;
     }
 
     function selectSecurityProfileMergerType( $type )

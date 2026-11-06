@@ -37,6 +37,7 @@ UTIL:
 * type=merger-possible-report | introduction
 * class CertificateProfile | introduction
 * type=certificate-profile | introduction with actions/filter
+* type=object-merger | introduction
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
