@@ -2079,6 +2079,17 @@ class XMLISSUE extends UTIL
         $first = array_shift( $nodes );
         $firstCanonical = $this->fullScanCanonical( $first );
 
+        // members are grouped by their trimmed text: the one that stays gets the trimmed text, so a duplicate
+        // that differed only by leading / trailing spaces never leaves the spaced value behind
+        // (e.g. '<member> a.com</member>' + '<member>a.com</member>' -> '<member>a.com</member>')
+        if( $kind === 'member' && $first->textContent !== $identifier && count( $first->childNodes ) <= 1 )
+        {
+            $line = $first->getLineNo();
+            $text = "<member>" . $first->textContent . "</member> under '{$pattern}' at XML line #{$line} has a duplicate without leading / trailing spaces - kept as <member>{$identifier}</member>";
+            $first->textContent = $identifier;
+            $this->logFinding( $location, $identifier, "full scan {$kind}", $text, true );
+        }
+
         foreach( $nodes as $node )
         {
             /** @var DOMElement $node */
