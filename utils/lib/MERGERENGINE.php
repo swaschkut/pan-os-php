@@ -117,7 +117,7 @@ trait MergerEngine
             // Building a hash table of all objects with same value
             //
             if( $this->upperLevelSearch )
-                $objectsToSearchThrough = $store->nestedPointOfView();
+                $objectsToSearchThrough = isset($spec['nestedObjects']) ? $spec['nestedObjects']( $store ) : $store->nestedPointOfView();
             else
                 $objectsToSearchThrough = $spec['listObjects']( $store );
 
@@ -861,6 +861,58 @@ trait MergerEngine
                 },
             ) );
 
+        if( $objectType === 'region-merger' )
+            return $this->xmlObjectMergeSpec( array(
+                'label' => "Region",
+                'objectTxt' => "region",
+                'pluralTxt' => "regions",
+                'storeProp' => $storeProp,
+                'ancestorTypeLabel' => "region",
+                // the address members count (as a set); geo-location only places the region on the map
+                'ignoreTags' => array( 'description', 'geo-location' ),
+                'listObjects' => function( $store ) {
+                    $ret = array();
+                    foreach( $store->all() as $object )
+                        if( $object instanceof Region )
+                            $ret[] = $object;
+                    return $ret;
+                },
+                // allowMergingWithUpperLevel: the regions visible from this location (lowest copy of a name first);
+                // AddressStore::nestedPointOfView() has no regions
+                'nestedObjects' => function( $store ) {
+                    $ret = array();
+                    for( $current = $store; $current !== null; $current = isset($current->parentCentralStore) ? $current->parentCentralStore : null )
+                        foreach( $current->all() as $object )
+                            if( $object instanceof Region && !isset($ret[$object->name()]) )
+                                $ret[$object->name()] = $object;
+                    return $ret;
+                },
+                'sameClass' => function( $object, $store ) {
+                    return ( $object instanceof Region ) && $object->xmlroot !== null;
+                },
+                'createCopy' => function( $store, $picked, $name ) {
+                    /** @var AddressStore $store */
+                    $node = $picked->xmlroot->cloneNode( TRUE );
+                    $node->setAttribute( 'name', $name );
+                    $created = new Region( '', $store );
+                    $created->load_from_domxml( $node );
+                    $store->add( $created );
+                    if( $this->apiMode )
+                    {
+                        $con = findConnectorOrDie( $store );
+                        if( $con->isAPI() )
+                            $con->sendSetRequest( $store->getRegionStoreXPath(), $created->getXmlText_inline() );
+                    }
+                    return $created;
+                },
+                'remove' => function( $object ) {
+                    if( $this->apiMode )
+                        $object->owner->API_remove( $object );
+                    else
+                        $object->owner->remove( $object );
+                },
+            ) );
+
         if( $storeProp === 'appStore' )
         {
             $appTypes = array( 'appcustom-merger' => 'application-custom', 'appfilter-merger' => 'application-filter', 'appgroup-merger' => 'application-group' );
@@ -1014,8 +1066,11 @@ trait MergerEngine
         };
         $sameClass = $def['sameClass'];
 
-        return array(
+        $spec = array(
             'label' => $def['label'],
+            'listObjects' => isset($def['listObjects']) ? $def['listObjects'] : function( $store ) {
+                return $store->getAll();
+            },
             'objectTxt' => $def['objectTxt'],
             'pluralTxt' => $def['pluralTxt'],
             'storeProp' => $def['storeProp'],
@@ -1023,9 +1078,6 @@ trait MergerEngine
             'differentValueTxt' => "with different content",
             'valueAlgs' => array( 'samename', 'samevalue' ),
 
-            'listObjects' => function( $store ) {
-                return $store->getAll();
-            },
             'eligible' => function( $object ) use ( $sameClass ) {
                 return $sameClass( $object, $object->owner );
             },
@@ -1108,6 +1160,10 @@ trait MergerEngine
                 return FALSE;
             },
         );
+        if( isset($def['nestedObjects']) )
+            $spec['nestedObjects'] = $def['nestedObjects'];
+
+        return $spec;
     }
 
     function addressMergeSpec(): array

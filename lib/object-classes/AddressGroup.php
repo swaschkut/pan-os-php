@@ -1199,6 +1199,17 @@ class AddressGroup
                 $localMap = $member->getIP4Mapping( $RuleReferenceLocation );
                 $mapObject->addMap($localMap, TRUE);
             }
+            elseif( $member->isRegion() )
+            {
+                // custom region: its address members
+                $localMap = $member->getIP4Mapping();
+                $mapObject->addMap($localMap, TRUE);
+            }
+            elseif( $member->isEDL() )
+            {
+                // EDL: content only known on the firewall
+                $mapObject->unresolved[$member->name()] = $member;
+            }
             else
                 derr('unsupported type of objects ' . $member->toString());
         }
@@ -1245,6 +1256,17 @@ class AddressGroup
             {
                 $localMap6 = $member->getIP6Mapping( $RuleReferenceLocation );
                 $mapObject6->addMap($localMap6, TRUE);
+            }
+            elseif( $member->isRegion() )
+            {
+                // custom region: its address members
+                $localMap6 = $member->getIP6Mapping();
+                $mapObject6->addMap($localMap6, TRUE);
+            }
+            elseif( $member->isEDL() )
+            {
+                // EDL: content only known on the firewall
+                $mapObject6->unresolved[$member->name()] = $member;
             }
             else
                 derr('unsupported type of objects ' . $member->toString());
@@ -1295,6 +1317,13 @@ class AddressGroup
                         $result['unresolved'][spl_object_hash($unresolvedEntry)] = $unresolvedEntry;
                 }
             }
+            elseif( $member->isRegion() )
+            {
+                $mapObject->addMap($member->getIP4Mapping(), TRUE);
+                $mapObject6->addMap($member->getIP6Mapping(), TRUE);
+            }
+            elseif( $member->isEDL() )
+                $result['unresolved'][spl_object_hash($member)] = $member;
             else
                 derr('unsupported type of objects ' . $member->toString());
         }

@@ -42,6 +42,7 @@ class MERGER extends UTIL
         'address' => 'address-merger',
         'service' => 'service-merger',
         'edl' => 'edl-merger',
+        'region' => 'region-merger',
         'application-custom' => 'appcustom-merger',
         'application-filter' => 'appfilter-merger',
         'addressgroup' => 'addressgroup-merger',
@@ -63,6 +64,7 @@ class MERGER extends UTIL
         'appcustom-merger' => 'appStore',
         'appfilter-merger' => 'appStore',
         'appgroup-merger' => 'appStore',
+        'region-merger' => 'addressStore',
     );
     /** type=object-merger: selected objecttype values */
     public $objectMergerSelected = array();
@@ -636,6 +638,8 @@ class MERGER extends UTIL
             $type = 'securityprofile';
         elseif( $this->utilType == "edl-merger" )
             $type = 'edl';
+        elseif( $this->utilType == "region-merger" )
+            $type = 'address';
         elseif( $this->utilType == "appcustom-merger" || $this->utilType == "appfilter-merger" || $this->utilType == "appgroup-merger" )
             $type = 'application';
 
@@ -810,7 +814,7 @@ class MERGER extends UTIL
                     "  - servicegroup: SameMembers (default) | SamePortMapping | Identical | WhereUsed\n" .
                     "  - tag: Identical (default) | SameColor | WhereUsed | SameName\n" .
                     "  - custom-url-category: SameValue (default) | Identical | SameName\n" .
-                    "  - schedule / log-profile / decryption-profile / edl / application-custom / application-filter / application-group / securityprofile: SameName (default) | SameValue\n" .
+                    "  - schedule / log-profile / decryption-profile / edl / region / application-custom / application-filter / application-group / securityprofile: SameName (default) | SameValue\n" .
                     "  - securityprofilegroup: SameMembers (default) | SameValue\n" .
                     "  with several object types the value must be valid for all of them\n",
                 'argDesc' => 'SameName|SameValue|...');

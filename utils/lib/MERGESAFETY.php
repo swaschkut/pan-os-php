@@ -424,7 +424,7 @@ class MergeSafety
     {
         if( $this->storeProp === 'EDLStore' )
             return $this->unreplaceableEdlUser( $object );
-        if( $this->storeProp === 'appStore' )
+        if( $this->storeProp === 'appStore' || $object instanceof Region )
             return $this->unreplaceableAppUser( $object );
 
         if( !in_array( $this->storeProp, self::$xmlObjectStores, TRUE ) )
@@ -497,7 +497,8 @@ class MergeSafety
 
     /**
      * applications: users are rule application fields (AppRuleContainer), application groups and application
-     * override rules; any other user blocks the replacement
+     * override rules; custom regions: rule address fields and address groups; any other user (e.g. a GlobalProtect
+     * gateway naming a region) blocks the replacement
      */
     private function unreplaceableAppUser( $object )
     {

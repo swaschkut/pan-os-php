@@ -642,6 +642,21 @@ class AddressStore
 
             $this->addressGroupRoot->appendChild($s->xmlroot);
         }
+        elseif( $class == 'Region' )
+        {
+            $this->_regionObjects[$objectName] = $s;
+            $this->_all[$objectName] = $s;
+
+            if( $this->regionRoot == null )
+            {
+                // shared (Panorama / firewall): /config/shared, otherwise the device group / vsys entry
+                $locationRoot = ( ( $this->owner instanceof PanoramaConf || $this->owner instanceof PANConf ) && isset($this->owner->sharedroot) && $this->owner->sharedroot !== null )
+                    ? $this->owner->sharedroot : $this->owner->xmlroot;
+                $this->regionRoot = DH::findFirstElementOrCreate( 'region', $locationRoot );
+            }
+
+            $this->regionRoot->appendChild($s->xmlroot);
+        }
         else
             derr('invalid class found');
 
