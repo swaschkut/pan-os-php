@@ -1845,7 +1845,49 @@ class PH
         if( $class == 'VirtualSystem' )
             return array( $location, self::findRootObjectOrDie($location) );
 
+        if( $class == 'Container' || $class == 'DeviceCloud' || $class == 'DeviceOnPrem' )
+            return self::scmResolutionLevels( $location );
+
         return array( $location );
+    }
+
+    /**
+     * SCM (Fawkes / Buckbeak): the folder (or device) itself wins, then the snippets attached to it, then the parent
+     * folder and its snippets, ... up to 'All' and its snippets; 'predefined-snippet' last.
+     * (Assumption agreed for the mergers: an object in 'All' wins over the same name in a snippet attached to 'All',
+     * an object in a lower folder wins over the parent folders.)
+     */
+    public static function scmResolutionLevels( $location ): array
+    {
+        $levels = array();
+        $predefined = null;
+        $seen = array();
+        for( $cur = $location; $cur !== null; $cur = ( isset($cur->parentContainer) ? $cur->parentContainer : null ) )
+        {
+            if( isset($seen[spl_object_id($cur)]) )
+                break;
+            $seen[spl_object_id($cur)] = TRUE;
+            $levels[] = $cur;
+
+            if( method_exists($cur, 'getAttachedSnippets') )
+                foreach( $cur->getAttachedSnippets() as $snippet )
+                {
+                    if( $snippet->name() == 'predefined-snippet' )
+                    {
+                        $predefined = $snippet;
+                        continue;
+                    }
+                    if( !isset($seen[spl_object_id($snippet)]) )
+                    {
+                        $seen[spl_object_id($snippet)] = TRUE;
+                        $levels[] = $snippet;
+                    }
+                }
+        }
+        if( $predefined !== null )
+            $levels[] = $predefined;
+
+        return $levels;
     }
 
     /**

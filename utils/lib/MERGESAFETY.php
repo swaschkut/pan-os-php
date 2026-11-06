@@ -86,12 +86,14 @@ class MergeSafety
 
     /** security profile stores: content of a profile = its XML compared like type=diff (XmlCompare) */
     public static $profileStores = array( 'AntiVirusProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore',
-        'URLProfileStore', 'FileBlockingProfileStore', 'WildfireProfileStore', 'DataFilteringProfileStore' );
+        'URLProfileStore', 'FileBlockingProfileStore', 'WildfireProfileStore', 'DataFilteringProfileStore',
+        'VirusAndWildfireProfileStore', 'DNSSecurityProfileStore', 'SaasSecurityProfileStore' );
 
     /** profile type in a security profile group => store property */
     public static $profileTypeStores = array( 'virus' => 'AntiVirusProfileStore', 'spyware' => 'AntiSpywareProfileStore',
         'vulnerability' => 'VulnerabilityProfileStore', 'file-blocking' => 'FileBlockingProfileStore',
-        'wildfire-analysis' => 'WildfireProfileStore', 'url-filtering' => 'URLProfileStore', 'data-filtering' => 'DataFilteringProfileStore' );
+        'wildfire-analysis' => 'WildfireProfileStore', 'url-filtering' => 'URLProfileStore', 'data-filtering' => 'DataFilteringProfileStore',
+        'virus-and-wildfire-analysis' => 'VirusAndWildfireProfileStore', 'dns-security' => 'DNSSecurityProfileStore', 'saas-security' => 'SaasSecurityProfileStore' );
 
     /** the configuration was changed: drop cached contents */
     public function changed()
@@ -364,6 +366,10 @@ class MergeSafety
         elseif( $this->root instanceof PANConf )
             foreach( $this->root->getVirtualSystems() as $vsys )
                 $list[] = $vsys;
+        elseif( $this->isScm() )
+            // folders, devices and snippets
+            foreach( array_merge( $this->root->getContainers(), $this->root->getDeviceClouds(), $this->root->getDeviceOnPrems(), $this->root->getSnippets() ) as $loc )
+                $list[] = $loc;
 
         return $this->allLocationsList = $list;
     }
@@ -383,10 +389,51 @@ class MergeSafety
             $ret = array_merge( array( $loc ), array_values( $loc->childDeviceGroups(TRUE) ) );
         elseif( $loc instanceof PANConf )
             $ret = array_values( $loc->getVirtualSystems() );
+        elseif( $this->isScm() )
+            $ret = $this->scmReach( $loc );
         else
             $ret = array( $loc );
 
         return $this->reachCache[$id] = $ret;
+    }
+
+    private function isScm(): bool
+    {
+        return ( $this->root instanceof FawkesConf ) || ( $this->root instanceof BuckbeakConf );
+    }
+
+    /**
+     * SCM: the folders / devices that get what is configured at $loc (every folder is checked as if a firewall
+     * were attached to it): a folder and all folders / devices below it; a snippet: everything below each
+     * folder / device it is attached to; the root: everything
+     */
+    private function scmReach( $loc ): array
+    {
+        $ret = array();
+        if( $loc instanceof FawkesConf || $loc instanceof BuckbeakConf )
+            $starts = array_merge( $loc->getContainers(), $loc->getDeviceClouds(), $loc->getDeviceOnPrems() );
+        elseif( $loc instanceof Snippet )
+        {
+            $starts = array();
+            foreach( array_merge( $this->root->getContainers(), $this->root->getDeviceClouds(), $this->root->getDeviceOnPrems() ) as $candidate )
+                if( method_exists($candidate, 'getAttachedSnippets') && in_array( $loc, $candidate->getAttachedSnippets(), TRUE ) )
+                    $starts[] = $candidate;
+        }
+        else
+            $starts = array( $loc );
+
+        $stack = $starts;
+        while( count($stack) > 0 )
+        {
+            $cur = array_pop( $stack );
+            if( isset($ret[spl_object_id($cur)]) )
+                continue;
+            $ret[spl_object_id($cur)] = $cur;
+            if( isset($cur->_childContainers) )
+                foreach( $cur->_childContainers as $child )
+                    $stack[] = $child;
+        }
+        return array_values( $ret );
     }
 
     private static function locationName( $loc ): string

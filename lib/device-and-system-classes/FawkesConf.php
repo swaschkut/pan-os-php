@@ -273,6 +273,17 @@ class FawkesConf
         //
 
 
+        // snippets first: containers and devices attach them while loading (as in BuckbeakConf)
+        foreach( $this->snippetroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new Snippet( $this );
+
+            $ldv->load_from_domxml( $node );
+            $this->snippets[] = $ldv;
+        }
+
         $containerMetaDataNode = DH::findXPathSingleEntry('/config/readonly/devices/entry/container', $this->xmlroot);
 
         $containerToParent = array();
@@ -450,15 +461,6 @@ class FawkesConf
         //
         // loading snippets
         //
-        foreach( $this->snippetroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new Snippet( $this );
-
-            $ldv->load_from_domxml( $node );
-            $this->snippets[] = $ldv;
-        }
         //
         // end of DeviceCloud
         //

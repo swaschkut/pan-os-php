@@ -219,6 +219,18 @@ class SecurityProfileGroup
                             $sub = $this->owner->owner;
 
 
+                        // predefined profiles: only where the configuration has such a store (not on SCM roots,
+                        // where e.g. a profile of a sibling folder or a predefined-snippet profile is named)
+                        $predefinedStores = array( 'AntiVirusProfileStore' => 'AntiVirusPredefinedStore', 'AntiSpywareProfileStore' => 'AntiSpywarePredefinedStore',
+                            'VulnerabilityProfileStore' => 'VulnerabilityPredefinedStore', 'FileBlockingProfileStore' => 'FileBlockingPredefinedStore',
+                            'WildfireProfileStore' => 'WildfirePredefinedStore', 'URLProfileStore' => 'UrlFilteringPredefinedStore',
+                            'VirusAndWildfireProfileStore' => 'VirusAndWildfireProfileStore', 'DataFilteringProfileStore' => 'DataFilteringPredefinedStore' );
+                        if( !isset($predefinedStores[$tmp_store_name]) || !isset($sub->{$predefinedStores[$tmp_store_name]}) || $sub->{$predefinedStores[$tmp_store_name]} === null )
+                        {
+                            $this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
+                            goto spgSlotNameOnly;
+                        }
+
                         if( $tmp_store_name == 'AntiVirusProfileStore')
                             $profile = $sub->AntiVirusPredefinedStore->find( $tmp_type->nodeValue );
                         elseif( $tmp_store_name == 'AntiSpywareProfileStore')
@@ -280,6 +292,7 @@ class SecurityProfileGroup
                         }
                     }
 
+                    spgSlotNameOnly:
                     $str .= $secprof_type.':'.$tmp_type->nodeValue;
                     if( $i < $counter )
                     {

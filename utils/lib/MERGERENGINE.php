@@ -2416,7 +2416,10 @@ trait MergerEngine
         $typeStores = array(
             'virus' => 'AntiVirusProfileStore', 'spyware' => 'AntiSpywareProfileStore', 'vulnerability' => 'VulnerabilityProfileStore',
             'file-blocking' => 'FileBlockingProfileStore', 'wildfire-analysis' => 'WildfireProfileStore', 'url-filtering' => 'URLProfileStore',
-            'data-filtering' => 'DataFilteringProfileStore' );
+            'data-filtering' => 'DataFilteringProfileStore',
+            // SCM
+            'virus-and-wildfire-analysis' => 'VirusAndWildfireProfileStore', 'dns-security' => 'DNSSecurityProfileStore',
+            'saas-security' => 'SaasSecurityProfileStore' );
         $ordered = array( 'rules' => TRUE );
 
         // type => profile object (or name if no object exists)

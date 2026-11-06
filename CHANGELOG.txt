@@ -41,6 +41,7 @@ UTIL:
 * type=object-merger | extend for EDL
 * type=object-merger | extend with appcustomer/group/filter
 * type=object-merger | extend with customer-region
+* merger extend with all new SCM SP objects
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

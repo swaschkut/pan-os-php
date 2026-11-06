@@ -32,6 +32,10 @@ class MERGER extends UTIL
         'file-blocking' => 'FileBlockingProfileStore',
         'wildfire-analysis' => 'WildfireProfileStore',
         'data-filtering' => 'DataFilteringProfileStore',
+        // SCM (Fawkes / Buckbeak)
+        'virus-and-wildfire-analysis' => 'VirusAndWildfireProfileStore',
+        'dns-security' => 'DNSSecurityProfileStore',
+        'saas-security' => 'SaasSecurityProfileStore',
     );
     /**
      * type=object-merger: objecttype argument => merger run for it (in this order for objecttype=any:
@@ -367,6 +371,9 @@ class MERGER extends UTIL
 
                 $subGroups2 = $this->pan->getDeviceOnPrems();
                 $alldevicegroup = array_merge( $alldevicegroup, $subGroups2 );
+
+                // snippets hold objects too
+                $alldevicegroup = array_merge( $alldevicegroup, $this->pan->getSnippets() );
             }
             elseif( $pan->isFirewall() )
                 $alldevicegroup = $pan->virtualSystems;
@@ -423,7 +430,7 @@ class MERGER extends UTIL
                         $parentStore = $findLocation->parentDeviceGroup->customURLProfileStore;
                     elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                         $parentStore = $findLocation->parentContainer->customURLProfileStore;
-                    else
+                    elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                         $parentStore = $findLocation->owner->customURLProfileStore;
                 }
                 elseif( $this->genericStoreProp() !== null )
@@ -435,7 +442,7 @@ class MERGER extends UTIL
                         $parentStore = $findLocation->parentDeviceGroup->$storeProp;
                     elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                         $parentStore = $findLocation->parentContainer->$storeProp;
-                    else
+                    elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                         $parentStore = $findLocation->owner->$storeProp;
                 }
 
@@ -528,7 +535,7 @@ class MERGER extends UTIL
                                 $parentStore = $findLocation->parentDeviceGroup->addressStore;
                             elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                                 $parentStore = $findLocation->parentContainer->addressStore;
-                            else
+                            elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                                 $parentStore = $findLocation->owner->addressStore;
                         }
                         elseif( $this->utilType == "service-merger" || $this->utilType == "servicegroup-merger" )
@@ -539,7 +546,7 @@ class MERGER extends UTIL
                                 $parentStore = $findLocation->parentDeviceGroup->serviceStore;
                             elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                                 $parentStore = $findLocation->parentContainer->serviceStore;
-                            else
+                            elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                                 $parentStore = $findLocation->owner->serviceStore;
                         }
                         elseif( $this->utilType == "tag-merger" )
@@ -550,7 +557,7 @@ class MERGER extends UTIL
                                 $parentStore = $findLocation->parentDeviceGroup->tagStore;
                             elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                                 $parentStore = $findLocation->parentContainer->tagStore;
-                            else
+                            elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                                 $parentStore = $findLocation->owner->tagStore;
                         }
                         elseif( $this->utilType == "custom-url-category-merger" )
@@ -561,7 +568,7 @@ class MERGER extends UTIL
                                 $parentStore = $findLocation->parentDeviceGroup->customURLProfileStore;
                             elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                                 $parentStore = $findLocation->parentContainer->customURLProfileStore;
-                            else
+                            elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                                 $parentStore = $findLocation->owner->customURLProfileStore;
                         }
                         elseif( $this->genericStoreProp() !== null )
@@ -573,16 +580,31 @@ class MERGER extends UTIL
                                 $parentStore = $findLocation->parentDeviceGroup->$storeProp;
                             elseif( ($pan->isFawkes() || $pan->isBuckbeak()) && isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
                                 $parentStore = $findLocation->parentContainer->$storeProp;
-                            else
+                            elseif( !$pan->isFawkes() && !$pan->isBuckbeak() )
                                 $parentStore = $findLocation->owner->$storeProp;
                         }
-                        if( get_class($findLocation->owner) == "FawkesConf" )
+                        if( get_class($findLocation->owner) == "FawkesConf" || get_class($findLocation->owner) == "BuckbeakConf" )
                             $parentStore = null;
 
                         $location_array[$key]['findLocation'] = $findLocation;
                         $location_array[$key]['store'] = $store;
                         $location_array[$key]['parentStore'] = $parentStore;
                     }
+                }
+            }
+            else
+            {
+                // SCM (Fawkes / Buckbeak): folders, devices and snippets by name; no parent store (no upper-level merge)
+                foreach( $objectsLocation as $key => $locationName )
+                {
+                    $findLocation = $pan->findSubSystemByName( $locationName );
+                    if( $findLocation === null )
+                        $this->locationNotFound( $locationName );
+
+                    $storeProp = $this->mergerStoreProp();
+                    $location_array[$key]['findLocation'] = $findLocation;
+                    $location_array[$key]['store'] = $findLocation->$storeProp;
+                    $location_array[$key]['parentStore'] = null;
                 }
             }
 
@@ -968,7 +990,8 @@ class MERGER extends UTIL
         {
             $type = trim($type);
             if( $type === 'any' )
-                $types = array_merge( $types, array_keys(self::$securityProfileMergerStores) );
+                // only the profile types this configuration has (Panorama / firewall: no SCM types, SCM: no virus / wildfire-analysis)
+                $types = array_merge( $types, $this->profileTypesOfConfig() );
             elseif( isset(self::$securityProfileMergerStores[$type]) )
                 $types[] = $type;
             else
@@ -977,6 +1000,34 @@ class MERGER extends UTIL
         $this->spProfileTypes = array_values( array_unique($types) );
 
         $this->selectSecurityProfileMergerType( $this->spProfileTypes[0] );
+    }
+
+    /** store property of the current merger run */
+    function mergerStoreProp()
+    {
+        if( $this->utilType == "address-merger" || $this->utilType == "addressgroup-merger" )
+            return 'addressStore';
+        if( $this->utilType == "service-merger" || $this->utilType == "servicegroup-merger" )
+            return 'serviceStore';
+        if( $this->utilType == "tag-merger" )
+            return 'tagStore';
+        if( $this->utilType == "custom-url-category-merger" )
+            return 'customURLProfileStore';
+        return $this->genericStoreProp();
+    }
+
+    /** profile types whose store exists in the loaded configuration */
+    function profileTypesOfConfig()
+    {
+        $location = $this->pan;
+        if( ( $this->pan->isFawkes() || $this->pan->isBuckbeak() ) && count( $this->pan->getContainers() ) > 0 )
+            $location = $this->pan->getContainers()[0];
+
+        $ret = array();
+        foreach( self::$securityProfileMergerStores as $type => $storeProp )
+            if( isset($location->$storeProp) && $location->$storeProp !== null )
+                $ret[] = $type;
+        return $ret;
     }
 
     /** store property of the security profile / security profile group / object merger runs, null for the others */

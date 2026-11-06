@@ -21,8 +21,9 @@ class SecurityProfileGroupStore extends ObjStore
     public $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
     public $secprof_store = array( 'AntiVirusProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore', 'FileBlockingProfileStore', 'WildfireProfileStore', 'URLProfileStore', 'DataFilteringProfileStore' );
 
-    private $secprof_fawkes_array = array('virusandwildfire-analysis', 'spyware', 'vulnerability', 'file-blocking', 'dns-security', 'url-filtering');
-    private $secprof_fawkes_store = array( 'VirusAndWildfireProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore', 'FileBlockingProfileStore', 'DNSSecurityProfileStore', 'URLProfileStore' );
+    // SCM (Fawkes / Buckbeak): the profile types of a security profile group / rule profile-setting
+    private $secprof_fawkes_array = array('virus-and-wildfire-analysis', 'spyware', 'vulnerability', 'file-blocking', 'dns-security', 'url-filtering', 'saas-security', 'data-filtering');
+    private $secprof_fawkes_store = array( 'VirusAndWildfireProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore', 'FileBlockingProfileStore', 'DNSSecurityProfileStore', 'URLProfileStore', 'SaasSecurityProfileStore', 'DataFilteringProfileStore' );
     
 
     /** @var DOMElement */
@@ -37,6 +38,13 @@ class SecurityProfileGroupStore extends ObjStore
 
         $this->owner = $owner;
         $this->o = array();
+
+        // SCM locations use the SCM profile types (rules look them up through secprof_array / secprof_store)
+        if( is_object($owner) && in_array( get_class($owner), array( 'FawkesConf', 'BuckbeakConf', 'Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet' ), TRUE ) )
+        {
+            $this->secprof_array = $this->secprof_fawkes_array;
+            $this->secprof_store = $this->secprof_fawkes_store;
+        }
 
         $this->setParentCentralStore( 'securityProfileGroupStore' );
     }
