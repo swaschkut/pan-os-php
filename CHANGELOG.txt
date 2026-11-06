@@ -68,6 +68,7 @@ BUGFIX:
 * type=rule-compare | bugfix related to ancestor-objects-take-precedence yes
 * MERGERENGINE - fix optimisation compare to origin to not crash
 * type=xml-issue | bugfix to keep the value without blank character at pre-/postfix
+* different classes nestedPointOfView - bugfix
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

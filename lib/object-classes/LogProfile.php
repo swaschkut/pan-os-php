@@ -46,6 +46,8 @@ class LogProfile
     public function __construct($name, $owner, $fromXmlTemplate = FALSE)
     {
         $this->name = $name;
+        // set before load_from_domxml() below: it reads the PAN-OS version through the owner
+        $this->owner = $owner;
 
         //with 810,910,100,121 there was also gtp,sctp??
         if( isset($owner->owner->version) )
@@ -334,6 +336,24 @@ class LogProfile
 
         $this->type[$logType][$name]['send_to_panorama'] = $sendToPanorama;
 
+        // the XML as well, so that a saved / pushed profile has the same match list
+        if( $this->xmlroot !== null )
+        {
+            $matchList = DH::findFirstElementOrCreate('match-list', $this->xmlroot);
+            foreach( $matchList->childNodes as $existing )
+                if( $existing->nodeType == XML_ELEMENT_NODE && $existing->getAttribute('name') === $name )
+                {
+                    $matchList->removeChild( $existing );
+                    break;
+                }
+
+            $entry = $this->xmlroot->ownerDocument->createElement('entry');
+            $entry->setAttribute('name', $name);
+            $entry->appendChild( $this->xmlroot->ownerDocument->createElement('log-type', $logType) );
+            $entry->appendChild( $this->xmlroot->ownerDocument->createElement('filter', $filter) );
+            $entry->appendChild( $this->xmlroot->ownerDocument->createElement('send-to-panorama', $sendToPanorama ? 'yes' : 'no') );
+            $matchList->appendChild( $entry );
+        }
     }
 
     /**

@@ -1098,8 +1098,7 @@ class AddressStore
                         if( $tmp_value != $o_value && ($o_ref_count > 0) )
                         {
                             if( $location != "shared" )
-                                foreach( $o->refrules as $ref )
-                                    $tmp_o->addReference( $ref );
+                                ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                         }
                     }
                 }
@@ -1134,8 +1133,7 @@ class AddressStore
                         if( $tmp_value != $o_value && ($o_ref_count > 0) )
                         {
                             if( $location != "shared" )
-                                foreach( $o->refrules as $ref )
-                                    $tmp_o->addReference( $ref );
+                                ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                         }
                     }
                 }
@@ -1165,8 +1163,7 @@ class AddressStore
                         if( $tmp_value != $o_value && ( $o_ref_count > 0) )
                         {
                             if( $location != "shared" )
-                                foreach( $o->refrules as $ref )
-                                    $tmp_o->addReference( $ref );
+                                ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                         }
                     }
                 }
