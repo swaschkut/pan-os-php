@@ -2044,6 +2044,7 @@ class PH
         "rule-compare",
         "custom-url-category-merger",
         "securityprofile-merger",
+        "securityprofilegroup-merger",
         "device-config-bundle"
         );
 
@@ -2129,6 +2130,7 @@ class PH
             || $type == "tag-merger"
             || $type == "custom-url-category-merger"
             || $type == "securityprofile-merger"
+            || $type == "securityprofilegroup-merger"
         )
             $util = new MERGER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

@@ -72,12 +72,18 @@ class MergeSafety
     /** whether this check applies (address / service objects and groups) */
     public static function supports( string $storeProp ): bool
     {
-        return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || in_array( $storeProp, self::$profileStores, TRUE );
+        return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || $storeProp === 'securityProfileGroupStore'
+            || in_array( $storeProp, self::$profileStores, TRUE );
     }
 
     /** security profile stores: content of a profile = its XML compared like type=diff (XmlCompare) */
     public static $profileStores = array( 'AntiVirusProfileStore', 'AntiSpywareProfileStore', 'VulnerabilityProfileStore',
         'URLProfileStore', 'FileBlockingProfileStore', 'WildfireProfileStore', 'DataFilteringProfileStore' );
+
+    /** profile type in a security profile group => store property */
+    public static $profileTypeStores = array( 'virus' => 'AntiVirusProfileStore', 'spyware' => 'AntiSpywareProfileStore',
+        'vulnerability' => 'VulnerabilityProfileStore', 'file-blocking' => 'FileBlockingProfileStore',
+        'wildfire-analysis' => 'WildfireProfileStore', 'url-filtering' => 'URLProfileStore', 'data-filtering' => 'DataFilteringProfileStore' );
 
     /** the configuration was changed: drop cached contents */
     public function changed()
@@ -513,6 +519,33 @@ class MergeSafety
         $id = spl_object_id($object);
         if( isset($overlay['content'][$id]) )
             return $overlay['content'][$id];
+
+        // security profile group: per profile type the profile its name resolves to on this firewall
+        if( $object instanceof SecurityProfileGroup )
+        {
+            $content = self::emptyContent();
+            $names = array();
+            foreach( $object->secprofProfiles_obj as $type => $profile )
+                $names[$type] = is_object($profile) ? $profile->name() : (string)$profile;
+            foreach( $object->secprofiles as $type => $name )
+                if( !isset($names[$type]) )
+                    $names[$type] = (string)$name;
+            ksort($names);
+            foreach( $names as $type => $name )
+            {
+                if( $name === '' )
+                    continue;
+                $resolved = isset(self::$profileTypeStores[$type]) ? $this->resolve( $name, $fw, $overlay, self::$profileTypeStores[$type] ) : null;
+                if( $resolved === null )
+                {
+                    $content['other'][$type . ':unresolved:' . $name] = TRUE;
+                    continue;
+                }
+                foreach( $this->leafContent( $resolved )['other'] as $token => $v )
+                    $content['other'][$type . ':' . $token] = TRUE;
+            }
+            return $content;
+        }
 
         $isGroup = $this->isGroupObject( $object );
         if( !$isGroup || ( $object instanceof AddressGroup && $object->isDynamic() ) )

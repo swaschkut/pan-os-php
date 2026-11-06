@@ -337,6 +337,35 @@ class SecurityProfileGroupStore extends ObjStore
      *
      * @return bool  True if Zone was found and removed. False if not found.
      */
+    /**
+     * Groups visible from this location: own groups first, then those of the parent locations
+     * (a name is listed once, the lowest copy wins).
+     * @return SecurityProfileGroup[]
+     */
+    public function nestedPointOfView()
+    {
+        $current = $this;
+        $objects = array();
+
+        while( TRUE )
+        {
+            foreach( $current->o as $o )
+                if( !isset($objects[$o->name()]) )
+                    $objects[$o->name()] = $o;
+
+            if( isset($current->owner->parentDeviceGroup) && $current->owner->parentDeviceGroup !== null )
+                $current = $current->owner->parentDeviceGroup->securityProfileGroupStore;
+            elseif( isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
+                $current = $current->owner->parentContainer->securityProfileGroupStore;
+            elseif( isset($current->owner->owner) && $current->owner->owner !== null && !$current->owner->owner->isFawkes() && !$current->owner->owner->isBuckbeak() )
+                $current = $current->owner->owner->securityProfileGroupStore;
+            else
+                break;
+        }
+
+        return $objects;
+    }
+
     public function removeSecurityProfileGroup(SecurityProfileGroup $tag)
     {
         $ret = $this->remove($tag);

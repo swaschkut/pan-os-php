@@ -32,6 +32,7 @@ UTIL:
 * type=xyz-merger | different classes preparation for securityprofilegroup-merger
 * type=diff | move part to class XmlCompare
 * type=securityprofile-merger | introduction
+* type=securityprofilegroup-merger | introduction
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

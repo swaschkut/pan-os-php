@@ -361,6 +361,8 @@ class UTIL
                 $tmp_utilType = "tag";
             elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                 $tmp_utilType = "securityprofile";
+            elseif( $tmp_utilType == "securityprofilegroup-merger" )
+                $tmp_utilType = "securityprofilegroup";
             elseif( $tmp_utilType == "rule-merger" )
                 $tmp_utilType = "rule";
 
@@ -621,6 +623,8 @@ class UTIL
                     $tmp_utilType = "tag";
                 elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                     $tmp_utilType = "securityprofile";
+                elseif( $tmp_utilType == "securityprofilegroup-merger" )
+                    $tmp_utilType = "securityprofilegroup";
                 elseif( $tmp_utilType == "rule-merger" )
                     $tmp_utilType = "rule";
                 else

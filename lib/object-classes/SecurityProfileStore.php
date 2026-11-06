@@ -1239,6 +1239,17 @@ class SecurityProfileStore extends ObjStore
     /**
      * @return * @param SecurityProfile| URLProfile | AntiSpywareProfile | AntiVirusProfile | VulnerabilityProfile | FileBlockingProfile | WildfireProfile | customURLProfile []
      */
+    /** name of the property of the owner (device group / vsys / shared) that holds this store */
+    public function ownStoreProperty()
+    {
+        if( is_object($this->owner) )
+            foreach( get_object_vars($this->owner) as $prop => $value )
+                if( $value === $this )
+                    return $prop;
+
+        return "customURLProfileStore";
+    }
+
     public function nestedPointOfView()
     {
         $current = $this;
@@ -1271,7 +1282,8 @@ class SecurityProfileStore extends ObjStore
                 }
             }
 
-            $storeType = "customURLProfileStore";
+            // the same store type one level up (was always customURLProfileStore)
+            $storeType = $this->ownStoreProperty();
             if( isset($current->owner->parentDeviceGroup) && $current->owner->parentDeviceGroup !== null )
                 $current = $current->owner->parentDeviceGroup->$storeType;
             elseif( isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )

@@ -635,6 +635,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared)",
                             "input": "input\/panorama-8.0.xml"
@@ -643,6 +644,7 @@ var subjectObject =
                     "regex": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
                         "ci": {
                             "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
@@ -651,7 +653,7 @@ var subjectObject =
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -660,7 +662,7 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -697,6 +699,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% -)",
                             "input": "input\/panorama-8.0.xml"
@@ -705,6 +708,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% new test 1)",
                             "input": "input\/panorama-8.0.xml"
@@ -713,6 +717,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% new test 2)",
                             "input": "input\/panorama-8.0.xml"
@@ -729,6 +734,15 @@ var subjectObject =
                     "is.in.file": {
                         "Function": {},
                         "arg": true
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "regex": {
                         "Function": {},
@@ -835,6 +849,15 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.member.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if the object is a direct member of the group specified in argument (members of sub-groups: is.recursive.member.of)",
+                        "ci": {
+                            "fString": "(%PROP% shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.group": {
                         "Function": {},
                         "arg": false,
@@ -915,14 +938,6 @@ var subjectObject =
                         "Function": {},
                         "arg": false
                     },
-                    "is.member.of": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% shared-group1)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.recursive.member.of": {
                         "Function": {},
                         "arg": true,
@@ -950,7 +965,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches",
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -959,7 +974,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches",
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -1578,6 +1593,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% ftp)",
                             "input": "input\/panorama-8.0.xml"
@@ -1587,7 +1603,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% \/tcp\/)",
+                            "fString": "(%PROP% \/-group\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1595,6 +1611,14 @@ var subjectObject =
             },
             "object": {
                 "operators": {
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.predefined": {
                         "Function": {},
                         "arg": false,
@@ -1620,14 +1644,6 @@ var subjectObject =
                         }
                     },
                     "is.application-custom": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.tmp": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -1967,6 +1983,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% -)",
                             "input": "input\/panorama-8.0.xml"
@@ -1975,6 +1992,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% new test 1)",
                             "input": "input\/panorama-8.0.xml"
@@ -1983,8 +2001,18 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% new test 2)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2762,6 +2790,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3038,10 +3067,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -3050,17 +3088,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3083,6 +3113,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -3091,6 +3122,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3099,6 +3131,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3113,6 +3146,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3167,6 +3209,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3175,6 +3218,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3364,10 +3408,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -3376,17 +3429,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3397,6 +3442,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -3405,6 +3451,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3413,6 +3460,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3427,6 +3475,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3509,6 +3566,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3517,6 +3575,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3618,10 +3677,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -3630,17 +3698,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3651,6 +3711,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -3659,6 +3720,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3667,6 +3729,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3681,6 +3744,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3715,6 +3787,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3723,6 +3796,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3775,10 +3849,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -3787,17 +3870,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3808,6 +3883,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -3816,6 +3892,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3824,6 +3901,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -3838,6 +3916,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3872,6 +3959,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3880,6 +3968,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3921,7 +4010,20 @@ var subjectObject =
                 "MainFunction": {}
             }
         },
-        "filter": []
+        "filter": {
+            "name": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
     },
     "gratuitous-arp": {
         "name": "gratuitous-arp",
@@ -3942,6 +4044,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -4030,6 +4133,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -4163,6 +4267,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -4319,19 +4424,19 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "eq": {
                         "Function": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% ethernet1\/1)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/tcp\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4528,10 +4633,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -4540,17 +4654,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4561,6 +4667,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -4569,6 +4676,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -4577,6 +4685,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -4591,6 +4700,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4641,6 +4759,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -4649,6 +4768,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -4794,6 +4914,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -4873,6 +4994,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -5002,10 +5124,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -5014,17 +5145,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5035,6 +5158,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -5043,6 +5167,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -5051,6 +5176,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -5065,6 +5191,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5130,7 +5265,11 @@ var subjectObject =
                     },
                     "is.predefined": {
                         "Function": {},
-                        "arg": false
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -5151,6 +5290,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -5159,6 +5299,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -5389,10 +5530,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -5401,17 +5551,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5422,6 +5564,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -5430,6 +5573,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -5438,6 +5582,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -5452,6 +5597,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5494,6 +5648,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -5502,6 +5657,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -7939,7 +8095,34 @@ var subjectObject =
                         "arg": true,
                         "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
-                            "fString": "(%PROP%  Datacenter)",
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -7967,33 +8150,6 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "returns TRUE if object location is DeviceOnPrem"
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
-                        "ci": {
-                            "fString": "(%PROP%  \/DC\/)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.child.of": {
-                        "Function": {},
-                        "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
-                        "ci": {
-                            "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.parent.of": {
-                        "Function": {},
-                        "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
-                        "ci": {
-                            "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
                     }
                 }
             },
@@ -8040,6 +8196,24 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% new test 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% new test 2)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "has.wrong.characters": {
                         "Function": {},
                         "arg": false,
@@ -8048,12 +8222,25 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "eq": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "contains": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if rule name matches the one specified in argument",
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
-                            "fString": "(%PROP%  rule1)",
+                            "fString": "(%PROP% udp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -8065,27 +8252,6 @@ var subjectObject =
                             "fString": "(%PROP%  \/^example\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
-                    },
-                    "eq.nocase": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP%  rule1)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "contains": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP%  searchME)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.in.file": {
-                        "Function": {},
-                        "arg": true,
-                        "help": "returns TRUE if rule name matches one of the names found in text file provided in argument"
                     },
                     "is.in.csv-report-file": {
                         "Function": {},
@@ -9306,6 +9472,7 @@ var subjectObject =
                     "regex": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
                         "ci": {
                             "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
@@ -9314,7 +9481,7 @@ var subjectObject =
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -9323,7 +9490,7 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -9336,6 +9503,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -9344,6 +9512,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -9352,6 +9521,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -9366,6 +9536,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -9460,6 +9639,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -9468,6 +9648,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -10374,10 +10555,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -10386,17 +10576,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -10407,6 +10589,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -10415,6 +10598,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -10423,6 +10607,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -10437,6 +10622,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -10457,6 +10651,14 @@ var subjectObject =
             "object": {
                 "operators": {
                     "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.predefined": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -10520,10 +10722,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.predefined": {
-                        "Function": {},
-                        "arg": false
-                    },
                     "is.visibility": {
                         "Function": {},
                         "arg": false
@@ -10547,6 +10745,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -10555,6 +10754,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -10873,6 +11073,11 @@ var subjectObject =
             }
         }
     },
+    "securityprofile-merger": {
+        "name": "securityprofile-merger",
+        "action": [],
+        "filter": []
+    },
     "securityprofilegroup": {
         "name": "securityprofilegroup",
         "action": {
@@ -11063,6 +11268,7 @@ var subjectObject =
                     "regex": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
                         "ci": {
                             "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
@@ -11071,7 +11277,7 @@ var subjectObject =
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -11080,7 +11286,7 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -11093,6 +11299,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -11101,6 +11308,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -11109,6 +11317,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -11123,6 +11332,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -11237,6 +11455,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -11245,6 +11464,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -11883,6 +12103,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared)",
                             "input": "input\/panorama-8.0.xml"
@@ -11891,6 +12112,7 @@ var subjectObject =
                     "regex": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
                         "ci": {
                             "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
@@ -11899,7 +12121,7 @@ var subjectObject =
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -11908,7 +12130,7 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -11942,6 +12164,24 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% new test 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% new test 2)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "has.wrong.characters": {
                         "Function": {},
                         "arg": false,
@@ -11954,27 +12194,21 @@ var subjectObject =
                         "Function": {},
                         "arg": true
                     },
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% tcp-80)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "eq.nocase": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% udp)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% udp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -12053,14 +12287,11 @@ var subjectObject =
                     },
                     "is.member.of": {
                         "Function": {},
-                        "arg": true
-                    },
-                    "is.recursive.member.of": {
-                        "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is a direct member of the group specified in argument (members of sub-groups: is.recursive.member.of)",
                         "ci": {
-                            "fString": "(%PROP% grp-in-grp-srv)",
-                            "input": "input\/panorama-8.0-merger.xml"
+                            "fString": "(%PROP% shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
                         }
                     },
                     "is.group": {
@@ -12069,6 +12300,14 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.recursive.member.of": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp-in-grp-srv)",
+                            "input": "input\/panorama-8.0-merger.xml"
                         }
                     },
                     "is.tcp": {
@@ -12166,6 +12405,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -12174,6 +12414,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -12295,13 +12536,17 @@ var subjectObject =
                     "has": {
                         "Function": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');"
+                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "has.nocase": {
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% test )",
+                            "fString": "(%PROP% test)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -12937,6 +13182,7 @@ var subjectObject =
                     "regex": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
                         "ci": {
                             "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
@@ -12945,7 +13191,7 @@ var subjectObject =
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -12954,7 +13200,7 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -12967,6 +13213,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -12975,6 +13222,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -12983,6 +13231,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -12997,6 +13246,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13079,6 +13337,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13087,6 +13346,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13282,6 +13542,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% -)",
                             "input": "input\/panorama-8.0.xml"
@@ -13290,8 +13551,18 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% ftp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13565,9 +13836,9 @@ var subjectObject =
                     },
                     "is.any": {
                         "Function": {},
-                        "arg": true,
+                        "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13583,10 +13854,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -13595,17 +13875,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13616,6 +13888,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -13624,6 +13897,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -13632,6 +13906,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -13646,6 +13921,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -13700,6 +13984,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13708,6 +13993,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13765,7 +14051,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% any )",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -13773,7 +14059,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14072,10 +14358,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -14084,17 +14379,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14164,6 +14451,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -14172,6 +14460,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -14180,6 +14469,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -14194,6 +14484,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14244,6 +14543,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -14252,6 +14552,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -14434,10 +14735,19 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.child.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
@@ -14446,17 +14756,9 @@ var subjectObject =
                     "is.parent.of": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "regex": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% \/shared\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14505,6 +14807,7 @@ var subjectObject =
                     "contains": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
                         "ci": {
                             "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
@@ -14513,6 +14816,7 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -14521,6 +14825,7 @@ var subjectObject =
                     "eq.nocase": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -14535,6 +14840,15 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14581,6 +14895,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -14589,6 +14904,7 @@ var subjectObject =
                     "is.only": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"

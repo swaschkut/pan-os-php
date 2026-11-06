@@ -53,6 +53,10 @@ class SecurityProfileGroup
 
     public $hash = null;
 
+    /** set by the mergers: same-name group in a parent / child device group */
+    public $ancestor;
+    public $childancestor;
+
     /**
      * @param string $name
      * @param SecurityProfileGroupStore|null $owner

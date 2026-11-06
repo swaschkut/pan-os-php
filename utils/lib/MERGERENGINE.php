@@ -1764,7 +1764,9 @@ trait MergerEngine
                     if( $this->action === "merge" )
                     {
                         self::deletedObject($index, $pickedObject, $pickedObject);
-                        if( $this->apiMode )
+                        if( isset($g['moveObject']) )
+                            $g['moveObject']( $pickedObject, $store );
+                        elseif( $this->apiMode )
                         {
                             $oldXpath = $pickedObject->getXPath();
                             $pickedObject->owner->remove($pickedObject);
@@ -1788,7 +1790,7 @@ trait MergerEngine
                     continue;
                 else
                 {
-                    if( !$target->isGroup() )
+                    if( !$this->groupIsGroup( $g, $target ) )
                     {
                         $g['targetNotGroup']( $index, $pickedObject, $target );
                         continue;
@@ -1844,14 +1846,11 @@ trait MergerEngine
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                         if( $this->action === "merge" )
                         {
-                            $success = $object->__replaceWhereIamUsed($this->apiMode, $target, TRUE, 5);
+                            $success = $this->groupReplace( $g, $object, $target );
 
                             if( $success )
                             {
-                                if( $this->apiMode )
-                                    $object->owner->API_remove($object, TRUE);
-                                else
-                                    $object->owner->remove($object, TRUE);
+                                $this->groupRemove( $g, $object );
 
                                 $countChildRemoved++;
                             }
@@ -2025,20 +2024,14 @@ trait MergerEngine
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                         $success = $g['reportWithoutMerge'];
                         if( $this->action === "merge" )
-                            $success = $object->__replaceWhereIamUsed($this->apiMode, $pickedObject, TRUE, 5);
+                            $success = $this->groupReplace( $g, $object, $pickedObject );
 
                         if( $success )
                         {
                             PH::print_stdout("    - deleting '{$object->_PANC_shortName()}'");
                             self::deletedObject($index, $pickedObject, $object);
                             if( $this->action === "merge" )
-                            {
-                                if( $this->apiMode )
-                                    //true flag needed for nested groups in a specific constellation
-                                    $object->owner->API_remove($object, TRUE);
-                                else
-                                    $object->owner->remove($object, TRUE);
-                            }
+                                $this->groupRemove( $g, $object );
                         }
                     }
 
@@ -2055,6 +2048,37 @@ trait MergerEngine
             $tmpCount = $g['countGroups']( $store );
             PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$tmpCount}' (removed {$countRemoved} groups)\n" );
         }
+    }
+
+    /** the object is a group of the merged type (spec hook 'isGroup', default $object->isGroup()) */
+    private function groupIsGroup( array $g, $object ): bool
+    {
+        if( isset($g['isGroup']) )
+            return $g['isGroup']( $object );
+        return $object->isGroup();
+    }
+
+    /** replaces $object by $target where it is used (spec hook 'replaceObject'); returns success */
+    private function groupReplace( array $g, $object, $target )
+    {
+        if( isset($g['replaceObject']) )
+            return $g['replaceObject']( $object, $target );
+        return $object->__replaceWhereIamUsed($this->apiMode, $target, TRUE, 5);
+    }
+
+    /** removes a merged group (spec hook 'removeObject') */
+    private function groupRemove( array $g, $object )
+    {
+        if( isset($g['removeObject']) )
+        {
+            $g['removeObject']( $object );
+            return;
+        }
+        if( $this->apiMode )
+            //true flag needed for nested groups in a specific constellation
+            $object->owner->API_remove($object, TRUE);
+        else
+            $object->owner->remove($object, TRUE);
     }
 
     /** DG name of an object's owner, "shared" for shared / no owner */
@@ -2085,7 +2109,7 @@ trait MergerEngine
         if( $childancestor === null )
             return null;
 
-        if( !$childancestor->isGroup() )
+        if( !$this->groupIsGroup( $g, $childancestor ) )
         {
             PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type: ". get_class( $childancestor )." '{$childancestor->_PANC_shortName()}' value: ".$childancestor->value());
             $this->skippedObject( $index, $object, $childancestor, 'childancestor of type: '.get_class( $childancestor ));
@@ -2108,6 +2132,225 @@ trait MergerEngine
         $this->skippedObject( $index, $object, $childancestor, 'childancestor at DG: '.$tmp_ancestor_DGname);
 
         return 'break';
+    }
+
+    /**
+     * type=securityprofilegroup-merger
+     *  samemembers (default): per profile type the same profile name
+     *  samevalue:             per profile type the same profile content (profile names may differ)
+     * A group is moved to / merged into a parent location only if every profile name it uses resolves there to
+     * a profile with the same content; MergeSafety checks the content each firewall receives.
+     */
+    function securityProfileGroupMergeSpec(): array
+    {
+        $typeStores = array(
+            'virus' => 'AntiVirusProfileStore', 'spyware' => 'AntiSpywareProfileStore', 'vulnerability' => 'VulnerabilityProfileStore',
+            'file-blocking' => 'FileBlockingProfileStore', 'wildfire-analysis' => 'WildfireProfileStore', 'url-filtering' => 'URLProfileStore',
+            'data-filtering' => 'DataFilteringProfileStore' );
+        $ordered = array( 'rules' => TRUE );
+
+        // type => profile object (or name if no object exists)
+        $slots = function( $spg ) {
+            $ret = array();
+            foreach( $spg->secprofProfiles_obj as $type => $profile )
+                if( is_object($profile) || ( $profile !== null && $profile !== '' ) )
+                    $ret[$type] = $profile;
+            foreach( $spg->secprofiles as $type => $name )
+                if( !isset($ret[$type]) && $name !== null && $name !== '' )
+                    $ret[$type] = $name;
+            ksort($ret);
+            return $ret;
+        };
+        $slotName = function( $profile ) {
+            return is_object($profile) ? $profile->name() : (string)$profile;
+        };
+        $profileContent = function( $profile ) use ( $slotName, $ordered ) {
+            if( is_object($profile) && isset($profile->xmlroot) && $profile->xmlroot !== null )
+                return md5( XmlCompare::canonical( $profile->xmlroot, $ordered ) );
+            return 'name:' . $slotName( $profile );
+        };
+        $slotsText = function( $spg ) use ( $slots, $slotName ) {
+            $parts = array();
+            foreach( $slots( $spg ) as $type => $profile )
+                $parts[] = $type . ':' . $slotName( $profile );
+            return implode( ',', $parts );
+        };
+        $slotsDiff = function( $a, $b ) use ( $slots, $slotName, $profileContent ) {
+            $sa = $slots( $a );
+            $sb = $slots( $b );
+            $diff = array();
+            foreach( array_unique( array_merge( array_keys($sa), array_keys($sb) ) ) as $type )
+            {
+                $na = isset($sa[$type]) ? $slotName( $sa[$type] ) : '-';
+                $nb = isset($sb[$type]) ? $slotName( $sb[$type] ) : '-';
+                if( $na !== $nb )
+                    $diff[] = $type . ": '" . $na . "' -> '" . $nb . "'";
+                elseif( isset($sa[$type]) && $profileContent( $sa[$type] ) !== $profileContent( $sb[$type] ) )
+                    $diff[] = $type . ": '" . $na . "' different content";
+            }
+            return implode( ' | ', $diff );
+        };
+        $remove = function( $object ) {
+            if( $this->apiMode )
+                $object->owner->API_removeSecurityProfileGroup( $object );
+            else
+                $object->owner->removeSecurityProfileGroup( $object );
+        };
+
+        return array(
+            'locationType' => "SecurityProfileGroup",
+            'storeProp' => "securityProfileGroupStore",
+            'childDoneLabel' => "securityprofilegroups",
+            'childPhase' => TRUE,
+            'childPhaseChildAncestorCheck' => TRUE,
+            'printDuplicateSet' => TRUE,
+            'ancestorNonGroupSkip' => FALSE,
+            'reportWithoutMerge' => FALSE,
+            'notIdenticalReason' => "not identical",
+            'notIdenticalPickedReason' => "not identical",
+
+            'hashGenerator' => function () use ( $slots, $slotName, $profileContent ) {
+                if( $this->dupAlg == 'samemembers' || $this->dupAlg == 'identical' )
+                    return function ($object) use ( $slots, $slotName ) {
+                        $value = '';
+                        foreach( $slots( $object ) as $type => $profile )
+                            $value .= './.' . $type . ':' . $slotName( $profile );
+                        return $value;
+                    };
+                elseif( $this->dupAlg == 'samevalue' )
+                    return function ($object) use ( $slots, $profileContent ) {
+                        $value = '';
+                        foreach( $slots( $object ) as $type => $profile )
+                            $value .= './.' . $type . ':' . $profileContent( $profile );
+                        return md5( $value );
+                    };
+                else
+                    derr("unsupported dupAlgorithm");
+            },
+            'listGroups' => function ($store) {
+                return $store->securityProfileGroups();
+            },
+            'eligible' => function ($object) {
+                return $object instanceof SecurityProfileGroup;
+            },
+            'isGroup' => function ($object) {
+                return $object instanceof SecurityProfileGroup;
+            },
+            'mainSkip' => function ($object, $store, $childDeviceGroups) {
+                return FALSE;
+            },
+            'checkParent' => function ($hash) use ( $slotsDiff ) {
+                foreach( $hash as $picked )
+                {
+                    $dg = $picked->owner->owner;
+                    if( !isset($dg->parentDeviceGroup) || $dg->parentDeviceGroup === null )
+                        continue;
+                    $parentCopy = $dg->parentDeviceGroup->securityProfileGroupStore->find( $picked->name(), null, TRUE );
+                    if( $parentCopy !== null && $slotsDiff( $picked, $parentCopy ) !== '' )
+                    {
+                        PH::print_stdout( "   * SKIPPED : a group named '{$picked->name()}' with other profiles exists in an upper level: " . $slotsDiff( $picked, $parentCopy ) );
+                        return TRUE;
+                    }
+                }
+                return FALSE;
+            },
+            'moveMessage' => function ($tmp_DG_name, $pickedObject) {
+                return "   * move object to DG: '" . $tmp_DG_name . "' : '" . $pickedObject->name() . "' from DG: '".$pickedObject->owner->owner->name()."'";
+            },
+            // every profile name must resolve in the target location to a profile with the same content
+            'memberCheck' => function ($index, $pickedObject, $store, $tmp_DG_name) use ( $slots, $slotName, $typeStores, $ordered ) {
+                $targetLocation = $store->owner;
+                foreach( $slots( $pickedObject ) as $type => $profile )
+                {
+                    if( !is_object($profile) || !isset($typeStores[$type]) )
+                        continue;
+                    $prop = $typeStores[$type];
+                    if( !isset($targetLocation->$prop) || $targetLocation->$prop === null )
+                        continue;
+                    $found = $targetLocation->$prop->find( $profile->name() );
+                    if( $found === null )
+                    {
+                        $reason = "profile {$type} '{$profile->name()}' does not exist in target location '{$tmp_DG_name}'";
+                        PH::print_stdout( "   * SKIPPED : " . $reason );
+                        $this->skippedObject( $index, $pickedObject, $profile, $reason );
+                        return TRUE;
+                    }
+                    if( $found !== $profile && isset($found->xmlroot) && isset($profile->xmlroot)
+                        && XmlCompare::canonical( $found->xmlroot, $ordered ) !== XmlCompare::canonical( $profile->xmlroot, $ordered ) )
+                    {
+                        $reason = "profile {$type} '{$profile->name()}' has other content in target location '{$tmp_DG_name}': "
+                            . XmlCompare::differencesText( XmlCompare::differences( $found->xmlroot, $profile->xmlroot, $ordered ) );
+                        PH::print_stdout( "   * SKIPPED : " . $reason );
+                        $this->skippedObject( $index, $pickedObject, $found, $reason );
+                        return TRUE;
+                    }
+                }
+                return FALSE;
+            },
+            // the moved group uses the profiles of its new location (same content, see memberCheck)
+            'moveObject' => function ($pickedObject, $store) use ( $slots, $typeStores ) {
+                $oldXpath = $pickedObject->getXPath();
+                $pickedObject->owner->removeSecurityProfileGroup( $pickedObject );
+                $store->addSecurityProfileGroup( $pickedObject );
+
+                $targetLocation = $store->owner;
+                foreach( $slots( $pickedObject ) as $type => $profile )
+                {
+                    if( !is_object($profile) || !isset($typeStores[$type]) )
+                        continue;
+                    $prop = $typeStores[$type];
+                    $found = $targetLocation->$prop->find( $profile->name() );
+                    if( $found === null || $found === $profile )
+                        continue;
+                    $profile->removeReference( $pickedObject );
+                    $found->addReference( $pickedObject );
+                    $pickedObject->secprofProfiles_obj[$type] = $found;
+                }
+
+                if( $this->apiMode )
+                {
+                    $pickedObject->API_sync();
+                    $this->pan->connector->sendDeleteRequest( $oldXpath );
+                }
+            },
+            'replaceObject' => function ($object, $target) {
+                $object->replaceMeGlobally( $target, $this->apiMode );
+                return TRUE;
+            },
+            'removeObject' => $remove,
+            'targetNotGroup' => function ($index, $pickedObject, $target) {
+                PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' can not be merged with object name: '{$target->_PANC_shortName()}' of type ".get_class($target) );
+                $this->skippedObject( $index, $pickedObject, $target, "object type is not security-profile-group");
+            },
+            'targetMismatch' => function ($index, $pickedObject, $target, $pickedObject_value, $target_value) use ( $slotsDiff ) {
+                $reason = $slotsDiff( $target, $pickedObject );
+                PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' is not IDENTICAL to object name: '{$target->_PANC_shortName()}': " . $reason );
+                $this->skippedObject( $index, $pickedObject, $target, "not identical: " . $reason );
+                return TRUE;
+            },
+            'valueDiff' => function ($ancestor, $object, $display) use ( $slotsDiff ) {
+                if( $display )
+                    PH::print_stdout( "       - differences to ancestor: " . $slotsDiff( $ancestor, $object ) );
+                return null;
+            },
+            'ancestorMergeable' => function ($ancestor) {
+                return $this->upperLevelSearch && $ancestor instanceof SecurityProfileGroup;
+            },
+            'ancestorMergedText' => function ($object, $tmp_ancestor_DGname) {
+                return "    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
+            },
+            'replaceWithAncestor' => null,
+            'removeAfterAncestorMerge' => $remove,
+            'ancestorNotMerged' => function ($index, $object, $ancestor, $tmp_ancestor_DGname) use ( $slotsDiff ) {
+                $reason = $slotsDiff( $ancestor, $object );
+                PH::print_stdout("    - group '{$object->name()}' cannot be merged because it has an ancestor at DG: ".$tmp_ancestor_DGname . ( $reason !== '' ? " (" . $reason . ")" : " (merging with upper level not allowed)" ) );
+                $this->skippedObject( $index, $object, $ancestor, $reason !== '' ? "ancestor at DG: " . $tmp_ancestor_DGname . ": " . $reason : "ancestor at DG: " . $tmp_ancestor_DGname . " same profiles, allowMergingWithUpperLevel not set" );
+                return TRUE;
+            },
+            'countGroups' => function ($store) {
+                return $store->count();
+            },
+        );
     }
 
     function addressGroupMergeSpec(): array
