@@ -2685,9 +2685,20 @@ class UTIL
                 $utilDiff->debugAPI = TRUE;
 
 
-            $doc2 = new DOMDocument();
-            $node = $doc2->importNode($this->pan->xmlroot, true);
-            $doc2->appendChild($node);
+            // The diff only reads its second document: runDiff() takes its first element, and every node the diff
+            // changes is first copied into a new document (DIFF::ignoreAddDeleteXpath; the ruletype attributes of
+            // additionalRuleOrderCalculateXpathGetElement() are set only by type=diff's own main()). So when xmlDoc's
+            // first element is the configuration root, compare xmlDoc itself: a deep copy of it is a third full DOM of
+            // the configuration beside xmlDoc and origXmlDoc, held to the end of the step.
+            $xmlDocRoot = ( $this->xmlDoc !== null ) ? DH::firstChildElement($this->xmlDoc) : FALSE;
+            if( $xmlDocRoot !== FALSE && $xmlDocRoot->isSameNode($this->pan->xmlroot) )
+                $doc2 = $this->xmlDoc;
+            else
+            {
+                $doc2 = new DOMDocument();
+                $node = $doc2->importNode($this->pan->xmlroot, true);
+                $doc2->appendChild($node);
+            }
             //print $doc2->saveXML();
 
             if( PH::$shadow_multivsys )

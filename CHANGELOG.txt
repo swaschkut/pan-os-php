@@ -17,6 +17,7 @@ UTIL:
 * type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
 * type=zone actions=exporttohtml:file.html | extend with column template-stack
 * type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
+* type=playbook | introduce argument removestagefiles
 * type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
 * introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
 * class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
@@ -53,6 +54,10 @@ BUGFIX:
 * type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
 * xml-issue - fix to NOT remove any bgp related part - to avoid removing aspath-prepand - no clue if some more must not be removed
 * bugfix class StatCollectorTrait - wrong value for av Inline ML
+* class UTIL | related to outputformatset - Run the diff on the saved document, not on a third copy.
+* type=playbook - Stop the playbook at a failed step whose output the next step reads.
+* type=playbook - Your fix for the repeated where used entries makes playbook steps that run in the main process about 6× slower; a lighter fix gives the same result.
+* type=playbook | class PH.php - dropPredefinedReferences
 * bugfix for filter missing GPGatewayTunnel / profile
 * type=profile | general bugfix to support profiletype argument | cleanup
 * type=rule-compare | bugfix related to ancestor-objects-take-precedence yes
