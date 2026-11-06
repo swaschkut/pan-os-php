@@ -34,6 +34,7 @@ UTIL:
 * type=diff | move part to class XmlCompare
 * type=securityprofile-merger | introduction
 * type=securityprofilegroup-merger | introduction
+* type=merger-possible-report | introduction
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

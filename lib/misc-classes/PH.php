@@ -2102,6 +2102,7 @@ class PH
         "custom-url-category-merger",
         "securityprofile-merger",
         "securityprofilegroup-merger",
+        "merger-possible-report",
         "device-config-bundle"
         );
 
@@ -2190,6 +2191,9 @@ class PH
             || $type == "securityprofilegroup-merger"
         )
             $util = new MERGER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "merger-possible-report" )
+            $util = new MERGERPOSSIBLEREPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "rule-merger" )
             $util = new RULEMERGER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);

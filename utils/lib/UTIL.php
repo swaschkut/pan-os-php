@@ -30,6 +30,7 @@ require_once(dirname(__FILE__)."/NETWORKUTIL.php");
 require_once(dirname(__FILE__)."/PROFILEUTIL.php");
 
 require_once(dirname(__FILE__)."/MERGER.php");
+require_once(dirname(__FILE__)."/MERGERPOSSIBLEREPORT.php");
 require_once(dirname(__FILE__)."/RULEMERGER.php");
 
 
