@@ -2168,19 +2168,51 @@ var subjectObject =
             },
             "name": {
                 "operators": {
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
+                        "ci": {
+                            "fString": "(%PROP% -)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
                         "ci": {
-                            "fString": "(%PROP% GP-Auth)",
+                            "fString": "(%PROP% new test 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% new test 2)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
                     },
                     "regex": {
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% \/auth\/i)",
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }

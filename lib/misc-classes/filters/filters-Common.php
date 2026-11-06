@@ -279,7 +279,8 @@ RQuery::registerFilter( array(
 RQuery::registerFilter( array(
     'address',
     'certificate',
-    'threat'
+    'threat',
+    'certificate-profile'
 ), 'name', 'contains', array(
     'Function' => function (RQueryContext $context) {
         return strpos($context->object->name(), $context->value) !== FALSE;
@@ -323,7 +324,8 @@ RQuery::registerFilter( array(
     'rule',
     'service',
     'address',
-    'certificate'
+    'certificate',
+    'certificate-profile'
 ), 'name', 'eq', array(
     'Function' => function (RQueryContext $context) {
         return $context->object->name() == $context->value;
@@ -389,7 +391,8 @@ RQuery::registerFilter( array(
     'rule',
     'service',
     'address',
-    'certificate'
+    'certificate',
+    'certificate-profile'
 ), 'name', 'eq.nocase', array(
     'Function' => function (RQueryContext $context) {
         return strtolower($context->object->name()) == strtolower($context->value);
@@ -470,7 +473,8 @@ RQuery::registerFilter( array(
     'tag',
     'threat-rule',
     'zone',
-    'zone-protection-profile'
+    'zone-protection-profile',
+    'certificate-profile'
 ), 'name', 'is.in.file', array(
     'Function' => function (RQueryContext $context) {
         $object = $context->object;
@@ -521,7 +525,8 @@ RQuery::registerFilter( array(
     'tag',
     'threat-rule',
     'zone',
-    'zone-protection-profile'
+    'zone-protection-profile',
+    'certificate-profile'
 ), 'name', 'regex', array(
     'Function' => function (RQueryContext $context) {
         $object = $context->object;
@@ -1166,7 +1171,8 @@ RQuery::registerFilter( array(
     'threat',
     'threat-rule',
     'zone',
-    'zone-protection-profile'
+    'zone-protection-profile',
+    'certificate-profile'
 ), 'name', 'contains.nocase', array(
     'Function' => function (RQueryContext $context) {
         return stripos($context->object->name(), $context->value) !== FALSE;

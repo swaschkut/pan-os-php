@@ -2,31 +2,8 @@
 
 // <editor-fold desc=" ***** CertificateProfile filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['certificate-profile']['name']['operators']['eq'] = Array(
-    'Function' => function(CertificateProfileRQueryContext $context )
-    {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => true,
-    'ci' => Array(
-        'fString' => '(%PROP% GP-Auth)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['certificate-profile']['name']['operators']['regex'] = Array(
-    'Function' => function(CertificateProfileRQueryContext $context )
-    {
-        $matching = preg_match($context->value, $context->object->name());
-        if( $matching === FALSE )
-            derr("regular expression error on '{$context->value}'");
-        return $matching === 1;
-    },
-    'arg' => true,
-    'ci' => Array(
-        'fString' => '(%PROP% /auth/i)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
+// name filters (eq, eq.nocase, contains, contains.nocase, regex, is.in.file): filters-Common.php
+
 RQuery::$defaultFilters['certificate-profile']['ca']['operators']['has'] = Array(
     'Function' => function(CertificateProfileRQueryContext $context )
     {
