@@ -198,6 +198,20 @@ class MERGERPOSSIBLEREPORT extends MERGER
                 $pk = DH::findFirstElement('private-key', $o->xmlroot);
                 return ( $cn !== FALSE ? 'CN=' . $cn->textContent : '' ) . ( $exp !== FALSE ? ' until ' . $exp->textContent : '' ) . ( $pk !== FALSE ? ' [private key]' : '' );
             } );
+        $this->reportTypes['certificate-profile'] = array( 'scope' => 'template', 'store' => 'certificateProfileStore', 'list' => $all, 'eligible' => null,
+            'value' => function( $o, $l ) {
+                // CA certificates are compared by their content, not by their names
+                $clone = $o->xmlroot->cloneNode(TRUE);
+                $ca = DH::findFirstElement('CA', $clone);
+                if( $ca !== FALSE )
+                    foreach( $ca->childNodes as $entry )
+                        if( $entry->nodeType == XML_ELEMENT_NODE && $entry->nodeName == 'entry' )
+                            $entry->setAttribute( 'name', $this->certificateFingerprint( $entry->getAttribute('name'), $l ) );
+                return $this->canonicalValue( $clone );
+            },
+            'info' => function( $o ) {
+                return 'CA: ' . implode( ',', $o->caCertificateNames() );
+            } );
         $this->reportTypes['ssl-tls-service-profile'] = array( 'scope' => 'template', 'store' => 'SSL_TLSServiceProfileStore', 'list' => $all, 'eligible' => null,
             'value' => function( $o, $l ) {
                 // the certificate is compared by its content, not by its name
@@ -227,6 +241,9 @@ class MERGERPOSSIBLEREPORT extends MERGER
         $stores = array();
         if( isset($l['loc']->certificateStore) )
             $stores[] = $l['loc']->certificateStore;
+        // vsys: then shared (firewall shared or the template / stack device configuration)
+        if( $l['loc'] instanceof VirtualSystem && isset($l['loc']->owner->certificateStore) )
+            $stores[] = $l['loc']->owner->certificateStore;
         if( isset($l['template']) )
         {
             if( $l['template']->certificateStore !== null )

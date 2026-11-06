@@ -189,6 +189,9 @@ class VirtualSystem
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     /** @var InterfaceContainer */
     public $importedInterfaces;
 
@@ -266,6 +269,9 @@ class VirtualSystem
 
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceProfileStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';
@@ -1083,6 +1089,16 @@ class VirtualSystem
             $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
         }
         // End of SSL_TLSServiceProfile objects extraction
+
+        //
+        // Extract certificate-profile objects
+        //
+        $tmp = DH::findFirstElement('certificate-profile', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->certificateProfileStore->load_from_domxml($tmp);
+        }
+        // End of CertificateProfile objects extraction
 
         //
         // Extract GlobalProtect objects

@@ -41,6 +41,9 @@ class Template
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     public $debugLoadTime = false;
     /**
      * Template constructor.
@@ -58,6 +61,9 @@ class Template
 
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
     }
 
     public function __destruct()
@@ -84,6 +90,7 @@ class Template
         // Clear stores
         $this->certificateStore = null;
         $this->SSL_TLSServiceProfileStore = null;
+        $this->certificateProfileStore = null;
 
         // Clear other references
         $this->owner = null;
@@ -144,6 +151,16 @@ class Template
                 $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
             }
             // End of SSL_TLSServiceProfile objects extraction
+
+            //
+            // Extract certificate-profile objects
+            //
+            $tmp = DH::findFirstElement('certificate-profile', $shared);
+            if( $tmp !== FALSE )
+            {
+                $this->certificateProfileStore->load_from_domxml($tmp);
+            }
+            // End of CertificateProfile objects extraction
         }
     }
 

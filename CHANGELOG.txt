@@ -35,6 +35,7 @@ UTIL:
 * type=securityprofile-merger | introduction
 * type=securityprofilegroup-merger | introduction
 * type=merger-possible-report | introduction
+* class CertificateProfile | introduction
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

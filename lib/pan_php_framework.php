@@ -393,6 +393,9 @@ require_once $basedir . '/network-classes/SharedGatewayStore.php';
 require_once $basedir . '/network-classes/Certificate.php';
 require_once $basedir . '/network-classes/CertificateStore.php';
 
+require_once $basedir . '/network-classes/CertificateProfile.php';
+require_once $basedir . '/network-classes/CertificateProfileStore.php';
+
 require_once $basedir . '/network-classes/SSL_TLSServiceProfile.php';
 require_once $basedir . '/network-classes/SSL_TLSServiceProfileStore.php';
 

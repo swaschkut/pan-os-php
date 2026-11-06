@@ -45,6 +45,9 @@ class TemplateStack
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     /** @var  PANConf */
     public $deviceConfiguration;
 
@@ -61,6 +64,9 @@ class TemplateStack
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
     }
 
     public function load_from_domxml(DOMElement $xml)
@@ -139,6 +145,16 @@ class TemplateStack
                     $this->certificateStore->load_from_domxml($tmp);
                 }
                 // End of Certificate objects extraction
+
+                //
+                // Extract certificate-profile objects
+                //
+                $tmp = DH::findFirstElement('certificate-profile', $shared);
+                if( $tmp !== FALSE )
+                {
+                    $this->certificateProfileStore->load_from_domxml($tmp);
+                }
+                // End of CertificateProfile objects extraction
             }
         }
 
