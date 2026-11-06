@@ -192,6 +192,7 @@ require_once $basedir . '/misc-classes/DeviceRQueryContext.php';
 
 require_once $basedir . '/misc-classes/DHCPRQueryContext.php';
 require_once $basedir . '/misc-classes/CertificateRQueryContext.php';
+require_once $basedir . '/misc-classes/CertificateProfileRQueryContext.php';
 
 require_once $basedir . '/misc-classes/StaticRouteRQueryContext.php';
 

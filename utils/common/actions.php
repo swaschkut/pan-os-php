@@ -114,6 +114,10 @@ require_once ( "SSL_TLSServiceProfileCallContext.php");
 require_once  "actions-ssl-tls-service-profile.php";
 SSL_TLSServiceProfileCallContext::prepareSupportedActions();
 
+require_once ( "CertificateProfileCallContext.php");
+require_once  "actions-certificate-profile.php";
+CertificateProfileCallContext::prepareSupportedActions();
+
 require_once ( "StaticRouteCallContext.php");
 require_once  "actions-static-route.php";
 StaticRouteCallContext::prepareSupportedActions();

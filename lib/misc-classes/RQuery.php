@@ -124,6 +124,8 @@ class RQuery
             $this->contextObject = new DHCPRQueryContext($this);
         elseif( $this->objectType == 'certificate' )
             $this->contextObject = new CertificateRQueryContext($this);
+        elseif( $this->objectType == 'certificate-profile' )
+            $this->contextObject = new CertificateProfileRQueryContext($this);
         elseif( $this->objectType == 'static-route' )
             $this->contextObject = new StaticRouteRQueryContext($this);
         elseif( $this->objectType == 'threat-rule' )
@@ -758,6 +760,7 @@ require_once 'filters/filters-EDL.php';
 require_once 'filters/filters-Device.php';
 require_once 'filters/filters-DHCP.php';
 require_once 'filters/filters-Certificate.php';
+require_once 'filters/filters-CertificateProfile.php';
 require_once 'filters/filters-Static-Route.php';
 require_once 'filters/filters-ThreatRule.php';
 require_once 'filters/filters-DNSRule.php';

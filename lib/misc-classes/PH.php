@@ -2052,7 +2052,7 @@ class PH
         "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
         "device", "securityprofile", "securityprofilegroup", "profile",
-        "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile",
+        "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile", "certificate-profile",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
         "zone-protection-profile","log-profile", "interface-management-profile",
@@ -2172,6 +2172,7 @@ class PH
             || $type == "zone-protection-profile"
             || $type == "interface-management-profile"
             || $type == "ssl-tls-service-profile"
+            || $type == "certificate-profile"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
