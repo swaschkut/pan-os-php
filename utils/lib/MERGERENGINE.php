@@ -835,6 +835,32 @@ trait MergerEngine
                 },
             ) );
 
+        if( $storeProp === 'EDLStore' )
+            return $this->xmlObjectMergeSpec( array(
+                'label' => "EDL",
+                'objectTxt' => "edl",
+                'pluralTxt' => "edls",
+                'storeProp' => $storeProp,
+                'ancestorTypeLabel' => "edl",
+                // descriptions (also inside <type><ip>…) do not change what the firewall gets
+                'ignoreTags' => array( 'description' ),
+                'sameClass' => function( $object, $store ) {
+                    return ( $object instanceof EDL ) && !$object->isTmp() && $object->xmlroot !== null
+                        && strpos( (string)$object->type(), 'predefined' ) !== 0;
+                },
+                'createCopy' => function( $store, $picked, $name ) {
+                    /** @var EDLStore $store */
+                    return $this->cloneXmlObject( $store, $picked, $name,
+                        function( $store, $object ) { $store->addEDL( $object ); } );
+                },
+                'remove' => function( $object ) {
+                    if( $this->apiMode )
+                        $object->owner->API_removeEDL( $object );
+                    else
+                        $object->owner->removeEDL( $object );
+                },
+            ) );
+
         if( $storeProp === 'LogProfileStore' )
             return $this->xmlObjectMergeSpec( array(
                 'label' => "LogProfile",
@@ -885,6 +911,20 @@ trait MergerEngine
         return $created;
     }
 
+    /** copy of $xml without the elements named in $tags (at any depth) */
+    public static function xmlWithoutTags( DOMElement $xml, array $tags ): DOMElement
+    {
+        $clone = $xml->cloneNode( TRUE );
+        $remove = array();
+        foreach( $tags as $tag )
+            foreach( $clone->getElementsByTagName( $tag ) as $node )
+                $remove[] = $node;
+        foreach( $remove as $node )
+            if( $node->parentNode !== null )
+                $node->parentNode->removeChild( $node );
+        return $clone;
+    }
+
     /**
      * objects compared by their XML content (XmlCompare, name ignored):
      *  samename (default): same name across the device-group hierarchy, merged only with the same content
@@ -894,14 +934,18 @@ trait MergerEngine
     function xmlObjectMergeSpec( array $def ): array
     {
         $ordered = array( 'rules' => TRUE );
-        $content = function( $object ) use ( $ordered ) {
-            return XmlCompare::canonical( $object->xmlroot, $ordered );
+        $ignoreTags = isset($def['ignoreTags']) ? $def['ignoreTags'] : array();
+        $xmlOf = function( $object ) use ( $ignoreTags ) {
+            return count($ignoreTags) == 0 ? $object->xmlroot : self::xmlWithoutTags( $object->xmlroot, $ignoreTags );
+        };
+        $content = function( $object ) use ( $ordered, $xmlOf ) {
+            return XmlCompare::canonical( $xmlOf( $object ), $ordered );
         };
         $sameContent = function( $a, $b ) use ( $content ) {
             return $content( $a ) === $content( $b );
         };
-        $diffText = function( $a, $b ) use ( $ordered ) {
-            return "different content: " . XmlCompare::differencesText( XmlCompare::differences( $a->xmlroot, $b->xmlroot, $ordered ) );
+        $diffText = function( $a, $b ) use ( $ordered, $xmlOf ) {
+            return "different content: " . XmlCompare::differencesText( XmlCompare::differences( $xmlOf( $a ), $xmlOf( $b ), $ordered ) );
         };
         $short = function( $object ) use ( $content ) {
             return "content#" . substr( md5( $content( $object ) ), 0, 8 );

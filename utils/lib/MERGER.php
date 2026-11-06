@@ -41,6 +41,7 @@ class MERGER extends UTIL
         'tag' => 'tag-merger',
         'address' => 'address-merger',
         'service' => 'service-merger',
+        'edl' => 'edl-merger',
         'addressgroup' => 'addressgroup-merger',
         'servicegroup' => 'servicegroup-merger',
         'custom-url-category' => 'custom-url-category-merger',
@@ -55,6 +56,7 @@ class MERGER extends UTIL
         'schedule-merger' => 'scheduleStore',
         'logprofile-merger' => 'LogProfileStore',
         'decryptionprofile-merger' => 'DecryptionProfileStore',
+        'edl-merger' => 'EDLStore',
     );
     /** type=object-merger: selected objecttype values */
     public $objectMergerSelected = array();
@@ -626,6 +628,8 @@ class MERGER extends UTIL
             $type = 'log-profile';
         elseif( $this->utilType == "decryptionprofile-merger" )
             $type = 'securityprofile';
+        elseif( $this->utilType == "edl-merger" )
+            $type = 'edl';
 
         if( isset(PH::$args['pickfilter']) )
         {
@@ -798,7 +802,7 @@ class MERGER extends UTIL
                     "  - servicegroup: SameMembers (default) | SamePortMapping | Identical | WhereUsed\n" .
                     "  - tag: Identical (default) | SameColor | WhereUsed | SameName\n" .
                     "  - custom-url-category: SameValue (default) | Identical | SameName\n" .
-                    "  - schedule / log-profile / decryption-profile / securityprofile: SameName (default) | SameValue\n" .
+                    "  - schedule / log-profile / decryption-profile / edl / securityprofile: SameName (default) | SameValue\n" .
                     "  - securityprofilegroup: SameMembers (default) | SameValue\n" .
                     "  with several object types the value must be valid for all of them\n",
                 'argDesc' => 'SameName|SameValue|...');

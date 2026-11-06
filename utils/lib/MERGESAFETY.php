@@ -73,7 +73,8 @@ class MergeSafety
     public static function supports( string $storeProp ): bool
     {
         return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || $storeProp === 'securityProfileGroupStore'
-            || in_array( $storeProp, self::$profileStores, TRUE ) || in_array( $storeProp, self::$xmlObjectStores, TRUE );
+            || in_array( $storeProp, self::$profileStores, TRUE ) || in_array( $storeProp, self::$xmlObjectStores, TRUE )
+            || $storeProp === 'EDLStore';
     }
 
     /**
@@ -239,6 +240,9 @@ class MergeSafety
             $units[] = $unit;
         foreach( $this->removalUnits( $overlay ) as $unit )
             $units[] = $unit;
+        if( $this->storeProp === 'EDLStore' )
+            foreach( $this->textualEdlUnits( $overlay ) as $unit )
+                $units[] = $unit;
 
         $this->lastReason = null;
         // the configuration may have changed since the last check
@@ -267,7 +271,7 @@ class MergeSafety
                 if( $this->allowWiden && $this->contentIncludes( $after, $before ) )
                     continue;
 
-                $refText = is_object($unit['ref']) && method_exists($unit['ref'], 'toString') ? $unit['ref']->toString() : '';
+                $refText = is_object($unit['ref']) && method_exists($unit['ref'], 'toString') ? $unit['ref']->toString() : ( isset($unit['text']) ? $unit['text'] : '' );
                 $this->lastReason = "effective policy would change for firewalls of '" . self::locationName( $fw ) . "'"
                     . " (name '" . implode("','", $unit['before']) . "'" . ( $refText !== '' ? " used by " . $refText : "" ) . ")"
                     . ": before [" . self::contentText( $before ) . "] after [" . self::contentText( $after ) . "]";
@@ -416,6 +420,9 @@ class MergeSafety
     /** for the object stores in $xmlObjectStores: a user of $object the merger cannot point to another object */
     private function unreplaceableUser( $object )
     {
+        if( $this->storeProp === 'EDLStore' )
+            return $this->unreplaceableEdlUser( $object );
+
         if( !in_array( $this->storeProp, self::$xmlObjectStores, TRUE ) )
             return null;
 
@@ -427,6 +434,70 @@ class MergeSafety
             return "used by " . get_class($ref) . " '" . $name . "' which cannot be pointed to another object";
         }
         return null;
+    }
+
+    /**
+     * EDL: users are rule fields (address, URL category) and address groups, all can be pointed to another object
+     * (uses in URL filtering / anti-spyware profiles: textualEdlUnits())
+     */
+    private function unreplaceableEdlUser( $object )
+    {
+        foreach( $this->referencers( $object ) as $ref )
+        {
+            if( method_exists( $ref, 'replaceReferencedObject' ) )
+                continue;
+            $name = method_exists( $ref, 'name' ) ? $ref->name() : '';
+            return "used by " . get_class($ref) . " '" . $name . "' which cannot be pointed to another object";
+        }
+
+        return null;
+    }
+
+    /**
+     * EDL: URL filtering profiles (URL lists) and anti-spyware profiles (DNS lists) name EDLs without reference
+     * tracking in pan-os-php and are not rewritten by the merger: one unit per such use of a changed name, the name
+     * stays the same; the check then tells whether it still resolves to the same content on every firewall
+     */
+    private function textualEdlUnits( array $overlay ): array
+    {
+        $names = array();
+        if( isset($overlay['removedObjects']) )
+            foreach( $overlay['removedObjects'] as $object )
+                $names[$object->name()] = TRUE;
+        if( isset($overlay['placed']) )
+            foreach( $overlay['placed'] as $byName )
+                foreach( $byName as $name => $object )
+                    $names[$name] = TRUE;
+
+        $units = array();
+        foreach( array_keys($names) as $name )
+        {
+            $literal = self::xpathLiteral( (string)$name );
+            foreach( $this->allLocations() as $loc )
+            {
+                $root = ( $loc instanceof PanoramaConf || $loc instanceof PANConf ) ? $loc->sharedroot : $loc->xmlroot;
+                if( $root === null )
+                    continue;
+                $xpath = new DOMXPath( $root->ownerDocument );
+                $found = $xpath->query( "profiles/url-filtering/entry[.//member[.=" . $literal . "]] | profiles/spyware/entry[.//lists/entry[@name=" . $literal . "]]", $root );
+                if( $found === FALSE )
+                    continue;
+                foreach( $found as $profile )
+                    $units[] = array( 'loc' => $loc, 'before' => array( $name ), 'after' => array( $name ),
+                        'via' => null, 'ref' => null, 'only' => null,
+                        'text' => $profile->parentNode->nodeName . " profile '" . $profile->getAttribute('name') . "'" );
+            }
+        }
+        return $units;
+    }
+
+    private static function xpathLiteral( $text ): string
+    {
+        if( strpos( $text, "'" ) === FALSE )
+            return "'" . $text . "'";
+        if( strpos( $text, '"' ) === FALSE )
+            return '"' . $text . '"';
+        return "concat('" . str_replace( "'", "',\"'\",'", $text ) . "')";
     }
 
     private function isGroupObject( $ref ): bool
@@ -636,7 +707,11 @@ class MergeSafety
         }
         if( $object instanceof EDL )
         {
-            $c['other']['edl:' . $object->name()] = TRUE;
+            // EDL merger: compared by content (description ignored); other checks: by name as before
+            if( $this->storeProp === 'EDLStore' && !$object->isTmp() && $object->xmlroot !== null )
+                $c['other']['edl:' . substr( md5( XmlCompare::canonical( MERGER::xmlWithoutTags( $object->xmlroot, array( 'description' ) ), array( 'rules' => TRUE ) ) ), 0, 12 )] = TRUE;
+            else
+                $c['other']['edl:' . $object->name()] = TRUE;
             return $c;
         }
         // the IP maps of pan-os-php hold IPv4 and IPv6 entries alike: one map ('ip4') is used for both

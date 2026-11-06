@@ -683,6 +683,14 @@ class PanoramaConf
         // end of address extraction
 
         //
+        // Extract EDL objects
+        //
+        $tmp = DH::findFirstElement('external-list', $this->sharedroot);
+        if( $tmp !== FALSE )
+            $this->EDLStore->load_from_domxml($tmp);
+        // End of EDL extraction (before the address groups: a group can have EDL members)
+
+        //
         // Extract address groups
         //
         $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
@@ -1180,13 +1188,6 @@ class PanoramaConf
             $this->scheduleStore->load_from_domxml($tmp);
         // End of address groups extraction
 
-        //
-        // Extract EDL objects
-        //
-        $tmp = DH::findFirstElement('external-list', $this->sharedroot);
-        if( $tmp !== FALSE )
-            $this->EDLStore->load_from_domxml($tmp);
-        // End of EDL extraction
 
         //
         // Extract LogProfile objects

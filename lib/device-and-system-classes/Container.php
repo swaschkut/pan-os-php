@@ -474,6 +474,14 @@ class Container
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("address-group");
         //
+        // Extract EDL objects
+        //
+        $tmp = DH::findFirstElement('external-list', $xml);
+        if( $tmp !== FALSE )
+            $this->EDLStore->load_from_domxml($tmp);
+        // End of EDL extraction (before the address groups: a group can have EDL members)
+
+        //
         // Extract address groups in this DV
         //
         $tmp = DH::findFirstElement('address-group', $xml);
@@ -745,13 +753,6 @@ class Container
             $this->scheduleStore->load_from_domxml($tmp);
         // End of address groups extraction
 
-        //
-        // Extract EDL objects
-        //
-        $tmp = DH::findFirstElement('external-list', $xml);
-        if( $tmp !== FALSE )
-            $this->EDLStore->load_from_domxml($tmp);
-        // End of EDL extraction
 
         //
         // Extract LogProfile objects
