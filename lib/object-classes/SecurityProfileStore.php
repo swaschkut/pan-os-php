@@ -180,6 +180,48 @@ class SecurityProfileStore extends ObjStore
     /**
      * @return SecurityProfileStore|null
      */
+    /**
+     * profile store name => name of the matching predefined store on PANConf / PanoramaConf
+     * (VirusAndWildfireProfileStore has no predefined store)
+     */
+    public static $predefinedStoreByStoreName = array(
+        'AntiVirusProfileStore' => 'AntiVirusPredefinedStore',
+        'AntiSpywareProfileStore' => 'AntiSpywarePredefinedStore',
+        'VulnerabilityProfileStore' => 'VulnerabilityPredefinedStore',
+        'FileBlockingProfileStore' => 'FileBlockingPredefinedStore',
+        'WildfireProfileStore' => 'WildfirePredefinedStore',
+        'URLProfileStore' => 'UrlFilteringPredefinedStore',
+        'DataFilteringProfileStore' => 'DataFilteringPredefinedStore',
+    );
+
+    /**
+     * Predefined store for a profile store name, seen from the location of the referencing object
+     * (security rule, default security rule, security profile group).
+     * @param object $location  owner of the referencing object's store: DeviceGroup, VirtualSystem, Container,
+     *                          DeviceCloud, DeviceOnPrem, Snippet, PANConf, PanoramaConf, FawkesConf, BuckbeakConf
+     * @param string $storeName  e.g. 'AntiVirusProfileStore'
+     * @return SecurityProfileStore|null  null if the location has no such predefined store
+     */
+    public static function getPredefinedStore( $location, $storeName )
+    {
+        if( !is_object($location) || !isset(self::$predefinedStoreByStoreName[$storeName]) )
+            return null;
+
+        $class = get_class( $location );
+        if( in_array( $class, array("DeviceGroup", "VirtualSystem", "Container", "DeviceCloud", "DeviceOnPrem", "Snippet") ) )
+            $sub = $location->owner;
+        elseif( in_array( $class, array("PANConf", "PanoramaConf", "FawkesConf", "BuckbeakConf") ) )
+            $sub = $location;
+        else
+            return null;
+
+        $predefinedStoreName = self::$predefinedStoreByStoreName[$storeName];
+        if( !is_object($sub) || !isset($sub->$predefinedStoreName) )
+            return null;
+
+        return $sub->$predefinedStoreName;
+    }
+
     public static function getVirusPredefinedStore( $owner )
     {
         if( self::$predefinedVirusStore !== null )

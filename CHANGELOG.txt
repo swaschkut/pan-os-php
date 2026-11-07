@@ -73,6 +73,7 @@ BUGFIX:
 * MERGERENGINE - fix optimisation compare to origin to not crash
 * type=xml-issue | bugfix to keep the value without blank character at pre-/postfix
 * different classes nestedPointOfView - bugfix
+* class SecurityProfileStore | predefined - bugfix for SPG - SecRule - DefaultSecRule - if predefined objects are directly used
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

@@ -506,26 +506,9 @@ class SecurityRule extends RuleWithUserID
                     }
                     else
                     {
-                        if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
-                            $sub = $this->owner->owner->owner;
-                        elseif( get_class( $this->owner->owner ) == "PANConf" || get_class( $this->owner->owner ) == "PanoramaConf" )
-                            $sub = $this->owner->owner;
-
-                        /** @var PanoramaConf|PANConf $sub */
-                        if( $tmp_store_name == 'AntiVirusProfileStore')
-                            $profile = $sub->AntiVirusPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'AntiSpywareProfileStore')
-                            $profile = $sub->AntiSpywarePredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'VulnerabilityProfileStore')
-                            $profile = $sub->VulnerabilityPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'FileBlockingProfileStore' )
-                            $profile = $sub->FileBlockingPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'WildfireProfileStore' )
-                            $profile = $sub->WildfirePredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'URLProfileStore' )
-                            $profile = $sub->UrlFilteringPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'DataFilteringProfileStore' )
-                            $profile = $sub->DataFilteringPredefinedStore->find( $firstE->textContent );
+                        $predefinedStore = SecurityProfileStore::getPredefinedStore( $this->owner->owner, $tmp_store_name );
+                        if( $predefinedStore !== null )
+                            $profile = $predefinedStore->find( $firstE->textContent );
 
                         if( $profile != null )
                         {
@@ -538,21 +521,8 @@ class SecurityRule extends RuleWithUserID
                             //todo: not an object - default object not yet created
                             mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' StoreName: '".$tmp_store_name."' not found.", null, false );
 
-                            if( $tmp_store_name == 'AntiVirusProfileStore')
-                                $profile = $sub->AntiVirusPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'AntiSpywareProfileStore')
-                                $profile = $sub->AntiSpywarePredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'VulnerabilityProfileStore')
-                                $profile = $sub->VulnerabilityPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'FileBlockingProfileStore' )
-                                $profile = $sub->FileBlockingPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'WildfireProfileStore' )
-                                $profile = $sub->WildfirePredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'URLProfileStore' )
-                                $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'DataFilteringProfileStore' )
-                                $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
-
+                            if( $predefinedStore !== null )
+                                $profile = $predefinedStore->createSPTmp( $firstE->textContent, $this );
 
                             if( $profile !== null )
                             {

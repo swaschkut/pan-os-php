@@ -310,8 +310,16 @@ class DefaultSecurityRule extends Rule
                     }
                     else
                     {
-                        //todo: not an object - default object not yet created
-                        $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                        $predefinedStore = SecurityProfileStore::getPredefinedStore( $this->owner->owner, $tmp_store_name );
+                        $profile = ( $predefinedStore !== null ) ? $predefinedStore->find( $firstE->textContent ) : null;
+                        //no createSPTmp() placeholder: its class SecurityProfile has no is_best_practice()
+                        if( $profile !== null )
+                        {
+                            $this->secprofProfiles_obj[$prof->nodeName] = $profile;
+                            $profile->addReference( $this );
+                        }
+                        else
+                            $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
                     }
                 }
             }
@@ -371,7 +379,7 @@ class DefaultSecurityRule extends Rule
         if( $this->secproftype != 'profile' )
             return array();
 
-        return $this->secprofProfiles;
+        return $this->secprofProfiles_obj;
     }
 
     public function securityProfilHash()
@@ -595,7 +603,7 @@ class DefaultSecurityRule extends Rule
             {
                 $type = $tmp->appendChild($this->secprofroot->ownerDocument->createElement($index));
                 $ntmp = $type->appendChild($this->secprofroot->ownerDocument->createElement('member'));
-                $ntmp->appendChild($this->secprofroot->ownerDocument->createTextNode($value));
+                $ntmp->appendChild($this->secprofroot->ownerDocument->createTextNode( is_object($value) ? $value->name() : $value ));
             }
         }
         elseif( $this->secproftype == 'none' )
@@ -920,8 +928,17 @@ class DefaultSecurityRule extends Rule
                 $text = $padding . "  SecurityProfil: ";
                 foreach( $this->securityProfiles() as $id => $profile )
                 {
-                    $text .= "[" . $id . "] => '" . $profile . "'  ";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile;
+                    if( is_object( $profile ) )
+                    {
+                        $suffix = str_contains($profile->owner->name(), "predefined") ? "[predefined]" : "";
+                        $text .= "[" . $id . "] => '" . $profile->name() . "'" . $suffix . "  ";
+                        PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile->name();
+                    }
+                    else
+                    {
+                        $text .= "[" . $id . "] => '" . $profile . "'  ";
+                        PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile;
+                    }
                 }
 
                 PH::print_stdout( $text );

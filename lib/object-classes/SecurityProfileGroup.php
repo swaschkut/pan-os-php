@@ -221,33 +221,17 @@ class SecurityProfileGroup
 
                         // predefined profiles: only where the configuration has such a store (not on SCM roots,
                         // where e.g. a profile of a sibling folder or a predefined-snippet profile is named)
-                        $predefinedStores = array( 'AntiVirusProfileStore' => 'AntiVirusPredefinedStore', 'AntiSpywareProfileStore' => 'AntiSpywarePredefinedStore',
-                            'VulnerabilityProfileStore' => 'VulnerabilityPredefinedStore', 'FileBlockingProfileStore' => 'FileBlockingPredefinedStore',
-                            'WildfireProfileStore' => 'WildfirePredefinedStore', 'URLProfileStore' => 'UrlFilteringPredefinedStore',
-                            'VirusAndWildfireProfileStore' => 'VirusAndWildfireProfileStore', 'DataFilteringProfileStore' => 'DataFilteringPredefinedStore' );
-                        if( !isset($predefinedStores[$tmp_store_name]) || !isset($sub->{$predefinedStores[$tmp_store_name]}) || $sub->{$predefinedStores[$tmp_store_name]} === null )
+                        $predefinedStore = SecurityProfileStore::getPredefinedStore( $this->owner->owner, $tmp_store_name );
+                        //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
+                        if( $predefinedStore === null && $tmp_store_name == 'VirusAndWildfireProfileStore' && isset($sub->VirusAndWildfireProfileStore) )
+                            $predefinedStore = $sub->VirusAndWildfireProfileStore;
+                        if( $predefinedStore === null )
                         {
                             $this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
                             goto spgSlotNameOnly;
                         }
 
-                        if( $tmp_store_name == 'AntiVirusProfileStore')
-                            $profile = $sub->AntiVirusPredefinedStore->find( $tmp_type->nodeValue );
-                        elseif( $tmp_store_name == 'AntiSpywareProfileStore')
-                            $profile = $sub->AntiSpywarePredefinedStore->find( $tmp_type->nodeValue );
-                        elseif( $tmp_store_name == 'VulnerabilityProfileStore')
-                            $profile = $sub->VulnerabilityPredefinedStore->find( $tmp_type->nodeValue );
-                        elseif( $tmp_store_name == 'FileBlockingProfileStore' )
-                            $profile = $sub->FileBlockingPredefinedStore->find( $tmp_type->nodeValue );
-                        elseif( $tmp_store_name == 'WildfireProfileStore' )
-                            $profile = $sub->WildfirePredefinedStore->find( $tmp_type->nodeValue );
-                        elseif( $tmp_store_name == 'URLProfileStore' )
-                            $profile = $sub->UrlFilteringPredefinedStore->find( $tmp_type->nodeValue );
-                        //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
-                        elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
-                            $profile = $sub->VirusAndWildfireProfileStore->find( $tmp_type->nodeValue );
-                        elseif( $tmp_store_name == 'DataFilteringProfileStore' )
-                            $profile = $sub->DataFilteringPredefinedStore->find( $tmp_type->nodeValue );
+                        $profile = $predefinedStore->find( $tmp_type->nodeValue );
 
                         if( $profile != null )
                         {
@@ -262,23 +246,7 @@ class SecurityProfileGroup
                                 mwarning( "SecProfGroup: '".$this->name()."' SecurityProfile: '".$tmp_type->nodeValue."' of StoreName: '".$tmp_store_name."' not found.", null, false );
 
                             //Todo: not a profile - default profile
-                            if( $tmp_store_name == 'AntiVirusProfileStore')
-                                $profile = $sub->AntiVirusPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            elseif( $tmp_store_name == 'AntiSpywareProfileStore')
-                                $profile = $sub->AntiSpywarePredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            elseif( $tmp_store_name == 'VulnerabilityProfileStore')
-                                $profile = $sub->VulnerabilityPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            elseif( $tmp_store_name == 'FileBlockingProfileStore' )
-                                $profile = $sub->FileBlockingPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            elseif( $tmp_store_name == 'WildfireProfileStore' )
-                                $profile = $sub->WildfirePredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            elseif( $tmp_store_name == 'URLProfileStore' )
-                                $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
-                            elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
-                                $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $tmp_type->nodeValue, $this );
-                            elseif( $tmp_store_name == 'DataFilteringProfileStore' )
-                                $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
+                            $profile = $predefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
 
                             #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
                             if( $profile !== null )
