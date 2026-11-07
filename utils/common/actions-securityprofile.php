@@ -3788,6 +3788,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     let explicitCalculationValue = 'N/A';
 
+                    // 1. Wenn das Backend im Objekt bereits den 'calc'-String liefert, direkt verwenden:
+                    if (matchedData !== null && typeof matchedData === 'object' && matchedData['calc']) {
+                        explicitCalculationValue = matchedData['calc'];
+                    }
+                    // 2. Fallback für App-ID, User-ID, Service/Port falls kein 'calc' direkt greifbar ist:
+                    else if (displayName === 'App-ID' || displayName === 'User-ID' || displayName === 'Service/Port') {
+                        let staticKey = 'service port';
+                        if (displayName === 'App-ID') staticKey = 'app id';
+                        if (displayName === 'User-ID') staticKey = 'user id';
+
+                        const passedRules = dataset[staticKey] || 0;
+                        const totalRules = dataset['security rules allow enabled'] || 0;
+                        explicitCalculationValue = `${passedRules}/${totalRules}`;
+                    }
+                    /*
                     if (displayName === 'App-ID' || displayName === 'User-ID' || displayName === 'Service/Port') {
                         let staticKey = 'service port';
                         if (displayName === 'App-ID') staticKey = 'app id';
@@ -3797,7 +3812,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         const matchingRules = Math.round((pctValue / 100) * totalRules);
 
                         explicitCalculationValue = `${matchingRules}/${totalRules}`;
-                    } else {
+                    }*/
+                    else {
                         let baseKey = displayName.toLowerCase()
                             .replace('virusandwildfire analysis ', 'avwf ')
                             .replace('wildfire analysis ', 'wf ')
