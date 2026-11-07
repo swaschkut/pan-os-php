@@ -161,15 +161,13 @@ IKEgatewayCallContext::$supportedActions[] = array(
 
                 if( get_class($object->owner->owner) == "PANConf" )
                 {
-                    if( isset($object->owner->owner)
-                        && $object->owner->owner !== null
-                        && (
-                            get_class($object->owner->owner) == "Template"
-                            || get_class($context->subSystem) == "TemplateStack" )
+                    // $object->owner->owner is the PANConf (deviceConfiguration) of a template / template stack: the template
+                    // (stack) name is its owner (before: compared the PANConf with "Template", so the column was always "---")
+                    if( isset($object->owner->owner->owner)
+                        && ( $object->owner->owner->owner instanceof Template || $object->owner->owner->owner instanceof TemplateStack )
                     )
                     {
-                        #$lines .= $context->encloseFunction($object->owner->owner->owner->name());
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                        $lines .= $context->encloseFunction($object->owner->owner->owner->name());
 
                         $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
                         if( $tmp_vsys !==  null )
