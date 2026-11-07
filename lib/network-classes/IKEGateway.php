@@ -159,7 +159,7 @@ class IKEGateway
                         if( $tmp_ike_profile != NULL )
                             $tmp_ike_profile->addReference($this);
                         elseif( $inTemplateScope && !in_array( $this->proposal, array( 'default', 'Suite-B-GCM-128', 'Suite-B-GCM-256' ), TRUE ) )
-                            mwarning( "IKE-gateway '" . $this->name() . "': IKE-crypto-profile '" . $this->proposal . "' not found", null, false );
+                            mwarning( "Template '" . $this->owner->owner->owner->name() . "' IKE-gateway: '" . $this->name() . "' IKE-crypto-profile '" . $this->proposal . "' not found", null, false );
                     }
 
 
