@@ -463,6 +463,24 @@ class NetworkPropertiesContainer
      * @param string $interfaceName
      * @return EthernetInterface|IPsecTunnel|TmpInterface|ReferenceableObject
      */
+    /**
+     * Panorama template stack: a template stack has no interfaces of its own, its zones, IKE gateways, ... use the
+     * interfaces of its templates: own network first, then the templates of the stack in the stack's order.
+     * Anything else (firewall, template): as findInterfaceOrCreateTmp().
+     */
+    function findInterfaceInTemplateScopeOrCreateTmp($interfaceName)
+    {
+        if( isset($this->owner) && PH::templateScopeOwner( $this->owner ) instanceof TemplateStack )
+            foreach( PH::templateScopeNetworks( $this->owner ) as $network )
+            {
+                $found = $network->findInterface( $interfaceName );
+                if( $found !== null && !( $found instanceof TmpInterface ) )
+                    return $found;
+            }
+
+        return $this->findInterfaceOrCreateTmp( $interfaceName );
+    }
+
     function findInterfaceOrCreateTmp($interfaceName)
     {
         $resolved = $this->findInterface($interfaceName);

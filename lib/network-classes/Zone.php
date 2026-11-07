@@ -234,6 +234,8 @@ class Zone
                             $tmp_zpp = $this->findZoneProtectionProfileObject( $this->zoneProtectionProfile );
                             if( is_object( $tmp_zpp ) )
                                 $tmp_zpp->addReference( $this );
+                            else
+                                mwarning( "Zone '" . $this->name() . "': zone-protection-profile '" . $this->zoneProtectionProfile . "' not found", null, false );
                         }
                         else
                         {
@@ -263,9 +265,10 @@ class Zone
 
                     if( get_class($this->owner->owner) == "VirtualSystem" || get_class($this->owner->owner) == "DeviceCloud" )
                     {
-                        if( isset($this->owner->owner->owner->owner) && get_class($this->owner->owner->owner->owner) == "Template" )
+                        if( isset($this->owner->owner->owner->owner) && in_array( get_class($this->owner->owner->owner->owner), array( "Template", "TemplateStack" ), TRUE ) )
                         {
-                            //this is done via Panorama class - after reading DeviceGroup
+                            // template / template stack: only a log forwarding profile of Panorama shared, resolved by
+                            // PanoramaConf once shared is loaded
                         }
                         else
                         {
@@ -419,25 +422,12 @@ class Zone
         if( !isset($panConf->network) )
             return null;
 
-        $tmp_zpp = $panConf->network->zoneProtectionProfileStore->find( $name );
-        if( $tmp_zpp !== null )
-            return $tmp_zpp;
+        // template / template stack: stack first, then the templates of the stack in the stack's order
+        // (a zone in a template never uses a profile of a stack)
+        if( PH::templateScopeOwner( $panConf ) !== null )
+            return PH::findInTemplateScopeNetworks( $panConf, 'zoneProtectionProfileStore', $name );
 
-        if( isset($panConf->owner) && is_object($panConf->owner) && get_class($panConf->owner) == "TemplateStack" )
-        {
-            foreach( $panConf->owner->templates as $template )
-            {
-                /** @var Template|null $template */
-                if( $template === null || !isset($template->deviceConfiguration->network) )
-                    continue;
-
-                $tmp_zpp = $template->deviceConfiguration->network->zoneProtectionProfileStore->find( $name );
-                if( $tmp_zpp !== null )
-                    return $tmp_zpp;
-            }
-        }
-
-        return null;
+        return $panConf->network->zoneProtectionProfileStore->find( $name );
     }
 
     public function API_setName($newname)

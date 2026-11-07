@@ -1670,81 +1670,32 @@ class PanoramaConf
         // End of DeviceGroup loading
         //
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //Todo: Template Zone already loaded with LogProfile as String
-        //all DeviceGroups with LogProfile objects are loaded
-        //Todo: correct place to now go through all Templates -> zone -> try to find for LogProfile Name the correct DG back via:
-
-        // zone which is used in Template
-        // Template can be used in one or more TemplateStack
-        // a TemplateStack is references by one or more ManagedDevice -> Serial
-        // This ManagedDevice has exactly one DeviceGroup attached
-        // LogProfile Name can be found in this DG or via the hierarchy in the upper/parent DGs
-
-        foreach( $this->templates as $template )
+        //
+        // log forwarding profile of a zone in a template / template stack: a template can only use objects of
+        // Panorama shared, never of a device group (the device groups and shared are loaded now)
+        //
+        foreach( array_merge( $this->templates, $this->templatestacks ) as $template )
         {
-            /* @VAR Template $template */
-            foreach( $template->deviceConfiguration->virtualSystems as $virtualSystem )
+            /** @var Template|TemplateStack $template */
+            if( $template->deviceConfiguration === null )
+                continue;
+            foreach( $template->deviceConfiguration->getVirtualSystems() as $virtualSystem )
             {
-                /* @VAR VirtualSystem $virtualSystem */
-                $zones = $virtualSystem->zoneStore->getAll();
-
-                foreach( $zones as $zone )
+                foreach( $virtualSystem->zoneStore->getAll() as $zone )
                 {
-                    /* @VAR Zone $zone */
+                    /** @var Zone $zone */
                     $logProfName = $zone->logsetting;
-                    if( !empty( $logProfName ) )
+                    if( empty( $logProfName ) )
+                        continue;
+
+                    $logProfObj = $this->LogProfileStore->find( $logProfName );
+                    if( $logProfObj !== null )
                     {
-                        foreach( $template->getReferences() as $templateStack )
-                        {
-                            /* @Var TemplateStack $templateStack */
-
-                            if( !empty($templateStack->FirewallsSerials) )
-                            {
-                                foreach($templateStack->FirewallsSerials as $managedFirewall)
-                                {
-                                    /* @var ManagedDevice $managedFirewall */
-                                    $deviceGroupNames = $managedFirewall->getDeviceGroup();
-                                    if( !empty($deviceGroupNames) )
-                                    {
-                                        foreach( $deviceGroupNames as $deviceGroupName )
-                                        {
-                                            $deviceGroupOjb = $this->findDeviceGroup( $deviceGroupName );
-
-                                            if( $deviceGroupOjb !== null )
-                                            {
-                                                $logProfObj = $deviceGroupOjb->LogProfileStore->find( $logProfName );
-                                                if( $logProfObj !== null )
-                                                {
-                                                    if( $logProfName == $logProfObj->name() )
-                                                    {
-                                                        $zone->logsetting_Obj = $logProfObj;
-                                                        $logProfObj->addReference($zone);
-                                                    }
-                                                }
-                                            }
-                                            else
-                                                mwarning( "DeviceGroup '$deviceGroupName' not found in DeviceGroup list for LogProfile '$logProfName'", null, false );
-                                        }
-                                    }
-                                    else
-                                    {
-                                        $logProfObj = $this->LogProfileStore->find( $logProfName );
-                                        if( $logProfObj !== null )
-                                        {
-                                            if( $logProfName == $logProfObj->name() )
-                                            {
-                                                $zone->logsetting_Obj = $logProfObj;
-                                                $logProfObj->addReference($zone);
-                                            }
-                                        }
-                                        mwarning( "managedDevice '{$managedFirewall->name()}' has no DeviceGroup attached. Template: '{$template->name()}' Zone: '{$zone->name()}' is using LogProfile: '$logProfName'", null, false );
-                                    }
-
-                                }
-                            }
-                        }
+                        $zone->logsetting_Obj = $logProfObj;
+                        $logProfObj->addReference( $zone );
                     }
+                    else
+                        mwarning( "Template '" . $template->name() . "' Zone: '" . $zone->name() . "' log forwarding profile '" . $logProfName . "' not found in Panorama shared", null, false );
                 }
             }
         }

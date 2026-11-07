@@ -256,19 +256,20 @@ class MERGERPOSSIBLEREPORT extends MERGER
                 if( isset($level->certificateStore) && $level->certificateStore !== null )
                     $stores[] = $level->certificateStore;
         }
-        elseif( isset($l['loc']->certificateStore) )
-            $stores[] = $l['loc']->certificateStore;
-        // vsys: then shared (firewall shared or the template / stack device configuration)
-        if( $l['loc'] instanceof VirtualSystem && isset($l['loc']->owner->certificateStore) )
-            $stores[] = $l['loc']->owner->certificateStore;
-        if( isset($l['template']) )
+        elseif( count( PH::templateScopeLevels( $l['loc'] ) ) > 0 )
         {
-            if( $l['template']->certificateStore !== null )
-                $stores[] = $l['template']->certificateStore;
-            if( $l['template'] instanceof TemplateStack )
-                foreach( $l['template']->templates as $t )
-                    if( $t->certificateStore !== null )
-                        $stores[] = $t->certificateStore;
+            // template / template stack: stack vsys, stack shared, then each template of the stack (vsys, shared)
+            foreach( PH::templateScopeLevels( $l['loc'] ) as $level )
+                if( isset($level->certificateStore) && $level->certificateStore !== null )
+                    $stores[] = $level->certificateStore;
+        }
+        else
+        {
+            if( isset($l['loc']->certificateStore) )
+                $stores[] = $l['loc']->certificateStore;
+            // firewall vsys: then shared
+            if( $l['loc'] instanceof VirtualSystem && isset($l['loc']->owner->certificateStore) )
+                $stores[] = $l['loc']->owner->certificateStore;
         }
         foreach( $stores as $store )
             foreach( $store->getAll() as $c )

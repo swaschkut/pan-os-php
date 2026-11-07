@@ -1891,6 +1891,102 @@ class PH
     }
 
     /**
+     * Panorama template scope: the Template / TemplateStack $location belongs to, or null.
+     * $location: a VirtualSystem or the PANConf (deviceConfiguration) of a template / template stack, or the
+     * Template / TemplateStack itself (shared level).
+     */
+    public static function templateScopeOwner( $location )
+    {
+        if( $location instanceof Template || $location instanceof TemplateStack )
+            return $location;
+        if( $location instanceof VirtualSystem )
+            $location = isset($location->owner) ? $location->owner : null;
+        if( $location instanceof PANConf && isset($location->owner) && ( $location->owner instanceof Template || $location->owner instanceof TemplateStack ) )
+            return $location->owner;
+        return null;
+    }
+
+    /** a template stack: the stack, then its templates in the stack's order (highest priority first); a template: itself */
+    private static function templateScopeSequence( $owner ): array
+    {
+        $sequence = array( $owner );
+        if( $owner instanceof TemplateStack )
+            foreach( $owner->templates as $template )
+                if( is_object($template) )
+                    $sequence[] = $template;
+        return $sequence;
+    }
+
+    /**
+     * Panorama template scope: the levels a name used by an object in $location is looked up in, highest priority
+     * first (as PAN-OS merges them for the firewall):
+     *   template stack, vsys X:  stack vsys X, stack shared, template 1 vsys X, template 1 shared, template 2 ...
+     *   template stack, shared:  stack shared, template 1 shared, template 2 shared ...
+     *   template:                its own vsys X (for a vsys object), its own shared - never the stack
+     * A level is a VirtualSystem (vsys stores) or the Template / TemplateStack (shared stores).
+     * Empty array: $location is not in a template scope.
+     */
+    public static function templateScopeLevels( $location ): array
+    {
+        $owner = self::templateScopeOwner( $location );
+        if( $owner === null )
+            return array();
+
+        $vsysName = ( $location instanceof VirtualSystem ) ? $location->name() : null;
+        $levels = array();
+        foreach( self::templateScopeSequence( $owner ) as $level )
+        {
+            if( $vsysName !== null && isset($level->deviceConfiguration) && $level->deviceConfiguration !== null )
+            {
+                $vsys = $level->deviceConfiguration->findVirtualSystem( $vsysName );
+                if( $vsys !== null )
+                    $levels[] = $vsys;
+            }
+            $levels[] = $level;
+        }
+        return $levels;
+    }
+
+    /**
+     * Panorama template scope: the network configurations (interfaces, profiles, IKE / IPsec, ...) a name used by an
+     * object in $location is looked up in: a template stack's own one, then those of its templates in the stack's
+     * order; a template: its own one. Empty array: $location is not in a template scope.
+     * @return NetworkPropertiesContainer[]
+     */
+    public static function templateScopeNetworks( $location ): array
+    {
+        $owner = self::templateScopeOwner( $location );
+        if( $owner === null )
+            return array();
+
+        $networks = array();
+        foreach( self::templateScopeSequence( $owner ) as $level )
+            if( isset($level->deviceConfiguration->network) && $level->deviceConfiguration->network !== null )
+                $networks[] = $level->deviceConfiguration->network;
+        return $networks;
+    }
+
+    /**
+     * Panorama template scope: first object named $name in the network store $storeProperty (property of
+     * NetworkPropertiesContainer, e.g. 'zoneProtectionProfileStore'), in the order of templateScopeNetworks().
+     * $findMethod: find method of that store (default find).
+     */
+    public static function findInTemplateScopeNetworks( $location, string $storeProperty, $name, string $findMethod = 'find' )
+    {
+        if( $name === null || $name === '' )
+            return null;
+        foreach( self::templateScopeNetworks( $location ) as $network )
+        {
+            if( !isset($network->$storeProperty) || $network->$storeProperty === null )
+                continue;
+            $found = $network->$storeProperty->$findMethod( $name );
+            if( is_object($found) )
+                return $found;
+        }
+        return null;
+    }
+
+    /**
      * SCM: locations a name used by an object stored in $location is looked up in.
      * Folder / device: as scmResolutionLevels(). Snippet: the snippet itself, then 'All' - the view of a
      * snippet ends there (no other snippet, also not the ones attached to 'All'; no predefined-snippet).

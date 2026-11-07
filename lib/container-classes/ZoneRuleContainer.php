@@ -517,7 +517,8 @@ class ZoneRuleContainer extends ObjRuleContainer
                 /* @var TemplateStack $tmp_TemplateStack */
                 $tmp_templates = $tmp_TemplateStack->templates;
 
-                $all = array_merge($tmp_templates, array($tmp_TemplateStack));
+                // PAN-OS precedence: the stack first, then its templates in the stack's order
+                $all = array_merge(array($tmp_TemplateStack), $tmp_templates);
 
                 foreach ($all as $template)
                 {

@@ -181,8 +181,18 @@ class CertificateProfile
      * The certificates get this profile as reference.
      * @return Certificate[]
      */
+    /** CA certificates referenced by the last resolveCACertificates() */
+    private $resolvedCACertificates = array();
+
+    /**
+     * references the CA certificates; can be called again once more certificate stores are loaded (e.g. the shared
+     * level of a template is loaded after its vsys): the references of the previous call are replaced
+     */
     public function resolveCACertificates()
     {
+        foreach( $this->resolvedCACertificates as $certificate )
+            $certificate->removeReference($this);
+
         $ret = array();
         foreach( $this->caCertificateNames() as $caName )
         {
@@ -192,6 +202,7 @@ class CertificateProfile
             $certificate->addReference($this);
             $ret[$caName] = $certificate;
         }
+        $this->resolvedCACertificates = $ret;
         return $ret;
     }
 
@@ -227,6 +238,17 @@ class CertificateProfile
         if( $location instanceof Container || $location instanceof Snippet || $location instanceof DeviceCloud || $location instanceof DeviceOnPrem )
         {
             foreach( PH::scmObjectLevels( $location ) as $level )
+                if( isset($level->certificateStore) && $level->certificateStore !== null && !in_array($level->certificateStore, $stores, TRUE) )
+                    $stores[] = $level->certificateStore;
+            return $stores;
+        }
+
+        // Panorama template / template stack: stack vsys, stack shared, then each template of the stack (vsys, shared);
+        // a template: its own vsys / shared only; a shared-level profile never looks into a vsys
+        $levels = PH::templateScopeLevels( $location );
+        if( count($levels) > 0 )
+        {
+            foreach( $levels as $level )
                 if( isset($level->certificateStore) && $level->certificateStore !== null && !in_array($level->certificateStore, $stores, TRUE) )
                     $stores[] = $level->certificateStore;
             return $stores;

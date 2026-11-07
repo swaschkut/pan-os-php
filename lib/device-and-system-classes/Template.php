@@ -162,6 +162,14 @@ class Template
             }
             // End of CertificateProfile objects extraction
         }
+
+        // certificate profiles of the vsys were loaded before the shared level: resolve their CA certificates again
+        // (vsys -> shared -> templates of a stack, see PH::templateScopeLevels())
+        if( $this->deviceConfiguration !== null )
+            foreach( $this->deviceConfiguration->getVirtualSystems() as $vsys )
+                if( isset($vsys->certificateProfileStore) && $vsys->certificateProfileStore !== null )
+                    foreach( $vsys->certificateProfileStore->getAll() as $certificateProfile )
+                        $certificateProfile->resolveCACertificates();
     }
 
     public function name()
