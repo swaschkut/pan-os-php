@@ -57,10 +57,35 @@ class PROFILEUTIL extends UTIL
         }
     }
 
+    /**
+     * profiletype => store property on PANConf / PanoramaConf / VirtualSystem / DeviceGroup / Container ...
+     */
+    static public $profileTypeStores = array(
+        'decryption' => 'DecryptionProfileStore',
+        'hip-objects' => 'HipObjectsProfileStore',
+        'hip-profiles' => 'HipProfilesProfileStore',
+    );
+
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['profiletype'] = array('niceName' => 'ProfileType', 'shortHelp' => 'specify which type(s) of profile to process (default is "any"). ie: profiletype=any  profiletype=decryption', 'argDesc' => 'any|decryption');
+        $this->supportedArguments['profiletype'] = array('niceName' => 'ProfileType', 'shortHelp' => 'specify which type(s) of profile to process (default is "any"). ie: profiletype=any  profiletype=decryption,hip-profiles', 'argDesc' => 'any|' . implode('|', array_keys(self::$profileTypeStores)));
+    }
+
+    /**
+     * add all stores of $sub matching the requested profiletype(s) to objectsToProcess
+     */
+    private function addProfileStores( $sub )
+    {
+        $any = array_search('any', $this->ProfileTypes) !== FALSE;
+        foreach( self::$profileTypeStores as $type => $storeProp )
+        {
+            if( !$any && array_search($type, $this->ProfileTypes) === FALSE )
+                continue;
+            if( !property_exists($sub, $storeProp) || $sub->$storeProp === null )
+                continue;
+            $this->objectsToProcess[] = array('store' => $sub->$storeProp, 'rules' => $sub->$storeProp->securityProfiles());
+        }
     }
 
     public function location_filter_object()
@@ -77,8 +102,7 @@ class PROFILEUTIL extends UTIL
                 if( $location == 'shared' || $location == 'any' )
                 {
 
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->DecryptionProfileStore, 'rules' => $this->pan->DecryptionProfileStore->securityProfiles());
+                    $this->addProfileStores( $this->pan );
 
                     $locationFound = TRUE;
                 }
@@ -92,8 +116,7 @@ class PROFILEUTIL extends UTIL
                         {
                             //Todo: Validation needed,cmpare to rule no pre/post rule but check if something else needed
 
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->DecryptionProfileStore, 'rules' => $sub->DecryptionProfileStore->securityProfiles());
+                            $this->addProfileStores( $sub );
 
                             $locationFound = TRUE;
                         }
@@ -104,8 +127,7 @@ class PROFILEUTIL extends UTIL
                         if( ($location == 'any' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
                         {
 
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->DecryptionProfileStore, 'rules' => $sub->DecryptionProfileStore->securityProfiles());
+                            $this->addProfileStores( $sub );
 
                             $locationFound = TRUE;
                         }
@@ -119,9 +141,7 @@ class PROFILEUTIL extends UTIL
                 #if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any' || $location == 'all') )
                 if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any' ) )
                 {
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->DecryptionProfileStore, 'rules' => $this->pan->DecryptionProfileStore->securityProfiles());
-
+                    $this->addProfileStores( $this->pan );
 
                     $locationFound = TRUE;
                 }
@@ -147,10 +167,7 @@ class PROFILEUTIL extends UTIL
                 {
                     if( $location == 'any' || $location == $sub->name() )
                     {
-                        if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                        {
-                            $this->objectsToProcess[] = array('store' => $sub->DecryptionProfileStore, 'rules' => $sub->DecryptionProfileStore->securityProfiles());
-                        }
+                        $this->addProfileStores( $sub );
 
                         $locationFound = TRUE;
                     }
@@ -169,7 +186,7 @@ class PROFILEUTIL extends UTIL
         //
         // Determine rule types
         //
-        $supportedProfileTypes = array('any', 'decryption');
+        $supportedProfileTypes = array_merge( array('any', 'all'), array_keys(self::$profileTypeStores) );
         
         if( !isset(PH::$args['profiletype']) )
         {

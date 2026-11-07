@@ -44,6 +44,7 @@ UTIL:
 * merger extend with all new SCM SP objects
 * type=merge-possible-report | extend for SCM
 * type=object-merger | extend for hip-object/-profile
+* type=profile | extend with hip-profile/-object
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
