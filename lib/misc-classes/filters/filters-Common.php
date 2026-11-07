@@ -709,6 +709,7 @@ RQuery::registerFilter( array(
 RQuery::registerFilter( array(
     'edl',
     'log-profile',
+    'profile',
     'schedule',
     'securityprofilegroup',
     'tag'
@@ -730,12 +731,29 @@ RQuery::registerFilter( array(
     'ike-profile',
     'ipsec-profile',
     'interface-management-profile',
-    'profile',
     'zone',
     'zone-protection-profile'
 ), 'object', 'is.unused', array(
     'Function' => function (RQueryContext $context) {
         return $context->object->countReferences() == 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+RQuery::registerFilter( array(
+    'profile'
+), 'object', 'is.unused.recursive', array(
+    // HIP objects / HIP profiles: also unused when only named by HIP profiles that are unused themselves
+    // other profile types (e.g. decryption): same as is.unused
+    'Function' => function (RQueryContext $context) {
+        $ret = $context->object->objectIsUnusedRecursive();
+        if( $ret === null )
+            return $context->object->objectIsUnused();
+        return $ret;
     },
     'arg' => FALSE,
     'ci' => array(

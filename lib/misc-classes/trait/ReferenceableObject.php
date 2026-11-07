@@ -951,7 +951,8 @@ trait ReferenceableObject
     private static function isGroupReferencer($object): bool
     {
         return $object instanceof AddressGroup || $object instanceof ServiceGroup
-            || $object instanceof AppGroup || $object instanceof SecurityProfileGroup;
+            || $object instanceof AppGroup || $object instanceof SecurityProfileGroup
+            || $object instanceof HipProfilesProfile;
     }
 
     /**
@@ -1004,6 +1005,8 @@ trait ReferenceableObject
             $className = 'SecurityProfileGroup';
         elseif( get_class($this) == 'App' || get_class($this) == 'AppFilter' || get_class($this) == 'AppGroup')
             $className = 'AppGroup';
+        elseif( get_class($this) == 'HipObjectsProfile' || get_class($this) == 'HipProfilesProfile' )
+            $className = 'HipProfilesProfile';   // HIP objects / profiles are combined by HIP profiles (<match>)
         else
             return null;
 
@@ -1015,14 +1018,27 @@ trait ReferenceableObject
         if( count($groups) != $this->countReferences() )
             return FALSE;
 
+        // cycle guard (e.g. HIP profiles naming each other): an object met again while it is still
+        // being evaluated adds no use of its own - the cycle is used only if a referencer outside it is
+        static $inProgress = array();
+        $id = spl_object_id($this);
+        if( isset($inProgress[$id]) )
+            return TRUE;
+        $inProgress[$id] = TRUE;
+
+        $ret = TRUE;
         foreach( $groups as $group )
         {
             if( $group === $this )
                 continue;
             if( !$group->objectIsUnusedRecursive() )
-                return FALSE;
+            {
+                $ret = FALSE;
+                break;
+            }
         }
 
-        return TRUE;
+        unset($inProgress[$id]);
+        return $ret;
     }
 }

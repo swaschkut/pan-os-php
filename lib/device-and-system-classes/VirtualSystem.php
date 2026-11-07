@@ -419,7 +419,7 @@ class VirtualSystem
 
             'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
             'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
+            'DecryptionProfileStore', 'HipObjectsProfileStore', 'HipProfilesProfileStore', 'customURLProfileStore'
 
         );
 

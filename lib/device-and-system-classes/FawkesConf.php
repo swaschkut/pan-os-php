@@ -1297,7 +1297,7 @@ class FawkesConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'HipProfilesProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 
