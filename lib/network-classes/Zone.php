@@ -240,7 +240,7 @@ class Zone
                             //Todo: 20260309 is it sharedgateway????
                         }
                     }
-                    elseif( get_class($this->owner->owner) == "DeviceCloud" )
+                    elseif( in_array( get_class($this->owner->owner), array( "DeviceCloud", "DeviceOnPrem", "Container", "Snippet" ), TRUE ) )
                     {
                         if( isset($this->owner->owner->network) )
                         {

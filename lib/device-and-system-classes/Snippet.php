@@ -140,6 +140,12 @@ class Snippet
     /** @var CertificateProfileStore */
     public $certificateProfileStore = null;
 
+    /** @var GPGatewayStore */
+    public $GPGatewayStore = null;
+
+    /** @var GPPortalStore */
+    public $GPPortalStore = null;
+
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
@@ -353,6 +359,12 @@ class Snippet
 
         $this->certificateProfileStore = new CertificateProfileStore($this);
         $this->certificateProfileStore->setName('certificateProfileStore');
+
+        $this->GPGatewayStore = new GPGatewayStore($this);
+        $this->GPGatewayStore->setName('GPGatewayStore');
+
+        $this->GPPortalStore = new GPPortalStore($this);
+        $this->GPPortalStore->setName('GPPortalStore');
 
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
@@ -853,6 +865,23 @@ class Snippet
         // End of certificate-profile extraction
 
         //
+        // Extract GlobalProtect gateway / portal objects
+        //
+        $tmp_globalprotect = DH::findFirstElement('global-protect', $xml);
+        if( $tmp_globalprotect !== FALSE )
+        {
+            $tmp = DH::findFirstElement('global-protect-gateway', $tmp_globalprotect);
+            if( $tmp !== FALSE )
+                $this->GPGatewayStore->load_from_domxml($tmp);
+            $tmp = DH::findFirstElement('global-protect-portal', $tmp_globalprotect);
+            if( $tmp !== FALSE )
+                $this->GPPortalStore->load_from_domxml($tmp);
+        }
+        // End of GlobalProtect extraction
+
+
+
+        //
         // Extract ssl-tls-service-profile objects
         //
         $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
@@ -1254,7 +1283,18 @@ class Snippet
             if( $debugLoadTime )
                 PH::print_DEBUG_loadtime("network");
             $this->network->load_from_domxml($tmp);
+            // part 2: IKE / IPsec crypto profiles and gateways, tunnels, GlobalProtect, ... (as PANConf does)
+            $this->network->load_from_domxml_2($tmp);
         }
+
+        //
+        // Extract Zone objects (SCM: every folder and snippet can hold zones; after the network part, so
+        // interfaces and zone protection profiles are known)
+        //
+        $tmp = DH::findFirstElement('zone', $xml);
+        if( $tmp !== FALSE )
+            $this->zoneStore->load_from_domxml($tmp);
+        // End of Zone objects extraction
         //
     }
 

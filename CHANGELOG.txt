@@ -75,6 +75,7 @@ BUGFIX:
 * different classes nestedPointOfView - bugfix
 * class SecurityProfileStore | predefined - bugfix for SPG - SecRule - DefaultSecRule - if predefined objects are directly used
 * Zone - ZPP binding | bugfix to read ZPP from Template for a Zone defined in TStack
+* SCM relate optimisation - add missing Stores, advanced_routing
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
