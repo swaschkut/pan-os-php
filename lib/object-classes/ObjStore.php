@@ -130,10 +130,12 @@ class ObjStore
                 else
                 {
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    if ($snippet !== null)
+                    if( $snippet !== null && $snippet !== $this->owner && isset($snippet->$storeType) )
+                    {
                         $f = $snippet->$storeType->findbyName($name, $ref, false);
-                    if ($f !== null)
-                        return $f;
+                        if( $f !== null )
+                            return $f;
+                    }
                 }
             }
 

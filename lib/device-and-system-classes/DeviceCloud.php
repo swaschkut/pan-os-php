@@ -131,6 +131,9 @@ class DeviceCloud
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
@@ -348,6 +351,9 @@ class DeviceCloud
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
 
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
@@ -801,6 +807,14 @@ class DeviceCloud
                 $this->certificateStore->load_from_domxml($tmp);
             }
             // End of Certificate objects extraction
+
+            //
+            // Extract certificate-profile objects
+            //
+            $tmp = DH::findFirstElement('certificate-profile', $xml);
+            if( $tmp !== FALSE )
+                $this->certificateProfileStore->load_from_domxml($tmp);
+            // End of certificate-profile extraction
 
             //
             // Extract ssl-tls-service-profile objects

@@ -257,7 +257,9 @@ class SecurityProfileGroup
                         }
                         else
                         {
-                            mwarning( "SecProfGroup: '".$this->name()."' SecurityProfile: '".$tmp_type->nodeValue."' of StoreName: '".$tmp_store_name."' not found.", null, false );
+                            // SCM snippet: the profile can be in 'All', which is loaded later (Snippet::linkToAll())
+                            if( get_class( $this->owner->owner ) !== "Snippet" )
+                                mwarning( "SecProfGroup: '".$this->name()."' SecurityProfile: '".$tmp_type->nodeValue."' of StoreName: '".$tmp_store_name."' not found.", null, false );
 
                             //Todo: not a profile - default profile
                             if( $tmp_store_name == 'AntiVirusProfileStore')
@@ -1159,6 +1161,57 @@ class SecurityProfileGroup
         return $ret;
     }
 
+    /**
+     * Slots that only hold a profile name (the profile was not found while loading): look the name up
+     * again from $location, e.g. SCM 'All' for a group in a snippet, once 'All' is loaded.
+     * @return int number of slots now pointing to a profile object
+     */
+    public function resolveNameOnlyProfiles( $location ): int
+    {
+        if( $location === null || $this->owner === null )
+            return 0;
+
+        $ownerClass = get_class( $this->owner->owner );
+        $isScm = in_array( $ownerClass, array( 'FawkesConf', 'BuckbeakConf', 'Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet' ), TRUE );
+        $types = $isScm ? $this->secprof_fawkes_array : $this->secprof_array;
+        $stores = $isScm ? $this->secprof_fawkes_store : $this->secprof_store;
+
+        $resolved = 0;
+        foreach( $types as $i => $type )
+        {
+            // unresolved: only the name, or a TMP profile created while loading (e.g. in the predefined store)
+            $tmpProfile = null;
+            if( isset($this->secprofProfiles_obj[$type]) && is_object($this->secprofProfiles_obj[$type]) )
+            {
+                $current = $this->secprofProfiles_obj[$type];
+                if( !method_exists($current, 'isTmp') || !$current->isTmp() )
+                    continue;
+                $tmpProfile = $current;
+                $name = $current->name();
+            }
+            elseif( isset($this->secprofiles[$type]) && is_string($this->secprofiles[$type]) && $this->secprofiles[$type] !== '' )
+                $name = $this->secprofiles[$type];
+            else
+                continue;
+
+            $storeProp = $stores[$i];
+            if( !isset($location->$storeProp) || $location->$storeProp === null )
+                continue;
+
+            $profile = $location->$storeProp->find( $name, null, FALSE );
+            if( !is_object($profile) || $profile === $tmpProfile || ( method_exists($profile, 'isTmp') && $profile->isTmp() ) )
+                continue;
+
+            if( $tmpProfile !== null )
+                $tmpProfile->removeReference( $this );
+            $this->secprofProfiles_obj[$type] = $profile;
+            $this->secprofiles[$type] = null;
+            $profile->addReference( $this );
+            $resolved++;
+        }
+        return $resolved;
+    }
+
     public function rewriteXML()
     {
         if( $this->xmlroot !== null )
@@ -1166,6 +1219,10 @@ class SecurityProfileGroup
 
         foreach( $this->secprofProfiles_obj as $key => $secprof)
         {
+            // a slot that only holds a profile name (profile not found while loading) keeps its name
+            if( $secprof == null && isset($this->secprofiles[$key]) && is_string($this->secprofiles[$key]) && $this->secprofiles[$key] !== '' )
+                $secprof = $this->secprofiles[$key];
+
             if( $secprof != null )
             {
                 $tmp = $this->owner->xmlroot->ownerDocument->createElement($key);
@@ -1180,7 +1237,8 @@ class SecurityProfileGroup
                 }
                 else
                 {
-                    mwarning("SecurityProfileGroup contains a string in a variable which should be an object");
+                    if( !isset($this->secprofiles[$key]) || $this->secprofiles[$key] !== $secprof )
+                        mwarning("SecurityProfileGroup contains a string in a variable which should be an object");
                     $tmp = $this->owner->xmlroot->ownerDocument->createTextNode( $secprof );
                 }
 

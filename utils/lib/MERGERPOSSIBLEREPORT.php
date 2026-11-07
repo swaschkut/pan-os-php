@@ -22,7 +22,8 @@
 /**
  * type=merger-possible-report
  *
- * Read-only report over all locations (shared, device groups, templates, template stacks, vsys):
+ * Read-only report over all locations (shared, device groups, templates, template stacks, vsys;
+ * SCM: folders, devices and snippets):
  * which objects exist more than once
  *   - same name, same value       -> duplicate, merge candidate
  *   - same name, different value  -> conflict; "overlapping" when one copy can hide the other
@@ -78,6 +79,12 @@ class MERGERPOSSIBLEREPORT extends MERGER
         $this->inputValidation();
         $this->location_provided();
         $this->load_config();
+
+        // security profile types: only those this configuration has (Panorama / firewall or SCM)
+        $presentProfileTypes = $this->profileTypesOfConfig();
+        foreach( MERGER::$securityProfileMergerStores as $profileType => $storeProp )
+            if( !in_array( $profileType, $presentProfileTypes, TRUE ) )
+                unset( $this->reportTypes['securityprofile-' . $profileType] );
 
         $types = array_keys($this->reportTypes);
         if( isset(PH::$args['objecttype']) && strtolower(PH::$args['objecttype']) !== 'any' )
@@ -242,7 +249,14 @@ class MERGERPOSSIBLEREPORT extends MERGER
     public function certificateFingerprint( $name, array $l )
     {
         $stores = array();
-        if( isset($l['loc']->certificateStore) )
+        if( $this->isScmReport() )
+        {
+            // SCM: folder / device / snippet chain, a snippet also uses 'All'
+            foreach( PH::scmObjectLevels( $l['loc'] ) as $level )
+                if( isset($level->certificateStore) && $level->certificateStore !== null )
+                    $stores[] = $level->certificateStore;
+        }
+        elseif( isset($l['loc']->certificateStore) )
             $stores[] = $l['loc']->certificateStore;
         // vsys: then shared (firewall shared or the template / stack device configuration)
         if( $l['loc'] instanceof VirtualSystem && isset($l['loc']->owner->certificateStore) )
@@ -290,6 +304,10 @@ class MERGERPOSSIBLEREPORT extends MERGER
         $ret = array();
         $pan = $this->pan;
 
+        // SCM has no templates: every folder, device and snippet can hold every object type
+        if( $this->isScmReport() )
+            return $this->scmReportLocations();
+
         if( $scope == 'dg' )
         {
             if( $pan->isPanorama() )
@@ -333,11 +351,56 @@ class MERGERPOSSIBLEREPORT extends MERGER
         return $ret;
     }
 
+    private function isScmReport()
+    {
+        return $this->pan->isFawkes() || $this->pan->isBuckbeak();
+    }
+
+    /** SCM: folders, cloud and on-prem devices, snippets (predefined-snippet left out, it cannot be changed) */
+    private function scmReportLocations()
+    {
+        $ret = array();
+        $pan = $this->pan;
+        foreach( $pan->getContainers() as $sub )
+            $ret[] = array( 'label' => $sub->name(), 'loc' => $sub );
+        foreach( $pan->getDeviceClouds() as $sub )
+            $ret[] = array( 'label' => $sub->name(), 'loc' => $sub );
+        foreach( $pan->getDeviceOnPrems() as $sub )
+            $ret[] = array( 'label' => $sub->name(), 'loc' => $sub );
+        foreach( $pan->getSnippets() as $sub )
+            if( $sub->name() !== 'predefined-snippet' )
+                $ret[] = array( 'label' => 'snippet:' . $sub->name(), 'loc' => $sub );
+        return $ret;
+    }
+
+    /** cache: SCM location id => locations its names are looked up in */
+    private $scmLevelsCache = array();
+
+    private function scmLevels( $loc )
+    {
+        $id = spl_object_id( $loc );
+        if( !isset($this->scmLevelsCache[$id]) )
+            $this->scmLevelsCache[$id] = PH::scmObjectLevels( $loc );
+        return $this->scmLevelsCache[$id];
+    }
+
     /** one copy can hide the other on a firewall */
     private function overlapping( array $a, array $b, $scope )
     {
         $la = $a['loc'];
         $lb = $b['loc'];
+
+        // SCM: both copies are in the lookup chain of one folder, device or snippet
+        if( $this->isScmReport() )
+        {
+            foreach( $this->scmReportLocations() as $view )
+            {
+                $levels = $this->scmLevels( $view['loc'] );
+                if( in_array( $la, $levels, TRUE ) && in_array( $lb, $levels, TRUE ) )
+                    return TRUE;
+            }
+            return FALSE;
+        }
 
         if( $scope == 'dg' )
         {
@@ -377,6 +440,18 @@ class MERGERPOSSIBLEREPORT extends MERGER
     /** depth of a location: shared 0, device group 1 + parent depth */
     private function depth( $loc )
     {
+        // SCM: 'All' 0, folder / device 1 + parent depth; a snippet copy is never the one kept
+        // while a folder copy exists
+        if( $loc instanceof Snippet )
+            return 1000;
+        if( $loc instanceof Container || $loc instanceof DeviceCloud || $loc instanceof DeviceOnPrem )
+        {
+            $d = 0;
+            for( $cur = $loc->parentContainer; $cur !== null; $cur = $cur->parentContainer )
+                $d++;
+            return $d;
+        }
+
         if( !( $loc instanceof DeviceGroup ) )
             return 0;
         $d = 1;
@@ -534,6 +609,11 @@ class MERGERPOSSIBLEREPORT extends MERGER
     /** an object in $keepLoc can be used from $otherLoc */
     private function visibleFrom( $keepLoc, $otherLoc )
     {
+        // SCM: the kept copy is in the lookup chain of the other copy's location
+        // (parent folders, their snippets; a snippet also uses 'All')
+        if( $this->isScmReport() )
+            return $keepLoc === $otherLoc || in_array( $keepLoc, $this->scmLevels( $otherLoc ), TRUE );
+
         if( $keepLoc === $otherLoc || $keepLoc instanceof PanoramaConf || $keepLoc instanceof PANConf )
             return TRUE;
         if( $keepLoc instanceof DeviceGroup && $otherLoc instanceof DeviceGroup )

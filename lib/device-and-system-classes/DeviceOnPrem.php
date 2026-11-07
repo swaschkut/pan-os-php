@@ -125,6 +125,9 @@ class DeviceOnPrem
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 /*
@@ -339,6 +342,9 @@ class DeviceOnPrem
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
 
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
@@ -793,6 +799,20 @@ class DeviceOnPrem
             if( $tmp !== FALSE )
                 $this->EDLStore->load_from_domxml($tmp);
             // End of EDL extraction
+
+            //
+            // Extract certificate, certificate-profile and ssl-tls-service-profile objects
+            //
+            $tmp = DH::findFirstElement('certificate', $xml);
+            if( $tmp !== FALSE )
+                $this->certificateStore->load_from_domxml($tmp);
+            $tmp = DH::findFirstElement('certificate-profile', $xml);
+            if( $tmp !== FALSE )
+                $this->certificateProfileStore->load_from_domxml($tmp);
+            $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+            if( $tmp !== FALSE )
+                $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+            // End of certificate extraction
         }
 
 

@@ -465,6 +465,11 @@ class FawkesConf
         // end of DeviceCloud
         //
 
+        // snippets are loaded before 'All': link them to 'All' now (they can use every 'All' object)
+        $containerAll = $this->findContainer( "All" );
+        foreach( $this->snippets as $snippet )
+            $snippet->linkToAll( $containerAll );
+
         #$this->managedFirewallsSerials = $this->managedFirewallsStore->get_serial_from_xml($tmp, TRUE);
         if( $tmp !== false )
             $this->managedFirewallsStore->load_from_domxml($tmp);

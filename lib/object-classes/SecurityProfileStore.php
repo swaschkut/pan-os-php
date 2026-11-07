@@ -1329,8 +1329,8 @@ class SecurityProfileStore extends ObjStore
 
         $this->o[] = $f;
         $this->nameIndex[$name] = $f;
+        // isTmp() / isTmpSecProf() compare with the type name 'tmp' (the constant TypeTmp is its index)
         $f->type = 'tmp';
-        $f->type = $f::TypeTmp;
         $f->addReference($ref);
 
         //Todo: 20260627 - swaschkut  needed for SASE API implementation - but NOT for SCM

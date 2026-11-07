@@ -1891,6 +1891,24 @@ class PH
     }
 
     /**
+     * SCM: locations a name used by an object stored in $location is looked up in.
+     * Folder / device: as scmResolutionLevels(). Snippet: the snippet itself, then 'All' - the view of a
+     * snippet ends there (no other snippet, also not the ones attached to 'All'; no predefined-snippet).
+     */
+    public static function scmObjectLevels( $location ): array
+    {
+        if( !( $location instanceof Snippet ) )
+            return self::scmResolutionLevels( $location );
+
+        $levels = array( $location );
+        $all = ( isset($location->owner) && method_exists($location->owner, 'findContainer') ) ? $location->owner->findContainer( 'All' ) : null;
+        if( $all !== null && $all !== $location )
+            $levels[] = $all;
+
+        return $levels;
+    }
+
+    /**
      * The object the firewalls of $location receive for $name (store e.g. 'addressStore', 'serviceStore').
      * Panorama: of all same-name copies from the device group up to Shared, the LOWEST one wins, or the
      * HIGHEST one with 'ancestor-objects-take-precedence yes'. Firewall: vsys before shared.

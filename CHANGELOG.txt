@@ -42,6 +42,7 @@ UTIL:
 * type=object-merger | extend with appcustomer/group/filter
 * type=object-merger | extend with customer-region
 * merger extend with all new SCM SP objects
+* type=merge-possible-report | extend for SCM
 
 BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set

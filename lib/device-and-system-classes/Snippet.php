@@ -137,6 +137,9 @@ class Snippet
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
@@ -348,6 +351,9 @@ class Snippet
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
 
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
+
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
@@ -418,6 +424,84 @@ class Snippet
      * !! Should not be used outside of a PanoramaConf constructor. !!
      * @param DOMElement $xml
      */
+    /**
+     * SCM: a snippet can use the objects of 'All' (every object type), as a Panorama template can use
+     * the Shared objects. The view of a snippet ends there: snippet, then 'All' - no other snippet (also
+     * not one attached to 'All'), no other folder. Called after 'All' is loaded: names the snippet could
+     * not resolve while loading (TMP objects, profile names in profile groups, profile group names in
+     * rules, CA certificates) are looked up in 'All' itself.
+     *
+     * @param Container|null $all
+     */
+    public function linkToAll( $all ): void
+    {
+        if( $all === null || $all === $this )
+            return;
+
+        $storeClasses = self::inheritableStoreClasses();
+        foreach( get_object_vars($this) as $property => $store )
+        {
+            if( !is_object($store) || !in_array(get_class($store), $storeClasses, TRUE) )
+                continue;
+            if( !isset($store->owner) || $store->owner !== $this )
+                continue;
+            if( !isset($all->$property) || !is_object($all->$property) || get_class($all->$property) !== get_class($store) )
+                continue;
+            if( !method_exists($all->$property, 'find') )
+                continue;
+
+            $objects = method_exists($store, 'all') ? $store->all() : $store->getAll();
+            foreach( $objects as $tmp )
+            {
+                if( !self::isTmpObject($tmp) )
+                    continue;
+
+                $real = $all->$property->find( $tmp->name(), null, FALSE );
+                if( $real === null || $real === $tmp || self::isTmpObject($real) || !method_exists($real, 'addReference') )
+                    continue;
+
+                $tmp->replaceMeGlobally( $real );
+
+                // the store may already have dropped the unused TMP object
+                if( $tmp->owner !== $store || $tmp->countReferences() > 0 )
+                    continue;
+                if( method_exists($store, 'removeSecurityProfile') )
+                    $store->removeSecurityProfile( $tmp );
+                elseif( is_callable( array($store, 'remove') ) )
+                    $store->remove( $tmp );
+            }
+        }
+
+        // security profile groups naming a profile of 'All'
+        if( $this->securityProfileGroupStore !== null )
+            foreach( $this->securityProfileGroupStore->getAll() as $securityProfileGroup )
+                $securityProfileGroup->resolveNameOnlyProfiles( $all );
+
+        // security rules naming a profile group of 'All'
+        if( $this->securityRules !== null )
+            foreach( $this->securityRules->rules() as $rule )
+                if( method_exists( $rule, 'resolveNameOnlySecurityProfileGroup' ) )
+                    $rule->resolveNameOnlySecurityProfileGroup( $all );
+
+        // CA certificates of the certificate profiles can be in 'All'
+        if( $this->certificateProfileStore !== null )
+            foreach( $this->certificateProfileStore->getAll() as $certificateProfile )
+                $certificateProfile->resolveCACertificates();
+    }
+
+    private static function isTmpObject( $o ): bool
+    {
+        if( !is_object($o) )
+            return FALSE;
+        if( method_exists($o, 'isTmpAddr') )
+            return $o->isTmpAddr();
+        if( method_exists($o, 'isTmpSrv') )
+            return $o->isTmpSrv();
+        if( method_exists($o, 'isTmp') )
+            return $o->isTmp();
+        return FALSE;
+    }
+
     public function load_from_domxml($xml, $debugLoadTime = false)
     {
         $this->xmlroot = $xml;
@@ -759,6 +843,14 @@ class Snippet
             $this->certificateStore->load_from_domxml($tmp);
         }
         // End of Certificate objects extraction
+
+        //
+        // Extract certificate-profile objects
+        //
+        $tmp = DH::findFirstElement('certificate-profile', $xml);
+        if( $tmp !== FALSE )
+            $this->certificateProfileStore->load_from_domxml($tmp);
+        // End of certificate-profile extraction
 
         //
         // Extract ssl-tls-service-profile objects

@@ -222,6 +222,16 @@ class CertificateProfile
             return $stores;
 
         $location = $this->owner->owner;
+
+        // SCM: folder / device / snippet chain (a snippet also uses 'All')
+        if( $location instanceof Container || $location instanceof Snippet || $location instanceof DeviceCloud || $location instanceof DeviceOnPrem )
+        {
+            foreach( PH::scmObjectLevels( $location ) as $level )
+                if( isset($level->certificateStore) && $level->certificateStore !== null && !in_array($level->certificateStore, $stores, TRUE) )
+                    $stores[] = $level->certificateStore;
+            return $stores;
+        }
+
         while( $location !== null )
         {
             if( isset($location->certificateStore) && $location->certificateStore !== null && !in_array($location->certificateStore, $stores, TRUE) )

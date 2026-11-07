@@ -245,6 +245,12 @@ class MergeSafety
         if( $this->storeProp === 'EDLStore' )
             foreach( $this->textualEdlUnits( $overlay ) as $unit )
                 $units[] = $unit;
+        if( in_array( $this->storeProp, self::$profileStores, TRUE ) )
+            foreach( $this->nameOnlyProfileUnits( $overlay ) as $unit )
+                $units[] = $unit;
+        if( $this->storeProp === 'securityProfileGroupStore' )
+            foreach( $this->nameOnlyGroupUnits( $overlay ) as $unit )
+                $units[] = $unit;
 
         $this->lastReason = null;
         // the configuration may have changed since the last check
@@ -540,6 +546,99 @@ class MergeSafety
             }
         }
         return $units;
+    }
+
+    /**
+     * security profiles: a security profile group slot that only holds the profile name (the profile was not
+     * found from the group's location while loading, e.g. a snippet group naming a profile of the folder the
+     * snippet is attached to) has no reference to the profile and is not rewritten by the merger: one unit per
+     * such slot naming a changed name, the name stays the same; the check tells whether it still resolves to
+     * the same content on every firewall
+     */
+    private function nameOnlyProfileUnits( array $overlay ): array
+    {
+        $names = array();
+        if( isset($overlay['removedObjects']) )
+            foreach( $overlay['removedObjects'] as $object )
+                $names[$object->name()] = TRUE;
+        if( isset($overlay['placed']) )
+            foreach( $overlay['placed'] as $byName )
+                foreach( $byName as $name => $object )
+                    $names[$name] = TRUE;
+        if( count($names) == 0 )
+            return array();
+
+        $units = array();
+        foreach( $this->allLocations() as $loc )
+        {
+            if( !isset($loc->securityProfileGroupStore) || $loc->securityProfileGroupStore === null )
+                continue;
+            foreach( $loc->securityProfileGroupStore->securityProfileGroups() as $group )
+                foreach( array_keys( $group->secprofProfiles_obj + $group->secprofiles ) as $type )
+                {
+                    // only the name, or a TMP profile (e.g. created in the predefined store while loading)
+                    $profile = isset($group->secprofProfiles_obj[$type]) ? $group->secprofProfiles_obj[$type] : null;
+                    if( is_object($profile) )
+                    {
+                        if( !method_exists($profile, 'isTmp') || !$profile->isTmp() )
+                            continue;
+                        $name = $profile->name();
+                    }
+                    else
+                        $name = isset($group->secprofiles[$type]) ? $group->secprofiles[$type] : null;
+                    if( !is_string($name) || $name === '' || !isset($names[$name]) )
+                        continue;
+                    if( !isset(self::$profileTypeStores[$type]) || self::$profileTypeStores[$type] !== $this->storeProp )
+                        continue;
+                    $units[] = array( 'loc' => $loc, 'before' => array( $name ), 'after' => array( $name ),
+                        'via' => $group, 'ref' => $group, 'only' => null );
+                }
+        }
+        return $units;
+    }
+
+    /**
+     * security profile groups: a security rule that only holds the group name (the group was not found from the
+     * rule's location while loading, e.g. a rule in a snippet naming a group of the folder the snippet is attached
+     * to) has no reference to the group: one unit per such rule naming a changed name (as nameOnlyProfileUnits())
+     */
+    private function nameOnlyGroupUnits( array $overlay ): array
+    {
+        $names = $this->changedNames( $overlay );
+        if( count($names) == 0 )
+            return array();
+
+        $units = array();
+        foreach( $this->allLocations() as $loc )
+        {
+            if( !isset($loc->securityRules) || $loc->securityRules === null )
+                continue;
+            foreach( $loc->securityRules->rules() as $rule )
+            {
+                if( !method_exists( $rule, 'nameOnlySecurityProfileGroup' ) )
+                    continue;
+                $name = $rule->nameOnlySecurityProfileGroup();
+                if( $name === null || !isset($names[$name]) )
+                    continue;
+                $units[] = array( 'loc' => $loc, 'before' => array( $name ), 'after' => array( $name ),
+                    'via' => null, 'ref' => $rule, 'only' => null );
+            }
+        }
+        return $units;
+    }
+
+    /** names of the objects removed or placed by $overlay */
+    private function changedNames( array $overlay ): array
+    {
+        $names = array();
+        if( isset($overlay['removedObjects']) )
+            foreach( $overlay['removedObjects'] as $object )
+                $names[$object->name()] = TRUE;
+        if( isset($overlay['placed']) )
+            foreach( $overlay['placed'] as $byName )
+                foreach( $byName as $name => $object )
+                    $names[$name] = TRUE;
+        return $names;
     }
 
     /**

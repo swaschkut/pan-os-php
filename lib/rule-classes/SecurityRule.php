@@ -599,6 +599,38 @@ class SecurityRule extends RuleWithUserID
         return $this->secproftype;
     }
 
+    /**
+     * The profile group was not found while loading (only its name is kept): look it up again in the
+     * store of $location only (e.g. SCM 'All' for a rule in a snippet, once 'All' is loaded), or in the
+     * rule's own location when $location is null.
+     * @return bool TRUE when the rule now points to a profile group object
+     */
+    public function resolveNameOnlySecurityProfileGroup( $location = null ): bool
+    {
+        if( $this->secproftype != 'group' || $this->secprofgroup_obj !== null || $this->secprofgroup === null || $this->secprofgroup === '' )
+            return FALSE;
+        if( $location === null )
+            $location = ( $this->owner !== null ) ? $this->owner->owner : null;
+        if( $location === null || !isset($location->securityProfileGroupStore) || $location->securityProfileGroupStore === null )
+            return FALSE;
+
+        $group = $location->securityProfileGroupStore->find( $this->secprofgroup, null, FALSE );
+        if( !is_object( $group ) )
+            return FALSE;
+
+        $this->secprofgroup_obj = $group;
+        $group->addReference( $this );
+        return TRUE;
+    }
+
+    /** the profile group name when the rule has no profile group object for it (name only), else null */
+    public function nameOnlySecurityProfileGroup()
+    {
+        if( $this->secproftype != 'group' || $this->secprofgroup_obj !== null || $this->secprofgroup === null || $this->secprofgroup === '' )
+            return null;
+        return $this->secprofgroup;
+    }
+
     public function securityProfileGroup()
     {
         if( $this->secproftype != 'group' )
