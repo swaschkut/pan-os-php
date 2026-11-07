@@ -812,6 +812,18 @@ trait MergerEngine
             return $spec;
         }
 
+        if( $storeProp === 'HipObjectsProfileStore' || $storeProp === 'HipProfilesProfileStore' )
+        {
+            // HIP objects / HIP profiles live in security profile stores: same handling as security profiles
+            $isObject = $storeProp === 'HipObjectsProfileStore';
+            $spec = $this->securityProfileMergeSpec( $isObject ? 'hip-objects' : 'hip-profiles', $storeProp );
+            $spec['label'] = $isObject ? "HipObject" : "HipProfile";
+            $spec['objectTxt'] = $isObject ? "hip-object" : "hip-profile";
+            $spec['pluralTxt'] = $isObject ? "hip-objects" : "hip-profiles";
+            $spec['ancestorTypeLabel'] = $isObject ? "hip-object" : "hip-profile";
+            return $spec;
+        }
+
         if( $storeProp === 'scheduleStore' )
             return $this->xmlObjectMergeSpec( array(
                 'label' => "Schedule",

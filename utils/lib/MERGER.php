@@ -56,6 +56,9 @@ class MERGER extends UTIL
         'schedule' => 'schedule-merger',
         'log-profile' => 'logprofile-merger',
         'decryption-profile' => 'decryptionprofile-merger',
+        // HIP objects before HIP profiles (profiles name objects in their match expression)
+        'hip-object' => 'hipobject-merger',
+        'hip-profile' => 'hipprofile-merger',
         'securityprofile' => 'securityprofile-merger',
         'securityprofilegroup' => 'securityprofilegroup-merger',
     );
@@ -69,6 +72,8 @@ class MERGER extends UTIL
         'appfilter-merger' => 'appStore',
         'appgroup-merger' => 'appStore',
         'region-merger' => 'addressStore',
+        'hipobject-merger' => 'HipObjectsProfileStore',
+        'hipprofile-merger' => 'HipProfilesProfileStore',
     );
     /** type=object-merger: selected objecttype values */
     public $objectMergerSelected = array();

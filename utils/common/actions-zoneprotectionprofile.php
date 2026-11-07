@@ -334,7 +334,12 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                 {
                     $refTextArray = array();
                     foreach( $object->getReferences() as $ref )
+                    {
+                        //short name is not showing
+                        //PanoramaConf / Template Stack
+                        //$ref->toString();
                         $refTextArray[] = $ref->_PANC_shortName();
+                    }
 
                     $lines .= $context->encloseFunction($refTextArray);
                 }

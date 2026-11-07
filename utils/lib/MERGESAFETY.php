@@ -74,8 +74,15 @@ class MergeSafety
     {
         return $storeProp === 'addressStore' || $storeProp === 'serviceStore' || $storeProp === 'securityProfileGroupStore'
             || in_array( $storeProp, self::$profileStores, TRUE ) || in_array( $storeProp, self::$xmlObjectStores, TRUE )
-            || $storeProp === 'EDLStore' || $storeProp === 'appStore';
+            || $storeProp === 'EDLStore' || $storeProp === 'appStore' || in_array( $storeProp, self::$hipStores, TRUE );
     }
+
+    /**
+     * HIP objects / HIP profiles: content = XML (XmlCompare). Users of a HIP profile: security rules (source-hip /
+     * destination-hip) and HIP profiles naming it in their match expression; users of a HIP object: HIP profiles.
+     * A HIP profile is checked like a group: it only matters where its name resolves to it.
+     */
+    public static $hipStores = array( 'HipObjectsProfileStore', 'HipProfilesProfileStore' );
 
     /**
      * objects used directly by rules (schedule, log forwarding profile, decryption profile): content = XML (XmlCompare);
@@ -458,13 +465,15 @@ class MergeSafety
     /** a referencer that is itself referenced by name (address / service group, security profile group) */
     private function isViaObject( $ref ): bool
     {
-        return $this->isGroupObject( $ref ) || ( $ref instanceof SecurityProfileGroup ) || ( $ref instanceof AppGroup );
+        return $this->isGroupObject( $ref ) || ( $ref instanceof SecurityProfileGroup ) || ( $ref instanceof AppGroup ) || ( $ref instanceof HipProfilesProfile );
     }
 
     private function viaStoreProp( $via ): string
     {
         if( $via instanceof SecurityProfileGroup )
             return 'securityProfileGroupStore';
+        if( $via instanceof HipProfilesProfile )
+            return 'HipProfilesProfileStore';
         if( $via instanceof ServiceGroup )
             return 'serviceStore';
         if( $via instanceof AppGroup )
@@ -479,6 +488,8 @@ class MergeSafety
             return $this->unreplaceableEdlUser( $object );
         if( $this->storeProp === 'appStore' || $object instanceof Region )
             return $this->unreplaceableAppUser( $object );
+        if( in_array( $this->storeProp, self::$hipStores, TRUE ) )
+            return $this->unreplaceableEdlUser( $object );
 
         if( !in_array( $this->storeProp, self::$xmlObjectStores, TRUE ) )
             return null;

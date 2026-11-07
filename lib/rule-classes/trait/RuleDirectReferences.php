@@ -22,7 +22,8 @@
 /**
  * Objects a rule references directly (not through a rule container):
  *   security profile group, security profiles (profile-setting), schedule,
- *   log forwarding profile (log-setting), decryption profile, application of an application override rule.
+ *   log forwarding profile (log-setting), decryption profile, application of an application override rule,
+ *   HIP profiles of a security rule (source-hip / destination-hip, hip-profiles before PAN-OS 10.0).
  *
  * replaceReferencedObject() / API_replaceReferencedObject() let ReferenceableObject::replaceMeGlobally()
  * swap such an object for another one of the same kind (used by the mergers). References are moved
@@ -121,8 +122,22 @@ trait RuleDirectReferences
             $xpathSuffix = 'application';
         }
 
+        // ---- HIP profiles of a security rule (one or more HIP fields)
+        $xpathSuffixes = null;
+        if( !$replaced && $old instanceof HipProfilesProfile && $new instanceof HipProfilesProfile && method_exists($this, 'replaceHipProfileObject') )
+        {
+            $fields = $this->replaceHipProfileObject( $old, $new );
+            if( count($fields) > 0 )
+            {
+                $replaced = TRUE;
+                $xpathSuffixes = $fields;
+            }
+        }
+
         if( !$replaced )
             return FALSE;
+        if( $xpathSuffixes === null )
+            $xpathSuffixes = array( $xpathSuffix );
 
         $old->removeReference($this);
         $new->addReference($this);
@@ -131,11 +146,12 @@ trait RuleDirectReferences
         {
             $con = findConnectorOrDie($this);
             if( $con->isAPI() )
-            {
-                $node = DH::findFirstElement($xpathSuffix, $this->xmlroot);
-                if( $node !== FALSE )
-                    $con->sendEditRequest($this->getXPath() . '/' . $xpathSuffix, DH::dom_to_xml($node, -1, FALSE));
-            }
+                foreach( $xpathSuffixes as $xpathSuffix )
+                {
+                    $node = DH::findFirstElement($xpathSuffix, $this->xmlroot);
+                    if( $node !== FALSE )
+                        $con->sendEditRequest($this->getXPath() . '/' . $xpathSuffix, DH::dom_to_xml($node, -1, FALSE));
+                }
         }
 
         return TRUE;

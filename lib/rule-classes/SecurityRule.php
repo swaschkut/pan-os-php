@@ -72,6 +72,13 @@ class SecurityRule extends RuleWithUserID
     public $hipprofroot = null;
     protected $hipprofProfiles = null;
 
+    /**
+     * HIP profiles of the rule: field (PAN-OS < 10.0 'hip-profiles', else 'source-hip' / 'destination-hip')
+     * => list of array( 'name' => member, 'object' => HipProfilesProfile|null ); null for 'any' / 'no-hip' / not found
+     * @var array
+     */
+    public $hipProfileFields = array();
+
     /** @var AppRuleContainer */
     public $apps;
 
@@ -303,6 +310,8 @@ class SecurityRule extends RuleWithUserID
         else
             $this->extract_hip_profile_from_domxml( );
 
+        // references to the HIP profiles in all HIP fields
+        $this->extract_hip_references_from_domxml();
 
         // End of <hip-profiles>
 
@@ -929,6 +938,111 @@ class SecurityRule extends RuleWithUserID
             $this->hipprofProfiles[$prof->textContent] = $prof->textContent;
             #print PH::boldText("name: |".$prof->nodeName."| - |".$prof->textContent."|\n" );
         }
+    }
+
+    /** the HIP fields of this rule for its PAN-OS version */
+    public function hipProfileFieldNames(): array
+    {
+        if( $this->owner !== null && isset($this->owner->version) && $this->owner->version < 100 )
+            return array( 'hip-profiles' );
+        return array( 'source-hip', 'destination-hip' );
+    }
+
+    /** reads the members of the HIP fields and references the HIP profiles they name */
+    public function extract_hip_references_from_domxml(): void
+    {
+        $this->hipProfileFields = array();
+        if( $this->xmlroot === null )
+            return;
+
+        $location = ( $this->owner !== null && isset($this->owner->owner) ) ? $this->owner->owner : null;
+        $store = ( $location !== null && isset($location->HipProfilesProfileStore) ) ? $location->HipProfilesProfileStore : null;
+
+        foreach( $this->hipProfileFieldNames() as $field )
+        {
+            $node = DH::findFirstElement( $field, $this->xmlroot );
+            if( $node === FALSE )
+                continue;
+
+            $entries = array();
+            foreach( $node->childNodes as $member )
+            {
+                if( $member->nodeType != XML_ELEMENT_NODE )
+                    continue;
+                $name = $member->textContent;
+                $object = null;
+                if( $store !== null && $name !== 'any' && $name !== 'no-hip' )
+                {
+                    $found = $store->find( $name );
+                    if( is_object($found) && $found instanceof HipProfilesProfile )
+                    {
+                        $object = $found;
+                        $object->addReference( $this );
+                    }
+                }
+                $entries[] = array( 'name' => $name, 'object' => $object );
+            }
+            $this->hipProfileFields[$field] = $entries;
+        }
+    }
+
+    /** @return HipProfilesProfile[] the HIP profile objects used by this rule (all HIP fields) */
+    public function hipProfileObjects(): array
+    {
+        $ret = array();
+        foreach( $this->hipProfileFields as $entries )
+            foreach( $entries as $entry )
+                if( $entry['object'] !== null && !in_array( $entry['object'], $ret, TRUE ) )
+                    $ret[] = $entry['object'];
+        return $ret;
+    }
+
+    /**
+     * $old is replaced by $new in every HIP field (used by RuleDirectReferences)
+     * @return string[] the fields that changed
+     */
+    public function replaceHipProfileObject( $old, $new ): array
+    {
+        $changed = array();
+        foreach( $this->hipProfileFields as $field => $entries )
+        {
+            $hit = FALSE;
+            $newEntries = array();
+            $names = array();
+            foreach( $entries as $entry )
+            {
+                if( $entry['object'] === $old )
+                {
+                    $entry = array( 'name' => $new->name(), 'object' => $new );
+                    $hit = TRUE;
+                }
+                // the new profile may already be in the field: keep it once
+                if( isset($names[$entry['name']]) )
+                    continue;
+                $names[$entry['name']] = TRUE;
+                $newEntries[] = $entry;
+            }
+            if( !$hit )
+                continue;
+            $this->hipProfileFields[$field] = $newEntries;
+
+            $node = DH::findFirstElement( $field, $this->xmlroot );
+            if( $node !== FALSE )
+            {
+                DH::clearDomNodeChilds( $node );
+                foreach( $this->hipProfileFields[$field] as $entry )
+                    DH::createElement( $node, 'member', $entry['name'] );
+            }
+            // names used by display / filters of the first HIP field
+            if( $field === 'hip-profiles' || $field === 'source-hip' )
+            {
+                $this->hipprofProfiles = array();
+                foreach( $this->hipProfileFields[$field] as $entry )
+                    $this->hipprofProfiles[$entry['name']] = $entry['name'];
+            }
+            $changed[] = $field;
+        }
+        return $changed;
     }
 
     public function hipProfileIsBlank()
@@ -1903,6 +2017,11 @@ class SecurityRule extends RuleWithUserID
         $this->grouptag = null;
         $this->services = null;
         $this->apps = null;
+
+        // the deleted rule no longer uses its HIP profiles
+        foreach( $this->hipProfileObjects() as $hipProfile )
+            $hipProfile->removeReference( $this );
+        $this->hipProfileFields = array();
 
         $this->owner = null;
     }

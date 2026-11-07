@@ -344,6 +344,11 @@ class SecurityProfileStore extends ObjStore
                 #$this->_all[$this->name] = $nr;
                 $this->o[] = $nr;
             }
+
+            // HIP profiles can name HIP profiles defined after them
+            if( $this->type === 'HipProfilesProfile' )
+                foreach( $this->o as $hipProfile )
+                    $hipProfile->resolveMatchReferences();
         }
     }
 
@@ -1182,6 +1187,10 @@ class SecurityProfileStore extends ObjStore
      */
     public function removeSecurityProfile( $tag)
     {
+        // a removed HIP profile no longer uses the HIP objects / profiles of its match expression
+        if( $tag instanceof HipProfilesProfile )
+            $tag->dropMatchReferences();
+
         $ret = $this->remove($tag);
 
         // remove() of ObjStore does not know the indexes of this store: without this, find() still
