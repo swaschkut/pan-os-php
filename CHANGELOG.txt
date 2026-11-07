@@ -74,6 +74,7 @@ BUGFIX:
 * type=xml-issue | bugfix to keep the value without blank character at pre-/postfix
 * different classes nestedPointOfView - bugfix
 * class SecurityProfileStore | predefined - bugfix for SPG - SecRule - DefaultSecRule - if predefined objects are directly used
+* Zone - ZPP binding | bugfix to read ZPP from Template for a Zone defined in TStack
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

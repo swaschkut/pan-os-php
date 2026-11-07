@@ -231,7 +231,7 @@ class Zone
                     {
                         if( isset($this->owner->owner->owner->network) )
                         {
-                            $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
+                            $tmp_zpp = $this->findZoneProtectionProfileObject( $this->zoneProtectionProfile );
                             if( is_object( $tmp_zpp ) )
                                 $tmp_zpp->addReference( $this );
                         }
@@ -397,6 +397,48 @@ class Zone
         }
     }
 
+
+    /**
+     * Zone-protection-profile lookup for a zone in a VirtualSystem:
+     * 1. the store of the zone's own configuration (firewall, template or template-stack)
+     * 2. zone defined in a template-stack: the stores of the stack's templates, in the stack's order
+     *    (the first template has the highest priority, as in PAN-OS)
+     * @param string $name
+     * @return ZoneProtectionProfile|null
+     */
+    public function findZoneProtectionProfileObject( $name )
+    {
+        if( $name === null || $name === '' )
+            return null;
+
+        if( get_class($this->owner->owner) != "VirtualSystem" )
+            return null;
+
+        /** @var PANConf $panConf */
+        $panConf = $this->owner->owner->owner;
+        if( !isset($panConf->network) )
+            return null;
+
+        $tmp_zpp = $panConf->network->zoneProtectionProfileStore->find( $name );
+        if( $tmp_zpp !== null )
+            return $tmp_zpp;
+
+        if( isset($panConf->owner) && is_object($panConf->owner) && get_class($panConf->owner) == "TemplateStack" )
+        {
+            foreach( $panConf->owner->templates as $template )
+            {
+                /** @var Template|null $template */
+                if( $template === null || !isset($template->deviceConfiguration->network) )
+                    continue;
+
+                $tmp_zpp = $template->deviceConfiguration->network->zoneProtectionProfileStore->find( $name );
+                if( $tmp_zpp !== null )
+                    return $tmp_zpp;
+            }
+        }
+
+        return null;
+    }
 
     public function API_setName($newname)
     {
