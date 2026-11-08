@@ -1542,5 +1542,103 @@ class URLProfile extends SecurityProfile2
             $xml .= '<member>' . $member . '</member>';
         return $xml . '</' . $tag . '>';
     }
+
+    public function site_access_BestPracticeSet()
+    {
+        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
+
+        $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        if( isset($check_array[0]['type']) )
+            $block_categories = $check_array[0]['type'];
+        else
+            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
+        $block_xmlnode = DH::findFirstElementOrCreate("block", $this->xmlroot);
+        foreach( $block_categories as $block_category )
+        {
+            if( !in_array( $block_category, $this->block ) )
+            {
+                if( in_array( $block_category, $this->alert ) )
+                {
+                    $key = array_search ($block_category, $this->alert);
+                    unset( $this->alert[$key] );
+                    $alert_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $alert_xmlnode );
+                    $alert_xmlnode->removeChild($alert_category_xmlnode);
+
+                    $this->block[$block_category] = $block_category;
+
+                    $xmlString = '<member>'.$block_category.'</member>';
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                    $block_xmlnode->appendChild($xmlElement);
+                }
+            }
+        }
+
+        //credential all from alert to block
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
+
+        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+        $block_credential_xmlnode = DH::findFirstElementOrCreate("block", $credential_xmlnode);
+
+        if( $alert_credential_xmlnode !== False )
+        {
+            foreach( $alert_credential_xmlnode->childNodes as $alert_node )
+            {
+                if( $alert_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $tmp_name = $alert_node->textContent;
+
+                $clone_node = $alert_node->cloneNode(true);
+                if( !in_array($tmp_name, $this->block_credential) )
+                {
+                    $block_credential_xmlnode->appendChild($clone_node);
+                    $this->block_credential[$tmp_name] = $tmp_name;
+                }
+
+                $alert_credential_xmlnode->removeChild($alert_node);
+
+
+                $key = array_search ($tmp_name, $this->allow_credential);
+                unset($this->alert_credential[$key]);
+            }
+            $credential_xmlnode->removeChild($alert_credential_xmlnode);
+        }
+
+
+        foreach( $this->alert_credential as $alert )
+        {
+            if( !in_array($alert, $this->block_credential) )
+            {
+                $this->block_credential[$alert] = $alert;
+
+                $xmlString = '<member>'.$alert.'</member>';
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $block_credential_xmlnode->appendChild($xmlElement);
+            }
+        }
+        $this->alert_credential = array();
+    }
+
+    public function AlertOnlySet(): void
+    {
+        $this->url_siteaccess_set_alertonly();
+
+        /////////////////
+        $this->url_credential_set_alertonly();
+
+        ////////////////////////////
+        $this->url_inline_cat_set(true);
+
+        ////////////
+        $this->url_credential_mode_alertonly();
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->AlertOnlySet();
+
+        $this->site_access_BestPracticeSet();
+    }
 }
 

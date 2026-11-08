@@ -365,5 +365,52 @@ class FileBlockingProfile extends SecurityProfile2
 
         return $xml . '</root>';
     }
+
+
+    public function rules_AlertOnlySet(&$add_FB_alert)
+    {
+        foreach( $this->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyFileBlocking $rule */
+            if( $rule->action() == "alert"
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_FB_alert = false;
+                break;
+            }
+
+        }
+
+        if( $add_FB_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyFileBlocking( $tmp_name, $this);
+            $threadPolicy_obj->type = "ThreatPolicyFileBlocking";
+
+            $threadPolicy_obj->action = "alert";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $this->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $this );
+
+            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+        }
+    }
+    public function AlertOnlySet()
+    {
+
+    }
+
+    public function BestPractice()
+    {
+
+    }
 }
 
