@@ -51,6 +51,7 @@ GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes
 * remove all ironskilet files and implementation
 * class URLProfile | single path for all version as categories are coming form predefined
+* Device App-ID update to version: 9168-10332
 
 
 2.1.61 (20261108)
