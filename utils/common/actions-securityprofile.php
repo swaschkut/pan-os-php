@@ -4076,6 +4076,8 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']
         if (get_class($object) !== "AntiVirusProfile")
             return null;
 
+        $object->decoder_BestPracticeSet();
+        /*
         $tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
         foreach($object->tmp_virus_prof_array as $decoder )
         {
@@ -4108,6 +4110,7 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']
                 }
             }
         }
+        */
     }
 );
 
@@ -4119,6 +4122,8 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set
         if (get_class($object) !== "AntiVirusProfile")
             return null;
 
+        $object->inlineML_BestPracticeSet();
+        /*
         $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
@@ -4135,6 +4140,7 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set
                 $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = "enable";
             }
         }
+        */
     }
 );
 
@@ -4146,13 +4152,15 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
         if( get_class( $object) !== "AntiVirusProfile")
             return null;
 
+        $object->decoder_BestPracticeSet();
         ////////////////////////////////////////////
-        $f = SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']['MainFunction'];
-        $f($context);
+        #$f = SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']['MainFunction'];
+        #$f($context);
 
+        $object->inlineML_BestPracticeSet();
         ////////////////////////////////////////////
-        $f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set']['MainFunction'];
-        $f($context);
+        #$f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set']['MainFunction'];
+        #$f($context);
 
 
         if( $context->isAPI )
@@ -4171,6 +4179,10 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set'] = 
         if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
+        $object->decoder_AlertOnlySet();
+
+        /*
+        // replace by virus methog
         $tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
         if( $tmp_decoder === False)
             return null;
@@ -4200,6 +4212,7 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set'] = 
                 }
             }
         }
+        */
     }
 );
 
@@ -4212,6 +4225,9 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
         if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
+        $object->inlineML_AlertOnlySet();
+
+        /*
         $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
@@ -4248,6 +4264,7 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
                 }
             }
         }
+        */
     }
 );
 
@@ -4259,14 +4276,16 @@ SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
         if( get_class( $object) !== "AntiVirusProfile")
             return null;
 
+        $object->decoder_AlertOnlySet();
         ///////////////////////////////////////////////////////////////
-        $f = SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set']['MainFunction'];
-        $f($context);
+        #$f = SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set']['MainFunction'];
+        #$f($context);
 
 
+        $object->inlineML_AlertOnlySet();
         ///////////////////////////////////////////////////////////////
-        $f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set']['MainFunction'];
-        $f($context);
+        #$f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set']['MainFunction'];
+        #$f($context);
 
 
         if( $context->isAPI )

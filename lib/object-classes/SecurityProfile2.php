@@ -48,6 +48,12 @@ class SecurityProfile2
         return $str;
     }
 
+    public function AlertOnlySet()
+    {}
+
+    public function BestPracticeSet()
+    {}
+
     public function cloud_inline_analysis_best_practice( $bp_json_file = null )
     {
         $this->bp_json_file = $bp_json_file;

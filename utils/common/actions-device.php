@@ -2881,6 +2881,10 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
             {
                 $node = $ownerDocument->importNode($node, TRUE);
                 $profile->load_from_domxml($node);
+
+                //This is setting the PAN-OS XML snippet to full alert
+                $profile->AlertOnlySet();
+
                 $profile->owner = null;
                 $store->addSecurityProfile($profile);
                 PH::print_stdout(" * " . $typeclass . " create: '" . $name . "-" . $type_name . "'");
@@ -2909,6 +2913,10 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
             {
                 $node = $ownerDocument->importNode($node, TRUE);
                 $profile->load_from_domxml($node);
+
+                //This is setting the PAN-OS XML snippet to full alert
+                $profile->BestPracticeSet();
+
                 $profile->owner = null;
                 if( isset($context->arguments['sp-name']) )
                     $profile->setName($name . "-" . $type_name);
