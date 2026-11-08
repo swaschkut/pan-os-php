@@ -626,19 +626,19 @@ class PanoramaConf
 
         $this->sharedroot = DH::findFirstElementOrCreate('shared', $this->xmlroot);
 
-        $this->devicesroot = DH::findFirstElementOrDie('devices', $this->xmlroot);
+        #$this->devicesroot = DH::findFirstElementOrDie('devices', $this->xmlroot);
+        $this->devicesroot = DH::findFirstElementOrCreate('devices', $this->xmlroot);
 
-        $this->localhostroot = DH::findFirstElementByNameAttrOrDie('entry', 'localhost.localdomain', $this->devicesroot);
-        /*
+
         $this->localhostroot = DH::findFirstElement('entry', $this->devicesroot);
         if( $this->localhostroot === false )
         {
             $this->localhostroot = DH::createElement($this->devicesroot, 'entry');
             $this->localhostroot->setAttribute('name', 'localhost.localdomain');
         }
-        */
 
-        $this->deviceconfigroot = DH::findFirstElement('deviceconfig', $this->localhostroot);
+        #$this->deviceconfigroot = DH::findFirstElement('deviceconfig', $this->localhostroot);
+        $this->deviceconfigroot = DH::findFirstElementOrCreate('deviceconfig', $this->localhostroot);
 
         $this->devicegrouproot = DH::findFirstElementOrCreate('device-group', $this->localhostroot);
         $this->templateroot = DH::findFirstElementOrCreate('template', $this->localhostroot);
