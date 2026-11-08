@@ -4076,7 +4076,7 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']
         if (get_class($object) !== "AntiVirusProfile")
             return null;
 
-        $object->decoder_BestPracticeSet();
+        $object->av_decoder_BestPracticeSet();
     }
 );
 
@@ -4088,7 +4088,7 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set
         if (get_class($object) !== "AntiVirusProfile")
             return null;
 
-        $object->inlineML_BestPracticeSet();
+        $object->av_inlineML_BestPracticeSet();
     }
 );
 
@@ -4100,12 +4100,12 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
         if( get_class( $object) !== "AntiVirusProfile")
             return null;
 
-        $object->decoder_BestPracticeSet();
+        $object->av_decoder_BestPracticeSet();
         ////////////////////////////////////////////
         #$f = SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']['MainFunction'];
         #$f($context);
 
-        $object->inlineML_BestPracticeSet();
+        $object->av_inlineML_BestPracticeSet();
         ////////////////////////////////////////////
         #$f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set']['MainFunction'];
         #$f($context);
@@ -4127,7 +4127,7 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set'] = 
         if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
-        $object->decoder_AlertOnlySet();
+        $object->av_decoder_AlertOnlySet();
     }
 );
 
@@ -4140,7 +4140,7 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
         if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
-        $object->inlineML_AlertOnlySet();
+        $object->wf_inlineML_AlertOnlySet();
     }
 );
 
@@ -4152,13 +4152,13 @@ SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
         if( get_class( $object) !== "AntiVirusProfile")
             return null;
 
-        $object->decoder_AlertOnlySet();
+        $object->av_decoder_AlertOnlySet();
         ///////////////////////////////////////////////////////////////
         #$f = SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set']['MainFunction'];
         #$f($context);
 
 
-        $object->inlineML_AlertOnlySet();
+        $object->av_inlineML_AlertOnlySet();
         ///////////////////////////////////////////////////////////////
         #$f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set']['MainFunction'];
         #$f($context);
@@ -5150,96 +5150,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
         if (get_class($object) !== "WildfireProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
-        $sendAPI = false;
-        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
-        if ($object->owner->owner->version >= 112)
-        {
-            if ($tmp_mlav_engine === False)
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
-
-            $tmp_mlav_engine->textContent = "yes";
-            $sendAPI = true;
-        }
-
-
-        $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $object->xmlroot);
-        if ($object->owner->owner->version >= 112)
-        {
-            if ($tmp_mlav_engine === False)
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $object->xmlroot);
-        }
-        if ($tmp_mlav_engine !== False)
-        {
-            if (!$tmp_mlav_engine->hasChildNodes())
-            {
-                $xmlString1 = '<entry name="wf_inline_alert">
-   <application>
-    <member>any</member>
-   </application>
-   <file-type>
-    <member>any</member>
-   </file-type>
-   <direction>both</direction>
-   <action>alert</action>
-  </entry>';
-                $xmlString2 = '<entry name="wf_inline_allow">
-   <application>
-    <member>any</member>
-   </application>
-   <file-type>
-    <member>any</member>
-   </file-type>
-   <direction>both</direction>
-   <action>allow</action>
-  </entry>';
-                //if ($object->owner->owner->version == 111 )
-                //    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
-                //else
-                if ($object->owner->owner->version >= 112 )
-                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
-
-                $tmp_mlav_engine->appendChild($xmlElement);
-
-                $sendAPI = true;
-            }
-
-            $action_other_then_allow_alert = false;
-            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
-            {
-                if ($mlav_engine_entry->nodeType != XML_ELEMENT_NODE)
-                    continue;
-
-                $name = DH::findAttribute("name", $mlav_engine_entry);
-
-                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
-                if ($action_xmlNode->textContent == "allow")
-                {
-                    if ($object->owner->owner->version >= 112)
-                    {
-                        $action_xmlNode->textContent = "alert";
-                        $object->additional['mica-engine-wildfire-rules'][$name]['action'] = "alert";
-
-                        $sendAPI = true;
-                    }
-                }
-                elseif ($action_xmlNode->textContent == "alert")
-                {
-
-                }
-                else
-                {
-                    $action_other_then_allow_alert = true;
-                }
-            }
-
-            if (!$action_other_then_allow_alert)
-            {
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-
-                $sendAPI = true;
-            }
-        }
+        $object->wf_inlineML_AlertOnlySet();
     }
 );
 
@@ -5257,44 +5168,11 @@ SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set'] =
         }
 
         $add_WF_alert = true;
-        foreach( $object->rules_obj as $rule )
-        {
-            /** @var ThreatPolicyWildfire $rule */
-            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
-                && $rule->direction() == "both"
-                && in_array("any", $rule->application() )
-                && in_array("any", $rule->filetype() )
-            )
-            {
-                $add_WF_alert = false;
-                break;
-            }
-
-
-        }
+        $object->wf_rules_AlertOnlySet( $add_WF_alert);
 
         if( $add_WF_alert )
-        {
-            $tmp_name = "alert_vcp";
-            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $object);
-            $threadPolicy_obj->type = "ThreatPolicyWildfire";
-
-            $threadPolicy_obj->analysis = "public-cloud";
-            $threadPolicy_obj->direction = "both";
-            $threadPolicy_obj->filetype[] = "any";
-            $threadPolicy_obj->application[] = "any";
-
-            $object->rules_obj[] = $threadPolicy_obj;
-            $threadPolicy_obj->addReference( $object );
-
-            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
-
             if( $context->isAPI )
-                $object->API_sync();
-        }
-
+                $this->API_sync();
     }
 );
 
@@ -5307,16 +5185,19 @@ SecurityProfileCallContext::$supportedActions['wildfire.alert-only-set'] = array
         if (get_class($object) !== "WildfireProfile")
             return null;
 
+        $object->wf_inlineML_AlertOnlySet();
         ///////////////////////////////////////////////////////////////////////////////////////
         /// InlineML
-        $f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set']['MainFunction'];
-        $f($context );
+        #$f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set']['MainFunction'];
+        #$f($context );
 
-
+        $add_WF_alert = true;
+        $object->wf_rules_AlertOnlySet( $add_WF_alert);
+        //if $add_WF_alert is false -> NO API needed
         ///////////////////////////////////////////////////////////////////////////////////////
         /// Rules
-        $f = SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set']['MainFunction'];
-        $f($context );
+        #$f = SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set']['MainFunction'];
+        #$f($context );
 
 
         if( $context->isAPI )
@@ -5334,53 +5215,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.best-practice-
         if (get_class($object) !== "WildfireProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
-        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
-        if( $object->owner->owner->version >= 111 )
-        {
-            if( $tmp_mlav_engine === False )
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
-
-            $tmp_mlav_engine->textContent = "yes";
-        }
-
-
-        $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $object->xmlroot);
-        if( $object->owner->owner->version >= 111 )
-        {
-            if ($tmp_mlav_engine === False)
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $object->xmlroot);
-        }
-        if( $tmp_mlav_engine !== False )
-        {
-            if( !$tmp_mlav_engine->hasChildNodes() )
-            {
-                $xmlString1 = '<entry name="wf_inline_block">
-   <application>
-    <member>any</member>
-   </application>
-   <file-type>
-    <member>any</member>
-   </file-type>
-   <direction>both</direction>
-   <action>block</action>
-  </entry>';
-                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
-                $tmp_mlav_engine->appendChild($xmlElement);
-            }
-
-            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
-            {
-                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $name = DH::findAttribute( "name", $mlav_engine_entry);
-
-                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
-                $action_xmlNode->textContent = "block";
-
-                $object->additional['mica-engine-wildfire-rules'][$name]['action'] = "block";
-            }
-        }
+        $object->wf_inlineML_BestPracticeSet();
     }
 );
 SecurityProfileCallContext::$supportedActions['wildfire.best-practice-set'] = array(
@@ -5391,10 +5226,11 @@ SecurityProfileCallContext::$supportedActions['wildfire.best-practice-set'] = ar
         if (get_class($object) !== "WildfireProfile")
             return null;
 
+        $object->wf_inlineML_BestPracticeSet();
         //////////////////////////////////////////////////////////////////////
         /// inline
-        $f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.best-practice-set']['MainFunction'];
-        $f($context );
+        #$f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.best-practice-set']['MainFunction'];
+        #$f($context );
 
         if( $context->isAPI )
         {

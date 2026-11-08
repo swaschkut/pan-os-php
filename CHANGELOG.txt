@@ -30,7 +30,7 @@ UTIL:
 * type=object-merger | extend for hip-object/-profile
 * type=profile | extend with hip-profile/-object
 * type=profile profiletype=hip-profile/-object | extend differnet classes to support these object, like common filter, refernceableObject
-* class AntiVirusProfile/AntiSpywareProfile - move actions to methods
+* class AntiVirusProfile/AntiSpywareProfile/WildfireProfile - move actions to methods
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

@@ -286,5 +286,31 @@ class VirusAndWildfireProfile extends SecurityProfile2
             . '<rules>' . WildfireProfile::ironSkilletForwardAllRuleXml() . '</rules>'
             . '</entry></root>';
     }
+
+    public function AlertOnlySet(): void
+    {
+        $this->av_decoder_AlertOnlySet();
+
+        $this->av_inlineML_AlertOnlySet();
+
+        //////////
+        $this->wf_inlineML_AlertOnlySet();
+
+        $add_WF_alert = true;
+        $this->wf_rules_AlertOnlySet($add_WF_alert);
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->av_decoder_BestPracticeSet();
+
+        $this->av_inlineML_BestPracticeSet();
+
+        ////////
+        $this->wf_inlineML_BestPracticeSet();
+
+        //nothing todo
+        //$this->wf_rules_BestPracticeSet();
+    }
 }
 

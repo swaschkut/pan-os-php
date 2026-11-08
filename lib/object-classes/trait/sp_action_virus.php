@@ -636,7 +636,7 @@ trait sp_action_virus
         }
     }
 
-    public function decoder_AlertOnlySet()
+    public function av_decoder_AlertOnlySet()
     {
         $decoder_action = "alert";
         $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
@@ -671,7 +671,7 @@ trait sp_action_virus
         }
     }
 
-    public function inlineML_AlertOnlySet(): void
+    public function av_inlineML_AlertOnlySet(): void
     {
         //bp_visibility_JSON already implemented
         $inlineML_action = "enable(alert-only)";
@@ -716,12 +716,12 @@ trait sp_action_virus
 
     public function AlertOnlySet(): void
     {
-        $this->decoder_AlertOnlySet();
+        $this->av_decoder_AlertOnlySet();
 
-        $this->inlineML_AlertOnlySet();
+        $this->av_inlineML_AlertOnlySet();
     }
 
-    public function inlineML_BestPracticeSet(): void
+    public function av_inlineML_BestPracticeSet(): void
     {
         $mlav_policy_action_bp = "enable";
 
@@ -743,7 +743,7 @@ trait sp_action_virus
         }
     }
 
-    public function decoder_BestPracticeSet(): void
+    public function av_decoder_BestPracticeSet(): void
     {
         $decoder_action_bp = "reset-both";
         $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
@@ -783,9 +783,9 @@ trait sp_action_virus
 
     public function BestPracticeSet(): void
     {
-        $this->decoder_BestPracticeSet();
+        $this->av_decoder_BestPracticeSet();
 
-        $this->inlineML_BestPracticeSet();
+        $this->av_inlineML_BestPracticeSet();
     }
 
 }
