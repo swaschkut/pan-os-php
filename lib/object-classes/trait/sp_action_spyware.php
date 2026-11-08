@@ -1114,4 +1114,569 @@ trait sp_action_spyware
         else
             return false;
     }
+
+    public function inlineML_BestPracticeSet(): void
+    {
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $this->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            $tmp_mlav_engine_enable = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+            $tmp_mlav_engine_enable->textContent = "yes";
+
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+                $action_xmlNode->textContent = "reset-both";
+
+                $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
+            }
+        }
+        else
+        {
+            $xmlString = '   <mica-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+     <inline-policy-action>reset-both</inline-policy-action>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+     <inline-policy-action>reset-both</inline-policy-action>
+  </entry>
+  <entry name="SSL Command and Control detector">
+     <inline-policy-action>reset-both</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+     <inline-policy-action>reset-both</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+     <inline-policy-action>reset-both</inline-policy-action>
+  </entry>
+</mica-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 102 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $this->xmlroot->appendChild($xmlElement);
+
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
+                $this->cloud_inline_analysis_enabled = true;
+
+                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "reset-both";
+                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "reset-both";
+
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "reset-both";
+            }
+        }
+    }
+
+    public function rules_BestPracticeSet(): void
+    {
+        foreach( $this->rules_obj as $rule )
+        {
+            /** @var ThreatPolicy $rule */
+            if( in_array("high", $rule->severity()) || in_array("critical", $rule->severity()) || in_array("medium", $rule->severity()) )
+            {
+                if( !in_array("low", $rule->severity()) && !in_array("informational", $rule->severity()) )
+                {
+                    if( $rule->category() != "brute-force" && $rule->category() != "app-id-change")
+                    {
+                        $rule->action = "reset-both";
+
+                        //move this to threatPolicyvulnerability create method "setAction($name)"
+                        $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                        if( $tmp !== FALSE )
+                        {
+                            $tmp_action = DH::firstChildElement($tmp);
+                            if( $tmp_action !== FALSE )
+                            {
+                                $tmp->removeChild($tmp_action);
+
+                                $xmlString = '<reset-both/>';
+                                $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                                $tmp->appendChild($xmlElement);
+                            }
+                        }
+
+                        $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+                        $tmp_packet_capture->textContent = "single-packet";
+                        $rule->packetCapture = "single-packet";
+                    }
+                }
+            }
+        }
+    }
+
+    public function dns_BestPracticeSet( $hasDNSlicense = true ): void
+    {
+        foreach( $this->dns_rules_obj as $rule )
+        {
+            $tmp_action = DH::findFirstElementOrCreate("action", $rule->xmlroot);
+
+            if( !$rule->advanced )
+            {
+                $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+                if( $tmp_packet_capture === FALSE )
+                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+            }
+
+            $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
+            /** @var DNSPolicy $rule */
+            if( $rule->name() == "pan-dns-sec-adtracking"
+                || $rule->name() == "pan-dns-sec-ddns"
+                || $rule->name() == "pan-dns-sec-recent"
+            )
+            {
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "allow";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "single-packet";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+            elseif( $rule->name() == "pan-dns-sec-parked" )
+            {
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "allow";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+            elseif( $rule->name() == "pan-dns-sec-cc" )
+            {
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "sinkhole";
+                    $tmp_packet_capture->textContent = "extended-capture";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+            else
+            {
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "sinkhole";
+                    $tmp_packet_capture->textContent = "single-packet";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+        }
+    }
+
+    public function botnet_BestPracticeSet( $hasDNSlicense = true ): void
+    {
+        $tmp_rule = DH::findFirstElement('botnet-domains', $this->xmlroot);
+        if( $tmp_rule !== FALSE )
+        {
+            $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            if ($tmp_lists !== FALSE)
+            {
+                foreach ($tmp_lists->childNodes as $tmp_entry1)
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    $tmp_dnsobj = $this->additional['botnet-domain']['lists'][$name];
+                    if( $name == "default-paloalto-dns" )
+                    {
+                        $tmp = DH::findFirstElement("action", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            $tmp_action = DH::firstChildElement($tmp);
+                            if ($tmp_action !== FALSE) {
+                                $tmp->removeChild($tmp_action);
+
+                                if( $hasDNSlicense )
+                                {
+                                    //swaschkut 20251109 - clarified with roland
+                                    //this should be kept as sinkhole - also if block is set, change it to sinkhole
+                                    $tmp_actionString = "sinkhole";
+                                }
+                                else
+                                    $tmp_actionString = "allow";
+                                $xmlString = '<'.$tmp_actionString.'/>';
+                                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                                $tmp->appendChild($xmlElement);
+
+                                $tmp_dnsobj->action = $tmp_actionString;
+                            }
+                        }
+                        $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            if( $hasDNSlicense )
+                            {
+                                #$tmp->textContent = "single-packet";
+                                $tmp->textContent = "extended-capture";
+                            }
+                            else
+                                $tmp->textContent = "disable";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    public function inlineML_AlertOnlySet(): void
+    {
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $this->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            $action_other_then_allow_alert = false;
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+
+                if( $action_xmlNode->textContent == "allow" )
+                {
+                    $action_xmlNode->textContent = "alert";
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
+                }
+                elseif( $action_xmlNode->textContent == "alert" )
+                {
+                }
+                elseif( !$this->cloud_inline_analysis_enabled )
+                {
+                    //explanation:
+                    //inline analysis is disabled -> but action is set to block -> not enabled, will not help
+                    $action_xmlNode->textContent = "alert";
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
+                }
+                else
+                {
+                    $action_other_then_allow_alert = true;
+                }
+            }
+
+            if( !$action_other_then_allow_alert )
+            {
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
+                $this->cloud_inline_analysis_enabled = true;
+            }
+        }
+        else
+        {
+            $xmlString = '   <mica-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="SSL Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+</mica-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 102 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $this->xmlroot->appendChild($xmlElement);
+
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
+                $this->cloud_inline_analysis_enabled = true;
+
+                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "alert";
+                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "alert";
+                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "alert";
+
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
+            }
+        }
+    }
+
+    public function rules_AlertOnlySet(): void
+    {
+        foreach( $this->rules_obj as $rule )
+        {
+            /** @var ThreatPolicy $rule */
+            if( $rule->action() == "allow" )
+            {
+                $rule->action = "alert";
+
+                //move this to threatPolicyvulnerability create method "setAction($name)"
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                if( $tmp !== FALSE )
+                {
+                    $tmp_action = DH::firstChildElement($tmp);
+                    if( $tmp_action !== FALSE )
+                    {
+                        $tmp->removeChild($tmp_action);
+
+                        $xmlString = '<alert/>';
+                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                        $tmp->appendChild($xmlElement);
+                    }
+                }
+            }
+        }
+        // add a rule only for a severity no rule matches (PAN-OS first match); after the loop above every rule logs
+        foreach( array( "critical", "high", "medium", "low", "informational" ) as $rule )
+        {
+            if( $this->spyware_rules_first_match( $rule, ThreatPolicy::OTHER_CATEGORY ) !== null )
+                continue;
+
+            $ruleName = ThreatPolicy::uniqueRuleName( $this->xmlroot, $rule );
+            $threadPolicy_obj = new ThreatPolicySpyware( $ruleName, $this);
+            $threadPolicy_obj->type = "ThreatPolicySpyware";
+
+            if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                $threadPolicy_obj->action = "alert";
+            elseif( $rule == "low" || $rule == "informational" )
+                $threadPolicy_obj->action = "default";
+
+            $this->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $this );
+
+            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $ruleName, $rule, $threadPolicy_obj->action);
+        }
+    }
+
+    public function dns_AlertOnlySet( $hasDNSlicense = true): void
+    {
+        foreach( $this->dns_rules_obj as $rule )
+        {
+            $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
+
+            if( !$rule->advanced )
+            {
+                $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+                if( $tmp_packet_capture === FALSE )
+                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+            }
+
+            $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
+            if( $tmp_log_level === FALSE )
+                $tmp_log_level = DH::findFirstElementOrCreate("log-level", $rule->xmlroot);
+
+            /** @var DNSPolicy $rule */
+            if( $rule->action() == "allow" )
+            {
+                $rule->action = "allow";
+
+                //move this to DNSPolicy create method "setAction($name)"
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "allow";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                        $tmp_log_level->textContent = "default";
+
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+            elseif( $rule->action() == "default" )
+            {
+                if( $rule->name() == "pan-dns-sec-adtracking"
+                    || $rule->name() == "pan-dns-sec-ddns"
+                    || $rule->name() == "pan-dns-sec-parked"
+                    || $rule->name() == "pan-dns-sec-recent"
+                )
+                {
+                    if( $hasDNSlicense )
+                    {
+                        if( $tmp_action->textContent == "" )
+                            $tmp_action->textContent = "allow";
+                        if( $tmp_packet_capture->textContent == "" )
+                            $tmp_packet_capture->textContent = "disable";
+                        if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                            $tmp_log_level->textContent = "default";
+                    }
+                    else
+                    {
+                        $tmp_action->textContent = "allow";
+                        $tmp_packet_capture->textContent = "disable";
+                        $tmp_log_level->textContent = "none";
+                    }
+                }
+                else
+                {
+                    if( $hasDNSlicense )
+                    {
+                        if( $tmp_action->textContent == "" )
+                            $tmp_action->textContent = "allow";
+                        if( $tmp_packet_capture->textContent == "" )
+                            $tmp_packet_capture->textContent = "disable";
+                        if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                            $tmp_log_level->textContent = "default";
+                    }
+                    else
+                    {
+                        $tmp_action->textContent = "allow";
+                        $tmp_packet_capture->textContent = "disable";
+                        $tmp_log_level->textContent = "none";
+                    }
+                }
+            }
+            elseif( $rule->action() == "sinkhole" )
+            {
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "sinkhole";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                        $tmp_log_level->textContent = "default";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+            elseif( $rule->action() == "block" )
+            {
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "block";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "block";
+                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                        $tmp_log_level->textContent = "default";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
+        }
+    }
+
+    public function botnet_AlertOnlySet( $hasDNSlicense = true): void
+    {
+        $tmp_rule = DH::findFirstElement('botnet-domains', $this->xmlroot);
+        if( $tmp_rule !== FALSE )
+        {
+            $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            if ($tmp_lists !== FALSE)
+            {
+                foreach ($tmp_lists->childNodes as $tmp_entry1)
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    /** @var DNSPolicy $tmp_dnsobj */
+                    $tmp_dnsobj = $this->additional['botnet-domain']['lists'][$name];
+                    if( $tmp_dnsobj->action() == "allow" )
+                    {
+                        $tmp = DH::findFirstElement("action", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            $tmp_action = DH::firstChildElement($tmp);
+                            if ($tmp_action !== FALSE) {
+                                $tmp->removeChild($tmp_action);
+
+                                if( $hasDNSlicense )
+                                    $tmp_actionString = "alert";
+                                else
+                                    $tmp_actionString = "allow";
+
+                                $xmlString = '<'.$tmp_actionString.'/>';
+                                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                                $tmp->appendChild($xmlElement);
+
+                                $tmp_dnsobj->action = $tmp_actionString;
+                            }
+                        }
+                        $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            if( $hasDNSlicense )
+                            {
+                                //keep what is there before!!!!
+                                //$tmp->textContent = "disable";
+                            }
+                            else
+                                $tmp->textContent = "disable";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public function AlertOnlySet(): void
+    {
+        $this->inlineML_AlertOnlySet();
+
+        $this->rules_AlertOnlySet();
+
+        $this->dns_AlertOnlySet();
+
+        $this->botnet_AlertOnlySet();
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->inlineML_BestPracticeSet();
+
+        $this->rules_BestPracticeSet();
+
+        $this->dns_BestPracticeSet();
+
+        $this->botnet_BestPracticeSet();
+    }
+
 }

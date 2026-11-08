@@ -635,4 +635,157 @@ trait sp_action_virus
 
         }
     }
+
+    public function decoder_AlertOnlySet()
+    {
+        $decoder_action = "alert";
+        $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
+
+
+        $tmp_decoder = DH::findFirstElement('decoder', $this->xmlroot);
+        if( $tmp_decoder === False)
+            return null;
+
+        foreach($this->tmp_virus_prof_array as $decoder )
+        {
+            $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
+
+            foreach( $actionTypeArray as $actionType )
+            {
+                $check_array = $this->virus_bp_visibility_JSON( "visibility", "virus", $actionType );
+
+                foreach( $check_array as $check )
+                {
+                    $final_check = $check;
+                    if( str_contains( $final_check, "!" ) )
+                        $final_check = str_replace("!", "", $final_check);
+
+                    if (isset($object->$decoder[$actionType]) && $object->$decoder[$actionType] == $final_check)
+                    {
+                        $object->$decoder[$actionType] = $decoder_action;
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = $decoder_action;
+                    }
+                }
+            }
+        }
+    }
+
+    public function inlineML_AlertOnlySet(): void
+    {
+        //bp_visibility_JSON already implemented
+        $inlineML_action = "enable(alert-only)";
+
+        $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $this->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $check_array = $this->bp_visibility_JSON( "visibility", "virus");
+
+                if( isset($check_array['inline-policy-action'] ) )
+                {
+                    foreach ($check_array['inline-policy-action'] as $validate)
+                    {
+                        foreach( $validate['type'] as $type )
+                        {
+                            if( $type == 'any' || $type == $mlav_engine_entry )
+                            {
+                                $final_check = $validate['action'][0];
+                                if( str_contains( $final_check, "!" ) )
+                                    $final_check = str_replace("!", "", $final_check);
+
+                                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                                $action_xmlNode = DH::findFirstElement("mlav-policy-action", $mlav_engine_entry);
+                                if( $action_xmlNode->textContent == $final_check )
+                                {
+                                    $action_xmlNode->textContent = $inlineML_action;
+                                    $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = $inlineML_action;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public function AlertOnlySet(): void
+    {
+        $this->decoder_AlertOnlySet();
+
+        $this->inlineML_AlertOnlySet();
+    }
+
+    public function inlineML_BestPracticeSet(): void
+    {
+        $mlav_policy_action_bp = "enable";
+
+        $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $this->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("mlav-policy-action", $mlav_engine_entry);
+                $action_xmlNode->textContent = $mlav_policy_action_bp;
+
+                $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = $mlav_policy_action_bp;
+            }
+        }
+    }
+
+    public function decoder_BestPracticeSet(): void
+    {
+        $decoder_action_bp = "reset-both";
+        $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
+        $decoder_array_default_allow = array( "http", "https", "ftp", "smb" );
+
+        $tmp_decoder = DH::findFirstElement('decoder', $this->xmlroot);
+        foreach($this->tmp_virus_prof_array as $decoder )
+        {
+            $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
+
+            if( in_array($decoder, $decoder_array_default_allow) )
+            {
+                foreach( $actionTypeArray as $actionType )
+                {
+                    if( $this->$decoder[$actionType] != "default" && $this->$decoder[$actionType] != $decoder_action_bp  )
+                    {
+                        $this->$decoder[$actionType] = $decoder_action_bp;
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = $decoder_action_bp;
+                    }
+                }
+            }
+            else
+            {
+                foreach( $actionTypeArray as $actionType )
+                {
+                    if( $this->$decoder[$actionType] != $decoder_action_bp  )
+                    {
+                        $this->$decoder[$actionType] = $decoder_action_bp;
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = $decoder_action_bp;
+                    }
+                }
+            }
+        }
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->decoder_BestPracticeSet();
+
+        $this->inlineML_BestPracticeSet();
+    }
+
 }
