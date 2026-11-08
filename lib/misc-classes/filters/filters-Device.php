@@ -413,4 +413,95 @@ RQuery::$defaultFilters['device']['devicegroup']['operators']['with-no-serial'] 
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.all.in.file'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $object */
+        $object = $context->object;
+
+        $class = get_class( $object );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+
+        $list = $context->cachedNameList( TRUE );
+        $devices = $object->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;   // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the template (through any template stack) or the template-stack is listed in the file, one serial per line, e.g. 'filter=(template manageddevice.all.in.file FILENAME)'"
+);
+
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.all.in.list'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $object */
+        $object = $context->object;
+
+        $class = get_class( $object );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+
+        $list = $context->cachedNameList( FALSE );
+        $devices = $object->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( !isset( $list[$serial] ) )
+                return FALSE;   // a firewall that receives the template is not listed
+        return TRUE;
+    },
+    'arg' => TRUE,
+    'help' => "TRUE when every firewall that receives the template (through any template stack) or the template-stack is listed, e.g. 'filter=(template manageddevice.all.in.list serial1,serial2)'"
+);
+
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.all.with-no-dg'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $owner */
+        $owner = $context->object;
+        $class = get_class( $owner );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( !$device->hasNoDeviceGroup() )
+                return FALSE;   // a firewall that receives the template is in a device group
+        return TRUE;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when the template (through any template stack) or the template-stack reaches at least one firewall and none of these firewalls is assigned to a device group, e.g. 'filter=(template manageddevice.all.with-no-dg)'"
+);
+
+RQuery::$defaultFilters['device']['template']['operators']['manageddevice.with-no-dg'] = array(
+    'Function' => function (DeviceRQueryContext $context) {
+        /** @var Template|TemplateStack $owner */
+        $owner = $context->object;
+        $class = get_class( $owner );
+        if( $class !== "Template" && $class !== "TemplateStack" )
+            return null;
+        if( !is_object( $owner ) || !method_exists( $owner, 'managedDevices' ) )
+            return null;
+        $devices = $owner->managedDevices();
+        if( count( $devices ) == 0 )
+            return null;   // no firewall receives the template / template-stack
+
+        foreach( $devices as $serial => $device )
+            if( $device->hasNoDeviceGroup() )
+                return TRUE;   // a firewall that receives the template is in no device group
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "TRUE when at least one firewall that receives the template (through any template stack) or the template-stack is not assigned to a device group, e.g. 'filter=(template manageddevice.with-no-dg)'"
+);
+
 // </editor-fold>

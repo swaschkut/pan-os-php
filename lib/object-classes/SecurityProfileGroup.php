@@ -96,6 +96,7 @@ class SecurityProfileGroup
         foreach( $used_secprof_array as $secprof )
         {
             $this->secprofiles[$secprof] = null;
+            $this->secprofProfiles_obj[$secprof] = null;
         }
 
         $this->owner = $owner;
@@ -226,8 +227,11 @@ class SecurityProfileGroup
                             $profile = $sub->WildfirePredefinedStore->find( $tmp_type->nodeValue );
                         elseif( $tmp_store_name == 'URLProfileStore' )
                             $profile = $sub->UrlFilteringPredefinedStore->find( $tmp_type->nodeValue );
+                        //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
                         elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                             $profile = $sub->VirusAndWildfireProfileStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'DataFilteringProfileStore' )
+                            $profile = $sub->DataFilteringPredefinedStore->find( $tmp_type->nodeValue );
 
                         if( $profile != null )
                         {
@@ -252,8 +256,11 @@ class SecurityProfileGroup
                                 $profile = $sub->WildfirePredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
                             elseif( $tmp_store_name == 'URLProfileStore' )
                                 $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
+                            //Todo: is there not a AV/WF predeifned store available??? BUG 20261016
                             elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                                 $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $tmp_type->nodeValue, $this );
+                            elseif( $tmp_store_name == 'DataFilteringProfileStore' )
+                                $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
 
                             #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
                             if( $profile !== null )
@@ -388,6 +395,7 @@ class SecurityProfileGroup
     public function removeSecurityProfile()
     {
         $this->secprofiles = array();
+        $this->secprofProfiles_obj = array();
 
         $this->rewriteXML();
 
@@ -1118,6 +1126,15 @@ class SecurityProfileGroup
                 }
 
                 $tmp1->appendChild( $tmp );
+            }
+        }
+
+        if( count($this->secprofProfiles_obj) !== count( $this->secprofiles ) )
+        {
+            foreach( $this->secprofiles as $key => $value )
+            {
+                if( !isset($this->secprofProfiles_obj[$key]) )
+                    mwarning("SecurityProfileGroup: '". $this->name() ."' contains a key in secprofiles array which is not in secprofProfiles_obj array: '".$key."'", null, false);
             }
         }
     }

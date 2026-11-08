@@ -54,8 +54,8 @@ trait ReferenceableObject
         if( $ref === null )
             return;
 
-        $serial = spl_object_hash($ref);
-        #$pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
+        // integer key: same identity as spl_object_hash(), without a 32 character string per reference
+        $serial = spl_object_id($ref);
 
         if( isset($this->refrules[$serial]) )
             return;
@@ -69,8 +69,7 @@ trait ReferenceableObject
         if( $ref === null )
             return;
 
-        $serial = spl_object_hash($ref);
-        #$pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
+        $serial = spl_object_id($ref);
 
         if( isset($this->refrules[$serial]) )
         {
@@ -232,10 +231,11 @@ trait ReferenceableObject
                 if( get_class( $reference ) == "Address" || get_class( $reference ) == "AddressGroup" )
                 {
                     $recursiveReferences = $reference->getReferencesRecursive();
-                    $references = array_merge( $references, $recursiveReferences );
+                    // keys are object ids: union keeps every object once (array_merge would renumber them)
+                    $references = $references + $recursiveReferences;
                 }
             }
-            $references = array_merge( $references, $this->refrules );
+            $references = $references + $this->refrules;
         }
 
         return $references;

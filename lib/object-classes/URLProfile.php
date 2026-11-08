@@ -6,7 +6,9 @@
  */
 class URLProfile extends SecurityProfile2
 {
-    use ReferenceableObject;
+    use ReferenceableObject {
+        removeReference as super_removeReference;
+    }
     use PathableName;
     use XmlConvertible;
     use ObjectWithDescription;

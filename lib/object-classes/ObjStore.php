@@ -111,7 +111,7 @@ class ObjStore
                 if( get_class($this->owner) !== "Snippet" )
                 {
                     $attachedSnippets = $this->owner->getAttachedSnippets();
-                    if (count($attachedSnippets) > 1)
+                    if (count($attachedSnippets) > 0)
                     {
                         foreach ($attachedSnippets as $snippet)
                         {
@@ -439,10 +439,22 @@ class ObjStore
                 $xml = $this->owner->sharedroot;
             elseif ($this->owner->isFirewall())
             {
+                /*
                 //Todo: multi-vsys => I assume shared!!!!!
                 //search vsys1 - if single vsys
                 $vsys = $this->owner->findVirtualSystem('vsys1');
                 $xml = $vsys->xmlroot;
+                */
+
+                // PANConf-owned stores belong to "shared"
+                if( isset($this->owner->sharedroot) && $this->owner->sharedroot instanceof DOMElement )
+                    $xml = $this->owner->sharedroot;
+                else
+                {
+                    // fallback, e.g. PANConf inside a Template has no sharedroot
+                    $vsys = $this->owner->findVirtualSystem('vsys1');
+                    $xml = $vsys->xmlroot;
+                }
             }
             else
                 $xml = $this->owner->xmlroot;

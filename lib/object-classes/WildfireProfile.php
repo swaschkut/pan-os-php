@@ -100,6 +100,8 @@ class WildfireProfile extends SecurityProfile2
     public function load_from_domxml(DOMElement $xml): bool
     {
         $this->secprof_type = "wildfire";
+        //should be:
+        //$this->secprof_type = "wildfire-analysis";
         $this->xmlroot = $xml;
 
         $this->name = DH::findAttribute('name', $xml);

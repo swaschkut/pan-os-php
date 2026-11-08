@@ -397,8 +397,17 @@ var subjectObject =
                             "disable",
                             "setAny"
                         ]
+                    },
+                    "actionIfLastMemberInGroup": {
+                        "type": "string",
+                        "default": "delete",
+                        "choices": [
+                            "delete",
+                            "skip"
+                        ]
                     }
-                }
+                },
+                "help": "removes the object from every rule and group it is used in.\n  - actionIfLastMemberInRule: what to do with a rule if the object is the last member of its source\/destination\/service: delete | disable | setAny\n  - actionIfLastMemberInGroup: what to do with a group if the object is its last member:\n     - delete: remove the group where it is used (using actionIfLastMemberInRule, also for nested groups) and delete it\n     - skip: keep the object in this group\n  example: 'actions=removeWhereUsed:disable,skip'"
             },
             "replace-ip-by-mt-like-object": {
                 "name": "replace-IP-by-MT-like-Object",
@@ -2715,6 +2724,14 @@ var subjectObject =
                         }
                     },
                     "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused.recursive": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -7667,6 +7684,16 @@ var subjectObject =
                         "arg": true,
                         "help": "example: 'filter=(from all.has.from.query subquery1)' 'subquery1=(zpp is.set)'"
                     },
+                    "all.targets.has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE if subquery matches on ALL Serial\/vsys the rule is deployed to. example: 'filter=(from all.targets.has.from.query subquery1)' 'subquery1=(zpp is.set)'"
+                    },
+                    "targets.has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE if subquery matches on AT LEAST ONE Serial\/vsys the rule is deployed to. example: 'filter=(from targets.has.from.query subquery1)' 'subquery1=!(zpp is.set)'"
+                    },
                     "has.regex": {
                         "Function": {},
                         "arg": true
@@ -8737,6 +8764,23 @@ var subjectObject =
                             "fString": "(%PROP%  00YC25C)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "has.regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if one of the target serial numbers matches the regular expression. Negated targets are taken into account. Ie: \"(target has.regex \/00YC25C\/)\"",
+                        "ci": {
+                            "fString": "(%PROP%  \/00YC25C\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.negated": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -8745,7 +8789,7 @@ var subjectObject =
                     ">,<,=,!": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
+                        "help": "returns TRUE if threat logs (severity >= medium) exist for this rule before (<) \/ since (>) the date: MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ YYYY\/MM\/DD \/ -7 [days]; on Panorama only logs of the firewalls of the rule's DeviceGroup are used"
                     }
                 }
             },
@@ -8754,7 +8798,7 @@ var subjectObject =
                     ">,<,=,!": {
                         "Function": {},
                         "arg": true,
-                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
+                        "help": "same as threat-log.occurrence.date.fast, but with one log query per rule (slower, for rules with many logs)"
                     }
                 }
             },
@@ -9259,6 +9303,10 @@ var subjectObject =
     "securityprofile": {
         "name": "securityprofile",
         "action": {
+            "clone-predefined-and-change-references": {
+                "name": "clone-predefined-and-change-references",
+                "MainFunction": {}
+            },
             "custom-url-category-add-ending-token": {
                 "name": "custom-url-category-add-ending-token",
                 "MainFunction": {},
@@ -11374,8 +11422,17 @@ var subjectObject =
                             "disable",
                             "setAny"
                         ]
+                    },
+                    "actionIfLastMemberInGroup": {
+                        "type": "string",
+                        "default": "delete",
+                        "choices": [
+                            "delete",
+                            "skip"
+                        ]
                     }
-                }
+                },
+                "help": "removes the object from every rule and group it is used in.\n  - actionIfLastMemberInRule: what to do with a rule if the object is the last member of its source\/destination\/service: delete | disable | setAny\n  - actionIfLastMemberInGroup: what to do with a group if the object is its last member:\n     - delete: remove the group where it is used (using actionIfLastMemberInRule, also for nested groups) and delete it\n     - skip: keep the object in this group\n  example: 'actions=removeWhereUsed:disable,skip'"
             },
             "replacebymembers": {
                 "name": "replaceByMembers",
@@ -13711,6 +13768,18 @@ var subjectObject =
                     }
                 }
             },
+            "manageddevice.owner": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.in.list": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "is.in.file": {
@@ -13832,6 +13901,18 @@ var subjectObject =
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    }
+                }
+            },
+            "template.owner": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.unused.recursive": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },
@@ -14001,6 +14082,18 @@ var subjectObject =
                     }
                 }
             },
+            "manageddevice.owner": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.in.list": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "is.in.file": {
@@ -14118,6 +14211,18 @@ var subjectObject =
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    }
+                }
+            },
+            "template.owner": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.unused.recursive": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             }

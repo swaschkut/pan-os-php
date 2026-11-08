@@ -1110,8 +1110,12 @@ trait StatCollectorTrait
         $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         //zone LFP is not needed so that this is visible
+        // 'zone protection': 2.1.60 reading (first template-stack) - kept stable, transitional
         $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
+        // 'zone protection all-targets': every from-zone protected on every serial/vsys the rule is pushed to (Target honoured)
+        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.targets.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        $stdoutarray['zone protection all-targets'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter."!(user is.any)" ) );
@@ -1311,6 +1315,7 @@ trait StatCollectorTrait
         $workingArray[] = array( 'wf adoption', $ruleForCalculation);
 
         $workingArray[] = array( 'zone protection', $ruleForCalculation);
+        $workingArray[] = array( 'zone protection all-targets', $ruleForCalculation);
         $workingArray[] = array( 'app id', $ruleForCalculation);
         $workingArray[] = array( 'user id', 'security rules enabled');
         $workingArray[] = array( 'service port', $ruleForCalculation);
@@ -1560,7 +1565,7 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Antivirus Actions']['value'] = $stdoutarray['av best-practice actions percentage'];
         $percentageArray_best_practice['Antivirus Actions']['group'] = 'Threat Prevention';
-        $percentageArray_best_practice['Antivirus InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Antivirus InLine ML']['value'] = $stdoutarray['av best-practice mica-engine percentage'];
         $percentageArray_best_practice['Antivirus InLine ML']['group'] = 'Threat Prevention';
 
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];

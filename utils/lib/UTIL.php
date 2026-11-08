@@ -1330,7 +1330,7 @@ class UTIL
         {
             $this->objectsTemplate = PH::$args['template'];
             if( !is_string($this->objectsTemplate) || strlen($this->objectsTemplate) < 1 )
-                $this->display_error_usage_exit('"location" argument is not a valid string');
+                $this->display_error_usage_exit('"template" argument is not a valid string');
         }
         else
         {
@@ -1544,6 +1544,8 @@ class UTIL
         if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" )
             $this->pan->load_from_domxml($this->xmlDoc, $this->debugLoadTime);
 
+        if( $this->debugLoadTime )
+            PH::print_DEBUG_loadtime_end();
 
         $this->loadEnd();
 
@@ -1633,6 +1635,7 @@ class UTIL
 
         PH::$loadStartTime = $this->loadStartTime;
         PH::$loadStartMem = $this->loadStartMem;
+        PH::print_DEBUG_loadtime_start();
     }
 
     public function loadEnd()
@@ -1812,6 +1815,11 @@ class UTIL
                 }
             }
         }
+        else
+        {
+            print_r( $this->objectsTemplate );
+            derr("more than one template specified, not yet implemented ", null, FALSE);
+        }
     }
 
 
@@ -1839,6 +1847,8 @@ class UTIL
 
             $folderArray = array_merge($folderArray, $responseArray);
 
+            //static folder list overlaps with /config/setup/v1/folders - load each location once
+            $folderArray = array_values(array_unique($folderArray));
         }
 
 
@@ -2672,9 +2682,20 @@ class UTIL
                 $utilDiff->debugAPI = TRUE;
 
 
-            $doc2 = new DOMDocument();
-            $node = $doc2->importNode($this->pan->xmlroot, true);
-            $doc2->appendChild($node);
+            // The diff only reads its second document: runDiff() takes its first element, and every node the diff
+            // changes is first copied into a new document (DIFF::ignoreAddDeleteXpath; the ruletype attributes of
+            // additionalRuleOrderCalculateXpathGetElement() are set only by type=diff's own main()). So when xmlDoc's
+            // first element is the configuration root, compare xmlDoc itself: a deep copy of it is a third full DOM of
+            // the configuration beside xmlDoc and origXmlDoc, held to the end of the step.
+            $xmlDocRoot = ( $this->xmlDoc !== null ) ? DH::firstChildElement($this->xmlDoc) : FALSE;
+            if( $xmlDocRoot !== FALSE && $xmlDocRoot->isSameNode($this->pan->xmlroot) )
+                $doc2 = $this->xmlDoc;
+            else
+            {
+                $doc2 = new DOMDocument();
+                $node = $doc2->importNode($this->pan->xmlroot, true);
+                $doc2->appendChild($node);
+            }
             //print $doc2->saveXML();
 
             if( PH::$shadow_multivsys )

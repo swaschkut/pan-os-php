@@ -207,6 +207,8 @@ class VirtualSystem
     public $sizeArray = array();
     public $sizeArrayShared = array();
 
+    public $isInTemplate = false;
+
     /**
      * VirtualSystem constructor.
      * @param PANConf|SharedGatewayStore $owner
@@ -434,6 +436,15 @@ class VirtualSystem
     {
         $this->xmlroot = $xml;
 
+        // resolve the PANConf this VSYS/SharedGateway belongs to
+        if( get_class($this->owner) == "SharedGatewayStore" )
+            $pan = $this->owner->owner;     // PANConf
+        else
+            $pan = $this->owner;            // PANConf
+
+        // PANConf->owner is a Template when the config is part of a Panorama template
+        $this->isInTemplate = ( $pan->owner !== null );
+
         // this VSYS has a name ?
         $this->name = DH::findAttribute('name', $xml);
         if( $this->name === FALSE )
@@ -482,7 +493,8 @@ class VirtualSystem
 
         //
 
-        if( $this->owner->owner === null || get_class($this->owner) == "SharedGatewayStore" )
+        //if( $this->owner->owner === null || get_class($this->owner) == "SharedGatewayStore" )
+        if( !$this->isInTemplate )
         {
 
             //
@@ -877,7 +889,8 @@ class VirtualSystem
         if( $this->rulebaseroot === FALSE )
             $this->rulebaseroot = null;
 
-        if( ($this->owner->owner === null || get_class($this->owner) == "SharedGatewayStore") && $this->rulebaseroot !== null )
+        //if( ($this->owner->owner === null || get_class($this->owner) == "SharedGatewayStore") && $this->rulebaseroot !== null )
+        if( !$this->isInTemplate  && $this->rulebaseroot !== null )
         {
             //
             // Security Rules extraction
@@ -1004,6 +1017,16 @@ class VirtualSystem
                     $this->defaultSecurityRules->load_from_domxml($tmprulesroot);
             }
             */
+
+            //Todo:
+            // it must NOT be to add default-security-rules if virtualSystem [SharedGateway] -> is part of template
+            // PROBLEM:
+            // if( ($this->owner->owner === null || get_class($this->owner) == "SharedGatewayStore") && $this->rulebaseroot !== null )
+            // $this->owner is SharedgatewaySTore ; why is this->owner->owner NULL????
+            // PanConf -> network -> sharedgatewayStore
+            // get_class( $this ) => SharedGateway
+            // get_class( $this->owner ) => SharedGatewayStore
+            // $this->owner->owner => NULL
             $sub = new Sub();
             $sub->owner = $this;
             $sub->rulebaseroot = $this->rulebaseroot;
@@ -1011,6 +1034,8 @@ class VirtualSystem
             $tmprulesroot = $sub->load_defaultSecurityRule( );
             if( $tmprulesroot !== FALSE )
                 $this->defaultSecurityRules->load_from_domxml( $tmprulesroot);
+
+            #derr( "why got this added??", null );
 
             //
             // network-packet-broker Rules extraction

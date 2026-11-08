@@ -40,13 +40,14 @@ class Service
     public $childancestor;
 
     /** @var null|DOMElement */
-    public $protocolRoot = null;
+    // protocolRoot / tcpOrUdpRoot / dportroot are not stored any more (each held DOM node costs ~0.5 KB in PHP),
+    // they are looked up from xmlroot when needed, see __get(), protocolNode(), tcpOrUdpNode()
 
     /** @var null|DOMElement */
-    protected $tcpOrUdpRoot = null;
+
 
     /** @var null|DOMElement */
-    public $dportroot = null;
+
 
     public $type = '';
 
@@ -100,6 +101,37 @@ class Service
      * @param DOMElement $xml
      * @throws Exception
      */
+    /** <protocol> of this service */
+    private function protocolNode()
+    {
+        return DH::findFirstElementOrDie('protocol', $this->xmlroot);
+    }
+
+    /** <tcp> or <udp> below <protocol> */
+    private function tcpOrUdpNode()
+    {
+        $node = DH::findFirstElement($this->_protocol, $this->protocolNode());
+        if( $node === FALSE )
+            derr("Error: <".$this->_protocol."> not found for service " . $this->name);
+        return $node;
+    }
+
+    /**
+     * compatibility for the former public properties protocolRoot / tcpOrUdpRoot / dportroot / overrideroot nodes
+     */
+    public function __get($name)
+    {
+        if( $name == 'protocolRoot' )
+            return $this->xmlroot === null ? null : $this->protocolNode();
+        if( $name == 'tcpOrUdpRoot' )
+            return $this->xmlroot === null ? null : $this->tcpOrUdpNode();
+        if( $name == 'dportroot' )
+            return $this->xmlroot === null ? null : DH::findFirstElement('port', $this->tcpOrUdpNode());
+
+        trigger_error("Undefined property: ".get_class($this)."::\$".$name, E_USER_NOTICE);
+        return null;
+    }
+
     public function load_from_domxml($xml)
     {
         $this->xmlroot = $xml;
@@ -113,23 +145,23 @@ class Service
         //
         // seeking <protocol>
         //
-        $this->protocolRoot = DH::findFirstElementOrDie('protocol', $xml);
+        $protocolRoot = DH::findFirstElementOrDie('protocol', $xml);
 
-        $this->tcpOrUdpRoot = DH::findFirstElement('tcp', $this->protocolRoot);
+        $tcpOrUdpRoot = DH::findFirstElement('tcp', $protocolRoot);
 
-        if( $this->tcpOrUdpRoot === FALSE )
+        if( $tcpOrUdpRoot === FALSE )
         {
             $this->_protocol = 'udp';
-            $this->tcpOrUdpRoot = DH::findFirstElement('udp', $this->protocolRoot);
+            $tcpOrUdpRoot = DH::findFirstElement('udp', $protocolRoot);
         }
-        if( $this->tcpOrUdpRoot === FALSE )
+        if( $tcpOrUdpRoot === FALSE )
             derr("Error: <tcp> or <udp> not found for service" . $this->name . "\n");
 
-        $this->dportroot = DH::findFirstElementOrDie('port', $this->tcpOrUdpRoot);
+        $dportroot = DH::findFirstElementOrDie('port', $tcpOrUdpRoot);
 
-        $this->_dport = $this->dportroot->textContent;
+        $this->_dport = $dportroot->textContent;
 
-        $sportroot = DH::findFirstElement('source-port', $this->tcpOrUdpRoot);
+        $sportroot = DH::findFirstElement('source-port', $tcpOrUdpRoot);
         if( $sportroot !== FALSE )
         {
             $this->_sport = $sportroot->textContent;
@@ -142,10 +174,12 @@ class Service
                 $this->tags->load_from_domxml($tagRoot);
         }
 
-        $this->overrideroot = DH::findFirstElement('override', $this->tcpOrUdpRoot);
-        if( $this->overrideroot !== FALSE )
+        $overrideroot = DH::findFirstElement('override', $tcpOrUdpRoot);
+        // only a flag is kept; the <override> node is looked up again where needed
+        $this->overrideroot = ( $overrideroot !== FALSE );
+        if( $overrideroot !== FALSE )
         {
-            $override_noyes = DH::findFirstElement('yes', $this->overrideroot);
+            $override_noyes = DH::findFirstElement('yes', $overrideroot);
             if( $override_noyes !== FALSE )
             {
                 $timeoutroot = DH::findFirstElement('timeout', $override_noyes);
@@ -210,7 +244,7 @@ class Service
             return FALSE;
 
         $this->_dport = $newPorts;
-        $tmp = DH::findFirstElementOrCreate('port', $this->tcpOrUdpRoot, $this->_dport);
+        $tmp = DH::findFirstElementOrCreate('port', $this->tcpOrUdpNode(), $this->_dport);
         DH::setDomNodeText($tmp, $newPorts);
         return TRUE;
     }
@@ -237,9 +271,9 @@ class Service
                 return FALSE;
 
             $this->_sport = $newPorts;
-            $sportroot = DH::findFirstElement('source-port', $this->tcpOrUdpRoot);
+            $sportroot = DH::findFirstElement('source-port', $this->tcpOrUdpNode());
             if( $sportroot !== FALSE )
-                $this->tcpOrUdpRoot->removeChild($sportroot);
+                $this->tcpOrUdpNode()->removeChild($sportroot);
 
             return TRUE;
         }
@@ -248,10 +282,10 @@ class Service
 
         if( strlen($this->_sport) == 0 )
         {
-            DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpRoot, $newPorts);
+            DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpNode(), $newPorts);
             return TRUE;
         }
-        $sportroot = DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpRoot);
+        $sportroot = DH::findFirstElementOrCreate('source-port', $this->tcpOrUdpNode());
         DH::setDomNodeText($sportroot, $newPorts);
         return TRUE;
     }
@@ -298,14 +332,15 @@ class Service
 
         $this->_protocol = $newProtocol;
 
-        DH::clearDomNodeChilds($this->protocolRoot);
+        $protocolRoot = $this->protocolNode();
+        DH::clearDomNodeChilds($protocolRoot);
 
-        $this->tcpOrUdpRoot = DH::createElement($this->protocolRoot, $this->_protocol);
+        $tcpOrUdpRoot = DH::createElement($protocolRoot, $this->_protocol);
 
-        DH::createElement($this->tcpOrUdpRoot, 'port', $this->_dport);
+        DH::createElement($tcpOrUdpRoot, 'port', $this->_dport);
 
         if( strlen($this->_sport) > 0 )
-            DH::createElement($this->tcpOrUdpRoot, 'source-port', $this->_dport);
+            DH::createElement($tcpOrUdpRoot, 'source-port', $this->_dport);
     }
 
     /**
@@ -378,7 +413,7 @@ class Service
         }
 
 
-        $tmp_override = DH::findFirstElementOrCreate('override', $this->tcpOrUdpRoot);
+        $tmp_override = DH::findFirstElementOrCreate('override', $this->tcpOrUdpNode());
         $tmpno = DH::findFirstElement('no', $tmp_override);
         if( $tmpno !== false )
             $tmp_override->removeChild( $tmpno );
@@ -488,7 +523,7 @@ class Service
         $this->_halfclose_timeout = "";
         $this->_timewait_timeout = "";
 
-        $tmp = DH::findFirstElement('override', $this->tcpOrUdpRoot);
+        $tmp = DH::findFirstElement('override', $this->tcpOrUdpNode());
         if( $tmp !== false )
         {
             $tmpyes = DH::findFirstElement('yes', $tmp);

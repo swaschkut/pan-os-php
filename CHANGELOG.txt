@@ -1,6 +1,54 @@
 CHANGELOG
 
-2.1.60
+2.1.61
+UTIL:
+* type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
+* type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
+* type=securityprofile | introduce actions=clone-predefined-and-change-references
+* type=zone/zone-protection-profile | introduce 'filter=(template.owner is.unused/ template.owner is.unused.recursive / manageddevice.owner is.in.list/manageddevice.owner is.in.file)'
+* type=rule 'filter=(from all.targets.has.from.query subquery1)' 'subquery1=(zpp is.set)'
+* type=rule 'filter=(from targets.has.from.query subquery1)' 'subquery1=!(zpp is.set)' - at least one serial/vsys
+* type=stats | introduce 'zone protection all-targets' (+ calc / percentage): from-zone protected on every serial/vsys the rule is pushed to, rule Target incl. negate honoured
+* type=rule actions=exporttoexcel:file,Visibility | introduce columns 'from-visible-all-targets' and 'from-zone-all-targets' (missing / ambiguous for templates with named vsys)
+* Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
+* type=zone/zone-protection-profile | correct/extend managed.device filter
+* type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
+* type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
+* type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
+* type=zone actions=exporttohtml:file.html | extend with column template-stack
+* type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
+* type=playbook | introduce argument removestagefiles
+
+BUGFIX:
+* class SecurityProfileStore | bugfix related to plugin/dlp - if not set
+* type=rule | bugfix for 'filter=(target has XYZ)' - to get also these rules where negation is used, but serial is not mentioned
+* class VirtualSystem | fix related to SharedGateway to NOT create default-security-rule in Panorama Template
+* class VulnerabilityProfile - vulnerability_rules_coverage optimisation - rules visiblity
+* type=stats | 'zone protection' and export 'from-visible' / 'from-zone-location' keep the 2.1.60 reading (first template-stack) - transitional
+* class DH.php | bugfix to generate set commands
+* SCM-API related bugfixed
+* SCM-API - differnet class are not reading snippets correctly
+* type=rule 'filter=( {RULEUSAGE} )' - bugfix to correctly interpret log-data from different firewalls
+* type=rule actions=exporttohtml | bugfix for ruleusage information
+* class PH | fix predefinedStores for type=playbook if NOT subprocess
+* remove multiple times getPredefinedXML load part
+* class ZoneRuleContainer - optimsation to reduce memory usage
+* class AntiSpyware-/VulnerabilityProfile and the relevant ThreatPolicy-/Spyware/Vulnerability - also actions-securityprofile | fix to cover new rules with existing name - CVE/Vendor-id
+* class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
+* type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
+* bugfix class StatCollectorTrait - wrong value for av Inline ML
+* class UTIL | related to outputformatset - Run the diff on the saved document, not on a third copy.
+* type=playbook - Stop the playbook at a failed step whose output the next step reads.
+* type=playbook - Your fix for the repeated where used entries makes playbook steps that run in the main process about 6× slower; a lighter fix gives the same result.
+* type=playbook | class PH.php - dropPredefinedReferences
+
+GENERAL:
+* update Device App-ID to version: 9161-10297
+* update Device App-ID to version: 9165-10321
+* update Device App-ID to version: 9167-10330
+
+
+2.1.60 (20261021)
 UTIL:
 * type=appid-toolbox phase=rule-marker | introduce optional arguments 'preview' and 'limit=#'
 * type=device | introduce 'filter=(template/devicegroup/templatestack is.unused)'
@@ -11,6 +59,8 @@ UTIL:
 * type=device | optimisation of actions=display/exporttohtml - related to serial and multiple vsys / template and vsys configured
 * type=device | extend with class LogCollector / LogCollectorGroup
 * type=device | introduce 'filter=(template is.unused.recursive)'
+* Class Panorama - introduce predefinedDataFilteringStore - base on if plugin is isntalled
+* type=securityprofile securityprofiletype=predefined-data-filtering | introduction
 
 BUGFIX:
 * type=address/service | fix for 'filter=(object is.unused.recursive)' if group has itself as member

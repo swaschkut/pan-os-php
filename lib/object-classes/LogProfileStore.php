@@ -80,7 +80,7 @@ class LogProfileStore extends ObjStore
                 if( get_class($this->owner) !== "Snippet" )
                 {
                     $attachedSnippets = $this->owner->getAttachedSnippets();
-                    if (count($attachedSnippets) > 1)
+                    if (count($attachedSnippets) > 0)
                     {
                         foreach ($attachedSnippets as $snippet)
                         {
@@ -442,8 +442,8 @@ class LogProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('log-settings'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/log-settings/profiles', $xmlDoc);

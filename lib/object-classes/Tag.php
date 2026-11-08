@@ -443,7 +443,7 @@ class Tag
      */
     public function API_addComments(string $newComment): bool
     {
-        DH::DEBUGprintDOMDocument($this->xmlroot);
+        #DH::DEBUGprintDOMDocument($this->xmlroot);
         if( !$this->addComments($newComment) )
             return FALSE;
 

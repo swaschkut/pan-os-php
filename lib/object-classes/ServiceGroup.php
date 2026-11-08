@@ -163,7 +163,8 @@ class ServiceGroup
                 if( !$alreadyInGroup )
                     $this->members[] = $f;
 
-                $this->members[] = $f;
+                //duplicate
+                #$this->members[] = $f;
 
             }
         }

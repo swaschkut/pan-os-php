@@ -23,6 +23,48 @@
 trait PanSubHelperTrait
 {
 
+    /**
+     * Object store classes whose lookups (find / findOrCreate with $nested) continue in the
+     * store of the same name on the parent (DeviceGroup, Container, ...).
+     */
+    public static function inheritableStoreClasses(): array
+    {
+        return array(
+            'AddressStore', 'ServiceStore', 'TagStore', 'AppStore', 'ScheduleStore',
+            'EDLStore', 'LogProfileStore', 'ZoneStore',
+            'SecurityProfileGroupStore', 'SecurityProfileStore'
+        );
+    }
+
+    /**
+     * Links every inheritable object store owned by this sub to the store of the same name on $parent.
+     * The set of stores is taken from the objects themselves instead of a hand-written list, so a store
+     * added to a class later is linked automatically and every code path (load from XML, create*())
+     * links exactly the same stores.
+     * A store is only linked when the parent has a store of the same name and class
+     * (e.g. DeviceGroup has no zoneStore, so zones are never linked between DeviceGroups).
+     *
+     * @param DeviceGroup|Container|PanoramaConf|BuckbeakConf|FawkesConf $parent
+     */
+    public function linkStoresToParent( $parent ): void
+    {
+        if( $parent === null )
+            return;
+
+        $storeClasses = self::inheritableStoreClasses();
+        foreach( get_object_vars($this) as $property => $store )
+        {
+            if( !is_object($store) || !in_array(get_class($store), $storeClasses, TRUE) )
+                continue;
+            if( !isset($store->owner) || $store->owner !== $this )
+                continue;
+            if( !isset($parent->$property) || !is_object($parent->$property) || get_class($parent->$property) !== get_class($store) )
+                continue;
+
+            $store->parentCentralStore = $parent->$property;
+        }
+    }
+
     public function isPanorama()
     {
         FALSE;

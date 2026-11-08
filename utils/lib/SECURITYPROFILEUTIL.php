@@ -67,7 +67,8 @@ class SECURITYPROFILEUTIL extends UTIL
             'predefined-virus','predefined-spyware',
             'predefined-file-blocking',
             'predefined-vulnerability',
-            'predefined-wildfire-analysis'
+            'predefined-wildfire-analysis',
+            'predefined-data-filtering'
         );
         $this->supportedArguments['securityprofiletype'] = array('niceName' => 'securityProfileType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: securityprofiletype=any  securityprofiletype=url-filtering, custom-url-category', 'argDesc' => implode("|", $supportedSP));
         //'any|url-filtering|virus|vulnerability|spyware|file-blocking|data-filtering|wildfire-analysis|custom-url-category|dns-security|virus-and-wildfire-analysis|saas-security|predefined-url|predefined-url-filtering|'
@@ -102,6 +103,8 @@ class SECURITYPROFILEUTIL extends UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywarePredefinedStore, 'rules' => $this->pan->AntiSpywarePredefinedStore->securityProfiles());
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-wildfire-analysis', $this->securityProfileTypes) !== FALSE )
                         $this->objectsToProcess[] = array('store' => $this->pan->WildfirePredefinedStore, 'rules' => $this->pan->WildfirePredefinedStore->securityProfiles());
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-data-filtering', $this->securityProfileTypes) !== FALSE )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DataFilteringPredefinedStore, 'rules' => $this->pan->DataFilteringPredefinedStore->securityProfiles());
 
 
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('url-filtering', $this->securityProfileTypes) !== FALSE )
@@ -227,6 +230,8 @@ class SECURITYPROFILEUTIL extends UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->FileBlockingPredefinedStore, 'rules' => $this->pan->FileBlockingPredefinedStore->securityProfiles());
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-wildfire-analysis', $this->securityProfileTypes) !== FALSE )
                         $this->objectsToProcess[] = array('store' => $this->pan->WildfirePredefinedStore, 'rules' => $this->pan->WildfirePredefinedStore->securityProfiles());
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-data-filtering', $this->securityProfileTypes) !== FALSE )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DataFilteringPredefinedStore, 'rules' => $this->pan->DataFilteringPredefinedStore->securityProfiles());
 
 
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('url-filtering', $this->securityProfileTypes) !== FALSE )
@@ -363,7 +368,8 @@ class SECURITYPROFILEUTIL extends UTIL
             'predefined-vulnerability',
             'predefined-file-blocking',
             'predefined-url-filtering',
-            'predefined-wildfire-analysis'
+            'predefined-wildfire-analysis',
+            'predefined-data-filtering',
             );
         if( !isset(PH::$args['securityprofiletype']) )
         {

@@ -29,7 +29,7 @@ class SecurityProfileStore extends ObjStore
 
     public static $childn = 'SecurityProfile';
 
-    private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url', 'data-filtering');
+    private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url', 'data-filtering', 'predefined-data-filtering');
     private $secprof_fawkes_array = array('virus-and-wildfire-analysis', 'spyware', 'vulnerability', 'file-blocking', 'dns-security', 'url-filtering', 'custom-url-category', 'predefined-url', 'saas-security');
     /** @var DOMElement */
     public $securityProfileRoot;
@@ -64,6 +64,7 @@ class SecurityProfileStore extends ObjStore
         'PredefinedSecurityProfileFileBlocking' => array('name' => 'predefinedFileblocking', 'varName' => 'predefinedFileblockingSecProf', 'xpathRoot' => 'predefined-Fileblocking'),
         'PredefinedSecurityProfileWildfire' => array('name' => 'predefinedWildfire', 'varName' => 'predefinedWildfireSecProf', 'xpathRoot' => 'predefined-Wildfire'),
         'PredefinedSecurityProfileUrlFiltering' => array('name' => 'predefinedURLProfile', 'varName' => 'predefinedUrlFilteringSecProfiles', 'xpathRoot' => 'predefined-url-filtering'),
+        'PredefinedSecurityProfileDataFiltering' => array('name' => 'predefinedDataProfile', 'varName' => 'predefinedDataFilteringSecProfiles', 'xpathRoot' => 'predefined-data-filtering'),
         'PredefinedSecurityProfileVirusAndWildfire' => array('name' => 'predefinedVirusAndWildfire', 'varName' => 'predefinedVirusAndWildfireSecProf', 'xpathRoot' => 'predefined-VirusAndWildfire'),
 
 
@@ -129,6 +130,8 @@ class SecurityProfileStore extends ObjStore
     public static $predefinedWildfireStore = null;
     public static $predefinedUrlFitleringStore = null;
 
+    public static $predefinedDataFilteringStore = null;
+
     public static $predefinedVirusAndWildfireStore = null;
 
     /**
@@ -158,6 +161,20 @@ class SecurityProfileStore extends ObjStore
         self::$predefinedUrlFitleringStore->load_url_filtering_from_predefinedfile();
 
         return self::$predefinedUrlFitleringStore;
+    }
+
+    public static function getDataFilteringPredefinedStore( $owner )
+    {
+        /** @VAR PanoramaConf $owner **/
+        if( self::$predefinedDataFilteringStore !== null )
+            return self::$predefinedDataFilteringStore;
+
+
+        self::$predefinedDataFilteringStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileDataFiltering");
+        self::$predefinedDataFilteringStore->setName('predefined DataFiltering');
+        self::$predefinedDataFilteringStore->load_data_filtering_from_config($owner );
+
+        return self::$predefinedDataFilteringStore;
     }
 
     /**
@@ -235,7 +252,7 @@ class SecurityProfileStore extends ObjStore
 
 
         self::$predefinedWildfireStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileWildfire");
-        self::$predefinedWildfireStore->setName('predefined Wildfire');
+        self::$predefinedWildfireStore->setName('predefined Wildfire-Analysis');
         self::$predefinedWildfireStore->load_wildfire_rules_from_predefinedfile();
 
         return self::$predefinedWildfireStore;
@@ -295,8 +312,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('pan-url-categories'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
@@ -311,13 +328,38 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/url-filtering', $xmlDoc);
         $this->load_predefined_url_filtering_from_domxml($cursor);
 
+    }
+
+    public function load_data_filtering_from_config($owner)
+    {
+        if( isset( $owner->localhostroot ) )
+        {
+            $pluginRoot = DH::findFirstElement('plugins', $owner->localhostroot);
+
+            if( $pluginRoot !== FALSE )
+            {
+                $dataFilteringRoot = DH::findFirstElement('dlp', $pluginRoot);
+
+                if( $dataFilteringRoot !== FALSE )
+                {
+                    $internalRoot = DH::findFirstElement('internal', $dataFilteringRoot);
+                    if( $internalRoot !== FALSE )
+                    {
+                        $dlp_data_profile_Root = DH::findFirstElement('dlp-data-profiles', $internalRoot);
+
+                        if( $dlp_data_profile_Root !== FALSE )
+                            $this->load_predefined_data_filtering_from_domxml($dlp_data_profile_Root);
+                    }
+                }
+            }
+        }
     }
 
     public function load_virus_rules_from_predefinedfile($filename = null)
@@ -327,8 +369,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
@@ -343,8 +385,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
@@ -359,8 +401,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/spyware', $xmlDoc);
@@ -375,8 +417,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/vulnerability', $xmlDoc);
@@ -391,8 +433,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/file-blocking', $xmlDoc);
@@ -407,8 +449,8 @@ class SecurityProfileStore extends ObjStore
             $filename = dirname(__FILE__) . '/predefined.xml';
         }
 
-        $xmlDoc = new DOMDocument();
-        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+        //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
+        $xmlDoc = PH::getPredefinedXmlDoc($filename, array('profiles'));
 
 
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/wildfire-analysis', $xmlDoc);
@@ -463,7 +505,7 @@ class SecurityProfileStore extends ObjStore
                 if( get_class($this->owner) !== "Snippet" )
                 {
                     $attachedSnippets = $this->owner->getAttachedSnippets();
-                    if (count($attachedSnippets) > 1)
+                    if (count($attachedSnippets) > 0)
                     {
                         foreach ($attachedSnippets as $snippet)
                         {
@@ -796,6 +838,45 @@ class SecurityProfileStore extends ObjStore
 
             #DH::DEBUGprintDOMDocument($appx);
             $app = new URLProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_data_filtering_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Data Filtering name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new DataFilteringProfile( $appName, $this );
             $app->load_from_domxml($appx);
 
             #$app = $this->newPredefinedSecurityProfileURL($appName);
@@ -1241,6 +1322,109 @@ class SecurityProfileStore extends ObjStore
         return $f;
     }
 
+    /**
+     * @param AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|FileBlockingProfile|URLProfile $rule
+     * @param string $newName
+     * @return AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|FileBlockingProfile|URLProfile
+     */
+    public function cloneSecurityProfile($object, $newName = null )
+    {
+        if( $newName !== null )
+        {
+            if( !$this->isSPObjectNameAvailable($newName) )
+                derr('this SecurityProfile name is not available: ' . $newName);
+        }
+        else
+            $newName = $this->findAvailableName($object->name(), '', 0);
+
+
+        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|FileBlockingProfile|URLProfile $newRule */
+        $newObject = new $this->type($newName, $this);
+
+        // make sure the target store has an XML root and know its document
+        if( $this->xmlroot === null )
+            $this->createXmlRoot();
+
+        $xml = $object->xmlroot->cloneNode(TRUE);
+
+        // the source may belong to another DOMDocument (e.g. predefined.xml)
+        if( $xml->ownerDocument !== $this->xmlroot->ownerDocument )
+            $xml = $this->xmlroot->ownerDocument->importNode($xml, TRUE);
+
+
+        $newObject->load_from_domxml($xml);
+
+        //trick to avoid name change propagation and errors
+        $newObject->owner = null;
+
+        $newObject->setName($newName);
+
+        // finally add it to the store
+        $this->addSecurityProfile($newObject);
+
+        return $newObject;
+    }
+
+    /**
+     * @param string $base
+     * @param string $suffix
+     * @param integer|string $startCount
+     * @return string
+     */
+    public function findAvailableName($base, $suffix = '', $startCount = 0, $nested = TRUE)
+    {
+        //Todo based on PAN-OS rule name was extended
+        if( $this->owner->version >= 81 )
+            $maxl = 63;
+        else
+            $maxl = 31;
+
+
+        $basel = strlen($base);
+        $suffixl = strlen($suffix);
+        $inc = $startCount;
+        $basePlusSuffixL = $basel + $suffixl;
+
+        while( TRUE )
+        {
+            if( $inc == 0 )
+            {
+                if( $basePlusSuffixL > $maxl )
+                    $newname = substr($base, 0, $basel - $suffixl) . $suffix;
+                else
+                    $newname = $base . $suffix;
+            }
+            else
+            {
+                $incl = strlen(strval($inc));
+
+                if( $basePlusSuffixL + $incl > $maxl )
+                    $newname = substr($base, 0, $basel - $suffixl - $incl) . $suffix . $inc;
+                else
+                    $newname = $base . $suffix . $inc;
+            }
+
+            if( $this->isSPObjectNameAvailable($newname, $nested) )
+                return $newname;
+
+            $inc++;
+        }
+    }
+
+    /**
+     * Check if this name is available (for new rule for example)
+     * @param string $name
+     * @param bool $nested
+     * @return bool
+     */
+    public function isSPObjectNameAvailable($name, $nested = FALSE): bool
+    {
+        if (isset($this->fastNameToIndex[$name])) {
+            return FALSE;
+        }
+
+        return true;
+    }
 
     public function createXmlRoot()
     {
