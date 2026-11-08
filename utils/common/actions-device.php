@@ -2915,7 +2915,8 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
                 $profile->load_from_domxml($node);
 
                 //This is setting the PAN-OS XML snippet to full alert
-                $profile->BestPracticeSet();
+                if( !str_contains( $profile->name(), "Alert" ) )
+                    $profile->BestPracticeSet();
 
                 $profile->owner = null;
                 if( isset($context->arguments['sp-name']) )
