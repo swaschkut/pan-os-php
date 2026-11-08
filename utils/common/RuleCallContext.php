@@ -1741,33 +1741,40 @@ class RuleCallContext extends CallContext
                 {
                     $bp_check = "";
 
-                    #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis"
-                        || $profType == "file-blocking" || $profType == "url-filtering"
-                        || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
-                    )
+                    if( get_class($profile) == "SecurityProfile" )
                     {
-                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
-                        if( !$profile->is_best_practice() )
-                        {
-                            if( $sp_best_practice )
-                                $bp_check .= $bp_NOT_sign;
-                        }
-                        if( !$profile->is_visibility() )
-                        {
-                            if( $sp_visibility )
-                                $bp_check .= $visibility_NOT_sign;
-                        }
-                        if( !$profile->is_adoption() )
-                        {
-                            if( $sp_adoption )
-                                $bp_check .= $adoption_NOT_sign;
-                        }
+                        $profiles[] = $profType . ': [object not found][no check]';
                     }
-                    if( str_contains( $profile->owner->name(), "predefined" ) )
-                        $profiles[] = $profType . ':' . $profile->name()."[predefined]".$bp_check;
                     else
-                        $profiles[] = $profType . ':' . $profile->name().$bp_check;
+                    {
+                        #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis"
+                            || $profType == "file-blocking" || $profType == "url-filtering"
+                            || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                        )
+                        {
+                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+                            if( !$profile->is_best_practice() )
+                            {
+                                if( $sp_best_practice )
+                                    $bp_check .= $bp_NOT_sign;
+                            }
+                            if( !$profile->is_visibility() )
+                            {
+                                if( $sp_visibility )
+                                    $bp_check .= $visibility_NOT_sign;
+                            }
+                            if( !$profile->is_adoption() )
+                            {
+                                if( $sp_adoption )
+                                    $bp_check .= $adoption_NOT_sign;
+                            }
+                        }
+                        if( str_contains( $profile->owner->name(), "predefined" ) )
+                            $profiles[] = $profType . ':' . $profile->name()."[predefined]".$bp_check;
+                        else
+                            $profiles[] = $profType . ':' . $profile->name().$bp_check;
+                    }
                 }
             }
             else
@@ -1867,29 +1874,32 @@ class RuleCallContext extends CallContext
                         || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
                     )
                     {
-                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|FileBlockingProfile|URLProfile */
-                        if( $sp_best_practice && $checkType == "bp" )
+                        if( get_class($profile) == "SecurityProfile" )
                         {
-                            if( !$profile->is_best_practice() )
-                                return self::enclose("N/A", $wrap);
-                            else
-                                return self::enclose($profile->name(), $wrap);
+                            return self::enclose("N/A", $wrap);
                         }
+                        else {
+                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|FileBlockingProfile|URLProfile */
+                            if ($sp_best_practice && $checkType == "bp") {
+                                if (!$profile->is_best_practice())
+                                    return self::enclose("N/A", $wrap);
+                                else
+                                    return self::enclose($profile->name(), $wrap);
+                            }
 
-                        if( $sp_visibility && $checkType == "visible")
-                        {
-                            if( !$profile->is_visibility() )
-                                return self::enclose("N/A", $wrap);
-                            else
-                                return self::enclose($profile->name(), $wrap);
-                        }
+                            if ($sp_visibility && $checkType == "visible") {
+                                if (!$profile->is_visibility())
+                                    return self::enclose("N/A", $wrap);
+                                else
+                                    return self::enclose($profile->name(), $wrap);
+                            }
 
-                        if( $sp_adoption && $checkType == "adoption")
-                        {
-                            if( !$profile->is_adoption() )
-                                return self::enclose("N/A", $wrap);
-                            else
-                                return self::enclose($profile->name(), $wrap);
+                            if ($sp_adoption && $checkType == "adoption") {
+                                if (!$profile->is_adoption())
+                                    return self::enclose("N/A", $wrap);
+                                else
+                                    return self::enclose($profile->name(), $wrap);
+                            }
                         }
                     }
                 }

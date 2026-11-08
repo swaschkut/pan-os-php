@@ -83,6 +83,7 @@ BUGFIX:
 * type=[ike/ipsec] | actions=exporttoexcel - show correct template name
 * class PanoramaConf | optimse XML reading without error out
 * class Address | avoid error out if an address object was not defined well - normally coming from 'set command' or XML API not finalised
+* type=rule actions=exporttohtml:rule.html,visibility|bestpractice | bugfix if found SP is not defined
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
