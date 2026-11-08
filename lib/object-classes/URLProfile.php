@@ -65,6 +65,8 @@ class URLProfile extends SecurityProfile2
 
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
 
+    public $block_array_defined = array();
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -91,6 +93,9 @@ class URLProfile extends SecurityProfile2
         }
 
         $this->name = $name;
+
+        //is is best do defined differnet array per verion???
+        $this->block_array_defined = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
     }
 
     /**
@@ -1438,9 +1443,12 @@ class URLProfile extends SecurityProfile2
 
         $categories = self::ironSkilletCategories( $version );
 
+        //Todo: not working as static!!!!
+        //$this->block_array_defined
+
         // blocked by Outbound-URL (and Exception-URL); every other category is alert
         $block = array_values( array_intersect(
-            array( 'Block', 'command-and-control', 'compromised-website', 'grayware', 'malware', 'phishing', 'ransomware' ),
+            array( 'Block', 'command-and-control', 'compromised-website', 'grayware', 'malware', 'phishing', 'ransomware','scanning-activity' ),
             $categories ) );
         $alert = array_values( array_diff( $categories, $block ) );
 
@@ -1551,7 +1559,7 @@ class URLProfile extends SecurityProfile2
         if( isset($check_array[0]['type']) )
             $block_categories = $check_array[0]['type'];
         else
-            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+            $block_categories = $this->block_array_defined;
 
         $block_xmlnode = DH::findFirstElementOrCreate("block", $this->xmlroot);
         foreach( $block_categories as $block_category )
