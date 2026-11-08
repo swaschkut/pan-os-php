@@ -94,7 +94,7 @@ class URLProfile extends SecurityProfile2
 
         $this->name = $name;
 
-        //is is best do defined differnet array per verion???
+        //is it best to define different array per version???
         $this->block_array_defined = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
     }
 
