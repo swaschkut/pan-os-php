@@ -1,23 +1,7 @@
 CHANGELOG
 
-2.1.61
+2.1.62
 UTIL:
-* type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
-* type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
-* type=securityprofile | introduce actions=clone-predefined-and-change-references
-* type=zone/zone-protection-profile | introduce 'filter=(template.owner is.unused/ template.owner is.unused.recursive / manageddevice.owner is.in.list/manageddevice.owner is.in.file)'
-* type=rule 'filter=(from all.targets.has.from.query subquery1)' 'subquery1=(zpp is.set)'
-* type=rule 'filter=(from targets.has.from.query subquery1)' 'subquery1=!(zpp is.set)' - at least one serial/vsys
-* type=stats | introduce 'zone protection all-targets' (+ calc / percentage): from-zone protected on every serial/vsys the rule is pushed to, rule Target incl. negate honoured
-* type=rule actions=exporttoexcel:file,Visibility | introduce columns 'from-visible-all-targets' and 'from-zone-all-targets' (missing / ambiguous for templates with named vsys)
-* Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
-* type=zone/zone-protection-profile | correct/extend managed.device filter
-* type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
-* type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
-* type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
-* type=zone actions=exporttohtml:file.html | extend with column template-stack
-* type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
-* type=playbook | introduce argument removestagefiles
 * type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
 * introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
 * class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
@@ -48,6 +32,47 @@ UTIL:
 * type=profile profiletype=hip-profile/-object | extend differnet classes to support these object, like common filter, refernceableObject
 
 BUGFIX:
+* bugfix for filter missing GPGatewayTunnel / profile
+* type=profile | general bugfix to support profiletype argument | cleanup
+* type=rule-compare | bugfix related to ancestor-objects-take-precedence yes
+* MERGERENGINE - fix optimisation compare to origin to not crash
+* type=xml-issue | bugfix to keep the value without blank character at pre-/postfix
+* different classes nestedPointOfView - bugfix
+* class SecurityProfileStore | predefined - bugfix for SPG - SecRule - DefaultSecRule - if predefined objects are directly used
+* Zone - ZPP binding | bugfix to read ZPP from Template for a Zone defined in TStack
+* SCM relate optimisation - add missing Stores, advanced_routing
+* TemplateStack to Tempalte hierarchy and calculation
+* type=[ike/ipsec] | actions=exporttoexcel - show correct template name
+* class PanoramaConf | optimse XML reading without error out
+* class Address | avoid error out if an address object was not defined well - normally coming from 'set command' or XML API not finalised
+* type=rule actions=exporttohtml:rule.html,visibility|bestpractice | bugfix if found SP is not defined
+
+GENERAL:
+* global change from iron-skillet files to XML snippets available in specific object classes
+* remove all ironskilet files and implementation
+* class URLProfile | single path for all version as categories are coming form predefined
+
+
+2.1.61 (20261108)
+UTIL:
+* type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
+* type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
+* type=securityprofile | introduce actions=clone-predefined-and-change-references
+* type=zone/zone-protection-profile | introduce 'filter=(template.owner is.unused/ template.owner is.unused.recursive / manageddevice.owner is.in.list/manageddevice.owner is.in.file)'
+* type=rule 'filter=(from all.targets.has.from.query subquery1)' 'subquery1=(zpp is.set)'
+* type=rule 'filter=(from targets.has.from.query subquery1)' 'subquery1=!(zpp is.set)' - at least one serial/vsys
+* type=stats | introduce 'zone protection all-targets' (+ calc / percentage): from-zone protected on every serial/vsys the rule is pushed to, rule Target incl. negate honoured
+* type=rule actions=exporttoexcel:file,Visibility | introduce columns 'from-visible-all-targets' and 'from-zone-all-targets' (missing / ambiguous for templates with named vsys)
+* Address/ServiceCommon type=address/service actions=removewhereused - Feature Request: removewhereused - delete empty group
+* type=zone/zone-protection-profile | correct/extend managed.device filter
+* type=device | introduce 'filter=(template manageddevice.all.in.file / .in.list XYZ)'
+* type=device/zone/zpp | introduce filter manageddevice.all.with-no-dg
+* type=rule actions=exporttohtml:rule.html,hitcount | extend with additional column - hit-count-per-firewall
+* type=zone actions=exporttohtml:file.html | extend with column template-stack
+* type=device/zone/zone-protection-profile | new filter manageddevice with-no-dg
+* type=playbook | introduce argument removestagefiles
+
+BUGFIX:
 * class SecurityProfileStore | bugfix related to plugin/dlp - if not set
 * type=rule | bugfix for 'filter=(target has XYZ)' - to get also these rules where negation is used, but serial is not mentioned
 * class VirtualSystem | fix related to SharedGateway to NOT create default-security-rule in Panorama Template
@@ -70,28 +95,11 @@ BUGFIX:
 * type=playbook - Stop the playbook at a failed step whose output the next step reads.
 * type=playbook - Your fix for the repeated where used entries makes playbook steps that run in the main process about 6× slower; a lighter fix gives the same result.
 * type=playbook | class PH.php - dropPredefinedReferences
-* bugfix for filter missing GPGatewayTunnel / profile
-* type=profile | general bugfix to support profiletype argument | cleanup
-* type=rule-compare | bugfix related to ancestor-objects-take-precedence yes
-* MERGERENGINE - fix optimisation compare to origin to not crash
-* type=xml-issue | bugfix to keep the value without blank character at pre-/postfix
-* different classes nestedPointOfView - bugfix
-* class SecurityProfileStore | predefined - bugfix for SPG - SecRule - DefaultSecRule - if predefined objects are directly used
-* Zone - ZPP binding | bugfix to read ZPP from Template for a Zone defined in TStack
-* SCM relate optimisation - add missing Stores, advanced_routing
-* TemplateStack to Tempalte hierarchy and calculation
-* type=[ike/ipsec] | actions=exporttoexcel - show correct template name
-* class PanoramaConf | optimse XML reading without error out
-* class Address | avoid error out if an address object was not defined well - normally coming from 'set command' or XML API not finalised
-* type=rule actions=exporttohtml:rule.html,visibility|bestpractice | bugfix if found SP is not defined
 
 GENERAL:
 * update Device App-ID to version: 9161-10297
 * update Device App-ID to version: 9165-10321
 * update Device App-ID to version: 9167-10330
-* global change from iron-skillet files to XML snippets available in specific object classes
-* remove all ironskilet files and implementation
-* class URLProfile | single path for all version as categories are coming form predefined
 
 
 2.1.60 (20261021)
