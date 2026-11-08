@@ -44,8 +44,15 @@ SecurityProfileCallContext::$supportedActions['delete'] = array(
             #PH::ACTIONstatus( $context, "SKIPPED", $string );
             #return;
         }
+        elseif( str_contains( $object->owner->name(), "redefined" ) )
+        {
+            $string = "predefined object of class ".get_class($object)." can not be deleted";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
         elseif( get_class( $object ) === "PredefinedSecurityProfileURL" )
         {
+            //already covered one above
             $string = "object of class PredefinedSecurityProfileURL can not be deleted";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
@@ -81,8 +88,15 @@ SecurityProfileCallContext::$supportedActions['delete-force'] = array(
             #PH::ACTIONstatus( $context, "SKIPPED", $string );
             #return;
         }
+        elseif( str_contains( $object->owner->name(), "redefined" ) )
+        {
+            $string = "predefined object of class ".get_class($object)." can not be deleted";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
         elseif( get_class( $object ) === "PredefinedSecurityProfileURL" )
         {
+            //already covered one above
             $string = "object of class PredefinedSecurityProfileURL can not be deleted";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
