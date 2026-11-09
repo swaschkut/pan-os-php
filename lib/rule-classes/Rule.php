@@ -2797,7 +2797,7 @@ class Rule
                     if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
                     {
                         /** @var AntiVirusProfile $profile */
-                        if (is_object($profile))
+                        if( is_object($profile) && get_class($profile) !== "SecurityProfile" )
                         {
                             if ($profile->is_adoption())
                                 $bp_set = TRUE;
@@ -2806,7 +2806,11 @@ class Rule
                         }
                         else
                         {
-                            mwarning("BP SPG check2 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            if( is_object($profile) && get_class($profile) == "SecurityProfile" )
+                                $profileName = "[class SecurityProfile]";
+                            else
+                                $profileName = $profile;
+                            mwarning("BP SPG check3 not possible - SecurityProfile type: " . $type . " name '" . $profileName . "' not found", null, false);
                             return FALSE;
                         }
                     }
