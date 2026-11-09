@@ -2684,7 +2684,7 @@ class Rule
                         }
                         else
                         {
-                            if( get_class($profile) == "SecurityProfile" )
+                            if( is_object($profile) && get_class($profile) == "SecurityProfile" )
                                 $profileName = "[class SecurityProfile]";
                             else
                                 $profileName = $profile;
@@ -2745,7 +2745,7 @@ class Rule
                         }
                         else
                         {
-                            if( get_class($profile) == "SecurityProfile" )
+                            if( is_object($profile) && get_class($profile) == "SecurityProfile" )
                                 $profileName = "[class SecurityProfile]";
                             else
                                 $profileName = $profile;
