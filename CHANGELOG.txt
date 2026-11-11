@@ -97,6 +97,7 @@ BUGFIX:
 * type=playbook - Stop the playbook at a failed step whose output the next step reads.
 * type=playbook - Your fix for the repeated where used entries makes playbook steps that run in the main process about 6× slower; a lighter fix gives the same result.
 * type=playbook | class PH.php - dropPredefinedReferences
+* class Vulnerability/Anti-Spyware | correction if BP JSON file has no visibility/best-practice setting
 
 GENERAL:
 * update Device App-ID to version: 9161-10297

@@ -66,6 +66,13 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
+        if( count( ThreatPolicy::checkedSeverities( $check_array ) ) == 0 )
+            return null;
+        // 'any' listed: every severity is asked for
+        if( in_array( 'any', $check_array['severity'], TRUE ) )
+            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
+
         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
@@ -117,6 +124,13 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function check_visibility_json( $check_array )
     {
+        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
+        if( count( ThreatPolicy::checkedSeverities( $check_array ) ) == 0 )
+            return null;
+        // 'any' listed: every severity is asked for
+        if( in_array( 'any', $check_array['severity'], TRUE ) )
+            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
+
         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
@@ -154,7 +168,8 @@ class ThreatPolicySpyware extends ThreatPolicy
     {
         $check_array = $this->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
         $bestpractise = $this->check_bp_json( $check_array );
-
+        if( $bestpractise === null )
+            return null;     // N/A: not asked for by the BP / visibility JSON
         if ($bestpractise == FALSE)
             return FALSE;
         else
@@ -165,7 +180,8 @@ class ThreatPolicySpyware extends ThreatPolicy
     {
         $check_array = $this->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
         $bestpractise = $this->check_visibility_json( $check_array );
-
+        if( $bestpractise === null )
+            return null;     // N/A: not asked for by the BP / visibility JSON
         if ($bestpractise == FALSE)
             return FALSE;
         else
