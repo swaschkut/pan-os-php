@@ -896,7 +896,10 @@ class RuleCallContext extends CallContext
                     return self::enclose('');
             }
 
-            if( $rule->SP_isBestPractice() === null )
+            $tmp_check = $rule->SP_isBestPractice();
+            if( $tmp_check === null && !$rule->securityProfileIsBlank() )
+                return self::enclose('[N/A]');      // profiles set, none of them checked by the BP JSON
+            if( $tmp_check === null )
             {
                 if( $rule->action() == "allow" )
                     return self::enclose($bp_text_no);
@@ -986,12 +989,12 @@ class RuleCallContext extends CallContext
                         )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
-                            if( !$profile->is_best_practice() )
+                            if( $profile->is_best_practice() === FALSE )
                             {
                                 if( $sp_best_practice )
                                     $bp_check .= $bp_NOT_sign;
                             }
-                            if( !$profile->is_visibility() )
+                            if( $profile->is_visibility() === FALSE )
                             {
                                 if( $sp_visibility )
                                     $bp_check .= $visibility_NOT_sign;
@@ -1030,7 +1033,10 @@ class RuleCallContext extends CallContext
                     return self::enclose('');
             }
 
-            if( $rule->SP_isVisibility() === null )
+            $tmp_check = $rule->SP_isVisibility();
+            if( $tmp_check === null && !$rule->securityProfileIsBlank() )
+                return self::enclose('[N/A]');      // profiles set, none of them checked by the BP JSON
+            if( $tmp_check === null )
             {
                 if( $rule->action() == "allow" )
                     return self::enclose($bp_text_no);
@@ -1754,12 +1760,12 @@ class RuleCallContext extends CallContext
                         )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
-                            if( !$profile->is_best_practice() )
+                            if( $profile->is_best_practice() === FALSE )
                             {
                                 if( $sp_best_practice )
                                     $bp_check .= $bp_NOT_sign;
                             }
-                            if( !$profile->is_visibility() )
+                            if( $profile->is_visibility() === FALSE )
                             {
                                 if( $sp_visibility )
                                     $bp_check .= $visibility_NOT_sign;

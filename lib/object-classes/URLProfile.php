@@ -1330,26 +1330,12 @@ class URLProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->url_siteaccess_best_practice() !== FALSE
-            && $this->url_usercredentialsubmission_best_practice() !== FALSE
-            && $this->url_usercredentialsubmission_best_practice_tab() !== FALSE
-            && $this->url_mica_engine_best_practice() !== FALSE
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_siteaccess_best_practice(), $this->url_usercredentialsubmission_best_practice(), $this->url_usercredentialsubmission_best_practice_tab(), $this->url_mica_engine_best_practice() ) );
     }
 
     public function is_visibility()
     {
-        if( $this->url_siteaccess_visibility() !== FALSE
-            && $this->url_usercredentialsubmission_visibility() !== FALSE
-            && $this->url_usercredentialsubmission_visibility_tab() !== FALSE
-            && $this->url_mica_engine_visibility() !== FALSE
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_siteaccess_visibility(), $this->url_usercredentialsubmission_visibility(), $this->url_usercredentialsubmission_visibility_tab(), $this->url_mica_engine_visibility() ) );
     }
 
     public function is_adoption()

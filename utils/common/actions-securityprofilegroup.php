@@ -345,14 +345,20 @@ SecurityProfileGroupCallContext::$commonActionFunctions['html-add-name'] = array
                 {
                     if ($bestPractice)
                     {
-                        if ($profile->is_best_practice())
+                        $tmp_check = $profile->is_best_practice();
+                        if( $tmp_check === null )
+                            $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                        elseif( $tmp_check )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                     if ($visibility)
                     {
-                        if ($profile->is_visibility())
+                        $tmp_check = $profile->is_visibility();
+                        if( $tmp_check === null )
+                            $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                        elseif( $tmp_check )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
@@ -571,13 +577,19 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($object->name());
 
                 if ($bestPractice) {
-                    if ($object->is_best_practice())
+                    $tmp_check = $object->is_best_practice();
+                    if( $tmp_check === null )
+                        $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                    elseif( $tmp_check )
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);
                 }
                 if ($visibility) {
-                    if ($object->is_visibility())
+                    $tmp_check = $object->is_visibility();
+                    if( $tmp_check === null )
+                        $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                    elseif( $tmp_check )
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);

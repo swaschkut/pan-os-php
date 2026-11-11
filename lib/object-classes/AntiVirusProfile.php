@@ -144,53 +144,27 @@ class AntiVirusProfile extends SecurityProfile2
 
 
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_best_practice() !== FALSE
-                && $this->av_wildfireaction_best_practice() !== FALSE
-                && $this->av_mlavaction_best_practice() !== FALSE
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
         }
         else
         {
-            if ($this->av_action_best_practice() !== FALSE
-                && $this->av_wildfireaction_best_practice() !== FALSE
-                && $this->av_mlavaction_best_practice() !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
         }
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_visibility() !== FALSE
-                && $this->av_wildfireaction_visibility() !== FALSE
-                && $this->av_mlavaction_visibility() !== FALSE
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
         }
         else
         {
-            if ($this->av_action_visibility() !== FALSE
-                && $this->av_wildfireaction_visibility() !== FALSE
-                && $this->av_mlavaction_visibility() !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
         }
     }
 

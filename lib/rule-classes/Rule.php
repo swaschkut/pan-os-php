@@ -2660,10 +2660,7 @@ class Rule
                 return FALSE;
             }
 
-            if( $group->is_best_practice() )
-                return TRUE;
-            else
-                return FALSE;
+            return $group->is_best_practice();     // null: N/A
         }
         else
         {
@@ -2671,16 +2668,19 @@ class Rule
             if( count($profiles) > 0 )
             {
                 $bp_set = FALSE;
+                $checked = FALSE;
                 foreach ($profiles as $type => $profile) {
                     if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
                     {
                         /** @var AntiVirusProfile $profile */
                         if( is_object($profile) && get_class($profile) !== "SecurityProfile" )
                         {
-                            if ($profile->is_best_practice())
-                                $bp_set = TRUE;
-                            else
+                            $ret = $profile->is_best_practice();
+                            if( $ret === FALSE )
                                 return FALSE;
+                            $bp_set = TRUE;     // null: N/A, does not fail
+                            if( $ret === TRUE )
+                                $checked = TRUE;
                         }
                         else
                         {
@@ -2701,7 +2701,7 @@ class Rule
                     return FALSE;
 
                 if ($bp_set)
-                    return TRUE;
+                    return $checked ? TRUE : null;     // every profile N/A: N/A
                 else
                     return FALSE;
             }
@@ -2720,10 +2720,9 @@ class Rule
             /** @var SecurityProfileGroup $group */
             $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
 
-            if( $group !== null && $group->is_visibility() )
-                return TRUE;
-            else
+            if( $group === null )
                 return FALSE;
+            return $group->is_visibility();     // null: N/A
         }
         else
         {
@@ -2731,6 +2730,7 @@ class Rule
             if( count($profiles) > 0 )
             {
                 $bp_set = FALSE;
+                $checked = FALSE;
                 foreach ($profiles as $type => $profile)
                 {
                     if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
@@ -2738,10 +2738,12 @@ class Rule
                         /** @var AntiVirusProfile $profile */
                         if( is_object($profile) && get_class($profile) !== "SecurityProfile" )
                         {
-                            if ($profile->is_visibility())
-                                $bp_set = TRUE;
-                            else
+                            $ret = $profile->is_visibility();
+                            if( $ret === FALSE )
                                 return FALSE;
+                            $bp_set = TRUE;     // null: N/A, does not fail
+                            if( $ret === TRUE )
+                                $checked = TRUE;
                         }
                         else
                         {
@@ -2762,7 +2764,7 @@ class Rule
                     return FALSE;
 
                 if ($bp_set)
-                    return TRUE;
+                    return $checked ? TRUE : null;     // every profile N/A: N/A
                 else
                     return FALSE;
             }

@@ -304,20 +304,12 @@ class FileBlockingProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->fileblocking_rules_best_practice() !== FALSE
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->fileblocking_rules_best_practice() ) );
     }
 
     public function is_visibility()
     {
-        if( $this->fileblocking_rules_visibility() !== FALSE
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->fileblocking_rules_visibility() ) );
     }
 
     public function is_adoption()

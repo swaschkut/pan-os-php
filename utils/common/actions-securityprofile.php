@@ -714,18 +714,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -741,18 +735,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice()  )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if ($object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -767,18 +755,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice()  )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if ($object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -793,18 +775,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -819,18 +795,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -845,18 +815,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -871,18 +835,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -897,18 +855,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_best_practice(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
-                                $lines .= $context->encloseFunction($bp_text_yes);
-                            else
-                                $lines .= $context->encloseFunction($bp_text_no);
+                            $lines .= $context->encloseFunction( $bpCell( $object->is_visibility(), $bp_text_yes, $bp_text_no ) );
                         }
 
                         if( $adoption )
@@ -2175,17 +2127,32 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
             }
 
-            if( $object->is_visibility() )
+            $tmp_check = $object->is_visibility();
+            if( $tmp_check === null )     // not listed in the BP JSON: not checked
+            {
+                $info['visible'] = 'N/A';
+            }
+            elseif( $tmp_check )
                 $info['visible'] = $info['count'];
             else
                 $info['visible'] = 0;
 
-            if( $object->is_best_practice() )
+            $tmp_check = $object->is_best_practice();
+            if( $tmp_check === null )     // not listed in the BP JSON: not checked
+            {
+                $info['bp_pass'] = 'N/A';
+            }
+            elseif( $tmp_check )
                 $info['bp_pass'] = $info['count'];
             else
                 $info['bp_pass'] = 0;
 
-            if( $object->is_adoption() )
+            $tmp_check = $object->is_adoption();
+            if( $tmp_check === null )     // not listed in the BP JSON: not checked
+            {
+                $info['adopted'] = 'N/A';
+            }
+            elseif( $tmp_check )
                 $info['adopted'] = $info['count'];
             else
                 $info['adopted'] = 0;
@@ -2205,7 +2172,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $info['bp_av_inline_ml_detail']             = 'BP Compliant';
             if( get_class($object) == "AntiVirusProfile" || get_class($object) == "VirusAndWildfireProfile")
             {
-                if( $object->av_actions_visibility() )
+                $tmp_check = $object->av_actions_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['actions'] = 'N/A';
+                    $info['actions_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['actions'] = $info['count'];
                 else
                 {
@@ -2224,7 +2197,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
 
 
-                if( $object->av_actions_best_practice() )
+                $tmp_check = $object->av_actions_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_actions'] = 'N/A';
+                    $info['bp_actions_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_actions'] = $info['count'];
                 else
                 {
@@ -2248,7 +2227,26 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 || get_class($object) == "VirusAndWildfireProfile"
             )
             {
-                if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
+                $tmp_check = $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    if (get_class($object) == "AntiVirusProfile")
+                    {
+                        $info['av_inline_ml'] = 'N/A';
+                        $info['av_inline_ml_detail'] = 'N/A';
+                    }
+                    else
+                    {
+                        $info['inline_ml'] = 'N/A';
+                        $info['inline_ml_detail'] = 'N/A';
+                        if (get_class($object) == "VirusAndWildfireProfile")
+                        {
+                            $info['av_inline_ml'] = 'N/A';
+                            $info['av_inline_ml_detail'] = 'N/A';
+                        }
+                    }
+                }
+                elseif( $tmp_check )
                 {
                     if (get_class($object) == "AntiVirusProfile")
                         $info['av_inline_ml'] = $info['count'];
@@ -2309,7 +2307,26 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 }
 
-                if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
+                $tmp_check = $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    if (get_class($object) == "AntiVirusProfile")
+                    {
+                        $info['bp_av_inline_ml'] = 'N/A';
+                        $info['bp_av_inline_ml_detail'] = 'N/A';
+                    }
+                    else
+                    {
+                        $info['bp_inline_ml'] = 'N/A';
+                        $info['bp_inline_ml_detail'] = 'N/A';
+                        if (get_class($object) == "VirusAndWildfireProfile")
+                        {
+                            $info['bp_av_inline_ml'] = 'N/A';
+                            $info['bp_av_inline_ml_detail'] = 'N/A';
+                        }
+                    }
+                }
+                elseif( $tmp_check )
                 {
                     if (get_class($object) == "AntiVirusProfile")
                         $info['bp_av_inline_ml'] = $info['count'];
@@ -2376,7 +2393,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $info['bp_rules_detail']             = 'BP Compliant';
             if( get_class($object) == "AntiSpywareProfile" )
             {
-                if(  $object->spyware_rules_visibility() )
+                $tmp_check = $object->spyware_rules_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['rules'] = 'N/A';
+                    $info['rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['rules'] = $info['count'];
                 else
                 {
@@ -2397,7 +2420,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $info['rules_detail'] = "[missing rules]";
                 }
 
-                if(  $object->spyware_rules_best_practice() )
+                $tmp_check = $object->spyware_rules_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_rules'] = 'N/A';
+                    $info['bp_rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_rules'] = $info['count'];
                 else
                 {
@@ -2421,7 +2450,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             if( get_class($object) == "VulnerabilityProfile" )
             {
-                if( $object->vulnerability_rules_visibility() )
+                $tmp_check = $object->vulnerability_rules_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['rules'] = 'N/A';
+                    $info['rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['rules'] = $info['count'];
                 else
                 {
@@ -2442,7 +2477,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $info['rules_detail'] = "[missing rules]";
                 }
 
-                if(  $object->vulnerability_rules_best_practice() )
+                $tmp_check = $object->vulnerability_rules_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_rules'] = 'N/A';
+                    $info['bp_rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_rules'] = $info['count'];
                 else
                 {
@@ -2466,7 +2507,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             if( get_class($object) == "FileBlockingProfile" )
             {
-                if( $object->fileblocking_rules_visibility() )
+                $tmp_check = $object->fileblocking_rules_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['rules'] = 'N/A';
+                    $info['rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['rules'] = $info['count'];
                 else
                 {
@@ -2487,7 +2534,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $info['rules_detail'] = "[missing rules]";
                 }
 
-                if(  $object->fileblocking_rules_best_practice() )
+                $tmp_check = $object->fileblocking_rules_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_rules'] = 'N/A';
+                    $info['bp_rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_rules'] = $info['count'];
                 else
                 {
@@ -2511,7 +2564,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             if( get_class($object) == "WildfireProfile" || get_class($object) == "VirusAndWildfireProfile")
             {
-                if( $object->wildfire_rules_visibility() )
+                $tmp_check = $object->wildfire_rules_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['rules'] = 'N/A';
+                    $info['rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['rules'] = $info['count'];
                 else
                 {
@@ -2532,7 +2591,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $info['rules_detail'] = "[missing rules]";
                 }
 
-                if(  $object->wildfire_rules_best_practice() )
+                $tmp_check = $object->wildfire_rules_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_rules'] = 'N/A';
+                    $info['bp_rules_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_rules'] = $info['count'];
                 else
                 {
@@ -2568,7 +2633,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $info['bp_adns_security_detail']             = 'BP Compliant';
             if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile" )
             {
-                if( $object->spyware_dnslist_visibility() )
+                $tmp_check = $object->spyware_dnslist_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['dns_lists'] = 'N/A';
+                    $info['dns_lists_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['dns_lists'] = $info['count'];
                 else
                 {
@@ -2582,7 +2653,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
 
 
-                if( $object->spyware_dnslist_best_practice() )
+                $tmp_check = $object->spyware_dnslist_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_dns_lists'] = 'N/A';
+                    $info['bp_dns_lists_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_dns_lists'] = $info['count'];
                 else
                 {
@@ -2598,7 +2675,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile" )
             {
-                if( $object->spyware_dns_security_visibility() )
+                $tmp_check = $object->spyware_dns_security_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['dns_security'] = 'N/A';
+                    $info['dns_security_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['dns_security'] = $info['count'];
                 else
                 {
@@ -2612,7 +2695,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
 
 
-                if( $object->spyware_dns_security_best_practice() )
+                $tmp_check = $object->spyware_dns_security_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_dns_security'] = 'N/A';
+                    $info['bp_dns_security_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_dns_security'] = $info['count'];
                 else
                 {
@@ -2626,7 +2715,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
 
 
-                if( $object->spyware_advanced_dns_security_visibility() )
+                $tmp_check = $object->spyware_advanced_dns_security_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['adns_security'] = 'N/A';
+                    $info['adns_security_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['adns_security'] = $info['count'];
                 else
                 {
@@ -2640,7 +2735,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
 
 
-                if( $object->spyware_advanced_dns_security_best_practice() )
+                $tmp_check = $object->spyware_advanced_dns_security_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_adns_security'] = 'N/A';
+                    $info['bp_adns_security_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_adns_security'] = $info['count'];
                 else
                 {
@@ -2669,7 +2770,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $info['bp_user_credential_detail']   = "Compliant";
             if( get_class($object) == "URLProfile" )
             {
-                if( $object->url_siteaccess_visibility())
+                $tmp_check = $object->url_siteaccess_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['site_access'] = 'N/A';
+                    $info['site_access_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['site_access'] = $info['count'];
                 else
                 {
@@ -2678,7 +2785,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['site_access_detail'] = implode("\n", $tmp_array);
                 }
 
-                if(  $object->url_usercredentialsubmission_visibility() )
+                $tmp_check = $object->url_usercredentialsubmission_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['user_credential'] = 'N/A';
+                    $info['user_credential_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['user_credential'] = $info['count'];
                 else
                 {
@@ -2687,7 +2800,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['user_credential_detail'] = implode("\n", $tmp_array);
                 }
 
-                if(  $object->url_usercredentialsubmission_visibility_tab())
+                $tmp_check = $object->url_usercredentialsubmission_visibility_tab();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['user_credential_tab'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['user_credential_tab'] = $info['count'];
                 else
                 {
@@ -2697,7 +2815,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['user_credential_detail'] .= implode("\n", $tmp_array);
                 }
 
-                if(  $object->url_siteaccess_best_practice())
+                $tmp_check = $object->url_siteaccess_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_site_access'] = 'N/A';
+                    $info['bp_site_access_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_site_access'] = $info['count'];
                 else
                 {
@@ -2706,7 +2830,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['bp_site_access_detail'] = implode("\n", $tmp_array);
                 }
 
-                if(  $object->url_usercredentialsubmission_best_practice() )
+                $tmp_check = $object->url_usercredentialsubmission_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_user_credential'] = 'N/A';
+                    $info['bp_user_credential_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_user_credential'] = $info['count'];
                 else
                 {
@@ -2715,7 +2845,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['bp_user_credential_detail'] = implode("\n", $tmp_array);
                 }
 
-                if(  $object->url_usercredentialsubmission_best_practice_tab())
+                $tmp_check = $object->url_usercredentialsubmission_best_practice_tab();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_user_credential_tab'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_user_credential_tab'] = $info['count'];
                 else
                 {
@@ -2726,7 +2861,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['bp_user_credential_detail'] .= implode("\n", $tmp_array);
                 }
 
-                if( $object->url_mica_engine_visibility())
+                $tmp_check = $object->url_mica_engine_visibility();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['inline_ml'] = 'N/A';
+                    $info['inline_ml_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['inline_ml'] = $info['count'];
                 else
                 {
@@ -2742,7 +2883,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
 
 
-                if( $object->url_mica_engine_best_practice() )
+                $tmp_check = $object->url_mica_engine_best_practice();
+                if( $tmp_check === null )     // not listed in the BP JSON: not checked
+                {
+                    $info['bp_inline_ml'] = 'N/A';
+                    $info['bp_inline_ml_detail'] = 'N/A';
+                }
+                elseif( $tmp_check )
                     $info['bp_inline_ml'] = $info['count'];
                 else
                 {

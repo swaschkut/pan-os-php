@@ -631,6 +631,7 @@ class SecurityProfileGroup
 
     public function is_best_practice()
     {
+        $checked = FALSE;
         //Todo: continue extending check for URL/FB/WF aso.
         $bp_av_set = false;
         $bp_as_set = false;
@@ -647,10 +648,12 @@ class SecurityProfileGroup
                 $profile = $this->secprofProfiles_obj['virus'];
             if( is_object($profile) )
             {
-                if ($profile->is_best_practice())
-                    $bp_av_set = TRUE;
-                else
+                $ret = $profile->is_best_practice();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_av_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -669,10 +672,12 @@ class SecurityProfileGroup
                 $profile = $this->secprofProfiles_obj['spyware'];
             if( is_object($profile) )
             {
-                if ($profile->is_best_practice())
-                    $bp_as_set = TRUE;
-                else
+                $ret = $profile->is_best_practice();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_as_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -691,10 +696,12 @@ class SecurityProfileGroup
                 $profile = $this->secprofProfiles_obj['vulnerability'];
             if( is_object($profile) )
             {
-                if ($profile->is_best_practice())
-                    $bp_vp_set = TRUE;
-                else
+                $ret = $profile->is_best_practice();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_vp_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -710,10 +717,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['url-filtering'];
             if( is_object($profile) )
             {
-                if ($profile->is_best_practice())
-                    $bp_url_set = TRUE;
-                else
+                $ret = $profile->is_best_practice();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_url_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -728,10 +737,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['file-blocking'];
             if( is_object($profile) )
             {
-                if ($profile->is_best_practice() )
-                    $bp_fb_set = TRUE;
-                else
+                $ret = $profile->is_best_practice();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_fb_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -746,10 +757,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['wildfire-analysis'];
             if( is_object($profile) )
             {
-                if ($profile->is_best_practice())
-                    $bp_wf_set = TRUE;
-                else
+                $ret = $profile->is_best_practice();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_wf_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -759,13 +772,14 @@ class SecurityProfileGroup
         }
 
         if( $bp_av_set && $bp_as_set && $bp_vp_set && $bp_url_set && $bp_fb_set && $bp_wf_set )
-            return TRUE;
+            return $checked ? TRUE : null;     // every profile N/A: N/A
         else
             return FALSE;
     }
 
     public function is_visibility()
     {
+        $checked = FALSE;
         //Todo: continue implementing more checks URL/WF/FB aso.
         $bp_av_set = false;
         $bp_as_set = false;
@@ -784,10 +798,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['virus'];
             if( is_object($profile) )
             {
-                if ($profile->is_visibility())
-                    $bp_av_set = TRUE;
-                else
+                $ret = $profile->is_visibility();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_av_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -806,10 +822,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['spyware'];
             if( is_object($profile) )
             {
-                if ($profile->is_visibility())
-                    $bp_as_set = TRUE;
-                else
+                $ret = $profile->is_visibility();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_as_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -828,10 +846,12 @@ class SecurityProfileGroup
                 $profile = $this->secprofProfiles_obj['vulnerability'];
             if( is_object($profile) )
             {
-                if ($profile->is_visibility())
-                    $bp_vp_set = TRUE;
-                else
+                $ret = $profile->is_visibility();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_vp_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -847,10 +867,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['url-filtering'];
             if( is_object($profile) )
             {
-                if ($profile->is_visibility())
-                    $bp_url_set = TRUE;
-                else
+                $ret = $profile->is_visibility();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_url_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -865,10 +887,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['file-blocking'];
             if( is_object($profile) )
             {
-                if ($profile->is_visibility())
-                    $bp_fb_set = TRUE;
-                else
+                $ret = $profile->is_visibility();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_fb_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -883,10 +907,12 @@ class SecurityProfileGroup
             $profile = $this->secprofProfiles_obj['wildfire-analysis'];
             if( is_object($profile) )
             {
-                if ($profile->is_visibility())
-                    $bp_wf_set = TRUE;
-                else
+                $ret = $profile->is_visibility();
+                if( $ret === FALSE )
                     return FALSE;
+                $bp_wf_set = TRUE;     // null: N/A, does not fail
+                if( $ret === TRUE )
+                    $checked = TRUE;
             }
             else
             {
@@ -896,7 +922,7 @@ class SecurityProfileGroup
         }
 
         if( $bp_av_set && $bp_as_set && $bp_vp_set && $bp_url_set && $bp_fb_set && $bp_wf_set )
-            return TRUE;
+            return $checked ? TRUE : null;     // every profile N/A: N/A
         else
             return FALSE;
     }

@@ -1677,3 +1677,61 @@ RQuery::$defaultFilters['securityprofile']['device']['operators']['is.buckbeak']
     'arg' => FALSE
 );
 // </editor-fold>
+/*
+ * '<field> is.visibility.na' / '<field> is.best-practice.na': the check returns null for a profile of the field's
+ * type - the BP JSON lists nothing to check (N/A). Used by the BP statistics to leave such rules out of the count.
+ * The operators wrap 'is.visibility' / 'is.best-practice' of the same field, so the result is the same code.
+ */
+$bp_na_types = array(
+    'cloud-inline-analysis' => array( 'spyware', 'vulnerability', 'virus', 'wildfire' ),
+    'av.action' => array( 'virus', 'virus-and-wildfire-analysis' ),
+    'av.wildfire-action' => array( 'virus', 'virus-and-wildfire-analysis' ),
+    'av.mlav-action' => array( 'virus', 'virus-and-wildfire-analysis' ),
+    'av.actions' => array( 'virus', 'virus-and-wildfire-analysis' ),
+    'av.mica-engine' => array( 'virus', 'virus-and-wildfire-analysis' ),
+    'av' => array( 'virus', 'virus-and-wildfire-analysis' ),
+    'as.mica-engine' => array( 'spyware' ),
+    'as.rules' => array( 'spyware' ),
+    'as' => array( 'spyware' ),
+    'vp.mica-engine' => array( 'vulnerability' ),
+    'vp.rules' => array( 'vulnerability' ),
+    'vp' => array( 'vulnerability' ),
+    'dns-list' => array( 'spyware', 'dns-security' ),
+    'dns-security' => array( 'spyware', 'dns-security' ),
+    'wf.rules' => array( 'wildfire', 'virus-and-wildfire-analysis' ),
+    'wf.mica-engine' => array( 'wildfire', 'virus-and-wildfire-analysis' ),
+    'wf' => array( 'wildfire', 'virus-and-wildfire-analysis' ),
+    'avwf' => array( 'virus-and-wildfire-analysis' ),
+    'dnssec' => array( 'dns-security' ),
+    'fb.rules' => array( 'file-blocking' ),
+    'fb' => array( 'file-blocking' ),
+    'df' => array( 'data-filtering' ),
+    'url' => array( 'url-filtering' ),
+    'url.user-credential-detection' => array( 'url-filtering' ),
+    'url.site-access' => array( 'url-filtering' ),
+    'url.mica-engine' => array( 'url-filtering' ),
+);
+foreach( $bp_na_types as $bp_na_field => $bp_na_secprof_types )
+{
+    foreach( array( 'is.visibility', 'is.best-practice' ) as $bp_na_operator )
+    {
+        if( !isset( RQuery::$defaultFilters['securityprofile'][$bp_na_field]['operators'][$bp_na_operator]['Function'] ) )
+            continue;
+        $bp_na_function = RQuery::$defaultFilters['securityprofile'][$bp_na_field]['operators'][$bp_na_operator]['Function'];
+
+        RQuery::$defaultFilters['securityprofile'][$bp_na_field]['operators'][$bp_na_operator.'.na'] = array(
+            'Function' => function (SecurityProfileRQueryContext $context) use ( $bp_na_function, $bp_na_secprof_types ) {
+                $object = $context->object;
+
+                // a profile of another type: the check does not apply to it (that is not N/A)
+                if( is_string($object) || !isset($object->secprof_type) || !in_array( $object->secprof_type, $bp_na_secprof_types, TRUE ) )
+                    return FALSE;
+
+                return $bp_na_function( $context ) === null;
+            },
+            'arg' => false,
+            'help' => "N/A: the BP JSON lists nothing to check for this profile ('".$bp_na_operator."' returns null); securityprofiletype=".implode( ",", $bp_na_secprof_types )
+        );
+    }
+}
+unset( $bp_na_types, $bp_na_field, $bp_na_secprof_types, $bp_na_operator, $bp_na_function );

@@ -1034,7 +1034,7 @@ trait sp_action_spyware
         return null;
     }
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
         if( $this->owner->owner->isPanorama()
             || $this->owner->owner->isDeviceGroup()
@@ -1043,70 +1043,28 @@ trait sp_action_spyware
         {
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
-                    && $this->spyware_rules_visibility() !== FALSE
-
-                    && $this->spyware_dnslist_best_practice() !== FALSE
-                    #this is DNS security
-                    && $this->spyware_dns_security_best_practice() !== FALSE
-                    && $this->spyware_advanced_dns_security_best_practice() !== FALSE
-
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file), $this->spyware_dnslist_best_practice(), $this->spyware_dns_security_best_practice(), $this->spyware_advanced_dns_security_best_practice() ) );
             }
             else
             {
-                if( $this->spyware_rules_best_practice() !== FALSE
-                    && $this->spyware_rules_visibility() !== FALSE
-
-                    && $this->spyware_dnslist_best_practice() !== FALSE
-                    #this is DNS security
-                    && $this->spyware_dns_security_best_practice() !== FALSE
-
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_best_practice(), $this->spyware_dnslist_best_practice(), $this->spyware_dns_security_best_practice() ) );
             }
         }
         else
         {
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
-                    && $this->spyware_rules_visibility() !== FALSE
-
-                    #&& $this->spyware_dnslist_best_practice() !== FALSE
-                    #this is DNS security
-                    && $this->spyware_dns_security_best_practice() !== FALSE
-                    && $this->spyware_advanced_dns_security_best_practice() !== FALSE
-
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file), $this->spyware_dns_security_best_practice(), $this->spyware_advanced_dns_security_best_practice() ) );
             }
             else
             {
-                if( $this->spyware_rules_best_practice() !== FALSE
-                    && $this->spyware_rules_visibility() !== FALSE
-
-                    #&& $this->spyware_dnslist_best_practice() !== FALSE
-                    #this is DNS security
-                    #&& $this->spyware_dns_security_best_practice() !== FALSE
-
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_best_practice() ) );
             }
         }
 
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
         if( $this->owner->owner->isPanorama()
             || $this->owner->owner->isDeviceGroup()
@@ -1115,26 +1073,11 @@ trait sp_action_spyware
         {
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
-                    && $this->spyware_dnslist_visibility() !== FALSE
-                    #this is DNS Security
-                    && $this->spyware_dns_security_visibility() !== FALSE
-                    && $this->spyware_advanced_dns_security_visibility() !== FALSE
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file), $this->spyware_dnslist_visibility(), $this->spyware_dns_security_visibility(), $this->spyware_advanced_dns_security_visibility() ) );
             }
             else
             {
-                if( $this->spyware_rules_visibility() !== FALSE
-                    && $this->spyware_dnslist_visibility() !== FALSE
-                    #this is DNS Security
-                    #&& $this->spyware_dns_security_visibility() !== FALSE
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_visibility(), $this->spyware_dnslist_visibility() ) );
             }
         }
         else
@@ -1142,26 +1085,11 @@ trait sp_action_spyware
             //Todo: validation for SCM needed - what version
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
-                    && $this->spyware_dnslist_visibility() !== FALSE
-                    #this is DNS Security
-                    && $this->spyware_dns_security_visibility() !== FALSE
-                    && $this->spyware_advanced_dns_security_visibility() !== FALSE
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file), $this->spyware_dnslist_visibility(), $this->spyware_dns_security_visibility(), $this->spyware_advanced_dns_security_visibility() ) );
             }
             else
             {
-                if( $this->spyware_rules_visibility() !== FALSE
-                    #&& $this->spyware_dnslist_visibility() !== FALSE
-                    #this is DNS Security
-                    #&& $this->spyware_dns_security_visibility() !== FALSE
-                )
-                    return TRUE;
-                else
-                    return FALSE;
+                return PH::bpCombine( array( $this->spyware_rules_visibility() ) );
             }
         }
     }

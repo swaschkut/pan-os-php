@@ -128,28 +128,14 @@ class DNSSecurityProfile extends SecurityProfile2
 
     }
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
-        if( $this->spyware_dnslist_best_practice() !== FALSE
-            #this is DNS security
-            && $this->spyware_dns_security_best_practice() !== FALSE
-            && $this->spyware_advanced_dns_security_best_practice() !== FALSE
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->spyware_dnslist_best_practice(), $this->spyware_dns_security_best_practice(), $this->spyware_advanced_dns_security_best_practice() ) );
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
-        if( $this->spyware_dnslist_visibility() !== FALSE
-            #this is DNS Security
-            && $this->spyware_dns_security_visibility() !== FALSE
-            && $this->spyware_advanced_dns_security_visibility() !== FALSE
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->spyware_dnslist_visibility(), $this->spyware_dns_security_visibility(), $this->spyware_advanced_dns_security_visibility() ) );
     }
 
     public function is_adaption(): bool

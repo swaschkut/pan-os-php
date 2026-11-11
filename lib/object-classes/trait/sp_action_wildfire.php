@@ -267,44 +267,27 @@ trait sp_action_wildfire
         }
     }
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_best_practice() !== FALSE
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->wildfire_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
         }
         else
         {
-            if( $this->wildfire_rules_best_practice() !== FALSE )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->wildfire_rules_best_practice() ) );
         }
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_visibility() !== FALSE
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->wildfire_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
         }
         else
         {
-            if( $this->wildfire_rules_visibility() !== FALSE
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->wildfire_rules_visibility() ) );
         }
     }
 
