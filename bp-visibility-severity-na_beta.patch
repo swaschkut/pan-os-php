@@ -1,0 +1,579 @@
+diff --git a/lib/object-classes/ThreatPolicy.php b/lib/object-classes/ThreatPolicy.php
+index 3621ec5..bd7d070 100644
+--- a/lib/object-classes/ThreatPolicy.php
++++ b/lib/object-classes/ThreatPolicy.php
+@@ -159,6 +159,31 @@ class ThreatPolicy
+      * @param ThreatPolicy[] $rules
+      * @return string[]
+      */
++    /**
++     * The rule applies to every threat: severity any (or none), host any, category any, no particular threat.
++     * Used when the BP / visibility JSON lists severity 'any': such a rule must be in the profile.
++     */
++    public function matchesEveryThreat(): bool
++    {
++        if( $this->namesParticularThreats() )
++            return FALSE;
++        if( !empty( $this->severity ) && !in_array( 'any', $this->severity, TRUE ) )
++            return FALSE;
++        if( ( $this->host ?? "any" ) !== "any" )
++            return FALSE;
++        if( ( $this->category ?? "any" ) !== "any" )
++            return FALSE;
++        return TRUE;
++    }
++
++    /** severity list of a BP / visibility JSON check; empty array: not listed (key missing or []) -> N/A */
++    public static function checkedSeverities( $checkArray ): array
++    {
++        if( !is_array($checkArray) || !isset($checkArray['severity']) || !is_array($checkArray['severity']) )
++            return array();
++        return $checkArray['severity'];
++    }
++
+     public static function categoriesOf( $rules )
+     {
+         $categories = array( self::OTHER_CATEGORY );
+diff --git a/lib/object-classes/ThreatPolicySpyware.php b/lib/object-classes/ThreatPolicySpyware.php
+index dfc09a4..09c89d2 100644
+--- a/lib/object-classes/ThreatPolicySpyware.php
++++ b/lib/object-classes/ThreatPolicySpyware.php
+@@ -66,6 +66,13 @@ class ThreatPolicySpyware extends ThreatPolicy
+ 
+     public function check_bp_json( $check_array )
+     {
++        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
++        if( count( ThreatPolicy::checkedSeverities( $check_array ) ) == 0 )
++            return null;
++        // 'any' listed: every severity is asked for
++        if( in_array( 'any', $check_array['severity'], TRUE ) )
++            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
++
+         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
+         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
+             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
+@@ -117,6 +124,13 @@ class ThreatPolicySpyware extends ThreatPolicy
+ 
+     public function check_visibility_json( $check_array )
+     {
++        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
++        if( count( ThreatPolicy::checkedSeverities( $check_array ) ) == 0 )
++            return null;
++        // 'any' listed: every severity is asked for
++        if( in_array( 'any', $check_array['severity'], TRUE ) )
++            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
++
+         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
+         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
+             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
+@@ -154,7 +168,8 @@ class ThreatPolicySpyware extends ThreatPolicy
+     {
+         $check_array = $this->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+         $bestpractise = $this->check_bp_json( $check_array );
+-
++        if( $bestpractise === null )
++            return null;     // N/A: not asked for by the BP / visibility JSON
+         if ($bestpractise == FALSE)
+             return FALSE;
+         else
+@@ -165,7 +180,8 @@ class ThreatPolicySpyware extends ThreatPolicy
+     {
+         $check_array = $this->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+         $bestpractise = $this->check_visibility_json( $check_array );
+-
++        if( $bestpractise === null )
++            return null;     // N/A: not asked for by the BP / visibility JSON
+         if ($bestpractise == FALSE)
+             return FALSE;
+         else
+diff --git a/lib/object-classes/ThreatPolicyVulnerability.php b/lib/object-classes/ThreatPolicyVulnerability.php
+index 923925d..2d1badb 100644
+--- a/lib/object-classes/ThreatPolicyVulnerability.php
++++ b/lib/object-classes/ThreatPolicyVulnerability.php
+@@ -71,6 +71,13 @@ class ThreatPolicyVulnerability extends ThreatPolicy
+ 
+     public function check_bp_json( $check_array )
+     {
++        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
++        if( count( ThreatPolicy::checkedSeverities( $check_array ) ) == 0 )
++            return null;
++        // 'any' listed: every severity is asked for
++        if( in_array( 'any', $check_array['severity'], TRUE ) )
++            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
++
+         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
+         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
+             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
+@@ -137,6 +144,13 @@ class ThreatPolicyVulnerability extends ThreatPolicy
+ 
+     public function check_visibility_json( $check_array )
+     {
++        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
++        if( count( ThreatPolicy::checkedSeverities( $check_array ) ) == 0 )
++            return null;
++        // 'any' listed: every severity is asked for
++        if( in_array( 'any', $check_array['severity'], TRUE ) )
++            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
++
+         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
+         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
+             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
+@@ -178,7 +192,8 @@ class ThreatPolicyVulnerability extends ThreatPolicy
+     {
+         $check_array = $this->vulnerability_rule_bp_visibility_JSON( "bp", "vulnerability" );
+         $bestpractise = $this->check_bp_json( $check_array );
+-
++        if( $bestpractise === null )
++            return null;     // N/A: not asked for by the BP / visibility JSON
+         if ($bestpractise == FALSE)
+             return FALSE;
+         else
+@@ -189,7 +204,8 @@ class ThreatPolicyVulnerability extends ThreatPolicy
+     {
+         $check_array = $this->vulnerability_rule_bp_visibility_JSON( "visibility", "vulnerability" );
+         $bestpractise = $this->check_visibility_json( $check_array );
+-
++        if( $bestpractise === null )
++            return null;     // N/A: not asked for by the BP / visibility JSON
+         if ($bestpractise == FALSE)
+             return FALSE;
+         else
+diff --git a/lib/object-classes/VulnerabilityProfile.php b/lib/object-classes/VulnerabilityProfile.php
+index 9f12a3e..844dfcc 100644
+--- a/lib/object-classes/VulnerabilityProfile.php
++++ b/lib/object-classes/VulnerabilityProfile.php
+@@ -438,57 +438,89 @@ class VulnerabilityProfile extends SecurityProfile2
+         return null;     // no rule matches: PAN-OS takes no action and logs nothing
+     }
+ 
+-    public function vulnerability_rules_best_practice()
++    /**
++     * Rules of the profile against the BP / visibility JSON (vulnerability -> rule -> bp|visibility):
++     *  - severity not listed (key missing or empty): not checked -> null (N/A)
++     *  - 'any' listed: a rule for every threat (severity, host and category any, no particular threat) must pass,
++     *    or every single severity is covered by rules with category any (host any, or client and server)
++     *  - another severity listed: for every host and category the first matching rule (PAN-OS order) must pass
++     * bp: the visibility check must pass as well (when it is asked for); categories in category-exclude are skipped.
++     * @return bool|null
++     */
++    private function vulnerability_rules_check( string $type ): ?bool
+     {
+-        if( empty( $this->rules_obj ) )
++        $details = PH::getBPjsonFile();
++        $check_array = $details['vulnerability']['rule'][$type] ?? array();
++        $severities = ThreatPolicy::checkedSeverities( $check_array );
++        if( count($severities) == 0 )
+             return null;
+-        if( !$this->vulnerability_rules_visibility() )      // first-match visibility check, called first as before
+-            return FALSE;
+-        $checkBP_array = $this->rules_obj[0]->vulnerability_rule_bp_visibility_JSON( "bp", "vulnerability" );
+-        $exclude = $checkBP_array['category-exclude'] ?? array();
++        if( empty( $this->rules_obj ) )
++            return FALSE;       // asked for, but the profile has no rule: no action, no log
+ 
++        $exclude = ( $type == "bp" ) ? ( $check_array['category-exclude'] ?? array() ) : array();
+         $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
+-
+-        foreach( $checkBP_array['severity'] ?? array() as $severity )
++        // the rule is checked for the severity in question (a rule for 'low' must not pass a check for 'any'
++        // only because the JSON lists no 'low')
++        $passes = function( $rule, $severity ) use ( $type, $check_array ) {
++            $check = $check_array;
++            $check['severity'] = array( $severity );
++            $ret = ( $type == "bp" ) ? $rule->check_bp_json( $check ) : $rule->check_visibility_json( $check );
++            return $ret !== FALSE;
++        };
++
++        foreach( $severities as $severity )
+         {
+             if( $severity == "any" )
+-                continue;       // a threat has one of the five severities; a severity-any rule is judged through them
++            {
++                $found = FALSE;
++                foreach( $this->rules_obj as $rule )
++                    if( $rule->matchesEveryThreat() && $passes( $rule, "any" ) )
++                    {
++                        $found = TRUE;
++                        break;
++                    }
++                // or: every single severity covered with category any, for host any or for client and server
++                // (first matching rule, PAN-OS order)
++                if( !$found )
++                {
++                    $found = TRUE;
++                    foreach( array( "critical", "high", "medium", "low", "informational" ) as $single )
++                        foreach( array( "client", "server" ) as $host )
++                        {
++                            $rule = $this->vulnerability_rules_first_match( $single, $host, ThreatPolicy::OTHER_CATEGORY );
++                            if( $rule === null || ( $rule->category() ?? "any" ) !== "any" || !$passes( $rule, $single ) )
++                                $found = FALSE;
++                        }
++                }
++                if( !$found )
++                    return FALSE;
++                continue;
++            }
+             foreach( array( "client", "server" ) as $host )
+                 foreach( $categories as $category )
+                 {
+                     if( in_array( $category, $exclude, TRUE ) )
+                         continue;   // the BP file leaves these categories out of best practice
+                     $rule = $this->vulnerability_rules_first_match( $severity, $host, $category );
+-                    if( $rule === null || !$rule->vulnerability_rule_best_practice() )
++                    if( $rule === null || !$passes( $rule, $severity ) )
+                         return FALSE;
+                 }
+         }
+-        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
+         return TRUE;
+     }
+ 
+-    public function vulnerability_rules_visibility()
++    /** @return bool|null null: not asked for by the BP JSON (N/A) */
++    public function vulnerability_rules_best_practice()
+     {
+-        if( empty( $this->rules_obj ) )
+-            return null;
+-        $check_array = $this->rules_obj[0]->vulnerability_rule_bp_visibility_JSON( "visibility", "vulnerability" );
+-
+-        $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
++        if( $this->vulnerability_rules_visibility() === FALSE )
++            return FALSE;
++        return $this->vulnerability_rules_check( "bp" );
++    }
+ 
+-        foreach( $check_array['severity'] ?? array() as $severity )
+-        {
+-            if( $severity == "any" )
+-                continue;
+-            foreach( array( "client", "server" ) as $host )
+-                foreach( $categories as $category )
+-                {
+-                    $rule = $this->vulnerability_rules_first_match( $severity, $host, $category );
+-                    if( $rule === null || !$rule->vulnerability_rule_visibility() )
+-                        return FALSE;
+-                }
+-        }
+-        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
+-        return TRUE;
++    /** @return bool|null null: not asked for by the visibility JSON (N/A) */
++    public function vulnerability_rules_visibility()
++    {
++        return $this->vulnerability_rules_check( "visibility" );
+     }
+ 
+     public function vulnerability_rules_coverage( $type = "visibility")
+@@ -555,9 +587,9 @@ class VulnerabilityProfile extends SecurityProfile2
+     {
+         if( $this->owner->owner->version >= 110 )
+         {
+-            if ($this->vulnerability_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
++            if ($this->vulnerability_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                 #&& $this->vulnerability_exception_best_practice()
+-                && $this->vulnerability_rules_visibility()
++                && $this->vulnerability_rules_visibility() !== FALSE
+             )
+                 return TRUE;
+             else
+@@ -565,9 +597,9 @@ class VulnerabilityProfile extends SecurityProfile2
+         }
+         else
+         {
+-            if ($this->vulnerability_rules_best_practice()
++            if ($this->vulnerability_rules_best_practice() !== FALSE
+                 #&& $this->vulnerability_exception_best_practice()
+-                && $this->vulnerability_rules_visibility()
++                && $this->vulnerability_rules_visibility() !== FALSE
+             )
+                 return TRUE;
+             else
+@@ -579,7 +611,7 @@ class VulnerabilityProfile extends SecurityProfile2
+     {
+         if( $this->owner->owner->version >= 110 )
+         {
+-            if ($this->vulnerability_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
++            if ($this->vulnerability_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+             )
+                 return TRUE;
+             else
+@@ -587,7 +619,7 @@ class VulnerabilityProfile extends SecurityProfile2
+         }
+         else
+         {
+-            if ($this->vulnerability_rules_visibility()
++            if ($this->vulnerability_rules_visibility() !== FALSE
+             )
+                 return TRUE;
+             else
+diff --git a/lib/object-classes/trait/sp_action_spyware.php b/lib/object-classes/trait/sp_action_spyware.php
+index e0710ff..323faeb 100644
+--- a/lib/object-classes/trait/sp_action_spyware.php
++++ b/lib/object-classes/trait/sp_action_spyware.php
+@@ -816,55 +816,85 @@ trait sp_action_spyware
+         return null;     // no rule matches: PAN-OS takes no action and logs nothing
+     }
+ 
+-    public function spyware_rules_best_practice(): ?bool
++    /**
++     * Rules of the profile against the BP / visibility JSON (spyware -> rule -> bp|visibility):
++     *  - severity not listed (key missing or empty): not checked -> null (N/A)
++     *  - 'any' listed: a rule for every threat (severity and category any, no particular threat) must pass,
++     *    or every single severity is covered by rules with category any
++     *  - another severity listed: for every category the first matching rule (PAN-OS order) must pass
++     * bp: the visibility check must pass as well (when it is asked for); categories in category-exclude are skipped.
++     */
++    private function spyware_rules_check( string $type ): ?bool
+     {
+-        if( empty( $this->rules_obj ) )
++        $details = PH::getBPjsonFile();
++        $check_array = $details['spyware']['rule'][$type] ?? array();
++        $severities = ThreatPolicy::checkedSeverities( $check_array );
++        if( count($severities) == 0 )
+             return null;
+-        if( !$this->spyware_rules_visibility() )
+-            return FALSE;
+-        $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+-        $exclude = $checkBP_array['category-exclude'] ?? array();
++        if( empty( $this->rules_obj ) )
++            return FALSE;       // asked for, but the profile has no rule: no action, no log
+ 
++        $exclude = ( $type == "bp" ) ? ( $check_array['category-exclude'] ?? array() ) : array();
+         $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
+-
+-        foreach( $checkBP_array['severity'] ?? array() as $severity )
++        // the rule is checked for the severity in question (a rule for 'low' must not pass a check for 'any'
++        // only because the JSON lists no 'low')
++        $passes = function( $rule, $severity ) use ( $type, $check_array ) {
++            $check = $check_array;
++            $check['severity'] = array( $severity );
++            $ret = ( $type == "bp" ) ? $rule->check_bp_json( $check ) : $rule->check_visibility_json( $check );
++            return $ret !== FALSE;
++        };
++
++        foreach( $severities as $severity )
+         {
+             if( $severity == "any" )
+-                continue;       // a threat has one of the five severities; a severity-any rule is judged through them
++            {
++                $found = FALSE;
++                foreach( $this->rules_obj as $rule )
++                    if( $rule->matchesEveryThreat() && $passes( $rule, "any" ) )
++                    {
++                        $found = TRUE;
++                        break;
++                    }
++                // or: every single severity covered with category any (first matching rule, PAN-OS order)
++                if( !$found )
++                {
++                    $found = TRUE;
++                    foreach( array( "critical", "high", "medium", "low", "informational" ) as $single )
++                    {
++                        $rule = $this->spyware_rules_first_match( $single, ThreatPolicy::OTHER_CATEGORY );
++                        if( $rule === null || ( $rule->category() ?? "any" ) !== "any" || !$passes( $rule, $single ) )
++                            $found = FALSE;
++                    }
++                }
++                if( !$found )
++                    return FALSE;
++                continue;
++            }
+             foreach( $categories as $category )
+             {
+                 if( in_array( $category, $exclude, TRUE ) )
+                     continue;   // the BP file leaves these categories out of best practice
+                 $rule = $this->spyware_rules_first_match( $severity, $category );
+-                if( $rule === null || !$rule->spyware_rule_best_practice() )
++                if( $rule === null || !$passes( $rule, $severity ) )
+                     return FALSE;
+             }
+         }
+-        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
+         return TRUE;
+     }
+ 
+-    public function spyware_rules_visibility(): ?bool
++    /** null: not asked for by the BP JSON (N/A) */
++    public function spyware_rules_best_practice(): ?bool
+     {
+-        if( empty( $this->rules_obj ) )
+-            return null;
+-        $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+-
+-        $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
++        if( $this->spyware_rules_visibility() === FALSE )
++            return FALSE;
++        return $this->spyware_rules_check( "bp" );
++    }
+ 
+-        foreach( $check_array['severity'] ?? array() as $severity )
+-        {
+-            if( $severity == "any" )
+-                continue;
+-            foreach( $categories as $category )
+-            {
+-                $rule = $this->spyware_rules_first_match( $severity, $category );
+-                if( $rule === null || !$rule->spyware_rule_visibility() )
+-                    return FALSE;
+-            }
+-        }
+-        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
+-        return TRUE;
++    /** null: not asked for by the visibility JSON (N/A) */
++    public function spyware_rules_visibility(): ?bool
++    {
++        return $this->spyware_rules_check( "visibility" );
+     }
+ 
+ 
+@@ -983,8 +1013,8 @@ trait sp_action_spyware
+         {
+             if( $this->owner->owner->version >= 102 )
+             {
+-                if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+-                    && $this->spyware_rules_visibility()
++                if( $this->spyware_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
++                    && $this->spyware_rules_visibility() !== FALSE
+ 
+                     && $this->spyware_dnslist_best_practice()
+                     #this is DNS security
+@@ -998,8 +1028,8 @@ trait sp_action_spyware
+             }
+             else
+             {
+-                if( $this->spyware_rules_best_practice()
+-                    && $this->spyware_rules_visibility()
++                if( $this->spyware_rules_best_practice() !== FALSE
++                    && $this->spyware_rules_visibility() !== FALSE
+ 
+                     && $this->spyware_dnslist_best_practice()
+                     #this is DNS security
+@@ -1015,8 +1045,8 @@ trait sp_action_spyware
+         {
+             if( $this->owner->owner->version >= 102 )
+             {
+-                if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+-                    && $this->spyware_rules_visibility()
++                if( $this->spyware_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
++                    && $this->spyware_rules_visibility() !== FALSE
+ 
+                     #&& $this->spyware_dnslist_best_practice()
+                     #this is DNS security
+@@ -1030,8 +1060,8 @@ trait sp_action_spyware
+             }
+             else
+             {
+-                if( $this->spyware_rules_best_practice()
+-                    && $this->spyware_rules_visibility()
++                if( $this->spyware_rules_best_practice() !== FALSE
++                    && $this->spyware_rules_visibility() !== FALSE
+ 
+                     #&& $this->spyware_dnslist_best_practice()
+                     #this is DNS security
+@@ -1055,7 +1085,7 @@ trait sp_action_spyware
+         {
+             if( $this->owner->owner->version >= 102 )
+             {
+-                if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
++                if( $this->spyware_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                     && $this->spyware_dnslist_visibility()
+                     #this is DNS Security
+                     && $this->spyware_dns_security_visibility()
+@@ -1067,7 +1097,7 @@ trait sp_action_spyware
+             }
+             else
+             {
+-                if( $this->spyware_rules_visibility()
++                if( $this->spyware_rules_visibility() !== FALSE
+                     && $this->spyware_dnslist_visibility()
+                     #this is DNS Security
+                     #&& $this->spyware_dns_security_visibility()
+@@ -1082,7 +1112,7 @@ trait sp_action_spyware
+             //Todo: validation for SCM needed - what version
+             if( $this->owner->owner->version >= 102 )
+             {
+-                if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
++                if( $this->spyware_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                     && $this->spyware_dnslist_visibility()
+                     #this is DNS Security
+                     && $this->spyware_dns_security_visibility()
+@@ -1094,7 +1124,7 @@ trait sp_action_spyware
+             }
+             else
+             {
+-                if( $this->spyware_rules_visibility()
++                if( $this->spyware_rules_visibility() !== FALSE
+                     #&& $this->spyware_dnslist_visibility()
+                     #this is DNS Security
+                     #&& $this->spyware_dns_security_visibility()
+diff --git a/utils/common/actions-securityprofile.php b/utils/common/actions-securityprofile.php
+index cb498fa..c210908 100644
+--- a/utils/common/actions-securityprofile.php
++++ b/utils/common/actions-securityprofile.php
+@@ -940,17 +940,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
+ 
+                         if( get_class($rule ) == "ThreatPolicySpyware" )
+                         {
+-                            if( !$rule->spyware_rule_best_practice() && $bestPractice )
++                            if( $rule->spyware_rule_best_practice() === FALSE && $bestPractice )   // null: N/A, no sign
+                                 $tmp_string .= $bp_NOT_sign;
+-                            if( !$rule->spyware_rule_visibility() && $visibility )
++                            if( $rule->spyware_rule_visibility() === FALSE && $visibility )
+                                 $tmp_string .= $visible_NOT_sign;
+                         }
+ 
+                         elseif( get_class($rule ) == "ThreatPolicyVulnerability" )
+                         {
+-                            if( !$rule->vulnerability_rule_best_practice() && $bestPractice )
++                            if( $rule->vulnerability_rule_best_practice() === FALSE && $bestPractice )   // null: N/A, no sign
+                                 $tmp_string .= $bp_NOT_sign;
+-                            if( !$rule->vulnerability_rule_visibility() && $visibility )
++                            if( $rule->vulnerability_rule_visibility() === FALSE && $visibility )
+                                 $tmp_string .= $visible_NOT_sign;
+                         }
+                         elseif( get_class($rule ) == "ThreatPolicyWildfire" )
+@@ -1020,14 +1020,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
+                     {
+                         if( $bestPractice )
+                         {
+-                            if( $object->spyware_rules_best_practice() )
++                            $tmp_check = $object->spyware_rules_best_practice();
++                            if( $tmp_check === null )
++                                $lines .= $context->encloseFunction('[N/A] BP AS rules: no severity listed in the BP JSON');
++                            elseif( $tmp_check )
+                                 $lines .= $context->encloseFunction($bp_text_yes.' BP AS rules set');
+                             else
+                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP AS rules');
+                         }
+                         if( $visibility )
+                         {
+-                            if( $object->spyware_rules_visibility() )
++                            $tmp_check = $object->spyware_rules_visibility();
++                            if( $tmp_check === null )
++                                $lines .= $context->encloseFunction('[N/A] Visibility AS rules: no severity listed in the BP JSON');
++                            elseif( $tmp_check )
+                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AS rules set');
+                             else
+                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS rules');
+@@ -1044,14 +1050,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
+                     {
+                         if( $bestPractice )
+                         {
+-                            if( $object->vulnerability_rules_best_practice() )
++                            $tmp_check = $object->vulnerability_rules_best_practice();
++                            if( $tmp_check === null )
++                                $lines .= $context->encloseFunction('[N/A] BP VP rules: no severity listed in the BP JSON');
++                            elseif( $tmp_check )
+                                 $lines .= $context->encloseFunction($bp_text_yes.' BP VP rules set');
+                             else
+                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP VP rules');
+                         }
+                         if( $visibility )
+                         {
+-                            if( $object->vulnerability_rules_visibility() )
++                            $tmp_check = $object->vulnerability_rules_visibility();
++                            if( $tmp_check === null )
++                                $lines .= $context->encloseFunction('[N/A] Visibility VP rules: no severity listed in the BP JSON');
++                            elseif( $tmp_check )
+                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility VP rules set');
+                             else
+                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility VP rules');
