@@ -159,31 +159,6 @@ class ThreatPolicy
      * @param ThreatPolicy[] $rules
      * @return string[]
      */
-    /**
-     * The rule applies to every threat: severity any (or none), host any, category any, no particular threat.
-     * Used when the BP / visibility JSON lists severity 'any': such a rule must be in the profile.
-     */
-    public function matchesEveryThreat(): bool
-    {
-        if( $this->namesParticularThreats() )
-            return FALSE;
-        if( !empty( $this->severity ) && !in_array( 'any', $this->severity, TRUE ) )
-            return FALSE;
-        if( ( $this->host ?? "any" ) !== "any" )
-            return FALSE;
-        if( ( $this->category ?? "any" ) !== "any" )
-            return FALSE;
-        return TRUE;
-    }
-
-    /** severity list of a BP / visibility JSON check; empty array: not listed (key missing or []) -> N/A */
-    public static function checkedSeverities( $checkArray ): array
-    {
-        if( !is_array($checkArray) || !isset($checkArray['severity']) || !is_array($checkArray['severity']) )
-            return array();
-        return $checkArray['severity'];
-    }
-
     public static function categoriesOf( $rules )
     {
         $categories = array( self::OTHER_CATEGORY );

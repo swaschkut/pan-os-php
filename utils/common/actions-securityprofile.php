@@ -648,7 +648,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $bp_text_no = "no";
         $bp_NOT_sign = " | **NOT BP**";
         $visible_NOT_sign = " | **NOT VISIBLE**";
-        $NA_sign = "[N/A]";
 
         $count = 0;
         if( isset($context->objectList) )
@@ -916,17 +915,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         if( get_class($rule ) == "ThreatPolicySpyware" )
                         {
-                            if( $rule->spyware_rule_best_practice() === FALSE && $bestPractice )   // null: N/A, no sign
+                            if( !$rule->spyware_rule_best_practice() && $bestPractice )
                                 $tmp_string .= $bp_NOT_sign;
-                            if( $rule->spyware_rule_visibility() === FALSE && $visibility )
+                            if( !$rule->spyware_rule_visibility() && $visibility )
                                 $tmp_string .= $visible_NOT_sign;
                         }
 
                         elseif( get_class($rule ) == "ThreatPolicyVulnerability" )
                         {
-                            if( $rule->vulnerability_rule_best_practice() === FALSE && $bestPractice )   // null: N/A, no sign
+                            if( !$rule->vulnerability_rule_best_practice() && $bestPractice )
                                 $tmp_string .= $bp_NOT_sign;
-                            if( $rule->vulnerability_rule_visibility() === FALSE && $visibility )
+                            if( !$rule->vulnerability_rule_visibility() && $visibility )
                                 $tmp_string .= $visible_NOT_sign;
                         }
                         elseif( get_class($rule ) == "ThreatPolicyWildfire" )
@@ -996,20 +995,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            $tmp_check = $object->spyware_rules_best_practice();
-                            if( $tmp_check === null )
-                                $lines .= $context->encloseFunction($NA_sign);
-                            elseif( $tmp_check )
+                            if( $object->spyware_rules_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP AS rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP AS rules');
                         }
                         if( $visibility )
                         {
-                            $tmp_check = $object->spyware_rules_visibility();
-                            if( $tmp_check === null )
-                                $lines .= $context->encloseFunction($NA_sign);
-                            elseif( $tmp_check )
+                            if( $object->spyware_rules_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AS rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS rules');
@@ -1026,20 +1019,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            $tmp_check = $object->vulnerability_rules_best_practice();
-                            if( $tmp_check === null )
-                                $lines .= $context->encloseFunction($NA_sign);
-                            elseif( $tmp_check )
+                            if( $object->vulnerability_rules_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP VP rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP VP rules');
                         }
                         if( $visibility )
                         {
-                            $tmp_check = $object->vulnerability_rules_visibility();
-                            if( $tmp_check === null )
-                                $lines .= $context->encloseFunction($NA_sign);
-                            elseif( $tmp_check )
+                            if( $object->vulnerability_rules_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility VP rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility VP rules');

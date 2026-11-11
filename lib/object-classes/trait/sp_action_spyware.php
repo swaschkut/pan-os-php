@@ -816,85 +816,55 @@ trait sp_action_spyware
         return null;     // no rule matches: PAN-OS takes no action and logs nothing
     }
 
-    /**
-     * Rules of the profile against the BP / visibility JSON (spyware -> rule -> bp|visibility):
-     *  - severity not listed (key missing or empty): not checked -> null (N/A)
-     *  - 'any' listed: a rule for every threat (severity and category any, no particular threat) must pass,
-     *    or every single severity is covered by rules with category any
-     *  - another severity listed: for every category the first matching rule (PAN-OS order) must pass
-     * bp: the visibility check must pass as well (when it is asked for); categories in category-exclude are skipped.
-     */
-    private function spyware_rules_check( string $type ): ?bool
+    public function spyware_rules_best_practice(): ?bool
     {
-        $details = PH::getBPjsonFile();
-        $check_array = $details['spyware']['rule'][$type] ?? array();
-        $severities = ThreatPolicy::checkedSeverities( $check_array );
-        if( count($severities) == 0 )
-            return null;
         if( empty( $this->rules_obj ) )
-            return FALSE;       // asked for, but the profile has no rule: no action, no log
+            return null;
+        if( !$this->spyware_rules_visibility() )
+            return FALSE;
+        $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+        $exclude = $checkBP_array['category-exclude'] ?? array();
 
-        $exclude = ( $type == "bp" ) ? ( $check_array['category-exclude'] ?? array() ) : array();
         $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
-        // the rule is checked for the severity in question (a rule for 'low' must not pass a check for 'any'
-        // only because the JSON lists no 'low')
-        $passes = function( $rule, $severity ) use ( $type, $check_array ) {
-            $check = $check_array;
-            $check['severity'] = array( $severity );
-            $ret = ( $type == "bp" ) ? $rule->check_bp_json( $check ) : $rule->check_visibility_json( $check );
-            return $ret !== FALSE;
-        };
 
-        foreach( $severities as $severity )
+        foreach( $checkBP_array['severity'] ?? array() as $severity )
         {
             if( $severity == "any" )
-            {
-                $found = FALSE;
-                foreach( $this->rules_obj as $rule )
-                    if( $rule->matchesEveryThreat() && $passes( $rule, "any" ) )
-                    {
-                        $found = TRUE;
-                        break;
-                    }
-                // or: every single severity covered with category any (first matching rule, PAN-OS order)
-                if( !$found )
-                {
-                    $found = TRUE;
-                    foreach( array( "critical", "high", "medium", "low", "informational" ) as $single )
-                    {
-                        $rule = $this->spyware_rules_first_match( $single, ThreatPolicy::OTHER_CATEGORY );
-                        if( $rule === null || ( $rule->category() ?? "any" ) !== "any" || !$passes( $rule, $single ) )
-                            $found = FALSE;
-                    }
-                }
-                if( !$found )
-                    return FALSE;
-                continue;
-            }
+                continue;       // a threat has one of the five severities; a severity-any rule is judged through them
             foreach( $categories as $category )
             {
                 if( in_array( $category, $exclude, TRUE ) )
                     continue;   // the BP file leaves these categories out of best practice
                 $rule = $this->spyware_rules_first_match( $severity, $category );
-                if( $rule === null || !$passes( $rule, $severity ) )
+                if( $rule === null || !$rule->spyware_rule_best_practice() )
                     return FALSE;
             }
         }
+        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
         return TRUE;
     }
 
-    /** null: not asked for by the BP JSON (N/A) */
-    public function spyware_rules_best_practice(): ?bool
-    {
-        if( $this->spyware_rules_visibility() === FALSE )
-            return FALSE;
-        return $this->spyware_rules_check( "bp" );
-    }
-
-    /** null: not asked for by the visibility JSON (N/A) */
     public function spyware_rules_visibility(): ?bool
     {
-        return $this->spyware_rules_check( "visibility" );
+        if( empty( $this->rules_obj ) )
+            return null;
+        $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+
+        $categories = ThreatPolicy::categoriesOf( $this->rules_obj );
+
+        foreach( $check_array['severity'] ?? array() as $severity )
+        {
+            if( $severity == "any" )
+                continue;
+            foreach( $categories as $category )
+            {
+                $rule = $this->spyware_rules_first_match( $severity, $category );
+                if( $rule === null || !$rule->spyware_rule_visibility() )
+                    return FALSE;
+            }
+        }
+        // every severity the BP file lists passed; a missing or empty list, or only 'any', asks for nothing
+        return TRUE;
     }
 
 
@@ -1013,8 +983,8 @@ trait sp_action_spyware
         {
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                    && $this->spyware_rules_visibility() !== FALSE
+                if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                    && $this->spyware_rules_visibility()
 
                     && $this->spyware_dnslist_best_practice()
                     #this is DNS security
@@ -1028,8 +998,8 @@ trait sp_action_spyware
             }
             else
             {
-                if( $this->spyware_rules_best_practice() !== FALSE
-                    && $this->spyware_rules_visibility() !== FALSE
+                if( $this->spyware_rules_best_practice()
+                    && $this->spyware_rules_visibility()
 
                     && $this->spyware_dnslist_best_practice()
                     #this is DNS security
@@ -1045,8 +1015,8 @@ trait sp_action_spyware
         {
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_best_practice() !== FALSE && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                    && $this->spyware_rules_visibility() !== FALSE
+                if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                    && $this->spyware_rules_visibility()
 
                     #&& $this->spyware_dnslist_best_practice()
                     #this is DNS security
@@ -1060,8 +1030,8 @@ trait sp_action_spyware
             }
             else
             {
-                if( $this->spyware_rules_best_practice() !== FALSE
-                    && $this->spyware_rules_visibility() !== FALSE
+                if( $this->spyware_rules_best_practice()
+                    && $this->spyware_rules_visibility()
 
                     #&& $this->spyware_dnslist_best_practice()
                     #this is DNS security
@@ -1085,7 +1055,7 @@ trait sp_action_spyware
         {
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
                     && $this->spyware_dnslist_visibility()
                     #this is DNS Security
                     && $this->spyware_dns_security_visibility()
@@ -1097,7 +1067,7 @@ trait sp_action_spyware
             }
             else
             {
-                if( $this->spyware_rules_visibility() !== FALSE
+                if( $this->spyware_rules_visibility()
                     && $this->spyware_dnslist_visibility()
                     #this is DNS Security
                     #&& $this->spyware_dns_security_visibility()
@@ -1112,7 +1082,7 @@ trait sp_action_spyware
             //Todo: validation for SCM needed - what version
             if( $this->owner->owner->version >= 102 )
             {
-                if( $this->spyware_rules_visibility() !== FALSE && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
                     && $this->spyware_dnslist_visibility()
                     #this is DNS Security
                     && $this->spyware_dns_security_visibility()
@@ -1124,7 +1094,7 @@ trait sp_action_spyware
             }
             else
             {
-                if( $this->spyware_rules_visibility() !== FALSE
+                if( $this->spyware_rules_visibility()
                     #&& $this->spyware_dnslist_visibility()
                     #this is DNS Security
                     #&& $this->spyware_dns_security_visibility()
