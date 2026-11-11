@@ -176,12 +176,20 @@ class ThreatPolicy
         return TRUE;
     }
 
-    /** severity list of a BP / visibility JSON check; empty array: not listed (key missing or []) -> N/A */
+    /**
+     * severity list of a BP / visibility JSON check; empty array: not listed (key missing or []) -> N/A
+     *  - 'any' alone: every severity is asked for (array('any'))
+     *  - 'any' beside single severities: only those severities are asked for, 'any' is dropped
+     *    (e.g. bp ["any","critical","high","medium"]: low / informational need visibility only, no BP)
+     */
     public static function checkedSeverities( $checkArray ): array
     {
         if( !is_array($checkArray) || !isset($checkArray['severity']) || !is_array($checkArray['severity']) )
             return array();
-        return $checkArray['severity'];
+        $severities = array_values( array_unique( $checkArray['severity'] ) );
+        if( in_array( 'any', $severities, TRUE ) && count( $severities ) > 1 )
+            $severities = array_values( array_diff( $severities, array( 'any' ) ) );
+        return $severities;
     }
 
     public static function categoriesOf( $rules )

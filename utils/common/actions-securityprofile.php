@@ -1174,9 +1174,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                                     /** @var DNSPolicy $rule */
                         /*
-                                    if( $bestPractice && !$rule->spyware_lists_bestpractice() )
+                                    if( $bestPractice && $rule->spyware_lists_bestpractice() === FALSE )
                                         $string .= $bp_NOT_sign;
-                                    if( $visibility && !$rule->spyware_lists_visibility() )
+                                    if( $visibility && $rule->spyware_lists_visibility() === FALSE )
                                         $string .= $visible_NOT_sign;
 
 
@@ -1203,7 +1203,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     /** @var DNSPolicy $rule */
                             /*        if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
                                         $string .= $bp_NOT_sign;
-                                    if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                                    if( $visibility && $rule->spyware_dns_security_rule_visibility() === FALSE )
                                         $string .= $visible_NOT_sign;
                                     $string_dns_security[] = $string;
                                 }
@@ -1223,9 +1223,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     //$string .= " - packet-capture: '".$rule->packetCapture()."'";
                                     /** @var DNSPolicy $rule */
                            /*         //Todo: TBD
-                                    if( $bestPractice && !$rule->spyware_advanced_dns_security_rule_bestpractice() )
+                                    if( $bestPractice && $rule->spyware_advanced_dns_security_rule_bestpractice() === FALSE )
                                         $string .= $bp_NOT_sign;
-                                    if( $visibility && !$rule->spyware_advanced_dns_security_rule_visibility() )
+                                    if( $visibility && $rule->spyware_advanced_dns_security_rule_visibility() === FALSE )
                                         $string .= $visible_NOT_sign;
                                     $string_dns_security[] = $string;
                                 }
@@ -2409,7 +2409,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicySpyware $rule */
-                            if( !$rule->spyware_rule_visibility() )
+                            if( $rule->spyware_rule_visibility() === FALSE )
                             {
                                 //Todo: how to bring in newline??
                                 $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2436,7 +2436,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicySpyware $rule */
-                            if( !$rule->spyware_rule_best_practice() )
+                            if( $rule->spyware_rule_best_practice() === FALSE )     // null: N/A, not NOT BP
                             {
                                 //Todo: how to bring in newline??
                                 $info['bp_rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2466,7 +2466,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicyVulnerability $rule */
-                            if( !$rule->vulnerability_rule_visibility() )
+                            if( $rule->vulnerability_rule_visibility() === FALSE )
                             {
                                 //Todo: how to bring in newline??
                                 $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2493,7 +2493,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicyVulnerability $rule */
-                            if( !$rule->vulnerability_rule_best_practice() )
+                            if( $rule->vulnerability_rule_best_practice() === FALSE )     // null: N/A, not NOT BP
                             {
                                 //Todo: how to bring in newline??
                                 $info['bp_rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2523,7 +2523,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicyFileBlocking $rule */
-                            if( !$rule->fileblocking_rule_visibility() )
+                            if( $rule->fileblocking_rule_visibility() === FALSE )
                             {
                                 //Todo: how to bring in newline??
                                 $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2550,7 +2550,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicyFileBlocking $rule */
-                            if( !$rule->fileblocking_rule_best_practice() )
+                            if( $rule->fileblocking_rule_best_practice() === FALSE )
                             {
                                 //Todo: how to bring in newline??
                                 $info['bp_rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2580,7 +2580,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicyWildfire $rule */
-                            if( !$rule->wildfire_rule_visibility() )
+                            if( $rule->wildfire_rule_visibility() === FALSE )
                             {
                                 //Todo: how to bring in newline??
                                 $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
@@ -2607,7 +2607,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->rules_obj as $rulename => $rule)
                         {
                             /* @var ThreatPolicyWildfire $rule */
-                            if( !$rule->wildfire_rule_best_practice() )
+                            if( $rule->wildfire_rule_best_practice() === FALSE )
                             {
                                 //Todo: how to bring in newline??
                                 $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
