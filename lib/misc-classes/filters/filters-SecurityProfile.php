@@ -618,7 +618,7 @@ RQuery::$defaultFilters['securityprofile']['av.actions']['operators']['is.best-p
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
-        return $object->av_mlavaction_best_practice() && $object->av_wildfireaction_best_practice() && $object->av_action_best_practice();
+        return $object->av_actions_best_practice();     // null: not listed in the BP JSON (N/A), matches neither
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -631,7 +631,7 @@ RQuery::$defaultFilters['securityprofile']['av.actions']['operators']['is.visibi
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
-        return $object->av_mlavaction_visibility() && $object->av_wildfireaction_visibility() && $object->av_action_visibility();
+        return $object->av_actions_visibility();     // null: not listed in the JSON (N/A), matches neither
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -1062,7 +1062,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.best
         if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
-        return $object->spyware_dns_security_best_practice() && $object->spyware_advanced_dns_security_best_practice();
+        return PH::bpCombine( array( $object->spyware_dns_security_best_practice(), $object->spyware_advanced_dns_security_best_practice() ) );
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.best-practice)'"
@@ -1075,7 +1075,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.visi
         if( is_string($object) || ($object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' ))
             return null;
 
-        return $object->spyware_dns_security_visibility() && $object->spyware_advanced_dns_security_visibility();
+        return PH::bpCombine( array( $object->spyware_dns_security_visibility(), $object->spyware_advanced_dns_security_visibility() ) );
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"

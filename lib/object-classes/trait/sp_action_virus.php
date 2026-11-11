@@ -396,12 +396,15 @@ trait sp_action_virus
         return $checkArray;
     }
 
-    public function check_bp_json($av_type, $check_array, $av_action_type): bool
+    /** @return bool|null null: the list for this decoder is not in the BP JSON (N/A) */
+    public function check_bp_json($av_type, $check_array, $av_action_type): ?bool
     {
         $bestpractise = FALSE;
 
-        if (in_array($av_type, $check_array['type']))
+        if( in_array( $av_type, $check_array['type'] ?? array() ) )
         {
+            if( empty( $check_array['action'] ) )
+                return null;
             foreach ($check_array['action'] as $validate_action)
             {
                 $negate_string = "";
@@ -418,6 +421,8 @@ trait sp_action_virus
         }
         else
         {
+            if( empty( $check_array['action-not-matching-type'] ) )
+                return null;
             foreach ($check_array['action-not-matching-type'] as $validate_action)
             {
                 $negate_string = "";
@@ -436,8 +441,12 @@ trait sp_action_virus
         return $bestpractise;
     }
 
+    /** @return bool|null null: nothing listed in the visibility JSON (N/A) */
     public function check_visibility_json($av_type, $check_array, $av_action_type)
     {
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
+
         $bestpractise = FALSE;
 
         foreach( $check_array as $validate )
@@ -460,20 +469,16 @@ trait sp_action_virus
         return $this->av_general_action_best_practice( "action" );
     }
 
+    /** @return bool|null null: none of action / wildfire-action / mlav-action listed in the visibility JSON (N/A) */
     public function av_actions_visibility()
     {
-        if( $this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility() )
-            return true;
-
-        return false;
+        return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
     }
 
+    /** @return bool|null null: none of action / wildfire-action / mlav-action listed in the BP JSON (N/A) */
     public function av_actions_best_practice()
     {
-        if( $this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice() )
-            return true;
-
-        return false;
+        return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
     }
 
     public function av_action_visibility()
@@ -516,19 +521,29 @@ trait sp_action_virus
         #    return null;
 
         $check_array = $this->virus_bp_visibility_JSON( "bp", "virus", $av_action_type );
+        // not listed in the JSON: not checked -> N/A
+        if( empty( $check_array ) )
+            return null;
 
         if( isset($this->tmp_virus_prof_array) )
         {
+            $checked = FALSE;
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
                 if( isset( $this->$type[$av_action_type] ) )
                 {
                     $bestpractise = $this->check_bp_json($type, $check_array, $av_action_type);
 
-                    if($bestpractise == FALSE)
+                    if( $bestpractise === FALSE )
                         return FALSE;
+                    if( $bestpractise !== null )
+                        $checked = TRUE;
                 }
             }
+            // decoders there, but none of them listed in the JSON -> N/A
+            if( !$checked && $bestpractise === null )
+                return null;
+            $bestpractise = $checked;
         }
 
         return $bestpractise;
@@ -545,19 +560,29 @@ trait sp_action_virus
         #    return null;
 
         $check_array = $this->virus_bp_visibility_JSON( "visibility", "virus", $av_action_type );
+        // not listed in the JSON: not checked -> N/A
+        if( empty( $check_array ) )
+            return null;
 
         if( isset($this->tmp_virus_prof_array) )
         {
+            $checked = FALSE;
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
                 if( isset( $this->$type[$av_action_type] ) )
                 {
                     $bestpractise = $this->check_visibility_json($type, $check_array, $av_action_type);
 
-                    if($bestpractise == FALSE)
+                    if( $bestpractise === FALSE )
                         return FALSE;
+                    if( $bestpractise !== null )
+                        $checked = TRUE;
                 }
             }
+            // decoders there, but none of them listed in the JSON -> N/A
+            if( !$checked && $bestpractise === null )
+                return null;
+            $bestpractise = $checked;
         }
 
         return $bestpractise;
@@ -586,38 +611,24 @@ trait sp_action_virus
                         if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                             $string .= $tmp_string;
 
+                        // the same checks as av_general_action_best_practice() / _visibility();
+                        // not listed in the JSON (null): no sign
                         if( $bestPractice )
                         {
-                            $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['bp'][$actionType];
-                            if( in_array( $type, $check_array['type'] ) )
+                            $check_array = PH::getBPjsonFile()['virus']['rule']['bp'][$actionType] ?? array();
+                            if( !empty( $check_array ) && $this->check_bp_json( $type, $check_array, $actionType ) === FALSE )
                             {
-                                if( !in_array( $this->$type[$actionType], $check_array['action'] ) )
-                                {
-                                    $add_to_array = true;
-                                    if( !empty($bp_NOT_sign) )
-                                        $string .= $bp_NOT_sign;
-                                    else
-                                        $string .= $tmp_string;
-                                }
-
-                            }
-                            else
-                            {
-                                if( !in_array( $this->$type[$actionType], $check_array['action-not-matching-type'] ) )
-                                {
-                                    $add_to_array = true;
-                                    if( !empty($bp_NOT_sign) )
-                                        $string .= $bp_NOT_sign;
-                                    else
-                                        $string .= $tmp_string;
-                                }
+                                $add_to_array = true;
+                                if( !empty($bp_NOT_sign) )
+                                    $string .= $bp_NOT_sign;
+                                else
+                                    $string .= $tmp_string;
                             }
                         }
                         if( $visibility )
                         {
-                            //Todo: to get same output as BP; change JSON and validate what is needed
-                            $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['visibility'][$actionType];
-                            if( in_array( "!".$this->$type[$actionType], $check_array ) )
+                            $check_array = PH::getBPjsonFile()['virus']['rule']['visibility'][$actionType] ?? array();
+                            if( $this->check_visibility_json( $type, $check_array, $actionType ) === FALSE )
                             {
                                 $add_to_array = true;
                                 if( !empty($visible_NOT_sign) )

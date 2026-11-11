@@ -1216,9 +1216,12 @@ class URLProfile extends SecurityProfile2
         return TRUE;
     }
 
+    /** @return bool|null null: url -> site_access -> bp not listed in the JSON, not checked (N/A) */
     public function url_siteaccess_best_practice()
     {
         $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
         $bestpractise = $this->check_siteaccess_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1227,9 +1230,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> site_access -> visibility not listed in the JSON, not checked (N/A) */
     public function url_siteaccess_visibility()
     {
         $check_array = $this->url_siteaccess_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array ) || !is_string( $check_array ) )
+            return null;
         $bestpractise = $this->check_siteaccess_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1239,9 +1245,12 @@ class URLProfile extends SecurityProfile2
     }
 
 
+    /** @return bool|null null: url -> user_credential_submission -> bp -> category not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_best_practice()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array['category'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1250,9 +1259,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> user_credential_submission -> bp -> tab -> mode not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_best_practice_tab()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array['tab']['mode'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_bp_tab_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1261,9 +1273,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> user_credential_submission -> visibility -> category not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_visibility()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array['category'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1272,9 +1287,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> user_credential_submission -> visibility -> tab -> mode not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_visibility_tab()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array['tab']['mode'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_visibility_tab_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1283,9 +1301,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> mica-engine -> visibility (PAN-OS >= 10.2) not listed in the JSON, not checked (N/A) */
     public function url_mica_engine_visibility()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) || $this->owner->owner->version < 102 )
+            return null;
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1293,9 +1314,12 @@ class URLProfile extends SecurityProfile2
         else
             return TRUE;
     }
+    /** @return bool|null null: url -> mica-engine -> bp (PAN-OS >= 10.2) not listed in the JSON, not checked (N/A) */
     public function url_mica_engine_best_practice()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) || $this->owner->owner->version < 102 )
+            return null;
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1306,10 +1330,10 @@ class URLProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->url_siteaccess_best_practice()
-            && $this->url_usercredentialsubmission_best_practice()
-            && $this->url_usercredentialsubmission_best_practice_tab()
-            && $this->url_mica_engine_best_practice()
+        if( $this->url_siteaccess_best_practice() !== FALSE
+            && $this->url_usercredentialsubmission_best_practice() !== FALSE
+            && $this->url_usercredentialsubmission_best_practice_tab() !== FALSE
+            && $this->url_mica_engine_best_practice() !== FALSE
         )
             return TRUE;
         else
@@ -1318,10 +1342,10 @@ class URLProfile extends SecurityProfile2
 
     public function is_visibility()
     {
-        if( $this->url_siteaccess_visibility()
-            && $this->url_usercredentialsubmission_visibility()
-            && $this->url_usercredentialsubmission_visibility_tab()
-            && $this->url_mica_engine_visibility()
+        if( $this->url_siteaccess_visibility() !== FALSE
+            && $this->url_usercredentialsubmission_visibility() !== FALSE
+            && $this->url_usercredentialsubmission_visibility_tab() !== FALSE
+            && $this->url_mica_engine_visibility() !== FALSE
         )
             return TRUE;
         else
@@ -1336,20 +1360,16 @@ class URLProfile extends SecurityProfile2
             return false;
     }
 
+    /** @return bool|null null: not listed in the BP JSON (N/A) */
     public function site_access_is_best_practice()
     {
-        if( $this->url_siteaccess_best_practice() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_siteaccess_best_practice();
     }
 
+    /** @return bool|null null: not listed in the visibility JSON (N/A) */
     public function site_access_is_visibility()
     {
-        if( $this->url_siteaccess_visibility() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_siteaccess_visibility();
     }
 
     public function site_access_is_adoption()
@@ -1357,24 +1377,16 @@ class URLProfile extends SecurityProfile2
         return TRUE;
     }
 
+    /** @return bool|null null: neither category nor tab listed in the BP JSON (N/A) */
     public function credential_is_best_practice()
     {
-        if( $this->url_usercredentialsubmission_best_practice()
-            && $this->url_usercredentialsubmission_best_practice_tab()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_usercredentialsubmission_best_practice(), $this->url_usercredentialsubmission_best_practice_tab() ) );
     }
 
+    /** @return bool|null null: neither category nor tab listed in the visibility JSON (N/A) */
     public function credential_is_visibility()
     {
-        if( $this->url_usercredentialsubmission_visibility()
-            && $this->url_usercredentialsubmission_visibility_tab()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_usercredentialsubmission_visibility(), $this->url_usercredentialsubmission_visibility_tab() ) );
     }
 
     public function credential_is_adoption()
@@ -1384,20 +1396,16 @@ class URLProfile extends SecurityProfile2
         return False;
     }
 
+    /** @return bool|null null: not listed in the visibility JSON (N/A) */
     public function mica_engine_is_visibility()
     {
-        if( $this->url_mica_engine_visibility() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_mica_engine_visibility();
     }
 
+    /** @return bool|null null: not listed in the BP JSON (N/A) */
     public function mica_engine_is_bestpractice()
     {
-        if( $this->url_mica_engine_visibility() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_mica_engine_best_practice();     // was the visibility check
     }
     public function mica_engine_is_adoption()
     {

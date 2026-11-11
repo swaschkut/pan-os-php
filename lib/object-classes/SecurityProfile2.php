@@ -68,6 +68,9 @@ class SecurityProfile2
             return null;
 
         $check_array = $this->bp_visibility_JSON( "bp", $this->secprof_type);
+        // not listed in the BP JSON: not checked -> N/A
+        if( !self::cloud_inline_listed( $check_array ) )
+            return null;
 
         if( isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled )
         {
@@ -183,6 +186,9 @@ class SecurityProfile2
             return null;
 
         $check_array = $this->bp_visibility_JSON( "visibility", $this->secprof_type);
+        // not listed in the visibility JSON: not checked -> N/A
+        if( !self::cloud_inline_listed( $check_array ) )
+            return null;
 
         if( isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled )
         {
@@ -371,9 +377,10 @@ class SecurityProfile2
             {
                 if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                 {
-                    if( $bestPractice )
+                    // not listed in the JSON (null): no sign
+                    if( $bestPractice && $this->cloud_inline_analysis_best_practice() === FALSE )
                         $enabled .= $bp_NOT_sign;
-                    if( $visibility )
+                    if( $visibility && $this->cloud_inline_analysis_visibility() === FALSE )
                         $enabled .= $visible_NOT_sign;
                 }
                 else
@@ -475,9 +482,10 @@ class SecurityProfile2
             {
                 if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                 {
-                    if( $bestPractice )
+                    // not listed in the JSON (null): no sign
+                    if( $bestPractice && $this->cloud_inline_analysis_best_practice() === FALSE )
                         $enabled .= $bp_NOT_sign;
-                    if( $visibility )
+                    if( $visibility && $this->cloud_inline_analysis_visibility() === FALSE )
                         $enabled .= $visible_NOT_sign;
                 }
                 else
@@ -662,9 +670,10 @@ class SecurityProfile2
             {
                 if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                 {
-                    if( $bestPractice )
+                    // not listed in the JSON (null): no sign
+                    if( $bestPractice && $this->cloud_inline_analysis_best_practice() === FALSE )
                         $enabled .= $bp_NOT_sign;
-                    if( $visibility )
+                    if( $visibility && $this->cloud_inline_analysis_visibility() === FALSE )
                         $enabled .= $visible_NOT_sign;
                 }
                 else
@@ -775,7 +784,7 @@ class SecurityProfile2
                         $string .= " - packet-capture: '".$rule->packetCapture()."'";
 
                         /** @var DNSPolicy $rule */
-                        if( $bestPractice && !$rule->spyware_lists_bestpractice() )
+                        if( $bestPractice && $rule->spyware_lists_bestpractice() === FALSE )
                         {
                             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                                 $string .= $bp_NOT_sign;
@@ -784,7 +793,7 @@ class SecurityProfile2
                                 $add_to_array = true;
                             }
                         }
-                        if( $visibility && !$rule->spyware_lists_visibility() )
+                        if( $visibility && $rule->spyware_lists_visibility() === FALSE )
                         {
                             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                                 $string .= $visible_NOT_sign;
@@ -831,7 +840,7 @@ class SecurityProfile2
                         $string .= " - action: '".$rule->action."'";
                         $string .= " - packet-capture: '".$rule->packetCapture()."'";
                         /** @var DNSPolicy $rule */
-                        if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                        if( $bestPractice && $rule->spyware_dns_security_rule_bestpractice() === FALSE )
                         {
                             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                                 $string .= $bp_NOT_sign;
@@ -841,7 +850,7 @@ class SecurityProfile2
                             }
                         }
 
-                        if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                        if( $visibility && $rule->spyware_dns_security_rule_visibility() === FALSE )
                         {
                             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                                 $string .= $visible_NOT_sign;
@@ -885,7 +894,7 @@ class SecurityProfile2
                         //$string .= " - packet-capture: '".$rule->packetCapture()."'";
                         /** @var DNSPolicy $rule */
                         //Todo: TBD
-                        if( $bestPractice && !$rule->spyware_advanced_dns_security_rule_bestpractice() )
+                        if( $bestPractice && $rule->spyware_advanced_dns_security_rule_bestpractice() === FALSE )
                         {
                             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                                 $string .= $bp_NOT_sign;
@@ -895,7 +904,7 @@ class SecurityProfile2
                             }
                         }
 
-                        if( $visibility && !$rule->spyware_advanced_dns_security_rule_visibility() )
+                        if( $visibility && $rule->spyware_advanced_dns_security_rule_visibility() === FALSE )
                         {
                             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                                 $string .= $visible_NOT_sign;
@@ -1120,7 +1129,10 @@ class SecurityProfile2
             $tmp_array[] = "log-severity: ".$this->credential_log;
             $tmp_array[] = "----";
 
-            if( $this->url_usercredentialsubmission_visibility_tab() )
+            $tmp_check = $this->url_usercredentialsubmission_visibility_tab();
+            if( $tmp_check === null )
+                $tmp_array[] = "[N/A]";
+            elseif( $tmp_check )
                 $tmp_array[] = $bp_text_yes;
             else
                 $tmp_array[] = $bp_text_no;
@@ -1132,7 +1144,10 @@ class SecurityProfile2
             $tmp_array[] = "log-severity: ".$this->credential_log;
             $tmp_array[] = "----";
 
-            if( $this->url_usercredentialsubmission_best_practice_tab() )
+            $tmp_check = $this->url_usercredentialsubmission_best_practice_tab();
+            if( $tmp_check === null )
+                $tmp_array[] = "[N/A]";
+            elseif( $tmp_check )
                 $tmp_array[] = $bp_text_yes;
             else
                 $tmp_array[] = $bp_text_no;
@@ -1167,6 +1182,20 @@ class SecurityProfile2
         return $bp_set;
     }
 
+
+    /**
+     * cloud-inline -> bp|visibility -> inline-policy-action: only entries with type 'any' and an action are checked.
+     * None of them: the BP JSON asks for nothing (key missing, empty list, ...) -> N/A
+     */
+    public static function cloud_inline_listed( $check_array ): bool
+    {
+        if( !isset( $check_array['inline-policy-action'] ) || !is_array( $check_array['inline-policy-action'] ) )
+            return FALSE;
+        foreach( $check_array['inline-policy-action'] as $validate )
+            if( isset( $validate['type'][0] ) && $validate['type'][0] == 'any' && !empty( $validate['action'] ) )
+                return TRUE;
+        return FALSE;
+    }
 
     public function bp_visibility_JSON( $checkType, $secprof_type )
     {

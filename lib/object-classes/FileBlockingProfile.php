@@ -143,8 +143,16 @@ class FileBlockingProfile extends SecurityProfile2
     }
 
 
+    /** @return bool|null null: file-blocking -> rule -> bp -> block -> filetype not listed in the BP JSON (N/A) */
     public function fileblocking_rules_best_practice()
     {
+        $checkBP_array = PH::getBPjsonFile()['file-blocking']['rule']['bp'] ?? array();
+        if( empty( $checkBP_array['block']['filetype'] ) || !is_array( $checkBP_array['block']['filetype'] ) )
+            return null;
+        // action / direction not listed: not checked
+        $bp_action = $checkBP_array['block']['action'] ?? null;
+        $bp_direction = $checkBP_array['block']['direction'] ?? null;
+
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
@@ -163,24 +171,22 @@ class FileBlockingProfile extends SecurityProfile2
             /// OLD
             ///
             ///
-            $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
-            $checkBP_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
             $this->fileblocking_rules_coverage();
 
             foreach( $checkBP_array['block']['filetype'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( $checkBP_array['block']['action'] !== $this->rule_coverage[$bp_array]['action']
-                        || $checkBP_array['block']['direction'] !== $this->rule_coverage[$bp_array]['direction']
+                    if( ( $bp_action !== null && $bp_action !== $this->rule_coverage[$bp_array]['action'] )
+                        || ( $bp_direction !== null && $bp_direction !== $this->rule_coverage[$bp_array]['direction'] )
                     )
                         return false;
                     else
                         $bp_set = true;
                 }
                 elseif( isset($this->rule_coverage['any'])
-                    && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action']
-                    && $checkBP_array['block']['direction'] === $this->rule_coverage['any']['direction']
+                    && ( $bp_action === null || $bp_action === $this->rule_coverage['any']['action'] )
+                    && ( $bp_direction === null || $bp_direction === $this->rule_coverage['any']['direction'] )
                 )
                 {
                     $bp_set = true;
@@ -190,15 +196,19 @@ class FileBlockingProfile extends SecurityProfile2
                     return false;
             }
 
-            if( !$this->fileblocking_rules_visibility() )
+            if( $this->fileblocking_rules_visibility() === FALSE )     // null: visibility not listed
                 return false;
 
         }
         return $bp_set;
     }
 
+    /** @return bool|null null: file-blocking -> rule -> visibility not listed in the visibility JSON (N/A) */
     public function fileblocking_rules_visibility()
     {
+        if( empty( PH::getBPjsonFile()['file-blocking']['rule']['visibility'] ) )
+            return null;
+
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
@@ -206,7 +216,7 @@ class FileBlockingProfile extends SecurityProfile2
             foreach( $this->rules_obj as $rulename => $rule )
             {
 
-                if( $rule->fileblocking_rule_visibility() )
+                if( $rule->fileblocking_rule_visibility() === TRUE )
                     return true;
             }
 
@@ -294,7 +304,7 @@ class FileBlockingProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->fileblocking_rules_best_practice()
+        if( $this->fileblocking_rules_best_practice() !== FALSE
         )
             return TRUE;
         else
@@ -303,7 +313,7 @@ class FileBlockingProfile extends SecurityProfile2
 
     public function is_visibility()
     {
-        if( $this->fileblocking_rules_visibility()
+        if( $this->fileblocking_rules_visibility() !== FALSE
         )
             return TRUE;
         else

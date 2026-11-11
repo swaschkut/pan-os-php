@@ -180,7 +180,7 @@ class DNSPolicy
                 $bp_packet = FALSE;
                 $bp_loglevel = FALSE;
 
-                foreach( $validate['type'] as $name )
+                foreach( $validate['type'] ?? array() as $name )
                 {
                     if( $this->name() == $name )
                     {
@@ -261,6 +261,8 @@ class DNSPolicy
                                 }
                             }
                         }
+                        else
+                            $bp_loglevel = TRUE;    // log-level not listed: not checked
 
 
 
@@ -274,7 +276,7 @@ class DNSPolicy
         }
 
 
-        return TRUE;
+        return null;    // category / list not in the BP JSON: not checked -> N/A
     }
 
     public function spyware_dns_security_rule_visibility()
@@ -293,7 +295,7 @@ class DNSPolicy
                 $bp_packet = FALSE;
                 $bp_loglevel = FALSE;
 
-                foreach( $validate['type'] as $name )
+                foreach( $validate['type'] ?? array() as $name )
                 {
                     if( $this->name() == $name )
                     {
@@ -390,7 +392,7 @@ class DNSPolicy
         }
 
 
-        return TRUE;
+        return null;    // category / list not in the BP JSON: not checked -> N/A
     }
 
     public function spyware_advanced_dns_security_rule_bestpractice()
@@ -410,7 +412,7 @@ class DNSPolicy
                 $bp_packet = FALSE;
                 $bp_loglevel = FALSE;
 
-                foreach( $validate['type'] as $name )
+                foreach( $validate['type'] ?? array() as $name )
                 {
                     if( $this->name() == $name )
                     {
@@ -525,7 +527,7 @@ class DNSPolicy
                 $bp_packet = FALSE;
                 $bp_loglevel = FALSE;
 
-                foreach( $validate['type'] as $name )
+                foreach( $validate['type'] ?? array() as $name )
                 {
                     if( $this->name() == $name )
                     {
@@ -668,12 +670,14 @@ class DNSPolicy
                 $bp_action = FALSE;
                 $bp_packet = FALSE;
 
-                foreach( $validate['type'] as $name )
+                foreach( $validate['type'] ?? array() as $name )
                 {
                     if( $this->name() == $name )
                     {
                         #print "0) name: ".$name."\n";
-                        foreach( $validate['action'] as $final_action_check )
+                        if( !isset( $validate['action'] ) )
+                            $bp_action = TRUE;      // not listed: not checked
+                        foreach( $validate['action'] ?? array() as $final_action_check )
                         {
                             #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
                             if( $this->action() == $final_action_check )
@@ -691,7 +695,9 @@ class DNSPolicy
                         }
 
 
-                        foreach( $validate['packet-capture'] as $final_packet_check )
+                        if( !isset( $validate['packet-capture'] ) )
+                            $bp_packet = TRUE;      // not listed: not checked
+                        foreach( $validate['packet-capture'] ?? array() as $final_packet_check )
                         {
                             #print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
                             if( $this->packetCapture() == $final_packet_check )
@@ -717,7 +723,7 @@ class DNSPolicy
             }
         }
 
-        return TRUE;
+        return null;    // category / list not in the BP JSON: not checked -> N/A
     }
 
     public function spyware_lists_visibility()
@@ -730,12 +736,14 @@ class DNSPolicy
             {
                 $bp_action = FALSE;
 
-                foreach( $validate['type'] as $name )
+                foreach( $validate['type'] ?? array() as $name )
                 {
                     if( $this->name() == $name )
                     {
                         #print "0) name: ".$name."\n";
-                        foreach( $validate['action'] as $final_action_check )
+                        if( !isset( $validate['action'] ) )
+                            $bp_action = TRUE;      // not listed: not checked
+                        foreach( $validate['action'] ?? array() as $final_action_check )
                         {
                             $final_action_check = str_replace("!", "", $final_action_check);
                             #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
@@ -762,7 +770,7 @@ class DNSPolicy
             }
         }
 
-        return true;
+        return null;    // category / list not in the BP JSON: not checked -> N/A
     }
 }
 

@@ -2541,6 +2541,24 @@ class PH
         return $details;
     }
 
+    /**
+     * Combine BP / visibility results: one FALSE fails; null (not listed in the BP JSON, not checked) is no statement.
+     * @param array $results bool|null each
+     * @return bool|null FALSE: one failed; TRUE: none failed, at least one checked; null: nothing checked (N/A)
+     */
+    public static function bpCombine( array $results ): ?bool
+    {
+        $ret = null;
+        foreach( $results as $result )
+        {
+            if( $result === FALSE )
+                return FALSE;
+            if( $result !== null )
+                $ret = TRUE;
+        }
+        return $ret;
+    }
+
     public static function validateIncludedInBPA( &$stdoutarray )
     {
         PH::getBPjsonFile();

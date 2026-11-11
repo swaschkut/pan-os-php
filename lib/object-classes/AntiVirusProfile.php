@@ -148,10 +148,10 @@ class AntiVirusProfile extends SecurityProfile2
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+            if ($this->av_action_best_practice() !== FALSE
+                && $this->av_wildfireaction_best_practice() !== FALSE
+                && $this->av_mlavaction_best_practice() !== FALSE
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
             )
                 return TRUE;
             else
@@ -159,9 +159,9 @@ class AntiVirusProfile extends SecurityProfile2
         }
         else
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
+            if ($this->av_action_best_practice() !== FALSE
+                && $this->av_wildfireaction_best_practice() !== FALSE
+                && $this->av_mlavaction_best_practice() !== FALSE
             )
                 return TRUE;
             else
@@ -173,10 +173,10 @@ class AntiVirusProfile extends SecurityProfile2
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+            if ($this->av_action_visibility() !== FALSE
+                && $this->av_wildfireaction_visibility() !== FALSE
+                && $this->av_mlavaction_visibility() !== FALSE
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
             )
                 return TRUE;
             else
@@ -184,9 +184,9 @@ class AntiVirusProfile extends SecurityProfile2
         }
         else
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
+            if ($this->av_action_visibility() !== FALSE
+                && $this->av_wildfireaction_visibility() !== FALSE
+                && $this->av_mlavaction_visibility() !== FALSE
             )
                 return TRUE;
             else

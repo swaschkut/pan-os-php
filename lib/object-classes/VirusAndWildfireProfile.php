@@ -159,10 +159,10 @@ class VirusAndWildfireProfile extends SecurityProfile2
         $bp = false;
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+            if ($this->av_action_best_practice() !== FALSE
+                && $this->av_wildfireaction_best_practice() !== FALSE
+                && $this->av_mlavaction_best_practice() !== FALSE
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
             )
                 $bp = TRUE;
             else
@@ -170,9 +170,9 @@ class VirusAndWildfireProfile extends SecurityProfile2
         }
         else
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
+            if ($this->av_action_best_practice() !== FALSE
+                && $this->av_wildfireaction_best_practice() !== FALSE
+                && $this->av_mlavaction_best_practice() !== FALSE
             )
                 $bp = TRUE;
             else
@@ -181,8 +181,8 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+            if( $this->wildfire_rules_best_practice() !== FALSE
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
             )
                 $bp = TRUE;
             else
@@ -190,7 +190,7 @@ class VirusAndWildfireProfile extends SecurityProfile2
         }
         else
         {
-            if( $this->wildfire_rules_best_practice() )
+            if( $this->wildfire_rules_best_practice() !== FALSE )
                 $bp = TRUE;
             else
                 return FALSE;
@@ -205,10 +205,10 @@ class VirusAndWildfireProfile extends SecurityProfile2
         //Todo - swaschkut 20260629
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+            if ($this->av_action_visibility() !== FALSE
+                && $this->av_wildfireaction_visibility() !== FALSE
+                && $this->av_mlavaction_visibility() !== FALSE
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
             )
                 $bp = true;
             else
@@ -216,9 +216,9 @@ class VirusAndWildfireProfile extends SecurityProfile2
         }
         else
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
+            if ($this->av_action_visibility() !== FALSE
+                && $this->av_wildfireaction_visibility() !== FALSE
+                && $this->av_mlavaction_visibility() !== FALSE
             )
                 $bp = true;
             else
@@ -227,8 +227,8 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+            if( $this->wildfire_rules_visibility() !== FALSE
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
             )
                 $bp = true;
             else
@@ -236,7 +236,7 @@ class VirusAndWildfireProfile extends SecurityProfile2
         }
         else
         {
-            if( $this->wildfire_rules_visibility()
+            if( $this->wildfire_rules_visibility() !== FALSE
             )
                 $bp = true;
             else

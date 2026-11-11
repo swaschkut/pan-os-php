@@ -141,27 +141,33 @@ trait sp_action_wildfire
         }
     }
 
+    /**
+     * @return bool|null null: wildfire -> rule -> bp (filetype) not listed in the BP JSON (N/A);
+     *                   FALSE: listed, but the profile has no rule
+     */
     public function wildfire_rules_best_practice(): ?bool
     {
-        $bp_set = null;
+        $details = PH::getBPjsonFile();
+        $checkBP_array = $details['wildfire']['rule']['bp'] ?? array();
+        $check_array = $details['wildfire']['rule']['visibility'] ?? array();
+        $first_array_key2 = is_array( $checkBP_array ) ? array_key_first( $checkBP_array ) : null;
+        if( $first_array_key2 === null || empty( $checkBP_array[$first_array_key2]['filetype'] ) )
+            return null;
+
+        $bp_set = false;
         if (!empty($this->rules_obj))
         {
-            $bp_set = false;
-
-            $first_array_key = array_key_first($this->rules_obj);
-
-            $check_array = $this->rules_obj[$first_array_key]->wildfire_rule_bp_visibility_JSON( "visibility", "wildfire" );
-            $checkBP_array = $this->rules_obj[$first_array_key]->wildfire_rule_bp_visibility_JSON( "bp", "wildfire" );
             $this->wildfire_rules_coverage();
 
-            $first_array_key2 = array_key_first($checkBP_array);
             foreach( $checkBP_array[$first_array_key2]['filetype'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( is_array($checkBP_array[$first_array_key2]['analysis']) )
+                    if( !isset( $checkBP_array[$first_array_key2]['analysis'] ) )
+                        $bp_set = true;     // analysis not listed: not checked
+                    elseif( is_array($checkBP_array[$first_array_key2]['analysis']) )
                     {
-                        if( !in_array($this->rule_coverage[$bp_array]['analysis'], $checkBP_array[0]['analysis']) )
+                        if( !in_array($this->rule_coverage[$bp_array]['analysis'], $checkBP_array[$first_array_key2]['analysis']) )
                             return false;
                         else
                             $bp_set = true;
@@ -178,12 +184,13 @@ trait sp_action_wildfire
                 #    return false;
             }
 
-            foreach( $check_array[$first_array_key2]['filetype'] as $bp_array )
+            $first_vis_key = is_array( $check_array ) ? array_key_first( $check_array ) : null;
+            foreach( ( $first_vis_key !== null ? ( $check_array[$first_vis_key]['filetype'] ?? array() ) : array() ) as $bp_array )
             {
-                if( isset($this->rule_coverage[$bp_array]) )
+                if( isset($this->rule_coverage[$bp_array]) && isset( $check_array[$first_vis_key]['analysis'] ) )
                 {
                     #print_r($this->rule_coverage[$bp_array]);
-                    $checkAction = $check_array[0]['analysis'];
+                    $checkAction = $check_array[$first_vis_key]['analysis'];
                     if( is_array($checkAction) )
                     {
                         //anything I need to do here:????
@@ -215,15 +222,22 @@ trait sp_action_wildfire
         return $bp_set;
     }
 
+    /**
+     * @return bool|null null: wildfire -> rule -> visibility not listed in the visibility JSON (N/A);
+     *                   FALSE: listed, but no rule passes (or the profile has no rule)
+     */
     public function wildfire_rules_visibility(): ?bool
     {
-        $bp_set = null;
+        if( empty( PH::getBPjsonFile()['wildfire']['rule']['visibility'] ) )
+            return null;
+
+        $bp_set = false;
         if (!empty($this->rules_obj)) {
             $bp_set = false;
 
             foreach ($this->rules_obj as $rulename => $rule) {
                 /** @var ThreatPolicyWildfire $rule */
-                if ($rule->wildfire_rule_visibility())
+                if ($rule->wildfire_rule_visibility() === TRUE)
                     #$bp_set = true;
                     return true;
                 else
@@ -257,8 +271,8 @@ trait sp_action_wildfire
     {
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+            if( $this->wildfire_rules_best_practice() !== FALSE
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) !== FALSE
             )
                 return TRUE;
             else
@@ -266,7 +280,7 @@ trait sp_action_wildfire
         }
         else
         {
-            if( $this->wildfire_rules_best_practice() )
+            if( $this->wildfire_rules_best_practice() !== FALSE )
                 return TRUE;
             else
                 return FALSE;
@@ -277,8 +291,8 @@ trait sp_action_wildfire
     {
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+            if( $this->wildfire_rules_visibility() !== FALSE
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) !== FALSE
             )
                 return TRUE;
             else
@@ -286,7 +300,7 @@ trait sp_action_wildfire
         }
         else
         {
-            if( $this->wildfire_rules_visibility()
+            if( $this->wildfire_rules_visibility() !== FALSE
             )
                 return TRUE;
             else
