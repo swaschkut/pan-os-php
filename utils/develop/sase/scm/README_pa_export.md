@@ -1,4 +1,4 @@
-# scm_pa_export.php – Prisma Access export (infrastructure, Remote Networks, Service Connections)
+# scm_pa_export.php – Prisma Access export (infrastructure, Remote Networks, Service Connections, Mobile Users)
 
 Downloads the Prisma Access configuration of one tenant (TSG) into a local directory, per **area**.
 The export is the input for the later steps:
@@ -12,8 +12,9 @@ The export is the input for the later steps:
 | `infra` | Prisma Access infrastructure: infrastructure subnet, infra BGP AS, loopbacks, BGP routing, internal DNS servers, locations, egress IPs |
 | `remote-networks` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, bandwidth allocations, remote networks (RN / RN-SPN) |
 | `service-connections` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, service connections (SC-CAN), service connection groups, traffic steering rules |
+| `mobile-users` | identity dependencies (certificates, trusted CAs, certificate / TLS service profiles, SAML / LDAP / RADIUS / TACACS+ / Kerberos server profiles, MFA servers, local users / groups, authentication profiles / sequences) and GlobalProtect (`/config/mobile-agent/v1/*`) |
 
-Mobile Users follow as a further area.
+Not covered yet: Mobile Users Explicit Proxy, IAM, ZTNA connector, license allocation.
 
 ## Usage
 
@@ -25,19 +26,21 @@ php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> outdir=/share
 # shortcuts
 php utils/develop/sase/scm/scm_rn_export.php in=scm-api://<TSG_ID>     # area=remote-networks
 php utils/develop/sase/scm/scm_sc_export.php in=scm-api://<TSG_ID>     # area=service-connections
+php utils/develop/sase/scm/scm_mu_export.php in=scm-api://<TSG_ID>     # area=mobile-users
 ```
 
 | argument | description |
 |---|---|
 | `in=scm-api://<TSG_ID>` | tenant; service account `client_id` / `client_secret` are taken from `~/.panconfkeystore` (`tsg_id<TSG_ID>`) or asked for and stored |
-| `area=` | comma separated: `infra`, `remote-networks`, `service-connections`; default: all |
+| `area=` | comma separated: `infra`, `remote-networks`, `service-connections`, `mobile-users`; default: all |
 | `outdir=` | base directory, default `export` |
 | `folder=` | SCM folder of the Remote Network IKE/IPsec objects, default `Remote Networks` |
 | `sc-folder=` | SCM folder of the Service Connection IKE/IPsec/QoS objects, default `Service Connections` |
+| `mu-folder=` | SCM folder of the Mobile Users identity / mobile-agent objects, default `Mobile Users` |
 | `egressip` | also download egress IPs via the Prisma Access egress-IP API (`serviceType=all`) |
 | `egressip-env=prod\|prod6` | egress-IP API host (`api.prod…` default, `api.prod6…` for some SCM tenants) |
-| `psk-list` | per connection area write `psk-list.csv` and `bgp-secret-list.csv` with the decrypted values (see below) |
-| `master-key=` | master key to decrypt PSKs and BGP secrets; default: PAN-OS default master key |
+| `psk-list` | write the secret lists with the decrypted values: `psk-list.csv` + `bgp-secret-list.csv` (RN, SC), `secret-list.csv` (MU) – see below |
+| `master-key=` | master key to decrypt the secrets; default: PAN-OS default master key |
 | `debugapi` | print every API call |
 
 ### Egress-IP API key
@@ -80,12 +83,40 @@ With `egressip` the key is taken from, in this order:
         08_traffic-steering-rules.json          /config/deployment/v1/traffic-steering-rules
         ip-mapping.json / ip-mapping.csv
         psk-list.csv / bgp-secret-list.csv      (only with psk-list, chmod 600, cleartext)
+    mobile-users/
+        01_certificates.json                    /config/identity/v1/certificates?folder=Mobile Users
+        02_trusted-certificate-authorities.json /config/identity/v1/trusted-certificate-authorities
+        03_certificate-profiles.json            /config/identity/v1/certificate-profiles
+        04_tls-service-profiles.json            /config/identity/v1/tls-service-profiles
+        05_saml-server-profiles.json            /config/identity/v1/saml-server-profiles
+        06_ldap-server-profiles.json            /config/identity/v1/ldap-server-profiles
+        07_radius-server-profiles.json          /config/identity/v1/radius-server-profiles
+        08_tacacs-server-profiles.json          /config/identity/v1/tacacs-server-profiles
+        09_kerberos-server-profiles.json        /config/identity/v1/kerberos-server-profiles
+        10_mfa-servers.json                     /config/identity/v1/mfa-servers
+        11_local-users.json                     /config/identity/v1/local-users
+        12_local-user-groups.json               /config/identity/v1/local-user-groups
+        13_authentication-profiles.json         /config/identity/v1/authentication-profiles
+        14_authentication-sequences.json        /config/identity/v1/authentication-sequences
+        20_mobile-agent-infrastructure-settings.json  /config/mobile-agent/v1/infrastructure-settings?folder=Mobile Users
+        21_mobile-agent-locations.json          /config/mobile-agent/v1/locations
+        22_mobile-agent-authentication-settings.json  /config/mobile-agent/v1/authentication-settings
+        23_mobile-agent-tunnel-profiles.json    /config/mobile-agent/v1/tunnel-profiles
+        24_mobile-agent-agent-profiles.json     /config/mobile-agent/v1/agent-profiles
+        25_mobile-agent-global-settings.json    /config/mobile-agent/v1/global-settings
+        26_mobile-agent-agent-versions.json     /config/mobile-agent/v1/agent-versions
+        27_mobile-agent-enable.json             /config/mobile-agent/v1/enable
+        ip-mapping.json / ip-mapping.csv
+        secret-list.csv                         (only with psk-list, chmod 600, cleartext)
 ```
 
-* **Import order**: `infra` → `remote-networks` → `service-connections`; inside an area the files `01`… are in import order
+All `mobile-users` endpoints are queried with `?folder=Mobile Users` (`mu-folder=`). Identity objects defined in a
+parent folder (e.g. `Prisma Access`, `All`) are reported as `inherited_or_predefined`.
+
+* **Import order**: `infra` → `remote-networks` → `service-connections` → `mobile-users`; inside an area the files `01`… are in import order
   (an entry only references entries with a lower number or of an earlier area).
   `manifest.json` lists the full order in `import_order` (`area/endpoint`).
-* `infra/90_locations.json` is also fetched with `area=remote-networks` / `service-connections` alone (needed for the IP mapping);
+* `infra/90_locations.json` is also fetched with `area=remote-networks` / `service-connections` / `mobile-users` alone (needed for the IP mapping);
   `manifest.json` marks it `fetched_as: context`.
 * Every endpoint file keeps the API data (`data`) plus `endpoint`, `url`, `tsg_id`, `fetched_at`, `http_code`,
   `status`, `error`. Normalisation (dropping `id`, read-only fields, sorting) is done by compare/import.
@@ -95,9 +126,14 @@ With `egressip` the key is taken from, in this order:
 
 ### manifest.json
 
-`format_version` (3), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (per connection area), `created_at`, `import_order`,
-per-endpoint `area`/status/count/http_code, `infra` summary, `ip_mapping` (summary per area), `secret_lists`
-(counts per area: `psk`, `bgp_secret`) and `import_hints` (each with `area`).
+`format_version` (4), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
+per-endpoint `area`/status/count/http_code, `infra` summary, `mobile_users` summary, `ip_mapping` (summary per area),
+`secret_lists` (counts per area: `psk`, `bgp_secret`, `secret`) and `import_hints` (each with `area`).
+
+`mobile_users` summary (null without area `mobile-users`): `portal_hostname`, `ip_pools` per pool name,
+`deployment_regions` (number of locations per region), number of `dns_servers`, `agent_profiles`, `tunnel_profiles`,
+`authentication_profiles_used` (mobile-agent authentication settings), `authentication_profiles`, `certificates`,
+number of `local_users`.
 
 `infra` summary (null without area `infra`): `infrastructure_subnet`, `infrastructure_subnet_ipv6`, `ipv6`,
 `infra_bgp_as`, `tunnel_monitor_ip_address`, `loopback_ips`, `bgp_routing` (routing preference, backbone routing,
@@ -114,6 +150,9 @@ accept route over SC, outbound routes for services, host route to IKE peer, with
   (`protocol.bgp.secret`, for service connections also `bgp_peer.secret`); see `bgp-secret-list.csv`.
 * `intra_dependency` – service connections referencing another service connection as `backup_SC`: import all service
   connections without `backup_SC` first, then set it.
+* `certificate_private_key` – certificates of the MU area: private keys are not exported by the API; import them
+  manually (PKCS12 / PEM with key) on the target tenant before the mobile-agent settings.
+* `secret` – MU passwords / shared secrets (see `secret-list.csv`).
 * `inherited_or_predefined` – entries not defined in the export folder itself (`snippet` set, e.g. `predefined`, or a
   parent folder). Import references them but does not create them.
 
@@ -187,6 +226,32 @@ One row per connection and BGP secret field:
 Import rule (`SCMPrismaAccessExport::loadBGPSecretList()`, key `object|field`): `secret_new` if filled, otherwise
 `secret_current`; same error handling and file protection as `psk-list.csv`.
 
+### mobile-users/ip-mapping.json / ip-mapping.csv
+
+One row per MU location (`mobile-agent-infrastructure-settings` → `deployment.region[].locations[]`, fallback
+`mobile-agent-locations`): `deployment_region`, `location`, `location_display`, `gp_gateway_active`,
+`gp_gateway_pre_allocated`, `gp_portal_active`, `gp_portal_pre_allocated`, `egress_match`.
+The egress IPs come from `infra/92_egress-ip.json` (`address_details` with `serviceType` `gp_gateway` / `gp_portal`,
+split by `addressType`); the JSON also holds `portal_hostname`. A new tenant gets new GlobalProtect IPs – allow lists
+of SaaS applications and partners have to be updated.
+
+### mobile-users/secret-list.csv
+
+Generic list of all secret fields found in the MU area – one row per value:
+
+| column | content |
+|---|---|
+| `endpoint`, `object`, `path` | where the value is, e.g. `ldap-server-profiles`, `AD`, `bind_password` |
+| `secret_current` | decrypted value (`-…` master-key format), `HASHED` for hashes (`$…`, e.g. local user passwords), `DECRYPT_FAILED`, or the value as returned |
+| `secret_new` | empty – fill in for the target tenant |
+
+Detected: fields named `secret`, `password`, `passwd`, `passphrase`, `key` or `*_password` / `*_secret` / `*_key`
+(except `public_key`, `key_type`, `key_size`, `key_usage`), and name/value entries like
+`gp_app_config.config[]` whose name contains `password`, `passcode`, `override-key` or `secret`.
+
+Import rule (`SCMPrismaAccessExport::loadSecretList()`, key `endpoint|object|path`): `secret_new` if filled, otherwise
+`secret_current`; `HASHED` and `DECRYPT_FAILED` require `secret_new`. Same file protection as `psk-list.csv`.
+
 ## Connector changes (`lib/misc-classes/PanSCMAPIConnector.php`)
 
 * `sendSCMAPIRequest($method, $url, $body = false, $exitOnError = TRUE)` now returns
@@ -211,11 +276,15 @@ Import rule (`SCMPrismaAccessExport::loadBGPSecretList()`, key `object|field`): 
   `service-connections` needs a `folder` parameter.
 * `qos-profiles` endpoint path (`/config/network/v1/qos-profiles`) for folder `Service Connections`.
 * BGP secret format (`protocol.bgp.secret`, `bgp_peer.secret`) – same master-key encryption as the PSK?
+* `mobile-users`: whether identity endpoints return objects of parent folders with `folder=Mobile Users`;
+  whether `agent-versions` / `enable` / `global-settings` accept the `folder` parameter; structure of
+  `mobile-agent/locations`; which secret fields the API really returns (bind password, RADIUS secret, GP app passwords).
+* Whether egress-IP `addrType=all` includes pre-allocated GlobalProtect addresses.
 
 ## Code
 
-* `scm_pa_export.php` – CLI; `scm_rn_export.php` / `scm_sc_export.php` – wrappers with `area=remote-networks` /
-  `area=service-connections`
+* `scm_pa_export.php` – CLI; `scm_rn_export.php` / `scm_sc_export.php` / `scm_mu_export.php` – wrappers with
+  `area=remote-networks` / `area=service-connections` / `area=mobile-users`
 * `lib/SCMPrismaAccessExport.php` – export logic; area/endpoint list in `getAllEndpoints()`, connection areas
   (folder, connection endpoint) in `CONNECTION_AREAS`; results are keyed `area/endpoint`
   (`SCMRemoteNetworkExport` remains as class alias)

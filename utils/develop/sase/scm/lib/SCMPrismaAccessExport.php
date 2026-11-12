@@ -36,6 +36,11 @@
  *           01_ike-crypto-profiles.json ... 08_traffic-steering-rules.json
  *           ip-mapping.json / ip-mapping.csv
  *           psk-list.csv / bgp-secret-list.csv      (optional, cleartext, chmod 600)
+ *       mobile-users/
+ *           01_certificates.json ... 13_authentication-sequences.json   (identity dependencies)
+ *           20_mobile-agent-infrastructure-settings.json ... 27_mobile-agent-enable.json
+ *           ip-mapping.json / ip-mapping.csv
+ *           secret-list.csv                         (optional, cleartext, chmod 600)
  *
  * Areas are exported/imported in the order of self::AREAS; inside an area the numbered "dependency" endpoints are in
  * import order (an entry only references entries with a lower number or of an earlier area).
@@ -43,13 +48,16 @@
  */
 class SCMPrismaAccessExport
 {
-    const FORMAT_VERSION = 3;
+    const FORMAT_VERSION = 4;
 
     const AREA_INFRA = 'infra';
     const AREA_RN = 'remote-networks';
     const AREA_SC = 'service-connections';
+    const AREA_MU = 'mobile-users';
     /** area order == import order */
-    const AREAS = array( self::AREA_INFRA, self::AREA_RN, self::AREA_SC );
+    const AREAS = array( self::AREA_INFRA, self::AREA_RN, self::AREA_SC, self::AREA_MU );
+
+    const MU_FOLDER = 'Mobile Users';
 
     /**
      * areas built on IKE/IPsec tunnels: folder of the network objects, connection endpoint, name of the connection column
@@ -101,6 +109,7 @@ class SCMPrismaAccessExport
 
         foreach( self::CONNECTION_AREAS as $area => $def )
             $this->folders[$area] = $def['folder'];
+        $this->folders[self::AREA_MU] = self::MU_FOLDER;
         if( $rnFolder !== null && $rnFolder !== "" )
             $this->folders[self::AREA_RN] = $rnFolder;
 
@@ -139,6 +148,10 @@ class SCMPrismaAccessExport
         $sc = self::AREA_SC;
         $rnF = $this->folders[$rn];
         $scF = $this->folders[$sc];
+        $mu = self::AREA_MU;
+        $muF = $this->folders[$mu];
+        $id = "/config/identity/v1/";
+        $ma = "/config/mobile-agent/v1/";
 
         return array(
             //Prisma Access infrastructure - tenant wide, mostly single objects
@@ -164,6 +177,32 @@ class SCMPrismaAccessExport
             array( 'area' => $sc, 'order' => 6, 'name' => 'service-connections', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/service-connections", 'depends_on' => array('service-connections/ipsec-tunnels', 'service-connections/qos-profiles', 'infra/shared-infrastructure-settings', 'infra/bgp-routing') ),
             array( 'area' => $sc, 'order' => 7, 'name' => 'service-connection-groups', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/service-connection-groups", 'depends_on' => array('service-connections/service-connections') ),
             array( 'area' => $sc, 'order' => 8, 'name' => 'traffic-steering-rules', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/traffic-steering-rules", 'depends_on' => array('service-connections/service-connections') ),
+
+            //Mobile Users - identity dependencies (folder Mobile Users)
+            array( 'area' => $mu, 'order' => 1, 'name' => 'certificates', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "certificates?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 2, 'name' => 'trusted-certificate-authorities', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "trusted-certificate-authorities?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 3, 'name' => 'certificate-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "certificate-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificates', 'mobile-users/trusted-certificate-authorities') ),
+            array( 'area' => $mu, 'order' => 4, 'name' => 'tls-service-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "tls-service-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificates') ),
+            array( 'area' => $mu, 'order' => 5, 'name' => 'saml-server-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "saml-server-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificates') ),
+            array( 'area' => $mu, 'order' => 6, 'name' => 'ldap-server-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "ldap-server-profiles?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 7, 'name' => 'radius-server-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "radius-server-profiles?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 8, 'name' => 'tacacs-server-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "tacacs-server-profiles?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 9, 'name' => 'kerberos-server-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "kerberos-server-profiles?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 10, 'name' => 'mfa-servers', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "mfa-servers?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 11, 'name' => 'local-users', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "local-users?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 12, 'name' => 'local-user-groups', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "local-user-groups?folder=" . $muF, 'depends_on' => array('mobile-users/local-users') ),
+            array( 'area' => $mu, 'order' => 13, 'name' => 'authentication-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "authentication-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificate-profiles', 'mobile-users/saml-server-profiles', 'mobile-users/ldap-server-profiles', 'mobile-users/radius-server-profiles', 'mobile-users/tacacs-server-profiles', 'mobile-users/kerberos-server-profiles', 'mobile-users/mfa-servers', 'mobile-users/local-user-groups') ),
+            array( 'area' => $mu, 'order' => 14, 'name' => 'authentication-sequences', 'category' => 'dependency', 'scope' => 'folder', 'url' => $id . "authentication-sequences?folder=" . $muF, 'depends_on' => array('mobile-users/authentication-profiles') ),
+
+            //Mobile Users - GlobalProtect (mobile agent)
+            array( 'area' => $mu, 'order' => 20, 'name' => 'mobile-agent-infrastructure-settings', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "infrastructure-settings?folder=" . $muF, 'depends_on' => array('infra/shared-infrastructure-settings', 'mobile-users/tls-service-profiles') ),
+            array( 'area' => $mu, 'order' => 21, 'name' => 'mobile-agent-locations', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "locations?folder=" . $muF, 'depends_on' => array('mobile-users/mobile-agent-infrastructure-settings') ),
+            array( 'area' => $mu, 'order' => 22, 'name' => 'mobile-agent-authentication-settings', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "authentication-settings?folder=" . $muF, 'depends_on' => array('mobile-users/authentication-profiles', 'mobile-users/authentication-sequences') ),
+            array( 'area' => $mu, 'order' => 23, 'name' => 'mobile-agent-tunnel-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "tunnel-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificates') ),
+            array( 'area' => $mu, 'order' => 24, 'name' => 'mobile-agent-agent-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "agent-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificates', 'mobile-users/mobile-agent-infrastructure-settings') ),
+            array( 'area' => $mu, 'order' => 25, 'name' => 'mobile-agent-global-settings', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "global-settings?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 26, 'name' => 'mobile-agent-agent-versions', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "agent-versions?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 27, 'name' => 'mobile-agent-enable', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "enable?folder=" . $muF, 'depends_on' => array('mobile-users/mobile-agent-infrastructure-settings', 'mobile-users/mobile-agent-agent-profiles') ),
         );
     }
 
@@ -174,7 +213,7 @@ class SCMPrismaAccessExport
     public function getEndpoints()
     {
         $needAsContext = array();
-        if( count($this->connectionAreas()) > 0 )
+        if( count($this->connectionAreas()) > 0 || $this->hasArea(self::AREA_MU) )
             $needAsContext[] = self::AREA_INFRA . '/locations';
 
         $endpoints = array();
@@ -540,8 +579,13 @@ class SCMPrismaAccessExport
             $summary['remote_networks'] = count($mapping['remote_networks']);
             $summary['egress_matched'] = count( array_filter($mapping['remote_networks'], function($r){ return $r['egress_match'] !== 'none'; }) );
         }
-        else
+        elseif( $area == self::AREA_SC )
             $summary['service_connections'] = count($mapping['service_connections']);
+        else
+        {
+            $summary['locations'] = count($mapping['locations']);
+            $summary['egress_matched'] = count( array_filter($mapping['locations'], function($r){ return $r['egress_match'] !== 'none'; }) );
+        }
         return $summary;
     }
 
@@ -621,6 +665,44 @@ class SCMPrismaAccessExport
             }
         }
 
+        if( $this->hasArea(self::AREA_MU) )
+        {
+            $folder = $this->folders[self::AREA_MU];
+            foreach( $this->getAllEndpoints() as $endpoint )
+            {
+                if( $endpoint['area'] !== self::AREA_MU )
+                    continue;
+                $inherited = array();
+                foreach( $this->listData($endpoint['name'], self::AREA_MU) as $entry )
+                {
+                    $snippet = self::get($entry, 'snippet');
+                    $entryFolder = self::get($entry, 'folder');
+                    if( $snippet !== null || ( $entryFolder !== null && $entryFolder !== $folder ) )
+                        $inherited[] = self::get($entry, 'name') . " [" . ( $snippet !== null ? "snippet=" . $snippet : "folder=" . $entryFolder ) . "]";
+                }
+                if( count($inherited) > 0 )
+                    $hints[] = array( 'type' => 'inherited_or_predefined', 'area' => self::AREA_MU, 'endpoint' => $endpoint['name'], 'objects' => $inherited,
+                        'message' => 'entries not defined in folder "' . $folder . '" itself (predefined / snippet / parent folder) - reference only, do not create on import' );
+            }
+
+            $certs = array();
+            foreach( $this->listData('certificates', self::AREA_MU) as $cert )
+            {
+                $name = self::get($cert, 'name');
+                if( $name !== null && self::get($cert, 'snippet') === null )
+                    $certs[] = $name;
+            }
+            if( count($certs) > 0 )
+                $hints[] = array( 'type' => 'certificate_private_key', 'area' => self::AREA_MU, 'endpoint' => 'certificates', 'objects' => $certs,
+                    'message' => 'private keys are not exported by the API - certificates (portal/gateway, cookie cert, CA) must be imported manually (PKCS12/PEM with key) on the target tenant before the mobile-agent settings' );
+
+            $secrets = $this->collectSecretFields( self::AREA_MU );
+            if( count($secrets) > 0 )
+                $hints[] = array( 'type' => 'secret', 'area' => self::AREA_MU,
+                    'objects' => array_map( function($s){ return $s['endpoint'] . ": " . $s['object'] . " [" . $s['path'] . "]"; }, $secrets ),
+                    'message' => 'passwords / shared secrets (encrypted with the master key, or hashed for local users) - create ' . self::AREA_MU . '/secret-list.csv (argument psk-list) to provide them for import; hashed values need secret_new' );
+        }
+
         //service connection referencing another service connection as backup: create all first, set backup_SC afterwards
         $backup = array();
         foreach( $this->listData('service-connections', self::AREA_SC) as $sc )
@@ -673,6 +755,7 @@ class SCMPrismaAccessExport
                 array_filter( $this->getEndpoints(), function($e){ return $e['category'] == 'dependency' && $e['fetched_as'] == 'selected'; } ) ) ),
             'endpoints' => $endpoints,
             'infra' => $this->buildInfraSummary(),
+            'mobile_users' => $this->buildMobileUsersSummary(),
             'ip_mapping' => count($mappingSummary) > 0 ? $mappingSummary : null,
             'secret_lists' => count($secretStats) > 0 ? $secretStats : null,
             'import_hints' => $this->collectImportHints(),
@@ -897,7 +980,7 @@ class SCMPrismaAccessExport
                 $result['secret'][$key] = $row[$newColumn];
                 $result['source'][$key] = 'new';
             }
-            elseif( $row[$currentColumn] !== "" && $row[$currentColumn] !== self::PSK_DECRYPT_FAILED )
+            elseif( $row[$currentColumn] !== "" && $row[$currentColumn] !== self::PSK_DECRYPT_FAILED && $row[$currentColumn] !== self::SECRET_HASHED )
             {
                 $result['secret'][$key] = $row[$currentColumn];
                 $result['source'][$key] = 'current';
@@ -908,6 +991,267 @@ class SCMPrismaAccessExport
         fclose( $fh );
 
         return $result;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // mobile users
+
+    const MU_MAPPING_COLUMNS = array( 'deployment_region', 'location', 'location_display',
+        'gp_gateway_active', 'gp_gateway_pre_allocated', 'gp_portal_active', 'gp_portal_pre_allocated', 'egress_match' );
+
+    /**
+     * MU locations (mobile-agent-infrastructure-settings deployment.region[].locations[], fallback mobile-agent-locations)
+     * with their GlobalProtect gateway / portal egress IPs (active / pre-allocated)
+     */
+    public function buildMobileUsersMapping()
+    {
+        $infraSettings = $this->singleData('mobile-agent-infrastructure-settings', self::AREA_MU);
+        $locations = $this->listData('locations', self::AREA_INFRA);
+        $egressByZone = array();
+        foreach( $this->listData('egress-ip', self::AREA_INFRA) as $zoneEntry )
+        {
+            if( isset($zoneEntry['zone']) )
+                $egressByZone[$zoneEntry['zone']] = $zoneEntry;
+        }
+
+        //region => [location, ...]
+        $regions = array();
+        $deployment = self::get($infraSettings, 'deployment.region');
+        if( is_array($deployment) )
+        {
+            foreach( $deployment as $region )
+                $regions[ (string)self::get($region, 'name') ] = (array)self::get($region, 'locations', array());
+        }
+        if( count($regions) == 0 )
+        {
+            //fallback: mobile-agent/locations (structure to be verified against a live tenant)
+            foreach( $this->listData('mobile-agent-locations', self::AREA_MU) as $entry )
+            {
+                $locList = self::get($entry, 'locations');
+                if( is_array($locList) )
+                    $regions[ (string)self::get($entry, 'name', self::get($entry, 'region', '')) ] = $locList;
+            }
+        }
+
+        $rows = array();
+        foreach( $regions as $regionName => $locList )
+        {
+            foreach( $locList as $location )
+            {
+                $location = is_array($location) ? self::get($location, 'name', json_encode($location)) : (string)$location;
+                $display = self::locationDisplayForRegion( $locations, $location );
+                $row = array(
+                    'deployment_region' => $regionName,
+                    'location' => $location,
+                    'location_display' => $display,
+                    'gp_gateway_active' => array(), 'gp_gateway_pre_allocated' => array(),
+                    'gp_portal_active' => array(), 'gp_portal_pre_allocated' => array(),
+                    'egress_match' => 'none',
+                );
+                if( $display !== null && isset($egressByZone[$display]) )
+                {
+                    foreach( array('gp_gateway', 'gp_portal') as $serviceType )
+                    {
+                        foreach( self::egressDetails( $egressByZone[$display], $serviceType ) as $detail )
+                        {
+                            $pre = in_array( self::get($detail, 'addressType'), array('pre_allocated', 'pre-allocated'), TRUE );
+                            $row[ $serviceType . ( $pre ? '_pre_allocated' : '_active' ) ][] = $detail['address'];
+                        }
+                    }
+                    $row['egress_match'] = 'location';
+                }
+                $rows[] = $row;
+            }
+        }
+
+        $mapping = array(
+            'tsg_id' => $this->tsg,
+            'area' => self::AREA_MU,
+            'created_at' => date('c'),
+            'portal_hostname' => self::get($infraSettings, 'name'),
+            'note' => 'egress IPs per MU location via location value -> infra/90_locations.json display -> egress zone (serviceType gp_gateway / gp_portal); a new tenant gets new IPs - allow lists of SaaS / partners must be updated',
+            'locations' => $rows,
+        );
+
+        $this->writeJson( self::AREA_MU . '/ip-mapping.json', $mapping );
+
+        $fh = fopen( $this->exportDir . "/" . self::AREA_MU . "/ip-mapping.csv", "w" );
+        fputcsv( $fh, self::MU_MAPPING_COLUMNS, ',', '"', '' );
+        foreach( $rows as $row )
+        {
+            $line = array();
+            foreach( self::MU_MAPPING_COLUMNS as $c )
+                $line[] = is_array($row[$c]) ? implode(" | ", $row[$c]) : $row[$c];
+            fputcsv( $fh, $line, ',', '"', '' );
+        }
+        fclose( $fh );
+
+        return $mapping;
+    }
+
+    /**
+     * address_details of one zone for one serviceType; fallback to 'addresses' only if no details exist
+     */
+    public static function egressDetails( $zoneEntry, $serviceType )
+    {
+        $list = array();
+        if( isset($zoneEntry['address_details']) && is_array($zoneEntry['address_details']) )
+        {
+            foreach( $zoneEntry['address_details'] as $detail )
+            {
+                if( self::get($detail, 'serviceType') === $serviceType && self::get($detail, 'address') !== null )
+                    $list[] = $detail;
+            }
+        }
+        return $list;
+    }
+
+    /**
+     * short, comparable MU summary (written to manifest.json)
+     */
+    public function buildMobileUsersSummary()
+    {
+        if( !$this->hasArea(self::AREA_MU) )
+            return null;
+
+        $infraSettings = $this->singleData('mobile-agent-infrastructure-settings', self::AREA_MU);
+
+        $ipPools = array();
+        foreach( (array)self::get($infraSettings, 'ip_pools', array()) as $pool )
+            $ipPools[ (string)self::get($pool, 'name') ] = self::get($pool, 'ip_pool');
+
+        $regions = array();
+        foreach( (array)self::get($infraSettings, 'deployment.region', array()) as $region )
+            $regions[ (string)self::get($region, 'name') ] = count( (array)self::get($region, 'locations', array()) );
+
+        $authProfiles = array();
+        foreach( $this->listData('mobile-agent-authentication-settings', self::AREA_MU) as $auth )
+            $authProfiles[] = self::get($auth, 'authentication_profile');
+
+        $names = function( $endpoint ){
+            return array_values( array_filter( array_map( function($e){ return self::get($e, 'name'); }, $this->listData($endpoint, self::AREA_MU) ) ) );
+        };
+
+        return array(
+            'portal_hostname' => self::get($infraSettings, 'name'),
+            'ip_pools' => $ipPools,
+            'deployment_regions' => $regions,
+            'dns_servers' => count( (array)self::get($infraSettings, 'dns_servers', array()) ),
+            'agent_profiles' => $names('mobile-agent-agent-profiles'),
+            'tunnel_profiles' => $names('mobile-agent-tunnel-profiles'),
+            'authentication_profiles_used' => array_values( array_unique( array_filter($authProfiles) ) ),
+            'authentication_profiles' => $names('authentication-profiles'),
+            'certificates' => $names('certificates'),
+            'local_users' => count( $this->listData('local-users', self::AREA_MU) ),
+        );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // generic secret list (mobile-users: server profile passwords / secrets, local user passwords, GP app passwords)
+
+    const SECRET_HASHED = 'HASHED';
+    const SECRET_LIST_COLUMNS = array( 'endpoint', 'object', 'path', 'secret_current', 'secret_new' );
+    /** field names treated as secret (last path element) */
+    const SECRET_KEY_PATTERN = '/(^|_)(secret|password|passwd|passphrase|key)$/i';
+    /** field names matching SECRET_KEY_PATTERN which are not secret */
+    const SECRET_KEY_EXCLUDE = '/^(public_key|key_type|key_size|key_usage|api_key_header)$/i';
+    /** name/value lists (e.g. gp_app_config.config[]) - entry name treated as secret */
+    const SECRET_NAME_PATTERN = '/(password|passcode|override-key|secret)/i';
+
+    /**
+     * all secret fields of an area: [['endpoint', 'object', 'path', 'value'], ...]
+     */
+    public function collectSecretFields( $area )
+    {
+        $found = array();
+        foreach( $this->getAllEndpoints() as $endpoint )
+        {
+            if( $endpoint['area'] !== $area )
+                continue;
+            $list = $this->listData($endpoint['name'], $area);
+            if( count($list) == 0 && ($single = $this->singleData($endpoint['name'], $area)) !== null )
+                $list = array( $single );
+            foreach( $list as $entry )
+            {
+                $object = (string)self::get($entry, 'name', '');
+                self::scanSecrets( $entry, "", function( $path, $value ) use( &$found, $endpoint, $object ) {
+                    $found[] = array( 'endpoint' => $endpoint['name'], 'object' => $object, 'path' => $path, 'value' => $value );
+                } );
+            }
+        }
+        return $found;
+    }
+
+    private static function scanSecrets( $data, $prefix, $callback )
+    {
+        if( !is_array($data) )
+            return;
+
+        //name/value pair
+        if( isset($data['name']) && is_string($data['name']) && array_key_exists('value', $data)
+            && preg_match(self::SECRET_NAME_PATTERN, $data['name']) )
+        {
+            $value = is_array($data['value']) ? ( count($data['value']) == 1 ? reset($data['value']) : json_encode($data['value']) ) : $data['value'];
+            if( $value !== null && $value !== "" )
+                $callback( ltrim($prefix . ".value", "."), (string)$value );
+            return;
+        }
+
+        foreach( $data as $k => $v )
+        {
+            $path = $prefix === "" ? (string)$k : $prefix . "." . $k;
+            if( is_array($v) )
+                self::scanSecrets( $v, $path, $callback );
+            elseif( is_string($k) && preg_match(self::SECRET_KEY_PATTERN, $k) && !preg_match(self::SECRET_KEY_EXCLUDE, $k)
+                && $v !== null && $v !== "" && !is_bool($v) )
+                $callback( $path, (string)$v );
+        }
+    }
+
+    /**
+     * writes <area>/secret-list.csv (mode 0600): encrypted values ("-...") are decrypted, hashes ("$...") marked HASHED
+     *
+     * @return array ['secrets' => int, 'decrypted' => int, 'decrypt_failed' => int, 'hashed' => int, 'cleartext' => int]
+     */
+    public function writeSecretList( $area, $masterKey = null )
+    {
+        $crypto = new PanosCrypto();
+        $stats = array( 'secrets' => 0, 'decrypted' => 0, 'decrypt_failed' => 0, 'hashed' => 0, 'cleartext' => 0 );
+
+        $fh = $this->openSecretFile( $this->exportDir . "/" . $area . "/secret-list.csv" );
+        fputcsv( $fh, self::SECRET_LIST_COLUMNS, ',', '"', '' );
+
+        foreach( $this->collectSecretFields($area) as $secret )
+        {
+            $stats['secrets']++;
+            $value = $secret['value'];
+            if( strpos($value, '-') === 0 )
+                $current = self::decryptValue( $crypto, $value, $masterKey, $stats );
+            elseif( strpos($value, '$') === 0 )
+            {
+                $current = self::SECRET_HASHED;
+                $stats['hashed']++;
+            }
+            else
+            {
+                $current = $value;
+                $stats['cleartext']++;
+            }
+            fputcsv( $fh, array( $secret['endpoint'], $secret['object'], $secret['path'], $current, "" ), ',', '"', '' );
+        }
+        fclose( $fh );
+
+        return $stats;
+    }
+
+    /**
+     * reads a secret-list.csv for import: secret_new if filled, otherwise secret_current (not HASHED / DECRYPT_FAILED)
+     *
+     * @return array ['secret' => ["<endpoint>|<object>|<path>" => cleartext], 'source' => [...], 'errors' => [...]]
+     */
+    public static function loadSecretList( $file )
+    {
+        return self::loadSecretCSV( $file, array('endpoint', 'object', 'path'), 'secret_current', 'secret_new' );
     }
 
     ////////////////////////////////////////////////////////////////////////////////

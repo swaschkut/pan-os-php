@@ -17,10 +17,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-// Export Prisma Access configuration of one tenant (TSG): infrastructure, Remote Networks (RN / RN-SPN), Service Connections (SC-CAN)
+// Export Prisma Access configuration of one tenant (TSG): infrastructure, Remote Networks (RN / RN-SPN), Service Connections (SC-CAN), Mobile Users (GlobalProtect)
 // see utils/develop/sase/scm/README_pa_export.md
 //
-// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
+// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections,mobile-users] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
 
 require_once("lib/pan_php_framework.php");
 require_once("utils/lib/UTIL.php");
@@ -39,14 +39,15 @@ $supportedArguments['area'] = Array('niceName' => 'area', 'shortHelp' => 'comma 
 $supportedArguments['outdir'] = Array('niceName' => 'outdir', 'shortHelp' => 'base directory for the export; files go to <outdir>/<TSG_ID>/<timestamp>/ (default: export)', 'argDesc' => '[directory]');
 $supportedArguments['folder'] = Array('niceName' => 'folder', 'shortHelp' => 'SCM folder for the Remote Network IKE/IPsec objects (default: "Remote Networks")', 'argDesc' => '[folder]');
 $supportedArguments['sc-folder'] = Array('niceName' => 'sc-folder', 'shortHelp' => 'SCM folder for the Service Connection IKE/IPsec/QoS objects (default: "Service Connections")', 'argDesc' => '[folder]');
+$supportedArguments['mu-folder'] = Array('niceName' => 'mu-folder', 'shortHelp' => 'SCM folder for the Mobile Users identity / mobile-agent objects (default: "Mobile Users")', 'argDesc' => '[folder]');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod (api.prod.datapath.prismaaccess.com, default) | prod6 (api.prod6.datapath.prismaaccess.com)', 'argDesc' => 'prod|prod6');
-$supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'per remote-networks / service-connections area: write psk-list.csv and bgp-secret-list.csv (chmod 600) with the decrypted current value and an empty *_new column for the import');
+$supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'write the secret lists (chmod 600) with the decrypted current value and an empty *_new column for the import: psk-list.csv + bgp-secret-list.csv (remote-networks, service-connections), secret-list.csv (mobile-users)');
 $supportedArguments['master-key'] = Array('niceName' => 'master-key', 'shortHelp' => 'master key to decrypt PSKs and BGP secrets (default: PAN-OS default master key)', 'argDesc' => '[master-key]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 
-$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
+$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections,mobile-users] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
     "php ".basename(__FILE__)." help          : more help messages\n";
 ##############
 
@@ -80,6 +81,8 @@ if( $egressEnv !== "prod" && $egressEnv !== "prod6" )
 $export = new SCMPrismaAccessExport( $connector, $tsg, $outdir, $folder, $areas );
 if( isset(PH::$args['sc-folder']) && PH::$args['sc-folder'] !== "" )
     $export->folders[SCMPrismaAccessExport::AREA_SC] = PH::$args['sc-folder'];
+if( isset(PH::$args['mu-folder']) && PH::$args['mu-folder'] !== "" )
+    $export->folders[SCMPrismaAccessExport::AREA_MU] = PH::$args['mu-folder'];
 $dir = $export->prepareDirectory();
 
 PH::print_stdout();
@@ -121,8 +124,18 @@ foreach( $export->connectionAreas() as $area )
         PH::print_stdout( " * " . $area . "/bgp-secret-list.csv: " . $bgp['secrets'] . " secret(s), decrypted: " . $bgp['decrypted'] . ", failed: " . $bgp['decrypt_failed'] );
     }
 }
+if( $export->hasArea(SCMPrismaAccessExport::AREA_MU) )
+{
+    $mappings[SCMPrismaAccessExport::AREA_MU] = $export->buildMobileUsersMapping();
+    if( isset(PH::$args['psk-list']) )
+    {
+        $sec = $export->writeSecretList( SCMPrismaAccessExport::AREA_MU, $masterKey );
+        $secretStats[SCMPrismaAccessExport::AREA_MU] = array( 'secret' => $sec );
+        PH::print_stdout( " * " . SCMPrismaAccessExport::AREA_MU . "/secret-list.csv: " . $sec['secrets'] . " secret(s), decrypted: " . $sec['decrypted'] . ", failed: " . $sec['decrypt_failed'] . ", hashed: " . $sec['hashed'] );
+    }
+}
 if( count($secretStats) > 0 )
-    PH::print_stdout( PH::boldText("   ! psk-list.csv / bgp-secret-list.csv contain cleartext secrets - keep them out of tickets / git") );
+    PH::print_stdout( PH::boldText("   ! psk-list.csv / bgp-secret-list.csv / secret-list.csv contain cleartext secrets - keep them out of tickets / git") );
 
 $manifest = $export->writeManifest( PH::frameworkVersion(), $mappings, $secretStats );
 
@@ -135,6 +148,8 @@ if( isset($manifest['ip_mapping'][SCMPrismaAccessExport::AREA_RN]) )
     PH::print_stdout( " * remote networks: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_RN]['remote_networks'] . " | egress IPs matched: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_RN]['egress_matched'] );
 if( isset($manifest['ip_mapping'][SCMPrismaAccessExport::AREA_SC]) )
     PH::print_stdout( " * service connections: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_SC]['service_connections'] );
+if( $manifest['mobile_users'] !== null )
+    PH::print_stdout( " * mobile users: portal " . json_encode($manifest['mobile_users']['portal_hostname']) . " | MU locations: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_MU]['locations'] . " | egress IPs matched: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_MU]['egress_matched'] );
 foreach( $manifest['import_hints'] as $hint )
     PH::print_stdout( " ! [" . $hint['area'] . "] " . $hint['type'] . ": " . count($hint['objects']) . " object(s) - " . $hint['message'] );
 if( $manifest['errors'] > 0 )
