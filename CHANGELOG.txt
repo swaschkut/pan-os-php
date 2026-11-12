@@ -33,7 +33,8 @@ UTIL:
 * class AntiVirusProfile/AntiSpywareProfile/WildfireProfile/FileBlockingProfile/UrlFilteringProfile - move actions to methods
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
 * scm export extend with SC / MU / RN / infra / prisma Browser / objects / security 
-~
+* SCM diff and import
+
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile
 * type=profile | general bugfix to support profiletype argument | cleanup

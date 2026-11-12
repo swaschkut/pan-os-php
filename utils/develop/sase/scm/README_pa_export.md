@@ -21,6 +21,8 @@ The export is the input for the later steps:
 Every export also writes `MIGRATION_CHECKLIST.md` (see below).
 
 Next steps and the verification list for the first live run: [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md).
+Comparing two exports: [README_pa_compare.md](README_pa_compare.md). Step-by-step guide for consultants:
+[CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
 
 Not covered: Mobile Users Explicit Proxy (no documented public API), ZTNA connector (separate API), license
 allocation – all three are listed in the migration checklist.
@@ -396,6 +398,12 @@ marked `internal`. Until then it is a manual item in the migration checklist.
   `snippet`; rule `position` values; how predefined objects are marked.
 * IAM: `custom_roles` / `permission_sets` paths (derived from the doc structure), access policy field names
   (`principal`, `role`, `resource`), list format / pagination of the IAM endpoints.
+
+## Endpoint metadata
+
+`ENDPOINT_META` / `endpointMeta()` in `lib/SCMPrismaAccessExport.php` describe per endpoint the identity key,
+singleton, ignored / secret fields, ordered lists, references and write mode – used by `scm_pa_compare.php` and the
+planned sync, see [README_pa_compare.md](README_pa_compare.md#endpoint-metadata).
 
 ## Code
 

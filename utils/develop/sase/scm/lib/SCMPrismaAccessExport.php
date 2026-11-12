@@ -1381,6 +1381,118 @@ class SCMPrismaAccessExport
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    // endpoint metadata for compare / sync
+
+    /**
+     * defaults for every endpoint; overridden per "area/endpoint" in ENDPOINT_META
+     *  key       fields forming the identity of an entry inside one container (never the tenant specific id)
+     *  singleton the endpoint returns one object (compared as a whole, key "_")
+     *  ignore    dotted paths removed before compare (derived / read-only / tenant specific)
+     *  secret    dotted paths of secrets - compared, but values masked in every output
+     *  ordered   true: the order of the entries matters (rule bases); "list.path" entries inside an object
+     *  refs      references to other endpoints: dotted path ("[]" = every list element) => "area/endpoint"
+     *  write     collection (POST / PUT {id} / DELETE {id}) | singleton (PUT) | none (read-only / documentation)
+     *  compare   false: not compared (pure context / runtime data)
+     */
+    const ENDPOINT_META_DEFAULT = array( 'key' => array('name'), 'singleton' => false, 'ignore' => array(), 'secret' => array(),
+        'ordered' => false, 'refs' => array(), 'write' => 'collection', 'compare' => true );
+
+    /** fields removed everywhere before compare */
+    const COMPARE_IGNORE_ALWAYS = array( 'id', 'folder', 'snippet' );
+
+    const ENDPOINT_META = array(
+        'infra/shared-infrastructure-settings' => array( 'singleton' => true, 'write' => 'singleton',
+            'ignore' => array( 'loopback_ips', 'tunnel_monitor_ip_address', 'captive_portal_redirect_ip_address', 'egress_ip_notification_url', 'api_key' ) ),
+        'infra/bgp-routing' => array( 'singleton' => true, 'write' => 'singleton' ),
+        'infra/locations' => array( 'key' => array('value'), 'write' => 'none' ),
+        'infra/egress-ip' => array( 'key' => array('zone'), 'write' => 'none', 'compare' => false ),
+
+        'remote-networks/ike-gateways' => array( 'secret' => array( 'authentication.pre_shared_key.key' ),
+            'refs' => array( 'protocol.ikev1.ike_crypto_profile' => 'remote-networks/ike-crypto-profiles', 'protocol.ikev2.ike_crypto_profile' => 'remote-networks/ike-crypto-profiles' ) ),
+        'remote-networks/ipsec-tunnels' => array(
+            'refs' => array( 'auto_key.ike_gateway[].name' => 'remote-networks/ike-gateways', 'auto_key.ipsec_crypto_profile' => 'remote-networks/ipsec-crypto-profiles' ) ),
+        'remote-networks/bandwidth-allocations' => array( 'refs' => array( 'qos.profile' => 'remote-networks/qos-profiles' ) ),
+        'remote-networks/remote-networks' => array( 'ignore' => array( 'details' ), 'secret' => array( 'protocol.bgp.secret' ),
+            'refs' => array( 'ipsec_tunnel' => 'remote-networks/ipsec-tunnels', 'secondary_ipsec_tunnel' => 'remote-networks/ipsec-tunnels', 'region' => 'remote-networks/bandwidth-allocations' ) ),
+
+        'service-connections/ike-gateways' => array( 'secret' => array( 'authentication.pre_shared_key.key' ),
+            'refs' => array( 'protocol.ikev1.ike_crypto_profile' => 'service-connections/ike-crypto-profiles', 'protocol.ikev2.ike_crypto_profile' => 'service-connections/ike-crypto-profiles' ) ),
+        'service-connections/ipsec-tunnels' => array(
+            'refs' => array( 'auto_key.ike_gateway[].name' => 'service-connections/ike-gateways', 'auto_key.ipsec_crypto_profile' => 'service-connections/ipsec-crypto-profiles' ) ),
+        'service-connections/service-connections' => array( 'secret' => array( 'protocol.bgp.secret', 'bgp_peer.secret' ),
+            'refs' => array( 'ipsec_tunnel' => 'service-connections/ipsec-tunnels', 'secondary_ipsec_tunnel' => 'service-connections/ipsec-tunnels',
+                'qos.qos_profile' => 'service-connections/qos-profiles', 'backup_SC' => 'service-connections/service-connections' ) ),
+        'service-connections/service-connection-groups' => array( 'refs' => array( 'target[]' => 'service-connections/service-connections' ) ),
+        'service-connections/traffic-steering-rules' => array( 'ordered' => true ),
+
+        'mobile-users/certificates' => array( 'ignore' => array( 'private_key' ) ),
+        'mobile-users/ldap-server-profiles' => array( 'secret' => array( 'bind_password' ) ),
+        'mobile-users/local-users' => array( 'secret' => array( 'password' ) ),
+        'mobile-users/certificate-profiles' => array( 'refs' => array( 'ca_certificates[].name' => 'mobile-users/certificates' ) ),
+        'mobile-users/tls-service-profiles' => array( 'refs' => array( 'certificate' => 'mobile-users/certificates' ) ),
+        'mobile-users/authentication-profiles' => array( 'refs' => array(
+            'method.saml_idp.server_profile' => 'mobile-users/saml-server-profiles', 'method.ldap.server_profile' => 'mobile-users/ldap-server-profiles',
+            'method.radius.server_profile' => 'mobile-users/radius-server-profiles', 'method.tacplus.server_profile' => 'mobile-users/tacacs-server-profiles',
+            'method.kerberos.server_profile' => 'mobile-users/kerberos-server-profiles', 'certificate_profile' => 'mobile-users/certificate-profiles' ) ),
+        'mobile-users/authentication-sequences' => array( 'refs' => array( 'authentication_profiles[]' => 'mobile-users/authentication-profiles' ) ),
+        'mobile-users/mobile-agent-infrastructure-settings' => array( 'singleton' => true, 'write' => 'singleton' ),
+        'mobile-users/mobile-agent-authentication-settings' => array( 'ordered' => true, 'refs' => array( 'authentication_profile' => 'mobile-users/authentication-profiles' ) ),
+        'mobile-users/mobile-agent-agent-profiles' => array( 'ordered' => true,
+            'refs' => array( 'authentication_override.cookie_encrypt_decrypt_cert' => 'mobile-users/certificates' ) ),
+        'mobile-users/mobile-agent-tunnel-profiles' => array( 'ordered' => true ),
+        'mobile-users/mobile-agent-global-settings' => array( 'singleton' => true, 'write' => 'singleton' ),
+        'mobile-users/mobile-agent-agent-versions' => array( 'singleton' => true, 'write' => 'none' ),
+        'mobile-users/mobile-agent-enable' => array( 'singleton' => true, 'write' => 'singleton' ),
+
+        'prisma-browser/policy-sign-in' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
+        'prisma-browser/policy-access-and-data' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
+        'prisma-browser/policy-security' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
+        'prisma-browser/policy-customization' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
+        'prisma-browser/application-groups' => array( 'refs' => array( 'applications[]' => 'prisma-browser/applications' ) ),
+        'prisma-browser/pending-changes' => array( 'write' => 'none', 'compare' => false ),
+
+        'iam/roles' => array( 'write' => 'none' ),
+        'iam/custom-roles' => array( 'write' => 'none' ),
+        'iam/permission-sets' => array( 'write' => 'none' ),
+        'iam/service-accounts' => array( 'write' => 'none', 'ignore' => array( 'client_id', 'created_at', 'updated_at' ) ),
+        'iam/access-policies' => array( 'key' => array( 'principal', 'role', 'resource' ), 'write' => 'none' ),
+        'iam/permissions' => array( 'write' => 'none', 'compare' => false ),
+
+        'config/folders' => array( 'write' => 'collection' ),
+        'config/snippets' => array( 'write' => 'collection' ),
+        'config/address-groups' => array( 'refs' => array( 'static[]' => 'config/addresses' ) ),
+        'config/service-groups' => array( 'refs' => array( 'members[]' => 'config/services' ) ),
+        'config/application-groups' => array( 'refs' => array( 'members[]' => 'config/applications' ) ),
+        'config/profile-groups' => array( 'refs' => array(
+            'spyware[]' => 'config/anti-spyware-profiles', 'vulnerability[]' => 'config/vulnerability-protection-profiles',
+            'virus_and_wildfire_analysis[]' => 'config/wildfire-anti-virus-profiles', 'dns_security[]' => 'config/dns-security-profiles',
+            'file_blocking[]' => 'config/file-blocking-profiles', 'url_filtering[]' => 'config/url-access-profiles' ) ),
+    );
+
+    /**
+     * metadata of one endpoint ("area", "endpoint"); config rule bases (-pre / -post) are ordered and resolve to their type
+     */
+    public static function endpointMeta( $area, $name )
+    {
+        $meta = self::ENDPOINT_META_DEFAULT;
+        $base = $name;
+        if( $area == self::AREA_CONFIG )
+        {
+            $base = preg_replace( '/-(pre|post)$/', '', $name );
+            foreach( self::getConfigTypes() as $t )
+                if( $t['name'] == $base && !empty($t['position']) )
+                    $meta['ordered'] = true;
+        }
+        $k = $area . "/" . $base;
+        if( isset(self::ENDPOINT_META[$k]) )
+            $meta = array_merge( $meta, self::ENDPOINT_META[$k] );
+        if( $meta['singleton'] )
+            $meta['key'] = array();
+        $meta['endpoint'] = $k;
+        return $meta;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
     // config: folders / snippets, objects, security, zones
 
     /**

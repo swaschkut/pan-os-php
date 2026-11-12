@@ -4,7 +4,8 @@ Status: the export covers all planned areas (`infra`, `config`, `remote-networks
 `mobile-users`, `prisma-browser`, `iam`) and writes `MIGRATION_CHECKLIST.md`. It has only been tested offline against simulated API
 answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
 
-Details of the export itself: [README_pa_export.md](README_pa_export.md).
+Details of the export itself: [README_pa_export.md](README_pa_export.md). Compare: [README_pa_compare.md](README_pa_compare.md).
+Step-by-step guide for consultants: [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
 
 ---
 
@@ -21,7 +22,8 @@ git am scm-rn-export_beta.patch \
        scm-pa-export-mu_beta.patch \
        scm-pa-export-pb-iam-checklist_beta.patch \
        scm-pa-export-next-steps_beta.patch \
-       scm-pa-export-config_beta.patch
+       scm-pa-export-config_beta.patch \
+       scm-pa-compare_beta.patch
 ```
 
 Quick check:
@@ -169,7 +171,19 @@ was found; wrong items are fixed in the code afterwards.
       `config.owners_not_exported`, not stored.
 - [ ] Runtime / number of API calls acceptable on a large tenant (containers × types).
 
-### 4.9 MIGRATION_CHECKLIST.md
+### 4.9 compare (two real exports)
+
+- [ ] Export the same tenant twice without changes in between and compare: **no differences** expected. Every
+      difference is a field that changes by itself (timestamps, counters, runtime state) → add it to `ignore` in
+      `ENDPOINT_META` (or report it).
+- [ ] Change one known value in the UI (e.g. a remote network BGP peer AS, an address, rule order), export again,
+      compare: exactly these changes are reported.
+- [ ] Compare two different tenants: are the keys right (no mass "only left / only right" for objects that exist on
+      both sides)? Endpoints without a `name` field show up in the warnings.
+- [ ] Secrets: a changed PSK shows `secret` with `***`; `grep` for a known PSK in the compare output finds nothing.
+- [ ] Lists reported as `order` where the order is irrelevant in SCM → note the path (candidate for normalisation).
+
+### 4.10 MIGRATION_CHECKLIST.md
 
 - [ ] All `action_required` items are plausible for this tenant.
 - [ ] License item shows the RN bandwidth sum of the source tenant.
@@ -206,8 +220,9 @@ Alternative: open SCM in the Claude browser pane and capture the calls together.
 |---|---|---|
 | 1 | fixes from the verification (section 4) | live run |
 | 2a | `scm_pa_verify.php`: verify pan-os-php's SCM loading against the raw export – input: export directory + XML written by `pan-os-php in=scm-api://<TSG> out=…`; per container and type: count, names, selected fields; report: types pan-os-php does not load, missing / extra objects, field differences, wrong owner (folder / snippet) | export format verified (4.8) |
-| 2 | `scm_pa_compare.php`: offline diff of two exports per area / endpoint – only in A, only in B, changed fields; normalised (no `id`, derived fields, redactions); IPs separately; JSON + HTML / Markdown report | export format verified |
-| 3 | `scm_pa_import.php` dry-run: dependency / reference check, secret lists loaded, read target tenant, plan create / skip / update | step 2 (same normalisation) |
+| 2 | ✅ endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` – offline diff per area / container / endpoint, hierarchy diff, name map, `diff.json` / `DIFF_REPORT.md` / `diff-summary.csv` ([README_pa_compare.md](README_pa_compare.md)) | done – verify with 4.9 |
+| 3 | `scm_pa_sync.php plan`: `diff.json` + direction (`source` / `target`) + mode (`additive` / `mirror` with `allow-delete` / `merge`) → editable `plan.json`; dependency closure via `refs`, delete blocked while referenced, creates in import order, deletes reversed | step 2 |
+| 3b | `scm_pa_import.php` dry-run: dependency / reference check, secret lists loaded, read target tenant, plan create / skip / update | step 2 (same normalisation) |
 | 4 | import execution per area in `import_order`, special cases (`backup_SC` afterwards, predefined objects skipped, Prisma Browser publish) | step 3 |
 | 5 | push (`config-versions candidate:push`) + job polling | step 4 |
 | 6 | Explicit Proxy area (internal API) | section 6 |
