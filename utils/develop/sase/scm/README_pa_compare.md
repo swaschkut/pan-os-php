@@ -6,7 +6,7 @@ Technical reference. For a step-by-step guide see
 
 `scm_pa_compare.php` compares two export directories written by `scm_pa_export.php` – **offline**, no API access,
 no credentials. The result is symmetric ("left" / "right", no direction) and is the input for the planned sync
-(`scm_pa_sync.php`: plan → apply, see [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md)).
+(`scm_pa_sync.php`: plan → apply, see [README_pa_sync.md](README_pa_sync.md)).
 
 ## Usage
 
@@ -46,6 +46,10 @@ Every endpoint file listed in both `manifest.json` files (key: area + container 
 | `order` | ordered endpoints (rule bases): same entries, different sequence |
 | `equal` | counted only |
 | not comparable | endpoint missing in one export (area not exported) or `status` not `ok` on one side (error / unavailable); both `unavailable` is skipped silently |
+
+A config container (folder / snippet) that exists on one side only is compared against an empty list – all its
+entries are `only_left` / `only_right` – unless the other export excluded it with `container=` / `config-types=`
+(then: not comparable).
 
 Config hierarchy (`config/hierarchy.json`) is compared separately: folders only left / right, folder `parent` /
 `type` changed, attached snippets changed or **order** changed, snippets only left / right.

@@ -34,6 +34,7 @@ UTIL:
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
 * scm export extend with SC / MU / RN / infra / prisma Browser / objects / security 
 * SCM diff and import
+* scm pa sync - introduction
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

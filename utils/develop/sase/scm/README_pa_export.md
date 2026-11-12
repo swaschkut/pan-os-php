@@ -21,7 +21,8 @@ The export is the input for the later steps:
 Every export also writes `MIGRATION_CHECKLIST.md` (see below).
 
 Next steps and the verification list for the first live run: [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md).
-Comparing two exports: [README_pa_compare.md](README_pa_compare.md). Step-by-step guide for consultants:
+Comparing two exports: [README_pa_compare.md](README_pa_compare.md); syncing differences: [README_pa_sync.md](README_pa_sync.md).
+Step-by-step guide for consultants:
 [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
 
 Not covered: Mobile Users Explicit Proxy (no documented public API), ZTNA connector (separate API), license

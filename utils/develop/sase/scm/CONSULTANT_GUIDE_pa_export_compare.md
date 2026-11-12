@@ -1,18 +1,23 @@
-# Consultant guide – Prisma Access export and compare with pan-os-php
+# Consultant guide – Prisma Access export, compare and sync with pan-os-php
 
-This guide explains how to take a complete snapshot of a Prisma Access tenant (Strata Cloud Manager) and how to
-compare two snapshots – for a tenant migration, a lab / production drift check, or a before / after check of a change.
+This guide explains how to take a complete snapshot of a Prisma Access tenant (Strata Cloud Manager), how to
+compare two snapshots – for a tenant migration, a lab / production drift check, or a before / after check of a change –
+and how to write the differences into a tenant.
 
 | tool | what it does | needs API access |
 |---|---|---|
 | `scm_pa_export.php` | downloads the tenant configuration into a local directory | yes (read only) |
 | `scm_pa_compare.php` | compares two export directories and writes a report | no |
+| `scm_pa_sync.php plan` | turns the differences into a reviewable list of operations | no |
+| `scm_pa_sync.php apply` | sends the operations to the target tenant (dry-run unless `execute`) | yes (**write**) |
 
 Reference documentation: [README_pa_export.md](README_pa_export.md) (export), [README_pa_compare.md](README_pa_compare.md)
-(compare), [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) (verification list, roadmap).
+(compare), [README_pa_sync.md](README_pa_sync.md) (sync), [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md)
+(verification list, roadmap).
 
-> **Status:** export and compare are in development (`beta_scm-extension`). Both only **read** from the tenant; nothing
-> is changed. Writing the differences into a tenant (sync) is the next development step.
+> **Status:** in development (`beta_scm-extension`). Export and compare only **read**. `scm_pa_sync.php apply execute`
+> **changes** the target tenant – it has been tested against a simulated tenant only: use it on lab tenants until
+> the live verification ([NEXT_STEPS](NEXT_STEPS_pa_export.md) §4.10) is done.
 
 ---
 
@@ -184,7 +189,68 @@ network, `backup_SC`, group members). `config,container,…` renames folders / s
 
 ---
 
-## 4. Troubleshooting
+## 4. Sync the differences into a tenant
+
+> Writes to a tenant. Lab tenants first. Always: plan → read the plan → dry-run → execute → push → compare again.
+
+### 4.1 Decide direction and mode
+
+- **source** = the export whose content should win (`left` or `right` of the compare); the other is the target.
+- **mode**
+  - `additive` – create what is missing in the target, update what differs; nothing is deleted. Safe default.
+  - `mirror` + `allow-delete` – the target becomes a copy of the source (within the compared areas / filters);
+    entries that exist only in the target are deleted.
+  - `merge` – both tenants get what they are missing (two plans); entries that differ are listed as conflicts and
+    not touched – decide them manually.
+- Infrastructure settings (infrastructure subnet, AS, BGP routing) are only changed with `allow-infra` – this can
+  interrupt traffic.
+
+### 4.2 Prepare the source export
+
+For gateways / connections with PSK or BGP secret and for MU server profiles / local users the cleartext is taken
+from the source export's secret lists. Export the source with `psk-list`. To set **new** keys on the target, fill
+`psk_new` / `secret_new` in those CSV files. Local user passwords (`HASHED`) always need `secret_new`.
+
+### 4.3 Create and read the plan
+
+```bash
+php utils/develop/sase/scm/scm_pa_sync.php plan diff=<compare dir>/diff.json source=left mode=additive
+```
+
+Open `PLAN_REPORT.md` next to `diff.json`:
+
+- **Blocked operations** – never executed, with the reason (delete not allowed, still referenced, secret missing,
+  read-only area, Prisma Browser, infrastructure without `allow-infra`). Fix the cause and plan again.
+- **Operations in execution order** – create / update / move / delete, the reason (e.g. `changed: protocol.bgp.peer_as`),
+  dependencies (`depends on`) and notes (e.g. "reference … not found – predefined or inherited?").
+- **Conflicts** (merge) – handle manually.
+
+To leave out single operations set `"enabled": false` in `plan.json` (operations depending on them are skipped too).
+
+### 4.4 Dry-run, execute, push
+
+```bash
+# dry-run – reads the target, sends nothing, shows every request
+php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=<compare dir>/plan.json
+
+# execute – you are asked to type the target TSG
+php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=<compare dir>/plan.json execute
+
+# execute and push the changed folders
+php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=<compare dir>/plan.json execute push
+```
+
+- `conflict` = the target object was changed after its export → export the target again, compare, plan again.
+- `failed` = the API refused a request (HTTP code and message in the console / `apply-log-*.json`); apply stops
+  unless `continue-on-error`.
+- Without `push` the touched folders are listed – push them in Strata Cloud Manager.
+
+### 4.5 Check the result
+
+Export the target again and compare it with the **same** source export. Only blocked / excluded differences may
+remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch / DC firewalls, …).
+
+## 5. Troubleshooting
 
 | symptom | cause / action |
 |---|---|
@@ -197,10 +263,13 @@ network, `backup_SC`, group members). `config,container,…` renames folders / s
 | compare: "not comparable – not exported in right" | the two exports used different areas / filters → export again with the same options |
 | compare: "format_version …" hint | an export from an older version → export again |
 | compare: everything "only in left / right" in one folder | the folder is named differently → name map `config,container,<left>,<right>` |
+| plan: `secret missing` | export the source with `psk-list` (or fill `*_new`) and compare / plan again |
+| plan: `still referenced by …` | another target object uses it – delete / change that one first, or leave it |
+| apply: `plan target TSG … does not match` | wrong `in=` – the plan belongs to another target |
+| apply: `conflict` | target changed after its export → re-export, compare, plan |
 
-## 5. What comes next
+## 6. What comes next
 
-- verification of the export against live tenants ([NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) §4)
+- verification of export, compare and sync against live tenants ([NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) §4)
+- Prisma Browser sync (rule / section API, draft publish)
 - `scm_pa_verify.php` – checks pan-os-php's own SCM loading against the raw export
-- `scm_pa_sync.php` – turns `diff.json` into a reviewed plan (direction, mode `additive` / `mirror` / `merge`, delete
-  only on request) and applies it to the target tenant (dry-run first), followed by push and a new compare

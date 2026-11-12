@@ -208,6 +208,17 @@ class SCMPrismaAccessCompare
             $r = isset($right[$k]) ? $right[$k] : null;
             $base = array( 'area' => $area, 'container' => $container === "" ? null : $container, 'endpoint' => $name, 'endpoint_key' => $meta['endpoint'] );
 
+            //config container that exists on one side only: compare against an empty list
+            if( ( $l === null || $r === null ) && $area == SCMPrismaAccessExport::AREA_CONFIG && $container !== ""
+                && $this->sideCovers( $l === null ? $this->leftManifest : $this->rightManifest, $container, $name, $l === null ) )
+            {
+                $present = $l === null ? $r : $l;
+                if( $present['status'] !== 'ok' )
+                    continue;
+                $data = $this->loadData( $l === null ? $this->rightDir : $this->leftDir, $present['file'] );
+                $this->entries[] = $l === null ? $this->compareEndpoint( $base, $meta, array(), $data ) : $this->compareEndpoint( $base, $meta, $data, array() );
+                continue;
+            }
             if( $l === null || $r === null )
             {
                 $this->notComparable[] = $base + array( 'reason' => 'not exported in ' . ( $l === null ? 'left' : 'right' ),
@@ -234,6 +245,30 @@ class SCMPrismaAccessCompare
             $this->hierarchy = $this->compareHierarchy(
                 json_decode( file_get_contents($this->leftDir . "/config/hierarchy.json"), TRUE ),
                 json_decode( file_get_contents($this->rightDir . "/config/hierarchy.json"), TRUE ) );
+    }
+
+    /**
+     * true if the export of $manifest would have contained the config container / type (container missing there
+     * because it does not exist in that tenant, not because of a filter)
+     */
+    private function sideCovers( $manifest, $container, $endpoint, $isLeft )
+    {
+        if( !isset($manifest['areas']) || !in_array(SCMPrismaAccessExport::AREA_CONFIG, $manifest['areas'], TRUE) )
+            return false;
+        $options = isset($manifest['config']['options']) ? $manifest['config']['options'] : array();
+        list($kind, $name) = explode(":", $container, 2);
+        if( $isLeft )
+        {
+            $inv = array_flip($this->containerMap);
+            if( isset($inv[$name]) )
+                $name = $inv[$name];
+        }
+        if( !empty($options['containers']) && !in_array($name, $options['containers'], TRUE) )
+            return false;
+        $base = preg_replace('/-(pre|post)$/', '', $endpoint);
+        if( !empty($options['types']) && !in_array($base, $options['types'], TRUE) )
+            return false;
+        return true;
     }
 
     private function loadData( $dir, $file )
@@ -391,6 +426,34 @@ class SCMPrismaAccessCompare
                 $obj = $this->mapRefs( $obj, explode(".", $path), $target );
         }
         return self::normalizeValue( $obj, "", $ignore, $orderedPaths );
+    }
+
+    /**
+     * applies the name map to the key field and all reference fields of a (raw) object - used by the sync plan
+     */
+    public function translateObject( $obj, $meta )
+    {
+        if( !is_array($obj) || !$this->hasNameMap() )
+            return $obj;
+        foreach( $meta['refs'] as $path => $target )
+            $obj = $this->mapRefs( $obj, explode(".", $path), $target );
+        if( count($meta['key']) == 1 && strpos($meta['key'][0], ".") === false && isset($obj[$meta['key'][0]]) && is_string($obj[$meta['key'][0]]) )
+            $obj[$meta['key'][0]] = $this->mapName( $meta['endpoint'], $obj[$meta['key'][0]] );
+        return $obj;
+    }
+
+    /**
+     * name map / container map in the other direction (right -> left)
+     */
+    public function invertMaps()
+    {
+        $inv = array();
+        foreach( $this->nameMap as $area => $byEndpoint )
+            foreach( $byEndpoint as $endpoint => $names )
+                foreach( $names as $l => $r )
+                    $inv[$area][$endpoint][$r] = $l;
+        $this->nameMap = $inv;
+        $this->containerMap = array_flip( $this->containerMap );
     }
 
     private function mapRefs( $obj, $segments, $target )

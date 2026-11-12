@@ -5,6 +5,7 @@ Status: the export covers all planned areas (`infra`, `config`, `remote-networks
 answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
 
 Details of the export itself: [README_pa_export.md](README_pa_export.md). Compare: [README_pa_compare.md](README_pa_compare.md).
+Sync: [README_pa_sync.md](README_pa_sync.md).
 Step-by-step guide for consultants: [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
 
 ---
@@ -23,7 +24,8 @@ git am scm-rn-export_beta.patch \
        scm-pa-export-pb-iam-checklist_beta.patch \
        scm-pa-export-next-steps_beta.patch \
        scm-pa-export-config_beta.patch \
-       scm-pa-compare_beta.patch
+       scm-pa-compare_beta.patch \
+       scm-pa-sync_beta.patch
 ```
 
 Quick check:
@@ -183,7 +185,29 @@ was found; wrong items are fixed in the code afterwards.
 - [ ] Secrets: a changed PSK shows `secret` with `***`; `grep` for a known PSK in the compare output finds nothing.
 - [ ] Lists reported as `order` where the order is irrelevant in SCM → note the path (candidate for normalisation).
 
-### 4.10 MIGRATION_CHECKLIST.md
+### 4.10 sync on a lab tenant
+
+Use two lab tenants (or one lab tenant and an export of another tenant). Export both with `psk-list`.
+
+- [ ] `plan` with `mode=additive`: `PLAN_REPORT.md` lists exactly the expected operations; dependencies are in the
+      right order (crypto profile → gateway → tunnel → RN / SC; parent folder → folder → objects).
+- [ ] `apply` dry-run: no write request in the SCM audit log; hash check reads work (no `conflict` on unchanged
+      objects – otherwise the single object GET returns another shape than the list → report).
+- [ ] `apply execute` for **one** operation (`ops=op-…`) per action type and endpoint family, check the result in SCM:
+      - [ ] create config object (`POST /config/objects/v1/addresses` with `folder` in the body)
+      - [ ] create security rule with `?position=pre`
+      - [ ] update by id (`PUT …/{id}`), incl. one with folder query (`ike-gateways?folder=Remote Networks`)
+      - [ ] PSK / BGP secret sent in cleartext from the list → tunnel comes up with the expected key
+      - [ ] singleton update (`PUT /config/mobile-agent/v1/global-settings?folder=Mobile Users`)
+      - [ ] create folder (`POST /config/setup/v1/folders` with `parent`)
+      - [ ] rule move (`POST …/security-rules/{id}:move`, body `destination` / `destination_rule` / `rulebase`)
+      - [ ] delete (`DELETE …/{id}`)
+      - [ ] service connection with `backup_SC` (create + follow-up update)
+- [ ] `push`: job id field of `candidate:push`, job status values (`FIN` / …) – adjust `push()` if different.
+- [ ] full `mirror allow-delete` run on the lab tenant, re-export, compare: identical except blocked / excluded.
+- [ ] merge: both plans and the conflict list are plausible.
+
+### 4.11 MIGRATION_CHECKLIST.md
 
 - [ ] All `action_required` items are plausible for this tenant.
 - [ ] License item shows the RN bandwidth sum of the source tenant.
@@ -221,10 +245,10 @@ Alternative: open SCM in the Claude browser pane and capture the calls together.
 | 1 | fixes from the verification (section 4) | live run |
 | 2a | `scm_pa_verify.php`: verify pan-os-php's SCM loading against the raw export – input: export directory + XML written by `pan-os-php in=scm-api://<TSG> out=…`; per container and type: count, names, selected fields; report: types pan-os-php does not load, missing / extra objects, field differences, wrong owner (folder / snippet) | export format verified (4.8) |
 | 2 | ✅ endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` – offline diff per area / container / endpoint, hierarchy diff, name map, `diff.json` / `DIFF_REPORT.md` / `diff-summary.csv` ([README_pa_compare.md](README_pa_compare.md)) | done – verify with 4.9 |
-| 3 | `scm_pa_sync.php plan`: `diff.json` + direction (`source` / `target`) + mode (`additive` / `mirror` with `allow-delete` / `merge`) → editable `plan.json`; dependency closure via `refs`, delete blocked while referenced, creates in import order, deletes reversed | step 2 |
-| 3b | `scm_pa_import.php` dry-run: dependency / reference check, secret lists loaded, read target tenant, plan create / skip / update | step 2 (same normalisation) |
-| 4 | import execution per area in `import_order`, special cases (`backup_SC` afterwards, predefined objects skipped, Prisma Browser publish) | step 3 |
-| 5 | push (`config-versions candidate:push`) + job polling | step 4 |
+| 3 | ✅ `scm_pa_sync.php plan`: `diff.json` + direction + mode (`additive` / `mirror` + `allow-delete` / `merge`) → `plan.json` / `PLAN_REPORT.md`; dependency closure, delete check, `backup_SC` follow-up, secrets as placeholders ([README_pa_sync.md](README_pa_sync.md)) | done – verify with 4.10 |
+| 4 | ✅ `scm_pa_sync.php apply`: dry-run by default, TSG check + confirmation, hash check, secrets from the lists, create / update / delete / move, ids of created objects, `push` + job polling, apply log | done – verify with 4.10 |
+| 4a | migration into a **new** tenant = export the new (empty) tenant, compare with the source, plan `additive`, apply – no separate import tool | steps 3 + 4 |
+| 5 | Prisma Browser sync (rule / section API, draft publish) | 4.10 |
 | 6 | Explicit Proxy area (internal API) | section 6 |
 
 ## 8. Known limitations
@@ -234,4 +258,6 @@ Alternative: open SCM in the Claude browser pane and capture the calls together.
 - IAM is documentation / compare only.
 - Not exported: Explicit Proxy, ZTNA connector, Cloud Identity Engine, Strata Logging Service, license allocation,
   Prisma Browser assets (logos).
-- Objects and security policy are handled by `pan-os-php in=scm-api://<TSG>`, not by this export.
+- `config` references in the endpoint metadata are partial (groups, profile groups) – dependencies of rules on
+  objects are not resolved by the sync plan yet.
+- Sync of Prisma Browser is blocked in the plan; IAM is never written.
