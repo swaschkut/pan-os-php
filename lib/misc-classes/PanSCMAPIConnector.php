@@ -315,7 +315,7 @@ class PanSCMAPIConnector
 
         foreach(PanAPIConnector::$savedConnectors as $connector )
         {
-            if( strpos($connector->apihost, $host) !== FALSE )
+            if( strpos($connector->apihost, $host) === 0 )
             {
                 $key = $connector->apikey;
                 $test = explode("%", $key);
@@ -2134,8 +2134,19 @@ class PanSCMAPIConnector
     }
 
 
-    public function sendSCMAPIRequest($requestMethod, $url, $body = false  )
+    /**
+     * sends a request to the SCM API
+     *
+     * @param string $requestMethod GET|POST|PUT|DELETE
+     * @param string $url full URL
+     * @param string|false $body JSON body
+     * @param bool $exitOnError TRUE: derr() on SCM '_errors' (old behaviour) | FALSE: return error to caller
+     * @return array ['http_code' => int, 'response' => string|false, 'json' => array|null, 'errors' => array|null]
+     */
+    public function sendSCMAPIRequest($requestMethod, $url, $body = false, $exitOnError = TRUE )
     {
+        $url = str_replace(' ', '%20', $url);
+
         if( $this->showApiCalls )
         {
             PH::print_stdout( "URL: ".$url);
@@ -2147,6 +2158,8 @@ class PanSCMAPIConnector
         $this->getAccessToken();
 
         $header = array( "Authorization: Bearer {$this->access_token}");
+        if( $body !== false )
+            $header[] = "Content-Type: application/json";
 
         $this->curlRequest( $url, $header );
 
@@ -2159,8 +2172,155 @@ class PanSCMAPIConnector
         }
 
         $response = curl_exec($this->_curl_handle);
+        $httpCode = (int)curl_getinfo($this->_curl_handle, CURLINFO_HTTP_CODE);
+        $jsonArray = ( $response !== false && $response !== '' ) ? json_decode($response, TRUE) : null;
 
-        $this->displayCurlResponse( $response, $url );
+        $errors = null;
+        if( $response === false )
+            $errors = array( array( 'message' => 'curl error: '.curl_error($this->_curl_handle) ) );
+        elseif( isset($jsonArray['_errors']) )
+            $errors = $jsonArray['_errors'];
+        elseif( $httpCode >= 400 )
+            $errors = array( array( 'message' => 'HTTP '.$httpCode, 'details' => $jsonArray !== null ? $jsonArray : $response ) );
+
+        if( $exitOnError )
+            $this->displayCurlResponse( $response, $url, $jsonArray );
+        elseif( $this->showApiCalls )
+            PH::print_stdout( "HTTP: ".$httpCode." RESPONSE: '".$response."'" );
+
+        return array( 'http_code' => $httpCode, 'response' => $response, 'json' => $jsonArray, 'errors' => $errors );
+    }
+
+    /**
+     * GET all entries of a SCM API list endpoint (limit/offset pagination), without stopping the script on errors
+     *
+     * @param string $url_config path incl. optional query, e.g. "/config/network/v1/ike-gateways?folder=Remote Networks"
+     * @param int $limit page size
+     * @return array ['http_code' => int, 'data' => array|null, 'total' => int|null, 'is_list' => bool, 'raw' => mixed, 'errors' => array|null]
+     *               'is_list' FALSE: endpoint returns a single object (e.g. bgp-routing) -> it is stored in 'raw' and 'data'
+     */
+    public function getSCMResourceAll( $url_config, $limit = 200 )
+    {
+        $offset = 0;
+        $allData = array();
+        $first = null;
+        $total = null;
+
+        do
+        {
+            $url = $this->url_api . $url_config;
+            $url .= ( strpos($url, "?") !== FALSE ) ? "&" : "?";
+            $url .= "limit=" . $limit . "&offset=" . $offset;
+
+            $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+
+            if( $result['errors'] !== null )
+                return array( 'http_code' => $result['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => $result['errors'] );
+
+            $json = $result['json'];
+            if( $first === null )
+                $first = $json;
+
+            if( !is_array($json) || !array_key_exists('data', $json) || !is_array($json['data']) )
+            {
+                //single object endpoint (no list wrapper)
+                return array( 'http_code' => $result['http_code'], 'data' => $json, 'total' => null, 'is_list' => false, 'raw' => $json, 'errors' => null );
+            }
+
+            foreach( $json['data'] as $entry )
+                $allData[] = $entry;
+
+            $total = isset($json['total']) ? (int)$json['total'] : count($allData);
+            $offset += $limit;
+        }
+        while( count($json['data']) > 0 && count($allData) < $total );
+
+        return array( 'http_code' => $result['http_code'], 'data' => $allData, 'total' => $total, 'is_list' => true, 'raw' => null, 'errors' => null );
+    }
+
+    ///////Prisma Access egress IP API (separate API key, not OAuth)
+    //https://docs.paloaltonetworks.com/prisma-access/administration/prisma-access-setup/retrieve-ip-addresses-for-prisma-access/retrieve-ip-addresses-for-prisma-access-cloud-management
+
+    static public $egressIPKeystorePrefix = "egressip_tsg_id";
+
+    /**
+     * reads the tenant egress-IP API key from .panconfkeystore (entry 'egressip_tsg_id<TSG>'), asks for it if not available and stores it
+     */
+    public function getEgressIPApiKey( $TSGid = null, $promptForKey = TRUE )
+    {
+        if( $TSGid === null )
+            $TSGid = $this->apihost;
+        $host = self::$egressIPKeystorePrefix . $TSGid;
+
+        PanAPIConnector::loadConnectorsFromUserHome();
+
+        foreach( PanAPIConnector::$savedConnectors as $connector )
+        {
+            if( $connector->apihost == $host )
+                return $connector->apikey;
+        }
+
+        if( !$promptForKey )
+            return null;
+
+        PH::print_stdout(" ** Please enter Prisma Access egress-IP API key (header-api-key) for TSG: ".$TSGid);
+        PH::print_stdout("    [Prisma Access > Infrastructure Settings > Egress IP API]");
+        $handle = fopen("php://stdin", "r");
+        $key = trim( (string)fgets($handle) );
+
+        if( $key === "" )
+            return null;
+
+        PanAPIConnector::$savedConnectors[] = new PanAPIConnector($host, $key);
+        PanAPIConnector::saveConnectorsToUserHome();
+
+        return $key;
+    }
+
+    /**
+     * @param string $apiKey
+     * @param string $serviceType all|remote_network|gp_gateway|gp_portal|swg_proxy|rbi
+     * @param string $addrType all|active|service_ip|auth_cache_service|network_load_balancer
+     * @param string $location all|deployed
+     * @param string $environment prod|prod6
+     * @return array ['http_code' => int, 'json' => array|null, 'errors' => array|null, 'url' => string]
+     */
+    public function getPrismaAccessEgressIP( $apiKey, $serviceType = "remote_network", $addrType = "all", $location = "all", $environment = "prod" )
+    {
+        if( PH::$saseQAapi )
+            $url = "https://api.lab.datapath.prismaaccess.com/getPrismaAccessIP/v2";
+        elseif( $environment == "prod6" )
+            $url = "https://api.prod6.datapath.prismaaccess.com/getPrismaAccessIP/v2";
+        else
+            $url = "https://api.prod.datapath.prismaaccess.com/getPrismaAccessIP/v2";
+
+        $body = json_encode( array( 'serviceType' => $serviceType, 'addrType' => $addrType, 'location' => $location ) );
+        $header = array( "header-api-key: ".$apiKey, "Content-Type: application/json" );
+
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout( "URL: ".$url );
+            PH::print_stdout( "BODY: ".$body );
+        }
+
+        $this->curlRequest( $url, $header );
+        curl_setopt($this->_curl_handle, CURLOPT_POST, 1 );
+        curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $body );
+
+        $response = curl_exec($this->_curl_handle);
+        $httpCode = (int)curl_getinfo($this->_curl_handle, CURLINFO_HTTP_CODE);
+        $json = ( $response !== false && $response !== '' ) ? json_decode($response, TRUE) : null;
+
+        if( $this->showApiCalls )
+            PH::print_stdout( "HTTP: ".$httpCode." RESPONSE: '".$response."'" );
+
+        $errors = null;
+        if( $response === false )
+            $errors = array( array( 'message' => 'curl error: '.curl_error($this->_curl_handle) ) );
+        elseif( $httpCode >= 400 || !is_array($json) || ( isset($json['status']) && $json['status'] !== 'success' ) )
+            $errors = array( array( 'message' => 'HTTP '.$httpCode, 'details' => $json !== null ? $json : $response ) );
+
+        return array( 'http_code' => $httpCode, 'json' => $json, 'errors' => $errors, 'url' => $url );
     }
 
 

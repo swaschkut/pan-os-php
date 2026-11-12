@@ -1,0 +1,2867 @@
+{
+    "format": "pan-os-php-scm-changes",
+    "version": 1,
+    "generated": "2026-11-04T07:36:21+01:00",
+    "generator": "pan-os-php 2.1.61.beta type=scm-changes",
+    "source": {
+        "file1": "../../utils/develop/buckbeak_baseconfig.xml",
+        "file2": "SCM-import.xml"
+    },
+    "api_base": "https://api.strata.paloaltonetworks.com",
+    "schema_source": "github.com/PaloAltoNetworks/pan.dev @32260be 2026-11-03 openapi-specs/scm/config/ngfw: objects/objects_R3.yaml, security/security-services.yaml, network/network-services.yaml, setup/config-setup_R3.yaml",
+    "notes": [
+        "PUT requests carry \"merge\": true: GET the object, apply the fields of body (null removes a field), PUT the result.",
+        "Requests with \"review\": true could not be translated completely; see their warnings.",
+        "Changes go to the SCM candidate configuration; pushing it is a separate step."
+    ],
+    "summary": {
+        "POST": 76,
+        "PUT": 4,
+        "DELETE": 0,
+        "review": 2
+    },
+    "warnings": [],
+    "requests": [
+        {
+            "seq": 1,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Panorama-Shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "Panorama-Shared",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']"
+            },
+            "lookup": {
+                "name": "Panorama-Shared"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 2,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Datacenter Master Template"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "Datacenter Master Template",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Datacenter Master Template']"
+            },
+            "lookup": {
+                "name": "Datacenter Master Template"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 3,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Internet Perimeter Master"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "Internet Perimeter Master",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Internet Perimeter Master']"
+            },
+            "lookup": {
+                "name": "Internet Perimeter Master"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 4,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Paris Datacenter"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "Paris Datacenter",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Paris Datacenter']"
+            },
+            "lookup": {
+                "name": "Paris Datacenter"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 5,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "DE-Berling_Office"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "DE-Berling_Office",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='DE-Berling_Office']"
+            },
+            "lookup": {
+                "name": "DE-Berling_Office"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 6,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Paris_Datacenter_Stack"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "Paris_Datacenter_Stack",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Paris_Datacenter_Stack']"
+            },
+            "lookup": {
+                "name": "Paris_Datacenter_Stack"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 7,
+            "method": "POST",
+            "path": "/config/setup/v1/snippets",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "DE_Berlin_Office_Stack"
+            },
+            "before": null,
+            "object": {
+                "resource": "snippets",
+                "name": "DE_Berlin_Office_Stack",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='DE_Berlin_Office_Stack']"
+            },
+            "lookup": {
+                "name": "DE_Berlin_Office_Stack"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 8,
+            "method": "POST",
+            "path": "/config/setup/v1/folders",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "ngfw-shared",
+                "parent": "All"
+            },
+            "before": null,
+            "object": {
+                "resource": "folders",
+                "name": "ngfw-shared",
+                "scope_type": "setup",
+                "scope": "All",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='ngfw-shared']"
+            },
+            "lookup": {
+                "name": "ngfw-shared"
+            },
+            "depends_on": [],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 9,
+            "method": "POST",
+            "path": "/config/setup/v1/folders",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Perimeter-FWs",
+                "parent": "ngfw-shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "folders",
+                "name": "Perimeter-FWs",
+                "scope_type": "setup",
+                "scope": "ngfw-shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']"
+            },
+            "lookup": {
+                "name": "Perimeter-FWs"
+            },
+            "depends_on": [
+                8
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 10,
+            "method": "POST",
+            "path": "/config/setup/v1/folders",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Datacenter-Firewalls",
+                "parent": "ngfw-shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "folders",
+                "name": "Datacenter-Firewalls",
+                "scope_type": "setup",
+                "scope": "ngfw-shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']"
+            },
+            "lookup": {
+                "name": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                8
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 11,
+            "method": "POST",
+            "path": "/config/setup/v1/folders",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "testDG",
+                "parent": "ngfw-shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "folders",
+                "name": "testDG",
+                "scope_type": "setup",
+                "scope": "ngfw-shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']"
+            },
+            "lookup": {
+                "name": "testDG"
+            },
+            "depends_on": [
+                8
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 12,
+            "method": "POST",
+            "path": "/config/setup/v1/folders",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "FR Datacenter",
+                "parent": "Datacenter-Firewalls"
+            },
+            "before": null,
+            "object": {
+                "resource": "folders",
+                "name": "FR Datacenter",
+                "scope_type": "setup",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='FR Datacenter']"
+            },
+            "lookup": {
+                "name": "FR Datacenter"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 13,
+            "method": "POST",
+            "path": "/config/setup/v1/folders",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "DE-Berlin Office",
+                "parent": "Perimeter-FWs"
+            },
+            "before": null,
+            "object": {
+                "resource": "folders",
+                "name": "DE-Berlin Office",
+                "scope_type": "setup",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='DE-Berlin Office']"
+            },
+            "lookup": {
+                "name": "DE-Berlin Office"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 14,
+            "method": "POST",
+            "path": "/config/objects/v1/tags",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test.tag",
+                "folder": "Perimeter-FWs"
+            },
+            "before": null,
+            "object": {
+                "resource": "tags",
+                "name": "test.tag",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/tag/entry[@name='test.tag']"
+            },
+            "lookup": {
+                "name": "test.tag",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 15,
+            "method": "POST",
+            "path": "/config/objects/v1/tags",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test1",
+                "folder": "testDG"
+            },
+            "before": null,
+            "object": {
+                "resource": "tags",
+                "name": "test1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/tag/entry[@name='test1']"
+            },
+            "lookup": {
+                "name": "test1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 16,
+            "method": "POST",
+            "path": "/config/objects/v1/tags",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test2",
+                "folder": "testDG"
+            },
+            "before": null,
+            "object": {
+                "resource": "tags",
+                "name": "test2",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/tag/entry[@name='test2']"
+            },
+            "lookup": {
+                "name": "test2",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 17,
+            "method": "POST",
+            "path": "/config/objects/v1/tags",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp.local-group1",
+                "snippet": "Panorama-Shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "tags",
+                "name": "grp.local-group1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/tag/entry[@name='grp.local-group1']"
+            },
+            "lookup": {
+                "name": "grp.local-group1",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 18,
+            "method": "POST",
+            "path": "/config/objects/v1/tags",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp.shared-group1",
+                "snippet": "Panorama-Shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "tags",
+                "name": "grp.shared-group1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/tag/entry[@name='grp.shared-group1']"
+            },
+            "lookup": {
+                "name": "grp.shared-group1",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 19,
+            "method": "POST",
+            "path": "/config/objects/v1/tags",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-shared",
+                "snippet": "Panorama-Shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "tags",
+                "name": "test-shared",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/tag/entry[@name='test-shared']"
+            },
+            "lookup": {
+                "name": "test-shared",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 20,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "local-host1",
+                "folder": "DE-Berlin Office",
+                "ip_netmask": "5.6.7.4/32"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "local-host1",
+                "scope_type": "folder",
+                "scope": "DE-Berlin Office",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='DE-Berlin Office']/address/entry[@name='local-host1']"
+            },
+            "lookup": {
+                "name": "local-host1",
+                "folder": "DE-Berlin Office"
+            },
+            "depends_on": [
+                13
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 21,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "new test 1",
+                "folder": "Datacenter-Firewalls",
+                "ip_netmask": "1.1.1.1"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "new test 1",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/address/entry[@name='new test 1']"
+            },
+            "lookup": {
+                "name": "new test 1",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 22,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "new test 2",
+                "folder": "Datacenter-Firewalls",
+                "ip_netmask": "1.1.1.1"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "new test 2",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/address/entry[@name='new test 2']"
+            },
+            "lookup": {
+                "name": "new test 2",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 23,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "local-host1",
+                "folder": "Perimeter-FWs",
+                "ip_netmask": "4.23.42.5/32",
+                "tag": [
+                    "test.tag",
+                    "grp.local-group1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "local-host1",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/address/entry[@name='local-host1']"
+            },
+            "lookup": {
+                "name": "local-host1",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 24,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-addr1",
+                "folder": "testDG",
+                "ip_netmask": "1.1.1.1",
+                "tag": [
+                    "test1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "test-addr1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address/entry[@name='test-addr1']"
+            },
+            "lookup": {
+                "name": "test-addr1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 25,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-addr2",
+                "folder": "testDG",
+                "ip_netmask": "1.1.1.2"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "test-addr2",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address/entry[@name='test-addr2']"
+            },
+            "lookup": {
+                "name": "test-addr2",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 26,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-addr1-1",
+                "folder": "testDG",
+                "ip_netmask": "1.1.1.1",
+                "tag": [
+                    "test2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "test-addr1-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address/entry[@name='test-addr1-1']"
+            },
+            "lookup": {
+                "name": "test-addr1-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 27,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-addr2-1",
+                "folder": "testDG",
+                "ip_netmask": "1.1.1.2"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "test-addr2-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address/entry[@name='test-addr2-1']"
+            },
+            "lookup": {
+                "name": "test-addr2-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 28,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shared-host1",
+                "snippet": "Panorama-Shared",
+                "ip_netmask": "1.2.2.3/32",
+                "tag": [
+                    "grp.shared-group1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "shared-host1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address/entry[@name='shared-host1']"
+            },
+            "lookup": {
+                "name": "shared-host1",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 29,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shared-host2",
+                "snippet": "Panorama-Shared",
+                "ip_netmask": "14.5.6.7/32",
+                "tag": [
+                    "grp.shared-group1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "shared-host2",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address/entry[@name='shared-host2']"
+            },
+            "lookup": {
+                "name": "shared-host2",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 30,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Datacenter Subnet",
+                "snippet": "Panorama-Shared",
+                "ip_netmask": "10.0.0.0/16"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "Datacenter Subnet",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address/entry[@name='Datacenter Subnet']"
+            },
+            "lookup": {
+                "name": "Datacenter Subnet",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 31,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "new test 1",
+                "snippet": "Panorama-Shared",
+                "ip_netmask": "1.1.1.1"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "new test 1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address/entry[@name='new test 1']"
+            },
+            "lookup": {
+                "name": "new test 1",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 32,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "new test 2",
+                "snippet": "Panorama-Shared",
+                "ip_netmask": "1.1.1.1",
+                "tag": [
+                    "test-shared"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "new test 2",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address/entry[@name='new test 2']"
+            },
+            "lookup": {
+                "name": "new test 2",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 33,
+            "method": "POST",
+            "path": "/config/objects/v1/addresses",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "another object",
+                "snippet": "Panorama-Shared",
+                "ip_netmask": "1.1.1.1"
+            },
+            "before": null,
+            "object": {
+                "resource": "addresses",
+                "name": "another object",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address/entry[@name='another object']"
+            },
+            "lookup": {
+                "name": "another object",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 34,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "local-group2",
+                "folder": "Datacenter-Firewalls",
+                "static": [
+                    "shared-host1",
+                    "shared-host2",
+                    "test-group2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "local-group2",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/address-group/entry[@name='local-group2']"
+            },
+            "lookup": {
+                "name": "local-group2",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 35,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "group-with-duplicate-child",
+                "folder": "Datacenter-Firewalls",
+                "static": [
+                    "new test 1",
+                    "new test 2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "group-with-duplicate-child",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/address-group/entry[@name='group-with-duplicate-child']"
+            },
+            "lookup": {
+                "name": "group-with-duplicate-child",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 36,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "local-group1",
+                "folder": "Perimeter-FWs",
+                "static": [
+                    "local-host1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "local-group1",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/address-group/entry[@name='local-group1']"
+            },
+            "lookup": {
+                "name": "local-group1",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 37,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp-test-1",
+                "folder": "testDG",
+                "static": [
+                    "test-addr1",
+                    "test-addr2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "grp-test-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address-group/entry[@name='grp-test-1']"
+            },
+            "lookup": {
+                "name": "grp-test-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 38,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp-in-grp-test-1",
+                "folder": "testDG",
+                "static": [
+                    "grp-test-1",
+                    "grp-test-1-1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "grp-in-grp-test-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address-group/entry[@name='grp-in-grp-test-1']"
+            },
+            "lookup": {
+                "name": "grp-in-grp-test-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 39,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp-test-1-1",
+                "folder": "testDG",
+                "static": [
+                    "test-addr1",
+                    "test-addr2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "grp-test-1-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/address-group/entry[@name='grp-test-1-1']"
+            },
+            "lookup": {
+                "name": "grp-test-1-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 40,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shared-group1",
+                "snippet": "Panorama-Shared",
+                "static": [
+                    "shared-host1",
+                    "shared-host2",
+                    "test-group2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "shared-group1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='shared-group1']"
+            },
+            "lookup": {
+                "name": "shared-group1",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 41,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-dynamic",
+                "snippet": "Panorama-Shared",
+                "dynamic": {
+                    "filter": "'grp.shared-group1'"
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "test-dynamic",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='test-dynamic']"
+            },
+            "lookup": {
+                "name": "test-dynamic",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 42,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-group2",
+                "snippet": "Panorama-Shared",
+                "static": [
+                    "shared-host2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "test-group2",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='test-group2']"
+            },
+            "lookup": {
+                "name": "test-group2",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 43,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shrd-grp-dynamic",
+                "snippet": "Panorama-Shared",
+                "dynamic": {
+                    "filter": "'test.tag'"
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "shrd-grp-dynamic",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='shrd-grp-dynamic']"
+            },
+            "lookup": {
+                "name": "shrd-grp-dynamic",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 44,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shrd-grp1-2obj-1ref",
+                "snippet": "Panorama-Shared",
+                "static": [
+                    "shared-host1",
+                    "test-dynamic"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "shrd-grp1-2obj-1ref",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='shrd-grp1-2obj-1ref']"
+            },
+            "lookup": {
+                "name": "shrd-grp1-2obj-1ref",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 45,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shrd-grp2-3obj-0ref",
+                "snippet": "Panorama-Shared",
+                "static": [
+                    "Datacenter Subnet",
+                    "shared-group1",
+                    "test-dynamic"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "shrd-grp2-3obj-0ref",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='shrd-grp2-3obj-0ref']"
+            },
+            "lookup": {
+                "name": "shrd-grp2-3obj-0ref",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 46,
+            "method": "POST",
+            "path": "/config/objects/v1/address-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "group-with-duplicate-child",
+                "snippet": "Panorama-Shared",
+                "static": [
+                    "new test 1",
+                    "new test 2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "address-groups",
+                "name": "group-with-duplicate-child",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/address-group/entry[@name='group-with-duplicate-child']"
+            },
+            "lookup": {
+                "name": "group-with-duplicate-child",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 47,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "tcp-with-dup1",
+                "folder": "Datacenter-Firewalls",
+                "protocol": {
+                    "tcp": {
+                        "port": "90"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "tcp-with-dup1",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/service/entry[@name='tcp-with-dup1']"
+            },
+            "lookup": {
+                "name": "tcp-with-dup1",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 48,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "tcp-with-dup2",
+                "folder": "Datacenter-Firewalls",
+                "protocol": {
+                    "tcp": {
+                        "port": "90"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "tcp-with-dup2",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/service/entry[@name='tcp-with-dup2']"
+            },
+            "lookup": {
+                "name": "tcp-with-dup2",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 49,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "svc-with-children",
+                "folder": "Datacenter-Firewalls",
+                "protocol": {
+                    "tcp": {
+                        "port": "57"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "svc-with-children",
+                "scope_type": "folder",
+                "scope": "Datacenter-Firewalls",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Datacenter-Firewalls']/service/entry[@name='svc-with-children']"
+            },
+            "lookup": {
+                "name": "svc-with-children",
+                "folder": "Datacenter-Firewalls"
+            },
+            "depends_on": [
+                10
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 50,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "dg-svc2",
+                "folder": "Perimeter-FWs",
+                "protocol": {
+                    "tcp": {
+                        "port": "80"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "dg-svc2",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/service/entry[@name='dg-svc2']"
+            },
+            "lookup": {
+                "name": "dg-svc2",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 51,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "dg-sv3",
+                "folder": "Perimeter-FWs",
+                "protocol": {
+                    "tcp": {
+                        "port": "90"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "dg-sv3",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/service/entry[@name='dg-sv3']"
+            },
+            "lookup": {
+                "name": "dg-sv3",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 52,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "dg-sv4",
+                "folder": "Perimeter-FWs",
+                "protocol": {
+                    "tcp": {
+                        "port": "2000"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "dg-sv4",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/service/entry[@name='dg-sv4']"
+            },
+            "lookup": {
+                "name": "dg-sv4",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 53,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-src-1",
+                "folder": "testDG",
+                "protocol": {
+                    "tcp": {
+                        "port": "80"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "test-src-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service/entry[@name='test-src-1']"
+            },
+            "lookup": {
+                "name": "test-src-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 54,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-srv-2",
+                "folder": "testDG",
+                "protocol": {
+                    "tcp": {
+                        "port": "443"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "test-srv-2",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service/entry[@name='test-srv-2']"
+            },
+            "lookup": {
+                "name": "test-srv-2",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 55,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-src-1-1",
+                "folder": "testDG",
+                "protocol": {
+                    "tcp": {
+                        "port": "80"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "test-src-1-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service/entry[@name='test-src-1-1']"
+            },
+            "lookup": {
+                "name": "test-src-1-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 56,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "test-srv-2-1",
+                "folder": "testDG",
+                "protocol": {
+                    "tcp": {
+                        "port": "443"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "test-srv-2-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service/entry[@name='test-srv-2-1']"
+            },
+            "lookup": {
+                "name": "test-srv-2-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 57,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shrd-sv1",
+                "snippet": "Panorama-Shared",
+                "protocol": {
+                    "tcp": {
+                        "port": "50"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "shrd-sv1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/service/entry[@name='shrd-sv1']"
+            },
+            "lookup": {
+                "name": "shrd-sv1",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 58,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shrd-sv5",
+                "snippet": "Panorama-Shared",
+                "protocol": {
+                    "tcp": {
+                        "port": "9000"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "shrd-sv5",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/service/entry[@name='shrd-sv5']"
+            },
+            "lookup": {
+                "name": "shrd-sv5",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 59,
+            "method": "POST",
+            "path": "/config/objects/v1/services",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "svc-with-children",
+                "snippet": "Panorama-Shared",
+                "protocol": {
+                    "tcp": {
+                        "port": "57"
+                    }
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "services",
+                "name": "svc-with-children",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/service/entry[@name='svc-with-children']"
+            },
+            "lookup": {
+                "name": "svc-with-children",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 60,
+            "method": "POST",
+            "path": "/config/objects/v1/service-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "shrd-grp1-1obj-1ref",
+                "folder": "Perimeter-FWs",
+                "members": [
+                    "shrd-sv1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "service-groups",
+                "name": "shrd-grp1-1obj-1ref",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/service-group/entry[@name='shrd-grp1-1obj-1ref']"
+            },
+            "lookup": {
+                "name": "shrd-grp1-1obj-1ref",
+                "folder": "Perimeter-FWs"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 61,
+            "method": "POST",
+            "path": "/config/objects/v1/service-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp-srv-1",
+                "folder": "testDG",
+                "members": [
+                    "test-src-1",
+                    "test-srv-2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "service-groups",
+                "name": "grp-srv-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service-group/entry[@name='grp-srv-1']"
+            },
+            "lookup": {
+                "name": "grp-srv-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 62,
+            "method": "POST",
+            "path": "/config/objects/v1/service-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp-in-grp-srv",
+                "folder": "testDG",
+                "members": [
+                    "grp-srv-1",
+                    "grp-srv-1-1"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "service-groups",
+                "name": "grp-in-grp-srv",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service-group/entry[@name='grp-in-grp-srv']"
+            },
+            "lookup": {
+                "name": "grp-in-grp-srv",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 63,
+            "method": "POST",
+            "path": "/config/objects/v1/service-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "grp-srv-1-1",
+                "folder": "testDG",
+                "members": [
+                    "test-src-1",
+                    "test-srv-2"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "service-groups",
+                "name": "grp-srv-1-1",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/service-group/entry[@name='grp-srv-1-1']"
+            },
+            "lookup": {
+                "name": "grp-srv-1-1",
+                "folder": "testDG"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 64,
+            "method": "POST",
+            "path": "/config/security/v1/profile-groups",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Shared Production Profile",
+                "snippet": "Panorama-Shared"
+            },
+            "before": null,
+            "object": {
+                "resource": "profile-groups",
+                "name": "Shared Production Profile",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/profile-group/entry[@name='Shared Production Profile']"
+            },
+            "lookup": {
+                "name": "Shared Production Profile",
+                "snippet": "Panorama-Shared"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 65,
+            "method": "POST",
+            "path": "/config/network/v1/zones",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "WAN",
+                "snippet": "Datacenter Master Template",
+                "network": {
+                    "layer3": []
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "zones",
+                "name": "WAN",
+                "scope_type": "snippet",
+                "scope": "Datacenter Master Template",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Datacenter Master Template']/zone/entry[@name='WAN']"
+            },
+            "lookup": {
+                "name": "WAN",
+                "snippet": "Datacenter Master Template"
+            },
+            "depends_on": [
+                2
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 66,
+            "method": "POST",
+            "path": "/config/network/v1/zones",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "Internet",
+                "snippet": "Internet Perimeter Master",
+                "network": {
+                    "layer3": []
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "zones",
+                "name": "Internet",
+                "scope_type": "snippet",
+                "scope": "Internet Perimeter Master",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Internet Perimeter Master']/zone/entry[@name='Internet']"
+            },
+            "lookup": {
+                "name": "Internet",
+                "snippet": "Internet Perimeter Master"
+            },
+            "depends_on": [
+                3
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 67,
+            "method": "POST",
+            "path": "/config/network/v1/zones",
+            "id": null,
+            "query": {},
+            "merge": false,
+            "body": {
+                "name": "LAN",
+                "snippet": "Internet Perimeter Master",
+                "network": {
+                    "layer3": []
+                }
+            },
+            "before": null,
+            "object": {
+                "resource": "zones",
+                "name": "LAN",
+                "scope_type": "snippet",
+                "scope": "Internet Perimeter Master",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Internet Perimeter Master']/zone/entry[@name='LAN']"
+            },
+            "lookup": {
+                "name": "LAN",
+                "snippet": "Internet Perimeter Master"
+            },
+            "depends_on": [
+                3
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 68,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "berlin-office  prerule  intra",
+                "folder": "DE-Berlin Office",
+                "to": [
+                    "any"
+                ],
+                "from": [
+                    "any"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "dg-sv3"
+                ],
+                "action": "deny",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "berlin-office  prerule  intra",
+                "scope_type": "folder",
+                "scope": "DE-Berlin Office",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='DE-Berlin Office']/pre-rulebase/security/rules/entry[@name='berlin-office  prerule  intra']"
+            },
+            "lookup": {
+                "name": "berlin-office  prerule  intra",
+                "folder": "DE-Berlin Office",
+                "position": "pre"
+            },
+            "depends_on": [
+                13
+            ],
+            "review": true,
+            "warnings": [
+                "not sent, unknown to the SCM schema of security-rules: rule-type"
+            ]
+        },
+        {
+            "seq": 69,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "berlin-office  prerule  intra-1",
+                "folder": "DE-Berlin Office",
+                "to": [
+                    "any"
+                ],
+                "from": [
+                    "any"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "dg-sv3"
+                ],
+                "action": "drop",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "berlin-office  prerule  intra-1",
+                "scope_type": "folder",
+                "scope": "DE-Berlin Office",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='DE-Berlin Office']/pre-rulebase/security/rules/entry[@name='berlin-office  prerule  intra-1']"
+            },
+            "lookup": {
+                "name": "berlin-office  prerule  intra-1",
+                "folder": "DE-Berlin Office",
+                "position": "pre"
+            },
+            "depends_on": [
+                13
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 70,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "berlin-office  prerule  intra-2",
+                "folder": "DE-Berlin Office",
+                "to": [
+                    "any"
+                ],
+                "from": [
+                    "any"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "any"
+                ],
+                "action": "reset-both",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "berlin-office  prerule  intra-2",
+                "scope_type": "folder",
+                "scope": "DE-Berlin Office",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='DE-Berlin Office']/pre-rulebase/security/rules/entry[@name='berlin-office  prerule  intra-2']"
+            },
+            "lookup": {
+                "name": "berlin-office  prerule  intra-2",
+                "folder": "DE-Berlin Office",
+                "position": "pre"
+            },
+            "depends_on": [
+                13
+            ],
+            "review": true,
+            "warnings": [
+                "not sent, unknown to the SCM schema of security-rules: rule-type"
+            ]
+        },
+        {
+            "seq": 71,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "perimeter - allow users outside",
+                "folder": "Perimeter-FWs",
+                "from": [
+                    "internal"
+                ],
+                "to": [
+                    "external"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "known-user"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "application-default"
+                ],
+                "action": "allow",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "perimeter - allow users outside",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/pre-rulebase/security/rules/entry[@name='perimeter - allow users outside']"
+            },
+            "lookup": {
+                "name": "perimeter - allow users outside",
+                "folder": "Perimeter-FWs",
+                "position": "pre"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 72,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "post"
+            },
+            "merge": false,
+            "body": {
+                "name": "no traffic out of dc",
+                "folder": "Perimeter-FWs",
+                "from": [
+                    "internal"
+                ],
+                "to": [
+                    "any"
+                ],
+                "source": [
+                    "Datacenter Subnet"
+                ],
+                "destination": [
+                    "shrd-grp1-2obj-1ref"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "application-default"
+                ],
+                "action": "deny",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "no traffic out of dc",
+                "scope_type": "folder",
+                "scope": "Perimeter-FWs",
+                "position": "post",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='Perimeter-FWs']/post-rulebase/security/rules/entry[@name='no traffic out of dc']"
+            },
+            "lookup": {
+                "name": "no traffic out of dc",
+                "folder": "Perimeter-FWs",
+                "position": "post"
+            },
+            "depends_on": [
+                9
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 73,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "local dg",
+                "folder": "testDG",
+                "to": [
+                    "any"
+                ],
+                "from": [
+                    "any"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "application-default"
+                ],
+                "action": "allow",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "local dg",
+                "scope_type": "folder",
+                "scope": "testDG",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='testDG']/pre-rulebase/security/rules/entry[@name='local dg']"
+            },
+            "lookup": {
+                "name": "local dg",
+                "folder": "testDG",
+                "position": "pre"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 74,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "shared pre rule 1",
+                "snippet": "Panorama-Shared",
+                "from": [
+                    "any"
+                ],
+                "to": [
+                    "any"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "application-default"
+                ],
+                "action": "allow",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "shared pre rule 1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/pre-rulebase/security/rules/entry[@name='shared pre rule 1']"
+            },
+            "lookup": {
+                "name": "shared pre rule 1",
+                "snippet": "Panorama-Shared",
+                "position": "pre"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 75,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "pre"
+            },
+            "merge": false,
+            "body": {
+                "name": "shared-pre-rule2",
+                "snippet": "Panorama-Shared",
+                "from": [
+                    "any"
+                ],
+                "to": [
+                    "any"
+                ],
+                "source": [
+                    "any"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "ssl"
+                ],
+                "service": [
+                    "application-default"
+                ],
+                "action": "allow",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "shared-pre-rule2",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": "pre",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/pre-rulebase/security/rules/entry[@name='shared-pre-rule2']"
+            },
+            "lookup": {
+                "name": "shared-pre-rule2",
+                "snippet": "Panorama-Shared",
+                "position": "pre"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 76,
+            "method": "POST",
+            "path": "/config/security/v1/security-rules",
+            "id": null,
+            "query": {
+                "position": "post"
+            },
+            "merge": false,
+            "body": {
+                "name": "shared post rule 1",
+                "snippet": "Panorama-Shared",
+                "from": [
+                    "any"
+                ],
+                "to": [
+                    "any"
+                ],
+                "source": [
+                    "Datacenter Subnet",
+                    "new test 2"
+                ],
+                "destination": [
+                    "any"
+                ],
+                "source_user": [
+                    "any"
+                ],
+                "category": [
+                    "any"
+                ],
+                "application": [
+                    "any"
+                ],
+                "service": [
+                    "application-default"
+                ],
+                "action": "allow",
+                "source_hip": [
+                    "any"
+                ]
+            },
+            "before": null,
+            "object": {
+                "resource": "security-rules",
+                "name": "shared post rule 1",
+                "scope_type": "snippet",
+                "scope": "Panorama-Shared",
+                "position": "post",
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='Panorama-Shared']/post-rulebase/security/rules/entry[@name='shared post rule 1']"
+            },
+            "lookup": {
+                "name": "shared post rule 1",
+                "snippet": "Panorama-Shared",
+                "position": "post"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": []
+        },
+        {
+            "seq": 77,
+            "method": "PUT",
+            "path": "/config/setup/v1/folders/{id}",
+            "id": null,
+            "query": {},
+            "merge": true,
+            "body": {
+                "snippets": [
+                    "Panorama-Shared"
+                ]
+            },
+            "before": {
+                "snippets": []
+            },
+            "object": {
+                "resource": "folders",
+                "name": "All",
+                "scope_type": "setup",
+                "scope": null,
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/container/entry[@name='All']"
+            },
+            "lookup": {
+                "name": "All"
+            },
+            "depends_on": [
+                1
+            ],
+            "review": false,
+            "warnings": [],
+            "merge_lists": {
+                "snippets": "keep-others"
+            }
+        },
+        {
+            "seq": 78,
+            "method": "PUT",
+            "path": "/config/setup/v1/devices/{id}",
+            "id": null,
+            "query": {},
+            "merge": true,
+            "body": {
+                "folder": "FR Datacenter",
+                "snippets": []
+            },
+            "before": {},
+            "object": {
+                "resource": "devices",
+                "name": "000007777",
+                "scope_type": "setup",
+                "scope": "FR Datacenter",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/device/on-prem/entry[@name='000007777']"
+            },
+            "lookup": {
+                "name": "000007777"
+            },
+            "depends_on": [
+                12
+            ],
+            "review": false,
+            "warnings": [
+                "devices cannot be created through the API: the firewall must be onboarded in SCM, otherwise this request is skipped"
+            ],
+            "merge_lists": {
+                "snippets": "keep-others"
+            },
+            "skip_if_missing": true
+        },
+        {
+            "seq": 79,
+            "method": "PUT",
+            "path": "/config/setup/v1/devices/{id}",
+            "id": null,
+            "query": {},
+            "merge": true,
+            "body": {
+                "folder": "ngfw-shared",
+                "snippets": []
+            },
+            "before": {},
+            "object": {
+                "resource": "devices",
+                "name": "007200006721",
+                "scope_type": "setup",
+                "scope": "ngfw-shared",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/device/on-prem/entry[@name='007200006721']"
+            },
+            "lookup": {
+                "name": "007200006721"
+            },
+            "depends_on": [
+                8
+            ],
+            "review": false,
+            "warnings": [
+                "devices cannot be created through the API: the firewall must be onboarded in SCM, otherwise this request is skipped"
+            ],
+            "merge_lists": {
+                "snippets": "keep-others"
+            },
+            "skip_if_missing": true
+        },
+        {
+            "seq": 80,
+            "method": "PUT",
+            "path": "/config/setup/v1/devices/{id}",
+            "id": null,
+            "query": {},
+            "merge": true,
+            "body": {
+                "folder": "testDG",
+                "snippets": []
+            },
+            "before": {},
+            "object": {
+                "resource": "devices",
+                "name": "007100000290",
+                "scope_type": "setup",
+                "scope": "testDG",
+                "position": null,
+                "xpath": "/config/devices/entry[@name='localhost.localdomain']/device/on-prem/entry[@name='007100000290']"
+            },
+            "lookup": {
+                "name": "007100000290"
+            },
+            "depends_on": [
+                11
+            ],
+            "review": false,
+            "warnings": [
+                "devices cannot be created through the API: the firewall must be onboarded in SCM, otherwise this request is skipped"
+            ],
+            "merge_lists": {
+                "snippets": "keep-others"
+            },
+            "skip_if_missing": true
+        }
+    ]
+}
