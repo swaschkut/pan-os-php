@@ -428,7 +428,24 @@ class ThreatPolicy
         if( $this->analysis() !== null )
             $stringAnalysis = " - analysis:'".$this->analysis()."'";
 
-        $tmp_string = "'".$this->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
+        // vulnerability / anti-spyware rules (also predefined profiles): every match field, a field not set
+        // as PAN-OS reads it ('any', packet-capture 'disable'); vulnerability also host, cve and vendor-id
+        $stringCve = "";
+        $stringVendorID = "";
+        if( $this instanceof ThreatPolicyVulnerability || $this instanceof ThreatPolicySpyware )
+        {
+            $stringThreatName = " - threat-name:'".( $this->threatname() ?? "any" )."'";
+            $stringPacketCapture = " - packetCapture:'".( $this->packetCapture() ?? "disable" )."'";
+            $stringCategory = " - category:'".( $this->category() ?? "any" )."'";
+            if( $this instanceof ThreatPolicyVulnerability )
+            {
+                $stringHost = " - host:'".( $this->host() ?? "any" )."'";
+                $stringCve = " - cve:'".( empty( $this->cve() ) ? "any" : implode( ",", $this->cve() ) )."'";
+                $stringVendorID = " - vendor-id:'".( empty( $this->vendorID() ) ? "any" : implode( ",", $this->vendorID() ) )."'";
+            }
+        }
+
+        $tmp_string = "'".$this->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringCve.$stringVendorID.$stringDirection.$stringAnalysis;
 
         return $tmp_string;
     }
