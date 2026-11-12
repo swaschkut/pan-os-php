@@ -1,0 +1,196 @@
+# scm_pa_export.php – next steps and verification
+
+Status: the export covers all planned areas (`infra`, `remote-networks`, `service-connections`, `mobile-users`,
+`prisma-browser`, `iam`) and writes `MIGRATION_CHECKLIST.md`. It has only been tested offline against simulated API
+answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
+
+Details of the export itself: [README_pa_export.md](README_pa_export.md).
+
+---
+
+## 1. Apply the patches (branch `beta_scm-extension`)
+
+Order matters, each patch builds on the previous one:
+
+```bash
+git checkout beta_scm-extension
+git am scm-rn-export_beta.patch \
+       scm-rn-export-psk-list_beta.patch \
+       scm-pa-export-infra_beta.patch \
+       scm-pa-export-sc_beta.patch \
+       scm-pa-export-mu_beta.patch \
+       scm-pa-export-pb-iam-checklist_beta.patch
+```
+
+Quick check:
+
+```bash
+php -l utils/develop/sase/scm/scm_pa_export.php
+php -l utils/develop/sase/scm/lib/SCMPrismaAccessExport.php
+php -l lib/misc-classes/PanSCMAPIConnector.php
+```
+
+## 2. Prerequisites for the first live run
+
+- [ ] **Test tenant** (TSG) with Prisma Access – ideally one with RN, SC and MU configured.
+- [ ] **Service account** with read access to the tenant. For `iam` and `prisma-browser` the account needs the
+      corresponding roles; without them these areas show `unavailable` (not an error).
+- [ ] **`.panconfkeystore`**: entry `tsg_id<TSG>` exists or is created on the first run (client_id / client_secret prompt).
+- [ ] **Egress-IP API key** (optional): either entry `egressip_tsg_id<TSG>` in `.panconfkeystore`, or the run takes
+      `api_key` from `shared-infrastructure-settings`, or it asks once.
+- [ ] Output directory outside of git (the secret lists contain cleartext).
+
+## 3. First live run
+
+Full export with all extras and API debug output (keep the log):
+
+```bash
+php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG> \
+    outdir=/share/export egressip psk-list debugapi 2>&1 | tee /share/export/run-<TSG>.log
+```
+
+If the full run is too noisy, run the areas one by one:
+
+```bash
+php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG> area=infra egressip debugapi
+php utils/develop/sase/scm/scm_rn_export.php  in=scm-api://<TSG> psk-list debugapi
+php utils/develop/sase/scm/scm_sc_export.php  in=scm-api://<TSG> psk-list debugapi
+php utils/develop/sase/scm/scm_mu_export.php  in=scm-api://<TSG> psk-list debugapi
+php utils/develop/sase/scm/scm_pb_export.php  in=scm-api://<TSG> debugapi
+php utils/develop/sase/scm/scm_iam_export.php in=scm-api://<TSG> debugapi
+```
+
+Note: `debugapi` prints the bearer token and full API answers – do not share the raw log.
+
+## 4. Verification
+
+Work through the list with the export directory `<outdir>/<TSG>/<timestamp>/`. For every item note **OK** or what
+was found; wrong items are fixed in the code afterwards.
+
+### 4.1 General
+
+- [ ] `manifest.json` → `errors` is 0. For every endpoint with `status: error`: note `http_code` and `error`
+      (wrong path, wrong folder, missing permission?).
+- [ ] `manifest.json` → `unavailable`: only products that are really not licensed / not permitted.
+- [ ] Log: does the "retry without limit/offset" line appear? For which endpoints? (They really reject
+      `limit` / `offset`.)
+- [ ] Endpoints with many objects (> 200): count in `manifest.json` = count in the SCM UI (pagination works).
+- [ ] `infra/01_shared-infrastructure-settings.json`: `api_key` is `***REDACTED***`;
+      `grep -r "<real api key>" <export dir>` finds nothing.
+- [ ] Secret lists have mode 600: `ls -l */psk-list.csv */bgp-secret-list.csv */secret-list.csv`.
+
+### 4.2 infra
+
+- [ ] `shared-infrastructure-settings`: `infrastructure_subnet`, `infra_bgp_as`, `loopback_ips` match the UI.
+- [ ] `bgp-routing`: field names as used in the `infra` summary of `manifest.json` (`routing_preference`,
+      `backbone_routing`, `accept_route_over_SC`, `outbound_routes_for_services`, `add_host_route_to_ike_peer`,
+      `withdraw_static_route`) – summary values not `null` where set in the UI.
+- [ ] `internal-dns-servers`: field names `domain_name`, `primary`, `secondary`.
+- [ ] `locations`: entries have `value` and `display` (used for all IP mappings).
+- [ ] `92_egress-ip.json`: request worked; if HTTP error → try `egressip-env=prod6`.
+- [ ] Egress API accepted the `api_key` of `shared-infrastructure-settings` (log line
+      "using api_key of shared-infrastructure-settings").
+- [ ] Egress `addrType=all` contains pre-allocated GlobalProtect addresses (`addressType` values in the file).
+
+### 4.3 remote-networks
+
+- [ ] `remote-networks` and `bandwidth-allocations` return data without a `folder` parameter.
+- [ ] `05_qos-profiles.json`: path `/config/network/v1/qos-profiles?folder=Remote Networks` works.
+- [ ] IKE / IPsec objects: folder `Remote Networks` returns the expected objects; predefined profiles are listed in
+      `import_hints` as `inherited_or_predefined`.
+- [ ] `ike-gateways`: PSK under `authentication.pre_shared_key.key`, format `-AQ==…`.
+- [ ] `psk-list.csv`: `psk_current` decrypted (no `DECRYPT_FAILED`); compare one key with a known PSK.
+- [ ] `bgp-secret-list.csv`: BGP secret under `protocol.bgp.secret`, decrypted.
+- [ ] `ip-mapping.csv`: `service_ip_address`, `fqdn`, `branch_peer_address` filled; `egress_match = location` for
+      most rows (if `none`: compare `region` with `infra/90_locations.json` `value`).
+
+### 4.4 service-connections
+
+- [ ] `service-connections`, `service-connection-groups`, `traffic-steering-rules`: paths work, without `folder`
+      parameter.
+- [ ] `05_qos-profiles.json` for folder `Service Connections`.
+- [ ] Field names in `ip-mapping.csv`: `backup_SC`, `subnets`, `nat_pool`, `source_nat`, `qos`, `bgp_peer.*`.
+- [ ] `psk-list.csv` / `bgp-secret-list.csv`: decrypted; `bgp_peer.secret` uses the same encryption as the PSK.
+- [ ] `import_hints` `intra_dependency` lists the service connections with `backup_SC`.
+
+### 4.5 mobile-users
+
+- [ ] Identity endpoints (`/config/identity/v1/*?folder=Mobile Users`): do they also return objects of parent
+      folders (`Prisma Access`, `All`)? Compare e.g. authentication profiles with the UI.
+- [ ] `mobile-agent/*`: `agent-versions`, `enable`, `global-settings` accept the `folder` parameter.
+- [ ] `21_mobile-agent-locations.json`: structure (used only as fallback for the MU IP mapping).
+- [ ] `20_mobile-agent-infrastructure-settings.json`: `name` = portal hostname, `ip_pools`, `deployment.region[]`.
+- [ ] `secret-list.csv`: which fields are really found (LDAP `bind_password`, RADIUS `secret`, local user
+      `password` = `HASHED`, GP app passwords in `gp_app_config`)? Any false positives (non-secret values)?
+      Any secret that is missing?
+- [ ] `ip-mapping.csv`: gateway / portal egress IPs per location, active and pre-allocated split correctly.
+- [ ] `import_hints` `certificate_private_key`: does the certificate list contain private key fields at all?
+
+### 4.6 prisma-browser
+
+- [ ] The SCM service account token is accepted on `api.sase.paloaltonetworks.com/seb-api/v1` (no 401).
+- [ ] Lists: response key (`data` / `items` / `results`) and cursor field in `pageInfo` – a list with more than
+      1000 entries is complete.
+- [ ] Policy GETs return the active configuration without `configurationVersion=active` (otherwise the parameter
+      has to be added).
+- [ ] `user-groups`: field / values for IdP-synced groups (`source`, `type`, …) → `idp_synced_groups` hint correct.
+- [ ] `applications`: field / value for catalog applications (`type: catalog`?).
+- [ ] `prisma_browser` summary in `manifest.json`: rule / section counts match the UI.
+
+### 4.7 iam
+
+- [ ] Paths `/iam/v1/custom_roles` and `/iam/v1/permission_sets` (derived from the documentation structure, not
+      confirmed).
+- [ ] List format and pagination of the IAM endpoints (all access policies present?).
+- [ ] `access-policies.csv`: `principal`, `role`, `resource` filled (field names of the access policy objects).
+
+### 4.8 MIGRATION_CHECKLIST.md
+
+- [ ] All `action_required` items are plausible for this tenant.
+- [ ] License item shows the RN bandwidth sum of the source tenant.
+- [ ] ZTNA connector item: lists the connector blocks if ZTNA is used.
+- [ ] Anything missing that you would do manually during a migration?
+
+## 5. What to send back for the fixes
+
+Safe to share (no secrets):
+
+- `manifest.json`
+- `MIGRATION_CHECKLIST.md`
+- the filled-in verification list (section 4)
+- one endpoint file per failing or suspicious endpoint – names / IPs may be anonymised
+
+Never share: `psk-list.csv`, `bgp-secret-list.csv`, `secret-list.csv`, the raw `debugapi` log.
+
+## 6. Explicit Proxy (internal SCM API)
+
+No documented public API exists. To add it as an area:
+
+1. Log in to Strata Cloud Manager, open Prisma Access → Mobile Users → Explicit Proxy.
+2. Browser developer tools → Network, filter `Fetch/XHR`, reload and open each Explicit Proxy page / tab.
+3. Note per request: method, path, query parameters, response structure (or save a HAR file).
+4. Remove `Authorization` headers and cookies from the HAR before sharing.
+5. The calls are added as area `mobile-users-explicit-proxy` with endpoints marked `internal`
+   (may change without notice).
+
+Alternative: open SCM in the Claude browser pane and capture the calls together.
+
+## 7. Next development steps
+
+| step | what | depends on |
+|---|---|---|
+| 1 | fixes from the verification (section 4) | live run |
+| 2 | `scm_pa_compare.php`: offline diff of two exports per area / endpoint – only in A, only in B, changed fields; normalised (no `id`, derived fields, redactions); IPs separately; JSON + HTML / Markdown report | export format verified |
+| 3 | `scm_pa_import.php` dry-run: dependency / reference check, secret lists loaded, read target tenant, plan create / skip / update | step 2 (same normalisation) |
+| 4 | import execution per area in `import_order`, special cases (`backup_SC` afterwards, predefined objects skipped, Prisma Browser publish) | step 3 |
+| 5 | push (`config-versions candidate:push`) + job polling | step 4 |
+| 6 | Explicit Proxy area (internal API) | section 6 |
+
+## 8. Known limitations
+
+- Private keys of certificates are not exported (manual import on the target tenant).
+- Service account secrets cannot be read (new service accounts on the target tenant).
+- IAM is documentation / compare only.
+- Not exported: Explicit Proxy, ZTNA connector, Cloud Identity Engine, Strata Logging Service, license allocation,
+  Prisma Browser assets (logos).
+- Objects and security policy are handled by `pan-os-php in=scm-api://<TSG>`, not by this export.
