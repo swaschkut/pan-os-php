@@ -1,4 +1,4 @@
-# scm_pa_export.php – Prisma Access export (infrastructure, Remote Networks)
+# scm_pa_export.php – Prisma Access export (infrastructure, Remote Networks, Service Connections)
 
 Downloads the Prisma Access configuration of one tenant (TSG) into a local directory, per **area**.
 The export is the input for the later steps:
@@ -11,8 +11,9 @@ The export is the input for the later steps:
 |---|---|
 | `infra` | Prisma Access infrastructure: infrastructure subnet, infra BGP AS, loopbacks, BGP routing, internal DNS servers, locations, egress IPs |
 | `remote-networks` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, bandwidth allocations, remote networks (RN / RN-SPN) |
+| `service-connections` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, service connections (SC-CAN), service connection groups, traffic steering rules |
 
-Service Connections (SC-CAN) and Mobile Users follow as further areas.
+Mobile Users follow as a further area.
 
 ## Usage
 
@@ -21,20 +22,22 @@ php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID>
 php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> area=infra egressip
 php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> outdir=/share/export egressip psk-list
 
-# shortcut for area=remote-networks
-php utils/develop/sase/scm/scm_rn_export.php in=scm-api://<TSG_ID>
+# shortcuts
+php utils/develop/sase/scm/scm_rn_export.php in=scm-api://<TSG_ID>     # area=remote-networks
+php utils/develop/sase/scm/scm_sc_export.php in=scm-api://<TSG_ID>     # area=service-connections
 ```
 
 | argument | description |
 |---|---|
 | `in=scm-api://<TSG_ID>` | tenant; service account `client_id` / `client_secret` are taken from `~/.panconfkeystore` (`tsg_id<TSG_ID>`) or asked for and stored |
-| `area=` | comma separated: `infra`, `remote-networks`; default: all |
+| `area=` | comma separated: `infra`, `remote-networks`, `service-connections`; default: all |
 | `outdir=` | base directory, default `export` |
-| `folder=` | SCM folder of the IKE/IPsec objects, default `Remote Networks` |
+| `folder=` | SCM folder of the Remote Network IKE/IPsec objects, default `Remote Networks` |
+| `sc-folder=` | SCM folder of the Service Connection IKE/IPsec/QoS objects, default `Service Connections` |
 | `egressip` | also download egress IPs via the Prisma Access egress-IP API (`serviceType=all`) |
 | `egressip-env=prod\|prod6` | egress-IP API host (`api.prod…` default, `api.prod6…` for some SCM tenants) |
-| `psk-list` | write `remote-networks/psk-list.csv` with the decrypted PSK per IKE gateway (see below) |
-| `master-key=` | master key to decrypt the PSKs; default: PAN-OS default master key |
+| `psk-list` | per connection area write `psk-list.csv` and `bgp-secret-list.csv` with the decrypted values (see below) |
+| `master-key=` | master key to decrypt PSKs and BGP secrets; default: PAN-OS default master key |
 | `debugapi` | print every API call |
 
 ### Egress-IP API key
@@ -65,13 +68,24 @@ With `egressip` the key is taken from, in this order:
         05_bandwidth-allocations.json           /config/deployment/v1/bandwidth-allocations
         06_remote-networks.json                 /config/deployment/v1/remote-networks
         ip-mapping.json / ip-mapping.csv
-        psk-list.csv                            (only with psk-list, chmod 600, cleartext)
+        psk-list.csv / bgp-secret-list.csv      (only with psk-list, chmod 600, cleartext)
+    service-connections/
+        01_ike-crypto-profiles.json             /config/network/v1/ike-crypto-profiles?folder=Service Connections
+        02_ipsec-crypto-profiles.json           /config/network/v1/ipsec-crypto-profiles?folder=Service Connections
+        03_ike-gateways.json                    /config/network/v1/ike-gateways?folder=Service Connections
+        04_ipsec-tunnels.json                   /config/network/v1/ipsec-tunnels?folder=Service Connections
+        05_qos-profiles.json                    /config/network/v1/qos-profiles?folder=Service Connections
+        06_service-connections.json             /config/deployment/v1/service-connections
+        07_service-connection-groups.json       /config/deployment/v1/service-connection-groups
+        08_traffic-steering-rules.json          /config/deployment/v1/traffic-steering-rules
+        ip-mapping.json / ip-mapping.csv
+        psk-list.csv / bgp-secret-list.csv      (only with psk-list, chmod 600, cleartext)
 ```
 
-* **Import order**: area `infra` before `remote-networks`; inside an area the files `01`… are in import order
+* **Import order**: `infra` → `remote-networks` → `service-connections`; inside an area the files `01`… are in import order
   (an entry only references entries with a lower number or of an earlier area).
   `manifest.json` lists the full order in `import_order` (`area/endpoint`).
-* `infra/90_locations.json` is also fetched with `area=remote-networks` alone (needed for the IP mapping);
+* `infra/90_locations.json` is also fetched with `area=remote-networks` / `service-connections` alone (needed for the IP mapping);
   `manifest.json` marks it `fetched_as: context`.
 * Every endpoint file keeps the API data (`data`) plus `endpoint`, `url`, `tsg_id`, `fetched_at`, `http_code`,
   `status`, `error`. Normalisation (dropping `id`, read-only fields, sorting) is done by compare/import.
@@ -81,8 +95,9 @@ With `egressip` the key is taken from, in this order:
 
 ### manifest.json
 
-`format_version` (2), `tool`, `areas`, `tsg_id`, `api_url`, `folder`, `created_at`, `import_order`,
-per-endpoint `area`/status/count/http_code, `infra` summary, `ip_mapping` summary, `psk_list` counts and `import_hints`.
+`format_version` (3), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (per connection area), `created_at`, `import_order`,
+per-endpoint `area`/status/count/http_code, `infra` summary, `ip_mapping` (summary per area), `secret_lists`
+(counts per area: `psk`, `bgp_secret`) and `import_hints` (each with `area`).
 
 `infra` summary (null without area `infra`): `infrastructure_subnet`, `infrastructure_subnet_ipv6`, `ipv6`,
 `infra_bgp_as`, `tunnel_monitor_ip_address`, `loopback_ips`, `bgp_routing` (routing preference, backbone routing,
@@ -95,6 +110,10 @@ accept route over SC, outbound routes for services, host route to IKE peer, with
 * `derived_read_only` – `loopback_ips`, `tunnel_monitor_ip_address`, `captive_portal_redirect_ip_address`,
   `egress_ip_notification_url`: derived by Prisma Access, compare only, not imported.
 * `pre_shared_key` – IKE gateways using a PSK. No key value is written to the manifest; use `psk-list` for the import.
+* `bgp_secret` – remote networks / service connections with a BGP authentication secret
+  (`protocol.bgp.secret`, for service connections also `bgp_peer.secret`); see `bgp-secret-list.csv`.
+* `intra_dependency` – service connections referencing another service connection as `backup_SC`: import all service
+  connections without `backup_SC` first, then set it.
 * `inherited_or_predefined` – entries not defined in the export folder itself (`snippet` set, e.g. `predefined`, or a
   parent folder). Import references them but does not create them.
 
@@ -116,14 +135,29 @@ One row per remote network:
 A new tenant gets new Prisma Access IPs, so this file is also the checklist for the branch firewall changes
 (peer address, allow lists).
 
-### remote-networks/psk-list.csv
+### service-connections/ip-mapping.json / ip-mapping.csv
 
-One row per IKE gateway with a pre-shared key:
+One row per service connection:
+
+| column | source |
+|---|---|
+| `region`, `onboarding_type`, `ipsec_tunnel`, `secondary_ipsec_tunnel`, `backup_SC` | service connection |
+| `subnets`, `nat_pool`, `source_nat`, `qos_profile` (only if `qos.enable`), `no_export_community` | service connection |
+| `bgp_*` | service connection `protocol.bgp` |
+| `bgp_peer_*` | service connection `bgp_peer` (local / peer IPv4 and IPv6) |
+| `peer_address` | service connection → IPsec tunnel → IKE gateway `peer_address` (data center / CAN side) |
+| `location_display` | region → `infra/90_locations.json` → `display` |
+
+The egress-IP API has no service type for service connections, so there are no egress columns.
+
+### <area>/psk-list.csv
+
+One row per IKE gateway with a pre-shared key (`remote-networks` and `service-connections`):
 
 | column | content |
 |---|---|
 | `ike_gateway` | gateway name – key for the import |
-| `ipsec_tunnel`, `remote_network`, `branch_peer_address` | context only, to find the right key |
+| `ipsec_tunnel`, `remote_network` / `service_connection`, `branch_peer_address` / `peer_address` | context only, to find the right key |
 | `psk_current` | decrypted PSK from the export (`PanosCrypto`, default or `master-key=`); `DECRYPT_FAILED` if not possible |
 | `psk_new` | empty – fill in to set a new PSK on the target tenant |
 
@@ -137,6 +171,21 @@ The file holds cleartext secrets: it is created with mode 0600, is not reference
 
 Note: `PanosCrypto::decrypt()` returns `""` instead of throwing on a wrong master key; the export treats an empty
 result as `DECRYPT_FAILED`.
+
+### <area>/bgp-secret-list.csv
+
+One row per connection and BGP secret field:
+
+| column | content |
+|---|---|
+| `object` | remote network / service connection name |
+| `field` | `protocol.bgp.secret` or `bgp_peer.secret` |
+| `bgp_peer_ip_address` | context only |
+| `secret_current` | decrypted secret; `DECRYPT_FAILED` if not possible |
+| `secret_new` | empty – fill in to set a new secret on the target tenant |
+
+Import rule (`SCMPrismaAccessExport::loadBGPSecretList()`, key `object|field`): `secret_new` if filled, otherwise
+`secret_current`; same error handling and file protection as `psk-list.csv`.
 
 ## Connector changes (`lib/misc-classes/PanSCMAPIConnector.php`)
 
@@ -158,9 +207,15 @@ result as `DECRYPT_FAILED`.
 * `pre_shared_key` format returned by `ike-gateways`.
 * Whether `remote-networks` and `bandwidth-allocations` need a `folder` parameter in your tenant.
 * Region → location → egress zone matching (`egress_match`).
+* `service-connections` / `service-connection-groups` / `traffic-steering-rules` field names; whether
+  `service-connections` needs a `folder` parameter.
+* `qos-profiles` endpoint path (`/config/network/v1/qos-profiles`) for folder `Service Connections`.
+* BGP secret format (`protocol.bgp.secret`, `bgp_peer.secret`) – same master-key encryption as the PSK?
 
 ## Code
 
-* `scm_pa_export.php` – CLI; `scm_rn_export.php` – wrapper with `area=remote-networks`
-* `lib/SCMPrismaAccessExport.php` – export logic; area/endpoint list in `getAllEndpoints()`
+* `scm_pa_export.php` – CLI; `scm_rn_export.php` / `scm_sc_export.php` – wrappers with `area=remote-networks` /
+  `area=service-connections`
+* `lib/SCMPrismaAccessExport.php` – export logic; area/endpoint list in `getAllEndpoints()`, connection areas
+  (folder, connection endpoint) in `CONNECTION_AREAS`; results are keyed `area/endpoint`
   (`SCMRemoteNetworkExport` remains as class alias)

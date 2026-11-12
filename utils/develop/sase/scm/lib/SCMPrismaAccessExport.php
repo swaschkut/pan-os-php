@@ -31,48 +31,79 @@
  *       remote-networks/
  *           01_ike-crypto-profiles.json ... 06_remote-networks.json
  *           ip-mapping.json / ip-mapping.csv
- *           psk-list.csv                           (optional, cleartext PSKs, chmod 600)
+ *           psk-list.csv / bgp-secret-list.csv      (optional, cleartext, chmod 600)
+ *       service-connections/
+ *           01_ike-crypto-profiles.json ... 08_traffic-steering-rules.json
+ *           ip-mapping.json / ip-mapping.csv
+ *           psk-list.csv / bgp-secret-list.csv      (optional, cleartext, chmod 600)
  *
- * Areas are exported/imported in the order infra -> remote-networks; inside an area the numbered "dependency"
- * endpoints are in import order (an entry only references entries with a lower number or of an earlier area).
+ * Areas are exported/imported in the order of self::AREAS; inside an area the numbered "dependency" endpoints are in
+ * import order (an entry only references entries with a lower number or of an earlier area).
  * Every file keeps the API data unmodified, except secrets which are redacted; normalisation happens in compare/import.
  */
 class SCMPrismaAccessExport
 {
-    const FORMAT_VERSION = 2;
+    const FORMAT_VERSION = 3;
 
     const AREA_INFRA = 'infra';
     const AREA_RN = 'remote-networks';
+    const AREA_SC = 'service-connections';
     /** area order == import order */
-    const AREAS = array( self::AREA_INFRA, self::AREA_RN );
+    const AREAS = array( self::AREA_INFRA, self::AREA_RN, self::AREA_SC );
+
+    /**
+     * areas built on IKE/IPsec tunnels: folder of the network objects, connection endpoint, name of the connection column
+     */
+    const CONNECTION_AREAS = array(
+        self::AREA_RN => array( 'folder' => 'Remote Networks', 'endpoint' => 'remote-networks', 'label' => 'remote_network' ),
+        self::AREA_SC => array( 'folder' => 'Service Connections', 'endpoint' => 'service-connections', 'label' => 'service_connection' ),
+    );
 
     const REDACTED = '***REDACTED***';
     /** keys whose values are never written to disk: endpoint => [dotted path, ...] */
     const SECRET_FIELDS = array( 'shared-infrastructure-settings' => array( 'api_key' ) );
 
-    /** @var string[] areas selected for this export */
-    public $areas = array( self::AREA_INFRA, self::AREA_RN );
-
-    /** @var array secret values kept in memory only, e.g. ['shared-infrastructure-settings.api_key' => '...'] */
-    private $secrets = array();
+    /** BGP secrets (encrypted with the master key) per connection endpoint */
+    const BGP_SECRET_FIELDS = array(
+        'remote-networks' => array( 'protocol.bgp.secret' ),
+        'service-connections' => array( 'protocol.bgp.secret', 'bgp_peer.secret' ),
+    );
 
     /** @var PanSCMAPIConnector */
     public $connector;
 
     public $tsg;
-    public $folder = "Remote Networks";
     public $baseDir;
     public $exportDir;
 
-    /** @var array endpoint result per endpoint name: ['meta' => ..., 'data' => ...] */
+    /** @var string[] areas selected for this export */
+    public $areas = self::AREAS;
+
+    /** @var array folder per connection area, see CONNECTION_AREAS */
+    public $folders = array();
+
+    /** @var array endpoint result per "area/endpoint": ['meta' => ..., 'data' => ...] */
     public $results = array();
     public $manifest = array();
 
+    /** @var array secret values kept in memory only, e.g. ['shared-infrastructure-settings.api_key' => '...'] */
+    private $secrets = array();
+
     /**
+     * @param string|null $rnFolder folder of the Remote Network IKE/IPsec objects (null: "Remote Networks")
      * @param string[]|null $areas subset of self::AREAS, null = all
      */
-    public function __construct( $connector, $tsg, $baseDir, $folder = "Remote Networks", $areas = null )
+    public function __construct( $connector, $tsg, $baseDir, $rnFolder = null, $areas = null )
     {
+        $this->connector = $connector;
+        $this->tsg = $tsg;
+        $this->baseDir = rtrim($baseDir, "/\\");
+
+        foreach( self::CONNECTION_AREAS as $area => $def )
+            $this->folders[$area] = $def['folder'];
+        if( $rnFolder !== null && $rnFolder !== "" )
+            $this->folders[self::AREA_RN] = $rnFolder;
+
         if( $areas !== null )
         {
             foreach( $areas as $area )
@@ -83,57 +114,78 @@ class SCMPrismaAccessExport
             //keep import order
             $this->areas = array_values( array_intersect(self::AREAS, $areas) );
         }
-        $this->connector = $connector;
-        $this->tsg = $tsg;
-        $this->baseDir = rtrim($baseDir, "/\\");
-        $this->folder = $folder;
     }
+
+    public function hasArea( $area )
+    {
+        return in_array($area, $this->areas, TRUE);
+    }
+
+    public function connectionAreas()
+    {
+        return array_values( array_filter( $this->areas, function($a){ return isset(self::CONNECTION_AREAS[$a]); } ) );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // endpoints
 
     /**
      * all known endpoints, per area in import order
      */
     public function getAllEndpoints()
     {
-        $f = $this->folder;
         $infra = self::AREA_INFRA;
         $rn = self::AREA_RN;
+        $sc = self::AREA_SC;
+        $rnF = $this->folders[$rn];
+        $scF = $this->folders[$sc];
 
         return array(
             //Prisma Access infrastructure - tenant wide, mostly single objects
             array( 'area' => $infra, 'order' => 1, 'name' => 'shared-infrastructure-settings', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/shared-infrastructure-settings", 'depends_on' => array() ),
-            array( 'area' => $infra, 'order' => 2, 'name' => 'bgp-routing', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/bgp-routing", 'depends_on' => array('shared-infrastructure-settings') ),
+            array( 'area' => $infra, 'order' => 2, 'name' => 'bgp-routing', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/bgp-routing", 'depends_on' => array('infra/shared-infrastructure-settings') ),
             array( 'area' => $infra, 'order' => 3, 'name' => 'internal-dns-servers', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/internal-dns-servers", 'depends_on' => array() ),
             array( 'area' => $infra, 'order' => 90, 'name' => 'locations', 'category' => 'context', 'scope' => 'tenant', 'url' => "/config/deployment/v1/locations", 'depends_on' => array() ),
 
             //Remote Networks
-            array( 'area' => $rn, 'order' => 1, 'name' => 'ike-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-crypto-profiles?folder=" . $f, 'depends_on' => array() ),
-            array( 'area' => $rn, 'order' => 2, 'name' => 'ipsec-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-crypto-profiles?folder=" . $f, 'depends_on' => array() ),
-            array( 'area' => $rn, 'order' => 3, 'name' => 'ike-gateways', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-gateways?folder=" . $f, 'depends_on' => array('ike-crypto-profiles') ),
-            array( 'area' => $rn, 'order' => 4, 'name' => 'ipsec-tunnels', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-tunnels?folder=" . $f, 'depends_on' => array('ike-gateways', 'ipsec-crypto-profiles') ),
+            array( 'area' => $rn, 'order' => 1, 'name' => 'ike-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-crypto-profiles?folder=" . $rnF, 'depends_on' => array() ),
+            array( 'area' => $rn, 'order' => 2, 'name' => 'ipsec-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-crypto-profiles?folder=" . $rnF, 'depends_on' => array() ),
+            array( 'area' => $rn, 'order' => 3, 'name' => 'ike-gateways', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-gateways?folder=" . $rnF, 'depends_on' => array('remote-networks/ike-crypto-profiles') ),
+            array( 'area' => $rn, 'order' => 4, 'name' => 'ipsec-tunnels', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-tunnels?folder=" . $rnF, 'depends_on' => array('remote-networks/ike-gateways', 'remote-networks/ipsec-crypto-profiles') ),
             array( 'area' => $rn, 'order' => 5, 'name' => 'bandwidth-allocations', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/bandwidth-allocations", 'depends_on' => array() ),
-            array( 'area' => $rn, 'order' => 6, 'name' => 'remote-networks', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/remote-networks", 'depends_on' => array('ipsec-tunnels', 'bandwidth-allocations', 'shared-infrastructure-settings', 'bgp-routing') ),
+            array( 'area' => $rn, 'order' => 6, 'name' => 'remote-networks', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/remote-networks", 'depends_on' => array('remote-networks/ipsec-tunnels', 'remote-networks/bandwidth-allocations', 'infra/shared-infrastructure-settings', 'infra/bgp-routing') ),
+
+            //Service Connections (SC-CAN)
+            array( 'area' => $sc, 'order' => 1, 'name' => 'ike-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-crypto-profiles?folder=" . $scF, 'depends_on' => array() ),
+            array( 'area' => $sc, 'order' => 2, 'name' => 'ipsec-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-crypto-profiles?folder=" . $scF, 'depends_on' => array() ),
+            array( 'area' => $sc, 'order' => 3, 'name' => 'ike-gateways', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-gateways?folder=" . $scF, 'depends_on' => array('service-connections/ike-crypto-profiles') ),
+            array( 'area' => $sc, 'order' => 4, 'name' => 'ipsec-tunnels', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-tunnels?folder=" . $scF, 'depends_on' => array('service-connections/ike-gateways', 'service-connections/ipsec-crypto-profiles') ),
+            array( 'area' => $sc, 'order' => 5, 'name' => 'qos-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/qos-profiles?folder=" . $scF, 'depends_on' => array() ),
+            array( 'area' => $sc, 'order' => 6, 'name' => 'service-connections', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/service-connections", 'depends_on' => array('service-connections/ipsec-tunnels', 'service-connections/qos-profiles', 'infra/shared-infrastructure-settings', 'infra/bgp-routing') ),
+            array( 'area' => $sc, 'order' => 7, 'name' => 'service-connection-groups', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/service-connection-groups", 'depends_on' => array('service-connections/service-connections') ),
+            array( 'area' => $sc, 'order' => 8, 'name' => 'traffic-steering-rules', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/traffic-steering-rules", 'depends_on' => array('service-connections/service-connections') ),
         );
     }
 
     /**
      * endpoints of the selected areas; endpoints of other areas which are needed as context
-     * (remote-networks -> infra/locations for the IP mapping) are added with 'fetched_as' => 'context'
+     * (remote-networks / service-connections -> infra/locations for the IP mapping) are added with 'fetched_as' => 'context'
      */
     public function getEndpoints()
     {
         $needAsContext = array();
-        if( in_array(self::AREA_RN, $this->areas, TRUE) )
-            $needAsContext[] = 'locations';
+        if( count($this->connectionAreas()) > 0 )
+            $needAsContext[] = self::AREA_INFRA . '/locations';
 
         $endpoints = array();
         foreach( $this->getAllEndpoints() as $endpoint )
         {
-            if( in_array($endpoint['area'], $this->areas, TRUE) )
+            if( $this->hasArea($endpoint['area']) )
             {
                 $endpoint['fetched_as'] = 'selected';
                 $endpoints[] = $endpoint;
             }
-            elseif( in_array($endpoint['name'], $needAsContext, TRUE) )
+            elseif( in_array(self::key($endpoint['area'], $endpoint['name']), $needAsContext, TRUE) )
             {
                 $endpoint['fetched_as'] = 'context';
                 $endpoints[] = $endpoint;
@@ -149,13 +201,21 @@ class SCMPrismaAccessExport
         return $endpoints;
     }
 
+    public static function key( $area, $name )
+    {
+        return $area . "/" . $name;
+    }
+
     public function prepareDirectory( $timestamp = null )
     {
         if( $timestamp === null )
             $timestamp = date('Ymd-His');
 
         $this->exportDir = $this->baseDir . "/" . $this->tsg . "/" . $timestamp;
-        foreach( array_merge( array(""), self::AREAS ) as $sub )
+        $subDirs = array("");
+        foreach( $this->getEndpoints() as $endpoint )
+            $subDirs[] = $endpoint['area'];
+        foreach( array_unique($subDirs) as $sub )
         {
             $dir = $this->exportDir . ( $sub === "" ? "" : "/" . $sub );
             if( !is_dir($dir) && !mkdir($dir, 0700, TRUE) )
@@ -200,6 +260,7 @@ class SCMPrismaAccessExport
 
             $fileContent = array(
                 'endpoint' => $endpoint['name'],
+                'area' => $endpoint['area'],
                 'url' => $endpoint['url'],
                 'tsg_id' => $this->tsg,
                 'fetched_at' => $meta['fetched_at'],
@@ -212,7 +273,7 @@ class SCMPrismaAccessExport
                 $fileContent['redacted'] = self::SECRET_FIELDS[$endpoint['name']];
             $this->writeJson( $meta['file'], $fileContent );
 
-            $this->results[$endpoint['name']] = array( 'meta' => $meta, 'data' => $this->redactSecrets( $endpoint['name'], $result['data'], TRUE ) );
+            $this->results[self::key($endpoint['area'], $endpoint['name'])] = array( 'meta' => $meta, 'data' => $this->redactSecrets( $endpoint['name'], $result['data'], TRUE ) );
         }
     }
 
@@ -261,13 +322,17 @@ class SCMPrismaAccessExport
     {
         $meta = array( 'area' => self::AREA_INFRA, 'order' => 92, 'name' => 'egress-ip', 'category' => 'context', 'scope' => 'tenant',
             'url' => 'getPrismaAccessIP/v2', 'depends_on' => array(), 'file' => self::AREA_INFRA . '/92_egress-ip.json', 'fetched_as' => 'selected' );
+        $key = self::key(self::AREA_INFRA, 'egress-ip');
 
         if( $apiKey === null )
         {
             $meta['status'] = 'skipped';
-            $this->results['egress-ip'] = array( 'meta' => $meta, 'data' => null );
+            $this->results[$key] = array( 'meta' => $meta, 'data' => null );
             return;
         }
+
+        if( !is_dir($this->exportDir . "/" . self::AREA_INFRA) )
+            mkdir($this->exportDir . "/" . self::AREA_INFRA, 0700, TRUE);
 
         PH::print_stdout( " - [infra 92] egress-ip (serviceType=all) ... " );
         $result = $this->connector->getPrismaAccessEgressIP( $apiKey, "all", "all", "all", $environment );
@@ -291,23 +356,48 @@ class SCMPrismaAccessExport
         }
 
         $this->writeJson( $meta['file'], array(
-            'endpoint' => 'egress-ip', 'request' => array( 'serviceType' => 'all', 'addrType' => 'all', 'location' => 'all' ), 'url' => $meta['url'], 'tsg_id' => $this->tsg, 'fetched_at' => $meta['fetched_at'],
+            'endpoint' => 'egress-ip', 'area' => self::AREA_INFRA, 'request' => array( 'serviceType' => 'all', 'addrType' => 'all', 'location' => 'all' ),
+            'url' => $meta['url'], 'tsg_id' => $this->tsg, 'fetched_at' => $meta['fetched_at'],
             'http_code' => $meta['http_code'], 'status' => $meta['status'],
             'error' => $result['errors'], 'data' => $data ) );
 
-        $this->results['egress-ip'] = array( 'meta' => $meta, 'data' => $data );
+        $this->results[$key] = array( 'meta' => $meta, 'data' => $data );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // IP mapping (remote-networks, service-connections)
+
+    /**
+     * CSV/JSON columns per connection area; order == CSV order
+     */
+    public static function mappingColumns( $area )
+    {
+        if( $area == self::AREA_RN )
+            return array( 'remote_network', 'region', 'spn_name', 'license_type', 'ipsec_tunnel', 'secondary_ipsec_tunnel',
+                'service_ip_address', 'fqdn', 'loopback_ip_address', 'bgp_enabled', 'bgp_peer_ip_address', 'bgp_peer_as',
+                'bgp_local_ip_address', 'branch_peer_address', 'location_display', 'egress_ip_addresses', 'egress_match' );
+
+        return array( 'service_connection', 'region', 'onboarding_type', 'ipsec_tunnel', 'secondary_ipsec_tunnel', 'backup_SC',
+            'subnets', 'nat_pool', 'source_nat', 'qos_profile', 'no_export_community',
+            'bgp_enabled', 'bgp_peer_ip_address', 'bgp_peer_as', 'bgp_local_ip_address',
+            'bgp_peer_local_ip_address', 'bgp_peer_peer_ip_address', 'bgp_peer_local_ipv6_address', 'bgp_peer_peer_ipv6_address',
+            'peer_address', 'location_display' );
     }
 
     /**
-     * one row per Remote Network: Prisma side (service IP / FQDN / egress), branch side (IKE peer, BGP peer)
+     * one row per connection (remote network / service connection):
+     * Prisma Access side (region, service IP, egress) and peer side (IKE peer address, BGP peer)
+     *
+     * @param string $area self::AREA_RN (default) or self::AREA_SC
      */
-    public function buildIPMapping()
+    public function buildIPMapping( $area = self::AREA_RN )
     {
-        $rns = $this->listData('remote-networks');
-        $tunnels = self::indexByName( $this->listData('ipsec-tunnels') );
-        $gateways = self::indexByName( $this->listData('ike-gateways') );
-        $locations = $this->listData('locations');
-        $egress = $this->listData('egress-ip');
+        $def = self::CONNECTION_AREAS[$area];
+        $connections = $this->listData($def['endpoint'], $area);
+        $tunnels = self::indexByName( $this->listData('ipsec-tunnels', $area) );
+        $gateways = self::indexByName( $this->listData('ike-gateways', $area) );
+        $locations = $this->listData('locations', self::AREA_INFRA);
+        $egress = $this->listData('egress-ip', self::AREA_INFRA);
 
         //egress result is per zone (display name of a location)
         $egressByZone = array();
@@ -318,83 +408,110 @@ class SCMPrismaAccessExport
         }
 
         $rows = array();
-        foreach( $rns as $rn )
+        foreach( $connections as $conn )
         {
             $row = array(
-                'remote_network' => self::get($rn, 'name'),
-                'region' => self::get($rn, 'region'),
-                'spn_name' => self::get($rn, 'spn_name'),
-                'license_type' => self::get($rn, 'license_type'),
-                'ipsec_tunnel' => self::get($rn, 'ipsec_tunnel'),
-                'secondary_ipsec_tunnel' => self::get($rn, 'secondary_ipsec_tunnel'),
-                'service_ip_address' => self::get($rn, 'details.service_ip_address'),
-                'fqdn' => self::get($rn, 'details.fqdn'),
-                'loopback_ip_address' => self::get($rn, 'details.loopback_ip_address'),
-                'bgp_enabled' => self::get($rn, 'protocol.bgp.enable'),
-                'bgp_peer_ip_address' => self::get($rn, 'protocol.bgp.peer_ip_address'),
-                'bgp_peer_as' => self::get($rn, 'protocol.bgp.peer_as'),
-                'bgp_local_ip_address' => self::get($rn, 'protocol.bgp.local_ip_address'),
-                'branch_peer_address' => array(),
-                'location_display' => null,
-                'egress_ip_addresses' => array(),
-                'egress_match' => 'none',
+                $def['label'] => self::get($conn, 'name'),
+                'region' => self::get($conn, 'region'),
+                'ipsec_tunnel' => self::get($conn, 'ipsec_tunnel'),
+                'secondary_ipsec_tunnel' => self::get($conn, 'secondary_ipsec_tunnel'),
+                'bgp_enabled' => self::get($conn, 'protocol.bgp.enable'),
+                'bgp_peer_ip_address' => self::get($conn, 'protocol.bgp.peer_ip_address'),
+                'bgp_peer_as' => self::get($conn, 'protocol.bgp.peer_as'),
+                'bgp_local_ip_address' => self::get($conn, 'protocol.bgp.local_ip_address'),
             );
 
-            //branch side: RN -> ipsec tunnel(s) -> ike gateway(s) -> peer_address
+            if( $area == self::AREA_RN )
+            {
+                $row['spn_name'] = self::get($conn, 'spn_name');
+                $row['license_type'] = self::get($conn, 'license_type');
+                $row['service_ip_address'] = self::get($conn, 'details.service_ip_address');
+                $row['fqdn'] = self::get($conn, 'details.fqdn');
+                $row['loopback_ip_address'] = self::get($conn, 'details.loopback_ip_address');
+                $row['egress_ip_addresses'] = array();
+                $row['egress_match'] = 'none';
+            }
+            else
+            {
+                $row['onboarding_type'] = self::get($conn, 'onboarding_type');
+                $row['backup_SC'] = self::get($conn, 'backup_SC');
+                $row['subnets'] = self::get($conn, 'subnets', array());
+                $row['nat_pool'] = self::get($conn, 'nat_pool');
+                $row['source_nat'] = self::get($conn, 'source_nat');
+                $row['qos_profile'] = self::get($conn, 'qos.enable') ? self::get($conn, 'qos.qos_profile') : null;
+                $row['no_export_community'] = self::get($conn, 'no_export_community');
+                $row['bgp_peer_local_ip_address'] = self::get($conn, 'bgp_peer.local_ip_address');
+                $row['bgp_peer_peer_ip_address'] = self::get($conn, 'bgp_peer.peer_ip_address');
+                $row['bgp_peer_local_ipv6_address'] = self::get($conn, 'bgp_peer.local_ipv6_address');
+                $row['bgp_peer_peer_ipv6_address'] = self::get($conn, 'bgp_peer.peer_ipv6_address');
+            }
+
+            //peer side: connection -> ipsec tunnel(s) -> ike gateway(s) -> peer_address
+            $peerAddresses = array();
             foreach( array($row['ipsec_tunnel'], $row['secondary_ipsec_tunnel']) as $tunnelName )
             {
                 if( $tunnelName === null || !isset($tunnels[$tunnelName]) )
                     continue;
-                $gwList = self::get($tunnels[$tunnelName], 'auto_key.ike_gateway');
-                if( !is_array($gwList) )
-                    continue;
-                foreach( $gwList as $gwRef )
+                foreach( self::tunnelGatewayNames($tunnels[$tunnelName]) as $gwName )
                 {
-                    $gwName = is_array($gwRef) ? self::get($gwRef, 'name') : $gwRef;
-                    if( $gwName === null || !isset($gateways[$gwName]) )
+                    if( !isset($gateways[$gwName]) )
                         continue;
-                    $peer = self::get($gateways[$gwName], 'peer_address');
-                    if( is_array($peer) )
-                    {
-                        foreach( $peer as $peerType => $peerValue )
-                            $row['branch_peer_address'][] = $tunnelName . " / " . $gwName . ": " . $peerType . "=" . (is_array($peerValue) ? json_encode($peerValue) : (string)$peerValue);
-                    }
+                    foreach( self::peerAddressList($gateways[$gwName]) as $peerText )
+                        $peerAddresses[] = $tunnelName . " / " . $gwName . ": " . $peerText;
                 }
             }
+            $row[ $area == self::AREA_RN ? 'branch_peer_address' : 'peer_address' ] = $peerAddresses;
 
-            //Prisma side egress: RN region -> location display name -> egress zone
             $display = self::locationDisplayForRegion( $locations, $row['region'] );
             $row['location_display'] = $display;
-            if( $display !== null && isset($egressByZone[$display]) )
+
+            //RN only: Prisma side egress via region -> location display name -> egress zone
+            if( $area == self::AREA_RN && $display !== null && isset($egressByZone[$display]) )
             {
-                $zoneEntry = $egressByZone[$display];
-                $row['egress_ip_addresses'] = self::egressAddressesForServiceType( $zoneEntry, 'remote_network' );
+                $row['egress_ip_addresses'] = self::egressAddressesForServiceType( $egressByZone[$display], 'remote_network' );
                 $row['egress_match'] = 'location';
             }
 
-            $rows[] = $row;
+            //fixed column order
+            $ordered = array();
+            foreach( self::mappingColumns($area) as $c )
+                $ordered[$c] = array_key_exists($c, $row) ? $row[$c] : null;
+            $rows[] = $ordered;
         }
 
         $mapping = array(
             'tsg_id' => $this->tsg,
+            'area' => $area,
             'created_at' => date('c'),
-            'note' => 'egress_ip_addresses are per Prisma Access location (zone), mapped via remote-network region -> locations[].display; egress_match=none means no automatic match, check infra/92_egress-ip.json manually',
-            'remote_networks' => $rows,
-            'egress_zones_without_remote_network' => array_values( array_diff( array_keys($egressByZone), array_filter(array_column($rows, 'location_display')) ) ),
         );
+        if( $area == self::AREA_RN )
+        {
+            $mapping['note'] = 'egress_ip_addresses are per Prisma Access location (zone), mapped via remote-network region -> locations[].display; egress_match=none means no automatic match, check infra/92_egress-ip.json manually';
+            $mapping['remote_networks'] = $rows;
+            $mapping['egress_zones_without_remote_network'] = array_values( array_diff( array_keys($egressByZone), array_filter(array_column($rows, 'location_display')) ) );
+        }
+        else
+        {
+            $mapping['note'] = 'peer_address is the data center / CAN side of the IPsec tunnel(s); a new tenant gets new Prisma Access service connection IPs';
+            $mapping['service_connections'] = $rows;
+        }
 
-        $this->writeJson( self::AREA_RN . '/ip-mapping.json', $mapping );
-        $this->writeIPMappingCSV( $rows );
+        $this->writeJson( $area . '/ip-mapping.json', $mapping );
+        $this->writeMappingCSV( $area, $rows );
 
         return $mapping;
     }
 
+    /** @deprecated use writeMappingCSV() */
     public function writeIPMappingCSV( $rows )
     {
-        $fh = fopen( $this->exportDir . "/" . self::AREA_RN . "/ip-mapping.csv", "w" );
-        $columns = array( 'remote_network', 'region', 'spn_name', 'license_type', 'ipsec_tunnel', 'secondary_ipsec_tunnel',
-            'service_ip_address', 'fqdn', 'loopback_ip_address', 'bgp_enabled', 'bgp_peer_ip_address', 'bgp_peer_as',
-            'bgp_local_ip_address', 'branch_peer_address', 'location_display', 'egress_ip_addresses', 'egress_match' );
+        $this->writeMappingCSV( self::AREA_RN, $rows );
+    }
+
+    public function writeMappingCSV( $area, $rows )
+    {
+        $fh = fopen( $this->exportDir . "/" . $area . "/ip-mapping.csv", "w" );
+        $columns = self::mappingColumns($area);
         fputcsv( $fh, $columns, ',', '"', '' );
         foreach( $rows as $row )
         {
@@ -413,6 +530,24 @@ class SCMPrismaAccessExport
         fclose( $fh );
     }
 
+    public static function mappingSummary( $area, $mapping )
+    {
+        if( $mapping === null )
+            return null;
+        $summary = array( 'files' => array($area . '/ip-mapping.json', $area . '/ip-mapping.csv') );
+        if( $area == self::AREA_RN )
+        {
+            $summary['remote_networks'] = count($mapping['remote_networks']);
+            $summary['egress_matched'] = count( array_filter($mapping['remote_networks'], function($r){ return $r['egress_match'] !== 'none'; }) );
+        }
+        else
+            $summary['service_connections'] = count($mapping['service_connections']);
+        return $summary;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // import hints / manifest
+
     /**
      * hints for later import - nothing secret is written, only counts / names
      */
@@ -422,54 +557,108 @@ class SCMPrismaAccessExport
 
         foreach( self::SECRET_FIELDS as $endpointName => $paths )
         {
-            if( isset($this->results[$endpointName]) && $this->results[$endpointName]['meta']['status'] == 'ok' )
-                $hints[] = array( 'type' => 'redacted', 'endpoint' => $endpointName, 'objects' => $paths,
-                    'message' => 'secret fields are not written to disk; they are tenant specific and must not be imported' );
+            foreach( self::AREAS as $area )
+            {
+                $key = self::key($area, $endpointName);
+                if( isset($this->results[$key]) && $this->results[$key]['meta']['status'] == 'ok' )
+                    $hints[] = array( 'type' => 'redacted', 'area' => $area, 'endpoint' => $endpointName, 'objects' => $paths,
+                        'message' => 'secret fields are not written to disk; they are tenant specific and must not be imported' );
+            }
         }
 
         $readOnly = array();
         foreach( array('loopback_ips', 'tunnel_monitor_ip_address', 'captive_portal_redirect_ip_address', 'egress_ip_notification_url') as $field )
         {
-            if( self::get( $this->singleData('shared-infrastructure-settings'), $field ) !== null )
+            if( self::get( $this->singleData('shared-infrastructure-settings', self::AREA_INFRA), $field ) !== null )
                 $readOnly[] = $field;
         }
         if( count($readOnly) > 0 )
-            $hints[] = array( 'type' => 'derived_read_only', 'endpoint' => 'shared-infrastructure-settings', 'objects' => $readOnly,
+            $hints[] = array( 'type' => 'derived_read_only', 'area' => self::AREA_INFRA, 'endpoint' => 'shared-infrastructure-settings', 'objects' => $readOnly,
                 'message' => 'values derived by Prisma Access from infrastructure_subnet / tenant - compare only, do not import' );
 
-        $pskGateways = array();
-        foreach( $this->listData('ike-gateways') as $gw )
+        foreach( $this->connectionAreas() as $area )
         {
-            if( self::get($gw, 'authentication.pre_shared_key') !== null )
-                $pskGateways[] = self::get($gw, 'name');
-        }
-        if( count($pskGateways) > 0 )
-            $hints[] = array( 'type' => 'pre_shared_key', 'objects' => $pskGateways,
-                'message' => 'IKE gateways use pre-shared keys (encrypted with the master key) - create psk-list.csv (argument psk-list) to provide them for import' );
+            $def = self::CONNECTION_AREAS[$area];
+            $folder = $this->folders[$area];
 
-        foreach( array('ike-crypto-profiles', 'ipsec-crypto-profiles', 'ike-gateways', 'ipsec-tunnels') as $type )
-        {
-            $inherited = array();
-            foreach( $this->listData($type) as $entry )
+            $pskGateways = array();
+            foreach( $this->listData('ike-gateways', $area) as $gw )
             {
-                $snippet = self::get($entry, 'snippet');
-                $folder = self::get($entry, 'folder');
-                if( $snippet !== null || ( $folder !== null && $folder !== $this->folder ) )
-                    $inherited[] = self::get($entry, 'name') . " [" . ( $snippet !== null ? "snippet=" . $snippet : "folder=" . $folder ) . "]";
+                if( self::get($gw, 'authentication.pre_shared_key') !== null )
+                    $pskGateways[] = self::get($gw, 'name');
             }
-            if( count($inherited) > 0 )
-                $hints[] = array( 'type' => 'inherited_or_predefined', 'endpoint' => $type, 'objects' => $inherited,
-                    'message' => 'entries not defined in folder "' . $this->folder . '" itself (predefined / snippet / parent folder) - reference only, do not create on import' );
+            if( count($pskGateways) > 0 )
+                $hints[] = array( 'type' => 'pre_shared_key', 'area' => $area, 'objects' => $pskGateways,
+                    'message' => 'IKE gateways use pre-shared keys (encrypted with the master key) - create ' . $area . '/psk-list.csv (argument psk-list) to provide them for import' );
+
+            $bgpSecrets = array();
+            foreach( $this->listData($def['endpoint'], $area) as $conn )
+            {
+                foreach( self::BGP_SECRET_FIELDS[$def['endpoint']] as $path )
+                {
+                    $v = self::get($conn, $path);
+                    if( $v !== null && $v !== "" )
+                        $bgpSecrets[] = self::get($conn, 'name') . " [" . $path . "]";
+                }
+            }
+            if( count($bgpSecrets) > 0 )
+                $hints[] = array( 'type' => 'bgp_secret', 'area' => $area, 'objects' => $bgpSecrets,
+                    'message' => 'BGP authentication secrets (encrypted with the master key) - create ' . $area . '/bgp-secret-list.csv (argument psk-list) to provide them for import' );
+
+            foreach( array('ike-crypto-profiles', 'ipsec-crypto-profiles', 'ike-gateways', 'ipsec-tunnels', 'qos-profiles') as $type )
+            {
+                $inherited = array();
+                foreach( $this->listData($type, $area) as $entry )
+                {
+                    $snippet = self::get($entry, 'snippet');
+                    $entryFolder = self::get($entry, 'folder');
+                    if( $snippet !== null || ( $entryFolder !== null && $entryFolder !== $folder ) )
+                        $inherited[] = self::get($entry, 'name') . " [" . ( $snippet !== null ? "snippet=" . $snippet : "folder=" . $entryFolder ) . "]";
+                }
+                if( count($inherited) > 0 )
+                    $hints[] = array( 'type' => 'inherited_or_predefined', 'area' => $area, 'endpoint' => $type, 'objects' => $inherited,
+                        'message' => 'entries not defined in folder "' . $folder . '" itself (predefined / snippet / parent folder) - reference only, do not create on import' );
+            }
         }
+
+        //service connection referencing another service connection as backup: create all first, set backup_SC afterwards
+        $backup = array();
+        foreach( $this->listData('service-connections', self::AREA_SC) as $sc )
+        {
+            $b = self::get($sc, 'backup_SC');
+            if( $b !== null && $b !== "" )
+                $backup[] = self::get($sc, 'name') . " -> " . $b;
+        }
+        if( count($backup) > 0 )
+            $hints[] = array( 'type' => 'intra_dependency', 'area' => self::AREA_SC, 'endpoint' => 'service-connections', 'objects' => $backup,
+                'message' => 'backup_SC references another service connection - import all service connections without backup_SC first, then set backup_SC' );
 
         return $hints;
     }
 
-    public function writeManifest( $frameworkVersion, $ipMapping = null, $pskStats = null )
+    /**
+     * @param array $mappings [area => mapping from buildIPMapping()]
+     * @param array $secretStats [area => ['psk' => stats, 'bgp_secret' => stats]]
+     */
+    public function writeManifest( $frameworkVersion, $mappings = array(), $secretStats = array() )
     {
+        //backward compatibility: writeManifest($v, $rnMapping, $pskStats)
+        if( is_array($mappings) && isset($mappings['remote_networks']) )
+            $mappings = array( self::AREA_RN => $mappings );
+        if( is_array($secretStats) && isset($secretStats['gateways']) )
+            $secretStats = array( self::AREA_RN => array( 'psk' => $secretStats ) );
+        if( $mappings === null )
+            $mappings = array();
+        if( $secretStats === null )
+            $secretStats = array();
+
         $endpoints = array();
-        foreach( $this->results as $name => $r )
+        foreach( $this->results as $r )
             $endpoints[] = $r['meta'];
+
+        $mappingSummary = array();
+        foreach( $mappings as $area => $mapping )
+            $mappingSummary[$area] = self::mappingSummary($area, $mapping);
 
         $this->manifest = array(
             'format_version' => self::FORMAT_VERSION,
@@ -478,18 +667,14 @@ class SCMPrismaAccessExport
             'pan_os_php_version' => $frameworkVersion,
             'tsg_id' => $this->tsg,
             'api_url' => $this->connector->url_api,
-            'folder' => $this->folder,
+            'folders' => $this->folders,
             'created_at' => date('c'),
-            'import_order' => array_values( array_map( function($e){ return $e['area'] . "/" . $e['name']; },
+            'import_order' => array_values( array_map( function($e){ return self::key($e['area'], $e['name']); },
                 array_filter( $this->getEndpoints(), function($e){ return $e['category'] == 'dependency' && $e['fetched_as'] == 'selected'; } ) ) ),
             'endpoints' => $endpoints,
             'infra' => $this->buildInfraSummary(),
-            'ip_mapping' => $ipMapping === null ? null : array(
-                'files' => array(self::AREA_RN . '/ip-mapping.json', self::AREA_RN . '/ip-mapping.csv'),
-                'remote_networks' => count($ipMapping['remote_networks']),
-                'egress_matched' => count( array_filter($ipMapping['remote_networks'], function($r){ return $r['egress_match'] !== 'none'; }) ),
-            ),
-            'psk_list' => $pskStats,
+            'ip_mapping' => count($mappingSummary) > 0 ? $mappingSummary : null,
+            'secret_lists' => count($secretStats) > 0 ? $secretStats : null,
             'import_hints' => $this->collectImportHints(),
             'errors' => count( array_filter($endpoints, function($e){ return isset($e['status']) && $e['status'] == 'error'; }) ),
         );
@@ -500,60 +685,85 @@ class SCMPrismaAccessExport
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    // PSK list
+    // secret lists (PSK, BGP secret)
 
     const PSK_DECRYPT_FAILED = 'DECRYPT_FAILED';
     const PSK_LIST_COLUMNS = array( 'ike_gateway', 'ipsec_tunnel', 'remote_network', 'branch_peer_address', 'psk_current', 'psk_new' );
+    const PSK_LIST_COLUMNS_SC = array( 'ike_gateway', 'ipsec_tunnel', 'service_connection', 'peer_address', 'psk_current', 'psk_new' );
+    const BGP_SECRET_LIST_COLUMNS = array( 'object', 'field', 'bgp_peer_ip_address', 'secret_current', 'secret_new' );
 
     /**
-     * writes psk-list.csv (one row per IKE gateway) with the decrypted current PSK and an empty psk_new column
-     * file permissions 0600 - contains cleartext secrets, never referenced by name in manifest / ip-mapping
-     *
-     * @param string|null $masterKey null = PAN-OS default master key
-     * @return array statistics ['gateways' => int, 'decrypted' => int, 'decrypt_failed' => int, 'without_psk' => int]
+     * opens a file with mode 0600 for cleartext secrets
      */
-    public function writePSKList( $masterKey = null )
+    private function openSecretFile( $file )
     {
-        $crypto = new PanosCrypto();
-
-        //reverse references: gateway -> tunnels, tunnel -> remote networks
-        $gatewayTunnels = array();
-        foreach( $this->listData('ipsec-tunnels') as $tunnel )
-        {
-            $gwList = self::get($tunnel, 'auto_key.ike_gateway');
-            if( !is_array($gwList) )
-                continue;
-            foreach( $gwList as $gwRef )
-            {
-                $gwName = is_array($gwRef) ? self::get($gwRef, 'name') : $gwRef;
-                if( $gwName !== null )
-                    $gatewayTunnels[$gwName][] = self::get($tunnel, 'name');
-            }
-        }
-        $tunnelRNs = array();
-        foreach( $this->listData('remote-networks') as $rn )
-        {
-            foreach( array('ipsec_tunnel', 'secondary_ipsec_tunnel') as $field )
-            {
-                $tunnelName = self::get($rn, $field);
-                if( $tunnelName !== null )
-                    $tunnelRNs[$tunnelName][] = self::get($rn, 'name');
-            }
-        }
-
-        $stats = array( 'gateways' => 0, 'decrypted' => 0, 'decrypt_failed' => 0, 'without_psk' => 0 );
-
-        $file = $this->exportDir . "/" . self::AREA_RN . "/psk-list.csv";
         $oldUmask = umask(0077);
         $fh = fopen( $file, "w" );
         umask($oldUmask);
         if( $fh === false )
             derr( "not possible to write " . $file, null, FALSE );
         chmod( $file, 0600 );
+        return $fh;
+    }
 
-        fputcsv( $fh, self::PSK_LIST_COLUMNS, ',', '"', '' );
+    /**
+     * @return string cleartext or self::PSK_DECRYPT_FAILED
+     */
+    private static function decryptValue( PanosCrypto $crypto, $encrypted, $masterKey, &$stats )
+    {
+        try
+        {
+            //PanosCrypto::decrypt() returns "" instead of throwing on wrong master key / invalid format
+            $cleartext = $crypto->decrypt( (string)$encrypted, $masterKey );
+            if( $cleartext === "" )
+                throw new Exception("decrypt failed");
+            $stats['decrypted']++;
+            return $cleartext;
+        }
+        catch( Exception $e )
+        {
+            $stats['decrypt_failed']++;
+            return self::PSK_DECRYPT_FAILED;
+        }
+    }
 
-        foreach( $this->listData('ike-gateways') as $gw )
+    /**
+     * writes <area>/psk-list.csv (one row per IKE gateway) with the decrypted current PSK and an empty psk_new column
+     * file permissions 0600 - contains cleartext secrets, never referenced by name in manifest / ip-mapping
+     *
+     * @param string|null $masterKey null = PAN-OS default master key
+     * @param string $area self::AREA_RN (default) or self::AREA_SC
+     * @return array statistics ['gateways' => int, 'decrypted' => int, 'decrypt_failed' => int, 'without_psk' => int]
+     */
+    public function writePSKList( $masterKey = null, $area = self::AREA_RN )
+    {
+        $def = self::CONNECTION_AREAS[$area];
+        $crypto = new PanosCrypto();
+
+        //reverse references: gateway -> tunnels, tunnel -> connections
+        $gatewayTunnels = array();
+        foreach( $this->listData('ipsec-tunnels', $area) as $tunnel )
+        {
+            foreach( self::tunnelGatewayNames($tunnel) as $gwName )
+                $gatewayTunnels[$gwName][] = self::get($tunnel, 'name');
+        }
+        $tunnelConnections = array();
+        foreach( $this->listData($def['endpoint'], $area) as $conn )
+        {
+            foreach( array('ipsec_tunnel', 'secondary_ipsec_tunnel') as $field )
+            {
+                $tunnelName = self::get($conn, $field);
+                if( $tunnelName !== null )
+                    $tunnelConnections[$tunnelName][] = self::get($conn, 'name');
+            }
+        }
+
+        $stats = array( 'gateways' => 0, 'decrypted' => 0, 'decrypt_failed' => 0, 'without_psk' => 0 );
+
+        $fh = $this->openSecretFile( $this->exportDir . "/" . $area . "/psk-list.csv" );
+        fputcsv( $fh, $area == self::AREA_RN ? self::PSK_LIST_COLUMNS : self::PSK_LIST_COLUMNS_SC, ',', '"', '' );
+
+        foreach( $this->listData('ike-gateways', $area) as $gw )
         {
             $encrypted = self::get($gw, 'authentication.pre_shared_key.key');
             if( $encrypted === null )
@@ -563,38 +773,51 @@ class SCMPrismaAccessExport
             }
             $stats['gateways']++;
 
-            try
-            {
-                //PanosCrypto::decrypt() returns "" instead of throwing on wrong master key / invalid format
-                $cleartext = $crypto->decrypt( (string)$encrypted, $masterKey );
-                if( $cleartext === "" )
-                    throw new Exception("decrypt failed");
-                $stats['decrypted']++;
-            }
-            catch( Exception $e )
-            {
-                $cleartext = self::PSK_DECRYPT_FAILED;
-                $stats['decrypt_failed']++;
-            }
+            $cleartext = self::decryptValue( $crypto, $encrypted, $masterKey, $stats );
 
             $gwName = self::get($gw, 'name');
             $tunnels = isset($gatewayTunnels[$gwName]) ? $gatewayTunnels[$gwName] : array();
-            $rns = array();
+            $conns = array();
             foreach( $tunnels as $tunnelName )
             {
-                if( isset($tunnelRNs[$tunnelName]) )
-                    $rns = array_merge( $rns, $tunnelRNs[$tunnelName] );
+                if( isset($tunnelConnections[$tunnelName]) )
+                    $conns = array_merge( $conns, $tunnelConnections[$tunnelName] );
             }
 
-            $peer = self::get($gw, 'peer_address');
-            $peerText = array();
-            if( is_array($peer) )
+            fputcsv( $fh, array( $gwName, implode(" | ", $tunnels), implode(" | ", array_unique($conns)), implode(" | ", self::peerAddressList($gw)), $cleartext, "" ), ',', '"', '' );
+        }
+        fclose( $fh );
+
+        return $stats;
+    }
+
+    /**
+     * writes <area>/bgp-secret-list.csv (one row per connection and BGP secret field), mode 0600
+     *
+     * @return array statistics ['secrets' => int, 'decrypted' => int, 'decrypt_failed' => int]
+     */
+    public function writeBGPSecretList( $masterKey = null, $area = self::AREA_RN )
+    {
+        $def = self::CONNECTION_AREAS[$area];
+        $crypto = new PanosCrypto();
+        $stats = array( 'secrets' => 0, 'decrypted' => 0, 'decrypt_failed' => 0 );
+
+        $fh = $this->openSecretFile( $this->exportDir . "/" . $area . "/bgp-secret-list.csv" );
+        fputcsv( $fh, self::BGP_SECRET_LIST_COLUMNS, ',', '"', '' );
+
+        foreach( $this->listData($def['endpoint'], $area) as $conn )
+        {
+            foreach( self::BGP_SECRET_FIELDS[$def['endpoint']] as $path )
             {
-                foreach( $peer as $peerType => $peerValue )
-                    $peerText[] = $peerType . "=" . ( is_array($peerValue) ? json_encode($peerValue) : (string)$peerValue );
-            }
+                $encrypted = self::get($conn, $path);
+                if( $encrypted === null || $encrypted === "" )
+                    continue;
+                $stats['secrets']++;
 
-            fputcsv( $fh, array( $gwName, implode(" | ", $tunnels), implode(" | ", array_unique($rns)), implode(" | ", $peerText), $cleartext, "" ), ',', '"', '' );
+                $peerPath = ( strpos($path, 'bgp_peer.') === 0 ) ? 'bgp_peer.peer_ip_address' : 'protocol.bgp.peer_ip_address';
+                fputcsv( $fh, array( self::get($conn, 'name'), $path, self::get($conn, $peerPath),
+                    self::decryptValue( $crypto, $encrypted, $masterKey, $stats ), "" ), ',', '"', '' );
+            }
         }
         fclose( $fh );
 
@@ -608,21 +831,40 @@ class SCMPrismaAccessExport
      */
     public static function loadPSKList( $file )
     {
+        $list = self::loadSecretCSV( $file, array('ike_gateway'), 'psk_current', 'psk_new' );
+        return array( 'psk' => $list['secret'], 'source' => $list['source'], 'errors' => $list['errors'] );
+    }
+
+    /**
+     * reads a bgp-secret-list.csv for import: secret_new if filled, otherwise secret_current
+     *
+     * @return array ['secret' => ["<object>|<field>" => cleartext], 'source' => [...], 'errors' => [...]]
+     */
+    public static function loadBGPSecretList( $file )
+    {
+        return self::loadSecretCSV( $file, array('object', 'field'), 'secret_current', 'secret_new' );
+    }
+
+    /**
+     * generic loader: key columns joined with '|', value = new column if filled, else current column
+     */
+    public static function loadSecretCSV( $file, $keyColumns, $currentColumn, $newColumn )
+    {
         if( !is_readable($file) )
-            derr( "PSK list not readable: " . $file, null, FALSE );
+            derr( "secret list not readable: " . $file, null, FALSE );
 
         $fh = fopen( $file, "r" );
         $header = fgetcsv( $fh, 0, ',', '"', '' );
         if( $header === false )
-            derr( "PSK list is empty: " . $file, null, FALSE );
+            derr( "secret list is empty: " . $file, null, FALSE );
         $header = array_map( 'trim', $header );
-        foreach( array('ike_gateway', 'psk_current', 'psk_new') as $required )
+        foreach( array_merge($keyColumns, array($currentColumn, $newColumn)) as $required )
         {
             if( !in_array($required, $header, TRUE) )
-                derr( "PSK list " . $file . " has no column '" . $required . "'", null, FALSE );
+                derr( "secret list " . $file . " has no column '" . $required . "'", null, FALSE );
         }
 
-        $result = array( 'psk' => array(), 'source' => array(), 'errors' => array() );
+        $result = array( 'secret' => array(), 'source' => array(), 'errors' => array() );
         $lineNo = 1;
         while( ($line = fgetcsv( $fh, 0, ',', '"', '' )) !== false )
         {
@@ -633,38 +875,40 @@ class SCMPrismaAccessExport
             foreach( $header as $i => $col )
                 $row[$col] = isset($line[$i]) ? $line[$i] : "";
 
-            $gw = trim( $row['ike_gateway'] );
-            if( $gw === "" )
+            $keyParts = array();
+            foreach( $keyColumns as $c )
+                $keyParts[] = trim( $row[$c] );
+            $key = implode( "|", $keyParts );
+            if( in_array("", $keyParts, TRUE) )
             {
-                $result['errors']["line " . $lineNo] = "no ike_gateway";
+                $result['errors']["line " . $lineNo] = "empty " . implode("/", $keyColumns);
                 continue;
             }
-            if( isset($result['psk'][$gw]) || isset($result['errors'][$gw]) )
+            if( isset($result['secret'][$key]) || isset($result['errors'][$key]) )
             {
-                $result['errors'][$gw] = "duplicate entry (line " . $lineNo . ")";
-                unset( $result['psk'][$gw], $result['source'][$gw] );
+                $result['errors'][$key] = "duplicate entry (line " . $lineNo . ")";
+                unset( $result['secret'][$key], $result['source'][$key] );
                 continue;
             }
 
-            //PSK values are used as written - no trim, whitespace may be part of the key
-            if( $row['psk_new'] !== "" )
+            //values are used as written - no trim, whitespace may be part of the key
+            if( $row[$newColumn] !== "" )
             {
-                $result['psk'][$gw] = $row['psk_new'];
-                $result['source'][$gw] = 'new';
+                $result['secret'][$key] = $row[$newColumn];
+                $result['source'][$key] = 'new';
             }
-            elseif( $row['psk_current'] !== "" && $row['psk_current'] !== self::PSK_DECRYPT_FAILED )
+            elseif( $row[$currentColumn] !== "" && $row[$currentColumn] !== self::PSK_DECRYPT_FAILED )
             {
-                $result['psk'][$gw] = $row['psk_current'];
-                $result['source'][$gw] = 'current';
+                $result['secret'][$key] = $row[$currentColumn];
+                $result['source'][$key] = 'current';
             }
             else
-                $result['errors'][$gw] = "psk_new empty and psk_current not available (" . ( $row['psk_current'] === "" ? "empty" : $row['psk_current'] ) . ")";
+                $result['errors'][$key] = $newColumn . " empty and " . $currentColumn . " not available (" . ( $row[$currentColumn] === "" ? "empty" : $row[$currentColumn] ) . ")";
         }
         fclose( $fh );
 
         return $result;
     }
-
 
     ////////////////////////////////////////////////////////////////////////////////
     // infra
@@ -674,14 +918,14 @@ class SCMPrismaAccessExport
      */
     public function buildInfraSummary()
     {
-        if( !in_array(self::AREA_INFRA, $this->areas, TRUE) )
+        if( !$this->hasArea(self::AREA_INFRA) )
             return null;
 
-        $shared = $this->singleData('shared-infrastructure-settings');
-        $bgp = $this->singleData('bgp-routing');
+        $shared = $this->singleData('shared-infrastructure-settings', self::AREA_INFRA);
+        $bgp = $this->singleData('bgp-routing', self::AREA_INFRA);
 
         $dnsServers = array();
-        foreach( $this->listData('internal-dns-servers') as $dns )
+        foreach( $this->listData('internal-dns-servers', self::AREA_INFRA) as $dns )
             $dnsServers[] = array(
                 'name' => self::get($dns, 'name'),
                 'domain_name' => self::get($dns, 'domain_name'),
@@ -705,7 +949,7 @@ class SCMPrismaAccessExport
                 'withdraw_static_route' => self::get($bgp, 'withdraw_static_route'),
             ),
             'internal_dns_servers' => $dnsServers,
-            'locations' => count( $this->listData('locations') ),
+            'locations' => count( $this->listData('locations', self::AREA_INFRA) ),
         );
     }
 
@@ -730,13 +974,16 @@ class SCMPrismaAccessExport
     ////////////////////////////////////////////////////////////////////////////////
     // helpers
 
-    public function listData( $name )
+    /**
+     * list data of an endpoint; single-object endpoints return an empty list
+     */
+    public function listData( $name, $area )
     {
-        if( !isset($this->results[$name]) || !is_array($this->results[$name]['data']) )
+        $key = self::key($area, $name);
+        if( !isset($this->results[$key]) || !is_array($this->results[$key]['data']) )
             return array();
-        $data = $this->results[$name]['data'];
-        //single object endpoint
-        if( array_keys($data) !== range(0, count($data) - 1) )
+        $data = $this->results[$key]['data'];
+        if( count($data) > 0 && array_keys($data) !== range(0, count($data) - 1) )
             return array();
         return $data;
     }
@@ -744,11 +991,14 @@ class SCMPrismaAccessExport
     /**
      * data of a single-object endpoint (e.g. shared-infrastructure-settings); a list with one entry is unwrapped
      */
-    public function singleData( $name )
+    public function singleData( $name, $area )
     {
-        if( !isset($this->results[$name]) || !is_array($this->results[$name]['data']) )
+        $key = self::key($area, $name);
+        if( !isset($this->results[$key]) || !is_array($this->results[$key]['data']) )
             return null;
-        $data = $this->results[$name]['data'];
+        $data = $this->results[$key]['data'];
+        if( count($data) == 0 )
+            return null;
         if( array_keys($data) === range(0, count($data) - 1) )
             return count($data) == 1 ? $data[0] : null;
         return $data;
@@ -771,6 +1021,39 @@ class SCMPrismaAccessExport
                 $index[$entry['name']] = $entry;
         }
         return $index;
+    }
+
+    /**
+     * IKE gateway names referenced by an IPsec tunnel (auto_key.ike_gateway[].name)
+     */
+    public static function tunnelGatewayNames( $tunnel )
+    {
+        $names = array();
+        $gwList = self::get($tunnel, 'auto_key.ike_gateway');
+        if( !is_array($gwList) )
+            return $names;
+        foreach( $gwList as $gwRef )
+        {
+            $gwName = is_array($gwRef) ? self::get($gwRef, 'name') : $gwRef;
+            if( $gwName !== null )
+                $names[] = $gwName;
+        }
+        return $names;
+    }
+
+    /**
+     * peer_address of an IKE gateway as "type=value" strings (ip / fqdn / dynamic)
+     */
+    public static function peerAddressList( $gateway )
+    {
+        $list = array();
+        $peer = self::get($gateway, 'peer_address');
+        if( is_array($peer) )
+        {
+            foreach( $peer as $peerType => $peerValue )
+                $list[] = $peerType . "=" . ( is_array($peerValue) ? json_encode($peerValue) : (string)$peerValue );
+        }
+        return $list;
     }
 
     /**
