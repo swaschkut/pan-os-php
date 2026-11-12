@@ -33,6 +33,7 @@
  *       91_bgp-routing.json           (context)
  *       92_egress-ip.json             (optional, egress-IP API)
  *       ip-mapping.json / ip-mapping.csv
+ *       psk-list.csv                  (optional, cleartext PSKs, chmod 600)
  *
  * The numbered "dependency" endpoints are listed in import order: an entry only references entries with a lower number.
  * Every file keeps the unmodified API data; normalisation happens later in compare/import.
@@ -316,7 +317,7 @@ class SCMRemoteNetworkExport
         }
         if( count($pskGateways) > 0 )
             $hints[] = array( 'type' => 'pre_shared_key', 'objects' => $pskGateways,
-                'message' => 'IKE gateways use pre-shared keys; values returned by the API are tenant-encrypted and most likely not usable on another tenant - provide them separately for import' );
+                'message' => 'IKE gateways use pre-shared keys (encrypted with the master key) - create psk-list.csv (argument psk-list) to provide them for import' );
 
         foreach( array('ike-crypto-profiles', 'ipsec-crypto-profiles', 'ike-gateways', 'ipsec-tunnels') as $type )
         {
@@ -336,7 +337,7 @@ class SCMRemoteNetworkExport
         return $hints;
     }
 
-    public function writeManifest( $frameworkVersion, $ipMapping = null )
+    public function writeManifest( $frameworkVersion, $ipMapping = null, $pskStats = null )
     {
         $endpoints = array();
         foreach( $this->results as $name => $r )
@@ -358,6 +359,7 @@ class SCMRemoteNetworkExport
                 'remote_networks' => count($ipMapping['remote_networks']),
                 'egress_matched' => count( array_filter($ipMapping['remote_networks'], function($r){ return $r['egress_match'] !== 'none'; }) ),
             ),
+            'psk_list' => $pskStats,
             'import_hints' => $this->collectImportHints(),
             'errors' => count( array_filter($endpoints, function($e){ return isset($e['status']) && $e['status'] == 'error'; }) ),
         );
@@ -366,6 +368,173 @@ class SCMRemoteNetworkExport
 
         return $this->manifest;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // PSK list
+
+    const PSK_DECRYPT_FAILED = 'DECRYPT_FAILED';
+    const PSK_LIST_COLUMNS = array( 'ike_gateway', 'ipsec_tunnel', 'remote_network', 'branch_peer_address', 'psk_current', 'psk_new' );
+
+    /**
+     * writes psk-list.csv (one row per IKE gateway) with the decrypted current PSK and an empty psk_new column
+     * file permissions 0600 - contains cleartext secrets, never referenced by name in manifest / ip-mapping
+     *
+     * @param string|null $masterKey null = PAN-OS default master key
+     * @return array statistics ['gateways' => int, 'decrypted' => int, 'decrypt_failed' => int, 'without_psk' => int]
+     */
+    public function writePSKList( $masterKey = null )
+    {
+        $crypto = new PanosCrypto();
+
+        //reverse references: gateway -> tunnels, tunnel -> remote networks
+        $gatewayTunnels = array();
+        foreach( $this->listData('ipsec-tunnels') as $tunnel )
+        {
+            $gwList = self::get($tunnel, 'auto_key.ike_gateway');
+            if( !is_array($gwList) )
+                continue;
+            foreach( $gwList as $gwRef )
+            {
+                $gwName = is_array($gwRef) ? self::get($gwRef, 'name') : $gwRef;
+                if( $gwName !== null )
+                    $gatewayTunnels[$gwName][] = self::get($tunnel, 'name');
+            }
+        }
+        $tunnelRNs = array();
+        foreach( $this->listData('remote-networks') as $rn )
+        {
+            foreach( array('ipsec_tunnel', 'secondary_ipsec_tunnel') as $field )
+            {
+                $tunnelName = self::get($rn, $field);
+                if( $tunnelName !== null )
+                    $tunnelRNs[$tunnelName][] = self::get($rn, 'name');
+            }
+        }
+
+        $stats = array( 'gateways' => 0, 'decrypted' => 0, 'decrypt_failed' => 0, 'without_psk' => 0 );
+
+        $file = $this->exportDir . "/psk-list.csv";
+        $oldUmask = umask(0077);
+        $fh = fopen( $file, "w" );
+        umask($oldUmask);
+        if( $fh === false )
+            derr( "not possible to write " . $file, null, FALSE );
+        chmod( $file, 0600 );
+
+        fputcsv( $fh, self::PSK_LIST_COLUMNS, ',', '"', '' );
+
+        foreach( $this->listData('ike-gateways') as $gw )
+        {
+            $encrypted = self::get($gw, 'authentication.pre_shared_key.key');
+            if( $encrypted === null )
+            {
+                $stats['without_psk']++;
+                continue;
+            }
+            $stats['gateways']++;
+
+            try
+            {
+                //PanosCrypto::decrypt() returns "" instead of throwing on wrong master key / invalid format
+                $cleartext = $crypto->decrypt( (string)$encrypted, $masterKey );
+                if( $cleartext === "" )
+                    throw new Exception("decrypt failed");
+                $stats['decrypted']++;
+            }
+            catch( Exception $e )
+            {
+                $cleartext = self::PSK_DECRYPT_FAILED;
+                $stats['decrypt_failed']++;
+            }
+
+            $gwName = self::get($gw, 'name');
+            $tunnels = isset($gatewayTunnels[$gwName]) ? $gatewayTunnels[$gwName] : array();
+            $rns = array();
+            foreach( $tunnels as $tunnelName )
+            {
+                if( isset($tunnelRNs[$tunnelName]) )
+                    $rns = array_merge( $rns, $tunnelRNs[$tunnelName] );
+            }
+
+            $peer = self::get($gw, 'peer_address');
+            $peerText = array();
+            if( is_array($peer) )
+            {
+                foreach( $peer as $peerType => $peerValue )
+                    $peerText[] = $peerType . "=" . ( is_array($peerValue) ? json_encode($peerValue) : (string)$peerValue );
+            }
+
+            fputcsv( $fh, array( $gwName, implode(" | ", $tunnels), implode(" | ", array_unique($rns)), implode(" | ", $peerText), $cleartext, "" ), ',', '"', '' );
+        }
+        fclose( $fh );
+
+        return $stats;
+    }
+
+    /**
+     * reads a psk-list.csv for import: psk_new if filled, otherwise psk_current
+     *
+     * @return array ['psk' => [gateway => cleartext], 'source' => [gateway => 'new'|'current'], 'errors' => [gateway => message]]
+     */
+    public static function loadPSKList( $file )
+    {
+        if( !is_readable($file) )
+            derr( "PSK list not readable: " . $file, null, FALSE );
+
+        $fh = fopen( $file, "r" );
+        $header = fgetcsv( $fh, 0, ',', '"', '' );
+        if( $header === false )
+            derr( "PSK list is empty: " . $file, null, FALSE );
+        $header = array_map( 'trim', $header );
+        foreach( array('ike_gateway', 'psk_current', 'psk_new') as $required )
+        {
+            if( !in_array($required, $header, TRUE) )
+                derr( "PSK list " . $file . " has no column '" . $required . "'", null, FALSE );
+        }
+
+        $result = array( 'psk' => array(), 'source' => array(), 'errors' => array() );
+        $lineNo = 1;
+        while( ($line = fgetcsv( $fh, 0, ',', '"', '' )) !== false )
+        {
+            $lineNo++;
+            if( count($line) == 1 && trim((string)$line[0]) === "" )
+                continue;
+            $row = array();
+            foreach( $header as $i => $col )
+                $row[$col] = isset($line[$i]) ? $line[$i] : "";
+
+            $gw = trim( $row['ike_gateway'] );
+            if( $gw === "" )
+            {
+                $result['errors']["line " . $lineNo] = "no ike_gateway";
+                continue;
+            }
+            if( isset($result['psk'][$gw]) || isset($result['errors'][$gw]) )
+            {
+                $result['errors'][$gw] = "duplicate entry (line " . $lineNo . ")";
+                unset( $result['psk'][$gw], $result['source'][$gw] );
+                continue;
+            }
+
+            //PSK values are used as written - no trim, whitespace may be part of the key
+            if( $row['psk_new'] !== "" )
+            {
+                $result['psk'][$gw] = $row['psk_new'];
+                $result['source'][$gw] = 'new';
+            }
+            elseif( $row['psk_current'] !== "" && $row['psk_current'] !== self::PSK_DECRYPT_FAILED )
+            {
+                $result['psk'][$gw] = $row['psk_current'];
+                $result['source'][$gw] = 'current';
+            }
+            else
+                $result['errors'][$gw] = "psk_new empty and psk_current not available (" . ( $row['psk_current'] === "" ? "empty" : $row['psk_current'] ) . ")";
+        }
+        fclose( $fh );
+
+        return $result;
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     // helpers

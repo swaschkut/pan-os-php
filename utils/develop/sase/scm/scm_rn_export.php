@@ -20,7 +20,7 @@
 // Export all Remote Network (RN / RN-SPN) related configuration of one Prisma Access tenant (TSG)
 // see utils/develop/sase/scm/README_rn_export.md
 //
-// php utils/develop/sase/scm/scm_rn_export.php in=scm-api://<TSG_ID> [outdir=export] [egressip] [egressip-env=prod|prod6] [debugapi]
+// php utils/develop/sase/scm/scm_rn_export.php in=scm-api://<TSG_ID> [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
 
 require_once("lib/pan_php_framework.php");
 require_once("utils/lib/UTIL.php");
@@ -39,10 +39,12 @@ $supportedArguments['outdir'] = Array('niceName' => 'outdir', 'shortHelp' => 'ba
 $supportedArguments['folder'] = Array('niceName' => 'folder', 'shortHelp' => 'SCM folder for the IKE/IPsec objects (default: "Remote Networks")', 'argDesc' => '[folder]');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (separate API key, stored in .panconfkeystore as egressip_tsg_id<TSG_ID>)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod (api.prod.datapath.prismaaccess.com, default) | prod6 (api.prod6.datapath.prismaaccess.com)', 'argDesc' => 'prod|prod6');
+$supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'write psk-list.csv (chmod 600) with the decrypted current PSK per IKE gateway and an empty psk_new column for the import');
+$supportedArguments['master-key'] = Array('niceName' => 'master-key', 'shortHelp' => 'master key to decrypt the PSKs (default: PAN-OS default master key)', 'argDesc' => '[master-key]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 
-$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [outdir=export] [egressip] [egressip-env=prod|prod6]\n".
+$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
     "php ".basename(__FILE__)." help          : more help messages\n";
 ##############
 
@@ -85,7 +87,16 @@ if( isset(PH::$args['egressip']) )
 $export->exportEgressIP( $egressKey, $egressEnv );
 
 $ipMapping = $export->buildIPMapping();
-$manifest = $export->writeManifest( PH::frameworkVersion(), $ipMapping );
+$pskStats = null;
+if( isset(PH::$args['psk-list']) )
+{
+    $masterKey = ( isset(PH::$args['master-key']) && PH::$args['master-key'] !== "" ) ? PH::$args['master-key'] : null;
+    $pskStats = $export->writePSKList( $masterKey );
+    PH::print_stdout( " * psk-list.csv: " . $pskStats['gateways'] . " gateway(s), decrypted: " . $pskStats['decrypted'] . ", failed: " . $pskStats['decrypt_failed'] );
+    PH::print_stdout( PH::boldText("   ! psk-list.csv contains cleartext PSKs - keep it out of tickets / git") );
+}
+
+$manifest = $export->writeManifest( PH::frameworkVersion(), $ipMapping, $pskStats );
 
 ########################################################################################################################
 

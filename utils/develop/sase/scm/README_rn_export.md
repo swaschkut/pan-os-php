@@ -21,6 +21,8 @@ php utils/develop/sase/scm/scm_rn_export.php in=scm-api://<TSG_ID> outdir=/share
 | `folder=` | SCM folder of the IKE/IPsec objects, default `Remote Networks` |
 | `egressip` | also download egress IPs via the Prisma Access egress-IP API |
 | `egressip-env=prod\|prod6` | egress-IP API host (`api.prod…` default, `api.prod6…` for some SCM tenants) |
+| `psk-list` | write `psk-list.csv` with the decrypted PSK per IKE gateway (see below) |
+| `master-key=` | master key to decrypt the PSKs; default: PAN-OS default master key |
 | `debugapi` | print every API call |
 
 ### Egress-IP API key
@@ -44,6 +46,7 @@ The egress-IP API (`getPrismaAccessIP/v2`) does not use OAuth but its own API ke
     91_bgp-routing.json             /config/deployment/v1/bgp-routing      (context)
     92_egress-ip.json               getPrismaAccessIP/v2, serviceType=remote_network (only with egressip)
     ip-mapping.json / ip-mapping.csv
+    psk-list.csv                    (only with psk-list, chmod 600, cleartext)
 ```
 
 * Files `01`–`06` are in **import order**: an entry only references entries with a lower number
@@ -57,9 +60,7 @@ The egress-IP API (`getPrismaAccessIP/v2`) does not use OAuth but its own API ke
 `format_version`, `tsg_id`, `api_url`, `folder`, `created_at`, `import_order`, per-endpoint status/count/http_code,
 `ip_mapping` summary and `import_hints`:
 
-* `pre_shared_key` – IKE gateways using a PSK. The API returns the key encrypted with a tenant-specific key, so it is
-  most likely not usable on another tenant; the PSKs must be provided separately for import. No key value is written
-  to the manifest.
+* `pre_shared_key` – IKE gateways using a PSK. No key value is written to the manifest; use `psk-list` for the import.
 * `inherited_or_predefined` – entries not defined in the export folder itself (`snippet` set, e.g. `predefined`, or a
   parent folder). Import references them but does not create them.
 
@@ -80,6 +81,28 @@ One row per remote network:
 
 A new tenant gets new Prisma Access IPs, so this file is also the checklist for the branch firewall changes
 (peer address, allow lists).
+
+### psk-list.csv
+
+One row per IKE gateway with a pre-shared key:
+
+| column | content |
+|---|---|
+| `ike_gateway` | gateway name – key for the import |
+| `ipsec_tunnel`, `remote_network`, `branch_peer_address` | context only, to find the right key |
+| `psk_current` | decrypted PSK from the export (`PanosCrypto`, default or `master-key=`); `DECRYPT_FAILED` if not possible |
+| `psk_new` | empty – fill in to set a new PSK on the target tenant |
+
+Import rule (`SCMRemoteNetworkExport::loadPSKList()`): `psk_new` if filled, otherwise `psk_current`.
+`psk_new` is optional. A gateway with empty `psk_new` and empty / `DECRYPT_FAILED` `psk_current`, or a duplicate
+gateway name, is reported as error, so the import can stop in dry-run before creating anything.
+Values are used exactly as written (no trimming). Gateways using certificates are not listed.
+
+The file holds cleartext secrets: it is created with mode 0600, is not referenced by name in `manifest.json`
+(only counts under `psk_list`) and should be kept out of git and tickets. Rotate keys if it leaks.
+
+Note: `PanosCrypto::decrypt()` returns `""` instead of throwing on a wrong master key; the export treats an empty
+result as `DECRYPT_FAILED`.
 
 ## Connector changes (`lib/misc-classes/PanSCMAPIConnector.php`)
 
