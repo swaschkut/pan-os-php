@@ -32,6 +32,7 @@ UTIL:
 * type=profile profiletype=hip-profile/-object | extend differnet classes to support these object, like common filter, refernceableObject
 * class AntiVirusProfile/AntiSpywareProfile/WildfireProfile/FileBlockingProfile/UrlFilteringProfile - move actions to methods
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
+* scm export extend with infra - before rn was included, too
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

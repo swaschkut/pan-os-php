@@ -2214,6 +2214,21 @@ class PanSCMAPIConnector
 
             $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
 
+            //some deployment endpoints answer 'Access denied' / 400 on limit/offset - retry the first page without them
+            if( $result['errors'] !== null && $offset == 0 && in_array($result['http_code'], array(400, 403), TRUE) )
+            {
+                if( $this->showApiCalls )
+                    PH::print_stdout( "   retry without limit/offset: " . $url_config );
+                $retry = $this->sendSCMAPIRequest( "GET", $this->url_api . $url_config, false, FALSE );
+                if( $retry['errors'] === null )
+                {
+                    $json = $retry['json'];
+                    if( is_array($json) && array_key_exists('data', $json) && is_array($json['data']) )
+                        return array( 'http_code' => $retry['http_code'], 'data' => $json['data'], 'total' => isset($json['total']) ? (int)$json['total'] : count($json['data']), 'is_list' => true, 'raw' => null, 'errors' => null, 'paginated' => false );
+                    return array( 'http_code' => $retry['http_code'], 'data' => $json, 'total' => null, 'is_list' => false, 'raw' => $json, 'errors' => null, 'paginated' => false );
+                }
+            }
+
             if( $result['errors'] !== null )
                 return array( 'http_code' => $result['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => $result['errors'] );
 
