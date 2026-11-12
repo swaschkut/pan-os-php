@@ -29,6 +29,10 @@ class Schedule
     /** @var ScheduleStore|null */
     public $owner = null;
 
+    /** set by the mergers (type=object-merger) */
+    public $ancestor;
+    public $childancestor;
+
     protected $recurring_type = null;
     //possible recurring setting daily/weekly/non-recurring
 

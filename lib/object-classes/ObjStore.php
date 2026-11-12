@@ -131,10 +131,12 @@ class ObjStore
                 {
                     $f = null;
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    if ($snippet !== null)
+                    if( $snippet !== null && $snippet !== $this->owner && isset($snippet->$storeType) )
+                    {
                         $f = $snippet->$storeType->findbyName($name, $ref, false);
-                    if ($f !== null)
-                        return $f;
+                        if( $f !== null )
+                            return $f;
+                    }
                 }
             }
 
@@ -397,6 +399,42 @@ class ObjStore
 
 
         return $res;
+    }
+
+    /**
+     * nestedPointOfView(): a same-name copy $target in the device group of $store has no references of its own;
+     * the users of the ancestor copy $source that sit in this device group's ancestor chain reach this device
+     * group's firewalls and use $target there (ancestor-objects-take-precedence off: the lowest copy wins).
+     * Users in other branches (sibling device groups and their descendants) are not taken over: their firewalls
+     * never get $target. With ancestor-objects-take-precedence yes the lowest copy is never used, nothing is taken
+     * over. Outside Panorama device groups (SCM containers / snippets) all users are taken over as before.
+     */
+    public static function adoptNestedReferences( $store, $target, $source )
+    {
+        $location = isset($store->owner) ? $store->owner : null;
+
+        if( !( $location instanceof DeviceGroup ) )
+        {
+            foreach( $source->refrules as $ref )
+                $target->addReference( $ref );
+            return;
+        }
+
+        $panorama = $location->owner;
+        if( is_object($panorama) && method_exists($panorama, 'ancestorObjectsTakePrecedence') && $panorama->ancestorObjectsTakePrecedence() )
+            return;
+
+        $chain = array( spl_object_id($panorama) => TRUE );
+        for( $dg = $location; $dg !== null; $dg = $dg->parentDeviceGroup )
+            $chain[spl_object_id($dg)] = TRUE;
+
+        foreach( $source->refrules as $ref )
+        {
+            // static method of the trait ReferenceableObject, called through a class that uses it
+            $refLocation = Address::findLocationOwner( $ref );
+            if( $refLocation === null || isset($chain[spl_object_id($refLocation)]) )
+                $target->addReference( $ref );
+        }
     }
 
     protected function findParentCentralStore( $storeType )

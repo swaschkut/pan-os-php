@@ -111,7 +111,8 @@ class IKEGateway
                 {
                     $this->localInterface = $tmp_interface_string->textContent;
 
-                    $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($this->localInterface);
+                    // template stack: the interface comes from one of its templates
+                    $tmp_interface = $this->owner->owner->network->findInterfaceInTemplateScopeOrCreateTmp($this->localInterface);
                     $tmp_interface->addReference($this);
                 }
 
@@ -150,8 +151,15 @@ class IKEGateway
                         $this->proposal = $proposalNode->textContent;
 
                         $tmp_ike_profile = $this->owner->owner->network->ikeCryptoProfileStore->findIKECryptoProfil($this->proposal);
+                        // template stack: the IKE crypto profile can come from one of its templates (stack first,
+                        // then the templates in the stack's order)
+                        $inTemplateScope = PH::templateScopeOwner( $this->owner->owner ) !== null;
+                        if( $tmp_ike_profile == NULL && $inTemplateScope )
+                            $tmp_ike_profile = PH::findInTemplateScopeNetworks( $this->owner->owner, 'ikeCryptoProfileStore', $this->proposal, 'findIKECryptoProfil' );
                         if( $tmp_ike_profile != NULL )
                             $tmp_ike_profile->addReference($this);
+                        elseif( $inTemplateScope && !in_array( $this->proposal, array( 'default', 'Suite-B-GCM-128', 'Suite-B-GCM-256' ), TRUE ) )
+                            mwarning( "Template '" . $this->owner->owner->owner->name() . "' IKE-gateway: '" . $this->name() . "' IKE-crypto-profile '" . $this->proposal . "' not found", null, false );
                     }
 
 

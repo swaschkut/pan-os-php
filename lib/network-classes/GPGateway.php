@@ -136,7 +136,7 @@ class GPGateway
             {
                 $this->localAddress_interface = $interface_Node->textContent;
 
-                $vsys_interfaces = $this->owner->owner->importedInterfaces->getAll();
+                $vsys_interfaces = $this->locationInterfaces();
                 foreach( $vsys_interfaces as $vsys_interface )
                 {
                     if( $vsys_interface->name() == $this->localAddress_interface )
@@ -299,7 +299,7 @@ class GPGateway
         {
             $tmp_remote_user_tunnel = $remote_user_tunnel_Node->textContent;
 
-            $vsys_interfaces = $this->owner->owner->importedInterfaces->getAll();
+            $vsys_interfaces = $this->locationInterfaces();
             foreach( $vsys_interfaces as $vsys_interface )
             {
                 if( $vsys_interface->name() == $tmp_remote_user_tunnel )
@@ -433,6 +433,17 @@ class GPGateway
 
     static protected $templatexml = '<entry name="**temporarynamechangemeL3**"><network><layer3></layer3></network></entry>';
 
+
+    /** interfaces of the location: vsys imported interfaces, else (SCM folder / device / snippet) its own network interfaces */
+    private function locationInterfaces()
+    {
+        $location = $this->owner->owner;
+        if( isset($location->importedInterfaces) && $location->importedInterfaces !== null )
+            return $location->importedInterfaces->getAll();
+        if( isset($location->network) && $location->network !== null )
+            return $location->network->getAllInterfaces();
+        return array();
+    }
 }
 
 

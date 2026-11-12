@@ -146,17 +146,16 @@ class DataFilteringProfile extends SecurityProfile2
             return false;
     }
 
+    /** @return null the BP JSON has no data-filtering section: not checked (N/A) */
     public function is_visibility()
     {
-        if( count($this->rules_obj) > 0 )
-            return true;
-        else
-            return false;
+        return null;
     }
 
+    /** @return null the BP JSON has no data-filtering section: not checked (N/A) */
     public function is_best_practice()
     {
-        return false;
+        return null;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

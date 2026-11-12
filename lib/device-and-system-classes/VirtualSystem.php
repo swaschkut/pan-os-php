@@ -189,6 +189,9 @@ class VirtualSystem
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     /** @var InterfaceContainer */
     public $importedInterfaces;
 
@@ -266,6 +269,9 @@ class VirtualSystem
 
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceProfileStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';
@@ -413,7 +419,7 @@ class VirtualSystem
 
             'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
             'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
+            'DecryptionProfileStore', 'HipObjectsProfileStore', 'HipProfilesProfileStore', 'customURLProfileStore'
 
         );
 
@@ -527,6 +533,14 @@ class VirtualSystem
             //print "VSYS '".$this->name."' address objectsloaded\n" ;
             // End of address objects extraction
 
+
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction (before the address groups: a group can have EDL members)
 
             //
             // Extract address groups in this DV
@@ -784,13 +798,6 @@ class VirtualSystem
             // End of schedule extraction
 
 
-            //
-            // Extract EDL objects
-            //
-            $tmp = DH::findFirstElement('external-list', $xml);
-            if( $tmp !== FALSE )
-                $this->EDLStore->load_from_domxml($tmp);
-            // End of EDL extraction
 
             //
             // Extract LogProfile objects
@@ -1083,6 +1090,16 @@ class VirtualSystem
             $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
         }
         // End of SSL_TLSServiceProfile objects extraction
+
+        //
+        // Extract certificate-profile objects
+        //
+        $tmp = DH::findFirstElement('certificate-profile', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->certificateProfileStore->load_from_domxml($tmp);
+        }
+        // End of CertificateProfile objects extraction
 
         //
         // Extract GlobalProtect objects

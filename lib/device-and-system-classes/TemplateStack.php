@@ -45,6 +45,12 @@ class TemplateStack
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     /** @var  PANConf */
     public $deviceConfiguration;
 
@@ -61,6 +67,12 @@ class TemplateStack
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceProfileStore');
     }
 
     public function load_from_domxml(DOMElement $xml)
@@ -139,8 +151,36 @@ class TemplateStack
                     $this->certificateStore->load_from_domxml($tmp);
                 }
                 // End of Certificate objects extraction
+
+                //
+                // Extract certificate-profile objects
+                //
+                $tmp = DH::findFirstElement('certificate-profile', $shared);
+                if( $tmp !== FALSE )
+                {
+                    $this->certificateProfileStore->load_from_domxml($tmp);
+                }
+                // End of CertificateProfile objects extraction
+
+                //
+                // Extract ssl-tls-service-profile objects (template stack, shared level)
+                //
+                $tmp = DH::findFirstElement('ssl-tls-service-profile', $shared);
+                if( $tmp !== FALSE )
+                {
+                    $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+                }
+                // End of SSL_TLSServiceProfile objects extraction
             }
         }
+
+        // certificate profiles of the vsys were loaded before the shared level: resolve their CA certificates again
+        // (vsys -> shared -> templates of a stack, see PH::templateScopeLevels())
+        if( $this->deviceConfiguration !== null )
+            foreach( $this->deviceConfiguration->getVirtualSystems() as $vsys )
+                if( isset($vsys->certificateProfileStore) && $vsys->certificateProfileStore !== null )
+                    foreach( $vsys->certificateProfileStore->getAll() as $certificateProfile )
+                        $certificateProfile->resolveCACertificates();
 
 
     }

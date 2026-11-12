@@ -896,7 +896,10 @@ class RuleCallContext extends CallContext
                     return self::enclose('');
             }
 
-            if( $rule->SP_isBestPractice() === null )
+            $tmp_check = $rule->SP_isBestPractice();
+            if( $tmp_check === null && !$rule->securityProfileIsBlank() )
+                return self::enclose('[N/A]');      // profiles set, none of them checked by the BP JSON
+            if( $tmp_check === null )
             {
                 if( $rule->action() == "allow" )
                     return self::enclose($bp_text_no);
@@ -986,12 +989,12 @@ class RuleCallContext extends CallContext
                         )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
-                            if( !$profile->is_best_practice() )
+                            if( $profile->is_best_practice() === FALSE )
                             {
                                 if( $sp_best_practice )
                                     $bp_check .= $bp_NOT_sign;
                             }
-                            if( !$profile->is_visibility() )
+                            if( $profile->is_visibility() === FALSE )
                             {
                                 if( $sp_visibility )
                                     $bp_check .= $visibility_NOT_sign;
@@ -1030,7 +1033,10 @@ class RuleCallContext extends CallContext
                     return self::enclose('');
             }
 
-            if( $rule->SP_isVisibility() === null )
+            $tmp_check = $rule->SP_isVisibility();
+            if( $tmp_check === null && !$rule->securityProfileIsBlank() )
+                return self::enclose('[N/A]');      // profiles set, none of them checked by the BP JSON
+            if( $tmp_check === null )
             {
                 if( $rule->action() == "allow" )
                     return self::enclose($bp_text_no);
@@ -1741,33 +1747,40 @@ class RuleCallContext extends CallContext
                 {
                     $bp_check = "";
 
-                    #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis"
-                        || $profType == "file-blocking" || $profType == "url-filtering"
-                        || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
-                    )
+                    if( get_class($profile) == "SecurityProfile" )
                     {
-                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
-                        if( !$profile->is_best_practice() )
-                        {
-                            if( $sp_best_practice )
-                                $bp_check .= $bp_NOT_sign;
-                        }
-                        if( !$profile->is_visibility() )
-                        {
-                            if( $sp_visibility )
-                                $bp_check .= $visibility_NOT_sign;
-                        }
-                        if( !$profile->is_adoption() )
-                        {
-                            if( $sp_adoption )
-                                $bp_check .= $adoption_NOT_sign;
-                        }
+                        $profiles[] = $profType . ': [object not found][no check]';
                     }
-                    if( str_contains( $profile->owner->name(), "predefined" ) )
-                        $profiles[] = $profType . ':' . $profile->name()."[predefined]".$bp_check;
                     else
-                        $profiles[] = $profType . ':' . $profile->name().$bp_check;
+                    {
+                        #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis"
+                            || $profType == "file-blocking" || $profType == "url-filtering"
+                            || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                        )
+                        {
+                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+                            if( $profile->is_best_practice() === FALSE )
+                            {
+                                if( $sp_best_practice )
+                                    $bp_check .= $bp_NOT_sign;
+                            }
+                            if( $profile->is_visibility() === FALSE )
+                            {
+                                if( $sp_visibility )
+                                    $bp_check .= $visibility_NOT_sign;
+                            }
+                            if( !$profile->is_adoption() )
+                            {
+                                if( $sp_adoption )
+                                    $bp_check .= $adoption_NOT_sign;
+                            }
+                        }
+                        if( str_contains( $profile->owner->name(), "predefined" ) )
+                            $profiles[] = $profType . ':' . $profile->name()."[predefined]".$bp_check;
+                        else
+                            $profiles[] = $profType . ':' . $profile->name().$bp_check;
+                    }
                 }
             }
             else
@@ -1867,29 +1880,32 @@ class RuleCallContext extends CallContext
                         || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
                     )
                     {
-                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|FileBlockingProfile|URLProfile */
-                        if( $sp_best_practice && $checkType == "bp" )
+                        if( get_class($profile) == "SecurityProfile" )
                         {
-                            if( !$profile->is_best_practice() )
-                                return self::enclose("N/A", $wrap);
-                            else
-                                return self::enclose($profile->name(), $wrap);
+                            return self::enclose("N/A", $wrap);
                         }
+                        else {
+                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|FileBlockingProfile|URLProfile */
+                            if ($sp_best_practice && $checkType == "bp") {
+                                if (!$profile->is_best_practice())
+                                    return self::enclose("N/A", $wrap);
+                                else
+                                    return self::enclose($profile->name(), $wrap);
+                            }
 
-                        if( $sp_visibility && $checkType == "visible")
-                        {
-                            if( !$profile->is_visibility() )
-                                return self::enclose("N/A", $wrap);
-                            else
-                                return self::enclose($profile->name(), $wrap);
-                        }
+                            if ($sp_visibility && $checkType == "visible") {
+                                if (!$profile->is_visibility())
+                                    return self::enclose("N/A", $wrap);
+                                else
+                                    return self::enclose($profile->name(), $wrap);
+                            }
 
-                        if( $sp_adoption && $checkType == "adoption")
-                        {
-                            if( !$profile->is_adoption() )
-                                return self::enclose("N/A", $wrap);
-                            else
-                                return self::enclose($profile->name(), $wrap);
+                            if ($sp_adoption && $checkType == "adoption") {
+                                if (!$profile->is_adoption())
+                                    return self::enclose("N/A", $wrap);
+                                else
+                                    return self::enclose($profile->name(), $wrap);
+                            }
                         }
                     }
                 }
@@ -2057,8 +2073,16 @@ class RuleCallContext extends CallContext
         return $strMapping;
     }
 
-    public function AddressResolveSummaryNEW( $rule, $typeSrcDst, &$unresolvedArray = array() )
+    /**
+     * IP summary of a rule's source / destination as the firewalls of $location receive it
+     * (default: the rule's own location). Every name is resolved with PH::resolveNameForFirewalls(),
+     * so same-name copies and 'ancestor-objects-take-precedence' are honoured.
+     */
+    public static function AddressResolveSummaryNEW( $rule, $typeSrcDst, &$unresolvedArray = array(), $location = null )
     {
+        if( $location === null )
+            $location = $rule->owner->owner;
+
         $mapObject = new IP4Map();
         if( $rule->$typeSrcDst->isAny() )
         {
@@ -2069,32 +2093,21 @@ class RuleCallContext extends CallContext
         }
 
         $allMembers = $rule->$typeSrcDst->getAll();
-        $strMapping = array();
         foreach($allMembers as $member)
         {
-            if( $member->isGroup() )
-            {
-                /** @var AddressGroup $member */
-                $tmp_array = array();
-                $members = $member->expand(FALSE, $tmp_array, $rule->owner->owner);
-                foreach( $members as $member )
-                {
-                    $tmp_member = $rule->owner->owner->addressStore->find($member->name());
-                    $localMap = $tmp_member->getIP4Mapping();
-                    $mapObject->addMap($localMap, TRUE);
-                }
-            }
-            elseif( $member->isEDL() )
-            {
+            if( !$member->isGroup() && $member->isEDL() )
+                continue;
 
-            }
-            else
-            {
-                $tmp_member = $rule->owner->owner->addressStore->find($member->name());
-                $localMap = $tmp_member->getIP4Mapping();
-                $mapObject->addMap($localMap, TRUE);
-            }
+            $resolved = PH::resolveNameForFirewalls('addressStore', $member->name(), $location);
+            if( $resolved === null )
+                $resolved = $member;
 
+            foreach( PH::expandForFirewalls('addressStore', $resolved, $location) as $leaf )
+            {
+                if( !method_exists($leaf, 'getIP4Mapping') )
+                    continue;
+                $mapObject->addMap($leaf->getIP4Mapping(), TRUE);
+            }
         }
 
         $mapObject->sortAndRecalculate();
@@ -2235,8 +2248,20 @@ class RuleCallContext extends CallContext
 
             if( count($objects  ) > 0 )
             {
+                // services as the firewalls of the rule's location receive them
+                $location = $rule->owner->owner;
+                $leaves = array();
+                foreach( $objects as $object )
+                {
+                    $resolved = PH::resolveNameForFirewalls('serviceStore', $object->name(), $location);
+                    if( $resolved === null )
+                        $resolved = $object;
+                    foreach( PH::expandForFirewalls('serviceStore', $resolved, $location) as $leaf )
+                        $leaves[] = $leaf;
+                }
+
                 $dst_port_mapping = new ServiceDstPortMapping();
-                $dst_port_mapping->mergeWithArrayOfServiceObjects( $objects);
+                $dst_port_mapping->mergeWithArrayOfServiceObjects( $leaves );
 
                 $dst_port_mapping->countPortmapping();
                 if( $type === "both" )
@@ -2262,8 +2287,15 @@ class RuleCallContext extends CallContext
         return $calculatedCounter;
     }
 
-    public function ServiceResolveSummary( $rule )
+    /**
+     * Port summary of a rule's services as the firewalls of $location receive them
+     * (default: the rule's own location); names resolved with PH::resolveNameForFirewalls().
+     */
+    public static function ServiceResolveSummary( $rule, $location = null )
     {
+        if( $location === null )
+            $location = $rule->owner->owner;
+
         $mapObject = new ServiceDstPortMapping();
         $mapObjectSrc = new ServiceSrcPortMapping();
         $timeoutSet = false;
@@ -2275,47 +2307,34 @@ class RuleCallContext extends CallContext
             $mapObject->mergeWithMapping($localMap);
         }
 
-
         if( $rule->services !== null )
             $allMembers = $rule->services->getAll();
         else
             $allMembers = array();
 
-        $strMapping = array();
         foreach($allMembers as $member)
         {
-            if( $member->isGroup() )
+            $resolved = PH::resolveNameForFirewalls('serviceStore', $member->name(), $location);
+            if( $resolved === null )
+                $resolved = $member;
+            $isGroup = $resolved->isGroup();
+
+            foreach( PH::expandForFirewalls('serviceStore', $resolved, $location) as $leaf )
             {
-                $tmp_array = array();
-                $members = $member->expand(FALSE, $tmp_array, $rule->owner->owner);
-                foreach( $members as $member )
-                {
-                    $tmp_member = $rule->owner->owner->serviceStore->find($member->name());
+                if( !method_exists($leaf, 'dstPortMapping') )
+                    continue;
 
-                    $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
-                    $mapObject->mergeWithMapping($localMap);
-
-                    $localMapSrc = $tmp_member->srcPortMapping( array(), $rule->owner->owner );
-                    $mapObjectSrc->mergeWithMapping($localMapSrc);
-
-                    /* @var Service $tmp_member */
-                    if( $tmp_member->getTimeout() != '' )
-                        $timeoutSet = true;
-                }
-            }
-            else
-            {
-                $tmp_member = $rule->owner->owner->serviceStore->find($member->name());
-
-                $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
+                $localMap = $leaf->dstPortMapping( array(), $location );
                 $mapObject->mergeWithMapping($localMap);
 
-                $localMapSrc = $tmp_member->srcPortMapping( array(), $rule->owner->owner );
+                $localMapSrc = $leaf->srcPortMapping( array(), $location );
                 $mapObjectSrc->mergeWithMapping($localMapSrc);
+
+                /* @var Service $leaf */
+                if( $isGroup && method_exists($leaf, 'getTimeout') && $leaf->getTimeout() != '' )
+                    $timeoutSet = true;
             }
-
         }
-
 
         $strMapping = explode(',', $mapObject->mappingToText());
         if( !empty($mapObjectSrc->mappingToText()) )

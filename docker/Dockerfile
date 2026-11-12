@@ -10,12 +10,13 @@ FROM ${IMAGE}
 
 ARG php_var="8.5"
 ARG user_var="ubuntu"
+ARG DEBIAN_FRONTEND=noninteractive
 
 SHELL ["/bin/bash", "-c"]
 
 
-RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
-  && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
+RUN apt-get update --fix-missing \
+  && apt-get install -y --fix-missing \
     tzdata \
     git \
     bash-completion \
@@ -37,30 +38,37 @@ RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
     python3-requests \
     python3-plotly \
     python3-pip \
-	jq
+    jq \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 #RUN pip3 install kaleido
 
 WORKDIR /tools/pan-os-php
 
-COPY appid-toolbox ./appid-toolbox
-COPY lib ./lib
-COPY phpseclib ./phpseclib
-COPY git-php ./git-php
-COPY utils ./utils
-COPY tests ./tests
-COPY migration ./migration
-COPY CHANGELOG.txt .
+# Rechte direkt beim Kopieren setzen statt spaeter mit "chmod -R 777"
+# (ein separates chmod -R dupliziert alle Dateien in einem neuen Layer)
+COPY --chmod=777 appid-toolbox ./appid-toolbox
+COPY --chmod=777 lib ./lib
+COPY --chmod=777 phpseclib ./phpseclib
+COPY --chmod=777 git-php ./git-php
+COPY --chmod=777 utils ./utils
+COPY --chmod=777 tests ./tests
+COPY --chmod=777 migration ./migration
+COPY --chmod=777 CHANGELOG.txt .
 
 
 # PHP library of pan-os-php
 RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini \
-  && chmod -R 777 /tools/pan-os-php
-
-RUN ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php \
-  && git config --global user.email=test@test.com user.name=test
+  && chmod 777 /tools/pan-os-php \
+  && ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php
 
 USER $user_var
+
+# Git-Konfiguration fuer den Laufzeit-User
+RUN git config --global user.email "test@test.com" \
+  && git config --global user.name "test"
+
 # UTIL alias for pan-os-php
 RUN cat /tools/pan-os-php/utils/alias.sh >> /home/$user_var/.bashrc \
   && cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /home/$user_var/.bashrc

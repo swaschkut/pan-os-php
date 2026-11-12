@@ -196,6 +196,9 @@ class PANConf
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
     public $_public_cloud_server = null;
 
     public $_advance_routing_enabled = false;
@@ -306,6 +309,9 @@ class PANConf
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
+
         $this->network = new NetworkPropertiesContainer($this);
 
         if( $this->owner == null )
@@ -399,6 +405,7 @@ class PANConf
         $this->LogProfileStore = null;
         $this->certificateStore = null;
         $this->SSL_TLSServiceProfileStore = null;
+        $this->certificateProfileStore = null;
 
         // Clear network properties
         $this->network = null;
@@ -602,6 +609,14 @@ class PANConf
             // end of address extraction
 
             //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $this->sharedroot);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction (before the address groups: a group can have EDL members)
+
+            //
             // Extract address groups
             //
             $tmp = DH::findFirstElement('address-group', $this->sharedroot);
@@ -775,13 +790,6 @@ class PANConf
                 $this->scheduleStore->load_from_domxml($tmp);
             // End of address groups extraction
 
-            //
-            // Extract EDL objects
-            //
-            $tmp = DH::findFirstElement('external-list', $this->sharedroot);
-            if( $tmp !== FALSE )
-                $this->EDLStore->load_from_domxml($tmp);
-            // End of EDL extraction
 
             //
             // Extract LogProfile objects
@@ -812,6 +820,16 @@ class PANConf
                 $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
             }
             // End of SSL_TLSServiceProfile objects extraction
+
+            //
+            // Extract certificate-profile objects
+            //
+            $tmp = DH::findFirstElement('certificate-profile', $this->sharedroot);
+            if( $tmp !== FALSE )
+            {
+                $this->certificateProfileStore->load_from_domxml($tmp);
+            }
+            // End of CertificateProfile objects extraction
         }
 
 

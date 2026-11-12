@@ -5,6 +5,7 @@ class PbfRule extends RuleWithUserID
 {
     use NegatableRule;
     use RuleWithSchedule;
+    use RuleDirectReferences;
 
     protected $schedule = null;
 
@@ -286,6 +287,10 @@ class PbfRule extends RuleWithUserID
 
     public function replaceReferencedObject($old, $new )
     {
+        // schedule: RuleDirectReferences (type=object-merger objecttype=schedule)
+        if( $old instanceof Schedule )
+            return $this->replaceDirectReference($old, $new, FALSE);
+
         if( get_class($new) == "Address" )
         {
             if( is_object($old) )

@@ -144,53 +144,27 @@ class AntiVirusProfile extends SecurityProfile2
 
 
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
         }
         else
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
         }
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
         }
         else
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-            )
-                return TRUE;
-            else
-                return FALSE;
+            return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
         }
     }
 
@@ -322,6 +296,7 @@ class AntiVirusProfile extends SecurityProfile2
     public static function ironSkilletContentXml( $version, $action )
     {
         $decoders = array( 'ftp', 'http', 'http2', 'imap', 'pop3', 'smb', 'smtp' );
+
         if( version_compare( $version, '9.1', '<' ) )
             $decoders = array_values( array_diff( $decoders, array( 'http2' ) ) );
 
@@ -340,8 +315,8 @@ class AntiVirusProfile extends SecurityProfile2
         if( !$withMlav )
             return $xml;
 
-        $models = array( 'Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2', 'Executable Linked Format',
-            'MSOffice', 'Shell' );
+        $models = array( 'Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2',
+            'Executable Linked Format', 'MSOffice', 'Shell' );
         if( version_compare( $version, '11.1', '>=' ) )
             $models = array_merge( $models, array( 'MachO', 'OOXML' ) );
 

@@ -30,6 +30,10 @@ class DecryptionProfile
     /** @var SecurityProfileStore|null */
     public $owner = null;
 
+    /** set by the mergers (type=object-merger) */
+    public $ancestor;
+    public $childancestor;
+
     public $secprof_type;
 
     /**

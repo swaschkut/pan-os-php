@@ -28,6 +28,7 @@ class PLAYBOOK__
     public $outputformatscmjsonFile = null;
     public $subprocessMode = false;
     public $memoryThreshold = 0;
+    public $removeStageFiles = false;
 
     public $mainLocation = null;
 
@@ -55,6 +56,7 @@ class PLAYBOOK__
         $this->supportedArguments['memorythreshold'] = array('niceName' => 'memorythreshold', 'shortHelp' => 'memory threshold in MB before switching to subprocess mode (e.g., memorythreshold=512)', 'argDesc' => 'memorythreshold=MB');
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
         $this->supportedArguments['outputformatscmjson'] = array('niceName' => 'outputformatscmjson', 'shortHelp' => 'SCM only (in= is an SCM XML from in=scm-api://): store one SCM API request per changed object in FILENAME, see type=scm-changes / type=scm-apply', 'argDesc' => 'FILENAME');
+        $this->supportedArguments['removestagefiles'] = array('niceName' => 'removestagefiles', 'shortHelp' => 'remove each stage file (stagename<N>.xml) the playbook passed to a step as in=, once that step has written its own; the input and the last stage file are kept (the last is copied to out=); a later step that names an earlier stage file itself will not find it');
 
 
         $in_exclude = array(
@@ -146,6 +148,9 @@ class PLAYBOOK__
 
         if( isset(PH::$args['subprocess']) )
             $this->subprocessMode = TRUE;
+
+        if( isset(PH::$args['removestagefiles']) )
+            $this->removeStageFiles = TRUE;
 
         if( isset(PH::$args['memorythreshold']) )
             $this->memoryThreshold = intval(PH::$args['memorythreshold']) * 1024 * 1024; // Convert MB to bytes
@@ -307,6 +312,8 @@ class PLAYBOOK__
         }
 
         $out_counter = 0;
+        // every stage file this run writes (stagename<N>.xml) — only these are ever removed by 'removestagefiles'
+        $stageFiles = array();
         foreach( $command_array as $key => $command )
         {
             if( isset( $command['pie_slice'] ) )
@@ -426,6 +433,7 @@ class PLAYBOOK__
                 {
                     $out = $stage_name.$out_counter.".xml";
                     $out_counter = $out_counter+10;
+                    $stageFiles[$out] = TRUE;
                 }
                 else
                     $out = $in;
@@ -446,11 +454,13 @@ class PLAYBOOK__
                 {
                     $out = $stage_name.$out_counter.".xml";
                     $out_counter = $out_counter+10;
+                    $stageFiles[$out] = TRUE;
                 }
                 else
                     $out = $in;
             }
 
+            $inSupplied = FALSE;    // the playbook gives this step $in: the stage file it may remove after the step
             if( !in_array( $script, $in_exclude ) )
             {
                 $IN_inarray = false;
@@ -461,10 +471,14 @@ class PLAYBOOK__
                     }
                 }
                 if( !$IN_inarray )
+                {
                     $arguments[] = "in=".$in;
+                    $inSupplied = TRUE;
+                }
             }
 
 
+            $outSupplied = FALSE;   // the playbook gives this step its stage file as out=: the next step reads it
             if( !in_array( $script, $out_exclude ) && !$this->isAPI )
             {
                 $OUT_inarray = false;
@@ -479,7 +493,11 @@ class PLAYBOOK__
                     }
                 }
                 if( !$OUT_inarray && !$IN_API_inarray )
+                {
                     $arguments[] = "out=".$out;
+                    // with out=/dev/null every step reads the input, so no later step reads this one's output
+                    $outSupplied = ( $out !== "/dev/null" );
+                }
             }
 
             //validate if arguments include "sleep"
@@ -529,10 +547,22 @@ class PLAYBOOK__
                 }
             }
 
+            // an in-process step that fails ends the whole run (derr), so reaching the end of the step means it ran
+            $stepOK = TRUE;
             if( $useSubprocess )
             {
                 // Run this step as a subprocess to get clean memory
-                $this->runStepAsSubprocess($script, PH::$argv, $argc, $PHP_FILE);
+                $returnCode = $this->runStepAsSubprocess($script, PH::$argv, $argc, $PHP_FILE);
+                $stepOK = ( $returnCode === 0 );
+
+                // a failed step whose out= the playbook gave leaves the next step without its input: end the run here,
+                // as a failed in-process step does (derr), instead of running every later step on a missing file
+                // (137 = the process was killed). A step naming its own out=, and every step of an out=/dev/null run,
+                // keep today's warning.
+                if( !$stepOK && $outSupplied )
+                    derr( "playbook step type=".$script." (in=".$in.", out=".$out.") ended with exit code ".$returnCode
+                        .( $returnCode === 137 ? " - the process was killed, most likely out of memory" : "" )
+                        ." - the playbook stops here", null, FALSE );
             }
             else
             {
@@ -599,8 +629,24 @@ class PLAYBOOK__
 
                 unset( $util );
 
-                // Use enhanced memory cleanup with verbose output if debugMemory is enabled
+                // Use enhanced memory cleanup with verbose output if debugMemory is enabled. It also drops the references
+                // this step's configuration added to the predefined objects (PH::dropPredefinedReferences()).
                 PH::clearGlobalMemory( true, $this->debugMemory );
+            }
+
+            // The step read $in and wrote $out; later steps read $out only. A stage file left on disk stays in the
+            // container's page cache, which memory.current (the memorythreshold reading) counts — one configuration
+            // per step. Remove the stage file the playbook gave this step as in=, never the input file nor the last
+            // stage file, and only one that exists (a step naming its own out= writes none).
+            if( $this->removeStageFiles && $stepOK && $inSupplied && $in !== $out && $in !== $input
+                && isset($stageFiles[$in]) && file_exists($in) && file_exists($out) )
+            {
+                if( unlink($in) )
+                {
+                    unset( $stageFiles[$in] );
+                    if( $this->debugMemory )
+                        PH::print_stdout(" - removed stage file: ".$in);
+                }
             }
 
             PH::print_stdout();
@@ -745,6 +791,8 @@ class PLAYBOOK__
         }
 
         $this->display_container_memory_usage($currentContainerTotalMemory, $memMBtotal);
+
+        return $returnCode;
     }
 
 

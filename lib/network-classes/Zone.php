@@ -231,16 +231,18 @@ class Zone
                     {
                         if( isset($this->owner->owner->owner->network) )
                         {
-                            $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
+                            $tmp_zpp = $this->findZoneProtectionProfileObject( $this->zoneProtectionProfile );
                             if( is_object( $tmp_zpp ) )
                                 $tmp_zpp->addReference( $this );
+                            else
+                                mwarning( "Zone '" . $this->name() . "': zone-protection-profile '" . $this->zoneProtectionProfile . "' not found", null, false );
                         }
                         else
                         {
                             //Todo: 20260309 is it sharedgateway????
                         }
                     }
-                    elseif( get_class($this->owner->owner) == "DeviceCloud" )
+                    elseif( in_array( get_class($this->owner->owner), array( "DeviceCloud", "DeviceOnPrem", "Container", "Snippet" ), TRUE ) )
                     {
                         if( isset($this->owner->owner->network) )
                         {
@@ -263,9 +265,10 @@ class Zone
 
                     if( get_class($this->owner->owner) == "VirtualSystem" || get_class($this->owner->owner) == "DeviceCloud" )
                     {
-                        if( isset($this->owner->owner->owner->owner) && get_class($this->owner->owner->owner->owner) == "Template" )
+                        if( isset($this->owner->owner->owner->owner) && in_array( get_class($this->owner->owner->owner->owner), array( "Template", "TemplateStack" ), TRUE ) )
                         {
-                            //this is done via Panorama class - after reading DeviceGroup
+                            // template / template stack: only a log forwarding profile of Panorama shared, resolved by
+                            // PanoramaConf once shared is loaded
                         }
                         else
                         {
@@ -397,6 +400,35 @@ class Zone
         }
     }
 
+
+    /**
+     * Zone-protection-profile lookup for a zone in a VirtualSystem:
+     * 1. the store of the zone's own configuration (firewall, template or template-stack)
+     * 2. zone defined in a template-stack: the stores of the stack's templates, in the stack's order
+     *    (the first template has the highest priority, as in PAN-OS)
+     * @param string $name
+     * @return ZoneProtectionProfile|null
+     */
+    public function findZoneProtectionProfileObject( $name )
+    {
+        if( $name === null || $name === '' )
+            return null;
+
+        if( get_class($this->owner->owner) != "VirtualSystem" )
+            return null;
+
+        /** @var PANConf $panConf */
+        $panConf = $this->owner->owner->owner;
+        if( !isset($panConf->network) )
+            return null;
+
+        // template / template stack: stack first, then the templates of the stack in the stack's order
+        // (a zone in a template never uses a profile of a stack)
+        if( PH::templateScopeOwner( $panConf ) !== null )
+            return PH::findInTemplateScopeNetworks( $panConf, 'zoneProtectionProfileStore', $name );
+
+        return $panConf->network->zoneProtectionProfileStore->find( $name );
+    }
 
     public function API_setName($newname)
     {

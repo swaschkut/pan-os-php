@@ -2549,7 +2549,11 @@ class Rule
         if( $RuleReferenceLocation !== null )
         {
             foreach( $objects as $key => $member )
-                $objects[$key] = $RuleReferenceLocation->serviceStore->find($member->name());
+            {
+                $resolved = PH::resolveNameForFirewalls('serviceStore', $member->name(), $RuleReferenceLocation);
+                if( $resolved !== null )
+                    $objects[$key] = $resolved;
+            }
         }
 
         $array = array();
@@ -2656,10 +2660,7 @@ class Rule
                 return FALSE;
             }
 
-            if( $group->is_best_practice() )
-                return TRUE;
-            else
-                return FALSE;
+            return $group->is_best_practice();     // null: N/A
         }
         else
         {
@@ -2667,20 +2668,27 @@ class Rule
             if( count($profiles) > 0 )
             {
                 $bp_set = FALSE;
+                $checked = FALSE;
                 foreach ($profiles as $type => $profile) {
                     if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
                     {
                         /** @var AntiVirusProfile $profile */
-                        if (is_object($profile))
+                        if( is_object($profile) && get_class($profile) !== "SecurityProfile" )
                         {
-                            if ($profile->is_best_practice())
-                                $bp_set = TRUE;
-                            else
+                            $ret = $profile->is_best_practice();
+                            if( $ret === FALSE )
                                 return FALSE;
+                            $bp_set = TRUE;     // null: N/A, does not fail
+                            if( $ret === TRUE )
+                                $checked = TRUE;
                         }
                         else
                         {
-                            mwarning("BP SPG check1 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            if( is_object($profile) && get_class($profile) == "SecurityProfile" )
+                                $profileName = "[class SecurityProfile]";
+                            else
+                                $profileName = $profile;
+                            mwarning("BP SPG check1 not possible - SecurityProfile type: " . $type . " name '" . $profileName . "' not found", null, false);
                             return FALSE;
                         }
                     }
@@ -2693,7 +2701,7 @@ class Rule
                     return FALSE;
 
                 if ($bp_set)
-                    return TRUE;
+                    return $checked ? TRUE : null;     // every profile N/A: N/A
                 else
                     return FALSE;
             }
@@ -2712,10 +2720,9 @@ class Rule
             /** @var SecurityProfileGroup $group */
             $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
 
-            if( $group !== null && $group->is_visibility() )
-                return TRUE;
-            else
+            if( $group === null )
                 return FALSE;
+            return $group->is_visibility();     // null: N/A
         }
         else
         {
@@ -2723,21 +2730,28 @@ class Rule
             if( count($profiles) > 0 )
             {
                 $bp_set = FALSE;
+                $checked = FALSE;
                 foreach ($profiles as $type => $profile)
                 {
                     if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
                     {
                         /** @var AntiVirusProfile $profile */
-                        if (is_object($profile))
+                        if( is_object($profile) && get_class($profile) !== "SecurityProfile" )
                         {
-                            if ($profile->is_visibility())
-                                $bp_set = TRUE;
-                            else
+                            $ret = $profile->is_visibility();
+                            if( $ret === FALSE )
                                 return FALSE;
+                            $bp_set = TRUE;     // null: N/A, does not fail
+                            if( $ret === TRUE )
+                                $checked = TRUE;
                         }
                         else
                         {
-                            mwarning("BP SPG check2 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            if( is_object($profile) && get_class($profile) == "SecurityProfile" )
+                                $profileName = "[class SecurityProfile]";
+                            else
+                                $profileName = $profile;
+                            mwarning("BP SPG check2 not possible - SecurityProfile type: " . $type . " name '" . $profileName . "' not found", null, false);
                             return FALSE;
                         }
                     }
@@ -2750,7 +2764,7 @@ class Rule
                     return FALSE;
 
                 if ($bp_set)
-                    return TRUE;
+                    return $checked ? TRUE : null;     // every profile N/A: N/A
                 else
                     return FALSE;
             }
@@ -2785,7 +2799,7 @@ class Rule
                     if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
                     {
                         /** @var AntiVirusProfile $profile */
-                        if (is_object($profile))
+                        if( is_object($profile) && get_class($profile) !== "SecurityProfile" )
                         {
                             if ($profile->is_adoption())
                                 $bp_set = TRUE;
@@ -2794,7 +2808,11 @@ class Rule
                         }
                         else
                         {
-                            mwarning("BP SPG check2 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            if( is_object($profile) && get_class($profile) == "SecurityProfile" )
+                                $profileName = "[class SecurityProfile]";
+                            else
+                                $profileName = $profile;
+                            mwarning("BP SPG check3 not possible - SecurityProfile type: " . $type . " name '" . $profileName . "' not found", null, false);
                             return FALSE;
                         }
                     }

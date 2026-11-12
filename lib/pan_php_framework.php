@@ -192,15 +192,19 @@ require_once $basedir . '/misc-classes/DeviceRQueryContext.php';
 
 require_once $basedir . '/misc-classes/DHCPRQueryContext.php';
 require_once $basedir . '/misc-classes/CertificateRQueryContext.php';
+require_once $basedir . '/misc-classes/CertificateProfileRQueryContext.php';
 
 require_once $basedir . '/misc-classes/StaticRouteRQueryContext.php';
 
 require_once $basedir . '/misc-classes/GPGatewayRQueryContext.php';
 require_once $basedir . '/misc-classes/GPPortalRQueryContext.php';
+require_once $basedir . '/misc-classes/GPGatewaytunnelRQueryContext.php';
+require_once $basedir . '/misc-classes/GREtunnelRQueryContext.php';
 
 require_once $basedir . '/misc-classes/ZoneProtectionProfileRQueryContext.php';
 require_once $basedir . '/misc-classes/InterfaceManagementProfileRQueryContext.php';
 require_once $basedir . '/misc-classes/LogProfileRQueryContext.php';
+require_once $basedir . '/misc-classes/ProfileRQueryContext.php';
 
 require_once $basedir . '/misc-classes/CsvParser.php';
 require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
@@ -221,6 +225,7 @@ require_once $basedir . '/helper-classes/cidr.php';
 require_once $basedir . '/helper-classes/ConsoleTable.php';
 require_once $basedir . '/helper-classes/PanosCrypto.php';
 require_once $basedir . '/helper-classes/PanosHasher.php';
+require_once $basedir . '/helper-classes/XmlCompare.php';
 
 require_once $basedir . '/container-classes/ObjRuleContainer.php';
 require_once $basedir . '/container-classes/ZoneRuleContainer.php';
@@ -391,6 +396,9 @@ require_once $basedir . '/network-classes/SharedGatewayStore.php';
 require_once $basedir . '/network-classes/Certificate.php';
 require_once $basedir . '/network-classes/CertificateStore.php';
 
+require_once $basedir . '/network-classes/CertificateProfile.php';
+require_once $basedir . '/network-classes/CertificateProfileStore.php';
+
 require_once $basedir . '/network-classes/SSL_TLSServiceProfile.php';
 require_once $basedir . '/network-classes/SSL_TLSServiceProfileStore.php';
 
@@ -404,6 +412,7 @@ require_once $basedir . '/rule-classes/Rule.php';
 require_once $basedir . '/rule-classes/RuleHitCountCollector.php';
 require_once $basedir . '/rule-classes/trait/NegatableRule.php';
 require_once $basedir . '/rule-classes/trait/RulewithLogging.php';
+require_once $basedir . '/rule-classes/trait/RuleDirectReferences.php';
 require_once $basedir . '/rule-classes/RuleWithUserID.php';
 require_once $basedir . '/rule-classes/RuleWithSchedule.php';
 

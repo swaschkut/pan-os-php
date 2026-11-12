@@ -23,6 +23,10 @@
 
 class Region
 {
+    /** set by the mergers (type=object-merger) */
+    public $ancestor;
+    public $childancestor;
+
     use AddressCommon;
     use PathableName;
     use XmlConvertible;
@@ -208,8 +212,16 @@ class Region
             return $this->_ip4Map;
         }
 
+        // the custom region's address members (ip-netmask / ip-range, IPv4 and IPv6 alike, as for Address)
         $this->_ip4Map = new IP4Map();
-
+        foreach( $this->members as $member )
+        {
+            $member = trim( $member );
+            if( $member === '' )
+                continue;
+            $this->_ip4Map->addMap( IP4Map::mapFromText( $member ), TRUE );
+        }
+        $this->_ip4Map->sortAndRecalculate();
 
         return $this->_ip4Map;
     }
@@ -225,8 +237,16 @@ class Region
             return $this->_ip6Map;
         }
 
+        // the IPv6 address members
         $this->_ip6Map = new IP6Map();
-
+        foreach( $this->members as $member )
+        {
+            $member = trim( $member );
+            if( $member === '' || strpos( $member, ':' ) === FALSE )
+                continue;
+            $this->_ip6Map->addMap( IP6Map::mapFromText( $member ), TRUE );
+        }
+        $this->_ip6Map->sortAndRecalculate();
 
         return $this->_ip6Map;
     }

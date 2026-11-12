@@ -202,6 +202,10 @@ class PH
 
     public static $UseDomXML = TRUE;
 
+    /** cache for the location filters: resolved argument chains, per root config object */
+    private static $locationFilterCache = array();
+    private static $locationFilterTemplateHintShown = FALSE;
+
     /**
      * @var null|mixed[]
      */
@@ -255,7 +259,7 @@ class PH
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
 
-    private static $library_version_bugfix = 61;
+    private static $library_version_bugfix = 62;
     private static $library_version_release = "beta";
 
 
@@ -707,6 +711,64 @@ class PH
     }
 
     /**
+     * Drops the references that configurations loaded earlier in this process added to the predefined objects.
+     *
+     * The predefined stores are static, one set per PHP process, so every configuration loaded in the process adds its
+     * references to the same objects: a predefined profile's 'where used' would list each referrer once for every
+     * earlier configuration ('total use' and 'count disabled Rules' multiplied with it), and those configurations would
+     * stay reachable through them, so their memory could not be freed.
+     *
+     * The stores stay (no reload of the predefined content), and so do the references between predefined objects (an
+     * application container's applications, the predefined URL-filtering profile's categories): a reference is dropped
+     * only when no predefined store owns its referrer, directly or further up. It is dropped as
+     * ReferenceableObject::removeReference() does it, in the object's own scope, not through the class's
+     * removeReference(): 2.1.60's URLProfile overrides it with a call to super_removeReference(), an alias 2.1.60 does
+     * not declare.
+     *
+     * Call it only when no configuration that should keep its references is still loaded in the process: it drops the
+     * references of every configuration, not only of the one that was released.
+     */
+    public static function dropPredefinedReferences(): void
+    {
+        $dropReference = function( $serial )
+        {
+            unset( $this->refrules[$serial] );
+            $this->refcomphash = null;
+        };
+
+        $predefinedStores = array();
+        foreach( array( 'SecurityProfileStore', 'ThreatStore', 'AppStore', 'LogProfileStore' ) as $storeClass )
+        {
+            foreach( (new ReflectionClass( $storeClass ))->getStaticProperties() as $property => $store )
+            {
+                if( strpos( $property, 'predefined' ) === 0 && is_object( $store ) )
+                    $predefinedStores[spl_object_id( $store )] = $store;
+            }
+        }
+
+        foreach( $predefinedStores as $store )
+        {
+            foreach( $store->o as $object )
+            {
+                if( !is_object( $object ) || !property_exists( $object, 'refrules' ) )
+                    continue;
+                $drop = Closure::bind( $dropReference, $object, get_class( $object ) );
+                foreach( $object->getReferences() as $serial => $ref )
+                {
+                    $owner = $ref;
+                    for( $depth = 0; is_object( $owner ) && $depth < 20; $depth++ )
+                    {
+                        if( isset( $predefinedStores[spl_object_id( $owner )] ) )
+                            continue 2;
+                        $owner = isset( $owner->owner ) ? $owner->owner : null;
+                    }
+                    $drop( $serial );
+                }
+            }
+        }
+    }
+
+    /**
      * Clears static variables and forces garbage collection to free memory.
      * This is particularly useful in playbook scenarios where multiple utilities
      * are executed sequentially and memory accumulates between steps.
@@ -730,10 +792,9 @@ class PH
         PH::$args = array();
         PH::$argv = array();
 
-        // Predefined stores are process-wide singletons (static). Their objects collect references
-        // (SecurityProfileGroup, SecurityRule, ...) from every config loaded in this process; a playbook running
-        // its steps in-process would otherwise keep the references of all previous steps.
-        PH::resetPredefinedStores();
+        // Predefined stores are process-wide singletons (static). They stay loaded for the next configuration;
+        // only the references the released configurations added to their objects are dropped.
+        PH::dropPredefinedReferences();
 
         // Clear load time tracking
         PH::$loadStartTime = null;
@@ -1589,6 +1650,451 @@ class PH
     }
 
     /**
+     * Location chain of an object for the location filters (is.child.of / is.parent.of):
+     * its own location first, then every ancestor up to 'shared'.
+     *  Panorama:  object in DG 'dg-child'  -> array('dg-child', 'dg-mid', 'shared')
+     *             object in Shared         -> array('shared')
+     *  Firewall:  object in 'vsys1'        -> array('vsys1', 'shared')
+     *             object in shared         -> array('shared')
+     *  SCM:       object in container / cloud or on-prem device 'X' -> array('X', parent container, ..., 'All')
+     *             object in snippet 'S'                              -> array('S')  (snippets are attached, not nested)
+     * Returns null when the hierarchy does not apply: objects inside a Template / TemplateStack, or no location found.
+     *
+     * @return array|null  array( 'root' => PanoramaConf|PANConf, 'chain' => string[] )
+     */
+    public static function locationChain($object)
+    {
+        $scm = self::scmLocationChain($object);
+        if( $scm !== null )
+            return $scm;
+
+        $location = self::findLocationObject($object);
+        if( $location === null )
+            return null;
+
+        $class = get_class($location);
+
+        if( $class == 'PanoramaConf' )
+            return array('root' => $location, 'chain' => array('shared'));
+
+        if( $class == 'DeviceGroup' )
+        {
+            $chain = array();
+            for( $dg = $location; $dg !== null; $dg = $dg->parentDeviceGroup )
+                $chain[] = $dg->name();
+            $chain[] = 'shared';
+            return array('root' => $location->owner, 'chain' => $chain);
+        }
+
+        if( $class == 'PANConf' || $class == 'VirtualSystem' )
+        {
+            $root = ($class == 'PANConf') ? $location : self::findRootObjectOrDie($location);
+
+            // PANConf inside a Template / TemplateStack: not part of the device-group hierarchy
+            if( isset($root->owner) && is_object($root->owner) )
+            {
+                if( !self::$locationFilterTemplateHintShown )
+                {
+                    self::$locationFilterTemplateHintShown = TRUE;
+                    PH::print_stdout( "   * location filters is.child.of / is.parent.of do not apply to objects inside a template / template-stack: these objects are not listed" );
+                }
+                return null;
+            }
+
+            if( $class == 'PANConf' )
+                return array('root' => $root, 'chain' => array('shared'));
+            return array('root' => $root, 'chain' => array($location->name(), 'shared'));
+        }
+
+        return null;
+    }
+
+    /**
+     * SCM (Fawkes / Buckbeak) part of locationChain(): location = Container, DeviceCloud, DeviceOnPrem or Snippet.
+     * Containers and devices follow parentContainer up to the top container ('All'); a snippet stands alone.
+     * Returns null when the object is not in an SCM configuration.
+     */
+    private static function scmLocationChain($object)
+    {
+        $scmClasses = array('Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet');
+
+        $location = null;
+        $cur = $object;
+        for( $i = 0; $i < 25 && is_object($cur); $i++ )
+        {
+            $class = get_class($cur);
+            if( in_array($class, $scmClasses, TRUE) )
+            {
+                $location = $cur;
+                break;
+            }
+            if( $class == 'PanoramaConf' || $class == 'PANConf' || $class == 'FawkesConf' || $class == 'BuckbeakConf' )
+                return null;
+            $cur = isset($cur->owner) ? $cur->owner : null;
+        }
+        if( $location === null )
+            return null;
+
+        $chain = array( $location->name() );
+        if( get_class($location) != 'Snippet' )
+        {
+            $parent = isset($location->parentContainer) ? $location->parentContainer : null;
+            for( $i = 0; $i < 25 && is_object($parent); $i++ )
+            {
+                $chain[] = $parent->name();
+                $parent = isset($parent->parentContainer) ? $parent->parentContainer : null;
+            }
+        }
+
+        return array('root' => self::findRootObjectOrDie($location), 'chain' => $chain);
+    }
+
+    /**
+     * Chain (see locationChain) of the location NAMED in a filter argument, resolved once per root
+     * config and cached. An unknown name stops with the list of available locations.
+     */
+    private static function locationChainByName($root, $name)
+    {
+        $key = spl_object_id($root) . '|' . $name;
+        if( isset(self::$locationFilterCache[$key]) )
+            return self::$locationFilterCache[$key];
+
+        $rootClass = get_class($root);
+        if( strtolower($name) == 'shared' && ($rootClass == 'PanoramaConf' || $rootClass == 'PANConf') )
+            return self::$locationFilterCache[$key] = array('shared');
+
+        $available = array('shared');
+        $found = null;
+        if( $rootClass == 'PanoramaConf' )
+        {
+            $found = $root->findDeviceGroup($name);
+            foreach( $root->getDeviceGroups() as $dg )
+                $available[] = $dg->name();
+        }
+        elseif( $rootClass == 'PANConf' )
+        {
+            $found = $root->findVirtualSystem($name);
+            foreach( $root->getVirtualSystems() as $vsys )
+                $available[] = $vsys->name();
+        }
+        elseif( $rootClass == 'FawkesConf' || $rootClass == 'BuckbeakConf' )
+        {
+            $available = array();
+            foreach( array('Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet') as $kind )
+            {
+                $findMethod = 'find' . $kind;
+                $listMethod = 'get' . $kind . 's';
+                if( $found === null && method_exists($root, $findMethod) )
+                    $found = $root->$findMethod($name);
+                if( method_exists($root, $listMethod) )
+                    foreach( $root->$listMethod() as $loc )
+                        $available[] = $loc->name();
+            }
+        }
+
+        if( $found === null )
+            derr( "location '" . $name . "' was not found. Available locations: " . implode(', ', $available), null, FALSE );
+
+        return self::$locationFilterCache[$key] = self::locationChain($found)['chain'];
+    }
+
+    /**
+     * Filter 'location is.child.of X': TRUE when the object's location is X or a descendant of X.
+     * X = shared: TRUE for every object. NULL when the hierarchy does not apply (see locationChain).
+     */
+    public static function locationIsChildOf($object, $name): ?bool
+    {
+        $info = self::locationChain($object);
+        if( $info === null )
+            return null;
+
+        $argChain = self::locationChainByName($info['root'], $name);
+        return in_array($argChain[0], $info['chain'], TRUE);
+    }
+
+    /**
+     * Filter 'location is.parent.of X': TRUE when the object's location is X or an ancestor of X.
+     * X = shared: TRUE only for objects in shared. NULL when the hierarchy does not apply (see locationChain).
+     */
+    public static function locationIsParentOf($object, $name): ?bool
+    {
+        $info = self::locationChain($object);
+        if( $info === null )
+            return null;
+
+        $argChain = self::locationChainByName($info['root'], $name);
+        return in_array($info['chain'][0], $argChain, TRUE);
+    }
+
+    /**
+     * Locations whose stores are searched, lowest first, when the firewalls of $location resolve a name:
+     *  DeviceGroup -> the device group, its parent device groups, Shared
+     *  PanoramaConf -> Shared;  VirtualSystem -> the vsys, the firewall's shared;  PANConf -> shared
+     */
+    public static function firewallResolutionLevels($location): array
+    {
+        $class = get_class($location);
+        if( $class == 'DeviceGroup' )
+        {
+            $levels = array();
+            for( $dg = $location; $dg !== null; $dg = $dg->parentDeviceGroup )
+                $levels[] = $dg;
+            $levels[] = $location->owner;
+            return $levels;
+        }
+        if( $class == 'VirtualSystem' )
+            return array( $location, self::findRootObjectOrDie($location) );
+
+        if( $class == 'Container' || $class == 'DeviceCloud' || $class == 'DeviceOnPrem' )
+            return self::scmResolutionLevels( $location );
+
+        return array( $location );
+    }
+
+    /**
+     * SCM (Fawkes / Buckbeak): the folder (or device) itself wins, then the snippets attached to it, then the parent
+     * folder and its snippets, ... up to 'All' and its snippets; 'predefined-snippet' last.
+     * (Assumption agreed for the mergers: an object in 'All' wins over the same name in a snippet attached to 'All',
+     * an object in a lower folder wins over the parent folders.)
+     */
+    public static function scmResolutionLevels( $location ): array
+    {
+        $levels = array();
+        $predefined = null;
+        $seen = array();
+        for( $cur = $location; $cur !== null; $cur = ( isset($cur->parentContainer) ? $cur->parentContainer : null ) )
+        {
+            if( isset($seen[spl_object_id($cur)]) )
+                break;
+            $seen[spl_object_id($cur)] = TRUE;
+            $levels[] = $cur;
+
+            if( method_exists($cur, 'getAttachedSnippets') )
+                foreach( $cur->getAttachedSnippets() as $snippet )
+                {
+                    if( $snippet->name() == 'predefined-snippet' )
+                    {
+                        $predefined = $snippet;
+                        continue;
+                    }
+                    if( !isset($seen[spl_object_id($snippet)]) )
+                    {
+                        $seen[spl_object_id($snippet)] = TRUE;
+                        $levels[] = $snippet;
+                    }
+                }
+        }
+        if( $predefined !== null )
+            $levels[] = $predefined;
+
+        return $levels;
+    }
+
+    /**
+     * Panorama template scope: the Template / TemplateStack $location belongs to, or null.
+     * $location: a VirtualSystem or the PANConf (deviceConfiguration) of a template / template stack, or the
+     * Template / TemplateStack itself (shared level).
+     */
+    public static function templateScopeOwner( $location )
+    {
+        if( $location instanceof Template || $location instanceof TemplateStack )
+            return $location;
+        if( $location instanceof VirtualSystem )
+            $location = isset($location->owner) ? $location->owner : null;
+        if( $location instanceof PANConf && isset($location->owner) && ( $location->owner instanceof Template || $location->owner instanceof TemplateStack ) )
+            return $location->owner;
+        return null;
+    }
+
+    /** a template stack: the stack, then its templates in the stack's order (highest priority first); a template: itself */
+    private static function templateScopeSequence( $owner ): array
+    {
+        $sequence = array( $owner );
+        if( $owner instanceof TemplateStack )
+            foreach( $owner->templates as $template )
+                if( is_object($template) )
+                    $sequence[] = $template;
+        return $sequence;
+    }
+
+    /**
+     * Panorama template scope: the levels a name used by an object in $location is looked up in, highest priority
+     * first (as PAN-OS merges them for the firewall):
+     *   template stack, vsys X:  stack vsys X, stack shared, template 1 vsys X, template 1 shared, template 2 ...
+     *   template stack, shared:  stack shared, template 1 shared, template 2 shared ...
+     *   template:                its own vsys X (for a vsys object), its own shared - never the stack
+     * A level is a VirtualSystem (vsys stores) or the Template / TemplateStack (shared stores).
+     * Empty array: $location is not in a template scope.
+     */
+    public static function templateScopeLevels( $location ): array
+    {
+        $owner = self::templateScopeOwner( $location );
+        if( $owner === null )
+            return array();
+
+        $vsysName = ( $location instanceof VirtualSystem ) ? $location->name() : null;
+        $levels = array();
+        foreach( self::templateScopeSequence( $owner ) as $level )
+        {
+            if( $vsysName !== null && isset($level->deviceConfiguration) && $level->deviceConfiguration !== null )
+            {
+                $vsys = $level->deviceConfiguration->findVirtualSystem( $vsysName );
+                if( $vsys !== null )
+                    $levels[] = $vsys;
+            }
+            $levels[] = $level;
+        }
+        return $levels;
+    }
+
+    /**
+     * Panorama template scope: the network configurations (interfaces, profiles, IKE / IPsec, ...) a name used by an
+     * object in $location is looked up in: a template stack's own one, then those of its templates in the stack's
+     * order; a template: its own one. Empty array: $location is not in a template scope.
+     * @return NetworkPropertiesContainer[]
+     */
+    public static function templateScopeNetworks( $location ): array
+    {
+        $owner = self::templateScopeOwner( $location );
+        if( $owner === null )
+            return array();
+
+        $networks = array();
+        foreach( self::templateScopeSequence( $owner ) as $level )
+            if( isset($level->deviceConfiguration->network) && $level->deviceConfiguration->network !== null )
+                $networks[] = $level->deviceConfiguration->network;
+        return $networks;
+    }
+
+    /**
+     * Panorama template scope: first object named $name in the network store $storeProperty (property of
+     * NetworkPropertiesContainer, e.g. 'zoneProtectionProfileStore'), in the order of templateScopeNetworks().
+     * $findMethod: find method of that store (default find).
+     */
+    public static function findInTemplateScopeNetworks( $location, string $storeProperty, $name, string $findMethod = 'find' )
+    {
+        if( $name === null || $name === '' )
+            return null;
+        foreach( self::templateScopeNetworks( $location ) as $network )
+        {
+            if( !isset($network->$storeProperty) || $network->$storeProperty === null )
+                continue;
+            $found = $network->$storeProperty->$findMethod( $name );
+            if( is_object($found) )
+                return $found;
+        }
+        return null;
+    }
+
+    /**
+     * SCM: locations a name used by an object stored in $location is looked up in.
+     * Folder / device: as scmResolutionLevels(). Snippet: the snippet itself, then 'All' - the view of a
+     * snippet ends there (no other snippet, also not the ones attached to 'All'; no predefined-snippet).
+     */
+    public static function scmObjectLevels( $location ): array
+    {
+        if( !( $location instanceof Snippet ) )
+            return self::scmResolutionLevels( $location );
+
+        $levels = array( $location );
+        $all = ( isset($location->owner) && method_exists($location->owner, 'findContainer') ) ? $location->owner->findContainer( 'All' ) : null;
+        if( $all !== null && $all !== $location )
+            $levels[] = $all;
+
+        return $levels;
+    }
+
+    /**
+     * The object the firewalls of $location receive for $name (store e.g. 'addressStore', 'serviceStore').
+     * Panorama: of all same-name copies from the device group up to Shared, the LOWEST one wins, or the
+     * HIGHEST one with 'ancestor-objects-take-precedence yes'. Firewall: vsys before shared.
+     * Names outside the hierarchy (predefined objects, ...) fall back to the normal lookup.
+     */
+    public static function resolveNameForFirewalls( string $storeProperty, string $name, $location )
+    {
+        $levels = self::firewallResolutionLevels($location);
+
+        $copies = array();
+        $seen = array();
+        foreach( $levels as $level )
+        {
+            if( !isset($level->$storeProperty) || $level->$storeProperty === null )
+                continue;
+            $store = $level->$storeProperty;
+            if( isset($seen[spl_object_id($store)]) )
+                continue;
+            $seen[spl_object_id($store)] = TRUE;
+
+            $found = $store->find($name, null, FALSE);
+            if( $found !== null )
+                $copies[] = $found;
+        }
+
+        if( count($copies) == 0 )
+        {
+            $first = $levels[0];
+            if( isset($first->$storeProperty) && $first->$storeProperty !== null )
+                return $first->$storeProperty->find($name);
+            return null;
+        }
+
+        $root = end($levels);
+        $ancestorPrecedence = ( $root instanceof PanoramaConf ) && $root->ancestorObjectsTakePrecedence();
+
+        return $ancestorPrecedence ? end($copies) : $copies[0];
+    }
+
+    /**
+     * Leaf objects of $object as the firewalls of $location see them: every group member is resolved
+     * again by name with resolveNameForFirewalls(). Dynamic address groups use their own expansion.
+     */
+    public static function expandForFirewalls( string $storeProperty, $object, $location, array &$visited = array() ): array
+    {
+        if( $object === null )
+            return array();
+        if( !method_exists($object, 'isGroup') || !$object->isGroup() )
+            return array( $object );
+
+        if( isset($visited[spl_object_id($object)]) )
+            return array();
+        $visited[spl_object_id($object)] = TRUE;
+
+        if( method_exists($object, 'isDynamic') && $object->isDynamic() )
+        {
+            $tmp = array();
+            return $object->expand(FALSE, $tmp, $location);
+        }
+
+        $leaves = array();
+        foreach( $object->members() as $member )
+        {
+            $resolved = self::resolveNameForFirewalls($storeProperty, $member->name(), $location);
+            if( $resolved === null )
+                $resolved = $member;
+            foreach( self::expandForFirewalls($storeProperty, $resolved, $location, $visited) as $leaf )
+                $leaves[] = $leaf;
+        }
+        return $leaves;
+    }
+
+    /**
+     * Template or TemplateStack that holds an object (zone, zone protection profile, ...),
+     * or null when the object is not inside a template / template-stack.
+     * @return Template|TemplateStack|null
+     */
+    public static function findTemplateOwner($object)
+    {
+        $cur = isset($object->owner) ? $object->owner : null;
+        for( $i = 0; $i < 25 && is_object($cur); $i++ )
+        {
+            if( $cur instanceof Template || $cur instanceof TemplateStack )
+                return $cur;
+            $cur = isset($cur->owner) ? $cur->owner : null;
+        }
+        return null;
+    }
+
+    /**
      * @param $panConfObject
      * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container
      * @throws Exception
@@ -1702,7 +2208,7 @@ class PH
         "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
         "device", "securityprofile", "securityprofilegroup", "profile",
-        "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile",
+        "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile", "certificate-profile",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
         "zone-protection-profile","log-profile", "interface-management-profile",
@@ -1753,6 +2259,10 @@ class PH
         "appid-toolbox",
         "rule-compare",
         "custom-url-category-merger",
+        "securityprofile-merger",
+        "securityprofilegroup-merger",
+        "object-merger",
+        "merger-possible-report",
         "device-config-bundle"
         );
 
@@ -1822,6 +2332,7 @@ class PH
             || $type == "zone-protection-profile"
             || $type == "interface-management-profile"
             || $type == "ssl-tls-service-profile"
+            || $type == "certificate-profile"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
@@ -1837,8 +2348,14 @@ class PH
             || $type == "servicegroup-merger"
             || $type == "tag-merger"
             || $type == "custom-url-category-merger"
+            || $type == "securityprofile-merger"
+            || $type == "securityprofilegroup-merger"
+            || $type == "object-merger"
         )
             $util = new MERGER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "merger-possible-report" )
+            $util = new MERGERPOSSIBLEREPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "rule-merger" )
             $util = new RULEMERGER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
@@ -2031,6 +2548,24 @@ class PH
             $details = PH::$shadow_bp_jsonfile;
 
         return $details;
+    }
+
+    /**
+     * Combine BP / visibility results: one FALSE fails; null (not listed in the BP JSON, not checked) is no statement.
+     * @param array $results bool|null each
+     * @return bool|null FALSE: one failed; TRUE: none failed, at least one checked; null: nothing checked (N/A)
+     */
+    public static function bpCombine( array $results ): ?bool
+    {
+        $ret = null;
+        foreach( $results as $result )
+        {
+            if( $result === FALSE )
+                return FALSE;
+            if( $result !== null )
+                $ret = TRUE;
+        }
+        return $ret;
     }
 
     public static function validateIncludedInBPA( &$stdoutarray )

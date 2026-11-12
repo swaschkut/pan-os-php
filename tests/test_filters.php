@@ -136,6 +136,8 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
                 $util = '../utils/pan-os-php.php type=zone';
             elseif( $type == 'schedule' )
                 $util = '../utils/pan-os-php.php type=schedule';
+            elseif( $type == 'certificate-profile' )
+                $util = '../utils/pan-os-php.php type=certificate-profile';
             #elseif( $type == 'application' )
             #    $util = '../utils/application-edit.php';
 

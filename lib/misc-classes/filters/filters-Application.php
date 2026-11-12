@@ -2,77 +2,10 @@
 
 // <editor-fold desc=" ***** Application filters *****" defaultstate="collapsed" >
 
-RQuery::$defaultFilters['app']['name']['operators']['eq'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['app']['characteristic']['operators']['has'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        $app = $context->object;
-
-        if( $app->isContainer() )
-            return null;
-
-        $sanitizedValue = strtolower($context->value);
-        if( $app->_characteristics[$sanitizedValue] === TRUE )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% evasive) ',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 
 //Todo: introduce filter
 //      app-id is.disabled
 
-RQuery::$defaultFilters['application']['name']['operators']['eq'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        return $context->object->name() == $context->value;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% ftp)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['application']['name']['operators']['regex'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        $object = $context->object;
-        $value = $context->value;
-
-        /*
-        if( strlen($value) > 0 && $value[0] == '%' )
-        {
-            $value = substr($value, 1);
-            if( !isset($context->nestedQueries[$value]) )
-                derr("regular expression filter makes reference to unknown string alias '{$value}'");
-
-            $value = $context->nestedQueries[$value];
-        }*/
-
-        $matching = preg_match($value, $object->name());
-        if( $matching === FALSE )
-            derr("regular expression error on '{$value}'");
-        if( $matching === 1 )
-            return TRUE;
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% /tcp/)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['application']['characteristic']['operators']['has'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $app = $context->object;
@@ -129,19 +62,6 @@ RQuery::$defaultFilters['application']['category']['operators']['eq'] = array(
     )
 );
 
-RQuery::$defaultFilters['application']['object']['operators']['is.predefined'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        if( $context->object->isPredefined() )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['application']['object']['operators']['is.application-group'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         if( $context->object->isApplicationGroup() )
@@ -171,19 +91,6 @@ RQuery::$defaultFilters['application']['object']['operators']['is.application-fi
 RQuery::$defaultFilters['application']['object']['operators']['is.application-custom'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         if( $context->object->isApplicationCustom() )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['application']['object']['operators']['is.tmp'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        if( $context->object->isTmp() )
             return TRUE;
 
         return FALSE;
@@ -390,19 +297,6 @@ RQuery::$defaultFilters['application']['udp']['operators']['has'] = array(
         return FALSE;
     },
     'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['application']['timeout']['operators']['is.set'] = array(
-    'Function' => function (ApplicationRQueryContext $context) {
-        if( isset( $context->object->udp) )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => FALSE,
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
@@ -653,6 +547,71 @@ RQuery::$defaultFilters['application']['object']['operators']['is.unused'] = arr
 
         return $object->objectIsUnused();
         #return $context->object->countReferences() == 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['has.same-name.other.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['sameNameOtherLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.overriding'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverriding'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.overriden'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['isOverridden'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['overriden.at.lower.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overriddenAtLowerLevel'];
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['overrides.upper.level'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->isPredefined() || $context->object->owner->name() == "predefined Apps" )
+            return null;
+        $status = $context->object->getSameNameLevelStatus();
+        return $status['overridesUpperLevel'];
     },
     'arg' => FALSE,
     'ci' => array(

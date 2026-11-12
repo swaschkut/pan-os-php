@@ -91,6 +91,10 @@ class NETWORKUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = Array('store' => $this->pan->SSL_TLSServiceProfileStore, 'objects' => $this->pan->SSL_TLSServiceProfileStore->getAll());
                     }
+                    elseif( $this->utilType == 'certificate-profile' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->certificateProfileStore, 'objects' => $this->pan->certificateProfileStore->getAll());
+                    }
                     elseif( $this->utilType == 'static-route' && !$this->pan->_advance_routing_enabled )
                     {
                         foreach($this->pan->network->virtualRouterStore->getAll() as $vr )
@@ -167,6 +171,8 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'ssl-tls-service-profile' )
                             {}
+                            elseif( $this->utilType == 'certificate-profile' )
+                            {}
                             elseif( $this->utilType == 'gp-gateway' )
                             {}
                             elseif( $this->utilType == 'gp-portal' )
@@ -205,6 +211,8 @@ class NETWORKUTIL extends UTIL
                                 $this->objectsToProcess[] = Array('store' => $sub->certificateStore, 'objects' => $sub->certificateStore->getAll());
                             elseif( $this->utilType == 'ssl-tls-service-profile' )
                                 $this->objectsToProcess[] = Array('store' => $sub->SSL_TLSServiceProfileStore, 'objects' => $sub->SSL_TLSServiceProfileStore->getAll());
+                            elseif( $this->utilType == 'certificate-profile' )
+                                $this->objectsToProcess[] = Array('store' => $sub->certificateProfileStore, 'objects' => $sub->certificateProfileStore->getAll());
                             elseif( $this->utilType == 'gp-gateway' )
                                 $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
                             elseif( $this->utilType == 'gp-portal' )
@@ -323,6 +331,10 @@ class NETWORKUTIL extends UTIL
                                 {
                                     $this->objectsToProcess[] = Array('store' => $template->SSL_TLSServiceProfileStore, 'objects' => $template->SSL_TLSServiceProfileStore->getAll());
                                 }
+                                elseif( $this->utilType == 'certificate-profile' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->certificateProfileStore, 'objects' => $template->certificateProfileStore->getAll());
+                                }
                                 elseif( $this->utilType == 'static-route' )
                                 {
                                     foreach($template->deviceConfiguration->network->virtualRouterStore->getAll() as $vr )
@@ -390,6 +402,8 @@ class NETWORKUTIL extends UTIL
                                         $this->objectsToProcess[] = Array('store' => $sub->certificateStore, 'objects' => $sub->certificateStore->getAll());
                                     elseif( $this->utilType == 'ssl-tls-service-profile' )
                                         $this->objectsToProcess[] = Array('store' => $sub->SSL_TLSServiceProfileStore, 'objects' => $sub->SSL_TLSServiceProfileStore->getAll());
+                                    elseif( $this->utilType == 'certificate-profile' )
+                                        $this->objectsToProcess[] = Array('store' => $sub->certificateProfileStore, 'objects' => $sub->certificateProfileStore->getAll());
                                     elseif( $this->utilType == 'gp-gateway' )
                                         $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
                                     elseif( $this->utilType == 'gp-portal' )
@@ -432,6 +446,10 @@ class NETWORKUTIL extends UTIL
                                     $this->objectsToProcess[] = Array('store' => $vsys->certificateStore, 'objects' => $vsys->certificateStore->getAll());
                             */
 
+                            // SCM: every folder, device and snippet has its own network configuration and its own
+                            // certificate / certificate profile / SSL/TLS service profile store (there are no templates)
+                            $network = isset($sub->network) ? $sub->network : null;
+
                             if( $this->utilType == 'zone' )
                                 $this->objectsToProcess[] = array('store' => $sub->zoneStore, 'objects' => $sub->zoneStore->getall());
 
@@ -439,6 +457,48 @@ class NETWORKUTIL extends UTIL
                             {
                                 $this->objectsToProcess[] = Array('store' => $sub->network->zoneProtectionProfileStore, 'objects' => $sub->network->zoneProtectionProfileStore->zoneProtectionProfile());
                             }
+                            elseif( $this->utilType == 'certificate' && isset($sub->certificateStore) )
+                                $this->objectsToProcess[] = Array('store' => $sub->certificateStore, 'objects' => $sub->certificateStore->getAll());
+                            elseif( $this->utilType == 'ssl-tls-service-profile' && isset($sub->SSL_TLSServiceProfileStore) )
+                                $this->objectsToProcess[] = Array('store' => $sub->SSL_TLSServiceProfileStore, 'objects' => $sub->SSL_TLSServiceProfileStore->getAll());
+                            elseif( $this->utilType == 'certificate-profile' && isset($sub->certificateProfileStore) )
+                                $this->objectsToProcess[] = Array('store' => $sub->certificateProfileStore, 'objects' => $sub->certificateProfileStore->getAll());
+                            elseif( $network === null )
+                            {}
+                            elseif( $this->utilType == 'interface' )
+                                $this->objectsToProcess[] = Array('store' => $network, 'objects' => $network->getAllInterfaces());
+                            elseif( $this->utilType == 'virtualwire' )
+                                $this->objectsToProcess[] = Array('store' => $network->virtualWireStore, 'objects' => $network->virtualWireStore->virtualWires());
+                            elseif( $this->utilType == 'routing' )
+                            {
+                                $this->objectsToProcess[] = Array('store' => $network->virtualRouterStore, 'objects' => $network->virtualRouterStore->getAll());
+                                $this->objectsToProcess[] = Array('store' => $network->logicalRouterStore, 'objects' => $network->logicalRouterStore->getAll());
+                            }
+                            elseif( $this->utilType == 'static-route' )
+                            {
+                                foreach( array_merge( $network->virtualRouterStore->getAll(), $network->logicalRouterStore->getAll() ) as $vr )
+                                    $this->objectsToProcess[] = Array('store' => $vr, 'objects' => $vr->staticRoutes());
+                            }
+                            elseif( $this->utilType == 'dhcp' )
+                                $this->objectsToProcess[] = Array('store' => $network->dhcpStore, 'objects' => $network->dhcpStore->getAll());
+                            elseif( $this->utilType == 'ike-profile' )
+                                $this->objectsToProcess[] = Array('store' => $network->ikeCryptoProfileStore, 'objects' => $network->ikeCryptoProfileStore->ikeCryptoProfil());
+                            elseif( $this->utilType == 'ike-gateway' )
+                                $this->objectsToProcess[] = Array('store' => $network->ikeGatewayStore, 'objects' => $network->ikeGatewayStore->gateways());
+                            elseif( $this->utilType == 'ipsec-profile' )
+                                $this->objectsToProcess[] = Array('store' => $network->ipsecCryptoProfileStore, 'objects' => $network->ipsecCryptoProfileStore->ipsecCryptoProfil());
+                            elseif( $this->utilType == 'ipsec-tunnel' )
+                                $this->objectsToProcess[] = Array('store' => $network->ipsecTunnelStore, 'objects' => $network->ipsecTunnelStore->tunnels());
+                            elseif( $this->utilType == 'gre-tunnel' )
+                                $this->objectsToProcess[] = Array('store' => $network->greTunnelStore, 'objects' => $network->greTunnelStore->tunnels());
+                            elseif( $this->utilType == 'gpgateway-tunnel' )
+                                $this->objectsToProcess[] = Array('store' => $network->gpGatewayTunnelStore, 'objects' => $network->gpGatewayTunnelStore->tunnels());
+                            elseif( $this->utilType == 'interface-management-profile' )
+                                $this->objectsToProcess[] = Array('store' => $network->interfaceManagementProfileStore, 'objects' => $network->interfaceManagementProfileStore->interfaceManagementProfile());
+                            elseif( $this->utilType == 'gp-gateway' && isset($sub->GPGatewayStore) )
+                                $this->objectsToProcess[] = Array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
+                            elseif( $this->utilType == 'gp-portal' && isset($sub->GPPortalStore) )
+                                $this->objectsToProcess[] = Array('store' => $sub->GPPortalStore, 'objects' => $sub->GPPortalStore->getall());
                         }
                     }
                 }

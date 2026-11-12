@@ -642,6 +642,21 @@ class AddressStore
 
             $this->addressGroupRoot->appendChild($s->xmlroot);
         }
+        elseif( $class == 'Region' )
+        {
+            $this->_regionObjects[$objectName] = $s;
+            $this->_all[$objectName] = $s;
+
+            if( $this->regionRoot == null )
+            {
+                // shared (Panorama / firewall): /config/shared, otherwise the device group / vsys entry
+                $locationRoot = ( ( $this->owner instanceof PanoramaConf || $this->owner instanceof PANConf ) && isset($this->owner->sharedroot) && $this->owner->sharedroot !== null )
+                    ? $this->owner->sharedroot : $this->owner->xmlroot;
+                $this->regionRoot = DH::findFirstElementOrCreate( 'region', $locationRoot );
+            }
+
+            $this->regionRoot->appendChild($s->xmlroot);
+        }
         else
             derr('invalid class found');
 
@@ -1098,8 +1113,7 @@ class AddressStore
                         if( $tmp_value != $o_value && ($o_ref_count > 0) )
                         {
                             if( $location != "shared" )
-                                foreach( $o->refrules as $ref )
-                                    $tmp_o->addReference( $ref );
+                                ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                         }
                     }
                 }
@@ -1134,8 +1148,7 @@ class AddressStore
                         if( $tmp_value != $o_value && ($o_ref_count > 0) )
                         {
                             if( $location != "shared" )
-                                foreach( $o->refrules as $ref )
-                                    $tmp_o->addReference( $ref );
+                                ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                         }
                     }
                 }
@@ -1165,8 +1178,7 @@ class AddressStore
                         if( $tmp_value != $o_value && ( $o_ref_count > 0) )
                         {
                             if( $location != "shared" )
-                                foreach( $o->refrules as $ref )
-                                    $tmp_o->addReference( $ref );
+                                ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                         }
                     }
                 }

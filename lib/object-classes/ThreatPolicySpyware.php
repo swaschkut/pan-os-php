@@ -66,6 +66,14 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
+        $check_array['severity'] = ThreatPolicy::checkedSeverities( $check_array );
+        if( count( $check_array['severity'] ) == 0 )
+            return null;
+        // 'any' alone: every severity is asked for; 'any' beside single severities: only those (dropped above)
+        if( $check_array['severity'] === array( 'any' ) )
+            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
+
         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
@@ -112,11 +120,21 @@ class ThreatPolicySpyware extends ThreatPolicy
             }
         }
 
-        return TRUE;
+        // the rule names none of the severities asked for (e.g. only low / informational, BP asks for
+        // critical / high / medium): this check does not apply to the rule -> N/A, no NOT BP mark
+        return null;
     }
 
     public function check_visibility_json( $check_array )
     {
+        // the BP / visibility JSON lists no severity: this check is not asked for -> N/A (null)
+        $check_array['severity'] = ThreatPolicy::checkedSeverities( $check_array );
+        if( count( $check_array['severity'] ) == 0 )
+            return null;
+        // 'any' alone: every severity is asked for; 'any' beside single severities: only those (dropped above)
+        if( $check_array['severity'] === array( 'any' ) )
+            $check_array['severity'] = array( 'any', 'critical', 'high', 'medium', 'low', 'informational' );
+
         // a rule naming 'any', or no severity (PAN-OS reads it as 'any'), names every severity
         $severities = ( empty( $this->severity ) || in_array( 'any', $this->severity, TRUE ) )
             ? array( 'any', 'critical', 'high', 'medium', 'low', 'informational' )
@@ -147,14 +165,17 @@ class ThreatPolicySpyware extends ThreatPolicy
             }
         }
 
-        return TRUE;
+        // the rule names none of the severities asked for (e.g. only low / informational, BP asks for
+        // critical / high / medium): this check does not apply to the rule -> N/A, no NOT BP mark
+        return null;
     }
 
     public function spyware_rule_best_practice()
     {
         $check_array = $this->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
         $bestpractise = $this->check_bp_json( $check_array );
-
+        if( $bestpractise === null )
+            return null;     // N/A: not asked for by the BP / visibility JSON
         if ($bestpractise == FALSE)
             return FALSE;
         else
@@ -165,7 +186,8 @@ class ThreatPolicySpyware extends ThreatPolicy
     {
         $check_array = $this->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
         $bestpractise = $this->check_visibility_json( $check_array );
-
+        if( $bestpractise === null )
+            return null;     // N/A: not asked for by the BP / visibility JSON
         if ($bestpractise == FALSE)
             return FALSE;
         else

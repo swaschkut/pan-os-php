@@ -30,6 +30,7 @@ require_once(dirname(__FILE__)."/NETWORKUTIL.php");
 require_once(dirname(__FILE__)."/PROFILEUTIL.php");
 
 require_once(dirname(__FILE__)."/MERGER.php");
+require_once(dirname(__FILE__)."/MERGERPOSSIBLEREPORT.php");
 require_once(dirname(__FILE__)."/RULEMERGER.php");
 
 
@@ -362,8 +363,10 @@ class UTIL
                 $tmp_utilType = "service";
             elseif( $tmp_utilType == "tag-merger" )
                 $tmp_utilType = "tag";
-            elseif( $tmp_utilType == "custom-url-category-merger" )
+            elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                 $tmp_utilType = "securityprofile";
+            elseif( $tmp_utilType == "securityprofilegroup-merger" )
+                $tmp_utilType = "securityprofilegroup";
             elseif( $tmp_utilType == "rule-merger" )
                 $tmp_utilType = "rule";
 
@@ -457,6 +460,8 @@ class UTIL
             $tmp_array = &CertificateCallContext::$supportedActions;
         elseif( $this->utilType == 'ssl-tls-service-profile' )
             $tmp_array = &SSL_TLSServiceProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'certificate-profile' )
+            $tmp_array = &CertificateProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'static-route' )
             $tmp_array = &StaticRouteCallContext::$supportedActions;
 
@@ -603,6 +608,8 @@ class UTIL
                 CertificateCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'ssl-tls-service-profile' )
                 SSL_TLSServiceProfileCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'certificate-profile' )
+                CertificateProfileCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'log-profile' )
                 LogProfileCallContext::prepareSupportedActions();
 
@@ -622,8 +629,10 @@ class UTIL
                     $tmp_utilType = "service";
                 elseif( $tmp_utilType == "tag-merger" )
                     $tmp_utilType = "tag";
-                elseif( $tmp_utilType == "custom-url-category-merger" )
+                elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                     $tmp_utilType = "securityprofile";
+                elseif( $tmp_utilType == "securityprofilegroup-merger" )
+                    $tmp_utilType = "securityprofilegroup";
                 elseif( $tmp_utilType == "rule-merger" )
                     $tmp_utilType = "rule";
                 else
@@ -1430,6 +1439,8 @@ class UTIL
                 $context = new CertificateCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ssl-tls-service-profile' )
                 $context = new SSL_TLSServiceProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'certificate-profile' )
+                $context = new CertificateProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'static-route' )
                 $context = new StaticRouteCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-gateway' )
@@ -2684,9 +2695,20 @@ class UTIL
                 $utilDiff->debugAPI = TRUE;
 
 
-            $doc2 = new DOMDocument();
-            $node = $doc2->importNode($this->pan->xmlroot, true);
-            $doc2->appendChild($node);
+            // The diff only reads its second document: runDiff() takes its first element, and every node the diff
+            // changes is first copied into a new document (DIFF::ignoreAddDeleteXpath; the ruletype attributes of
+            // additionalRuleOrderCalculateXpathGetElement() are set only by type=diff's own main()). So when xmlDoc's
+            // first element is the configuration root, compare xmlDoc itself: a deep copy of it is a third full DOM of
+            // the configuration beside xmlDoc and origXmlDoc, held to the end of the step.
+            $xmlDocRoot = ( $this->xmlDoc !== null ) ? DH::firstChildElement($this->xmlDoc) : FALSE;
+            if( $xmlDocRoot !== FALSE && $xmlDocRoot->isSameNode($this->pan->xmlroot) )
+                $doc2 = $this->xmlDoc;
+            else
+            {
+                $doc2 = new DOMDocument();
+                $node = $doc2->importNode($this->pan->xmlroot, true);
+                $doc2->appendChild($node);
+            }
             //print $doc2->saveXML();
 
             if( PH::$shadow_multivsys )

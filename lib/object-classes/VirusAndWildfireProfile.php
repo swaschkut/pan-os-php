@@ -153,97 +153,54 @@ class VirusAndWildfireProfile extends SecurityProfile2
         $this->display_wildfire();
     }
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
         //Todo - swaschkut 20260629
-        $bp = false;
+        $results = array();
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-            )
-                $bp = TRUE;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
         }
         else
         {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-            )
-                $bp = TRUE;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
         }
 
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-            )
-                $bp = TRUE;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->wildfire_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
         }
         else
         {
-            if( $this->wildfire_rules_best_practice() )
-                $bp = TRUE;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->wildfire_rules_best_practice() ) );
         }
 
-        return $bp;
+        return PH::bpCombine( $results );
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
-        $bp = false;
+        $results = array();
         //Todo - swaschkut 20260629
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-            )
-                $bp = true;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
         }
         else
         {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-            )
-                $bp = true;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
         }
 
         if( $this->owner->owner->version >= 112 )
         {
-            if( $this->wildfire_rules_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-            )
-                $bp = true;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->wildfire_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
         }
         else
         {
-            if( $this->wildfire_rules_visibility()
-            )
-                $bp = true;
-            else
-                return FALSE;
+            $results = array_merge( $results, array( $this->wildfire_rules_visibility() ) );
         }
 
-        return $bp;
+        return PH::bpCombine( $results );
     }
 
     public function is_adoption(): bool
@@ -285,6 +242,32 @@ class VirusAndWildfireProfile extends SecurityProfile2
             . AntiVirusProfile::ironSkilletContentXml( $version, 'alert' )
             . '<rules>' . WildfireProfile::ironSkilletForwardAllRuleXml() . '</rules>'
             . '</entry></root>';
+    }
+
+    public function AlertOnlySet(): void
+    {
+        $this->av_decoder_AlertOnlySet();
+
+        $this->av_inlineML_AlertOnlySet();
+
+        //////////
+        $this->wf_inlineML_AlertOnlySet();
+
+        $add_WF_alert = true;
+        $this->wf_rules_AlertOnlySet($add_WF_alert);
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->av_decoder_BestPracticeSet();
+
+        $this->av_inlineML_BestPracticeSet();
+
+        ////////
+        $this->wf_inlineML_BestPracticeSet();
+
+        //nothing todo
+        //$this->wf_rules_BestPracticeSet();
     }
 }
 

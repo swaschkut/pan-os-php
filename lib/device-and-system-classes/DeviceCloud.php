@@ -131,6 +131,15 @@ class DeviceCloud
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
+    /** @var GPGatewayStore */
+    public $GPGatewayStore = null;
+
+    /** @var GPPortalStore */
+    public $GPPortalStore = null;
+
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
@@ -349,6 +358,15 @@ class DeviceCloud
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
 
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
+
+        $this->GPGatewayStore = new GPGatewayStore($this);
+        $this->GPGatewayStore->setName('GPGatewayStore');
+
+        $this->GPPortalStore = new GPPortalStore($this);
+        $this->GPPortalStore->setName('GPPortalStore');
+
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
@@ -516,6 +534,14 @@ class DeviceCloud
                 $this->addressStore->load_addresses_from_domxml($tmp);
             // End of address objects extraction
 
+
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction (before the address groups: a group can have EDL members)
 
             //
             // Extract address groups in this DV
@@ -773,13 +799,6 @@ class DeviceCloud
                 $this->scheduleStore->load_from_domxml($tmp);
             // End of address groups extraction
 
-            //
-            // Extract EDL objects
-            //
-            $tmp = DH::findFirstElement('external-list', $xml);
-            if( $tmp !== FALSE )
-                $this->EDLStore->load_from_domxml($tmp);
-            // End of EDL extraction
 
             //
             // Extract LogProfile objects
@@ -800,6 +819,30 @@ class DeviceCloud
                 $this->certificateStore->load_from_domxml($tmp);
             }
             // End of Certificate objects extraction
+
+            //
+            // Extract certificate-profile objects
+            //
+            $tmp = DH::findFirstElement('certificate-profile', $xml);
+            if( $tmp !== FALSE )
+                $this->certificateProfileStore->load_from_domxml($tmp);
+            // End of certificate-profile extraction
+
+            //
+            // Extract GlobalProtect gateway / portal objects
+            //
+            $tmp_globalprotect = DH::findFirstElement('global-protect', $xml);
+            if( $tmp_globalprotect !== FALSE )
+            {
+                $tmp = DH::findFirstElement('global-protect-gateway', $tmp_globalprotect);
+                if( $tmp !== FALSE )
+                    $this->GPGatewayStore->load_from_domxml($tmp);
+                $tmp = DH::findFirstElement('global-protect-portal', $tmp_globalprotect);
+                if( $tmp !== FALSE )
+                    $this->GPPortalStore->load_from_domxml($tmp);
+            }
+            // End of GlobalProtect extraction
+
 
             //
             // Extract ssl-tls-service-profile objects
@@ -1044,6 +1087,8 @@ class DeviceCloud
             if( $debugLoadTime )
                 PH::print_DEBUG_loadtime("network");
             $this->network->load_from_domxml($tmp);
+            // part 2: IKE / IPsec crypto profiles and gateways, tunnels, GlobalProtect, ... (as PANConf does)
+            $this->network->load_from_domxml_2($tmp);
         }
         //
     }

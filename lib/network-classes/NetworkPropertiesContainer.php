@@ -163,7 +163,17 @@ class NetworkPropertiesContainer
         }
 
 
-        if( $this->owner->_advance_routing_enabled )
+        if( !property_exists( $this->owner, '_advance_routing_enabled' ) )
+        {
+            // owner without the advanced routing setting (e.g. SCM folder / device / snippet): load what is there
+            $tmp = DH::findFirstElement('logical-router', $this->xmlroot);
+            if( $tmp !== FALSE )
+                $this->logicalRouterStore->load_from_domxml($tmp);
+            $tmp = DH::findFirstElement('virtual-router', $this->xmlroot);
+            if( $tmp !== FALSE )
+                $this->virtualRouterStore->load_from_domxml($tmp);
+        }
+        elseif( $this->owner->_advance_routing_enabled )
         {
             $tmp = DH::findFirstElement('logical-router', $this->xmlroot);
             if( $tmp !== FALSE )
@@ -260,7 +270,13 @@ class NetworkPropertiesContainer
             }
         }
 
-        if( $this->owner->_advance_routing_enabled )
+        // owner without the advanced routing setting (SCM folder / device / snippet): not a firewall config,
+        // static route references are not checked (as for a Panorama template)
+        $isScmOwner = !property_exists( $this->owner, '_advance_routing_enabled' );
+
+        if( $isScmOwner )
+            $allRouters = array();
+        elseif( $this->owner->_advance_routing_enabled )
             $allRouters = $this->logicalRouterStore->getAll();
         else
             $allRouters = $this->virtualRouterStore->getAll();
@@ -268,7 +284,7 @@ class NetworkPropertiesContainer
         //todo: check again static Route information if objects are used to set references
         //only for NGFW
         $tmp_PanoramaConfig = false;
-        if( isset($this->owner->owner->owner) )
+        if( $isScmOwner || isset($this->owner->owner->owner) )
         {
             $tmp_PanoramaConfig = true;
         }
@@ -447,6 +463,24 @@ class NetworkPropertiesContainer
      * @param string $interfaceName
      * @return EthernetInterface|IPsecTunnel|TmpInterface|ReferenceableObject
      */
+    /**
+     * Panorama template stack: a template stack has no interfaces of its own, its zones, IKE gateways, ... use the
+     * interfaces of its templates: own network first, then the templates of the stack in the stack's order.
+     * Anything else (firewall, template): as findInterfaceOrCreateTmp().
+     */
+    function findInterfaceInTemplateScopeOrCreateTmp($interfaceName)
+    {
+        if( isset($this->owner) && PH::templateScopeOwner( $this->owner ) instanceof TemplateStack )
+            foreach( PH::templateScopeNetworks( $this->owner ) as $network )
+            {
+                $found = $network->findInterface( $interfaceName );
+                if( $found !== null && !( $found instanceof TmpInterface ) )
+                    return $found;
+            }
+
+        return $this->findInterfaceOrCreateTmp( $interfaceName );
+    }
+
     function findInterfaceOrCreateTmp($interfaceName)
     {
         $resolved = $this->findInterface($interfaceName);

@@ -180,6 +180,48 @@ class SecurityProfileStore extends ObjStore
     /**
      * @return SecurityProfileStore|null
      */
+    /**
+     * profile store name => name of the matching predefined store on PANConf / PanoramaConf
+     * (VirusAndWildfireProfileStore has no predefined store)
+     */
+    public static $predefinedStoreByStoreName = array(
+        'AntiVirusProfileStore' => 'AntiVirusPredefinedStore',
+        'AntiSpywareProfileStore' => 'AntiSpywarePredefinedStore',
+        'VulnerabilityProfileStore' => 'VulnerabilityPredefinedStore',
+        'FileBlockingProfileStore' => 'FileBlockingPredefinedStore',
+        'WildfireProfileStore' => 'WildfirePredefinedStore',
+        'URLProfileStore' => 'UrlFilteringPredefinedStore',
+        'DataFilteringProfileStore' => 'DataFilteringPredefinedStore',
+    );
+
+    /**
+     * Predefined store for a profile store name, seen from the location of the referencing object
+     * (security rule, default security rule, security profile group).
+     * @param object $location  owner of the referencing object's store: DeviceGroup, VirtualSystem, Container,
+     *                          DeviceCloud, DeviceOnPrem, Snippet, PANConf, PanoramaConf, FawkesConf, BuckbeakConf
+     * @param string $storeName  e.g. 'AntiVirusProfileStore'
+     * @return SecurityProfileStore|null  null if the location has no such predefined store
+     */
+    public static function getPredefinedStore( $location, $storeName )
+    {
+        if( !is_object($location) || !isset(self::$predefinedStoreByStoreName[$storeName]) )
+            return null;
+
+        $class = get_class( $location );
+        if( in_array( $class, array("DeviceGroup", "VirtualSystem", "Container", "DeviceCloud", "DeviceOnPrem", "Snippet") ) )
+            $sub = $location->owner;
+        elseif( in_array( $class, array("PANConf", "PanoramaConf", "FawkesConf", "BuckbeakConf") ) )
+            $sub = $location;
+        else
+            return null;
+
+        $predefinedStoreName = self::$predefinedStoreByStoreName[$storeName];
+        if( !is_object($sub) || !isset($sub->$predefinedStoreName) )
+            return null;
+
+        return $sub->$predefinedStoreName;
+    }
+
     public static function getVirusPredefinedStore( $owner )
     {
         if( self::$predefinedVirusStore !== null )
@@ -302,6 +344,11 @@ class SecurityProfileStore extends ObjStore
                 #$this->_all[$this->name] = $nr;
                 $this->o[] = $nr;
             }
+
+            // HIP profiles can name HIP profiles defined after them
+            if( $this->type === 'HipProfilesProfile' )
+                foreach( $this->o as $hipProfile )
+                    $hipProfile->resolveMatchReferences();
         }
     }
 
@@ -1140,7 +1187,27 @@ class SecurityProfileStore extends ObjStore
      */
     public function removeSecurityProfile( $tag)
     {
+        // a removed HIP profile no longer uses the HIP objects / profiles of its match expression
+        if( $tag instanceof HipProfilesProfile )
+            $tag->dropMatchReferences();
+
         $ret = $this->remove($tag);
+
+        // remove() of ObjStore does not know the indexes of this store: without this, find() still
+        // returned the removed profile (owner null)
+        if( $ret )
+        {
+            $name = $tag->name();
+            if( isset($this->_SecurityProfiles[$name]) && $this->_SecurityProfiles[$name] === $tag )
+            {
+                unset($this->_SecurityProfiles[$name]);
+                unset($this->fastNameToIndex[$name]);
+            }
+            unset($this->fastMemToIndex[spl_object_hash($tag)]);
+            $pos = array_search($tag, $this->_all, TRUE);
+            if( $pos !== FALSE )
+                unset($this->_all[$pos]);
+        }
 
         #if( $ret && !$tag->isTmpSecProf() && $this->xmlroot !== null )
         if( $ret && $this->xmlroot !== null )
@@ -1223,6 +1290,17 @@ class SecurityProfileStore extends ObjStore
     /**
      * @return * @param SecurityProfile| URLProfile | AntiSpywareProfile | AntiVirusProfile | VulnerabilityProfile | FileBlockingProfile | WildfireProfile | customURLProfile []
      */
+    /** name of the property of the owner (device group / vsys / shared) that holds this store */
+    public function ownStoreProperty()
+    {
+        if( is_object($this->owner) )
+            foreach( get_object_vars($this->owner) as $prop => $value )
+                if( $value === $this )
+                    return $prop;
+
+        return "customURLProfileStore";
+    }
+
     public function nestedPointOfView()
     {
         $current = $this;
@@ -1249,13 +1327,13 @@ class SecurityProfileStore extends ObjStore
                     {
                         //Todo: check if object value is same; if same to not add ref
                         if( $location != "shared" )
-                            foreach( $o->refrules as $ref )
-                                $tmp_o->addReference( $ref );
+                            ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                     }
                 }
             }
 
-            $storeType = "customURLProfileStore";
+            // the same store type one level up (was always customURLProfileStore)
+            $storeType = $this->ownStoreProperty();
             if( isset($current->owner->parentDeviceGroup) && $current->owner->parentDeviceGroup !== null )
                 $current = $current->owner->parentDeviceGroup->$storeType;
             elseif( isset($current->owner->parentContainer) && $current->owner->parentContainer !== null )
@@ -1302,8 +1380,8 @@ class SecurityProfileStore extends ObjStore
 
         $this->o[] = $f;
         $this->nameIndex[$name] = $f;
+        // isTmp() / isTmpSecProf() compare with the type name 'tmp' (the constant TypeTmp is its index)
         $f->type = 'tmp';
-        $f->type = $f::TypeTmp;
         $f->addReference($ref);
 
         //Todo: 20260627 - swaschkut  needed for SASE API implementation - but NOT for SCM

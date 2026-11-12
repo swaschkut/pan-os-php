@@ -68,4 +68,63 @@ class AppGroup extends App
         return TRUE;
     }
 
+    /**
+     * @return App[]
+     */
+    public function members()
+    {
+        return array_values( $this->groupapps );
+    }
+
+    /**
+     * member $old is replaced by $new (used by ReferenceableObject::replaceMeGlobally(), e.g. the object merger)
+     * @return bool TRUE if $old was a member
+     */
+    public function replaceReferencedObject( $old, $new )
+    {
+        if( $old === $new || !is_object($old) || !isset($this->groupapps[$old->name()]) || $this->groupapps[$old->name()] !== $old )
+            return FALSE;
+
+        unset( $this->groupapps[$old->name()] );
+        $old->removeReference( $this );
+
+        if( $new !== null && !isset($this->groupapps[$new->name()]) )
+        {
+            $this->groupapps[$new->name()] = $new;
+            $new->addReference( $this );
+        }
+        ksort( $this->groupapps );
+
+        $this->rewriteMembersXML();
+
+        return TRUE;
+    }
+
+    public function API_replaceReferencedObject( $old, $new )
+    {
+        $ret = $this->replaceReferencedObject( $old, $new );
+
+        if( $ret )
+        {
+            // the whole group entry (its members list changed)
+            $con = findConnectorOrDie( $this );
+            if( $con->isAPI() )
+                $con->sendEditRequest( $this->getXPath(), $this->getXmlText_inline() );
+        }
+
+        return $ret;
+    }
+
+    /** writes the members list from groupapps */
+    public function rewriteMembersXML()
+    {
+        if( $this->xmlroot === null )
+            return;
+
+        $members = DH::findFirstElementOrCreate( 'members', $this->xmlroot );
+        DH::clearDomNodeChilds( $members );
+        foreach( $this->groupapps as $app )
+            $members->appendChild( $this->xmlroot->ownerDocument->createElement( 'member', $app->name() ) );
+    }
+
 }

@@ -273,6 +273,17 @@ class FawkesConf
         //
 
 
+        // snippets first: containers and devices attach them while loading (as in BuckbeakConf)
+        foreach( $this->snippetroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new Snippet( $this );
+
+            $ldv->load_from_domxml( $node );
+            $this->snippets[] = $ldv;
+        }
+
         $containerMetaDataNode = DH::findXPathSingleEntry('/config/readonly/devices/entry/container', $this->xmlroot);
 
         $containerToParent = array();
@@ -450,18 +461,14 @@ class FawkesConf
         //
         // loading snippets
         //
-        foreach( $this->snippetroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new Snippet( $this );
-
-            $ldv->load_from_domxml( $node );
-            $this->snippets[] = $ldv;
-        }
         //
         // end of DeviceCloud
         //
+
+        // snippets are loaded before 'All': link them to 'All' now (they can use every 'All' object)
+        $containerAll = $this->findContainer( "All" );
+        foreach( $this->snippets as $snippet )
+            $snippet->linkToAll( $containerAll );
 
         #$this->managedFirewallsSerials = $this->managedFirewallsStore->get_serial_from_xml($tmp, TRUE);
         if( $tmp !== false )
@@ -1290,7 +1297,7 @@ class FawkesConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'HipProfilesProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 

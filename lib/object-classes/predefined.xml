@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <predefined>
-  <application-version>9167-10330</application-version>
+  <application-version>9168-10332</application-version>
   <history minver="7.0.0">
     <entry id="10162" name="104apci-unnumbered-startdt-act">
       <member>
@@ -339279,7 +339279,7 @@ With the Application and Threats content update scheduled for April 15, 2025, we
       </entry>
     </profiles>
   </log-settings>
-  <threat-version>9167-10330</threat-version>
+  <threat-version>9168-10332</threat-version>
   <threats>
     <phone-home>
       <entry name="10001" p="yes">
@@ -585020,6 +585020,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>alert</default-action>
       </entry>
+      <entry name="97407" p="yes">
+        <threatname>RabbitMQ Server-Side Request Forgery Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-57211</member>
+        </cve>
+        <category>info-leak</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97408" p="yes">
         <threatname>ServiceNow AI Platform Assessment-thanks.do Remote Code Execution Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586518,6 +586531,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-both</default-action>
       </entry>
+      <entry name="97567" p="yes">
+        <threatname>Google Chrome Out-of-Bounds Read and Write Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-5419</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <client>yes</client>
+        </affected-host>
+        <default-action>reset-both</default-action>
+      </entry>
       <entry name="97569" p="yes">
         <threatname>Microsoft Windows Shell Security Feature Bypass Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -586856,6 +586882,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97607" p="yes">
+        <threatname>Eaton xComfort Ethernet Communication Interface Improper Input Validation Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2025-59886</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97608" p="yes">
         <threatname>Zabbix API CApiService sortfield SQL Injection Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -587016,6 +587055,32 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97632" p="yes">
+        <threatname>Edimax BR-6428NS Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-9297</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>medium</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>alert</default-action>
+      </entry>
+      <entry name="97634" p="yes">
+        <threatname>Ivanti Endpoint Manager Mobile handleMessage Command Injection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-10727</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97635" p="yes">
         <threatname>Fast-jwt JWT Auth Bypass Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -587024,6 +587089,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <category>code-execution</category>
         <severity>critical</severity>
         <engine-version min="11.2"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97637" p="yes">
+        <threatname>PaperCut NGMF External User Lookup Unsafe Reflection Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-82078</member>
+        </cve>
+        <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
         <affected-host>
           <server>yes</server>
         </affected-host>
@@ -587086,7 +587164,7 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <default-action>reset-server</default-action>
       </entry>
       <entry name="97653" p="yes">
-        <threatname>PHP Overflow Vulnerability</threatname>
+        <threatname>PHP Remote Code Execution Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <member>CVE-2026-109618</member>
           <member>CVE-2026-109619</member>
@@ -587173,6 +587251,7 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <threatname>PHP Remote Code Execution Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <member>CVE-2026-109618</member>
+          <member>CVE-2026-109619</member>
         </cve>
         <category>code-execution</category>
         <severity>critical</severity>
@@ -587189,6 +587268,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
           <member>CVE-2026-109619</member>
         </cve>
         <category>code-execution</category>
+        <severity>critical</severity>
+        <engine-version min="8.1"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97669" p="yes">
+        <threatname>ABB Multiple Products Path Traversal Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2024-51549</member>
+        </cve>
+        <category>info-leak</category>
         <severity>critical</severity>
         <engine-version min="8.1"/>
         <affected-host>
@@ -707143,6 +707235,19 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         </affected-host>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97245" p="yes">
+        <threatname>Microsoft Windows Netlogon Remote Code Execution Vulnerability</threatname>
+        <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <member>CVE-2026-41089</member>
+        </cve>
+        <category>overflow</category>
+        <severity>critical</severity>
+        <engine-version min="10.2"/>
+        <affected-host>
+          <server>yes</server>
+        </affected-host>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97366" p="yes">
         <threatname>Microsoft Windows Netlogon Remote Code Execution Vulnerability</threatname>
         <cve xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -737143,13 +737248,6 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <test-signature>yes</test-signature>
         <default-action>alert</default-action>
       </entry>
-      <entry name="97407" p="yes">
-        <threatname>RabbitMQ Server-Side Request Forgery Vulnerability</threatname>
-        <category>info-leak</category>
-        <severity>critical</severity>
-        <test-signature>yes</test-signature>
-        <default-action>reset-server</default-action>
-      </entry>
       <entry name="97459" p="yes">
         <threatname>Flexense SyncBreeze Enterprise ParseHttpHeader Stack Buffer Overflow Vulnerability</threatname>
         <category>overflow</category>
@@ -737192,6 +737290,13 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <test-signature>yes</test-signature>
         <default-action>reset-server</default-action>
       </entry>
+      <entry name="97638" p="yes">
+        <threatname>nginx-ignition Onboarding Endpoint Unauthenticated Admin Account Creation Vulnerability</threatname>
+        <category>code-execution</category>
+        <severity>high</severity>
+        <test-signature>yes</test-signature>
+        <default-action>reset-server</default-action>
+      </entry>
       <entry name="97665" p="yes">
         <threatname>PHP Remote Code Execution Vulnerability</threatname>
         <category>code-execution</category>
@@ -737199,12 +737304,12 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <test-signature>yes</test-signature>
         <default-action>reset-server</default-action>
       </entry>
-      <entry name="97245" p="yes">
-        <threatname>Microsoft Windows Netlogon Remote Code Execution Vulnerability</threatname>
+      <entry name="97679" p="yes">
+        <threatname>PaperCut NGMF ConfigEditor Authentication Bypass Vulnerability</threatname>
         <category>code-execution</category>
         <severity>critical</severity>
         <test-signature>yes</test-signature>
-        <default-action>reset-server</default-action>
+        <default-action>alert</default-action>
       </entry>
       <entry name="97396" p="yes">
         <threatname>DCMTK Memory Leak Denial-of-Service Vulnerability</threatname>
@@ -737230,6 +737335,13 @@ With the Application and Threats content update scheduled for April 15, 2025, we
         <threatname>Microsoft Windows Active Directory Certificate Services Authorization Bypass Vulnerability</threatname>
         <category>code-execution</category>
         <severity>high</severity>
+        <test-signature>yes</test-signature>
+        <default-action>reset-server</default-action>
+      </entry>
+      <entry name="97687" p="yes">
+        <threatname>KSMBD Heap Memory Leak Vulnerability</threatname>
+        <category>info-leak</category>
+        <severity>critical</severity>
         <test-signature>yes</test-signature>
         <default-action>reset-server</default-action>
       </entry>
