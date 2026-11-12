@@ -17,10 +17,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-// Export Prisma Access configuration of one tenant (TSG): infrastructure, Remote Networks (RN / RN-SPN), Service Connections (SC-CAN), Mobile Users (GlobalProtect)
+// Export Prisma Access configuration of one tenant (TSG): infrastructure, Remote Networks (RN / RN-SPN), Service Connections (SC-CAN),
+// Mobile Users (GlobalProtect), Prisma Browser, IAM (documentation) + migration checklist
 // see utils/develop/sase/scm/README_pa_export.md
 //
-// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections,mobile-users] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
+// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections,mobile-users,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
 
 require_once("lib/pan_php_framework.php");
 require_once("utils/lib/UTIL.php");
@@ -47,7 +48,7 @@ $supportedArguments['master-key'] = Array('niceName' => 'master-key', 'shortHelp
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 
-$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections,mobile-users] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
+$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,remote-networks,service-connections,mobile-users,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
     "php ".basename(__FILE__)." help          : more help messages\n";
 ##############
 
@@ -152,6 +153,14 @@ if( $manifest['mobile_users'] !== null )
     PH::print_stdout( " * mobile users: portal " . json_encode($manifest['mobile_users']['portal_hostname']) . " | MU locations: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_MU]['locations'] . " | egress IPs matched: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_MU]['egress_matched'] );
 foreach( $manifest['import_hints'] as $hint )
     PH::print_stdout( " ! [" . $hint['area'] . "] " . $hint['type'] . ": " . count($hint['objects']) . " object(s) - " . $hint['message'] );
+if( $manifest['prisma_browser'] !== null )
+    PH::print_stdout( " * prisma browser: user groups " . $manifest['prisma_browser']['user_groups'] . " | applications " . $manifest['prisma_browser']['applications'] . " | pending changes " . $manifest['prisma_browser']['pending_changes'] );
+if( $manifest['iam'] !== null )
+    PH::print_stdout( " * iam: access policies " . $manifest['iam']['access_policies'] . " | custom roles " . count($manifest['iam']['custom_roles']) . " | service accounts " . count($manifest['iam']['service_accounts']) );
+if( count($manifest['unavailable']) > 0 )
+    PH::print_stdout( " - not available (licence / permission): " . implode(", ", $manifest['unavailable']) );
+$actions = array_filter( $manifest['migration_checklist'], function($i){ return $i['status'] == 'action_required'; } );
+PH::print_stdout( " * MIGRATION_CHECKLIST.md: " . count($actions) . " action(s) required, " . count($manifest['migration_checklist']) . " item(s)" );
 if( $manifest['errors'] > 0 )
     PH::print_stdout( PH::boldText(" x " . $manifest['errors'] . " endpoint(s) failed - see manifest.json") );
 PH::print_stdout( " * done: " . $dir );

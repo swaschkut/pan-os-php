@@ -2201,6 +2201,8 @@ class PanSCMAPIConnector
      */
     public function getSCMResourceAll( $url_config, $limit = 200 )
     {
+        //absolute URL (other host, e.g. IAM / Prisma Browser on api.sase.paloaltonetworks.com) or path below url_api
+        $base = ( strpos($url_config, "https://") === 0 ) ? "" : $this->url_api;
         $offset = 0;
         $allData = array();
         $first = null;
@@ -2208,7 +2210,7 @@ class PanSCMAPIConnector
 
         do
         {
-            $url = $this->url_api . $url_config;
+            $url = $base . $url_config;
             $url .= ( strpos($url, "?") !== FALSE ) ? "&" : "?";
             $url .= "limit=" . $limit . "&offset=" . $offset;
 
@@ -2219,7 +2221,7 @@ class PanSCMAPIConnector
             {
                 if( $this->showApiCalls )
                     PH::print_stdout( "   retry without limit/offset: " . $url_config );
-                $retry = $this->sendSCMAPIRequest( "GET", $this->url_api . $url_config, false, FALSE );
+                $retry = $this->sendSCMAPIRequest( "GET", $base . $url_config, false, FALSE );
                 if( $retry['errors'] === null )
                 {
                     $json = $retry['json'];
@@ -2251,6 +2253,76 @@ class PanSCMAPIConnector
         while( count($json['data']) > 0 && count($allData) < $total );
 
         return array( 'http_code' => $result['http_code'], 'data' => $allData, 'total' => $total, 'is_list' => true, 'raw' => null, 'errors' => null );
+    }
+
+    /**
+     * GET all entries of a cursor paginated list endpoint (e.g. Prisma Browser /seb-api/v1/*), without stopping on errors
+     * list key: data | items | results; next cursor: pageInfo.nextCursor | pageInfo.endCursor | pageInfo.cursor | next_cursor
+     *
+     * @param string $url absolute URL or path below url_api
+     * @return array same structure as getSCMResourceAll()
+     */
+    public function getCursorResourceAll( $url, $limit = 1000, $maxPages = 1000 )
+    {
+        if( strpos($url, "https://") !== 0 )
+            $url = $this->url_api . $url;
+
+        $all = array();
+        $cursor = null;
+        $httpCode = null;
+        for( $page = 0; $page < $maxPages; $page++ )
+        {
+            $pageUrl = $url . ( strpos($url, "?") !== FALSE ? "&" : "?" ) . "limit=" . $limit;
+            if( $cursor !== null )
+                $pageUrl .= "&cursor=" . rawurlencode($cursor);
+
+            $result = $this->sendSCMAPIRequest( "GET", $pageUrl, false, FALSE );
+            $httpCode = $result['http_code'];
+
+            //limit not accepted: first page without it
+            if( $result['errors'] !== null && $page == 0 && $httpCode == 400 )
+                $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+
+            if( $result['errors'] !== null )
+                return array( 'http_code' => $result['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => $result['errors'] );
+
+            $json = $result['json'];
+            $listKey = null;
+            foreach( array('data', 'items', 'results') as $k )
+            {
+                if( is_array($json) && isset($json[$k]) && is_array($json[$k]) && ( $json[$k] === array() || array_keys($json[$k]) === range(0, count($json[$k]) - 1) ) )
+                {
+                    $listKey = $k;
+                    break;
+                }
+            }
+            if( $listKey === null )
+                return array( 'http_code' => $httpCode, 'data' => $json, 'total' => null, 'is_list' => false, 'raw' => $json, 'errors' => null );
+
+            foreach( $json[$listKey] as $entry )
+                $all[] = $entry;
+
+            $next = null;
+            $pageInfo = isset($json['pageInfo']) && is_array($json['pageInfo']) ? $json['pageInfo'] : array();
+            foreach( array('nextCursor', 'endCursor', 'cursor', 'next') as $k )
+            {
+                if( isset($pageInfo[$k]) && is_string($pageInfo[$k]) && $pageInfo[$k] !== "" )
+                {
+                    $next = $pageInfo[$k];
+                    break;
+                }
+            }
+            if( $next === null && isset($json['next_cursor']) && is_string($json['next_cursor']) && $json['next_cursor'] !== "" )
+                $next = $json['next_cursor'];
+            if( isset($pageInfo['hasNextPage']) && !$pageInfo['hasNextPage'] )
+                $next = null;
+
+            if( $next === null || $next === $cursor || count($json[$listKey]) == 0 )
+                break;
+            $cursor = $next;
+        }
+
+        return array( 'http_code' => $httpCode, 'data' => $all, 'total' => count($all), 'is_list' => true, 'raw' => null, 'errors' => null );
     }
 
     ///////Prisma Access egress IP API (separate API key, not OAuth)

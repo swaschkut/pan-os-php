@@ -37,10 +37,15 @@
  *           ip-mapping.json / ip-mapping.csv
  *           psk-list.csv / bgp-secret-list.csv      (optional, cleartext, chmod 600)
  *       mobile-users/
- *           01_certificates.json ... 13_authentication-sequences.json   (identity dependencies)
+ *           01_certificates.json ... 14_authentication-sequences.json   (identity dependencies)
  *           20_mobile-agent-infrastructure-settings.json ... 27_mobile-agent-enable.json
  *           ip-mapping.json / ip-mapping.csv
  *           secret-list.csv                         (optional, cleartext, chmod 600)
+ *       prisma-browser/
+ *           01_user-groups.json ... 09_policy-customization.json, 90_pending-changes.json
+ *       iam/                                        (documentation / compare only, not imported)
+ *           01_roles.json ... 06_access-policies.json, access-policies.csv
+ *       MIGRATION_CHECKLIST.md
  *
  * Areas are exported/imported in the order of self::AREAS; inside an area the numbered "dependency" endpoints are in
  * import order (an entry only references entries with a lower number or of an earlier area).
@@ -48,14 +53,19 @@
  */
 class SCMPrismaAccessExport
 {
-    const FORMAT_VERSION = 4;
+    const FORMAT_VERSION = 5;
 
     const AREA_INFRA = 'infra';
     const AREA_RN = 'remote-networks';
     const AREA_SC = 'service-connections';
     const AREA_MU = 'mobile-users';
-    /** area order == import order */
-    const AREAS = array( self::AREA_INFRA, self::AREA_RN, self::AREA_SC, self::AREA_MU );
+    const AREA_PB = 'prisma-browser';
+    const AREA_IAM = 'iam';
+    /** area order == import order (iam: documentation only) */
+    const AREAS = array( self::AREA_INFRA, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_PB, self::AREA_IAM );
+
+    /** host of the IAM and Prisma Browser APIs */
+    const SASE_API = 'https://api.sase.paloaltonetworks.com';
 
     const MU_FOLDER = 'Mobile Users';
 
@@ -125,6 +135,17 @@ class SCMPrismaAccessExport
         }
     }
 
+    /**
+     * IAM / Prisma Browser host; for QA tenants (url_api qa.*) the connector host is used
+     */
+    public function saseApiUrl()
+    {
+        $api = is_object($this->connector) && isset($this->connector->url_api) ? $this->connector->url_api : "";
+        if( strpos($api, "://qa.") !== FALSE )
+            return rtrim($api, "/");
+        return self::SASE_API;
+    }
+
     public function hasArea( $area )
     {
         return in_array($area, $this->areas, TRUE);
@@ -152,6 +173,10 @@ class SCMPrismaAccessExport
         $muF = $this->folders[$mu];
         $id = "/config/identity/v1/";
         $ma = "/config/mobile-agent/v1/";
+        $pb = self::AREA_PB;
+        $iam = self::AREA_IAM;
+        $seb = $this->saseApiUrl() . "/seb-api/v1/";
+        $iamUrl = $this->saseApiUrl() . "/iam/v1/";
 
         return array(
             //Prisma Access infrastructure - tenant wide, mostly single objects
@@ -165,8 +190,9 @@ class SCMPrismaAccessExport
             array( 'area' => $rn, 'order' => 2, 'name' => 'ipsec-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-crypto-profiles?folder=" . $rnF, 'depends_on' => array() ),
             array( 'area' => $rn, 'order' => 3, 'name' => 'ike-gateways', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-gateways?folder=" . $rnF, 'depends_on' => array('remote-networks/ike-crypto-profiles') ),
             array( 'area' => $rn, 'order' => 4, 'name' => 'ipsec-tunnels', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ipsec-tunnels?folder=" . $rnF, 'depends_on' => array('remote-networks/ike-gateways', 'remote-networks/ipsec-crypto-profiles') ),
-            array( 'area' => $rn, 'order' => 5, 'name' => 'bandwidth-allocations', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/bandwidth-allocations", 'depends_on' => array() ),
-            array( 'area' => $rn, 'order' => 6, 'name' => 'remote-networks', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/remote-networks", 'depends_on' => array('remote-networks/ipsec-tunnels', 'remote-networks/bandwidth-allocations', 'infra/shared-infrastructure-settings', 'infra/bgp-routing') ),
+            array( 'area' => $rn, 'order' => 5, 'name' => 'qos-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/qos-profiles?folder=" . $rnF, 'depends_on' => array() ),
+            array( 'area' => $rn, 'order' => 6, 'name' => 'bandwidth-allocations', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/bandwidth-allocations", 'depends_on' => array('remote-networks/qos-profiles') ),
+            array( 'area' => $rn, 'order' => 7, 'name' => 'remote-networks', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/deployment/v1/remote-networks", 'depends_on' => array('remote-networks/ipsec-tunnels', 'remote-networks/bandwidth-allocations', 'infra/shared-infrastructure-settings', 'infra/bgp-routing') ),
 
             //Service Connections (SC-CAN)
             array( 'area' => $sc, 'order' => 1, 'name' => 'ike-crypto-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => "/config/network/v1/ike-crypto-profiles?folder=" . $scF, 'depends_on' => array() ),
@@ -203,6 +229,26 @@ class SCMPrismaAccessExport
             array( 'area' => $mu, 'order' => 25, 'name' => 'mobile-agent-global-settings', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "global-settings?folder=" . $muF, 'depends_on' => array() ),
             array( 'area' => $mu, 'order' => 26, 'name' => 'mobile-agent-agent-versions', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "agent-versions?folder=" . $muF, 'depends_on' => array() ),
             array( 'area' => $mu, 'order' => 27, 'name' => 'mobile-agent-enable', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "enable?folder=" . $muF, 'depends_on' => array('mobile-users/mobile-agent-infrastructure-settings', 'mobile-users/mobile-agent-agent-profiles') ),
+
+            //Prisma Browser (Strata Enterprise Browser) - cursor pagination, draft / publish
+            array( 'area' => $pb, 'order' => 1, 'name' => 'user-groups', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "user-groups", 'depends_on' => array() ),
+            array( 'area' => $pb, 'order' => 2, 'name' => 'device-groups', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "device-groups", 'depends_on' => array() ),
+            array( 'area' => $pb, 'order' => 3, 'name' => 'applications', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "applications", 'depends_on' => array() ),
+            array( 'area' => $pb, 'order' => 4, 'name' => 'application-groups', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "application-groups", 'depends_on' => array('prisma-browser/applications') ),
+            array( 'area' => $pb, 'order' => 5, 'name' => 'application-plugins', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "applications/plugins", 'depends_on' => array('prisma-browser/applications') ),
+            array( 'area' => $pb, 'order' => 6, 'name' => 'policy-sign-in', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "policy/sign-in", 'depends_on' => array('prisma-browser/user-groups', 'prisma-browser/device-groups') ),
+            array( 'area' => $pb, 'order' => 7, 'name' => 'policy-access-and-data', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "policy/access-and-data", 'depends_on' => array('prisma-browser/user-groups', 'prisma-browser/device-groups', 'prisma-browser/applications', 'prisma-browser/application-groups') ),
+            array( 'area' => $pb, 'order' => 8, 'name' => 'policy-security', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "policy/security", 'depends_on' => array('prisma-browser/user-groups', 'prisma-browser/device-groups') ),
+            array( 'area' => $pb, 'order' => 9, 'name' => 'policy-customization', 'category' => 'dependency', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "policy/customization", 'depends_on' => array('prisma-browser/user-groups', 'prisma-browser/device-groups') ),
+            array( 'area' => $pb, 'order' => 90, 'name' => 'pending-changes', 'category' => 'context', 'scope' => 'tenant', 'pagination' => 'cursor', 'optional' => true, 'url' => $seb . "configuration-management/draft/pending-changes", 'depends_on' => array() ),
+
+            //IAM - documentation / compare only (principals, scopes and secrets are tenant specific)
+            array( 'area' => $iam, 'order' => 1, 'name' => 'roles', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "roles", 'depends_on' => array() ),
+            array( 'area' => $iam, 'order' => 2, 'name' => 'custom-roles', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "custom_roles", 'depends_on' => array() ),
+            array( 'area' => $iam, 'order' => 3, 'name' => 'permission-sets', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "permission_sets", 'depends_on' => array() ),
+            array( 'area' => $iam, 'order' => 4, 'name' => 'service-accounts', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "service_accounts", 'depends_on' => array() ),
+            array( 'area' => $iam, 'order' => 5, 'name' => 'access-policies', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "access_policies", 'depends_on' => array('iam/roles', 'iam/custom-roles', 'iam/service-accounts') ),
+            array( 'area' => $iam, 'order' => 90, 'name' => 'permissions', 'category' => 'context', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "permissions", 'depends_on' => array() ),
         );
     }
 
@@ -275,14 +321,25 @@ class SCMPrismaAccessExport
         {
             PH::print_stdout( " - [" . $endpoint['area'] . " " . sprintf("%02d", $endpoint['order']) . "] " . $endpoint['name'] . ( $endpoint['fetched_as'] == 'context' ? " (context)" : "" ) . " ... " );
 
-            $result = $this->connector->getSCMResourceAll( $endpoint['url'] );
+            if( isset($endpoint['pagination']) && $endpoint['pagination'] == 'cursor' )
+                $result = $this->connector->getCursorResourceAll( $endpoint['url'] );
+            else
+                $result = $this->connector->getSCMResourceAll( $endpoint['url'] );
 
             $meta = $endpoint;
             $meta['file'] = self::fileName($endpoint);
             $meta['http_code'] = $result['http_code'];
             $meta['fetched_at'] = date('c');
 
-            if( $result['errors'] !== null )
+            if( $result['errors'] !== null && !empty($endpoint['optional']) && in_array($result['http_code'], array(401, 403, 404), TRUE) )
+            {
+                //product not licensed / no permission for this service account
+                $meta['status'] = 'unavailable';
+                $meta['count'] = null;
+                $meta['error'] = self::errorMessage($result['errors']);
+                PH::print_stdout( "     - not available (HTTP " . $result['http_code'] . ")" );
+            }
+            elseif( $result['errors'] !== null )
             {
                 $meta['status'] = 'error';
                 $meta['count'] = null;
@@ -703,6 +760,54 @@ class SCMPrismaAccessExport
                     'message' => 'passwords / shared secrets (encrypted with the master key, or hashed for local users) - create ' . self::AREA_MU . '/secret-list.csv (argument psk-list) to provide them for import; hashed values need secret_new' );
         }
 
+        if( $this->hasArea(self::AREA_PB) )
+        {
+            $idpGroups = array();
+            foreach( $this->listData('user-groups', self::AREA_PB) as $g )
+            {
+                $src = strtolower( (string)self::firstOf($g, array('source', 'type', 'origin', 'groupType')) );
+                if( $src !== "" && $src !== "local" )
+                    $idpGroups[] = self::get($g, 'name', self::get($g, 'id')) . " [" . $src . "]";
+            }
+            if( count($idpGroups) > 0 )
+                $hints[] = array( 'type' => 'idp_synced_groups', 'area' => self::AREA_PB, 'endpoint' => 'user-groups', 'objects' => $idpGroups,
+                    'message' => 'user groups synced from an identity provider are not created by import - the IdP integration must exist on the target tenant' );
+
+            $catalog = array();
+            foreach( $this->listData('applications', self::AREA_PB) as $app )
+            {
+                $type = strtolower( (string)self::firstOf($app, array('type', 'applicationType', 'kind')) );
+                if( $type === 'catalog' )
+                    $catalog[] = self::get($app, 'name', self::get($app, 'id'));
+            }
+            if( count($catalog) > 0 )
+                $hints[] = array( 'type' => 'inherited_or_predefined', 'area' => self::AREA_PB, 'endpoint' => 'applications', 'objects' => $catalog,
+                    'message' => 'catalog applications are predefined - reference only, do not create on import' );
+
+            $pending = $this->listData('pending-changes', self::AREA_PB);
+            if( count($pending) > 0 )
+                $hints[] = array( 'type' => 'unpublished_draft', 'area' => self::AREA_PB, 'endpoint' => 'pending-changes',
+                    'objects' => array_map( function($c){ return (string)self::firstOf($c, array('entityType', 'type')) . ": " . (string)self::firstOf($c, array('name', 'entityName', 'id')); }, $pending ),
+                    'message' => 'the source tenant has unpublished Prisma Browser changes - the export contains the active configuration' );
+
+            $signIn = self::key(self::AREA_PB, 'policy-sign-in');
+            if( isset($this->results[$signIn]) && $this->results[$signIn]['meta']['status'] === 'ok' )
+                $hints[] = array( 'type' => 'publish_required', 'area' => self::AREA_PB, 'objects' => array('configuration-management/draft/publish'),
+                    'message' => 'Prisma Browser changes are written to a draft - publish after import' );
+        }
+
+        if( $this->hasArea(self::AREA_IAM) )
+        {
+            $sa = array_map( function($a){ return (string)self::firstOf($a, array('name', 'client_id', 'id')); }, $this->listData('service-accounts', self::AREA_IAM) );
+            if( count($sa) > 0 )
+                $hints[] = array( 'type' => 'service_account_secret', 'area' => self::AREA_IAM, 'endpoint' => 'service-accounts', 'objects' => $sa,
+                    'message' => 'service account secrets are only shown at creation - create new service accounts on the target tenant and update all tools (.panconfkeystore, automation)' );
+            $policies = $this->listData('access-policies', self::AREA_IAM);
+            if( count($policies) > 0 )
+                $hints[] = array( 'type' => 'iam_documentation', 'area' => self::AREA_IAM, 'endpoint' => 'access-policies', 'objects' => array( count($policies) . " access policies" ),
+                    'message' => 'IAM is exported for documentation / compare only; principals and TSG scopes are tenant specific - see iam/access-policies.csv' );
+        }
+
         //service connection referencing another service connection as backup: create all first, set backup_SC afterwards
         $backup = array();
         foreach( $this->listData('service-connections', self::AREA_SC) as $sc )
@@ -756,13 +861,19 @@ class SCMPrismaAccessExport
             'endpoints' => $endpoints,
             'infra' => $this->buildInfraSummary(),
             'mobile_users' => $this->buildMobileUsersSummary(),
+            'prisma_browser' => $this->buildPrismaBrowserSummary(),
+            'iam' => $this->buildIAMSummary(),
             'ip_mapping' => count($mappingSummary) > 0 ? $mappingSummary : null,
             'secret_lists' => count($secretStats) > 0 ? $secretStats : null,
             'import_hints' => $this->collectImportHints(),
             'errors' => count( array_filter($endpoints, function($e){ return isset($e['status']) && $e['status'] == 'error'; }) ),
+            'unavailable' => array_values( array_map( function($e){ return self::key($e['area'], $e['name']); },
+                array_filter($endpoints, function($e){ return isset($e['status']) && $e['status'] == 'unavailable'; }) ) ),
         );
+        $this->manifest['migration_checklist'] = $this->buildMigrationChecklist( $this->manifest );
 
         $this->writeJson( 'manifest.json', $this->manifest );
+        $this->writeMigrationChecklistMarkdown( $this->manifest['migration_checklist'] );
 
         return $this->manifest;
     }
@@ -1252,6 +1363,263 @@ class SCMPrismaAccessExport
     public static function loadSecretList( $file )
     {
         return self::loadSecretCSV( $file, array('endpoint', 'object', 'path'), 'secret_current', 'secret_new' );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // prisma browser / iam
+
+    public function buildPrismaBrowserSummary()
+    {
+        if( !$this->hasArea(self::AREA_PB) )
+            return null;
+        $policy = function( $name ){
+            $data = $this->singleData($name, self::AREA_PB);
+            if( $data === null )
+                return null;
+            $rules = self::firstOf($data, array('rules', 'policy.rules'));
+            $sections = self::firstOf($data, array('sections', 'policy.sections'));
+            return array( 'rules' => is_array($rules) ? count($rules) : null, 'sections' => is_array($sections) ? count($sections) : null );
+        };
+        return array(
+            'user_groups' => count( $this->listData('user-groups', self::AREA_PB) ),
+            'device_groups' => count( $this->listData('device-groups', self::AREA_PB) ),
+            'applications' => count( $this->listData('applications', self::AREA_PB) ),
+            'application_groups' => count( $this->listData('application-groups', self::AREA_PB) ),
+            'policy_sign_in' => $policy('policy-sign-in'),
+            'policy_access_and_data' => $policy('policy-access-and-data'),
+            'policy_security' => $policy('policy-security'),
+            'policy_customization' => $policy('policy-customization'),
+            'pending_changes' => count( $this->listData('pending-changes', self::AREA_PB) ),
+        );
+    }
+
+    const IAM_POLICY_COLUMNS = array( 'principal', 'principal_type', 'role', 'resource', 'principal_new', 'resource_new' );
+
+    /**
+     * iam/access-policies.csv: one row per access policy, *_new columns to fill in for the target tenant
+     */
+    public function buildIAMSummary()
+    {
+        if( !$this->hasArea(self::AREA_IAM) )
+            return null;
+
+        $rows = array();
+        foreach( $this->listData('access-policies', self::AREA_IAM) as $p )
+        {
+            $principal = self::firstOf($p, array('principal', 'principal_id', 'email', 'principal_display_name'));
+            $role = self::firstOf($p, array('role', 'role_name', 'role.name'));
+            $resource = self::firstOf($p, array('resource', 'resource_id', 'scope'));
+            $rows[] = array(
+                'principal' => is_array($principal) ? json_encode($principal) : $principal,
+                'principal_type' => self::firstOf($p, array('principal_type', 'type')),
+                'role' => is_array($role) ? json_encode($role) : $role,
+                'resource' => is_array($resource) ? json_encode($resource) : $resource,
+                'principal_new' => '', 'resource_new' => '',
+            );
+        }
+
+        if( $this->exportDir !== null && is_dir($this->exportDir . "/" . self::AREA_IAM) )
+        {
+            $fh = fopen( $this->exportDir . "/" . self::AREA_IAM . "/access-policies.csv", "w" );
+            fputcsv( $fh, self::IAM_POLICY_COLUMNS, ',', '"', '' );
+            foreach( $rows as $row )
+                fputcsv( $fh, array_values($row), ',', '"', '' );
+            fclose( $fh );
+        }
+
+        $byRole = array();
+        foreach( $rows as $row )
+        {
+            $r = (string)$row['role'];
+            $byRole[$r] = ( isset($byRole[$r]) ? $byRole[$r] : 0 ) + 1;
+        }
+        ksort($byRole);
+
+        $names = function( $endpoint ){
+            return array_values( array_filter( array_map( function($e){ return self::firstOf($e, array('name', 'role_name', 'client_id', 'id')); }, $this->listData($endpoint, self::AREA_IAM) ) ) );
+        };
+
+        return array(
+            'access_policies' => count($rows),
+            'access_policies_by_role' => $byRole,
+            'custom_roles' => $names('custom-roles'),
+            'permission_sets' => $names('permission-sets'),
+            'service_accounts' => $names('service-accounts'),
+            'files' => array( self::AREA_IAM . '/access-policies.csv' ),
+        );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // migration checklist
+
+    /**
+     * items to do / check for a migration to a new tenant: from the export (hints, counts) plus fixed items
+     * status: action_required | check | info
+     */
+    public function buildMigrationChecklist( $manifest )
+    {
+        $items = array();
+        $add = function( $id, $status, $area, $title, $detail, $objects = array() ) use( &$items ) {
+            $items[] = array( 'id' => $id, 'status' => $status, 'area' => $area, 'title' => $title, 'detail' => $detail, 'objects' => array_values($objects) );
+        };
+        $hint = function( $type, $area = null ) use( $manifest ) {
+            $objects = array();
+            foreach( $manifest['import_hints'] as $h )
+            {
+                if( $h['type'] == $type && ( $area === null || $h['area'] == $area ) )
+                    $objects = array_merge( $objects, $h['objects'] );
+            }
+            return $objects;
+        };
+        $secretList = function( $area ) use( $manifest ) {
+            return isset($manifest['secret_lists'][$area]);
+        };
+
+        //licence
+        $bandwidth = 0;
+        foreach( $this->listData('bandwidth-allocations', self::AREA_RN) as $bw )
+            $bandwidth += (int)self::get($bw, 'allocated_bandwidth', 0);
+        $add( 'license', 'check', 'tenant', 'Prisma Access license / units on the target tenant',
+            'allocate the Prisma Access license (units, MU count, RN bandwidth) to the target TSG before importing'
+            . ( $bandwidth > 0 ? '; source RN bandwidth allocated: ' . $bandwidth . ' Mbps' : '' ) );
+
+        if( $manifest['errors'] > 0 )
+            $add( 'export_errors', 'action_required', 'export', 'Endpoints failed during export', 'check manifest.json endpoints with status error',
+                array_map( function($e){ return self::key($e['area'], $e['name']) . ": " . (isset($e['error']) ? $e['error'] : ''); },
+                    array_filter( $manifest['endpoints'], function($e){ return isset($e['status']) && $e['status'] == 'error'; } ) ) );
+        if( count($manifest['unavailable']) > 0 )
+            $add( 'unavailable', 'check', 'export', 'Endpoints not available', 'product not licensed or the service account has no permission (HTTP 401/403/404)', $manifest['unavailable'] );
+
+        //secrets
+        foreach( array( self::AREA_RN, self::AREA_SC ) as $area )
+        {
+            $psk = $hint('pre_shared_key', $area);
+            if( count($psk) > 0 )
+                $add( 'psk_' . $area, $secretList($area) ? 'check' : 'action_required', $area, 'IKE pre-shared keys',
+                    $secretList($area) ? 'review ' . $area . '/psk-list.csv (psk_new optional)' : 'run the export with psk-list to create ' . $area . '/psk-list.csv', $psk );
+            $bgp = $hint('bgp_secret', $area);
+            if( count($bgp) > 0 )
+                $add( 'bgp_secret_' . $area, $secretList($area) ? 'check' : 'action_required', $area, 'BGP authentication secrets',
+                    $secretList($area) ? 'review ' . $area . '/bgp-secret-list.csv' : 'run the export with psk-list to create ' . $area . '/bgp-secret-list.csv', $bgp );
+        }
+        $muSecrets = $hint('secret', self::AREA_MU);
+        if( count($muSecrets) > 0 )
+            $add( 'secret_' . self::AREA_MU, 'action_required', self::AREA_MU, 'Passwords / shared secrets (server profiles, local users, GP app)',
+                $secretList(self::AREA_MU) ? 'fill secret_new in mobile-users/secret-list.csv for HASHED / DECRYPT_FAILED entries' : 'run the export with psk-list to create mobile-users/secret-list.csv', $muSecrets );
+
+        $certs = $hint('certificate_private_key', self::AREA_MU);
+        if( count($certs) > 0 )
+            $add( 'certificates', 'action_required', self::AREA_MU, 'Certificates with private key',
+                'import the certificates incl. private key (PKCS12 / PEM) on the target tenant before the mobile-agent settings', $certs );
+
+        //new IPs on the target tenant
+        if( isset($manifest['ip_mapping'][self::AREA_RN]) && $manifest['ip_mapping'][self::AREA_RN]['remote_networks'] > 0 )
+            $add( 'ips_rn', 'action_required', self::AREA_RN, 'Branch firewalls: new Prisma Access IPs',
+                'update IKE peer / service IP and allow lists on the branch side - see remote-networks/ip-mapping.csv',
+                array( $manifest['ip_mapping'][self::AREA_RN]['remote_networks'] . " remote networks" ) );
+        if( isset($manifest['ip_mapping'][self::AREA_SC]) && $manifest['ip_mapping'][self::AREA_SC]['service_connections'] > 0 )
+            $add( 'ips_sc', 'action_required', self::AREA_SC, 'Data center / CAN firewalls: new service connection IPs',
+                'update IKE peer and BGP on the data center side - see service-connections/ip-mapping.csv',
+                array( $manifest['ip_mapping'][self::AREA_SC]['service_connections'] . " service connections" ) );
+        if( isset($manifest['ip_mapping'][self::AREA_MU]) && $manifest['ip_mapping'][self::AREA_MU]['locations'] > 0 )
+            $add( 'ips_mu', 'action_required', self::AREA_MU, 'Allow lists: new GlobalProtect egress IPs',
+                'SaaS / partner allow lists must contain the new gateway / portal egress IPs - see mobile-users/ip-mapping.csv; portal hostname: '
+                . json_encode( isset($manifest['mobile_users']['portal_hostname']) ? $manifest['mobile_users']['portal_hostname'] : null ) );
+
+        $intra = $hint('intra_dependency', self::AREA_SC);
+        if( count($intra) > 0 )
+            $add( 'backup_sc', 'check', self::AREA_SC, 'Service connections with backup_SC', 'create all service connections first, then set backup_SC', $intra );
+
+        $derived = $hint('derived_read_only', self::AREA_INFRA);
+        if( count($derived) > 0 )
+            $add( 'derived', 'info', self::AREA_INFRA, 'Values derived by Prisma Access', 'loopbacks / tunnel monitor IP etc. are calculated on the target tenant - compare only', $derived );
+
+        if( $this->hasArea(self::AREA_INFRA) )
+            $add( 'egress_api_key', 'info', self::AREA_INFRA, 'Egress-IP API key', 'the target tenant has its own egress-IP API key (.panconfkeystore egressip_tsg_id<TSG>)' );
+
+        //not exported
+        $sharedInfra = $this->singleData('shared-infrastructure-settings', self::AREA_INFRA);
+        $ztna = array();
+        foreach( array('connector_connector_blocks', 'connector_application_blocks') as $f )
+        {
+            $members = self::get($sharedInfra, $f . '.member');
+            if( is_array($members) && count($members) > 0 )
+                $ztna[] = $f . ": " . implode(", ", $members);
+        }
+        $add( 'ztna_connector', count($ztna) > 0 ? 'action_required' : 'check', self::AREA_INFRA, 'ZTNA connector (not exported)',
+            'ZTNA connector groups / applications use a separate API and are not part of this export', $ztna );
+        if( $this->hasArea(self::AREA_MU) )
+            $add( 'explicit_proxy', 'check', self::AREA_MU, 'Mobile Users Explicit Proxy (not exported)',
+                'no documented public API - configure manually or via the internal SCM API (to be added)' );
+        $add( 'identity_logging', 'check', 'tenant', 'Cloud Identity Engine, Strata Logging Service, log forwarding (not exported)',
+            'tenant bound services - set up on the target tenant before the configuration that references them' );
+        $add( 'objects_policies', 'info', 'tenant', 'Objects and security policy',
+            'not part of this export - use pan-os-php in=scm-api://<TSG> for folders / snippets / objects / rules' );
+
+        $pbOk = FALSE;
+        foreach( $manifest['endpoints'] as $e )
+        {
+            if( $e['area'] == self::AREA_PB && isset($e['status']) && $e['status'] == 'ok' )
+                $pbOk = TRUE;
+        }
+        if( $this->hasArea(self::AREA_PB) && $pbOk )
+        {
+            $idp = $hint('idp_synced_groups', self::AREA_PB);
+            if( count($idp) > 0 )
+                $add( 'pb_idp_groups', 'check', self::AREA_PB, 'IdP-synced user groups', 'the IdP integration must exist on the target tenant', $idp );
+            $draft = $hint('unpublished_draft', self::AREA_PB);
+            if( count($draft) > 0 )
+                $add( 'pb_draft', 'check', self::AREA_PB, 'Unpublished Prisma Browser changes on the source tenant', 'export contains the active configuration', $draft );
+            $add( 'pb_publish', 'info', self::AREA_PB, 'Publish Prisma Browser draft', 'POST /seb-api/v1/configuration-management/draft/publish after import; logos / assets must be uploaded again' );
+        }
+        if( $this->hasArea(self::AREA_IAM) && isset($manifest['iam'])
+            && ( $manifest['iam']['access_policies'] > 0 || count($manifest['iam']['service_accounts']) > 0 ) )
+        {
+            $sa = $hint('service_account_secret', self::AREA_IAM);
+            $add( 'iam', 'action_required', self::AREA_IAM, 'IAM: users, roles, service accounts',
+                'create access policies on the target TSG (iam/access-policies.csv: principal_new / resource_new); service account secrets cannot be exported - create new ones', $sa );
+        }
+
+        $add( 'push', 'info', 'tenant', 'Push configuration', 'after import push the configuration (config-versions candidate:push) and check the jobs' );
+
+        return $items;
+    }
+
+    public function writeMigrationChecklistMarkdown( $items )
+    {
+        if( $this->exportDir === null )
+            return;
+        $order = array( 'action_required' => 0, 'check' => 1, 'info' => 2 );
+        usort( $items, function($a, $b) use( $order ){ return $order[$a['status']] - $order[$b['status']]; } );
+
+        $md = "# Migration checklist - TSG " . $this->tsg . "\n\n";
+        $md .= "Generated by scm_pa_export.php on " . date('c') . " for areas: " . implode(", ", $this->areas) . ".\n\n";
+        $md .= "| status | area | item | detail |\n|---|---|---|---|\n";
+        foreach( $items as $i )
+        {
+            $detail = $i['detail'];
+            if( count($i['objects']) > 0 )
+            {
+                $shown = array_slice($i['objects'], 0, 10);
+                $detail .= "<br>" . implode(", ", $shown) . ( count($i['objects']) > 10 ? " … (+" . (count($i['objects']) - 10) . ")" : "" );
+            }
+            $md .= "| " . $i['status'] . " | " . $i['area'] . " | " . str_replace("|", "\\|", $i['title']) . " | " . str_replace(array("|", "\n"), array("\\|", " "), $detail) . " |\n";
+        }
+        file_put_contents( $this->exportDir . "/MIGRATION_CHECKLIST.md", $md );
+    }
+
+    /**
+     * first non-null of several dotted paths
+     */
+    public static function firstOf( $array, $paths )
+    {
+        foreach( $paths as $path )
+        {
+            $v = self::get($array, $path);
+            if( $v !== null )
+                return $v;
+        }
+        return null;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
