@@ -1,4 +1,4 @@
-# scm_pa_export.php – Prisma Access export (infrastructure, RN, SC, Mobile Users, Prisma Browser, IAM)
+# scm_pa_export.php – Prisma Access export (infrastructure, config, RN, SC, Mobile Users, Prisma Browser, IAM)
 
 Downloads the Prisma Access configuration of one tenant (TSG) into a local directory, per **area**.
 The export is the input for the later steps:
@@ -10,6 +10,7 @@ The export is the input for the later steps:
 | area | content |
 |---|---|
 | `infra` | Prisma Access infrastructure: infrastructure subnet, infra BGP AS, loopbacks, BGP routing, internal DNS servers, locations, egress IPs |
+| `config` | folder / snippet hierarchy (with snippet order) and per container all objects, security profiles, rules (pre / post) and zones – stored at the owning container |
 | `remote-networks` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, bandwidth allocations, remote networks (RN / RN-SPN) |
 | `service-connections` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, service connections (SC-CAN), service connection groups, traffic steering rules |
 | `mobile-users` | identity dependencies (certificates, trusted CAs, certificate / TLS service profiles, SAML / LDAP / RADIUS / TACACS+ / Kerberos server profiles, MFA servers, local users / groups, authentication profiles / sequences) and GlobalProtect (`/config/mobile-agent/v1/*`) |
@@ -37,12 +38,17 @@ php utils/develop/sase/scm/scm_sc_export.php in=scm-api://<TSG_ID>     # area=se
 php utils/develop/sase/scm/scm_mu_export.php in=scm-api://<TSG_ID>     # area=mobile-users
 php utils/develop/sase/scm/scm_pb_export.php in=scm-api://<TSG_ID>     # area=prisma-browser
 php utils/develop/sase/scm/scm_iam_export.php in=scm-api://<TSG_ID>    # area=iam
+php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container="Mobile Users" config-types=addresses,security-rules
 ```
 
 | argument | description |
 |---|---|
 | `in=scm-api://<TSG_ID>` | tenant; service account `client_id` / `client_secret` are taken from `~/.panconfkeystore` (`tsg_id<TSG_ID>`) or asked for and stored |
-| `area=` | comma separated: `infra`, `remote-networks`, `service-connections`, `mobile-users`, `prisma-browser`, `iam`; default: all |
+| `area=` | comma separated: `infra`, `config`, `remote-networks`, `service-connections`, `mobile-users`, `prisma-browser`, `iam`; default: all |
+| `container=` | config: comma separated folder / snippet names (default: all containers; the hierarchy is always exported) |
+| `config-types=` | config: comma separated types, e.g. `addresses,security-rules` (default: all) |
+| `config-devices` | config: also device folders (type `cloud` / `on-prem`) |
+| `config-predefined-snippets` | config: also predefined snippets (large) |
 | `outdir=` | base directory, default `export` |
 | `folder=` | SCM folder of the Remote Network IKE/IPsec objects, default `Remote Networks` |
 | `sc-folder=` | SCM folder of the Service Connection IKE/IPsec/QoS objects, default `Service Connections` |
@@ -138,13 +144,19 @@ With `egressip` the key is taken from, in this order:
         05_access-policies.json                 access_policies
         90_permissions.json                     permissions                                      (context)
         access-policies.csv
+    config/
+        01_folders.json                         /config/setup/v1/folders
+        02_snippets.json                        /config/setup/v1/snippets
+        hierarchy.json / hierarchy.txt
+        folders/<container>/NN_<type>.json      ?folder=<container>   (only objects owned by <container>)
+        snippets/<snippet>/NN_<type>.json       ?snippet=<snippet>
     MIGRATION_CHECKLIST.md
 ```
 
 All `mobile-users` endpoints are queried with `?folder=Mobile Users` (`mu-folder=`). Identity objects defined in a
 parent folder (e.g. `Prisma Access`, `All`) are reported as `inherited_or_predefined`.
 
-* **Import order**: `infra` → `remote-networks` → `service-connections` → `mobile-users` → `prisma-browser`; `iam` is not imported (category `documentation`); inside an area the files `01`… are in import order
+* **Import order**: `infra` → `config` → `remote-networks` → `service-connections` → `mobile-users` → `prisma-browser`; `iam` is not imported (category `documentation`); inside an area the files `01`… are in import order
   (an entry only references entries with a lower number or of an earlier area).
   `manifest.json` lists the full order in `import_order` (`area/endpoint`).
 * `infra/90_locations.json` is also fetched with `area=remote-networks` / `service-connections` / `mobile-users` alone (needed for the IP mapping);
@@ -159,9 +171,9 @@ parent folder (e.g. `Prisma Access`, `All`) are reported as `inherited_or_predef
 
 ### manifest.json
 
-`format_version` (5), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
+`format_version` (6), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
 per-endpoint `area`/status/count/http_code, `infra` summary, `mobile_users` summary, `ip_mapping` (summary per area),
-`secret_lists` (counts per area: `psk`, `bgp_secret`, `secret`), `prisma_browser` and `iam` summaries, `unavailable`,
+`secret_lists` (counts per area: `psk`, `bgp_secret`, `secret`), `prisma_browser`, `iam` and `config` summaries, `unavailable`,
 `migration_checklist` and `import_hints` (each with `area`).
 
 `mobile_users` summary (null without area `mobile-users`): `portal_hostname`, `ip_pools` per pool name,
@@ -187,6 +199,7 @@ accept route over SC, outbound routes for services, host route to IKE peer, with
 * `certificate_private_key` – certificates of the MU area: private keys are not exported by the API; import them
   manually (PKCS12 / PEM with key) on the target tenant before the mobile-agent settings.
 * `secret` – MU passwords / shared secrets (see `secret-list.csv`).
+* `owner_not_exported` – config: inherited objects whose owner container is not exported (predefined / filtered).
 * `idp_synced_groups` – Prisma Browser user groups from an identity provider (not created by import).
 * `unpublished_draft` – the source tenant has unpublished Prisma Browser changes (export = active configuration).
 * `publish_required` – Prisma Browser import writes a draft, publish afterwards.
@@ -290,6 +303,34 @@ Detected: fields named `secret`, `password`, `passwd`, `passphrase`, `key` or `*
 Import rule (`SCMPrismaAccessExport::loadSecretList()`, key `endpoint|object|path`): `secret_new` if filled, otherwise
 `secret_current`; `HASHED` and `DECRYPT_FAILED` require `secret_new`. Same file protection as `psk-list.csv`.
 
+### config
+
+**Hierarchy.** `config/hierarchy.json` is built from `/config/setup/v1/folders` and `/config/setup/v1/snippets`:
+folders in depth-first order with `parent`, `depth`, `path` (root → folder), `snippets` (attached snippets **in API
+order**), `children` and `inheritance_chain` (for every level root → folder: the folder, then its snippets in order).
+Snippets list `attached_to` (folder + position). `hierarchy.txt` shows the same as an indented tree. Folders are
+ordered by parent, independent of the response order.
+
+**Owned objects only.** A query for a container also returns the objects of its parent folders and attached snippets.
+Every object is stored only at its owner (field `snippet`, else `folder` of the object): in
+`folders/<container>/` or `snippets/<snippet>/` (`<container>` with unsafe characters replaced by `_`). Each file
+contains `container`, `container_kind`, `inherited_skipped` (objects of other owners in that answer) and `data`
+(owned objects). Objects without owner field are kept. Inherited objects whose owner is not exported (predefined
+snippet, `container=` filter, device folders, predefined snippets) are counted per owner in
+`manifest.json` → `config.owners_not_exported` (each object once).
+
+**Containers.** Folders of type `container` (devices with `config-devices`), then snippets (predefined ones with
+`config-predefined-snippets`). **Types** (pan.dev, not pan-os-php's own list – so the verification can find gaps):
+`variables`, tags, addresses, address groups, regions, services, service groups, schedules, external dynamic lists,
+dynamic user groups, applications, application filters / groups, URL categories, HIP objects / profiles, HTTP / syslog
+server profiles, log forwarding profiles, auto-tag actions, zone protection profiles, zones, security profiles
+(anti-spyware, vulnerability, WildFire / AV, DNS security, file blocking, URL access, decryption, SaaS, AI), profile
+groups, and the rule bases security / decryption / authentication / app-override / QoS as `-pre` and `-post`. A type
+that answers 401/403/404 is `unavailable` (`config.types_unavailable`), not an error.
+
+`manifest.json` → `config`: number of folders / snippets, exported containers, owned objects per type and per
+container, `owners_not_exported`, `types_unavailable`, options.
+
 ### prisma-browser
 
 Lists use cursor pagination (`limit=1000`, `cursor` from `pageInfo`); the four policies are single objects with
@@ -351,13 +392,15 @@ marked `internal`. Until then it is a manual item in the migration checklist.
 * `remote-networks/qos-profiles` path for folder `Remote Networks`.
 * Prisma Browser: OAuth token of the SCM service account accepted on `api.sase…/seb-api`; `pageInfo` cursor field
   name; whether the policy GETs need `configurationVersion=active`; user group `source` / application `type` values.
+* config: which types answer 404 in your tenant; whether objects of the queried container always carry `folder` /
+  `snippet`; rule `position` values; how predefined objects are marked.
 * IAM: `custom_roles` / `permission_sets` paths (derived from the doc structure), access policy field names
   (`principal`, `role`, `resource`), list format / pagination of the IAM endpoints.
 
 ## Code
 
 * `scm_pa_export.php` – CLI; `scm_rn_export.php` / `scm_sc_export.php` / `scm_mu_export.php` / `scm_pb_export.php` /
-  `scm_iam_export.php` – wrappers with one area
+  `scm_iam_export.php` / `scm_config_export.php` – wrappers with one area
 * `lib/SCMPrismaAccessExport.php` – export logic; area/endpoint list in `getAllEndpoints()`, connection areas
   (folder, connection endpoint) in `CONNECTION_AREAS`; results are keyed `area/endpoint`
   (`SCMRemoteNetworkExport` remains as class alias)

@@ -1,7 +1,7 @@
 # scm_pa_export.php – next steps and verification
 
-Status: the export covers all planned areas (`infra`, `remote-networks`, `service-connections`, `mobile-users`,
-`prisma-browser`, `iam`) and writes `MIGRATION_CHECKLIST.md`. It has only been tested offline against simulated API
+Status: the export covers all planned areas (`infra`, `config`, `remote-networks`, `service-connections`,
+`mobile-users`, `prisma-browser`, `iam`) and writes `MIGRATION_CHECKLIST.md`. It has only been tested offline against simulated API
 answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
 
 Details of the export itself: [README_pa_export.md](README_pa_export.md).
@@ -19,7 +19,9 @@ git am scm-rn-export_beta.patch \
        scm-pa-export-infra_beta.patch \
        scm-pa-export-sc_beta.patch \
        scm-pa-export-mu_beta.patch \
-       scm-pa-export-pb-iam-checklist_beta.patch
+       scm-pa-export-pb-iam-checklist_beta.patch \
+       scm-pa-export-next-steps_beta.patch \
+       scm-pa-export-config_beta.patch
 ```
 
 Quick check:
@@ -58,6 +60,13 @@ php utils/develop/sase/scm/scm_sc_export.php  in=scm-api://<TSG> psk-list debuga
 php utils/develop/sase/scm/scm_mu_export.php  in=scm-api://<TSG> psk-list debugapi
 php utils/develop/sase/scm/scm_pb_export.php  in=scm-api://<TSG> debugapi
 php utils/develop/sase/scm/scm_iam_export.php in=scm-api://<TSG> debugapi
+php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> debugapi
+```
+
+The `config` area queries every type for every container – on a large tenant start with a filter:
+
+```bash
+php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> container="Mobile Users" config-types=addresses,security-rules debugapi
 ```
 
 Note: `debugapi` prints the bearer token and full API answers – do not share the raw log.
@@ -144,7 +153,23 @@ was found; wrong items are fixed in the code afterwards.
 - [ ] List format and pagination of the IAM endpoints (all access policies present?).
 - [ ] `access-policies.csv`: `principal`, `role`, `resource` filled (field names of the access policy objects).
 
-### 4.8 MIGRATION_CHECKLIST.md
+### 4.8 config
+
+- [ ] `config/hierarchy.txt` matches the folder tree in SCM, incl. the order of the attached snippets per folder.
+- [ ] Every object returned for a container carries `folder` or `snippet` (otherwise it stays in the queried container
+      – check files with `data` entries without these fields).
+- [ ] No object appears twice on disk: per type, the names over all `config/*/*/NN_<type>.json` files are unique
+      per owner.
+- [ ] Owned counts per container (`manifest.json` → `config.owned_objects_by_container`) match the UI for a few
+      containers / types.
+- [ ] `config.types_unavailable`: only types that really do not exist / are not licensed (e.g. `ai-security-profiles`).
+      A type that exists in the UI but is listed there has a wrong path.
+- [ ] Rules: `-pre` / `-post` split as in the UI; order of the rules inside a file = rule order in the UI.
+- [ ] Predefined objects (applications, profiles): owner value (`snippet: predefined`?) → counted under
+      `config.owners_not_exported`, not stored.
+- [ ] Runtime / number of API calls acceptable on a large tenant (containers × types).
+
+### 4.9 MIGRATION_CHECKLIST.md
 
 - [ ] All `action_required` items are plausible for this tenant.
 - [ ] License item shows the RN bandwidth sum of the source tenant.
@@ -180,6 +205,7 @@ Alternative: open SCM in the Claude browser pane and capture the calls together.
 | step | what | depends on |
 |---|---|---|
 | 1 | fixes from the verification (section 4) | live run |
+| 2a | `scm_pa_verify.php`: verify pan-os-php's SCM loading against the raw export – input: export directory + XML written by `pan-os-php in=scm-api://<TSG> out=…`; per container and type: count, names, selected fields; report: types pan-os-php does not load, missing / extra objects, field differences, wrong owner (folder / snippet) | export format verified (4.8) |
 | 2 | `scm_pa_compare.php`: offline diff of two exports per area / endpoint – only in A, only in B, changed fields; normalised (no `id`, derived fields, redactions); IPs separately; JSON + HTML / Markdown report | export format verified |
 | 3 | `scm_pa_import.php` dry-run: dependency / reference check, secret lists loaded, read target tenant, plan create / skip / update | step 2 (same normalisation) |
 | 4 | import execution per area in `import_order`, special cases (`backup_SC` afterwards, predefined objects skipped, Prisma Browser publish) | step 3 |

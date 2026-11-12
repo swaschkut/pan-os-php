@@ -43,6 +43,9 @@
  *           secret-list.csv                         (optional, cleartext, chmod 600)
  *       prisma-browser/
  *           01_user-groups.json ... 09_policy-customization.json, 90_pending-changes.json
+ *       config/                                     (folders / snippets, objects, security, zones)
+ *           01_folders.json, 02_snippets.json, hierarchy.json, hierarchy.txt
+ *           folders/<container>/NN_<type>.json, snippets/<snippet>/NN_<type>.json   (objects owned by that container)
  *       iam/                                        (documentation / compare only, not imported)
  *           01_roles.json ... 06_access-policies.json, access-policies.csv
  *       MIGRATION_CHECKLIST.md
@@ -53,7 +56,7 @@
  */
 class SCMPrismaAccessExport
 {
-    const FORMAT_VERSION = 5;
+    const FORMAT_VERSION = 6;
 
     const AREA_INFRA = 'infra';
     const AREA_RN = 'remote-networks';
@@ -61,8 +64,15 @@ class SCMPrismaAccessExport
     const AREA_MU = 'mobile-users';
     const AREA_PB = 'prisma-browser';
     const AREA_IAM = 'iam';
+    const AREA_CONFIG = 'config';
     /** area order == import order (iam: documentation only) */
-    const AREAS = array( self::AREA_INFRA, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_PB, self::AREA_IAM );
+    const AREAS = array( self::AREA_INFRA, self::AREA_CONFIG, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_PB, self::AREA_IAM );
+
+    /** config area options, set by the CLI: container / type filter, device folders, predefined snippets */
+    public $configOptions = array( 'containers' => null, 'types' => null, 'devices' => false, 'predefined_snippets' => false );
+
+    /** @var array|null config hierarchy (folders, snippets) after exportConfig() */
+    public $configHierarchy = null;
 
     /** host of the IAM and Prisma Browser APIs */
     const SASE_API = 'https://api.sase.paloaltonetworks.com';
@@ -808,6 +818,11 @@ class SCMPrismaAccessExport
                     'message' => 'IAM is exported for documentation / compare only; principals and TSG scopes are tenant specific - see iam/access-policies.csv' );
         }
 
+        if( $this->hasArea(self::AREA_CONFIG) && $this->configStats !== null && count($this->configStats['owners_not_exported']) > 0 )
+            $hints[] = array( 'type' => 'owner_not_exported', 'area' => self::AREA_CONFIG,
+                'objects' => array_map( function($k, $v){ return $k . " (" . $v . ")"; }, array_keys($this->configStats['owners_not_exported']), $this->configStats['owners_not_exported'] ),
+                'message' => 'objects inherited from containers that are not exported (predefined / filtered) - counted only, reference them on import' );
+
         //service connection referencing another service connection as backup: create all first, set backup_SC afterwards
         $backup = array();
         foreach( $this->listData('service-connections', self::AREA_SC) as $sc )
@@ -856,13 +871,13 @@ class SCMPrismaAccessExport
             'api_url' => $this->connector->url_api,
             'folders' => $this->folders,
             'created_at' => date('c'),
-            'import_order' => array_values( array_map( function($e){ return self::key($e['area'], $e['name']); },
-                array_filter( $this->getEndpoints(), function($e){ return $e['category'] == 'dependency' && $e['fetched_as'] == 'selected'; } ) ) ),
+            'import_order' => $this->buildImportOrder(),
             'endpoints' => $endpoints,
             'infra' => $this->buildInfraSummary(),
             'mobile_users' => $this->buildMobileUsersSummary(),
             'prisma_browser' => $this->buildPrismaBrowserSummary(),
             'iam' => $this->buildIAMSummary(),
+            'config' => $this->buildConfigSummary(),
             'ip_mapping' => count($mappingSummary) > 0 ? $mappingSummary : null,
             'secret_lists' => count($secretStats) > 0 ? $secretStats : null,
             'import_hints' => $this->collectImportHints(),
@@ -1366,6 +1381,391 @@ class SCMPrismaAccessExport
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    // config: folders / snippets, objects, security, zones
+
+    /**
+     * object types per container in import order (an entry only references lower entries or the hierarchy)
+     * 'position' => true: rules, fetched as pre and post
+     */
+    public static function getConfigTypes()
+    {
+        $o = "/config/objects/v1/";
+        $sec = "/config/security/v1/";
+        $net = "/config/network/v1/";
+        $set = "/config/setup/v1/";
+        $t = array(
+            array( 'name' => 'variables', 'path' => $set . 'variables' ),
+            array( 'name' => 'tags', 'path' => $o . 'tags' ),
+            array( 'name' => 'addresses', 'path' => $o . 'addresses' ),
+            array( 'name' => 'address-groups', 'path' => $o . 'address-groups' ),
+            array( 'name' => 'regions', 'path' => $o . 'regions' ),
+            array( 'name' => 'services', 'path' => $o . 'services' ),
+            array( 'name' => 'service-groups', 'path' => $o . 'service-groups' ),
+            array( 'name' => 'schedules', 'path' => $o . 'schedules' ),
+            array( 'name' => 'external-dynamic-lists', 'path' => $o . 'external-dynamic-lists' ),
+            array( 'name' => 'dynamic-user-groups', 'path' => $o . 'dynamic-user-groups' ),
+            array( 'name' => 'applications', 'path' => $o . 'applications' ),
+            array( 'name' => 'application-filters', 'path' => $o . 'application-filters' ),
+            array( 'name' => 'application-groups', 'path' => $o . 'application-groups' ),
+            array( 'name' => 'url-categories', 'path' => $sec . 'url-categories' ),
+            array( 'name' => 'hip-objects', 'path' => $o . 'hip-objects' ),
+            array( 'name' => 'hip-profiles', 'path' => $o . 'hip-profiles' ),
+            array( 'name' => 'http-server-profiles', 'path' => $o . 'http-server-profiles' ),
+            array( 'name' => 'syslog-server-profiles', 'path' => $o . 'syslog-server-profiles' ),
+            array( 'name' => 'log-forwarding-profiles', 'path' => $o . 'log-forwarding-profiles' ),
+            array( 'name' => 'auto-tag-actions', 'path' => $o . 'auto-tag-actions' ),
+            array( 'name' => 'zone-protection-profiles', 'path' => $net . 'zone-protection-profiles' ),
+            array( 'name' => 'zones', 'path' => $net . 'zones' ),
+            array( 'name' => 'anti-spyware-profiles', 'path' => $sec . 'anti-spyware-profiles' ),
+            array( 'name' => 'vulnerability-protection-profiles', 'path' => $sec . 'vulnerability-protection-profiles' ),
+            array( 'name' => 'wildfire-anti-virus-profiles', 'path' => $sec . 'wildfire-anti-virus-profiles' ),
+            array( 'name' => 'dns-security-profiles', 'path' => $sec . 'dns-security-profiles' ),
+            array( 'name' => 'file-blocking-profiles', 'path' => $sec . 'file-blocking-profiles' ),
+            array( 'name' => 'url-access-profiles', 'path' => $sec . 'url-access-profiles' ),
+            array( 'name' => 'decryption-profiles', 'path' => $sec . 'decryption-profiles' ),
+            array( 'name' => 'saas-security-profiles', 'path' => $sec . 'saas-security-profiles' ),
+            array( 'name' => 'ai-security-profiles', 'path' => $sec . 'ai-security-profiles' ),
+            array( 'name' => 'profile-groups', 'path' => $sec . 'profile-groups' ),
+            array( 'name' => 'security-rules', 'path' => $sec . 'security-rules', 'position' => true ),
+            array( 'name' => 'decryption-rules', 'path' => $sec . 'decryption-rules', 'position' => true ),
+            array( 'name' => 'authentication-rules', 'path' => $sec . 'authentication-rules', 'position' => true ),
+            array( 'name' => 'app-override-rules', 'path' => $sec . 'app-override-rules', 'position' => true ),
+            array( 'name' => 'qos-policy-rules', 'path' => $sec . 'qos-policy-rules', 'position' => true ),
+        );
+        foreach( $t as $i => &$type )
+            $type['order'] = $i + 1;
+        return $t;
+    }
+
+    public static function slug( $name )
+    {
+        $slug = preg_replace( '/[^A-Za-z0-9._-]+/', '_', (string)$name );
+        return trim( $slug, "_" ) === "" ? "_" : $slug;
+    }
+
+    /**
+     * folders + snippets -> hierarchy: tree, path root..container, attached snippets in API order, DFS order
+     */
+    public static function buildHierarchy( $folders, $snippets )
+    {
+        $byName = array();
+        foreach( $folders as $f )
+            $byName[(string)self::get($f, 'name')] = $f;
+
+        $children = array();
+        $roots = array();
+        foreach( $folders as $f )
+        {
+            $parent = self::get($f, 'parent');
+            if( $parent === null || $parent === "" || !isset($byName[$parent]) )
+                $roots[] = (string)self::get($f, 'name');
+            else
+                $children[$parent][] = (string)self::get($f, 'name');
+        }
+
+        $ordered = array();
+        $walk = function( $name, $path, $depth ) use( &$walk, &$ordered, $byName, $children ) {
+            $f = $byName[$name];
+            $path[] = $name;
+            $ordered[] = array(
+                'name' => $name,
+                'id' => self::get($f, 'id'),
+                'type' => self::get($f, 'type'),
+                'parent' => self::get($f, 'parent'),
+                'depth' => $depth,
+                'path' => $path,
+                'snippets' => array_values( (array)self::get($f, 'snippets', array()) ),
+                'children' => isset($children[$name]) ? $children[$name] : array(),
+            );
+            if( isset($children[$name]) )
+                foreach( $children[$name] as $child )
+                    if( !in_array($child, $path, TRUE) )
+                        $walk( $child, $path, $depth + 1 );
+        };
+        foreach( $roots as $root )
+            $walk( $root, array(), 0 );
+
+        $folderIndex = array();
+        foreach( $ordered as $f )
+            $folderIndex[$f['name']] = $f;
+
+        //effective chain per folder: for every level root..folder the folder itself and its snippets
+        foreach( $ordered as &$f )
+        {
+            $chain = array();
+            foreach( $f['path'] as $level )
+            {
+                $chain[] = array( 'kind' => 'folder', 'name' => $level );
+                foreach( $folderIndex[$level]['snippets'] as $sn )
+                    $chain[] = array( 'kind' => 'snippet', 'name' => $sn, 'attached_to' => $level );
+            }
+            $f['inheritance_chain'] = $chain;
+        }
+        unset($f);
+
+        $snippetList = array();
+        foreach( $snippets as $sn )
+        {
+            $name = (string)self::get($sn, 'name');
+            $attached = array();
+            foreach( $ordered as $f )
+            {
+                $pos = array_search($name, $f['snippets'], TRUE);
+                if( $pos !== FALSE )
+                    $attached[] = array( 'folder' => $f['name'], 'position' => $pos + 1 );
+            }
+            $snippetList[] = array( 'name' => $name, 'id' => self::get($sn, 'id'), 'type' => self::get($sn, 'type'), 'attached_to' => $attached );
+        }
+
+        return array( 'folders' => $ordered, 'snippets' => $snippetList, 'roots' => $roots );
+    }
+
+    public static function hierarchyText( $hierarchy )
+    {
+        $lines = array();
+        foreach( $hierarchy['folders'] as $f )
+        {
+            $line = str_repeat("    ", $f['depth']) . $f['name'] . " [" . $f['type'] . "]";
+            if( count($f['snippets']) > 0 )
+            {
+                $sn = array();
+                foreach( $f['snippets'] as $i => $name )
+                    $sn[] = ($i + 1) . ":" . $name;
+                $line .= "  snippets: " . implode(", ", $sn);
+            }
+            $lines[] = $line;
+        }
+        $unattached = array();
+        foreach( $hierarchy['snippets'] as $sn )
+            if( count($sn['attached_to']) == 0 )
+                $unattached[] = $sn['name'] . ( $sn['type'] ? " [" . $sn['type'] . "]" : "" );
+        if( count($unattached) > 0 )
+            $lines[] = "\n(snippets not attached: " . implode(", ", $unattached) . ")";
+        return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * exports the config area: hierarchy + per container (folder / snippet) all config types;
+     * a container query also returns the objects of its parents / snippets, so only objects owned by the queried
+     * container (field folder / snippet) are stored there; the others are counted per owner
+     */
+    public function exportConfig()
+    {
+        $a = self::AREA_CONFIG;
+        $opt = $this->configOptions;
+
+        $setup = array(
+            array( 'area' => $a, 'order' => 1, 'name' => 'folders', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/setup/v1/folders", 'depends_on' => array(), 'fetched_as' => 'selected' ),
+            array( 'area' => $a, 'order' => 2, 'name' => 'snippets', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/setup/v1/snippets", 'depends_on' => array(), 'fetched_as' => 'selected' ),
+        );
+        $raw = array();
+        foreach( $setup as $endpoint )
+        {
+            PH::print_stdout( " - [config " . sprintf("%02d", $endpoint['order']) . "] " . $endpoint['name'] . " ... " );
+            $result = $this->connector->getSCMResourceAll( $endpoint['url'] );
+            $this->storeConfigResult( $endpoint, $endpoint['area'] . "/" . sprintf("%02d", $endpoint['order']) . "_" . $endpoint['name'] . ".json", $result, $result['data'] );
+            $raw[$endpoint['name']] = ( $result['errors'] === null && is_array($result['data']) ) ? $result['data'] : array();
+        }
+
+        $hierarchy = self::buildHierarchy( $raw['folders'], $raw['snippets'] );
+        $this->configHierarchy = $hierarchy;
+        $this->writeJson( $a . '/hierarchy.json', $hierarchy );
+        file_put_contents( $this->exportDir . "/" . $a . "/hierarchy.txt", self::hierarchyText($hierarchy) );
+
+        //containers to query: folders (type container, optionally devices) in DFS order, then snippets
+        $containers = array();
+        foreach( $hierarchy['folders'] as $f )
+        {
+            if( $f['type'] !== null && $f['type'] !== 'container' && !$opt['devices'] )
+                continue;
+            $containers[] = array( 'kind' => 'folder', 'name' => $f['name'] );
+        }
+        foreach( $hierarchy['snippets'] as $sn )
+        {
+            if( $sn['type'] === 'predefined' && !$opt['predefined_snippets'] )
+                continue;
+            $containers[] = array( 'kind' => 'snippet', 'name' => $sn['name'] );
+        }
+        if( $opt['containers'] !== null )
+            $containers = array_values( array_filter( $containers, function($c) use( $opt ){ return in_array($c['name'], $opt['containers'], TRUE); } ) );
+
+        $types = self::getConfigTypes();
+        if( $opt['types'] !== null )
+            $types = array_values( array_filter( $types, function($t) use( $opt ){ return in_array($t['name'], $opt['types'], TRUE); } ) );
+
+        $exported = array();
+        foreach( $containers as $c )
+            $exported[$c['kind'] . ":" . $c['name']] = TRUE;
+
+        $this->configStats = array( 'containers' => array(), 'owned' => array(), 'inherited_by_owner' => array(), 'owners_not_exported' => array() );
+
+        foreach( $containers as $c )
+        {
+            $param = ( $c['kind'] == 'folder' ? 'folder' : 'snippet' ) . "=" . rawurlencode($c['name']);
+            $dirKey = $a . "/" . $c['kind'] . "s/" . self::slug($c['name']);
+            PH::print_stdout( " - [config] " . $c['kind'] . " '" . $c['name'] . "'" );
+            $this->configStats['containers'][$c['kind'] . ":" . $c['name']] = array();
+
+            foreach( $types as $type )
+            {
+                foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
+                {
+                    $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
+                    $url = $type['path'] . "?" . $param . ( $position !== null ? "&position=" . $position : "" );
+                    $endpoint = array( 'area' => $a, 'order' => $type['order'], 'name' => $name, 'container' => $c['name'], 'container_kind' => $c['kind'],
+                        'category' => 'dependency', 'scope' => $c['kind'], 'optional' => true, 'url' => $url, 'depends_on' => array(), 'fetched_as' => 'selected' );
+
+                    $result = $this->connector->getSCMResourceAll( $url );
+
+                    $owned = null;
+                    $inherited = 0;
+                    if( $result['errors'] === null && is_array($result['data']) && $result['is_list'] )
+                    {
+                        $owned = array();
+                        foreach( $result['data'] as $obj )
+                        {
+                            $ownerKind = isset($obj['snippet']) && $obj['snippet'] !== "" ? 'snippet' : ( isset($obj['folder']) ? 'folder' : null );
+                            $ownerName = $ownerKind === null ? null : (string)$obj[$ownerKind];
+                            //no owner field: keep (cannot be attributed)
+                            if( $ownerKind === null || ( $ownerKind === $c['kind'] && $ownerName === $c['name'] ) )
+                                $owned[] = $obj;
+                            else
+                            {
+                                $inherited++;
+                                $ownerKey = $ownerKind . ":" . $ownerName;
+                                $this->configStats['inherited_by_owner'][$ownerKey][$type['name']] = true;
+                                if( !isset($exported[$ownerKey]) )
+                                {
+                                    //count each foreign object once per owner and type
+                                    $id = isset($obj['id']) ? $obj['id'] : json_encode($obj);
+                                    $this->configStats['not_exported_ids'][$ownerKey][$name][$id] = true;
+                                }
+                            }
+                        }
+                    }
+
+                    $file = $dirKey . "/" . sprintf("%02d", $type['order']) . "_" . $name . ".json";
+                    $this->storeConfigResult( $endpoint, $file, $result, $owned, array( 'container' => $c['name'], 'container_kind' => $c['kind'], 'inherited_skipped' => $inherited ) );
+
+                    if( $owned !== null )
+                    {
+                        $this->configStats['containers'][$c['kind'] . ":" . $c['name']][$name] = count($owned);
+                        $this->configStats['owned'][$name] = ( isset($this->configStats['owned'][$name]) ? $this->configStats['owned'][$name] : 0 ) + count($owned);
+                    }
+                }
+            }
+        }
+
+        foreach( isset($this->configStats['not_exported_ids']) ? $this->configStats['not_exported_ids'] : array() as $owner => $byType )
+        {
+            $n = 0;
+            foreach( $byType as $ids )
+                $n += count($ids);
+            $this->configStats['owners_not_exported'][$owner] = $n;
+        }
+        unset( $this->configStats['not_exported_ids'] );
+    }
+
+    /** @var array statistics of exportConfig() */
+    public $configStats = null;
+
+    private function storeConfigResult( $endpoint, $file, $result, $data, $extra = array() )
+    {
+        $meta = $endpoint;
+        $meta['file'] = $file;
+        $meta['http_code'] = $result['http_code'];
+        $meta['fetched_at'] = date('c');
+        if( $result['errors'] !== null && !empty($endpoint['optional']) && in_array($result['http_code'], array(401, 403, 404), TRUE) )
+        {
+            $meta['status'] = 'unavailable';
+            $meta['error'] = self::errorMessage($result['errors']);
+        }
+        elseif( $result['errors'] !== null )
+        {
+            $meta['status'] = 'error';
+            $meta['error'] = self::errorMessage($result['errors']);
+            PH::print_stdout( "     x ERROR " . $endpoint['name'] . ": " . $meta['error'] );
+        }
+        else
+        {
+            $meta['status'] = 'ok';
+            $meta['count'] = is_array($data) ? count($data) : null;
+        }
+
+        $this->writeJson( $file, array_merge( array(
+            'endpoint' => $endpoint['name'], 'area' => $endpoint['area'], 'url' => $endpoint['url'], 'tsg_id' => $this->tsg,
+            'fetched_at' => $meta['fetched_at'], 'http_code' => $result['http_code'], 'status' => $meta['status'],
+            'error' => isset($meta['error']) ? $result['errors'] : null ), $extra, array( 'data' => $data ) ) );
+
+        $key = isset($endpoint['container']) ? $endpoint['area'] . "/" . $endpoint['container_kind'] . ":" . $endpoint['container'] . "/" . $endpoint['name'] : self::key($endpoint['area'], $endpoint['name']);
+        $this->results[$key] = array( 'meta' => $meta, 'data' => $data );
+    }
+
+    public function buildConfigSummary()
+    {
+        if( !$this->hasArea(self::AREA_CONFIG) || $this->configHierarchy === null )
+            return null;
+        $owned = $this->configStats['owned'];
+        ksort($owned);
+        $unavailableTypes = array();
+        foreach( $this->results as $r )
+        {
+            if( $r['meta']['area'] == self::AREA_CONFIG && isset($r['meta']['container']) && $r['meta']['status'] == 'unavailable' )
+                $unavailableTypes[$r['meta']['name']] = true;
+        }
+        return array(
+            'files' => array( self::AREA_CONFIG . '/hierarchy.json', self::AREA_CONFIG . '/hierarchy.txt' ),
+            'folders' => count($this->configHierarchy['folders']),
+            'snippets' => count($this->configHierarchy['snippets']),
+            'containers_exported' => array_keys($this->configStats['containers']),
+            'owned_objects_by_type' => $owned,
+            'owned_objects_by_container' => $this->configStats['containers'],
+            'owners_not_exported' => $this->configStats['owners_not_exported'],
+            'types_unavailable' => array_keys($unavailableTypes),
+            'options' => $this->configOptions,
+        );
+    }
+
+    /**
+     * area/endpoint list in import order; config: hierarchy, then every type (per container)
+     */
+    public function buildImportOrder()
+    {
+        $order = array();
+        foreach( $this->getEndpoints() as $e )
+        {
+            if( $e['area'] == self::AREA_CONFIG )
+                continue;
+            if( $e['category'] == 'dependency' && $e['fetched_as'] == 'selected' )
+                $order[] = self::key($e['area'], $e['name']);
+        }
+        if( $this->hasArea(self::AREA_CONFIG) )
+        {
+            $config = array( 'config/folders', 'config/snippets' );
+            $types = self::getConfigTypes();
+            if( $this->configOptions['types'] !== null )
+                $types = array_filter( $types, function($t){ return in_array($t['name'], $this->configOptions['types'], TRUE); } );
+            foreach( $types as $t )
+            {
+                if( !empty($t['position']) )
+                {
+                    $config[] = 'config/' . $t['name'] . '-pre';
+                    $config[] = 'config/' . $t['name'] . '-post';
+                }
+                else
+                    $config[] = 'config/' . $t['name'];
+            }
+            //config right after infra
+            $pos = 0;
+            foreach( $order as $i => $k )
+                if( strpos($k, self::AREA_INFRA . '/') === 0 )
+                    $pos = $i + 1;
+            array_splice( $order, $pos, 0, $config );
+        }
+        return array_values($order);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
     // prisma browser / iam
 
     public function buildPrismaBrowserSummary()
@@ -1553,8 +1953,19 @@ class SCMPrismaAccessExport
                 'no documented public API - configure manually or via the internal SCM API (to be added)' );
         $add( 'identity_logging', 'check', 'tenant', 'Cloud Identity Engine, Strata Logging Service, log forwarding (not exported)',
             'tenant bound services - set up on the target tenant before the configuration that references them' );
-        $add( 'objects_policies', 'info', 'tenant', 'Objects and security policy',
-            'not part of this export - use pan-os-php in=scm-api://<TSG> for folders / snippets / objects / rules' );
+        if( $this->hasArea(self::AREA_CONFIG) && $this->configHierarchy !== null )
+        {
+            $add( 'objects_policies', 'check', self::AREA_CONFIG, 'Folders, snippets, objects and security policy',
+                'exported in config/ (owned objects per container, hierarchy.json with snippet order); import / verify with pan-os-php in=scm-api://<TSG>' );
+            $notExported = isset($manifest['config']['owners_not_exported']) ? $manifest['config']['owners_not_exported'] : array();
+            if( count($notExported) > 0 )
+                $add( 'config_owners', 'info', self::AREA_CONFIG, 'Objects owned by containers not exported',
+                    'inherited objects whose owner is predefined or filtered out (container= / config-devices / config-predefined-snippets) - counted only',
+                    array_map( function($k, $v){ return $k . " (" . $v . ")"; }, array_keys($notExported), $notExported ) );
+        }
+        else
+            $add( 'objects_policies', 'info', 'tenant', 'Objects and security policy',
+                'not part of this export (area config) - use pan-os-php in=scm-api://<TSG> for folders / snippets / objects / rules' );
 
         $pbOk = FALSE;
         foreach( $manifest['endpoints'] as $e )
@@ -1718,6 +2129,9 @@ class SCMPrismaAccessExport
 
     public function writeJson( $file, $content )
     {
+        $dir = dirname( $this->exportDir . "/" . $file );
+        if( !is_dir($dir) )
+            mkdir( $dir, 0700, TRUE );
         $json = json_encode( $content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
         if( $json === false )
             derr( "JSON encode failed for " . $file . ": " . json_last_error_msg(), null, FALSE );
