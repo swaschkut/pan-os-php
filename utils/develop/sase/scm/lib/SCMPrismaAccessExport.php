@@ -56,7 +56,7 @@
  */
 class SCMPrismaAccessExport
 {
-    const FORMAT_VERSION = 7;
+    const FORMAT_VERSION = 8;
 
     const AREA_INFRA = 'infra';
     const AREA_RN = 'remote-networks';
@@ -69,7 +69,7 @@ class SCMPrismaAccessExport
     const AREAS = array( self::AREA_INFRA, self::AREA_CONFIG, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_PB, self::AREA_IAM );
 
     /** config area options, set by the CLI: container / type filter, device folders, predefined snippets */
-    public $configOptions = array( 'containers' => null, 'types' => null, 'scope' => null, 'devices' => false, 'predefined_snippets' => false );
+    public $configOptions = array( 'containers' => null, 'types' => null, 'scope' => null, 'devices' => false, 'predefined_snippets' => false, 'mode' => 'leaf' );
 
     /** @var array|null config hierarchy (folders, snippets) after exportConfig() */
     public $configHierarchy = null;
@@ -897,9 +897,34 @@ class SCMPrismaAccessExport
     // secret lists (PSK, BGP secret)
 
     const PSK_DECRYPT_FAILED = 'DECRYPT_FAILED';
-    const PSK_LIST_COLUMNS = array( 'ike_gateway', 'ipsec_tunnel', 'remote_network', 'branch_peer_address', 'psk_current', 'psk_new' );
-    const PSK_LIST_COLUMNS_SC = array( 'ike_gateway', 'ipsec_tunnel', 'service_connection', 'peer_address', 'psk_current', 'psk_new' );
-    const BGP_SECRET_LIST_COLUMNS = array( 'object', 'field', 'bgp_peer_ip_address', 'secret_current', 'secret_new' );
+    const PSK_LIST_COLUMNS = array( 'ike_gateway', 'ipsec_tunnel', 'remote_network', 'branch_peer_address', 'psk_current', 'psk_new', 'psk_sha1' );
+    const PSK_LIST_COLUMNS_SC = array( 'ike_gateway', 'ipsec_tunnel', 'service_connection', 'peer_address', 'psk_current', 'psk_new', 'psk_sha1' );
+    const BGP_SECRET_LIST_COLUMNS = array( 'object', 'field', 'bgp_peer_ip_address', 'secret_current', 'secret_new', 'secret_sha1' );
+
+    /**
+     * PAN-OS encrypted value, version 1: "-" + base64(0x01) + base64(sha1(cleartext)) + base64(aes-256-cbc(cleartext))
+     * The SHA1 part identifies the cleartext independent of the master key: two tenants with different master keys
+     * produce different values for the same secret, but the same SHA1.
+     */
+    const ENCRYPTED_V1_PATTERN = '#^-AQ==([A-Za-z0-9+/]{27}=)[A-Za-z0-9+/]+={0,2}$#';
+
+    /**
+     * base64 SHA1 of the cleartext of a PAN-OS encrypted value, or null
+     */
+    public static function encryptedSha1( $value )
+    {
+        if( !is_string($value) || !preg_match(self::ENCRYPTED_V1_PATTERN, $value, $m) )
+            return null;
+        return $m[1];
+    }
+
+    /**
+     * base64 SHA1 of a cleartext (same format as encryptedSha1())
+     */
+    public static function cleartextSha1( $cleartext )
+    {
+        return base64_encode( sha1( (string)$cleartext, true ) );
+    }
 
     /**
      * opens a file with mode 0600 for cleartext secrets
@@ -967,7 +992,7 @@ class SCMPrismaAccessExport
             }
         }
 
-        $stats = array( 'gateways' => 0, 'decrypted' => 0, 'decrypt_failed' => 0, 'without_psk' => 0 );
+        $stats = array( 'gateways' => 0, 'decrypted' => 0, 'decrypt_failed' => 0, 'without_psk' => 0, 'sha1_available' => 0 );
 
         $fh = $this->openSecretFile( $this->exportDir . "/" . $area . "/psk-list.csv" );
         fputcsv( $fh, $area == self::AREA_RN ? self::PSK_LIST_COLUMNS : self::PSK_LIST_COLUMNS_SC, ',', '"', '' );
@@ -993,7 +1018,10 @@ class SCMPrismaAccessExport
                     $conns = array_merge( $conns, $tunnelConnections[$tunnelName] );
             }
 
-            fputcsv( $fh, array( $gwName, implode(" | ", $tunnels), implode(" | ", array_unique($conns)), implode(" | ", self::peerAddressList($gw)), $cleartext, "" ), ',', '"', '' );
+            $sha1 = self::encryptedSha1( $encrypted );
+            if( $sha1 !== null )
+                $stats['sha1_available']++;
+            fputcsv( $fh, array( $gwName, implode(" | ", $tunnels), implode(" | ", array_unique($conns)), implode(" | ", self::peerAddressList($gw)), $cleartext, "", (string)$sha1 ), ',', '"', '' );
         }
         fclose( $fh );
 
@@ -1025,7 +1053,7 @@ class SCMPrismaAccessExport
 
                 $peerPath = ( strpos($path, 'bgp_peer.') === 0 ) ? 'bgp_peer.peer_ip_address' : 'protocol.bgp.peer_ip_address';
                 fputcsv( $fh, array( self::get($conn, 'name'), $path, self::get($conn, $peerPath),
-                    self::decryptValue( $crypto, $encrypted, $masterKey, $stats ), "" ), ',', '"', '' );
+                    self::decryptValue( $crypto, $encrypted, $masterKey, $stats ), "", (string)self::encryptedSha1($encrypted) ), ',', '"', '' );
             }
         }
         fclose( $fh );
@@ -1040,8 +1068,8 @@ class SCMPrismaAccessExport
      */
     public static function loadPSKList( $file )
     {
-        $list = self::loadSecretCSV( $file, array('ike_gateway'), 'psk_current', 'psk_new' );
-        return array( 'psk' => $list['secret'], 'source' => $list['source'], 'errors' => $list['errors'] );
+        $list = self::loadSecretCSV( $file, array('ike_gateway'), 'psk_current', 'psk_new', 'psk_sha1' );
+        return array( 'psk' => $list['secret'], 'source' => $list['source'], 'errors' => $list['errors'], 'verified' => $list['verified'] );
     }
 
     /**
@@ -1051,13 +1079,15 @@ class SCMPrismaAccessExport
      */
     public static function loadBGPSecretList( $file )
     {
-        return self::loadSecretCSV( $file, array('object', 'field'), 'secret_current', 'secret_new' );
+        return self::loadSecretCSV( $file, array('object', 'field'), 'secret_current', 'secret_new', 'secret_sha1' );
     }
 
     /**
      * generic loader: key columns joined with '|', value = new column if filled, else current column
+     * 'verified' [key => true|false|null]: the used value has the SHA1 of the exported (encrypted) value -
+     * true = same secret as in the source tenant, false = a different secret, null = no SHA1 in the list
      */
-    public static function loadSecretCSV( $file, $keyColumns, $currentColumn, $newColumn )
+    public static function loadSecretCSV( $file, $keyColumns, $currentColumn, $newColumn, $sha1Column = null )
     {
         if( !is_readable($file) )
             derr( "secret list not readable: " . $file, null, FALSE );
@@ -1073,7 +1103,8 @@ class SCMPrismaAccessExport
                 derr( "secret list " . $file . " has no column '" . $required . "'", null, FALSE );
         }
 
-        $result = array( 'secret' => array(), 'source' => array(), 'errors' => array() );
+        $result = array( 'secret' => array(), 'source' => array(), 'errors' => array(), 'verified' => array() );
+        $hasSha1 = $sha1Column !== null && in_array($sha1Column, $header, TRUE);
         $lineNo = 1;
         while( ($line = fgetcsv( $fh, 0, ',', '"', '' )) !== false )
         {
@@ -1105,11 +1136,15 @@ class SCMPrismaAccessExport
             {
                 $result['secret'][$key] = $row[$newColumn];
                 $result['source'][$key] = 'new';
+                $result['verified'][$key] = ( $hasSha1 && trim($row[$sha1Column]) !== "" )
+                    ? self::cleartextSha1($row[$newColumn]) === trim($row[$sha1Column]) : null;
             }
             elseif( $row[$currentColumn] !== "" && $row[$currentColumn] !== self::PSK_DECRYPT_FAILED && $row[$currentColumn] !== self::SECRET_HASHED )
             {
                 $result['secret'][$key] = $row[$currentColumn];
                 $result['source'][$key] = 'current';
+                $result['verified'][$key] = ( $hasSha1 && trim($row[$sha1Column]) !== "" )
+                    ? self::cleartextSha1($row[$currentColumn]) === trim($row[$sha1Column]) : null;
             }
             else
                 $result['errors'][$key] = $newColumn . " empty and " . $currentColumn . " not available (" . ( $row[$currentColumn] === "" ? "empty" : $row[$currentColumn] ) . ")";
@@ -1276,7 +1311,7 @@ class SCMPrismaAccessExport
     // generic secret list (mobile-users: server profile passwords / secrets, local user passwords, GP app passwords)
 
     const SECRET_HASHED = 'HASHED';
-    const SECRET_LIST_COLUMNS = array( 'endpoint', 'object', 'path', 'secret_current', 'secret_new' );
+    const SECRET_LIST_COLUMNS = array( 'endpoint', 'object', 'path', 'secret_current', 'secret_new', 'secret_sha1' );
     /** field names treated as secret (last path element) */
     const SECRET_KEY_PATTERN = '/(^|_)(secret|password|passwd|passphrase|key)$/i';
     /** field names matching SECRET_KEY_PATTERN which are not secret */
@@ -1363,7 +1398,7 @@ class SCMPrismaAccessExport
                 $current = $value;
                 $stats['cleartext']++;
             }
-            fputcsv( $fh, array( $secret['endpoint'], $secret['object'], $secret['path'], $current, "" ), ',', '"', '' );
+            fputcsv( $fh, array( $secret['endpoint'], $secret['object'], $secret['path'], $current, "", (string)self::encryptedSha1($value) ), ',', '"', '' );
         }
         fclose( $fh );
 
@@ -1377,7 +1412,7 @@ class SCMPrismaAccessExport
      */
     public static function loadSecretList( $file )
     {
-        return self::loadSecretCSV( $file, array('endpoint', 'object', 'path'), 'secret_current', 'secret_new' );
+        return self::loadSecretCSV( $file, array('endpoint', 'object', 'path'), 'secret_current', 'secret_new', 'secret_sha1' );
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1809,108 +1844,279 @@ class SCMPrismaAccessExport
 
         $exported = array();
         foreach( $containers as $c )
-            $exported[$c['kind'] . ":" . $c['name']] = TRUE;
+            $exported[$c['kind'] . ":" . $c['name']] = $c;
 
-        $this->configStats = array( 'containers' => array(), 'owned' => array(), 'inherited_by_owner' => array(), 'owners_not_exported' => array() );
-
+        $this->configStats = array( 'containers' => array(), 'owned' => array(), 'inherited_by_owner' => array(), 'owners_not_exported' => array(),
+            'mode' => null, 'queries' => 0, 'skipped_unavailable' => 0 );
         foreach( $containers as $c )
-        {
-            $param = ( $c['kind'] == 'folder' ? 'folder' : 'snippet' ) . "=" . rawurlencode($c['name']);
-            $dirKey = $a . "/" . $c['kind'] . "s/" . self::slug($c['name']);
-            PH::print_stdout( " - [config] " . ( $c['device'] ? "device" : $c['kind'] ) . " '" . $c['name'] . "'" );
             $this->configStats['containers'][$c['kind'] . ":" . $c['name']] = array();
-            //device folders: "folder=<serial>", fallback "device=<serial>" if the API refuses the folder parameter
-            $deviceParamChecked = !$c['device'];
 
-            foreach( $types as $type )
+        //query plan: leaf (default) or all; an explicit container filter always queries exactly those containers
+        $mode = ( isset($opt['mode']) && $opt['mode'] === 'all' ) || $opt['containers'] !== null ? 'all' : 'leaf';
+        $this->configStats['mode'] = $mode;
+
+        $folderInfo = array();
+        foreach( $hierarchy['folders'] as $f )
+            $folderInfo[$f['name']] = $f;
+
+        $collected = array();      // ckey => name => ['objects' => [], 'seen' => [], 'status' => [], 'queries' => [], 'inherited' => 0, 'errors' => []]
+        $notExportedIds = array();
+        $unavailable = array();    // type name|class => first container
+        $deviceParam = array();    // device container => 'folder' | 'device'
+
+        foreach( $types as $type )
+        {
+            $eligible = array();
+            foreach( $containers as $c )
+                if( self::configTypeEligible($c, $type) )
+                    $eligible[$c['kind'] . ":" . $c['name']] = $c;
+            if( count($eligible) == 0 )
+                continue;
+
+            $queries = $mode == 'all' ? self::queryPlanAll($eligible) : self::queryPlanLeaf($eligible, $folderInfo);
+            PH::print_stdout( " - [config " . sprintf("%03d", $type['order']) . "] " . $type['name'] . " ... " . count($queries) . " quer" . ( count($queries) == 1 ? "y" : "ies" ) . " for " . count($eligible) . " container(s)" );
+
+            foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
             {
-                //Prisma Access folders: network / identity / device are covered by the dedicated areas
-                if( $c['kind'] == 'folder' && in_array($c['name'], self::PA_FOLDERS, TRUE) && in_array($type['group'], array('network', 'identity', 'device'), TRUE) )
-                    continue;
-                foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
+                $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
+                foreach( $queries as $q )
                 {
-                    $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
-                    $url = $type['path'] . "?" . $param . ( $position !== null ? "&position=" . $position : "" );
-                    $endpoint = array( 'area' => $a, 'order' => $type['order'], 'name' => $name, 'container' => $c['name'], 'container_kind' => $c['kind'],
-                        'category' => 'dependency', 'scope' => $c['kind'], 'optional' => true, 'url' => $url, 'depends_on' => array(), 'fetched_as' => 'selected' );
+                    $c = $q['container'];
+                    $qkey = $c['kind'] . ":" . $c['name'];
+                    $class = $c['kind'] == 'snippet' ? 'snippet' : ( $c['device'] ? 'device' : 'folder' );
 
-                    $result = $this->connector->getSCMResourceAll( $url );
-                    if( !$deviceParamChecked && $result['errors'] !== null && in_array($result['http_code'], array(400, 404), TRUE) )
+                    //type unavailable for this class of container: no further calls
+                    if( isset($unavailable[$type['name'] . "|" . $class]) )
                     {
-                        $altParam = "device=" . rawurlencode($c['name']);
-                        $altUrl = $type['path'] . "?" . $altParam . ( $position !== null ? "&position=" . $position : "" );
+                        $this->configStats['skipped_unavailable']++;
+                        foreach( $q['covers'] as $ck )
+                            $collected[$ck][$name]['status'][] = 'unavailable';
+                        continue;
+                    }
+
+                    $paramName = $c['kind'] == 'snippet' ? 'snippet' : ( isset($deviceParam[$c['name']]) ? $deviceParam[$c['name']] : 'folder' );
+                    $url = $type['path'] . "?" . $paramName . "=" . rawurlencode($c['name']) . ( $position !== null ? "&position=" . $position : "" );
+                    $result = $this->connector->getSCMResourceAll( $url );
+                    $this->configStats['queries']++;
+
+                    //device folders: "folder=<serial>", fallback "device=<serial>"
+                    if( $c['device'] && !isset($deviceParam[$c['name']]) && $result['errors'] !== null && in_array($result['http_code'], array(400, 404), TRUE) )
+                    {
+                        $altUrl = $type['path'] . "?device=" . rawurlencode($c['name']) . ( $position !== null ? "&position=" . $position : "" );
                         $alt = $this->connector->getSCMResourceAll( $altUrl );
+                        $this->configStats['queries']++;
                         if( $alt['errors'] === null )
                         {
-                            $param = $altParam;
+                            $deviceParam[$c['name']] = 'device';
                             $url = $altUrl;
-                            $endpoint['url'] = $url;
                             $result = $alt;
                         }
                     }
-                    if( $result['errors'] === null )
-                        $deviceParamChecked = true;
+                    if( $c['device'] && !isset($deviceParam[$c['name']]) && $result['errors'] === null )
+                        $deviceParam[$c['name']] = 'folder';
 
-                    $owned = null;
-                    $inherited = 0;
-                    if( $result['errors'] === null && is_array($result['data']) && $result['is_list'] )
+                    if( $result['errors'] !== null )
                     {
-                        $owned = array();
-                        foreach( $result['data'] as $obj )
+                        $status = in_array($result['http_code'], array(401, 403, 404), TRUE) ? 'unavailable' : 'error';
+                        if( $status == 'unavailable' )
+                            $unavailable[$type['name'] . "|" . $class] = $c['name'];
+                        foreach( $q['covers'] as $ck )
                         {
-                            //owner: snippet, folder or device (a device is a folder of type cloud / on-prem)
-                            if( isset($obj['snippet']) && $obj['snippet'] !== "" )
-                                list($ownerKind, $ownerName) = array( 'snippet', (string)$obj['snippet'] );
-                            elseif( isset($obj['folder']) && $obj['folder'] !== "" )
-                                list($ownerKind, $ownerName) = array( 'folder', (string)$obj['folder'] );
-                            elseif( isset($obj['device']) && $obj['device'] !== "" )
-                                list($ownerKind, $ownerName) = array( 'folder', (string)$obj['device'] );
-                            else
-                                list($ownerKind, $ownerName) = array( null, null );
-                            //no owner field: keep (cannot be attributed)
-                            if( $ownerKind === null || ( $ownerKind === $c['kind'] && $ownerName === $c['name'] ) )
-                                $owned[] = $obj;
-                            else
-                            {
-                                $inherited++;
-                                $ownerKey = $ownerKind . ":" . $ownerName;
-                                $this->configStats['inherited_by_owner'][$ownerKey][$type['name']] = true;
-                                if( !isset($exported[$ownerKey]) )
-                                {
-                                    //count each foreign object once per owner and type
-                                    $id = isset($obj['id']) ? $obj['id'] : json_encode($obj);
-                                    $this->configStats['not_exported_ids'][$ownerKey][$name][$id] = true;
-                                }
-                            }
+                            $collected[$ck][$name]['status'][] = $status;
+                            $collected[$ck][$name]['errors'][] = $url . ": " . self::errorMessage($result['errors']);
                         }
+                        if( $status == 'error' )
+                            PH::print_stdout( "     x ERROR " . $name . " " . $qkey . ": " . self::errorMessage($result['errors']) );
+                        continue;
                     }
 
-                    $file = $dirKey . "/" . sprintf("%02d", $type['order']) . "_" . $name . ".json";
-                    $this->storeConfigResult( $endpoint, $file, $result, $owned, array( 'container' => $c['name'], 'container_kind' => $c['kind'], 'inherited_skipped' => $inherited ) );
+                    foreach( $q['covers'] as $ck )
+                    {
+                        $collected[$ck][$name]['status'][] = 'ok';
+                        $collected[$ck][$name]['queries'][] = $url;
+                    }
+                    if( !$result['is_list'] || !is_array($result['data']) )
+                        continue;
+
+                    foreach( $result['data'] as $obj )
+                    {
+                        //owner: snippet, folder or device (a device is a folder of type cloud / on-prem)
+                        if( isset($obj['snippet']) && $obj['snippet'] !== "" )
+                            $ownerKey = "snippet:" . $obj['snippet'];
+                        elseif( isset($obj['folder']) && $obj['folder'] !== "" )
+                            $ownerKey = "folder:" . $obj['folder'];
+                        elseif( isset($obj['device']) && $obj['device'] !== "" )
+                            $ownerKey = "folder:" . $obj['device'];
+                        else
+                        {
+                            //no owner field: kept at the queried container (cannot be attributed)
+                            $ownerKey = $qkey;
+                            if( $mode == 'leaf' )
+                                $this->warnings[] = "config " . $name . ": object without folder / snippet field in the answer for " . $qkey . " - stored there";
+                        }
+                        $id = isset($obj['id']) ? (string)$obj['id'] : md5( json_encode($obj) );
+
+                        if( $ownerKey !== $qkey )
+                        {
+                            $this->configStats['inherited_by_owner'][$ownerKey][$type['name']] = true;
+                            if( !isset($collected[$qkey][$name]['inherited']) )
+                                $collected[$qkey][$name]['inherited'] = 0;
+                            $collected[$qkey][$name]['inherited']++;
+                        }
+                        if( !isset($exported[$ownerKey]) )
+                        {
+                            $notExportedIds[$ownerKey][$name][$id] = true;
+                            continue;
+                        }
+                        if( isset($collected[$ownerKey][$name]['seen'][$id]) )
+                            continue;
+                        $collected[$ownerKey][$name]['seen'][$id] = true;
+                        $collected[$ownerKey][$name]['objects'][] = $obj;
+                    }
+                }
+            }
+
+            //one file per exported container and type
+            foreach( $eligible as $ck => $c )
+            {
+                foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
+                {
+                    $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
+                    $info = isset($collected[$ck][$name]) ? $collected[$ck][$name] : array();
+                    $statuses = isset($info['status']) ? $info['status'] : array();
+                    $paramName = $c['kind'] == 'snippet' ? 'snippet' : ( isset($deviceParam[$c['name']]) ? $deviceParam[$c['name']] : 'folder' );
+                    $endpoint = array( 'area' => $a, 'order' => $type['order'], 'name' => $name, 'group' => $type['group'], 'container' => $c['name'], 'container_kind' => $c['kind'],
+                        'category' => 'dependency', 'scope' => $c['kind'], 'optional' => true,
+                        'url' => $type['path'] . "?" . $paramName . "=" . $c['name'] . ( $position !== null ? "&position=" . $position : "" ),
+                        'depends_on' => array(), 'fetched_as' => 'selected' );
+
+                    if( in_array('ok', $statuses, TRUE) )
+                        $result = array( 'http_code' => 200, 'errors' => null );
+                    elseif( count($statuses) > 0 && !in_array('error', $statuses, TRUE) )
+                        $result = array( 'http_code' => 404, 'errors' => array( array( 'message' => 'unavailable' . ( isset($unavailable[$type['name'] . "|" . ( $c['kind'] == 'snippet' ? 'snippet' : ( $c['device'] ? 'device' : 'folder' ) )]) ? ' (first answer for ' . $unavailable[$type['name'] . "|" . ( $c['kind'] == 'snippet' ? 'snippet' : ( $c['device'] ? 'device' : 'folder' ) )] . ')' : '' ) ) ) );
+                    else
+                        $result = array( 'http_code' => 0, 'errors' => array( array( 'message' => count($statuses) == 0 ? 'not covered by a query' : implode("; ", array_slice( isset($info['errors']) ? $info['errors'] : array(), 0, 3 )) ) ) );
+
+                    $owned = $result['errors'] === null ? ( isset($info['objects']) ? $info['objects'] : array() ) : null;
+                    $file = $a . "/" . $c['kind'] . "s/" . self::slug($c['name']) . "/" . sprintf("%02d", $type['order']) . "_" . $name . ".json";
+                    $this->storeConfigResult( $endpoint, $file, $result, $owned, array( 'container' => $c['name'], 'container_kind' => $c['kind'],
+                        'inherited_skipped' => isset($info['inherited']) ? $info['inherited'] : 0,
+                        'source_queries' => isset($info['queries']) ? array_values(array_unique($info['queries'])) : array() ), true );
 
                     if( $owned !== null )
                     {
-                        $this->configStats['containers'][$c['kind'] . ":" . $c['name']][$name] = count($owned);
+                        $this->configStats['containers'][$ck][$name] = count($owned);
                         $this->configStats['owned'][$name] = ( isset($this->configStats['owned'][$name]) ? $this->configStats['owned'][$name] : 0 ) + count($owned);
                     }
                 }
             }
+            unset( $collected );
+            $collected = array();
         }
 
-        foreach( isset($this->configStats['not_exported_ids']) ? $this->configStats['not_exported_ids'] : array() as $owner => $byType )
+        foreach( $notExportedIds as $owner => $byType )
         {
             $n = 0;
             foreach( $byType as $ids )
                 $n += count($ids);
             $this->configStats['owners_not_exported'][$owner] = $n;
         }
-        unset( $this->configStats['not_exported_ids'] );
+        PH::print_stdout( " - [config] " . $this->configStats['queries'] . " API queries (mode " . $mode . "), " . $this->configStats['skipped_unavailable'] . " skipped (type unavailable)" );
+    }
+
+    /** @var string[] warnings of exportConfig() */
+    public $warnings = array();
+
+    /**
+     * Prisma Access folders: network / identity / device types are exported by the PA areas
+     */
+    public static function configTypeEligible( $container, $type )
+    {
+        if( $container['kind'] == 'folder' && in_array($container['name'], self::PA_FOLDERS, TRUE)
+            && in_array($type['group'], array('network', 'identity', 'device'), TRUE) )
+            return false;
+        return true;
+    }
+
+    /**
+     * every container is queried and covers itself
+     */
+    public static function queryPlanAll( $eligible )
+    {
+        $plan = array();
+        foreach( $eligible as $ck => $c )
+            $plan[] = array( 'container' => $c, 'covers' => array( $ck ) );
+        return $plan;
+    }
+
+    /**
+     * the answer for a folder contains the objects of its parent folders and of their attached snippets:
+     * query only the deepest eligible (non device) folders - they cover their ancestors and the snippets attached
+     * on the way; device folders and snippets that are not covered are queried as well
+     */
+    public static function queryPlanLeaf( $eligible, $folderInfo )
+    {
+        $folders = array();
+        $devices = array();
+        $snippets = array();
+        foreach( $eligible as $ck => $c )
+        {
+            if( $c['kind'] == 'snippet' )
+                $snippets[$ck] = $c;
+            elseif( $c['device'] )
+                $devices[$ck] = $c;
+            else
+                $folders[$ck] = $c;
+        }
+
+        //a folder is a leaf if no other eligible folder has it in its path
+        $hasEligibleDescendant = array();
+        foreach( $folders as $ck => $c )
+        {
+            $path = isset($folderInfo[$c['name']]) ? $folderInfo[$c['name']]['path'] : array( $c['name'] );
+            foreach( $path as $ancestor )
+                if( $ancestor !== $c['name'] )
+                    $hasEligibleDescendant[$ancestor] = true;
+        }
+
+        $plan = array();
+        $covered = array();
+        foreach( $folders as $ck => $c )
+        {
+            if( isset($hasEligibleDescendant[$c['name']]) )
+                continue;
+            $covers = array();
+            $chain = isset($folderInfo[$c['name']]) ? $folderInfo[$c['name']]['inheritance_chain'] : array( array( 'kind' => 'folder', 'name' => $c['name'] ) );
+            foreach( $chain as $level )
+            {
+                $lk = $level['kind'] . ":" . $level['name'];
+                if( isset($eligible[$lk]) && !( $level['kind'] == 'folder' && isset($devices[$lk]) ) )
+                {
+                    $covers[] = $lk;
+                    $covered[$lk] = true;
+                }
+            }
+            $plan[] = array( 'container' => $c, 'covers' => array_values(array_unique($covers)) );
+        }
+        //folders not covered (should not happen) and device folders: own query
+        foreach( $folders as $ck => $c )
+            if( !isset($covered[$ck]) )
+            {
+                $plan[] = array( 'container' => $c, 'covers' => array( $ck ) );
+                $covered[$ck] = true;
+            }
+        foreach( $devices as $ck => $c )
+            $plan[] = array( 'container' => $c, 'covers' => array( $ck ) );
+        foreach( $snippets as $ck => $c )
+            if( !isset($covered[$ck]) )
+                $plan[] = array( 'container' => $c, 'covers' => array( $ck ) );
+        return $plan;
     }
 
     /** @var array statistics of exportConfig() */
     public $configStats = null;
 
-    private function storeConfigResult( $endpoint, $file, $result, $data, $extra = array() )
+    private function storeConfigResult( $endpoint, $file, $result, $data, $extra = array(), $quiet = false )
     {
         $meta = $endpoint;
         $meta['file'] = $file;
@@ -1925,7 +2131,8 @@ class SCMPrismaAccessExport
         {
             $meta['status'] = 'error';
             $meta['error'] = self::errorMessage($result['errors']);
-            PH::print_stdout( "     x ERROR " . $endpoint['name'] . ": " . $meta['error'] );
+            if( !$quiet )
+                PH::print_stdout( "     x ERROR " . $endpoint['name'] . ": " . $meta['error'] );
         }
         else
         {
@@ -1964,6 +2171,10 @@ class SCMPrismaAccessExport
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
             'devices' => $this->buildDeviceSummary(),
+            'mode' => $this->configStats['mode'],
+            'api_queries' => $this->configStats['queries'],
+            'skipped_unavailable' => $this->configStats['skipped_unavailable'],
+            'warnings' => array_values( array_unique($this->warnings) ),
             'options' => $this->configOptions,
         );
     }
@@ -2239,7 +2450,13 @@ class SCMPrismaAccessExport
         foreach( array( self::AREA_RN, self::AREA_SC ) as $area )
         {
             $psk = $hint('pre_shared_key', $area);
-            if( count($psk) > 0 )
+            $pskStats = isset($manifest['secret_lists'][$area]['psk']) ? $manifest['secret_lists'][$area]['psk'] : null;
+            if( count($psk) > 0 && $pskStats !== null && $pskStats['decrypt_failed'] > 0 )
+                $add( 'psk_' . $area, 'action_required', $area, 'IKE pre-shared keys not decryptable',
+                    $pskStats['decrypt_failed'] . ' of ' . $pskStats['gateways'] . ' PSKs are not encrypted with the master key used (default or master-key=) - '
+                    . 'fill psk_new in ' . $area . '/psk-list.csv (e.g. from the peer firewalls); check the values with scm_pa_secret_check.php '
+                    . '(SHA1 of the exported value: psk_sha1)', $psk );
+            elseif( count($psk) > 0 )
                 $add( 'psk_' . $area, $secretList($area) ? 'check' : 'action_required', $area, 'IKE pre-shared keys',
                     $secretList($area) ? 'review ' . $area . '/psk-list.csv (psk_new optional)' : 'run the export with psk-list to create ' . $area . '/psk-list.csv', $psk );
             $bgp = $hint('bgp_secret', $area);

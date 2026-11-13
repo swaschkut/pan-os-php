@@ -72,6 +72,7 @@ Result: `/data/pa-export/<TSG>/<YYYYmmdd-HHMMSS>/` – one directory per run, no
 | `container="Mobile Users"` / `config-types=addresses,security-rules` | the tenant is large and you only need part of the objects / policies |
 | `config-devices` | NGFW: include the device folders (device specific interfaces, routing, settings) |
 | `config-scope=objects,policies` | only some groups of the config area (`identity`, `objects`, `network`, `policies`, `device`) |
+| `config-mode=all` | only to cross-check: queries every folder instead of only the deepest ones (much slower) |
 | `debugapi` | troubleshooting only |
 
 Shortcuts for one area: `scm_rn_export.php`, `scm_sc_export.php`, `scm_mu_export.php`, `scm_pb_export.php`,
@@ -230,6 +231,18 @@ For gateways / connections with PSK or BGP secret and for MU server profiles / l
 from the source export's secret lists. Export the source with `psk-list`. To set **new** keys on the target, fill
 `psk_new` / `secret_new` in those CSV files. Local user passwords (`HASHED`) always need `secret_new`.
 
+**Strata Cloud Manager tenants use their own master key**, so `psk_current` is usually `DECRYPT_FAILED`. Then:
+
+1. fill `psk_new` with the existing PSKs – the peer firewalls (branch / data center) have them; for PAN-OS peers
+   pan-os-php can read them from their configuration
+2. check the list – no secret is printed:
+   ```bash
+   php utils/develop/sase/scm/scm_pa_secret_check.php dir=<source export dir>
+   ```
+   `OK new = secret of the source tenant` → correct; `NEW` → this is a different PSK than in the source tenant
+   (typo, or an intended new key – then the peer needs it too); `MISSING` → no value yet
+3. plan again – the plan shows per secret "verified" or "new secret"
+
 ### 4.3 Create and read the plan
 
 ```bash
@@ -277,8 +290,8 @@ remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch 
 | many endpoints `unavailable` | product not licensed or service account without role → expected / add role |
 | endpoint `error` with HTTP 400 / 404 | API path or parameter not valid for this tenant → note it in the verification list ([NEXT_STEPS](NEXT_STEPS_pa_export.md) §4) |
 | egress IP error | try `egressip-env=prod6`; check the egress API key |
-| `psk-list.csv` shows `DECRYPT_FAILED` | tenant uses a custom master key → `master-key=<key>` |
-| export of `config` takes long | filter with `container=` / `config-types=` |
+| `psk-list.csv` shows `DECRYPT_FAILED` | normal for SCM tenants (own master key) → fill `psk_new`, check with `scm_pa_secret_check.php` (4.2); a known master key: `master-key=<key>` |
+| export of `config` takes long | default `config-mode=leaf` already queries only the deepest folders; further: `config-scope=` / `container=` / `config-types=` |
 | compare: "not comparable – not exported in right" | the two exports used different areas / filters → export again with the same options |
 | compare: "format_version …" hint | an export from an older version → export again |
 | compare: everything "only in left / right" in one folder | the folder is named differently → name map `config,container,<left>,<right>` |

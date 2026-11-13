@@ -494,6 +494,9 @@ class SCMPrismaAccessCompare
 
     public static function normalizeValue( $v, $path, $ignore, $orderedPaths )
     {
+        //PAN-OS encrypted value: compared by the SHA1 of the cleartext (independent of the tenant master key)
+        if( is_string($v) && ($sha1 = SCMPrismaAccessExport::encryptedSha1($v)) !== null )
+            return "sha1:" . $sha1;
         if( !is_array($v) )
             return $v;
 
@@ -616,7 +619,8 @@ class SCMPrismaAccessCompare
     {
         foreach( $changes as &$c )
         {
-            if( self::isSecretPath($c['path'], $meta['secret']) )
+            $encrypted = ( is_string($c['left']) && strpos($c['left'], "sha1:") === 0 ) || ( is_string($c['right']) && strpos($c['right'], "sha1:") === 0 );
+            if( $encrypted || self::isSecretPath($c['path'], $meta['secret']) )
             {
                 $c['type'] = $c['type'] == 'changed' ? 'secret' : $c['type'];
                 $c['left'] = $c['left'] === null ? null : self::MASK;
@@ -652,7 +656,7 @@ class SCMPrismaAccessCompare
         foreach( $v as $k => $child )
         {
             $p = self::joinPath($path, $k);
-            if( !is_array($child) && $child !== null && self::isSecretPath($p, $secretPaths) )
+            if( !is_array($child) && $child !== null && ( self::isSecretPath($p, $secretPaths) || ( is_string($child) && strpos($child, "sha1:") === 0 ) ) )
                 $v[$k] = self::MASK;
             else
                 $v[$k] = self::maskValue( $child, $secretPaths, $p );

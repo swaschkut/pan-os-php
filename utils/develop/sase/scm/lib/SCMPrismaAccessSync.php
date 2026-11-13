@@ -320,8 +320,9 @@ class SCMPrismaAccessSync
      * request body: source object, translated to target names, without id / derived fields, owner set to target,
      * secrets replaced by placeholders
      */
-    private function buildBody( $ctx, $srcObj, &$secrets, &$blocked )
+    private function buildBody( $ctx, $srcObj, &$secrets, &$blocked, &$notes = null )
     {
+        $notes = array();
         $meta = $ctx['meta'];
         $area = $ctx['entry']['area'];
         $obj = $this->mapper->translateObject( $srcObj, $meta );
@@ -354,6 +355,14 @@ class SCMPrismaAccessSync
             $secrets[] = array( 'path' => $path ) + $source;
             if( !$this->secretAvailable($source) )
                 $blocked = "secret missing: " . $source['list'] . " " . $source['key'] . " (export the source with psk-list / fill *_new)";
+            else
+            {
+                $v = $this->secretVerified( $source );
+                if( $v === false )
+                    $notes[] = "secret " . $path . ": the value in " . $source['list'] . " differs from the source tenant (new secret)";
+                elseif( $v === true )
+                    $notes[] = "secret " . $path . ": verified against the source tenant (SHA1)";
+            }
         }
         return $obj;
     }
@@ -396,21 +405,44 @@ class SCMPrismaAccessSync
 
     private $secretListCache = array();
 
+    private $secretVerifiedCache = array();
+
     private function loadSecretListFile( $dir, $source )
     {
         $file = $dir . "/" . $source['list'];
-        if( !isset($this->secretListCache[$file]) )
+        if( !array_key_exists($file, $this->secretListCache) )
         {
             if( !is_readable($file) )
+            {
                 $this->secretListCache[$file] = null;
-            elseif( $source['kind'] == 'psk' )
-                $this->secretListCache[$file] = SCMPrismaAccessExport::loadPSKList($file)['psk'];
-            elseif( $source['kind'] == 'bgp' )
-                $this->secretListCache[$file] = SCMPrismaAccessExport::loadBGPSecretList($file)['secret'];
+                $this->secretVerifiedCache[$file] = array();
+            }
             else
-                $this->secretListCache[$file] = SCMPrismaAccessExport::loadSecretList($file)['secret'];
+            {
+                if( $source['kind'] == 'psk' )
+                {
+                    $l = SCMPrismaAccessExport::loadPSKList($file);
+                    $l['secret'] = $l['psk'];
+                }
+                elseif( $source['kind'] == 'bgp' )
+                    $l = SCMPrismaAccessExport::loadBGPSecretList($file);
+                else
+                    $l = SCMPrismaAccessExport::loadSecretList($file);
+                $this->secretListCache[$file] = $l['secret'];
+                $this->secretVerifiedCache[$file] = $l['verified'];
+            }
         }
         return $this->secretListCache[$file];
+    }
+
+    /**
+     * true / false / null: secret of the list matches the SHA1 of the exported value
+     */
+    private function secretVerified( $source )
+    {
+        $this->loadSecretListFile( $this->src['dir'], $source );
+        $file = $this->src['dir'] . "/" . $source['list'];
+        return isset($this->secretVerifiedCache[$file][$source['key']]) ? $this->secretVerifiedCache[$file][$source['key']] : null;
     }
 
     private function secretAvailable( $source )
@@ -430,9 +462,9 @@ class SCMPrismaAccessSync
             return null;
         }
         $tgtName = $meta['singleton'] ? '_' : $this->mapper->mapName( $meta['endpoint'], $srcName );
-        $body = $this->buildBody( $ctx, $srcObjects[$srcName], $secrets, $blocked );
+        $body = $this->buildBody( $ctx, $srcObjects[$srcName], $secrets, $blocked, $secretNotes );
 
-        $op = array( 'action' => $meta['singleton'] ? 'update' : 'create', 'phase' => self::PHASE_CREATE_UPDATE,
+        $op = array( 'notes' => $secretNotes, 'action' => $meta['singleton'] ? 'update' : 'create', 'phase' => self::PHASE_CREATE_UPDATE,
             'area' => $e['area'], 'endpoint' => $e['endpoint'], 'endpoint_key' => $meta['endpoint'], 'write' => $meta['write'],
             'container' => $ctx['tgt_container'], 'name' => $tgtName, 'source_name' => $srcName,
             'url' => $this->endpointUrl( $this->tgt, $e['area'], $ctx['tgt_container'], $e['endpoint'] ) ?: $this->endpointUrl( $this->src, $e['area'], $ctx['src_container'], $e['endpoint'] ),
@@ -454,9 +486,9 @@ class SCMPrismaAccessSync
             $this->warnings[] = $meta['endpoint'] . ": object '" . $srcName . "' / '" . $tgtName . "' not found in the exports";
             return null;
         }
-        $body = $this->buildBody( $ctx, $srcObjects[$srcName], $secrets, $blocked );
+        $body = $this->buildBody( $ctx, $srcObjects[$srcName], $secrets, $blocked, $secretNotes );
         $tgtObj = $tgtObjects[$tgtName];
-        $op = array( 'action' => 'update', 'phase' => self::PHASE_CREATE_UPDATE,
+        $op = array( 'notes' => $secretNotes, 'action' => 'update', 'phase' => self::PHASE_CREATE_UPDATE,
             'area' => $e['area'], 'endpoint' => $e['endpoint'], 'endpoint_key' => $meta['endpoint'], 'write' => $meta['write'],
             'container' => $ctx['tgt_container'], 'name' => $tgtName, 'source_name' => $srcName,
             'url' => $this->endpointUrl( $this->tgt, $e['area'], $ctx['tgt_container'], $e['endpoint'] ),

@@ -26,7 +26,8 @@ git am scm-rn-export_beta.patch \
        scm-pa-export-config_beta.patch \
        scm-pa-compare_beta.patch \
        scm-pa-sync_beta.patch \
-       scm-pa-export-ngfw_beta.patch
+       scm-pa-export-ngfw_beta.patch \
+       scm-pa-livefix-1_beta.patch
 ```
 
 Quick check:
@@ -76,6 +77,16 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> container="M
 
 Note: `debugapi` prints the bearer token and full API answers – do not share the raw log.
 
+## 3a. Results of the first live run (Prisma Access tenant, areas infra, RN, SC, MU, IAM)
+
+| finding | change |
+|---|---|
+| 0 errors, all endpoints of infra / RN / SC / MU answered; egress mapping matched for all RNs and MU locations | – |
+| all PSKs `-AQ==…` (PAN-OS format v1, 77 chars), none decryptable with the default master key → SCM tenant key | SHA1 of the cleartext used: `psk_sha1` column, `scm_pa_secret_check.php`, compare by SHA1, plan notes; checklist item "PSKs not decryptable" |
+| IAM lists come as `{"items": [...], "count": n}` → were stored as single object, IAM summary empty | list detection for `data` / `items` / top-level arrays (`PanSCMAPIConnector::listOfAnswer()`) |
+| `locations`, `mobile-agent/locations` return a top-level array → counted as 1 entry | same fix |
+| `area=config` too slow on a large tenant | `config-mode=leaf` (default) + skip of unavailable types |
+
 ## 4. Verification
 
 Work through the list with the export directory `<outdir>/<TSG>/<timestamp>/`. For every item note **OK** or what
@@ -113,7 +124,9 @@ was found; wrong items are fixed in the code afterwards.
 - [ ] IKE / IPsec objects: folder `Remote Networks` returns the expected objects; predefined profiles are listed in
       `import_hints` as `inherited_or_predefined`.
 - [ ] `ike-gateways`: PSK under `authentication.pre_shared_key.key`, format `-AQ==…`.
-- [ ] `psk-list.csv`: `psk_current` decrypted (no `DECRYPT_FAILED`); compare one key with a known PSK.
+- [x] `ike-gateways` PSK format `-AQ==…` – confirmed; not decryptable with the default master key (3a).
+- [ ] fill `psk_new` for a few gateways with known PSKs → `scm_pa_secret_check.php` reports `OK new = secret of the
+      source tenant`; a deliberately wrong value reports `NEW`.
 - [ ] `bgp-secret-list.csv`: BGP secret under `protocol.bgp.secret`, decrypted.
 - [ ] `ip-mapping.csv`: `service_ip_address`, `fqdn`, `branch_peer_address` filled; `egress_match = location` for
       most rows (if `none`: compare `region` with `infra/90_locations.json` `value`).
@@ -155,11 +168,18 @@ was found; wrong items are fixed in the code afterwards.
 
 - [ ] Paths `/iam/v1/custom_roles` and `/iam/v1/permission_sets` (derived from the documentation structure, not
       confirmed).
-- [ ] List format and pagination of the IAM endpoints (all access policies present?).
+- [x] List format of the IAM endpoints: `items` / `count` (3a) – re-run `area=iam`: access policies / service accounts
+      counted in `manifest.json` → `iam`.
+- [ ] Pagination of the IAM endpoints (more than 200 access policies complete?).
 - [ ] `access-policies.csv`: `principal`, `role`, `resource` filled (field names of the access policy objects).
 
 ### 4.8 config
 
+- [ ] **`config-mode=leaf` vs `all`**: export a part of the tenant twice (e.g. `config-scope=objects,policies`, once
+      with `config-mode=all`) and compare the two exports → **no differences** expected. A difference means a folder
+      answer does not contain all inherited objects (→ use `all` and report).
+- [ ] `manifest.json` → `config.api_queries` / runtime of `leaf` acceptable; `config.warnings` empty (objects
+      without owner field).
 - [ ] `config/hierarchy.txt` matches the folder tree in SCM, incl. the order of the attached snippets per folder.
 - [ ] Every object returned for a container carries `folder` or `snippet` (otherwise it stays in the queried container
       – check files with `data` entries without these fields).

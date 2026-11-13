@@ -50,6 +50,7 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `area=` | comma separated: `infra`, `config`, `remote-networks`, `service-connections`, `mobile-users`, `prisma-browser`, `iam`; default: all |
 | `container=` | config: comma separated folder / snippet names (default: all containers; the hierarchy is always exported) |
 | `config-scope=` | config: groups `identity`, `objects`, `network`, `policies`, `device` (default: all) |
+| `config-mode=leaf\|all` | config: `leaf` (default) queries only the deepest folders, `all` every container (slower, for verification) |
 | `config-types=` | config: comma separated types, e.g. `addresses,security-rules` (default: all) |
 | `config-devices` | config: also the device folders (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
 | `config-predefined-snippets` | config: also predefined snippets (large) |
@@ -177,7 +178,7 @@ parent folder (e.g. `Prisma Access`, `All`) are reported as `inherited_or_predef
 
 ### manifest.json
 
-`format_version` (7), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
+`format_version` (8), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
 per-endpoint `area`/status/count/http_code, `infra` summary, `mobile_users` summary, `ip_mapping` (summary per area),
 `secret_lists` (counts per area: `psk`, `bgp_secret`, `secret`), `prisma_browser`, `iam` and `config` summaries, `unavailable`,
 `migration_checklist` and `import_hints` (each with `area`).
@@ -255,7 +256,8 @@ One row per IKE gateway with a pre-shared key (`remote-networks` and `service-co
 | `ike_gateway` | gateway name – key for the import |
 | `ipsec_tunnel`, `remote_network` / `service_connection`, `branch_peer_address` / `peer_address` | context only, to find the right key |
 | `psk_current` | decrypted PSK from the export (`PanosCrypto`, default or `master-key=`); `DECRYPT_FAILED` if not possible |
-| `psk_new` | empty – fill in to set a new PSK on the target tenant |
+| `psk_new` | empty – fill in to set a new PSK on the target tenant, or the existing PSK if `psk_current` is `DECRYPT_FAILED` |
+| `psk_sha1` | base64 SHA1 of the PSK, taken from the exported encrypted value – used to verify `psk_new` |
 
 Import rule (`SCMPrismaAccessExport::loadPSKList()`): `psk_new` if filled, otherwise `psk_current`.
 `psk_new` is optional. A gateway with empty `psk_new` and empty / `DECRYPT_FAILED` `psk_current`, or a duplicate
@@ -268,6 +270,29 @@ The file holds cleartext secrets: it is created with mode 0600, is not reference
 Note: `PanosCrypto::decrypt()` returns `""` instead of throwing on a wrong master key; the export treats an empty
 result as `DECRYPT_FAILED`.
 
+**Strata Cloud Manager tenants do not use the PAN-OS default master key.** The first live run: all PSKs in the
+standard PAN-OS format version 1 (`-AQ==` + base64 SHA1 of the cleartext + base64 AES-256-CBC), none decryptable with
+the default key → `DECRYPT_FAILED`. The SHA1 part does not depend on the master key, therefore:
+
+* fill `psk_new` with the existing PSKs (e.g. from the peer firewalls) and check them with
+  `scm_pa_secret_check.php dir=<export dir>` – it reports per gateway whether the filled value **is** the PSK of the
+  source tenant (`OK new = secret of the source tenant`) or a different one (`NEW`), without the master key and
+  without printing a secret;
+* the compare matches encrypted values by this SHA1: the same PSK in two tenants (different master keys, different
+  encrypted values) is **no** difference, another PSK is a `secret` difference;
+* the sync plan notes per secret whether the value from the list is verified or a new secret.
+
+### scm_pa_secret_check.php
+
+```bash
+php utils/develop/sase/scm/scm_pa_secret_check.php dir=<export dir> [details] [fail-on-missing]
+php utils/develop/sase/scm/scm_pa_secret_check.php file=<export dir>/remote-networks/psk-list.csv
+```
+
+Offline. Per list: usable entries (decrypted / filled = source secret / filled = different secret / not verifiable)
+and missing ones; with `details` one line per entry. Prints keys (gateway names), never secrets. `fail-on-missing`:
+exit code 2 if an entry has no usable value.
+
 ### <area>/bgp-secret-list.csv
 
 One row per connection and BGP secret field:
@@ -279,6 +304,7 @@ One row per connection and BGP secret field:
 | `bgp_peer_ip_address` | context only |
 | `secret_current` | decrypted secret; `DECRYPT_FAILED` if not possible |
 | `secret_new` | empty – fill in to set a new secret on the target tenant |
+| `secret_sha1` | base64 SHA1 from the exported encrypted value (verification, see `psk-list.csv`) |
 
 Import rule (`SCMPrismaAccessExport::loadBGPSecretList()`, key `object|field`): `secret_new` if filled, otherwise
 `secret_current`; same error handling and file protection as `psk-list.csv`.
@@ -301,6 +327,7 @@ Generic list of all secret fields found in the MU area – one row per value:
 | `endpoint`, `object`, `path` | where the value is, e.g. `ldap-server-profiles`, `AD`, `bind_password` |
 | `secret_current` | decrypted value (`-…` master-key format), `HASHED` for hashes (`$…`, e.g. local user passwords), `DECRYPT_FAILED`, or the value as returned |
 | `secret_new` | empty – fill in for the target tenant |
+| `secret_sha1` | base64 SHA1 from the exported encrypted value, if it is one (verification) |
 
 Detected: fields named `secret`, `password`, `passwd`, `passphrase`, `key` or `*_password` / `*_secret` / `*_key`
 (except `public_key`, `key_type`, `key_size`, `key_usage`), and name/value entries like
@@ -324,6 +351,15 @@ contains `container`, `container_kind`, `inherited_skipped` (objects of other ow
 (owned objects). Objects without owner field are kept. Inherited objects whose owner is not exported (predefined
 snippet, `container=` filter, device folders, predefined snippets) are counted per owner in
 `manifest.json` → `config.owners_not_exported` (each object once).
+
+**Query plan (`config-mode`).** `leaf` (default): the answer for a folder contains the objects of its parent folders
+and of the snippets attached on the way, so per type only the deepest eligible folders are queried; their answers
+are split by owner. Device folders and snippets that are not attached to a queried folder are queried directly.
+A type that answers 401 / 403 / 404 is not queried again for the same kind of container (folder / device / snippet).
+`all`: every container is queried (the previous behaviour – slower; both modes must give the same files, see
+[NEXT_STEPS](NEXT_STEPS_pa_export.md) §4.8). An explicit `container=` filter always queries exactly those containers.
+Every file lists the queries it was built from (`source_queries`); `manifest.json` → `config.mode`, `api_queries`,
+`skipped_unavailable`, `warnings`.
 
 **Containers.** Folders of type `container` (device folders of type `cloud` / `on-prem` with `config-devices`), then
 snippets (predefined ones with `config-predefined-snippets`). A device folder is queried with `folder=<serial>`; if the

@@ -119,6 +119,9 @@ php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=
 | `skip-hash-check` | do not verify that target objects are unchanged since the export |
 | `debugapi` | print every API call (contains secrets in request bodies – do not share) |
 
+The plan notes for every secret whether the value from the list is verified against the source tenant (SHA1 of the
+exported encrypted value) or a new secret.
+
 Per operation:
 
 1. skipped if blocked, disabled, not in `ops=`, or a `depends_on` operation was not executed

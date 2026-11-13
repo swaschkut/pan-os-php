@@ -2192,29 +2192,60 @@ class PanSCMAPIConnector
     }
 
     /**
+     * list part of a SCM API answer:
+     *   {"data": [...], "total": n}   config APIs
+     *   {"items": [...], "count": n}  IAM
+     *   [...]                         some deployment endpoints (e.g. locations)
+     * @return array|null ['list' => array, 'total' => int|null] or null for a single object answer
+     */
+    public static function listOfAnswer( $json, $pageSize = null )
+    {
+        if( !is_array($json) )
+            return null;
+        if( $json === array() || array_keys($json) === range(0, count($json) - 1) )
+            return array( 'list' => $json, 'total' => null );
+        foreach( array('data', 'items') as $k )
+        {
+            if( array_key_exists($k, $json) && is_array($json[$k]) && ( $json[$k] === array() || array_keys($json[$k]) === range(0, count($json[$k]) - 1) ) )
+            {
+                $total = null;
+                if( isset($json['total']) && is_numeric($json['total']) )
+                    $total = (int)$json['total'];
+                //"count" is a total only if it is bigger than the page (otherwise it may be the page size)
+                elseif( isset($json['count']) && is_numeric($json['count']) && (int)$json['count'] > count($json[$k]) )
+                    $total = (int)$json['count'];
+                return array( 'list' => $json[$k], 'total' => $total );
+            }
+        }
+        return null;
+    }
+
+    /**
      * GET all entries of a SCM API list endpoint (limit/offset pagination), without stopping the script on errors
      *
-     * @param string $url_config path incl. optional query, e.g. "/config/network/v1/ike-gateways?folder=Remote Networks"
+     * @param string $url_config path incl. optional query, e.g. "/config/network/v1/ike-gateways?folder=Remote Networks",
+     *                           or an absolute URL (other host, e.g. IAM / Prisma Browser on api.sase.paloaltonetworks.com)
      * @param int $limit page size
      * @return array ['http_code' => int, 'data' => array|null, 'total' => int|null, 'is_list' => bool, 'raw' => mixed, 'errors' => array|null]
      *               'is_list' FALSE: endpoint returns a single object (e.g. bgp-routing) -> it is stored in 'raw' and 'data'
      */
     public function getSCMResourceAll( $url_config, $limit = 200 )
     {
-        //absolute URL (other host, e.g. IAM / Prisma Browser on api.sase.paloaltonetworks.com) or path below url_api
         $base = ( strpos($url_config, "https://") === 0 ) ? "" : $this->url_api;
         $offset = 0;
         $allData = array();
-        $first = null;
         $total = null;
+        $previousFirst = null;
+        $httpCode = null;
 
-        do
+        for( $page = 0; $page < 10000; $page++ )
         {
             $url = $base . $url_config;
             $url .= ( strpos($url, "?") !== FALSE ) ? "&" : "?";
             $url .= "limit=" . $limit . "&offset=" . $offset;
 
             $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            $httpCode = $result['http_code'];
 
             //some deployment endpoints answer 'Access denied' / 400 on limit/offset - retry the first page without them
             if( $result['errors'] !== null && $offset == 0 && in_array($result['http_code'], array(400, 403), TRUE) )
@@ -2224,35 +2255,45 @@ class PanSCMAPIConnector
                 $retry = $this->sendSCMAPIRequest( "GET", $base . $url_config, false, FALSE );
                 if( $retry['errors'] === null )
                 {
-                    $json = $retry['json'];
-                    if( is_array($json) && array_key_exists('data', $json) && is_array($json['data']) )
-                        return array( 'http_code' => $retry['http_code'], 'data' => $json['data'], 'total' => isset($json['total']) ? (int)$json['total'] : count($json['data']), 'is_list' => true, 'raw' => null, 'errors' => null, 'paginated' => false );
-                    return array( 'http_code' => $retry['http_code'], 'data' => $json, 'total' => null, 'is_list' => false, 'raw' => $json, 'errors' => null, 'paginated' => false );
+                    $list = self::listOfAnswer( $retry['json'] );
+                    if( $list !== null )
+                        return array( 'http_code' => $retry['http_code'], 'data' => $list['list'], 'total' => $list['total'] !== null ? $list['total'] : count($list['list']), 'is_list' => true, 'raw' => null, 'errors' => null, 'paginated' => false );
+                    return array( 'http_code' => $retry['http_code'], 'data' => $retry['json'], 'total' => null, 'is_list' => false, 'raw' => $retry['json'], 'errors' => null, 'paginated' => false );
                 }
             }
 
             if( $result['errors'] !== null )
                 return array( 'http_code' => $result['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => $result['errors'] );
 
-            $json = $result['json'];
-            if( $first === null )
-                $first = $json;
-
-            if( !is_array($json) || !array_key_exists('data', $json) || !is_array($json['data']) )
+            $list = self::listOfAnswer( $result['json'] );
+            if( $list === null )
             {
                 //single object endpoint (no list wrapper)
-                return array( 'http_code' => $result['http_code'], 'data' => $json, 'total' => null, 'is_list' => false, 'raw' => $json, 'errors' => null );
+                return array( 'http_code' => $result['http_code'], 'data' => $result['json'], 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => null );
             }
 
-            foreach( $json['data'] as $entry )
-                $allData[] = $entry;
+            $entries = $list['list'];
+            //endpoint ignores offset: the same page again -> stop
+            $first = count($entries) > 0 ? json_encode($entries[0]) : null;
+            if( $page > 0 && $first !== null && $first === $previousFirst )
+                break;
+            $previousFirst = $first;
 
-            $total = isset($json['total']) ? (int)$json['total'] : count($allData);
+            foreach( $entries as $entry )
+                $allData[] = $entry;
+            if( $list['total'] !== null )
+                $total = $list['total'];
+
+            if( count($entries) == 0 )
+                break;
+            if( $total !== null && count($allData) >= $total )
+                break;
+            if( $total === null && count($entries) < $limit )
+                break;
             $offset += $limit;
         }
-        while( count($json['data']) > 0 && count($allData) < $total );
 
-        return array( 'http_code' => $result['http_code'], 'data' => $allData, 'total' => $total, 'is_list' => true, 'raw' => null, 'errors' => null );
+        return array( 'http_code' => $httpCode, 'data' => $allData, 'total' => $total !== null ? $total : count($allData), 'is_list' => true, 'raw' => null, 'errors' => null );
     }
 
     /**

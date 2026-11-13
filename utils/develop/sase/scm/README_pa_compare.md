@@ -91,6 +91,9 @@ Before comparing, both sides are normalised:
 | `order` | same list elements, different order |
 | `secret` | secret field differs – values shown as `***` |
 
+Encrypted values (PAN-OS format `-AQ==…`) are compared by the SHA1 of their cleartext that is part of the value –
+the same secret in two tenants with different master keys is equal, a different secret is a `secret` change.
+
 Secrets: paths in the endpoint metadata `secret` (e.g. `authentication.pre_shared_key.key`, `protocol.bgp.secret`,
 `bgp_peer.secret`, `bind_password`) and every field whose name matches the export's secret pattern (`secret`,
 `password`, `passphrase`, `key`, `*_key` …, except `public_key` etc.) are compared (encrypted values are deterministic
