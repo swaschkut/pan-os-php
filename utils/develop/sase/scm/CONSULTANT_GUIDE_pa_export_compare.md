@@ -72,6 +72,7 @@ Result: `/data/pa-export/<TSG>/<YYYYmmdd-HHMMSS>/` – one directory per run, no
 | `container="Mobile Users"` / `config-types=addresses,security-rules` | the tenant is large and you only need part of the objects / policies |
 | `config-devices` | NGFW: include the device folders (device specific interfaces, routing, settings) |
 | `config-scope=objects,policies` | only some groups of the config area (`identity`, `objects`, `network`, `policies`, `device`) |
+| `config-types=applications container=<folder>` | custom applications are needed – `applications` is skipped by default (every answer contains the whole predefined catalog) |
 | `config-parallel=4` | the tenant answers with HTTP 429 (rate limit) – default is 8 concurrent requests |
 | `config-mode=all` | only to cross-check: queries every folder instead of only the deepest ones (much slower) |
 | `debugapi` | troubleshooting only |

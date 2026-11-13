@@ -54,6 +54,7 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `config-types=` | config: comma separated types, e.g. `addresses,security-rules` (default: all) |
 | `config-parallel=N` | config: concurrent API requests (default `8`, `1` = one after the other); HTTP 429 / 5xx are retried with backoff |
 | `config-page-size=N` | config: entries per API page (default `1000`; if the server returns fewer, the next offsets follow the received count) |
+| `config-heavy-types` | config: also export `applications` – skipped by default because every folder answer contains the complete predefined catalog (~100,000 objects, with SaaS applications ~1,000,000); `config-types=applications` (best with `container=`) exports it as well |
 | `config-devices` | config: also the device folders (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
 | `config-predefined-snippets` | config: also predefined snippets (large) |
 | `outdir=` | base directory, default `export` |
@@ -369,6 +370,11 @@ objects), so the volume is roughly *queries × inherited objects*. Per type the 
 type is available, then all others; remaining pages of a query are requested in parallel as soon as the first page
 reports `total`. Large pages (`config-page-size`, default 1000) cut the number of requests. The console shows per type
 the number of objects received and the time. Lower `config-parallel` if the tenant answers with many HTTP 429.
+Answers are fetched in chunks of 2 × `config-parallel` while they are processed, so memory stays bounded (console:
+peak memory per type). Objects of owners that are not exported (predefined, filtered) are only counted
+(`owners_not_exported`: per owner the maximum of one answer – every answer that includes an owner contains all of its
+objects). Types in `CONFIG_HEAVY_TYPES` (`applications`) are skipped unless requested
+(`manifest.json` → `config.types_skipped_heavy`, checklist item "Custom applications not exported").
 
 **Containers.** Folders of type `container` (device folders of type `cloud` / `on-prem` with `config-devices`), then
 snippets (predefined ones with `config-predefined-snippets`). A device folder is queried with `folder=<serial>`; if the

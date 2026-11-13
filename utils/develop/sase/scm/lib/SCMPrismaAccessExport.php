@@ -1628,9 +1628,19 @@ class SCMPrismaAccessExport
                 'hipmatch-match-list' => $net, 'globalprotect-match-list' => $net, 'iptag-match-list' => $net ) )
         );
         foreach( $t as $i => &$type )
+        {
             $type['order'] = $i + 1;
+            $type['heavy'] = in_array( $type['name'], self::CONFIG_HEAVY_TYPES, TRUE );
+        }
         return $t;
     }
+
+    /**
+     * config types whose answers contain the complete predefined catalog for every queried folder
+     * (applications: ~100,000, with SaaS applications ~1,000,000 objects per query) - skipped unless
+     * config-heavy-types or named in config-types=
+     */
+    const CONFIG_HEAVY_TYPES = array( 'applications' );
 
     /**
      * config types of the given groups (null = all)
@@ -1849,13 +1859,24 @@ class SCMPrismaAccessExport
         $types = self::configTypesForScope( isset($opt['scope']) ? $opt['scope'] : null );
         if( $opt['types'] !== null )
             $types = array_values( array_filter( $types, function($t) use( $opt ){ return in_array($t['name'], $opt['types'], TRUE); } ) );
+        //types with the whole predefined catalog in every answer: only on request
+        $skippedHeavy = array();
+        if( empty($opt['heavy_types']) )
+            foreach( $types as $i => $t )
+                if( !empty($t['heavy']) && ( $opt['types'] === null || !in_array($t['name'], $opt['types'], TRUE) ) )
+                {
+                    $skippedHeavy[] = $t['name'];
+                    unset( $types[$i] );
+                    PH::print_stdout( " - [config " . sprintf("%03d", $t['order']) . "] " . $t['name'] . " ... skipped (predefined catalog in every answer - config-heavy-types or config-types=" . $t['name'] . " to export)" );
+                }
+        $types = array_values( $types );
 
         $exported = array();
         foreach( $containers as $c )
             $exported[$c['kind'] . ":" . $c['name']] = $c;
 
         $this->configStats = array( 'containers' => array(), 'owned' => array(), 'inherited_by_owner' => array(), 'owners_not_exported' => array(),
-            'mode' => null, 'queries' => 0, 'skipped_unavailable' => 0 );
+            'mode' => null, 'queries' => 0, 'skipped_unavailable' => 0, 'skipped_heavy' => $skippedHeavy );
         foreach( $containers as $c )
             $this->configStats['containers'][$c['kind'] . ":" . $c['name']] = array();
 
@@ -1868,7 +1889,7 @@ class SCMPrismaAccessExport
             $folderInfo[$f['name']] = $f;
 
         $collected = array();      // ckey => name => ['objects' => [], 'seen' => [], 'status' => [], 'queries' => [], 'inherited' => 0, 'errors' => []]
-        $notExportedIds = array();
+        $notExportedIds = array();   // owner => type => objects (max. per query: every query that includes the owner returns all its objects)
         $unavailable = array();    // type name|class => first container
         $deviceParam = array();    // device container => 'folder' | 'device'
 
@@ -1989,6 +2010,7 @@ class SCMPrismaAccessExport
                         continue;
 
                     $typeObjects += count($result['data']);
+                    $notExportedQuery = array();
                     foreach( $result['data'] as $obj )
                     {
                         //owner: snippet, folder or device (a device is a folder of type cloud / on-prem)
@@ -2016,7 +2038,7 @@ class SCMPrismaAccessExport
                         }
                         if( !isset($exported[$ownerKey]) )
                         {
-                            $notExportedIds[$ownerKey][$name][$id] = true;
+                            $notExportedQuery[$ownerKey] = ( isset($notExportedQuery[$ownerKey]) ? $notExportedQuery[$ownerKey] : 0 ) + 1;
                             continue;
                         }
                         if( isset($collected[$ownerKey][$name]['seen'][$id]) )
@@ -2024,6 +2046,10 @@ class SCMPrismaAccessExport
                         $collected[$ownerKey][$name]['seen'][$id] = true;
                         $collected[$ownerKey][$name]['objects'][] = $obj;
                     }
+                    foreach( $notExportedQuery as $owner => $n )
+                        if( !isset($notExportedIds[$owner][$name]) || $notExportedIds[$owner][$name] < $n )
+                            $notExportedIds[$owner][$name] = $n;
+                    unset( $result );
                 }
             }
 
@@ -2070,8 +2096,8 @@ class SCMPrismaAccessExport
         foreach( $notExportedIds as $owner => $byType )
         {
             $n = 0;
-            foreach( $byType as $ids )
-                $n += count($ids);
+            foreach( $byType as $count )
+                $n += $count;
             $this->configStats['owners_not_exported'][$owner] = $n;
         }
         $this->configStats['http_requests'] = $this->connector->parallelRequests - $requestsBefore;
@@ -2249,6 +2275,7 @@ class SCMPrismaAccessExport
             'owned_objects_by_container' => $this->configStats['containers'],
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
+            'types_skipped_heavy' => isset($this->configStats['skipped_heavy']) ? $this->configStats['skipped_heavy'] : array(),
             'devices' => $this->buildDeviceSummary(),
             'mode' => $this->configStats['mode'],
             'api_queries' => $this->configStats['queries'],
@@ -2640,6 +2667,10 @@ class SCMPrismaAccessExport
         {
             $add( 'objects_policies', 'check', self::AREA_CONFIG, 'Folders, snippets, objects and security policy',
                 'exported in config/ (owned objects per container, hierarchy.json with snippet order); import / verify with pan-os-php in=scm-api://<TSG>' );
+            if( !empty($manifest['config']['types_skipped_heavy']) )
+                $add( 'config_heavy', 'check', self::AREA_CONFIG, 'Custom applications not exported',
+                    'the applications API returns the complete predefined catalog for every folder - skipped by default; export custom applications with config-types=applications (optionally container=<folders with custom applications>) or config-heavy-types',
+                    $manifest['config']['types_skipped_heavy'] );
             $notExported = isset($manifest['config']['owners_not_exported']) ? $manifest['config']['owners_not_exported'] : array();
             if( count($notExported) > 0 )
                 $add( 'config_owners', 'info', self::AREA_CONFIG, 'Objects owned by containers not exported',

@@ -48,6 +48,7 @@ $supportedArguments['config-mode'] = Array('niceName' => 'config-mode', 'shortHe
 $supportedArguments['config-devices'] = Array('niceName' => 'config-devices', 'shortHelp' => 'config area: also export device folders (type cloud / on-prem)');
 $supportedArguments['config-parallel'] = Array('niceName' => 'config-parallel', 'shortHelp' => 'config area: concurrent API requests (default 8, 1 = sequential)', 'argDesc' => 'N');
 $supportedArguments['config-page-size'] = Array('niceName' => 'config-page-size', 'shortHelp' => 'config area: entries per API page (default 1000; the server may cap it)', 'argDesc' => 'N');
+$supportedArguments['config-heavy-types'] = Array('niceName' => 'config-heavy-types', 'shortHelp' => 'config area: also export types whose answers contain the whole predefined catalog per folder (applications) - very slow');
 $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-predefined-snippets', 'shortHelp' => 'config area: also export predefined snippets (large)');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod (api.prod.datapath.prismaaccess.com, default) | prod6 (api.prod6.datapath.prismaaccess.com)', 'argDesc' => 'prod|prod6');
@@ -105,6 +106,7 @@ $export->configOptions = array(
     'mode' => isset(PH::$args['config-mode']) ? PH::$args['config-mode'] : 'leaf',
     'devices' => isset(PH::$args['config-devices']),
     'predefined_snippets' => isset(PH::$args['config-predefined-snippets']),
+    'heavy_types' => isset(PH::$args['config-heavy-types']),
     'parallel' => isset(PH::$args['config-parallel']) ? (int)PH::$args['config-parallel'] : 8,
     'page_size' => isset(PH::$args['config-page-size']) ? (int)PH::$args['config-page-size'] : 1000,
 );
