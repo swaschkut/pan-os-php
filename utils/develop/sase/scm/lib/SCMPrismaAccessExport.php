@@ -1963,9 +1963,10 @@ class SCMPrismaAccessExport
         $containers = array();
         foreach( $hierarchy['folders'] as $f )
         {
-            if( $f['type'] !== null && $f['type'] !== 'container' && !$opt['devices'] )
+            $isDevice = self::isDeviceFolder( $f );
+            if( $isDevice && !$opt['devices'] )
                 continue;
-            $containers[] = array( 'kind' => 'folder', 'name' => $f['name'], 'device' => $f['type'] !== null && $f['type'] !== 'container' );
+            $containers[] = array( 'kind' => 'folder', 'name' => $f['name'], 'device' => $isDevice );
         }
         foreach( $hierarchy['snippets'] as $sn )
         {
@@ -2352,6 +2353,28 @@ class SCMPrismaAccessExport
     /**
      * every container is queried and covers itself
      */
+    /**
+     * NGFW device folder (name = serial)? Prisma Access deployments (Mobile Users GlobalProtect / Explicit Proxy,
+     * Remote Networks, Service Connections) are folders of a type other than "container" as well, but hold
+     * configuration and are always exported.
+     */
+    public static function isDeviceFolder( $f )
+    {
+        $type = isset($f['type']) ? $f['type'] : null;
+        if( $type === null || $type === '' || $type === 'container' )
+            return false;
+        if( isset($f['device']) )
+            return true;    // matched in the device inventory
+        if( in_array( $f['name'], self::PA_DEPLOYMENT_FOLDERS, TRUE ) || stripos((string)$type, 'cloud') !== FALSE )
+            return false;
+        //remaining types (on-prem, ngfw ...): device folder
+        return true;
+    }
+
+    /** Prisma Access deployment folders (folder type is not "container") */
+    const PA_DEPLOYMENT_FOLDERS = array( 'Mobile Users', 'Mobile Users Explicit Proxy', 'Remote Networks', 'Service Connections',
+        'mobile-users-gp', 'mobile-users-ep', 'remote-networks', 'service-connections' );
+
     /**
      * rule base positions of a config type: folders pre / post, snippets have one rule base (null = no position);
      * without container kind: every position used by any container

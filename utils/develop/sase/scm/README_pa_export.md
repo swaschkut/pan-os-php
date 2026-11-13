@@ -55,7 +55,7 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `config-parallel=N` | config: concurrent API requests (default `8`, `1` = one after the other); HTTP 429 / 5xx are retried with backoff |
 | `config-page-size=N` | config: entries per API page (default `1000`; if the server returns fewer, the next offsets follow the received count) |
 | `config-heavy-types` | config: also export `applications` – skipped by default because every folder answer contains the complete predefined catalog (~100,000 objects, with SaaS applications ~1,000,000); `config-types=applications` (best with `container=`) exports it as well |
-| `config-devices` | config: also the device folders (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
+| `config-devices` | config: also the NGFW device folders (Prisma Access deployment folders – Mobile Users GlobalProtect / Explicit Proxy, Remote Networks, Service Connections – are always exported, although their folder type is not `container`) (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
 | `config-predefined-snippets` | config: also predefined snippets (large) |
 | `outdir=` | base directory, default `export` |
 | `folder=` | SCM folder of the Remote Network IKE/IPsec objects, default `Remote Networks` |
