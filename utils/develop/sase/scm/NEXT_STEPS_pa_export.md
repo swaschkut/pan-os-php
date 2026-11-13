@@ -308,6 +308,25 @@ No documented public API exists. To add it as an area:
 
 Alternative: open SCM in the Claude browser pane and capture the calls together.
 
+### 6.1 Captured (HAR, Mobile Users setup / GP setup / EP setup / security profiles)
+
+The UI uses a region specific host (e.g. `paas-3.prod.eu.panorama.paloaltonetworks.com`) with the header
+`x-auth-jwt` (UI session token). Folder names are the API names (`Mobile Users`, `Mobile Users Explicit Proxy`,
+`Mobile Users Container`) plus `type=cloud|container`; the UI routes `mobile-users-gp` / `mobile-users-ep` are not
+folder names. The deployment folders have `type=cloud` (patch 23).
+
+| page | internal calls (GET) |
+|---|---|
+| Explicit Proxy setup | `/api/config/v9.2/Plugins/CloudServices/MobileUsersExplicitProxy` (proxy URL, cookie lifetime, DNS, TLS termination, Prisma Access Browser, deployment / locations), `…/MobileUsersExplicitProxy/AuthSettings`, `…/AuthIPAccess`, `configByPath?prefix=plugins/cloud_services/mobile-users-explicit-proxy/block-settings`, `configByPath?subPath=mobile-users-explicit-proxy/users`, `/api/sase/config/v1/device-config/policies/proxy-server-profile`, `…/upstream-proxy-policy-rule`, `Device/SAMLIdPProfiles` |
+| forwarding profiles (GP proxy / PAC) | `/api/sase/config/v1/device-config/sase-forwarding-profiles/forwarding-profile`, `…/destinations`, `…/regional-and-custom-proxies`, `…/user-locations`, `…/source-applications`, summary `/api/sase/config/v1/forwarding-profiles/summary` |
+| Mobile Users / GP setup | `/api/config/v9.2/Plugins/CloudServices/MobileUsers` (portal hostname, IP pools, DNS, deployment – overlaps the public `mobile-agent/infrastructure-settings`), `configByPath?prefix=plugins/cloud_services/mobile-users` (`ipv6`, `multi-portal-multi-auth`), GP portal / gateway via `configByPath?prefix=global-protect/...` and `Network/GlobalProtectGateways`, `/api/sase/config/v1/device-config/global-protect/portals`, `…/general-settings`, `/api/sase/config/v1/global-settings`, `/api/sase/config/v1/jupiter/*`, `Device/ZTNAAgent/AppSettings` |
+| security profiles | `/api/config/v9.2/Objects/VulnerabilityProtectionSecurityProfiles`, `…/WildFireAndAntivirusSecurityProfiles` (PAN-OS XML structure as JSON: `rules.entry`, `decoder.entry`, `@loc`, `@snippet-loc`), `Objects/CustomVulnerabilitySignatures`, `Profile/CustomSignature` |
+| runtime / status (not configuration) | `/api/extensions/gpcs/*` (users, PAC URLs, regions, gateways, IP allow list status) |
+
+Next: `scm_internal_api_probe.php in=scm-api://<TSG> [host=…]` – checks whether these calls accept the service
+account token (`Authorization: Bearer` or `x-auth-jwt`). Only then an area `mobile-users-explicit-proxy` is possible;
+otherwise Explicit Proxy stays a manual / documented item.
+
 ## 7. Next development steps
 
 | step | what | depends on |
