@@ -1081,6 +1081,14 @@ class SCMPrismaAccessSync
                 && ( $meta['singleton'] || ( $targetId !== null && strpos($targetId, "<new ") !== 0 ) ) )
             {
                 $current = self::readTarget( $connector, ( $meta['singleton'] ? $base : $base . "/" . rawurlencode($targetId) ) . $qs(), $opts['execute'] );
+                //the single GET can return other fields than the list query of the export (live: folders) -
+                //read the object the same way as the export before reporting a conflict
+                if( $current !== false && $current !== null && !$meta['singleton'] && self::objectHash($current, $meta) !== $op['target_hash'] )
+                {
+                    $listed = self::readTargetFromList( $connector, $op, $targetId );
+                    if( $listed !== null )
+                        $current = $listed;
+                }
                 if( $current !== false && $current !== null && self::objectHash($current, $meta) !== $op['target_hash'] )
                 {
                     $res['status'] = 'conflict';
@@ -1270,6 +1278,27 @@ class SCMPrismaAccessSync
         if( isset($json['data']) && is_array($json['data']) && count($json['data']) == 1 && isset($json['data'][0]) )
             return $json['data'][0];
         return $json;
+    }
+
+    /**
+     * object by id from the list query the export uses (folder= / snippet= of the container, tenant lists without)
+     */
+    private static function readTargetFromList( $connector, $op, $id )
+    {
+        $url = preg_replace( '#^https?://[^/]+#', '', $op['url'] );
+        $url = preg_replace( '#\?.*$#', '', $url );
+        if( $op['container'] !== null )
+        {
+            list($kind, $name) = explode(":", $op['container'], 2);
+            $url .= "?" . ( $kind == 'snippet' ? 'snippet' : 'folder' ) . "=" . rawurlencode($name);
+        }
+        $result = $connector->getSCMResourceAll( $url );
+        if( $result['errors'] !== null || !is_array($result['data']) )
+            return null;
+        foreach( $result['data'] as $o )
+            if( is_array($o) && isset($o['id']) && $o['id'] === $id )
+                return $o;
+        return null;
     }
 
     /**
