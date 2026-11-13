@@ -373,7 +373,11 @@ the number of objects received and the time. Lower `config-parallel` if the tena
 Answers are fetched in chunks of 2 × `config-parallel` while they are processed, so memory stays bounded (console:
 peak memory per type). Objects of owners that are not exported (predefined, filtered) are only counted
 (`owners_not_exported`: per owner the maximum of one answer – every answer that includes an owner contains all of its
-objects). Objects whose owner is not in the folder / snippet list at all (seen: `folder:Shared`) are kept in
+objects). Owners `snippet:predefined` / `folder:predefined` (`PREDEFINED_OWNERS`) are predefined content and only counted. The
+legacy owner name `folder:Shared` (former name of the Prisma Access folder) is mapped to `folder:Prisma Access`
+(`OWNER_ALIASES`, only if `Shared` is not a real folder): the objects are exported, compared and synced there
+(`manifest.json` → `config.owner_aliases`, checklist info item).
+Objects whose owner is still not in the folder / snippet list are kept in
 `config/owners-not-in-hierarchy.json` (`manifest.json` → `config.owners_not_in_hierarchy`, checklist item); they are
 not part of compare / sync. `_seen_in` per owner lists the queried containers whose answer contained them – this shows
 where the owner sits in the inheritance (only leaves below `Prisma Access` → a Prisma Access level, leaves below

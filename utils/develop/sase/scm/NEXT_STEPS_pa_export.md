@@ -92,6 +92,7 @@ Note: `debugapi` prints the bearer token and full API answers – do not share t
 | 5 objects owned by `folder:Shared`, which is not in the folder list → only counted, i.e. lost | patch 17: objects of owners not in the folder / snippet list are stored in `config/owners-not-in-hierarchy.json`, checklist item, `config.owners_not_in_hierarchy` |
 | 95 "HA pairs" for 142 devices, many `<serial> / unknown` | standalone devices report `ha_peer_serial` "unknown" → ignored; peers not in the tenant marked |
 | console "owner_not_exported: 4 object(s)" counted owners | prints objects and owners |
+| run with patch 17 / 18 (448 s, 47 HA pairs): `snippet:predefined` is not in the snippet list → reported as unknown owner; `folder:Shared` (1 url-category, 4 post security rules) visible only in the one leaf below `Prisma Access` | patch 19: `snippet:predefined` / `folder:predefined` counted as predefined; `folder:Shared` mapped to `folder:Prisma Access` (legacy name), exported / compared / synced there |
 | run with patch 15: peak memory 326 MB; `addresses` 894,923 objects in 191 s, `services` 193,521 in 18 s; `applications`: every folder answer contains the whole predefined catalog (~100,000, with SaaS ~1,000,000) → not feasible for 101 leaves | patch 16: `applications` skipped by default (`config-heavy-types` or `config-types=applications` to export, best with `container=`), checklist item; objects of not exported owners only counted (no id sets) |
 | run with patch 14: `variables` 2,891 objects in 2.6 s, `tags` 506,839 objects (101 leaf answers, mostly inherited) in 49.5 s | patch 15: answers are fetched in chunks (2 × `config-parallel`) while processing, so only a few answers are in memory at a time; peak memory per type on the console |
 
@@ -205,8 +206,10 @@ was found; wrong items are fixed in the code afterwards.
       errors in the console (otherwise `config-parallel=4`); page size: does the API accept `limit=1000`
       (`debugapi`: number of entries in the first answer)?
 - [ ] Same slice with `config-parallel=1` and with default → compare → no differences.
-- [ ] `config/owners-not-in-hierarchy.json`: what is `folder:Shared` in SCM (which objects, where visible in the UI)?
-- [ ] HA pairs after patch 17 plausible (≤ devices / 2).
+- [x] `folder:Shared`: only below `Prisma Access` → legacy name of the Prisma Access folder (patch 19 maps it).
+- [ ] After patch 19: the url-category and the 4 post rules of `Shared` in `config/folders/Prisma_Access/`; check in the
+      SCM UI that they are shown in the Prisma Access folder; `owners-not-in-hierarchy.json` no longer written.
+- [x] HA pairs after patch 17 plausible: 47 for 142 devices.
 - [ ] `config/hierarchy.txt` matches the folder tree in SCM, incl. the order of the attached snippets per folder.
 - [ ] Every object returned for a container carries `folder` or `snippet` (otherwise it stays in the queried container
       – check files with `data` entries without these fields).

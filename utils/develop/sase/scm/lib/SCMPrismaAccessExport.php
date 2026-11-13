@@ -1655,6 +1655,16 @@ class SCMPrismaAccessExport
      */
     const CONFIG_HEAVY_TYPES = array( 'applications' );
 
+    /** owners of predefined content - not in the folder / snippet list, never exported (counted only) */
+    const PREDEFINED_OWNERS = array( 'snippet:predefined', 'folder:predefined' );
+
+    /**
+     * legacy owner names returned by the API => owner they belong to
+     * "Shared" is the former name of the Prisma Access folder (Prisma Access configuration API); seen in a live
+     * tenant on url-categories / post security rules, visible only below "Prisma Access"
+     */
+    const OWNER_ALIASES = array( 'folder:Shared' => 'folder:Prisma Access' );
+
     /**
      * config types of the given groups (null = all)
      */
@@ -1907,6 +1917,15 @@ class SCMPrismaAccessExport
             $knownOwners['folder:' . $f['name']] = true;
         foreach( $hierarchy['snippets'] as $sn )
             $knownOwners['snippet:' . $sn['name']] = true;
+        //predefined content: owner is not in the lists, counted as not exported
+        foreach( self::PREDEFINED_OWNERS as $po )
+            $knownOwners[$po] = true;
+        //legacy owner names (only if the legacy name is not a real folder and the target exists)
+        $ownerAlias = array();
+        foreach( self::OWNER_ALIASES as $from => $to )
+            if( !isset($knownOwners[$from]) && isset($knownOwners[$to]) )
+                $ownerAlias[$from] = $to;
+        $this->configStats['owner_aliases'] = array();
         $orphans = array();          // owner => type => id => object (owner not in the folder / snippet list)
         $orphanSeen = array();       // owner => queried container => true (where the objects are visible)
         $notExportedIds = array();   // owner => type => objects (max. per query: every query that includes the owner returns all its objects)
@@ -2046,6 +2065,12 @@ class SCMPrismaAccessExport
                             $ownerKey = $qkey;
                             if( $mode == 'leaf' )
                                 $this->warnings[] = "config " . $name . ": object without folder / snippet field in the answer for " . $qkey . " - stored there";
+                        }
+                        if( isset($ownerAlias[$ownerKey]) )
+                        {
+                            $aliasKey = $ownerKey . " -> " . $ownerAlias[$ownerKey];
+                            $this->configStats['owner_aliases'][$aliasKey][$type['name']][ isset($obj['id']) ? (string)$obj['id'] : md5(json_encode($obj)) ] = true;
+                            $ownerKey = $ownerAlias[$ownerKey];
                         }
                         $id = isset($obj['id']) ? (string)$obj['id'] : md5( json_encode($obj) );
 
@@ -2321,6 +2346,7 @@ class SCMPrismaAccessExport
             'owned_objects_by_container' => $this->configStats['containers'],
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
+            'owner_aliases' => self::countAliases( isset($this->configStats['owner_aliases']) ? $this->configStats['owner_aliases'] : array() ),
             'owners_not_in_hierarchy' => isset($this->configStats['owners_not_in_hierarchy']) ? $this->configStats['owners_not_in_hierarchy'] : array(),
             'types_skipped_heavy' => isset($this->configStats['skipped_heavy']) ? $this->configStats['skipped_heavy'] : array(),
             'devices' => $this->buildDeviceSummary(),
@@ -2536,6 +2562,15 @@ class SCMPrismaAccessExport
     /**
      * unavailable endpoints, once per area/endpoint; config types with the number of containers
      */
+    public static function countAliases( $aliases )
+    {
+        $out = array();
+        foreach( $aliases as $k => $byType )
+            foreach( $byType as $t => $ids )
+                $out[$k][$t] = count($ids);
+        return $out;
+    }
+
     public static function unavailableList( $endpoints )
     {
         $count = array();
@@ -2736,6 +2771,15 @@ class SCMPrismaAccessExport
         {
             $add( 'objects_policies', 'check', self::AREA_CONFIG, 'Folders, snippets, objects and security policy',
                 'exported in config/ (owned objects per container, hierarchy.json with snippet order); compare with scm_pa_compare.php, transfer with scm_pa_sync.php' );
+            if( !empty($manifest['config']['owner_aliases']) )
+            {
+                $o = array();
+                foreach( $manifest['config']['owner_aliases'] as $k => $byType )
+                    foreach( $byType as $t => $n )
+                        $o[] = $k . " " . $t . " (" . $n . ")";
+                $add( 'config_owner_alias', 'info', self::AREA_CONFIG, 'Objects with a legacy owner name',
+                    'the API returns the former folder name (e.g. "Shared" = Prisma Access); the objects are exported, compared and synced in the folder they belong to', $o );
+            }
             if( !empty($manifest['config']['owners_not_in_hierarchy']) )
             {
                 $o = array();
