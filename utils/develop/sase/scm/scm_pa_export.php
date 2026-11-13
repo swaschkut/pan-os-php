@@ -142,7 +142,9 @@ if( isset(PH::$args['egressip']) )
     if( $egressKey === null )
         $egressKey = $connector->getEgressIPApiKey( $tsg, TRUE );
 }
-$export->exportEgressIP( $egressKey, $egressEnv );
+//egress IPs belong to infra: no "skipped" entry for exports without infra unless egressip was requested
+if( $export->hasArea(SCMPrismaAccessExport::AREA_INFRA) || isset(PH::$args['egressip']) )
+    $export->exportEgressIP( $egressKey, $egressEnv );
 
 $mappings = array();
 $secretStats = array();

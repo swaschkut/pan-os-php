@@ -54,7 +54,7 @@ BUGFIX:
 * class Vulnerability/Anti-Spyware | correction if BP JSON file has no visibility/best-practice setting
 * optimisation for all parts related to BP_JSON file - stats/exporttohtml
 * correction VP/Spyware BP - severity informational / low
-* SCM export after first production run
+* SCM export after first production run / IAM patch
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes

@@ -408,6 +408,12 @@ draft must be published (`POST /seb-api/v1/configuration-management/draft/publis
 One row per access policy: `principal`, `principal_type`, `role`, `resource`, plus empty `principal_new` /
 `resource_new` to fill in for the target tenant (principals and the TSG in `resource` differ). Service account secrets
 cannot be read – create new service accounts on the target tenant and update `.panconfkeystore` / automation.
+`principal_type` comes from the API; if missing it is derived from the principal (`*.iam.panserviceaccount.com` →
+`service_account`, e-mail address → `user`).
+
+`manifest.json` → `iam`: `access_policies`, `access_policies_by_role`, `access_policies_by_principal_type`, counts of
+`roles`, `permission_sets`, `permissions` (names in the `iam/*.json` files), names of `custom_roles` and
+`service_accounts`.
 
 ### MIGRATION_CHECKLIST.md
 
@@ -459,8 +465,8 @@ marked `internal`. Until then it is a manual item in the migration checklist.
   name; whether the policy GETs need `configurationVersion=active`; user group `source` / application `type` values.
 * config: which types answer 404 in your tenant; whether objects of the queried container always carry `folder` /
   `snippet`; rule `position` values; how predefined objects are marked.
-* IAM: `custom_roles` / `permission_sets` paths (derived from the doc structure), access policy field names
-  (`principal`, `role`, `resource`), list format / pagination of the IAM endpoints.
+* IAM: access policy field names `principal` / `principal_type` / `resource`, pagination of the IAM endpoints
+  (paths and list format confirmed).
 
 ## Endpoint metadata
 

@@ -87,6 +87,17 @@ Note: `debugapi` prints the bearer token and full API answers – do not share t
 | `locations`, `mobile-agent/locations` return a top-level array → counted as 1 entry | same fix |
 | `area=config` too slow on a large tenant | `config-mode=leaf` (default) + skip of unavailable types |
 
+Re-run `area=iam` after patch 12: 0 errors, roles 35, permission sets 643, service accounts 4, access policies 122,
+permissions 6414 – list detection confirmed. Follow-ups (patch 13):
+
+| finding | change |
+|---|---|
+| `manifest.json` → `iam.permission_sets` listed all 643 names | counts only (`roles`, `permission_sets`, `permissions`); names stay in `iam/*.json` |
+| no overview users vs. service accounts | `access_policies_by_principal_type`; `principal_type` derived from the principal when the API has none (`*.iam.panserviceaccount.com` → `service_account`, e-mail → `user`) |
+| checklist item IAM without numbers | detail lists the access policies per role, hint to review superuser assignments; extra item for custom roles |
+| export without `infra` listed `infra/egress-ip` as `skipped` and a ZTNA connector item | egress-IP only with `infra` or `egressip`; ZTNA item only with `infra` |
+| checklist "objects and security policy" pointed to `in=scm-api://` | points to `area=config` |
+
 ## 4. Verification
 
 Work through the list with the export directory `<outdir>/<TSG>/<timestamp>/`. For every item note **OK** or what
@@ -166,12 +177,14 @@ was found; wrong items are fixed in the code afterwards.
 
 ### 4.7 iam
 
-- [ ] Paths `/iam/v1/custom_roles` and `/iam/v1/permission_sets` (derived from the documentation structure, not
-      confirmed).
-- [x] List format of the IAM endpoints: `items` / `count` (3a) – re-run `area=iam`: access policies / service accounts
-      counted in `manifest.json` → `iam`.
+- [x] List format of the IAM endpoints: `items` / `count` (3a) – confirmed by the re-run (122 access policies,
+      4 service accounts, 643 permission sets).
+- [x] Paths `custom_roles` / `permission_sets`: HTTP 200 (custom roles: 0 in the test tenant).
 - [ ] Pagination of the IAM endpoints (more than 200 access policies complete?).
-- [ ] `access-policies.csv`: `principal`, `role`, `resource` filled (field names of the access policy objects).
+- [x] `role` filled (counts per role in `manifest.json` → `iam.access_policies_by_role`).
+- [ ] `access-policies.csv`: `principal`, `principal_type`, `resource` filled; `access_policies_by_principal_type`
+      without `unknown`.
+- [ ] Access policy count matches the UI (Identity & Access → access policies), i.e. pagination complete.
 
 ### 4.8 config
 

@@ -2354,6 +2354,24 @@ class SCMPrismaAccessExport
     /**
      * iam/access-policies.csv: one row per access policy, *_new columns to fill in for the target tenant
      */
+    /**
+     * principal_type of the access policy; if the API does not return one: derived from the principal
+     * (service accounts end with .iam.panserviceaccount.com)
+     */
+    public static function iamPrincipalType( $policy, $principal )
+    {
+        $t = self::firstOf($policy, array('principal_type', 'type'));
+        if( is_string($t) && $t !== '' )
+            return $t;
+        if( !is_string($principal) || $principal === '' )
+            return '';
+        if( substr($principal, -strlen('.iam.panserviceaccount.com')) === '.iam.panserviceaccount.com' )
+            return 'service_account';
+        if( strpos($principal, '@') !== FALSE )
+            return 'user';
+        return '';
+    }
+
     public function buildIAMSummary()
     {
         if( !$this->hasArea(self::AREA_IAM) )
@@ -2367,7 +2385,7 @@ class SCMPrismaAccessExport
             $resource = self::firstOf($p, array('resource', 'resource_id', 'scope'));
             $rows[] = array(
                 'principal' => is_array($principal) ? json_encode($principal) : $principal,
-                'principal_type' => self::firstOf($p, array('principal_type', 'type')),
+                'principal_type' => self::iamPrincipalType( $p, $principal ),
                 'role' => is_array($role) ? json_encode($role) : $role,
                 'resource' => is_array($resource) ? json_encode($resource) : $resource,
                 'principal_new' => '', 'resource_new' => '',
@@ -2384,12 +2402,16 @@ class SCMPrismaAccessExport
         }
 
         $byRole = array();
+        $byType = array();
         foreach( $rows as $row )
         {
             $r = (string)$row['role'];
             $byRole[$r] = ( isset($byRole[$r]) ? $byRole[$r] : 0 ) + 1;
+            $t = (string)$row['principal_type'] !== '' ? (string)$row['principal_type'] : 'unknown';
+            $byType[$t] = ( isset($byType[$t]) ? $byType[$t] : 0 ) + 1;
         }
         ksort($byRole);
+        ksort($byType);
 
         $names = function( $endpoint ){
             return array_values( array_filter( array_map( function($e){ return self::firstOf($e, array('name', 'role_name', 'client_id', 'id')); }, $this->listData($endpoint, self::AREA_IAM) ) ) );
@@ -2398,8 +2420,12 @@ class SCMPrismaAccessExport
         return array(
             'access_policies' => count($rows),
             'access_policies_by_role' => $byRole,
+            'access_policies_by_principal_type' => $byType,
+            'roles' => count( $this->listData('roles', self::AREA_IAM) ),
             'custom_roles' => $names('custom-roles'),
-            'permission_sets' => $names('permission-sets'),
+            //names are in iam/03_permission-sets.json - hundreds of entries, only counted here
+            'permission_sets' => count( $this->listData('permission-sets', self::AREA_IAM) ),
+            'permissions' => count( $this->listData('permissions', self::AREA_IAM) ),
             'service_accounts' => $names('service-accounts'),
             'files' => array( self::AREA_IAM . '/access-policies.csv' ),
         );
@@ -2508,8 +2534,9 @@ class SCMPrismaAccessExport
             if( is_array($members) && count($members) > 0 )
                 $ztna[] = $f . ": " . implode(", ", $members);
         }
-        $add( 'ztna_connector', count($ztna) > 0 ? 'action_required' : 'check', self::AREA_INFRA, 'ZTNA connector (not exported)',
-            'ZTNA connector groups / applications use a separate API and are not part of this export', $ztna );
+        if( $this->hasArea(self::AREA_INFRA) )
+            $add( 'ztna_connector', count($ztna) > 0 ? 'action_required' : 'check', self::AREA_INFRA, 'ZTNA connector (not exported)',
+                'ZTNA connector groups / applications use a separate API and are not part of this export', $ztna );
         if( $this->hasArea(self::AREA_MU) )
             $add( 'explicit_proxy', 'check', self::AREA_MU, 'Mobile Users Explicit Proxy (not exported)',
                 'no documented public API - configure manually or via the internal SCM API (to be added)' );
@@ -2538,7 +2565,7 @@ class SCMPrismaAccessExport
         }
         else
             $add( 'objects_policies', 'info', 'tenant', 'Objects and security policy',
-                'not part of this export (area config) - use pan-os-php in=scm-api://<TSG> for folders / snippets / objects / rules' );
+                'not part of this export - export them with area=config (config-scope=objects,policies,...)' );
 
         $pbOk = FALSE;
         foreach( $manifest['endpoints'] as $e )
@@ -2560,8 +2587,14 @@ class SCMPrismaAccessExport
             && ( $manifest['iam']['access_policies'] > 0 || count($manifest['iam']['service_accounts']) > 0 ) )
         {
             $sa = $hint('service_account_secret', self::AREA_IAM);
+            $roles = array();
+            foreach( $manifest['iam']['access_policies_by_role'] as $r => $c )
+                $roles[] = $r . " " . $c;
             $add( 'iam', 'action_required', self::AREA_IAM, 'IAM: users, roles, service accounts',
-                'create access policies on the target TSG (iam/access-policies.csv: principal_new / resource_new); service account secrets cannot be exported - create new ones', $sa );
+                $manifest['iam']['access_policies'] . ' access policies (' . implode(", ", $roles) . ') - create them on the target TSG (iam/access-policies.csv: principal_new / resource_new); review superuser assignments; service account secrets cannot be exported - create new ones', $sa );
+            if( count($manifest['iam']['custom_roles']) > 0 )
+                $add( 'iam_custom_roles', 'action_required', self::AREA_IAM, 'IAM custom roles',
+                    'create the custom roles before the access policies that use them (iam/02_custom-roles.json)', $manifest['iam']['custom_roles'] );
         }
 
         $add( 'push', 'info', 'tenant', 'Push configuration', 'after import push the configuration (config-versions candidate:push) and check the jobs' );
