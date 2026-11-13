@@ -32,7 +32,7 @@ $isApply = in_array("apply", array_slice($argv, 1), TRUE);
 $isPlan = in_array("plan", array_slice($argv, 1), TRUE);
 
 $usage = "USAGE:\n"
-    . "  php " . basename(__FILE__) . " plan diff=<diff.json> source=left|right [mode=additive|mirror|merge] [allow-delete] [allow-infra]\n"
+    . "  php " . basename(__FILE__) . " plan diff=<diff.json> source=left|right [mode=additive|mirror|merge] [allow-delete] [allow-infra] [allow-network]\n"
     . "        [area=a,b] [container=c1,c2] [config-types=t1,t2] [out=<dir>]\n"
     . "  php " . basename(__FILE__) . " apply in=scm-api://<target TSG> plan=<plan.json> [execute [yes]] [push] [continue-on-error]\n"
     . "        [ops=op-0001,op-0002] [source-dir=<source export dir>] [skip-hash-check] [debugapi]\n"
@@ -40,6 +40,7 @@ $usage = "USAGE:\n"
     . "  plan   offline; writes plan.json + PLAN_REPORT.md next to diff.json (or out=). source = the export that wins.\n"
     . "         additive: create + update · mirror: + delete (only with allow-delete) · merge: two plans, conflicts not sent\n"
     . "         allow-infra: also update infrastructure singletons (shared infrastructure settings, BGP routing)\n"
+    . "         allow-network: also write NGFW network / device settings of the config area (interfaces, routing, device setup)\n"
     . "  apply  dry-run unless 'execute'; 'execute' asks for confirmation unless 'yes'; 'push' pushes the touched folders\n";
 
 if( !$isApply && !$isPlan )
@@ -68,7 +69,7 @@ if( $isPlan && !$isApply )
         else
             $args[strtolower(substr($a, 0, $p))] = substr($a, $p + 1);
     }
-    $known = array('plan', 'diff', 'source', 'mode', 'allow-delete', 'allow-infra', 'area', 'container', 'config-types', 'out', 'help');
+    $known = array('plan', 'diff', 'source', 'mode', 'allow-delete', 'allow-infra', 'allow-network', 'area', 'container', 'config-types', 'out', 'help');
     foreach( array_keys($args) as $a )
         if( !in_array($a, $known, TRUE) )
         {
@@ -90,6 +91,7 @@ if( $isPlan && !$isApply )
         'mode' => isset($args['mode']) ? $args['mode'] : 'additive',
         'allow_delete' => isset($args['allow-delete']),
         'allow_infra' => isset($args['allow-infra']),
+        'allow_network' => isset($args['allow-network']),
         'areas' => $listArg( isset($args['area']) ? $args['area'] : null ),
         'containers' => $listArg( isset($args['container']) ? $args['container'] : null ),
         'types' => $listArg( isset($args['config-types']) ? $args['config-types'] : null ),

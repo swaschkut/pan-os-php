@@ -28,6 +28,7 @@ php utils/develop/sase/scm/scm_pa_sync.php plan diff=<compare dir>/diff.json mod
 | `mode=` | `additive` (default), `mirror`, `merge` – see below |
 | `allow-delete` | `mirror` only: delete operations are executable (otherwise listed as blocked) |
 | `allow-infra` | infrastructure singletons (shared infrastructure settings, BGP routing) may be updated |
+| `allow-network` | config area: NGFW `network` and `device` groups (interfaces, routing, zones, IKE / IPsec, device settings) may be written |
 | `area=` / `container=` / `config-types=` | restrict the plan (same meaning as in compare) |
 | `out=` | output directory (default: directory of `diff.json`) |
 
@@ -61,6 +62,8 @@ Output: `plan.json` (merge: `plan-<side>-to-<side>.json`) and `PLAN_REPORT.md`.
    - `write: none` endpoints (IAM, locations, agent versions …)
    - Prisma Browser (rule / section API and draft publish not implemented yet)
    - infrastructure singletons without `allow-infra`
+   - config `network` / `device` groups without `allow-network`
+   - devices (`config/devices`): onboarding and folder assignment are done in SCM device management
    - deletes without `allow-delete`, deletes of referenced objects, singleton deletes
    - missing secret: the source export has no secret list / no value for the object
 

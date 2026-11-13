@@ -25,7 +25,8 @@ git am scm-rn-export_beta.patch \
        scm-pa-export-next-steps_beta.patch \
        scm-pa-export-config_beta.patch \
        scm-pa-compare_beta.patch \
-       scm-pa-sync_beta.patch
+       scm-pa-sync_beta.patch \
+       scm-pa-export-ngfw_beta.patch
 ```
 
 Quick check:
@@ -171,7 +172,18 @@ was found; wrong items are fixed in the code afterwards.
 - [ ] Rules: `-pre` / `-post` split as in the UI; order of the rules inside a file = rule order in the UI.
 - [ ] Predefined objects (applications, profiles): owner value (`snippet: predefined`?) → counted under
       `config.owners_not_exported`, not stored.
-- [ ] Runtime / number of API calls acceptable on a large tenant (containers × types).
+- [ ] Runtime / number of API calls acceptable on a large tenant (containers × types) – the config area has now
+      ~110 types; use `config-scope=` / `container=` for the first runs.
+- [ ] NGFW groups: which of the derived paths answer 404 (`config.types_unavailable`) although the type exists in the
+      UI → correct the path in `getConfigTypes()`. Especially: `layer2-subinterfaces`, `layer3-subinterfaces`,
+      `ospf-auth-profiles`, `bgp-*`, `route-*-lists`, `sdwan-*`, all `/config/device/v1/*` and `*-match-list`.
+- [ ] `nat-rules`, `pbf-rules`, `qos-policy-rules`, `sdwan-rules` accept `position=pre|post` (otherwise: one rule base).
+- [ ] Device folders: does `folder=<serial>` work, or is the `device=<serial>` fallback used (see the `url` in
+      `config/folders/<serial>/*.json`)? Which owner field do device objects carry (`folder` / `device`)?
+- [ ] Device settings (`general-settings` …): list with `name` or single object? (key in `ENDPOINT_META`)
+- [ ] `config/devices.csv` matches SCM device management (serials, folder, connected, version, HA peer);
+      `grep` for a known authcode in the export finds nothing.
+- [ ] Prisma Access folders: no network / identity files in `config/folders/<PA folder>/` (covered by the PA areas).
 
 ### 4.9 compare (two real exports)
 
@@ -202,6 +214,8 @@ Use two lab tenants (or one lab tenant and an export of another tenant). Export 
       - [ ] create folder (`POST /config/setup/v1/folders` with `parent`)
       - [ ] rule move (`POST …/security-rules/{id}:move`, body `destination` / `destination_rule` / `rulebase`)
       - [ ] delete (`DELETE …/{id}`)
+      - [ ] NGFW (with `allow-network`, lab firewall only): update of an interface / zone / NAT rule in a device
+            folder (owner field `folder` or `device`), push to the device
       - [ ] service connection with `backup_SC` (create + follow-up update)
 - [ ] `push`: job id field of `candidate:push`, job status values (`FIN` / …) – adjust `push()` if different.
 - [ ] full `mirror allow-delete` run on the lab tenant, re-export, compare: identical except blocked / excluded.

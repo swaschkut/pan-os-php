@@ -62,6 +62,9 @@ Default key is `name`; exceptions are defined in the endpoint metadata (see belo
 `bgp-routing`, Prisma Browser policies) have no key and are compared as one object. Entries without key value are
 compared by position (warning). Duplicate keys are reported, the first entry is compared.
 
+Devices (`config/devices`) are matched by `serial_number`; the folder assignment is compared as `assigned_folder`,
+runtime values (connection, uptime, software / content versions, HA state, licenses) are ignored.
+
 Config objects are only stored at their owner by the export, so an object moved to another folder / snippet appears
 as `only_left` in one container and `only_right` in the other.
 

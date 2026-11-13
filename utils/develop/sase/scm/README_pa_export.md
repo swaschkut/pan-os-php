@@ -10,7 +10,7 @@ The export is the input for the later steps:
 | area | content |
 |---|---|
 | `infra` | Prisma Access infrastructure: infrastructure subnet, infra BGP AS, loopbacks, BGP routing, internal DNS servers, locations, egress IPs |
-| `config` | folder / snippet hierarchy (with snippet order) and per container all objects, security profiles, rules (pre / post) and zones – stored at the owning container |
+| `config` | complete NGFW / SCM configuration: folder / snippet hierarchy (with snippet order), **devices** (serials, folder, connection, versions, HA), and per folder / snippet / device the groups identity (certificates, auth / server profiles), objects (incl. security profiles), network (interfaces, routing, zones, IKE / IPsec, SD-WAN, QoS), policies (security, decryption, auth, app-override, NAT, PBF, QoS, SD-WAN rules – pre / post) and device settings – stored at the owning container |
 | `remote-networks` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, bandwidth allocations, remote networks (RN / RN-SPN) |
 | `service-connections` | IKE/IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, service connections (SC-CAN), service connection groups, traffic steering rules |
 | `mobile-users` | identity dependencies (certificates, trusted CAs, certificate / TLS service profiles, SAML / LDAP / RADIUS / TACACS+ / Kerberos server profiles, MFA servers, local users / groups, authentication profiles / sequences) and GlobalProtect (`/config/mobile-agent/v1/*`) |
@@ -49,8 +49,9 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `in=scm-api://<TSG_ID>` | tenant; service account `client_id` / `client_secret` are taken from `~/.panconfkeystore` (`tsg_id<TSG_ID>`) or asked for and stored |
 | `area=` | comma separated: `infra`, `config`, `remote-networks`, `service-connections`, `mobile-users`, `prisma-browser`, `iam`; default: all |
 | `container=` | config: comma separated folder / snippet names (default: all containers; the hierarchy is always exported) |
+| `config-scope=` | config: groups `identity`, `objects`, `network`, `policies`, `device` (default: all) |
 | `config-types=` | config: comma separated types, e.g. `addresses,security-rules` (default: all) |
-| `config-devices` | config: also device folders (type `cloud` / `on-prem`) |
+| `config-devices` | config: also the device folders (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
 | `config-predefined-snippets` | config: also predefined snippets (large) |
 | `outdir=` | base directory, default `export` |
 | `folder=` | SCM folder of the Remote Network IKE/IPsec objects, default `Remote Networks` |
@@ -150,8 +151,10 @@ With `egressip` the key is taken from, in this order:
     config/
         01_folders.json                         /config/setup/v1/folders
         02_snippets.json                        /config/setup/v1/snippets
+        03_devices.json / devices.csv           /config/setup/v1/devices   (license authcodes redacted)
         hierarchy.json / hierarchy.txt
-        folders/<container>/NN_<type>.json      ?folder=<container>   (only objects owned by <container>)
+        folders/<container>/NN_<type>.json      ?folder=<container>   (only objects owned by <container>;
+                                                device folders: ?folder=<serial>, fallback ?device=<serial>)
         snippets/<snippet>/NN_<type>.json       ?snippet=<snippet>
     MIGRATION_CHECKLIST.md
 ```
@@ -174,7 +177,7 @@ parent folder (e.g. `Prisma Access`, `All`) are reported as `inherited_or_predef
 
 ### manifest.json
 
-`format_version` (6), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
+`format_version` (7), `tool`, `areas`, `tsg_id`, `api_url`, `folders` (RN, SC, MU), `created_at`, `import_order`,
 per-endpoint `area`/status/count/http_code, `infra` summary, `mobile_users` summary, `ip_mapping` (summary per area),
 `secret_lists` (counts per area: `psk`, `bgp_secret`, `secret`), `prisma_browser`, `iam` and `config` summaries, `unavailable`,
 `migration_checklist` and `import_hints` (each with `area`).
@@ -322,17 +325,40 @@ contains `container`, `container_kind`, `inherited_skipped` (objects of other ow
 snippet, `container=` filter, device folders, predefined snippets) are counted per owner in
 `manifest.json` → `config.owners_not_exported` (each object once).
 
-**Containers.** Folders of type `container` (devices with `config-devices`), then snippets (predefined ones with
-`config-predefined-snippets`). **Types** (pan.dev, not pan-os-php's own list – so the verification can find gaps):
-`variables`, tags, addresses, address groups, regions, services, service groups, schedules, external dynamic lists,
-dynamic user groups, applications, application filters / groups, URL categories, HIP objects / profiles, HTTP / syslog
-server profiles, log forwarding profiles, auto-tag actions, zone protection profiles, zones, security profiles
-(anti-spyware, vulnerability, WildFire / AV, DNS security, file blocking, URL access, decryption, SaaS, AI), profile
-groups, and the rule bases security / decryption / authentication / app-override / QoS as `-pre` and `-post`. A type
-that answers 401/403/404 is `unavailable` (`config.types_unavailable`), not an error.
+**Containers.** Folders of type `container` (device folders of type `cloud` / `on-prem` with `config-devices`), then
+snippets (predefined ones with `config-predefined-snippets`). A device folder is queried with `folder=<serial>`; if the
+API refuses that (HTTP 400 / 404), `device=<serial>` is used for that device. An owner field `device` is treated like
+`folder`.
+
+**Prisma Access folders** (`Prisma Access`, `Remote Networks`, `Service Connections`, `Mobile Users`,
+`Mobile Users Container`, `Mobile Users Explicit Proxy`): only the groups `objects` and `policies` are exported in the
+config area – their network / identity settings are exported by the areas `remote-networks`, `service-connections`
+and `mobile-users`.
+
+**Types** (pan.dev, not pan-os-php's own list – so the verification can find gaps), in import order, per group
+(`config-scope=`):
+
+| group | types |
+|---|---|
+| `objects` | variables (`/config/setup/v1`), tags, addresses, address groups, regions, services, service groups, schedules, external dynamic lists, dynamic user groups, applications, application filters / groups, URL categories, HIP objects / profiles, HTTP / syslog server profiles, log forwarding profiles, auto-tag actions; security profiles (anti-spyware, vulnerability, WildFire / AV, DNS security, file blocking, URL access, decryption, SaaS, AI) and profile groups |
+| `identity` | `/config/identity/v1`: certificates, trusted CAs, certificate profiles, OCSP responders, SCEP profiles, TLS service profiles, SAML / LDAP / RADIUS / TACACS+ / Kerberos server profiles, MFA servers, local users / user groups, authentication profiles / sequences / portals |
+| `network` | `/config/network/v1`: interface management profiles, link tags, LLDP profiles, zone protection profiles, ethernet / aggregate interfaces, layer 2 / layer 3 subinterfaces, loopback / tunnel / VLAN interfaces, DHCP interfaces, zones, route access / prefix / community / path access lists, BGP route maps / redistributions / address family / authentication / filtering / redistribution profiles, OSPF auth profiles, logical routers, DNS proxies, IKE / IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS profiles, SD-WAN path quality / SaaS quality / traffic distribution / error correction profiles |
+| `policies` | rule bases as `-pre` / `-post`: security, decryption, authentication, app-override (`/config/security/v1`), NAT, PBF, QoS, SD-WAN (`/config/network/v1`) |
+| `device` | `/config/device/v1`: general, management interface, service, service route, authentication, session, session timeouts, TCP, content-ID, update schedule, VPN, login banner settings; log match lists (system, config, user-ID, HIP match, GlobalProtect, IP tag – `/config/network/v1`) |
+
+Groups `objects` and `identity` come first, `network` before `policies` (zones / interfaces before rules). A type that
+answers 401/403/404 is `unavailable` (`config.types_unavailable`), not an error – several paths of the network /
+device groups are derived from the pan.dev navigation and must be confirmed on a live tenant.
+
+**Devices.** `/config/setup/v1/devices` → `config/03_devices.json` (license `authcode` replaced by `***REDACTED***`)
+and `config/devices.csv` (serial, name / display name / hostname, model, family, type, folder, snippets, labels,
+connected / since / last disconnect, management IP / MAC, software / content versions, HA state / peer, license
+match, description). `hierarchy.txt` shows each device folder with display name, model, version, connection state
+and HA peer; devices that are not a folder of the hierarchy are listed with their `folder` field.
 
 `manifest.json` → `config`: number of folders / snippets, exported containers, owned objects per type and per
-container, `owners_not_exported`, `types_unavailable`, options.
+container, `owners_not_exported`, `types_unavailable`, `devices` (total, connected, not connected, by model, by
+folder, HA pairs, without folder), options.
 
 ### prisma-browser
 

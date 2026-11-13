@@ -42,7 +42,7 @@ class SCMPrismaAccessSync
     const PHASE_DELETE = 4;
 
     public $diff;
-    public $options = array( 'source' => 'left', 'mode' => 'additive', 'allow_delete' => false, 'allow_infra' => false,
+    public $options = array( 'source' => 'left', 'mode' => 'additive', 'allow_delete' => false, 'allow_infra' => false, 'allow_network' => false,
         'areas' => null, 'containers' => null, 'types' => null );
 
     /** side data: ['dir', 'manifest', 'index' => [area|container|endpoint => meta], 'files' => cache] */
@@ -332,8 +332,10 @@ class SCMPrismaAccessSync
         if( $area == SCMPrismaAccessExport::AREA_CONFIG && $ctx['tgt_container'] !== null )
         {
             list($kind, $name) = explode(":", $ctx['tgt_container'], 2);
-            unset( $obj['folder'], $obj['snippet'] );
-            $obj[$kind] = $name;
+            //objects of a device folder may carry the owner as "device"
+            $ownerField = ( $kind == 'folder' && isset($srcObj['device']) && !isset($srcObj['folder']) ) ? 'device' : $kind;
+            unset( $obj['folder'], $obj['snippet'], $obj['device'] );
+            $obj[$ownerField] = $name;
         }
 
         //secrets
@@ -518,12 +520,21 @@ class SCMPrismaAccessSync
      */
     private function writeBlock( $meta, $area )
     {
+        if( $meta['endpoint'] == 'config/devices' )
+            return "device onboarding / folder assignment is done in Strata Cloud Manager device management (not by the config API)";
         if( $meta['write'] == 'none' )
             return "read-only / documentation endpoint";
         if( $area == SCMPrismaAccessExport::AREA_PB )
             return "Prisma Browser sync not implemented yet (rule / section API, draft publish)";
         if( $area == SCMPrismaAccessExport::AREA_INFRA && $meta['singleton'] && !$this->options['allow_infra'] )
             return "infrastructure setting - changes are disruptive (option allow-infra)";
+        if( $area == SCMPrismaAccessExport::AREA_CONFIG && !$this->options['allow_network'] )
+        {
+            $base = preg_replace('/^config\//', '', $meta['endpoint']);
+            foreach( SCMPrismaAccessExport::getConfigTypes() as $t )
+                if( $t['name'] == $base && in_array($t['group'], array('network', 'device'), TRUE) )
+                    return "NGFW " . $t['group'] . " setting (interfaces, routing, device settings) - changes can interrupt traffic (option allow-network)";
+        }
         return null;
     }
 
@@ -877,7 +888,7 @@ class SCMPrismaAccessSync
         $md .= "| mode | **" . $plan['mode'] . "** |\n";
         $md .= "| source | TSG " . $plan['source']['tsg_id'] . ", export " . $plan['source']['created_at'] . " |\n";
         $md .= "| target | TSG " . $plan['target']['tsg_id'] . ", export " . $plan['target']['created_at'] . " |\n";
-        $md .= "| options | allow-delete " . ( $plan['options']['allow_delete'] ? "yes" : "no" ) . ", allow-infra " . ( $plan['options']['allow_infra'] ? "yes" : "no" ) . " |\n";
+        $md .= "| options | allow-delete " . ( $plan['options']['allow_delete'] ? "yes" : "no" ) . ", allow-infra " . ( $plan['options']['allow_infra'] ? "yes" : "no" ) . ", allow-network " . ( !empty($plan['options']['allow_network']) ? "yes" : "no" ) . " |\n";
         $md .= "| created | " . $plan['created_at'] . " |\n\n";
         $s = $plan['summary'];
         $md .= "**" . $s['operations'] . " operations**: " . $s['enabled'] . " to execute, " . $s['blocked'] . " blocked";

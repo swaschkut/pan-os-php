@@ -56,7 +56,7 @@
  */
 class SCMPrismaAccessExport
 {
-    const FORMAT_VERSION = 6;
+    const FORMAT_VERSION = 7;
 
     const AREA_INFRA = 'infra';
     const AREA_RN = 'remote-networks';
@@ -69,7 +69,7 @@ class SCMPrismaAccessExport
     const AREAS = array( self::AREA_INFRA, self::AREA_CONFIG, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_PB, self::AREA_IAM );
 
     /** config area options, set by the CLI: container / type filter, device folders, predefined snippets */
-    public $configOptions = array( 'containers' => null, 'types' => null, 'devices' => false, 'predefined_snippets' => false );
+    public $configOptions = array( 'containers' => null, 'types' => null, 'scope' => null, 'devices' => false, 'predefined_snippets' => false );
 
     /** @var array|null config hierarchy (folders, snippets) after exportConfig() */
     public $configHierarchy = null;
@@ -1393,12 +1393,13 @@ class SCMPrismaAccessExport
      *  refs      references to other endpoints: dotted path ("[]" = every list element) => "area/endpoint"
      *  write     collection (POST / PUT {id} / DELETE {id}) | singleton (PUT) | none (read-only / documentation)
      *  compare   false: not compared (pure context / runtime data)
+     *  keep_owner true: the folder field is data, not the owner (devices: folder assignment) - compared as assigned_folder
      */
     const ENDPOINT_META_DEFAULT = array( 'key' => array('name'), 'singleton' => false, 'ignore' => array(), 'secret' => array(),
-        'ordered' => false, 'refs' => array(), 'write' => 'collection', 'compare' => true );
+        'ordered' => false, 'refs' => array(), 'write' => 'collection', 'compare' => true, 'keep_owner' => false );
 
     /** fields removed everywhere before compare */
-    const COMPARE_IGNORE_ALWAYS = array( 'id', 'folder', 'snippet' );
+    const COMPARE_IGNORE_ALWAYS = array( 'id', 'folder', 'snippet', 'device' );
 
     const ENDPOINT_META = array(
         'infra/shared-infrastructure-settings' => array( 'singleton' => true, 'write' => 'singleton',
@@ -1459,6 +1460,21 @@ class SCMPrismaAccessExport
         'iam/permissions' => array( 'write' => 'none', 'compare' => false ),
 
         'config/folders' => array( 'write' => 'collection' ),
+        'config/devices' => array( 'key' => array('serial_number'), 'write' => 'none', 'secret' => array(), 'keep_owner' => true,
+            'ignore' => array( 'is_connected', 'connected_since', 'last_disconnect_time', 'last_device_update_time', 'last_das_update_time',
+                'uptime', 'software_version', 'app_version', 'app_release_date', 'anti_virus_version', 'av_release_date', 'threat_version',
+                'threat_release_date', 'wf_ver', 'wf_release_date', 'iot_version', 'iot_release_date', 'gp_client_verion', 'gp_data_version',
+                'log_db_version', 'url_db_ver', 'url_db_type', 'ha_state', 'ha_peer_state', 'vm_state', 'dev_cert_detail', 'dev_cert_expiry_date',
+                'installed_licenses', 'available_licenses', 'license_match', 'deactivate_wait_hrs', 'deactivated_by', 'to_be_deactivated_at' ) ),
+        'config/ike-gateways' => array( 'secret' => array( 'authentication.pre_shared_key.key' ),
+            'refs' => array( 'protocol.ikev1.ike_crypto_profile' => 'config/ike-crypto-profiles', 'protocol.ikev2.ike_crypto_profile' => 'config/ike-crypto-profiles' ) ),
+        'config/ipsec-tunnels' => array(
+            'refs' => array( 'auto_key.ike_gateway[].name' => 'config/ike-gateways', 'auto_key.ipsec_crypto_profile' => 'config/ipsec-crypto-profiles' ) ),
+        'config/zones' => array( 'refs' => array( 'zone_protection_profile' => 'config/zone-protection-profiles' ) ),
+        'config/tls-service-profiles' => array( 'refs' => array( 'certificate' => 'config/certificates' ) ),
+        'config/certificates' => array( 'ignore' => array( 'private_key' ) ),
+        'config/ldap-server-profiles' => array( 'secret' => array( 'bind_password' ) ),
+        'config/local-users' => array( 'secret' => array( 'password' ) ),
         'config/snippets' => array( 'write' => 'collection' ),
         'config/address-groups' => array( 'refs' => array( 'static[]' => 'config/addresses' ) ),
         'config/service-groups' => array( 'refs' => array( 'members[]' => 'config/services' ) ),
@@ -1495,9 +1511,17 @@ class SCMPrismaAccessExport
     ////////////////////////////////////////////////////////////////////////////////
     // config: folders / snippets, objects, security, zones
 
+    /** groups of config types (option config-scope) */
+    const CONFIG_GROUPS = array( 'identity', 'objects', 'network', 'policies', 'device' );
+
+    /** Prisma Access folders: network / identity / device types are covered by the areas remote-networks,
+     *  service-connections and mobile-users, so only objects and policies are exported there */
+    const PA_FOLDERS = array( 'Prisma Access', 'Remote Networks', 'Service Connections', 'Mobile Users',
+        'Mobile Users Container', 'Mobile Users Explicit Proxy' );
+
     /**
      * object types per container in import order (an entry only references lower entries or the hierarchy)
-     * 'position' => true: rules, fetched as pre and post
+     * 'position' => true: rules, fetched as pre and post; 'group': CONFIG_GROUPS
      */
     public static function getConfigTypes()
     {
@@ -1505,48 +1529,81 @@ class SCMPrismaAccessExport
         $sec = "/config/security/v1/";
         $net = "/config/network/v1/";
         $set = "/config/setup/v1/";
-        $t = array(
-            array( 'name' => 'variables', 'path' => $set . 'variables' ),
-            array( 'name' => 'tags', 'path' => $o . 'tags' ),
-            array( 'name' => 'addresses', 'path' => $o . 'addresses' ),
-            array( 'name' => 'address-groups', 'path' => $o . 'address-groups' ),
-            array( 'name' => 'regions', 'path' => $o . 'regions' ),
-            array( 'name' => 'services', 'path' => $o . 'services' ),
-            array( 'name' => 'service-groups', 'path' => $o . 'service-groups' ),
-            array( 'name' => 'schedules', 'path' => $o . 'schedules' ),
-            array( 'name' => 'external-dynamic-lists', 'path' => $o . 'external-dynamic-lists' ),
-            array( 'name' => 'dynamic-user-groups', 'path' => $o . 'dynamic-user-groups' ),
-            array( 'name' => 'applications', 'path' => $o . 'applications' ),
-            array( 'name' => 'application-filters', 'path' => $o . 'application-filters' ),
-            array( 'name' => 'application-groups', 'path' => $o . 'application-groups' ),
-            array( 'name' => 'url-categories', 'path' => $sec . 'url-categories' ),
-            array( 'name' => 'hip-objects', 'path' => $o . 'hip-objects' ),
-            array( 'name' => 'hip-profiles', 'path' => $o . 'hip-profiles' ),
-            array( 'name' => 'http-server-profiles', 'path' => $o . 'http-server-profiles' ),
-            array( 'name' => 'syslog-server-profiles', 'path' => $o . 'syslog-server-profiles' ),
-            array( 'name' => 'log-forwarding-profiles', 'path' => $o . 'log-forwarding-profiles' ),
-            array( 'name' => 'auto-tag-actions', 'path' => $o . 'auto-tag-actions' ),
-            array( 'name' => 'zone-protection-profiles', 'path' => $net . 'zone-protection-profiles' ),
-            array( 'name' => 'zones', 'path' => $net . 'zones' ),
-            array( 'name' => 'anti-spyware-profiles', 'path' => $sec . 'anti-spyware-profiles' ),
-            array( 'name' => 'vulnerability-protection-profiles', 'path' => $sec . 'vulnerability-protection-profiles' ),
-            array( 'name' => 'wildfire-anti-virus-profiles', 'path' => $sec . 'wildfire-anti-virus-profiles' ),
-            array( 'name' => 'dns-security-profiles', 'path' => $sec . 'dns-security-profiles' ),
-            array( 'name' => 'file-blocking-profiles', 'path' => $sec . 'file-blocking-profiles' ),
-            array( 'name' => 'url-access-profiles', 'path' => $sec . 'url-access-profiles' ),
-            array( 'name' => 'decryption-profiles', 'path' => $sec . 'decryption-profiles' ),
-            array( 'name' => 'saas-security-profiles', 'path' => $sec . 'saas-security-profiles' ),
-            array( 'name' => 'ai-security-profiles', 'path' => $sec . 'ai-security-profiles' ),
-            array( 'name' => 'profile-groups', 'path' => $sec . 'profile-groups' ),
-            array( 'name' => 'security-rules', 'path' => $sec . 'security-rules', 'position' => true ),
-            array( 'name' => 'decryption-rules', 'path' => $sec . 'decryption-rules', 'position' => true ),
-            array( 'name' => 'authentication-rules', 'path' => $sec . 'authentication-rules', 'position' => true ),
-            array( 'name' => 'app-override-rules', 'path' => $sec . 'app-override-rules', 'position' => true ),
-            array( 'name' => 'qos-policy-rules', 'path' => $sec . 'qos-policy-rules', 'position' => true ),
+        $id = "/config/identity/v1/";
+        $dev = "/config/device/v1/";
+        $g = function( $group, $list ){
+            $out = array();
+            foreach( $list as $name => $path )
+            {
+                $position = false;
+                if( substr($name, 0, 1) == "@" )
+                {
+                    $position = true;
+                    $name = substr($name, 1);
+                }
+                $out[] = array( 'name' => $name, 'path' => $path . $name, 'group' => $group ) + ( $position ? array( 'position' => true ) : array() );
+            }
+            return $out;
+        };
+        $t = array_merge(
+            array( array( 'name' => 'variables', 'path' => $set . 'variables', 'group' => 'objects' ) ),
+            $g( 'identity', array(
+                'certificates' => $id, 'trusted-certificate-authorities' => $id, 'certificate-profiles' => $id,
+                'ocsp-responders' => $id, 'scep-profiles' => $id, 'tls-service-profiles' => $id,
+                'saml-server-profiles' => $id, 'ldap-server-profiles' => $id, 'radius-server-profiles' => $id,
+                'tacacs-server-profiles' => $id, 'kerberos-server-profiles' => $id, 'mfa-servers' => $id,
+                'local-users' => $id, 'local-user-groups' => $id, 'authentication-profiles' => $id,
+                'authentication-sequences' => $id, 'authentication-portals' => $id ) ),
+            $g( 'objects', array(
+                'tags' => $o, 'addresses' => $o, 'address-groups' => $o, 'regions' => $o, 'services' => $o,
+                'service-groups' => $o, 'schedules' => $o, 'external-dynamic-lists' => $o, 'dynamic-user-groups' => $o,
+                'applications' => $o, 'application-filters' => $o, 'application-groups' => $o, 'url-categories' => $sec,
+                'hip-objects' => $o, 'hip-profiles' => $o, 'http-server-profiles' => $o, 'syslog-server-profiles' => $o,
+                'log-forwarding-profiles' => $o, 'auto-tag-actions' => $o ) ),
+            $g( 'network', array(
+                'interface-management-profiles' => $net, 'link-tags' => $net, 'lldp-profiles' => $net,
+                'zone-protection-profiles' => $net,
+                'ethernet-interfaces' => $net, 'aggregate-interfaces' => $net, 'layer2-subinterfaces' => $net,
+                'layer3-subinterfaces' => $net, 'loopback-interfaces' => $net, 'tunnel-interfaces' => $net,
+                'vlan-interfaces' => $net, 'dhcp-interfaces' => $net, 'zones' => $net,
+                'route-access-lists' => $net, 'route-prefix-lists' => $net, 'route-community-lists' => $net,
+                'route-path-access-lists' => $net, 'bgp-route-maps' => $net, 'bgp-route-map-redistributions' => $net,
+                'bgp-address-family-profiles' => $net, 'bgp-authentication-profiles' => $net,
+                'bgp-filtering-profiles' => $net, 'bgp-redistribution-profiles' => $net,
+                'ospf-auth-profiles' => $net, 'logical-routers' => $net, 'dns-proxies' => $net,
+                'ike-crypto-profiles' => $net, 'ipsec-crypto-profiles' => $net, 'ike-gateways' => $net,
+                'ipsec-tunnels' => $net, 'qos-profiles' => $net,
+                'sdwan-path-quality-profiles' => $net, 'sdwan-saas-quality-profiles' => $net,
+                'sdwan-traffic-distribution-profiles' => $net, 'sdwan-error-correction-profiles' => $net ) ),
+            $g( 'objects', array(
+                'anti-spyware-profiles' => $sec, 'vulnerability-protection-profiles' => $sec,
+                'wildfire-anti-virus-profiles' => $sec, 'dns-security-profiles' => $sec, 'file-blocking-profiles' => $sec,
+                'url-access-profiles' => $sec, 'decryption-profiles' => $sec, 'saas-security-profiles' => $sec,
+                'ai-security-profiles' => $sec, 'profile-groups' => $sec ) ),
+            $g( 'policies', array(
+                '@security-rules' => $sec, '@decryption-rules' => $sec, '@authentication-rules' => $sec,
+                '@app-override-rules' => $sec, '@nat-rules' => $net, '@pbf-rules' => $net, '@qos-policy-rules' => $net,
+                '@sdwan-rules' => $net ) ),
+            $g( 'device', array(
+                'general-settings' => $dev, 'management-interface-settings' => $dev, 'service-settings' => $dev,
+                'service-route-settings' => $dev, 'authentication-settings' => $dev, 'session-settings' => $dev,
+                'session-timeouts-settings' => $dev, 'tcp-settings' => $dev, 'content-id-settings' => $dev,
+                'update-schedule-settings' => $dev, 'vpn-settings' => $dev, 'login-banner-settings' => $dev,
+                'system-match-list' => $net, 'config-match-list' => $net, 'userid-match-list' => $net,
+                'hipmatch-match-list' => $net, 'globalprotect-match-list' => $net, 'iptag-match-list' => $net ) )
         );
         foreach( $t as $i => &$type )
             $type['order'] = $i + 1;
         return $t;
+    }
+
+    /**
+     * config types of the given groups (null = all)
+     */
+    public static function configTypesForScope( $scope )
+    {
+        return array_values( array_filter( self::getConfigTypes(), function($t) use( $scope ){
+            return $scope === null || in_array($t['group'], $scope, TRUE); } ) );
     }
 
     public static function slug( $name )
@@ -1558,8 +1615,15 @@ class SCMPrismaAccessExport
     /**
      * folders + snippets -> hierarchy: tree, path root..container, attached snippets in API order, DFS order
      */
-    public static function buildHierarchy( $folders, $snippets )
+    public static function buildHierarchy( $folders, $snippets, $devices = array() )
     {
+        $deviceBySerial = array();
+        foreach( (array)$devices as $d )
+        {
+            $serial = (string)self::firstOf($d, array('serial_number', 'name'));
+            if( $serial !== "" )
+                $deviceBySerial[$serial] = $d;
+        }
         $byName = array();
         foreach( $folders as $f )
             $byName[(string)self::get($f, 'name')] = $f;
@@ -1576,7 +1640,7 @@ class SCMPrismaAccessExport
         }
 
         $ordered = array();
-        $walk = function( $name, $path, $depth ) use( &$walk, &$ordered, $byName, $children ) {
+        $walk = function( $name, $path, $depth ) use( &$walk, &$ordered, $byName, $children, $deviceBySerial ) {
             $f = $byName[$name];
             $path[] = $name;
             $ordered[] = array(
@@ -1589,6 +1653,16 @@ class SCMPrismaAccessExport
                 'snippets' => array_values( (array)self::get($f, 'snippets', array()) ),
                 'children' => isset($children[$name]) ? $children[$name] : array(),
             );
+            //device folder (name = serial): device facts from /config/setup/v1/devices
+            $serial = (string)self::firstOf($f, array('serial_number', 'name'));
+            if( isset($deviceBySerial[$serial]) )
+            {
+                $dv = $deviceBySerial[$serial];
+                $ordered[count($ordered) - 1]['device'] = array( 'serial_number' => $serial,
+                    'display_name' => self::get($dv, 'display_name'), 'model' => self::get($dv, 'model'),
+                    'is_connected' => self::get($dv, 'is_connected'), 'software_version' => self::get($dv, 'software_version'),
+                    'ha_peer_serial' => self::get($dv, 'ha_peer_serial') );
+            }
             if( isset($children[$name]) )
                 foreach( $children[$name] as $child )
                     if( !in_array($child, $path, TRUE) )
@@ -1629,7 +1703,17 @@ class SCMPrismaAccessExport
             $snippetList[] = array( 'name' => $name, 'id' => self::get($sn, 'id'), 'type' => self::get($sn, 'type'), 'attached_to' => $attached );
         }
 
-        return array( 'folders' => $ordered, 'snippets' => $snippetList, 'roots' => $roots );
+        //devices that are not a folder of the hierarchy, listed per folder field
+        $folderSet = array();
+        foreach( $ordered as $f )
+            $folderSet[$f['name']] = true;
+        $unplaced = array();
+        foreach( $deviceBySerial as $serial => $dv )
+            if( !isset($folderSet[$serial]) )
+                $unplaced[] = array( 'serial_number' => $serial, 'folder' => self::get($dv, 'folder'), 'model' => self::get($dv, 'model'),
+                    'display_name' => self::get($dv, 'display_name'), 'is_connected' => self::get($dv, 'is_connected') );
+
+        return array( 'folders' => $ordered, 'snippets' => $snippetList, 'roots' => $roots, 'devices_not_in_folders' => $unplaced );
     }
 
     public static function hierarchyText( $hierarchy )
@@ -1638,6 +1722,10 @@ class SCMPrismaAccessExport
         foreach( $hierarchy['folders'] as $f )
         {
             $line = str_repeat("    ", $f['depth']) . $f['name'] . " [" . $f['type'] . "]";
+            if( isset($f['device']) )
+                $line .= "  " . trim( (string)$f['device']['display_name'] . " " . (string)$f['device']['model'] . " " . (string)$f['device']['software_version'] )
+                    . ( $f['device']['is_connected'] === true ? " connected" : " NOT connected" )
+                    . ( !empty($f['device']['ha_peer_serial']) ? " HA peer " . $f['device']['ha_peer_serial'] : "" );
             if( count($f['snippets']) > 0 )
             {
                 $sn = array();
@@ -1653,6 +1741,13 @@ class SCMPrismaAccessExport
                 $unattached[] = $sn['name'] . ( $sn['type'] ? " [" . $sn['type'] . "]" : "" );
         if( count($unattached) > 0 )
             $lines[] = "\n(snippets not attached: " . implode(", ", $unattached) . ")";
+        if( isset($hierarchy['devices_not_in_folders']) && count($hierarchy['devices_not_in_folders']) > 0 )
+        {
+            $lines[] = "\ndevices (folder field):";
+            foreach( $hierarchy['devices_not_in_folders'] as $d )
+                $lines[] = "    " . $d['serial_number'] . " " . trim((string)$d['display_name'] . " " . (string)$d['model']) . " -> " . ( $d['folder'] === null ? "(no folder)" : $d['folder'] )
+                    . ( $d['is_connected'] === true ? " connected" : " NOT connected" );
+        }
         return implode("\n", $lines) . "\n";
     }
 
@@ -1669,17 +1764,24 @@ class SCMPrismaAccessExport
         $setup = array(
             array( 'area' => $a, 'order' => 1, 'name' => 'folders', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/setup/v1/folders", 'depends_on' => array(), 'fetched_as' => 'selected' ),
             array( 'area' => $a, 'order' => 2, 'name' => 'snippets', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/setup/v1/snippets", 'depends_on' => array(), 'fetched_as' => 'selected' ),
+            array( 'area' => $a, 'order' => 3, 'name' => 'devices', 'category' => 'context', 'scope' => 'tenant', 'optional' => true, 'url' => "/config/setup/v1/devices", 'depends_on' => array(), 'fetched_as' => 'selected' ),
         );
         $raw = array();
         foreach( $setup as $endpoint )
         {
             PH::print_stdout( " - [config " . sprintf("%02d", $endpoint['order']) . "] " . $endpoint['name'] . " ... " );
             $result = $this->connector->getSCMResourceAll( $endpoint['url'] );
+            if( $endpoint['name'] == 'devices' && is_array($result['data']) )
+                $result['data'] = self::stripDeviceSecrets( $result['data'] );
             $this->storeConfigResult( $endpoint, $endpoint['area'] . "/" . sprintf("%02d", $endpoint['order']) . "_" . $endpoint['name'] . ".json", $result, $result['data'] );
             $raw[$endpoint['name']] = ( $result['errors'] === null && is_array($result['data']) ) ? $result['data'] : array();
         }
 
-        $hierarchy = self::buildHierarchy( $raw['folders'], $raw['snippets'] );
+        $this->configDevices = $raw['devices'];
+        if( count($raw['devices']) > 0 )
+            $this->writeDevicesCSV( $raw['devices'] );
+
+        $hierarchy = self::buildHierarchy( $raw['folders'], $raw['snippets'], $raw['devices'] );
         $this->configHierarchy = $hierarchy;
         $this->writeJson( $a . '/hierarchy.json', $hierarchy );
         file_put_contents( $this->exportDir . "/" . $a . "/hierarchy.txt", self::hierarchyText($hierarchy) );
@@ -1690,18 +1792,18 @@ class SCMPrismaAccessExport
         {
             if( $f['type'] !== null && $f['type'] !== 'container' && !$opt['devices'] )
                 continue;
-            $containers[] = array( 'kind' => 'folder', 'name' => $f['name'] );
+            $containers[] = array( 'kind' => 'folder', 'name' => $f['name'], 'device' => $f['type'] !== null && $f['type'] !== 'container' );
         }
         foreach( $hierarchy['snippets'] as $sn )
         {
             if( $sn['type'] === 'predefined' && !$opt['predefined_snippets'] )
                 continue;
-            $containers[] = array( 'kind' => 'snippet', 'name' => $sn['name'] );
+            $containers[] = array( 'kind' => 'snippet', 'name' => $sn['name'], 'device' => false );
         }
         if( $opt['containers'] !== null )
             $containers = array_values( array_filter( $containers, function($c) use( $opt ){ return in_array($c['name'], $opt['containers'], TRUE); } ) );
 
-        $types = self::getConfigTypes();
+        $types = self::configTypesForScope( isset($opt['scope']) ? $opt['scope'] : null );
         if( $opt['types'] !== null )
             $types = array_values( array_filter( $types, function($t) use( $opt ){ return in_array($t['name'], $opt['types'], TRUE); } ) );
 
@@ -1715,11 +1817,16 @@ class SCMPrismaAccessExport
         {
             $param = ( $c['kind'] == 'folder' ? 'folder' : 'snippet' ) . "=" . rawurlencode($c['name']);
             $dirKey = $a . "/" . $c['kind'] . "s/" . self::slug($c['name']);
-            PH::print_stdout( " - [config] " . $c['kind'] . " '" . $c['name'] . "'" );
+            PH::print_stdout( " - [config] " . ( $c['device'] ? "device" : $c['kind'] ) . " '" . $c['name'] . "'" );
             $this->configStats['containers'][$c['kind'] . ":" . $c['name']] = array();
+            //device folders: "folder=<serial>", fallback "device=<serial>" if the API refuses the folder parameter
+            $deviceParamChecked = !$c['device'];
 
             foreach( $types as $type )
             {
+                //Prisma Access folders: network / identity / device are covered by the dedicated areas
+                if( $c['kind'] == 'folder' && in_array($c['name'], self::PA_FOLDERS, TRUE) && in_array($type['group'], array('network', 'identity', 'device'), TRUE) )
+                    continue;
                 foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
                 {
                     $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
@@ -1728,6 +1835,21 @@ class SCMPrismaAccessExport
                         'category' => 'dependency', 'scope' => $c['kind'], 'optional' => true, 'url' => $url, 'depends_on' => array(), 'fetched_as' => 'selected' );
 
                     $result = $this->connector->getSCMResourceAll( $url );
+                    if( !$deviceParamChecked && $result['errors'] !== null && in_array($result['http_code'], array(400, 404), TRUE) )
+                    {
+                        $altParam = "device=" . rawurlencode($c['name']);
+                        $altUrl = $type['path'] . "?" . $altParam . ( $position !== null ? "&position=" . $position : "" );
+                        $alt = $this->connector->getSCMResourceAll( $altUrl );
+                        if( $alt['errors'] === null )
+                        {
+                            $param = $altParam;
+                            $url = $altUrl;
+                            $endpoint['url'] = $url;
+                            $result = $alt;
+                        }
+                    }
+                    if( $result['errors'] === null )
+                        $deviceParamChecked = true;
 
                     $owned = null;
                     $inherited = 0;
@@ -1736,8 +1858,15 @@ class SCMPrismaAccessExport
                         $owned = array();
                         foreach( $result['data'] as $obj )
                         {
-                            $ownerKind = isset($obj['snippet']) && $obj['snippet'] !== "" ? 'snippet' : ( isset($obj['folder']) ? 'folder' : null );
-                            $ownerName = $ownerKind === null ? null : (string)$obj[$ownerKind];
+                            //owner: snippet, folder or device (a device is a folder of type cloud / on-prem)
+                            if( isset($obj['snippet']) && $obj['snippet'] !== "" )
+                                list($ownerKind, $ownerName) = array( 'snippet', (string)$obj['snippet'] );
+                            elseif( isset($obj['folder']) && $obj['folder'] !== "" )
+                                list($ownerKind, $ownerName) = array( 'folder', (string)$obj['folder'] );
+                            elseif( isset($obj['device']) && $obj['device'] !== "" )
+                                list($ownerKind, $ownerName) = array( 'folder', (string)$obj['device'] );
+                            else
+                                list($ownerKind, $ownerName) = array( null, null );
                             //no owner field: keep (cannot be attributed)
                             if( $ownerKind === null || ( $ownerKind === $c['kind'] && $ownerName === $c['name'] ) )
                                 $owned[] = $obj;
@@ -1834,6 +1963,7 @@ class SCMPrismaAccessExport
             'owned_objects_by_container' => $this->configStats['containers'],
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
+            'devices' => $this->buildDeviceSummary(),
             'options' => $this->configOptions,
         );
     }
@@ -1854,7 +1984,7 @@ class SCMPrismaAccessExport
         if( $this->hasArea(self::AREA_CONFIG) )
         {
             $config = array( 'config/folders', 'config/snippets' );
-            $types = self::getConfigTypes();
+            $types = self::configTypesForScope( isset($this->configOptions['scope']) ? $this->configOptions['scope'] : null );
             if( $this->configOptions['types'] !== null )
                 $types = array_filter( $types, function($t){ return in_array($t['name'], $this->configOptions['types'], TRUE); } );
             foreach( $types as $t )
@@ -1875,6 +2005,109 @@ class SCMPrismaAccessExport
             array_splice( $order, $pos, 0, $config );
         }
         return array_values($order);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // devices (/config/setup/v1/devices)
+
+    /** @var array devices of the last exportConfig() */
+    public $configDevices = array();
+
+    const DEVICE_CSV_COLUMNS = array( 'serial_number', 'name', 'display_name', 'hostname', 'model', 'family', 'type', 'folder',
+        'snippets', 'labels', 'is_connected', 'connected_since', 'last_disconnect_time', 'ip_address', 'ipV6_address',
+        'mac_address', 'software_version', 'app_version', 'threat_version', 'anti_virus_version', 'wf_ver', 'url_db_ver',
+        'ha_state', 'ha_peer_serial', 'ha_peer_state', 'license_match', 'device_only', 'description' );
+
+    /**
+     * license authcodes are not written to disk
+     */
+    public static function stripDeviceSecrets( $devices )
+    {
+        foreach( $devices as &$d )
+        {
+            foreach( array('installed_licenses', 'available_licenses') as $f )
+            {
+                if( !isset($d[$f]) || !is_array($d[$f]) )
+                    continue;
+                foreach( $d[$f] as &$lic )
+                    if( is_array($lic) && array_key_exists('authcode', $lic) && $lic['authcode'] !== null && $lic['authcode'] !== "" )
+                        $lic['authcode'] = self::REDACTED;
+                unset($lic);
+            }
+        }
+        unset($d);
+        return $devices;
+    }
+
+    public function writeDevicesCSV( $devices )
+    {
+        $fh = fopen( $this->exportDir . "/" . self::AREA_CONFIG . "/devices.csv", "w" );
+        fputcsv( $fh, self::DEVICE_CSV_COLUMNS, ',', '"', '' );
+        foreach( $devices as $d )
+        {
+            $line = array();
+            foreach( self::DEVICE_CSV_COLUMNS as $c )
+            {
+                $v = self::get($d, $c);
+                if( is_array($v) )
+                    $v = implode(" | ", array_map( function($x){ return is_array($x) ? json_encode($x) : (string)$x; }, $v ));
+                elseif( is_bool($v) )
+                    $v = $v ? "true" : "false";
+                $line[] = $v;
+            }
+            fputcsv( $fh, $line, ',', '"', '' );
+        }
+        fclose( $fh );
+    }
+
+    public function buildDeviceSummary()
+    {
+        $devices = $this->configDevices;
+        if( count($devices) == 0 )
+            return null;
+        $byModel = array();
+        $byFolder = array();
+        $connected = array();
+        $disconnected = array();
+        $ha = array();
+        $withoutFolder = array();
+        $folderNames = array();
+        foreach( (array)( $this->configHierarchy !== null ? $this->configHierarchy['folders'] : array() ) as $f )
+            $folderNames[$f['name']] = true;
+        foreach( $devices as $d )
+        {
+            $serial = (string)self::firstOf($d, array('serial_number', 'name'));
+            $model = (string)self::get($d, 'model', '?');
+            $folder = self::get($d, 'folder');
+            $byModel[$model] = ( isset($byModel[$model]) ? $byModel[$model] : 0 ) + 1;
+            $fk = $folder === null || $folder === "" ? '(none)' : (string)$folder;
+            $byFolder[$fk][] = $serial;
+            if( self::get($d, 'is_connected') === true )
+                $connected[] = $serial;
+            else
+                $disconnected[] = $serial;
+            $peer = self::get($d, 'ha_peer_serial');
+            if( $peer !== null && $peer !== "" )
+            {
+                $pair = array( $serial, (string)$peer );
+                sort($pair);
+                $ha[ implode(" / ", $pair) ] = true;
+            }
+            if( $folder === null || $folder === "" || ( count($folderNames) > 0 && !isset($folderNames[$folder]) && !isset($folderNames[$serial]) ) )
+                $withoutFolder[] = $serial;
+        }
+        ksort($byModel);
+        ksort($byFolder);
+        return array(
+            'files' => array( self::AREA_CONFIG . '/03_devices.json', self::AREA_CONFIG . '/devices.csv' ),
+            'total' => count($devices),
+            'connected' => count($connected),
+            'disconnected' => $disconnected,
+            'by_model' => $byModel,
+            'by_folder' => $byFolder,
+            'ha_pairs' => array_keys($ha),
+            'without_folder' => $withoutFolder,
+        );
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -2065,6 +2298,17 @@ class SCMPrismaAccessExport
                 'no documented public API - configure manually or via the internal SCM API (to be added)' );
         $add( 'identity_logging', 'check', 'tenant', 'Cloud Identity Engine, Strata Logging Service, log forwarding (not exported)',
             'tenant bound services - set up on the target tenant before the configuration that references them' );
+        if( $this->hasArea(self::AREA_CONFIG) && isset($manifest['config']['devices']) && $manifest['config']['devices'] !== null )
+        {
+            $dv = $manifest['config']['devices'];
+            $add( 'devices', 'action_required', self::AREA_CONFIG, 'Devices (NGFW serials)',
+                $dv['total'] . ' device(s) - onboarding / license transfer of the serials to the target tenant and the folder assignment are not part of the config sync; see config/devices.csv',
+                array_map( function($f, $serials){ return $f . ": " . implode(", ", $serials); }, array_keys($dv['by_folder']), $dv['by_folder'] ) );
+            if( count($dv['disconnected']) > 0 )
+                $add( 'devices_disconnected', 'check', self::AREA_CONFIG, 'Devices not connected', 'not connected to Strata Cloud Manager at export time', $dv['disconnected'] );
+            if( count($dv['ha_pairs']) > 0 )
+                $add( 'devices_ha', 'info', self::AREA_CONFIG, 'HA pairs', 'move HA peers together', $dv['ha_pairs'] );
+        }
         if( $this->hasArea(self::AREA_CONFIG) && $this->configHierarchy !== null )
         {
             $add( 'objects_policies', 'check', self::AREA_CONFIG, 'Folders, snippets, objects and security policy',

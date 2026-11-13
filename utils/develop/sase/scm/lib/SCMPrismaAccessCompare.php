@@ -268,6 +268,16 @@ class SCMPrismaAccessCompare
         $base = preg_replace('/-(pre|post)$/', '', $endpoint);
         if( !empty($options['types']) && !in_array($base, $options['types'], TRUE) )
             return false;
+        if( !empty($options['scope']) )
+        {
+            $inScope = array_map( function($t){ return $t['name']; }, SCMPrismaAccessExport::configTypesForScope($options['scope']) );
+            if( !in_array($base, $inScope, TRUE) )
+                return false;
+        }
+        //Prisma Access folders: network / identity / device types are not exported there
+        foreach( SCMPrismaAccessExport::getConfigTypes() as $t )
+            if( $t['name'] == $base && $kind == 'folder' && in_array($name, SCMPrismaAccessExport::PA_FOLDERS, TRUE) && in_array($t['group'], array('network', 'identity', 'device'), TRUE) )
+                return false;
         return true;
     }
 
@@ -420,6 +430,13 @@ class SCMPrismaAccessCompare
      */
     public function normalize( $obj, $ignore, $orderedPaths, $meta, $isLeft )
     {
+        if( !empty($meta['keep_owner']) && is_array($obj) && isset($obj['folder']) )
+        {
+            $folder = (string)$obj['folder'];
+            if( $isLeft && isset($this->containerMap[$folder]) )
+                $folder = $this->containerMap[$folder];
+            $obj['assigned_folder'] = $folder;
+        }
         if( $isLeft && $this->hasNameMap() && is_array($obj) )
         {
             foreach( $meta['refs'] as $path => $target )

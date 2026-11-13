@@ -43,6 +43,7 @@ $supportedArguments['sc-folder'] = Array('niceName' => 'sc-folder', 'shortHelp' 
 $supportedArguments['mu-folder'] = Array('niceName' => 'mu-folder', 'shortHelp' => 'SCM folder for the Mobile Users identity / mobile-agent objects (default: "Mobile Users")', 'argDesc' => '[folder]');
 $supportedArguments['container'] = Array('niceName' => 'container', 'shortHelp' => 'config area: comma separated folder / snippet names to export (default: all containers; the hierarchy is always exported)', 'argDesc' => '[name1,name2]');
 $supportedArguments['config-types'] = Array('niceName' => 'config-types', 'shortHelp' => 'config area: comma separated object types, e.g. addresses,security-rules (default: all)', 'argDesc' => '[type1,type2]');
+$supportedArguments['config-scope'] = Array('niceName' => 'config-scope', 'shortHelp' => 'config area: comma separated groups ' . implode(",", SCMPrismaAccessExport::CONFIG_GROUPS) . ' (default: all)', 'argDesc' => '[group1,group2]');
 $supportedArguments['config-devices'] = Array('niceName' => 'config-devices', 'shortHelp' => 'config area: also export device folders (type cloud / on-prem)');
 $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-predefined-snippets', 'shortHelp' => 'config area: also export predefined snippets (large)');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
@@ -97,9 +98,14 @@ $listArg = function( $name ){
 $export->configOptions = array(
     'containers' => $listArg('container'),
     'types' => $listArg('config-types'),
+    'scope' => $listArg('config-scope'),
     'devices' => isset(PH::$args['config-devices']),
     'predefined_snippets' => isset(PH::$args['config-predefined-snippets']),
 );
+if( $export->configOptions['scope'] !== null )
+    foreach( $export->configOptions['scope'] as $g )
+        if( !in_array($g, SCMPrismaAccessExport::CONFIG_GROUPS, TRUE) )
+            derr( "config-scope: unknown group '" . $g . "' - supported: " . implode(",", SCMPrismaAccessExport::CONFIG_GROUPS), null, FALSE );
 if( $export->configOptions['types'] !== null )
 {
     $known = array_map( function($t){ return $t['name']; }, SCMPrismaAccessExport::getConfigTypes() );
@@ -181,6 +187,9 @@ foreach( $manifest['import_hints'] as $hint )
 if( $manifest['config'] !== null )
     PH::print_stdout( " * config: " . $manifest['config']['folders'] . " folder(s), " . $manifest['config']['snippets'] . " snippet(s), "
         . count($manifest['config']['containers_exported']) . " container(s) exported, " . array_sum($manifest['config']['owned_objects_by_type']) . " owned object(s) - see config/hierarchy.txt" );
+if( $manifest['config'] !== null && $manifest['config']['devices'] !== null )
+    PH::print_stdout( " * devices: " . $manifest['config']['devices']['total'] . " (connected " . $manifest['config']['devices']['connected']
+        . ", not connected " . count($manifest['config']['devices']['disconnected']) . ", HA pairs " . count($manifest['config']['devices']['ha_pairs']) . ") - see config/devices.csv" );
 if( $manifest['prisma_browser'] !== null )
     PH::print_stdout( " * prisma browser: user groups " . $manifest['prisma_browser']['user_groups'] . " | applications " . $manifest['prisma_browser']['applications'] . " | pending changes " . $manifest['prisma_browser']['pending_changes'] );
 if( $manifest['iam'] !== null )

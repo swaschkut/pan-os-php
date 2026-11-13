@@ -70,6 +70,8 @@ Result: `/data/pa-export/<TSG>/<YYYYmmdd-HHMMSS>/` – one directory per run, no
 | `egressip` | you need the public egress IPs (allow lists, IP mapping) |
 | `psk-list` | you prepare a migration and need the PSKs / secrets (cleartext lists!) |
 | `container="Mobile Users"` / `config-types=addresses,security-rules` | the tenant is large and you only need part of the objects / policies |
+| `config-devices` | NGFW: include the device folders (device specific interfaces, routing, settings) |
+| `config-scope=objects,policies` | only some groups of the config area (`identity`, `objects`, `network`, `policies`, `device`) |
 | `debugapi` | troubleshooting only |
 
 Shortcuts for one area: `scm_rn_export.php`, `scm_sc_export.php`, `scm_mu_export.php`, `scm_pb_export.php`,
@@ -80,7 +82,7 @@ Shortcuts for one area: `scm_rn_export.php`, `scm_sc_export.php`, `scm_mu_export
 | area | content |
 |---|---|
 | `infra` | infrastructure subnet, infra BGP AS, BGP routing, internal DNS, locations, egress IPs |
-| `config` | folder / snippet hierarchy (incl. snippet order), objects, security profiles, rules (pre / post), zones – each object at its owning folder / snippet |
+| `config` | the complete NGFW / SCM configuration: folder / snippet hierarchy (incl. snippet order), devices (serials), and per folder / snippet / device: certificates and auth profiles, objects and security profiles, interfaces / routing / zones / VPN, all rule bases (security, NAT, PBF, decryption, …), device settings – each object at its owning container |
 | `remote-networks` | IKE / IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS, bandwidth allocations, remote networks |
 | `service-connections` | the same chain for service connections, QoS, service connection groups, traffic steering |
 | `mobile-users` | certificates, server / authentication profiles, local users, GlobalProtect settings |
@@ -97,10 +99,25 @@ At the end the export prints a summary. Then open in the export directory:
 1. **`manifest.json` → `errors`** must be 0. `unavailable` lists endpoints the tenant does not have or the service
    account may not read – check that this is expected.
 2. **`MIGRATION_CHECKLIST.md`** – the to-do list for a migration, sorted `action_required` → `check` → `info`.
-3. **`config/hierarchy.txt`** – the folder tree with the attached snippets in order; compare with SCM.
-4. **`*/ip-mapping.csv`** – per remote network / service connection / MU location the Prisma Access and peer IPs.
+3. **`config/hierarchy.txt`** – the folder tree with the attached snippets in order and the devices (model, version,
+   connected, HA peer); compare with SCM.
+4. **`config/devices.csv`** – all firewalls (serials) with folder, connection state, versions and HA peer.
+5. **`*/ip-mapping.csv`** – per remote network / service connection / MU location the Prisma Access and peer IPs.
 
-### 2.4 Export directory at a glance
+### 2.4 NGFW (firewalls managed by Strata Cloud Manager)
+
+```bash
+php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> outdir=/data/pa-export config-devices
+```
+
+- `config/devices.csv` – which serials are onboarded, in which folder, connected or not, software version, HA pairs.
+  The license authcodes are not written.
+- device specific configuration (interfaces, routing, device settings) lands in `config/folders/<serial>/`,
+  shared configuration in the folders / snippets above it (`config/hierarchy.txt` shows where).
+- for a big tenant start with one device / folder: `container=<serial>` or `container="ngfw-shared"`.
+- `manifest.json` → `config.types_unavailable` lists types the tenant / API does not know.
+
+### 2.5 Export directory at a glance
 
 ```
 <TSG>/<timestamp>/
@@ -110,7 +127,7 @@ At the end the export prints a summary. Then open in the export directory:
         NN_<endpoint>.json      raw API data, NN = import order inside the area
         ip-mapping.csv/.json    (RN, SC, MU)
         psk-list.csv …          (only with psk-list)
-    config/hierarchy.txt/.json
+    config/hierarchy.txt/.json, config/devices.csv
     config/folders/<folder>/NN_<type>.json, config/snippets/<snippet>/NN_<type>.json
 ```
 
@@ -196,6 +213,8 @@ network, `backup_SC`, group members). `config,container,…` renames folders / s
 ### 4.1 Decide direction and mode
 
 - **source** = the export whose content should win (`left` or `right` of the compare); the other is the target.
+- **NGFW network / device settings** (interfaces, routing, zones, VPN, device setup) are only written with
+  `allow-network`; devices themselves (serials, folder assignment) are never written – onboard / move them in SCM.
 - **mode**
   - `additive` – create what is missing in the target, update what differs; nothing is deleted. Safe default.
   - `mirror` + `allow-delete` – the target becomes a copy of the source (within the compared areas / filters);
