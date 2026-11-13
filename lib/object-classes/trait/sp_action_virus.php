@@ -671,9 +671,9 @@ trait sp_action_virus
                     if( str_contains( $final_check, "!" ) )
                         $final_check = str_replace("!", "", $final_check);
 
-                    if (isset($object->$decoder[$actionType]) && $object->$decoder[$actionType] == $final_check)
+                    if (isset($this->$decoder[$actionType]) && $this->$decoder[$actionType] == $final_check)
                     {
-                        $object->$decoder[$actionType] = $decoder_action;
+                        $this->$decoder[$actionType] = $decoder_action;
                         $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
                         $action_xmlNode->textContent = $decoder_action;
                     }
