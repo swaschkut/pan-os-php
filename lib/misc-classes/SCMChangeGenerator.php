@@ -450,6 +450,9 @@ class SCMChangeGenerator
             $r['query'] = array('position' => $obj['position']);
 
         $this->addDroppedWarnings($r, $dropped, TRUE);
+        // SCM requires at least one match list (live: "missing node 'match-list'")
+        if( $obj['resource'] == 'log-forwarding-profiles' && empty($body['match_list']) )
+            $this->markReview($r, "log forwarding profile without match list - SCM requires at least one");
         $this->checkScope($r, $obj);
         $this->requests[] = $r;
     }
@@ -853,6 +856,38 @@ class SCMChangeGenerator
         if( !is_array($body) )
             $body = array();
         $body = array('name' => $obj['name']) + $body;
+        return self::translateValues($obj['resource'], $body);
+    }
+
+    /** PAN-OS tag colors (color1 ...) -> SCM color names */
+    static public $tagColors = array(
+        'color1' => 'Red', 'color2' => 'Green', 'color3' => 'Blue', 'color4' => 'Yellow', 'color5' => 'Copper',
+        'color6' => 'Orange', 'color7' => 'Purple', 'color8' => 'Gray', 'color9' => 'Light Green', 'color10' => 'Cyan',
+        'color11' => 'Light Gray', 'color12' => 'Blue Gray', 'color13' => 'Lime', 'color14' => 'Black', 'color15' => 'Gold',
+        'color16' => 'Brown', 'color17' => 'Olive', 'color19' => 'Maroon', 'color20' => 'Red-Orange',
+        'color21' => 'Yellow-Orange', 'color22' => 'Forest Green', 'color23' => 'Turquoise Blue', 'color24' => 'Azure Blue',
+        'color25' => 'Cerulean Blue', 'color26' => 'Midnight Blue', 'color27' => 'Medium Blue', 'color28' => 'Cobalt Blue',
+        'color29' => 'Violet Blue', 'color30' => 'Blue Violet', 'color31' => 'Medium Violet', 'color32' => 'Medium Rose',
+        'color33' => 'Lavender', 'color34' => 'Orchid', 'color35' => 'Thistle', 'color36' => 'Peach', 'color37' => 'Salmon',
+        'color38' => 'Magenta', 'color39' => 'Red Violet', 'color40' => 'Mahogany', 'color41' => 'Burnt Sienna',
+        'color42' => 'Chestnut',
+    );
+
+    /**
+     * values PAN-OS writes differently than the SCM API expects (live SCM answers, 2026-11-13):
+     * tag color codes, custom URL categories without type (PAN-OS before 9.0: always a URL list)
+     */
+    static public function translateValues($resource, array $body)
+    {
+        if( $resource == 'tags' && isset($body['color']) && isset(self::$tagColors[$body['color']]) )
+            $body['color'] = self::$tagColors[$body['color']];
+        if( $resource == 'url-categories' )
+        {
+            if( !isset($body['type']) )
+                $body['type'] = 'URL List';
+            if( !isset($body['list']) )
+                $body['list'] = array();
+        }
         return $body;
     }
 

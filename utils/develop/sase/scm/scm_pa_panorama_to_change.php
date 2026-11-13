@@ -109,7 +109,9 @@ if( count($importer->depthErrors) > 0 )
 }
 
 $tmp = tempnam( sys_get_temp_dir(), "scm-import-" );
+ob_start();
 $scm->save_to_file( $tmp );
+ob_end_clean();
 
 // 2) SCM XML -> SCM API requests (bodies in SCM field names)
 ob_start();

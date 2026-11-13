@@ -73,6 +73,19 @@ The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
 * rule `target` without firewalls → removed; with firewalls → warning (SCM rules have no target)
 * Panorama uuids are removed
 
+## Live findings (lab tenant, 2026-11-13, 478 requests: 453 created, 25 failed → fixed)
+
+| SCM answer | cause | fix |
+|---|---|---|
+| tag `"color" must be one of [Red, Green, …]` | PAN-OS writes `color1` … `color42` | translated to the SCM color names (`SCMChangeGenerator::$tagColors`) |
+| URL category `missing 'type'` | PAN-OS before 9.0: no `<type>` (always a URL list) | `type: "URL List"`, empty `list` added |
+| URL access profile `credential_enforcement.mode.ip_user must be of type object` | `<ip-user/>` → `{}` was decoded as PHP array and sent as `[]` | the sync / change apply sends `{}` where the SCM schema has an object (`SCMPrismaAccessSync::restoreEmptyObjects`) |
+| log forwarding profile `missing node 'match-list'` | Panorama profile without match list (forwards nothing) | not importable (review) – zones / rules that use it as well |
+| rule `tag … is not a valid reference`, zone `log-setting … is not a valid reference` | follow-up of the failed tags / log forwarding profiles | – |
+
+Open: whether SCM accepts an object in a folder with the name of an object in `All` (Panorama: device-group object
+with the name of a shared object, here URL category `Custom-No-Decrypt`) – both failed for the missing type.
+
 ## Notes for the first run
 
 * Rules reference custom applications (not imported): SCM may refuse such rules. `continue-on-error` creates the

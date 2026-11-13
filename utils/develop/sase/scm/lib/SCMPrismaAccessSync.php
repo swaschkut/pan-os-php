@@ -1111,7 +1111,8 @@ class SCMPrismaAccessSync
                             $ids[$idKey] = "<new " . $op['id'] . ">";
                         continue;
                     }
-                    $answer = $connector->sendSCMAPIRequest( $r[0], $r[1], $r[2] === null ? false : json_encode($r[2]), FALSE );
+                    $sendBody = $r[2] === null ? false : json_encode( self::restoreEmptyObjects( $op['endpoint'], $r[2] ) );
+                    $answer = $connector->sendSCMAPIRequest( $r[0], $r[1], $sendBody, FALSE );
                     $line['http_code'] = $answer['http_code'];
                     if( $answer['errors'] !== null )
                     {
@@ -1279,6 +1280,48 @@ class SCMPrismaAccessSync
         if( isset($json['data']) && is_array($json['data']) && count($json['data']) == 1 && isset($json['data'][0]) )
             return $json['data'][0];
         return $json;
+    }
+
+    private static $schema = null;
+
+    /**
+     * exports / change files are decoded as PHP arrays: an empty JSON object {} becomes [] and would be sent as a list
+     * (live: "credential_enforcement.mode.ip_user must be of type object"). Where the SCM schema of the resource
+     * (lib/resources/scm/scm-ngfw-config-schema.json) has an object, an empty list is sent as {}.
+     */
+    public static function restoreEmptyObjects( $endpoint, $body )
+    {
+        if( self::$schema === null )
+        {
+            $file = dirname(__FILE__) . "/../../../../../lib/resources/scm/scm-ngfw-config-schema.json";
+            $j = is_readable($file) ? json_decode( file_get_contents($file), TRUE ) : null;
+            self::$schema = isset($j['resources']) ? $j['resources'] : array();
+        }
+        $resource = preg_replace( '/-(pre|post)$/', '', $endpoint );
+        if( !is_array($body) || !isset(self::$schema[$resource]['schema']) )
+            return $body;
+        return self::emptyObjectsBySchema( $body, self::$schema[$resource]['schema'] );
+    }
+
+    private static function emptyObjectsBySchema( $value, $schema )
+    {
+        $type = isset($schema['type']) ? $schema['type'] : 'any';
+        if( $type == 'object' && is_array($value) )
+        {
+            if( count($value) == 0 )
+                return new stdClass();
+            foreach( $value as $k => $v )
+                if( isset($schema['properties'][$k]) )
+                    $value[$k] = self::emptyObjectsBySchema( $v, $schema['properties'][$k] );
+            return $value;
+        }
+        if( $type == 'array' && is_array($value) && isset($schema['items']) )
+        {
+            foreach( $value as $k => $v )
+                $value[$k] = self::emptyObjectsBySchema( $v, $schema['items'] );
+            return $value;
+        }
+        return $value;
     }
 
     /**

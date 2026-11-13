@@ -111,7 +111,8 @@ foreach( $change->dryRunLog['results'] as $r )
 foreach( $ops as $op )
 {
     $method = $op['action'] == 'create' ? 'POST' : ( $op['action'] == 'delete' ? 'DELETE' : ( $op['action'] == 'move' ? 'POST' : 'PUT' ) );
-    $line = sprintf( "   %-8s %-7s %-6s %s %s", $op['id'], $op['action'], $method, $op['url'], $op['name'] );
+    $url = $op['url'] . ( !empty($op['query']) && $op['action'] == 'create' ? "?" . http_build_query($op['query']) : "" );
+    $line = sprintf( "   %-8s %-7s %-6s %s %s", $op['id'], $op['action'], $method, $url, $op['name'] );
     if( $op['blocked'] !== null )
         $line .= "  BLOCKED: " . $op['blocked'];
     elseif( isset($dry[$op['id']]['message']) )
