@@ -68,6 +68,24 @@ PAN-OS XML structure as JSON – directly convertible to the XML that pan-os-php
 2. **pan-os-php loader** (`in=scm-api://…`): load these two types from the internal API and convert the entries to
    PAN-OS XML → `type=securityprofile`, best practice / visibility checks see the same data as for Panorama / firewall.
 
+## Implemented: pan-os-php loader (`in=scm-api://…`)
+
+`PanSCMAPIConnector` loads `vulnerability-protection-profiles` and `wildfire-anti-virus-profiles` from the internal UI
+API: per loaded folder one GET (`type=container` for folders, `type=cloud` for the Prisma Access deployment folders),
+entries matched by `@uuid` = `id` of the public object, converted with `SCM_internalEntryToDom()` to PAN-OS XML and
+loaded by `VulnerabilityProfile` / `VirusAndWildfireProfile::load_from_domxml()` – decoder, inline ML, inline cloud
+analysis and rule action `default` are then available for `type=securityprofile`, best practice / visibility checks.
+
+- `shadow-scmuiapihost=<host>`: internal UI API host of the tenant region (default
+  `paas-3.prod.eu.panorama.paloaltonetworks.com`)
+- `shadow-noscminternalapi`: public API only
+- internal API not reachable / not accepted → one warning, public API as before
+- objects loaded from a snippet query use the internal answer of the folder being loaded (it contains the entries of
+  the attached snippets); device folders (on-prem) use the public API
+
+Verified offline with the internal answers of the lab tenant (`best-practice`, `best-practice-1`, `web-security-default`,
+custom `WF_AV_Sven`).
+
 ## Open
 
 - Public API owner of `best-practice` (snippet name).

@@ -38,6 +38,23 @@ class PanSCMAPIConnector
 
     private $loadedSnippets = array();
 
+    /**
+     * internal UI API (used by the SCM web UI, accepts the service account token): the public API does not return
+     * all sections of some security profiles (vulnerability: mica-engine-vulnerability-enabled; WildFire / AV:
+     * decoder, mlav-engine-filebased-enabled, mica-engine-wildfire-rules; rule action "default" as []) - these
+     * types are taken from the internal API, which returns the PAN-OS XML structure as JSON
+     */
+    const UI_API_HOST_DEFAULT = 'paas-3.prod.eu.panorama.paloaltonetworks.com';
+    const INTERNAL_PROFILE_TYPES = array(
+        'vulnerability-protection-profiles' => 'VulnerabilityProtectionSecurityProfiles',
+        'wildfire-anti-virus-profiles' => 'WildFireAndAntivirusSecurityProfiles',
+    );
+    /** @var array type => folder|type => uuid => internal entry | FALSE (not available) */
+    private $internalProfileCache = array();
+    /** @var array|null folder used for internal lookups: array( name, type container|cloud ) */
+    private $internalLookupFolder = null;
+    private $internalApiWarned = false;
+
 
     /**
      * @var PanAPIConnector[]
@@ -1106,6 +1123,16 @@ class PanSCMAPIConnector
 
     function loadSCMConfig($folder, $sub, $utilType, $ruleType = "security")
     {
+        //internal UI API lookups (security profiles) are done with the folder being loaded - its answer contains
+        //the entries of the attached snippets and the parent folders as well
+        $cls = get_class($sub);
+        if( $cls == "Container" )
+            $this->internalLookupFolder = array( $folder, 'container' );
+        elseif( $cls == "DeviceCloud" )
+            $this->internalLookupFolder = array( $folder, 'cloud' );
+        else
+            $this->internalLookupFolder = null;
+
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
@@ -1698,7 +1725,9 @@ class PanSCMAPIConnector
             elseif( $type === "vulnerability-protection-profiles" )
             {
                 $profileStoreName = "VulnerabilityProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -1706,7 +1735,9 @@ class PanSCMAPIConnector
             elseif( $type === "wildfire-anti-virus-profiles" )
             {
                 $profileStoreName = "VirusAndWildfireProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -2750,6 +2781,128 @@ class PanSCMAPIConnector
             $entry->setAttribute( 'name', $data['name'] );
         if( isset($data['id'] ) )
             $entry->setAttribute( 'uuid', $data['id'] );
+    }
+
+    /**
+     * security profile from the internal UI API (complete PAN-OS structure), matched by id = @uuid
+     * @return string|bool|null "continue" (already loaded), TRUE (imported), null (not available - use the public API)
+     */
+    private function SCM_API_internal_profile_import( $type, $object, $sub, $profileStoreName )
+    {
+        if( !isset($object['id']) || !isset($object['name']) )
+            return null;
+        $entry = $this->SCM_API_internal_profile_lookup( $type, $object['id'] );
+        if( $entry === null )
+            return null;
+
+        if( $sub->$profileStoreName->find($object['name']) !== null )
+            return "continue";
+
+        $dom = self::SCM_internalEntryToDom( $entry, $object['name'], $object['id'] );
+        $this->SCM_API_SP_object_import( $dom, $sub, $profileStoreName, $object );
+        return TRUE;
+    }
+
+    /**
+     * internal entry of a security profile by uuid; the internal answer of the folder being loaded is read once per
+     * type and folder
+     */
+    private function SCM_API_internal_profile_lookup( $type, $uuid )
+    {
+        if( PH::$shadow_scm_no_internal_api || !isset(self::INTERNAL_PROFILE_TYPES[$type]) || $this->internalLookupFolder === null )
+            return null;
+
+        list( $folderName, $folderType ) = $this->internalLookupFolder;
+        $cacheKey = $folderName . "|" . $folderType;
+        if( !isset($this->internalProfileCache[$type][$cacheKey]) )
+        {
+            $host = PH::$shadow_scm_ui_api_host !== null ? PH::$shadow_scm_ui_api_host : self::UI_API_HOST_DEFAULT;
+            $url = "https://" . $host . "/api/config/v9.2/Objects/" . self::INTERNAL_PROFILE_TYPES[$type]
+                . "?" . http_build_query( array( 'folder' => $folderName, 'type' => $folderType ), '', '&', PHP_QUERY_RFC3986 );
+            $r = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            $byUuid = FALSE;
+            if( $r['errors'] === null && $r['http_code'] < 400 && is_array($r['json'])
+                && ( !isset($r['json']['@status']) || $r['json']['@status'] === 'success' ) )
+            {
+                $byUuid = array();
+                $entries = isset($r['json']['result']['entry']) && is_array($r['json']['result']['entry']) ? $r['json']['result']['entry'] : array();
+                if( isset($entries['@name']) )
+                    $entries = array( $entries );
+                foreach( $entries as $e )
+                    if( isset($e['@uuid']) )
+                        $byUuid[$e['@uuid']] = $e;
+            }
+            elseif( !$this->internalApiWarned )
+            {
+                $this->internalApiWarned = true;
+                PH::print_stdout( " ! SCM internal UI API not available (HTTP " . $r['http_code'] . ", host " . $host . ") - "
+                    . "security profiles only from the public API (decoder / inline ML / inline cloud analysis missing); "
+                    . "region specific host: shadow-scmuiapihost=<host>" );
+            }
+            $this->internalProfileCache[$type][$cacheKey] = $byUuid;
+        }
+
+        $byUuid = $this->internalProfileCache[$type][$cacheKey];
+        if( $byUuid === FALSE || !isset($byUuid[$uuid]) )
+            return null;
+        return $byUuid[$uuid];
+    }
+
+    /**
+     * internal UI API entry (PAN-OS XML structure as JSON) -> DOMDocument <entry name="" uuid="">...</entry>
+     * - "@name" -> attribute name; other "@..." keys (loc, snippet-loc, type, uuid, plugin-predefined) are meta data
+     * - "entry": [ {...} ] -> <entry name="..."> per element, "member": [ ... ] -> <member> per element
+     * - empty object / empty list -> empty element (e.g. action reset-both)
+     */
+    public static function SCM_internalEntryToDom( $entry, $name, $uuid = null )
+    {
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $dom->formatOutput = true;
+        $root = $dom->createElement('entry');
+        $root->setAttribute('name', $name);
+        if( $uuid !== null )
+            $root->setAttribute('uuid', $uuid);
+        $dom->appendChild($root);
+        self::SCM_internalArrayToXml( $dom, $root, $entry );
+        return $dom;
+    }
+
+    private static function SCM_internalArrayToXml( $dom, $parent, $data )
+    {
+        foreach( $data as $key => $value )
+        {
+            $key = (string)$key;
+            if( $key !== '' && $key[0] === '@' )
+                continue;
+
+            if( ( $key === 'entry' || $key === 'member' ) && is_array($value) )
+            {
+                $items = ( $value === array() || array_keys($value) === range(0, count($value) - 1) ) ? $value : array( $value );
+                foreach( $items as $item )
+                {
+                    $el = $dom->createElement($key);
+                    $parent->appendChild($el);
+                    if( is_array($item) )
+                    {
+                        if( isset($item['@name']) )
+                            $el->setAttribute('name', $item['@name']);
+                        self::SCM_internalArrayToXml( $dom, $el, $item );
+                    }
+                    else
+                        $el->appendChild( $dom->createTextNode( (string)$item ) );
+                }
+                continue;
+            }
+
+            $el = $dom->createElement($key);
+            $parent->appendChild($el);
+            if( is_array($value) )
+                self::SCM_internalArrayToXml( $dom, $el, $value );
+            elseif( is_bool($value) )
+                $el->appendChild( $dom->createTextNode( $value ? 'yes' : 'no' ) );
+            elseif( $value !== null )
+                $el->appendChild( $dom->createTextNode( (string)$value ) );
+        }
     }
 
     private function SCM_API_object_import_preperation($object, $sub, $profileStoreName)

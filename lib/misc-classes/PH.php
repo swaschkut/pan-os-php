@@ -187,6 +187,25 @@ class PH
                     $argc--;
                 continue;
             }
+            elseif( strpos( $arg, 'shadow-scmuiapihost=' ) === 0 )
+            {
+                //SCM: host of the internal UI API (region specific), e.g. paas-3.prod.eu.panorama.paloaltonetworks.com
+                $arg_array = explode( "=", $arg, 2 );
+                PH::$shadow_scm_ui_api_host = preg_replace( '#^https?://#', '', rtrim( $arg_array[1], "/" ) );
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
+            elseif( $arg == 'shadow-noscminternalapi' )
+            {
+                //SCM: do not use the internal UI API (security profiles only from the public API)
+                PH::$shadow_scm_no_internal_api = TRUE;
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
             elseif( $arg == 'shadow-multivsys' )
             {
                 PH::$shadow_multivsys = TRUE;
@@ -233,6 +252,11 @@ class PH
     public static $displayCurlRequest = FALSE;
 
     public static $saseQAapi = FALSE;
+
+    /** SCM internal UI API host (shadow-scmuiapihost=), null = default of PanSCMAPIConnector */
+    public static $shadow_scm_ui_api_host = null;
+    /** SCM: do not use the internal UI API (shadow-noscminternalapi) */
+    public static $shadow_scm_no_internal_api = FALSE;
 
     public static $shadow_reducexml = FALSE;
 
