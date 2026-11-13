@@ -37,9 +37,9 @@ php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.js
 
 | key | content |
 |---|---|
-| `folders` | `name`, `parent`, optional `description` / `labels`. New folders only below `ngfw-shared` (All Firewalls); a new parent must come first in the list. Existing folder: fields are updated, moving (other `parent`) is refused. |
+| `folders` | `name`, `parent`, optional `description` / `labels`. New folders only below `ngfw-shared` (All Firewalls), max. 4 levels below it (as Panorama device-groups below shared); a new parent must come first in the list. Existing folder: fields are updated, moving (other `parent`) is refused. |
 | `snippets` | `name`, optional `description` / `labels`. Predefined snippets cannot be changed. |
-| `<config type>` | a list per type, e.g. `addresses`, `address-groups`, `tags`, `services`, `service-groups`, `external-dynamic-lists`, `url-categories`, security profiles, `profile-groups`, identity objects … (all types of the groups `objects` and `identity` of `scm_pa_export.php`) |
+| `<config type>` | a list per type, e.g. `addresses`, `address-groups`, `tags`, `services`, `service-groups`, `external-dynamic-lists`, `url-categories`, security profiles, `profile-groups`, identity objects, rule bases (`security-rules`, `nat-rules` …) … (all types of the groups `objects`, `identity` and `policies` of `scm_pa_export.php`) |
 | `objects` | the same as one list, with `"type": "<config type>"` per entry |
 
 Per object:
@@ -54,8 +54,14 @@ Per object:
 
 The request is idempotent: a second run with the same file finds nothing to do ("unchanged" / "absent").
 
-Not supported (refused with a message; use the sync workflow): rule bases (`security-rules`, `nat-rules` … – position
-and order), network / device settings, Prisma Access infrastructure, deleting folders / snippets.
+Rules (`security-rules`, `nat-rules`, `decryption-rules` …): `"position": "pre"` (default) or `"post"` in a folder, no
+position in a snippet. New rules are added at the end of the rule base in file order; the verification also checks the
+order of the rules of the file in the tenant. Moving existing rules is not part of this tool (sync workflow).
+
+Zones (`zones`) are the only network type a change request can contain (they belong to the rules that use them).
+
+Not supported (refused with a message; use the sync workflow): other network / device settings, Prisma Access
+infrastructure, deleting folders / snippets.
 
 Examples in `examples/` (lab folder `pan-os-php-test`, run in this order): `change-sub-folder.json` (sub folder, tag,
 address – verified live), `change-append-tag.json` (`_append` of a tag from the parent folder),
@@ -96,7 +102,10 @@ firewall – push is neither possible nor needed (`not_pushable`); the candidate
 
 ## Relation to the other tools
 
-* bigger changes, rule bases, Prisma Access areas, tenant → tenant: export / edit / `scm_pa_compare.php` /
+* Panorama device-groups → SCM: [README_pa_panorama_import.md](README_pa_panorama_import.md)
+  (`scm_pa_panorama_to_change.php` writes the change file)
+
+* bigger changes, reordering rule bases, Prisma Access areas, tenant → tenant: export / edit / `scm_pa_compare.php` /
   `scm_pa_sync.php` ([README_pa_sync.md](README_pa_sync.md))
 * gap remediation (best practice / visibility fixes for the CDSS portal): change file `pan-os-php-scm-changes`
   ([../../scm/CONCEPT_gap_remediation.md](../../scm/CONCEPT_gap_remediation.md)) – there the requests are generated

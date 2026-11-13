@@ -41,6 +41,9 @@ class SCMImporter
 {
     const FIREWALL_FOLDER = "ngfw-shared";
 
+    /** folder levels below the firewall folder - the same limit as device-group levels below shared in Panorama */
+    const MAX_FOLDER_DEPTH = 4;
+
     /** paths that are the same below a Panorama device-group / shared / vsys and an SCM folder / snippet */
     static public $objectPaths = array(
         'tag', 'address', 'address-group', 'service', 'service-group', 'schedule',
@@ -105,6 +108,24 @@ class SCMImporter
     public $keepZoneInterfaces = FALSE;
     public $firewallFolder = self::FIREWALL_FOLDER;
 
+    /** Panorama: 'all' (default), 'device-groups' (shared + device-groups only: no templates, stacks, firewalls) or
+     *  'templates' (shared + device-groups + templates / template-stacks as snippets, attached to the device-group
+     *  folders: per firewall of the device-group its template-stack, then the stack's templates; no firewalls) */
+    public $panoramaScope = 'all';
+    /** Panorama: folder (below the firewall folder) that holds the device-group tree; null = the firewall folder */
+    public $dgParentFolder = null;
+    /** Panorama: only these device-groups (their parents are imported as well); null = all */
+    public $deviceGroupFilter = null;
+    /** Panorama, scope device-groups: create the zones used by the security rules of a device-group in its folder
+     *  (definition from the templates, interfaces removed; not created again below a folder that has it already) */
+    public $zonesFromRules = FALSE;
+
+    /** device-groups not imported because the folder level would exceed MAX_FOLDER_DEPTH */
+    public $depthErrors = array();
+
+    /** group tags removed from rules (reported once) */
+    public $groupTags = array();
+
     /** "type|name" => name of the snippet created for it */
     private $snippetNames = array();
 
@@ -119,7 +140,7 @@ class SCMImporter
 
     /**
      * @param PanoramaConf $pano
-     * @param string $sharedMode 'snippet' (default) or 'global'
+     * @param string $sharedMode 'snippet' (default), 'global', 'folder' (into the device-group parent folder) or 'skip'
      * @param string $sharedSnippet name of the snippet for shared
      */
     public function importPanorama(PanoramaConf $pano, $sharedMode = 'snippet', $sharedSnippet = 'Panorama-Shared')
@@ -128,23 +149,61 @@ class SCMImporter
         $all = $this->scm->findContainer("All");
         $fwFolder = $this->ensureFirewallFolder();
 
+        // folder that holds the device-group tree
+        $dgRoot = $fwFolder;
+        if( $this->dgParentFolder !== null && $this->dgParentFolder !== $fwFolder->name() )
+        {
+            $dgRoot = $this->scm->findContainer($this->dgParentFolder);
+            if( $dgRoot === null )
+                $dgRoot = $this->scm->createContainer($this->validName($this->dgParentFolder, "device-group parent folder"), $fwFolder->name());
+        }
+
         // shared
         $shared = $xp->query("/config/shared")->item(0);
+        if( $sharedMode == 'skip' )
+        {
+            if( $shared !== null )
+                $this->reportSkippedShared($shared);
+            $shared = null;
+        }
         if( $shared !== null )
         {
             if( $sharedMode == 'global' )
                 $target = $all;
+            elseif( $sharedMode == 'folder' )
+                $target = $dgRoot;
             else
             {
                 $target = $this->ensureSnippet($this->validName($sharedSnippet, "shared snippet"), "shared");
                 $all->addSnippet($target);
             }
             $this->copyScope($shared, $target, "Panorama shared", TRUE);
+            $sharedRules = (new DOMXPath($shared->ownerDocument))->query("pre-rulebase/security/rules/entry|post-rulebase/security/rules/entry", $shared)->length;
+            if( $sharedRules > 0 && $sharedMode == 'global' )
+                $this->warnings[] = "Panorama shared: " . $sharedRules . " security rule(s) copied to folder 'All' - they apply to Prisma Access as well";
+            if( $this->zonesFromRules && $sharedMode == 'folder' )
+                $this->addRuleZones($pano, $target, $dgRoot === $fwFolder ? "All" : $fwFolder->name(), "Panorama shared");
         }
 
         // device-groups, parents first
         $dgFolders = array();
         $pending = $pano->deviceGroups;
+        if( $this->deviceGroupFilter !== null )
+        {
+            $wanted = array();
+            foreach( $this->deviceGroupFilter as $name )
+            {
+                $dg = $pano->findDeviceGroup($name);
+                if( $dg === null )
+                {
+                    $this->warnings[] = "device-group '" . $name . "' not found";
+                    continue;
+                }
+                for( $d = $dg; $d !== null; $d = $d->parentDeviceGroup )
+                    $wanted[$d->name()] = TRUE;
+            }
+            $pending = array_filter($pending, function($dg) use ($wanted){ return isset($wanted[$dg->name()]); });
+        }
         while( !empty($pending) )
         {
             $progress = FALSE;
@@ -154,7 +213,16 @@ class SCMImporter
                 $parentDG = $dg->parentDeviceGroup;
                 if( $parentDG !== null && !isset($dgFolders[$parentDG->name()]) )
                     continue;
-                $parentName = $parentDG === null ? $fwFolder->name() : $dgFolders[$parentDG->name()]->name();
+                $parentName = $parentDG === null ? $dgRoot->name() : $dgFolders[$parentDG->name()]->name();
+                $parentDepth = $this->folderDepth($parentName);
+                if( $parentDepth !== null && $parentDepth + 1 > self::MAX_FOLDER_DEPTH )
+                {
+                    $this->depthErrors[] = "device-group '" . $dg->name() . "': folder level " . ($parentDepth + 1) . " below '" . $this->firewallFolder
+                        . "' (max. " . self::MAX_FOLDER_DEPTH . ") - not imported" . ( $dgRoot !== $fwFolder ? "; dg-parent '" . $dgRoot->name() . "' uses " . $this->folderDepth($dgRoot->name()) . " level(s)" : "" );
+                    unset($pending[$i]);
+                    $progress = TRUE;
+                    continue;
+                }
                 $folder = $this->ensureFolder($this->validName($dg->name(), "device-group"), $parentName);
                 $dgFolders[$dg->name()] = $folder;
                 $this->copyScope($dg->xmlroot, $folder, "device-group '" . $dg->name() . "'", TRUE);
@@ -169,6 +237,14 @@ class SCMImporter
             }
         }
         $this->summary['folders'] = count($dgFolders);
+
+        if( $this->panoramaScope == 'device-groups' )
+        {
+            $this->addZonesOfRules($pano, $dgFolders);
+            $this->summary['skipped'] = array( 'templates' => count($pano->templates), 'template-stacks' => count($pano->templatestacks),
+                'firewalls' => count($pano->managedFirewallsStore->getAll()) );
+            return;
+        }
 
         // templates and template-stacks
         foreach( $pano->templates as $template )
@@ -193,6 +269,14 @@ class SCMImporter
                 $this->copyNetworkScope($config, $snippet, "template-stack '" . $stack->name() . "'");
         }
         $this->summary['snippets'] = count($this->snippetNames);
+
+        if( $this->panoramaScope == 'templates' )
+        {
+            $this->attachStacksToFolders($pano, $dgFolders);
+            $this->addZonesOfRules($pano, $dgFolders);
+            $this->summary['skipped'] = array( 'firewalls' => count($pano->managedFirewallsStore->getAll()) );
+            return;
+        }
 
         // managed firewalls
         $devices = 0;
@@ -230,6 +314,187 @@ class SCMImporter
             $devices++;
         }
         $this->summary['devices'] = $devices;
+    }
+
+    /**
+     * device-group folder <- snippets of the template-stacks of its firewalls: stack, then its templates (stack order);
+     * the first snippet is the top one (wins in SCM, as the stack wins over its templates in Panorama)
+     */
+    private function attachStacksToFolders(PanoramaConf $pano, array $dgFolders)
+    {
+        $stacksOfDG = array();
+        foreach( $pano->managedFirewallsStore->getAll() as $fw )
+        {
+            /** @var ManagedDevice $fw */
+            $dgs = array_keys($fw->getDeviceGroup());
+            if( count($dgs) == 0 || !isset($dgFolders[$dgs[0]]) )
+                continue;
+            if( empty($fw->template_stack) )
+            {
+                $this->warnings[] = "firewall " . $fw->name() . " (device-group '" . $dgs[0] . "') is in no template-stack";
+                continue;
+            }
+            $stack = $pano->findTemplateStack($fw->template_stack);
+            if( $stack === null )
+            {
+                $this->warnings[] = "firewall " . $fw->name() . ": template-stack '" . $fw->template_stack . "' not found";
+                continue;
+            }
+            $stacksOfDG[$dgs[0]][$stack->name()] = $stack;
+        }
+        $this->summary['folder_snippets'] = array();
+        foreach( $stacksOfDG as $dgName => $stacks )
+        {
+            $folder = $dgFolders[$dgName];
+            if( count($stacks) > 1 )
+                $this->warnings[] = "device-group '" . $dgName . "': its firewalls use " . count($stacks) . " template-stacks (" . implode(", ", array_keys($stacks))
+                    . ") - the snippets of all are attached in this order, the first wins";
+            foreach( $stacks as $stack )
+            {
+                $names = array( $this->snippetNames["stack|" . $stack->name()] );
+                foreach( $stack->templates as $t )
+                    $names[] = $this->snippetNames["template|" . $t->name()];
+                foreach( $names as $n )
+                {
+                    $folder->addSnippet($this->scm->findSnippet($n));
+                    $this->summary['folder_snippets'][$folder->name()][] = $n;
+                }
+            }
+        }
+        foreach( $dgFolders as $dgName => $folder )
+            if( !isset($stacksOfDG[$dgName]) && !$this->hasChildFolder($folder) )
+                $this->warnings[] = "device-group '" . $dgName . "': no firewall with a template-stack - no snippets attached";
+    }
+
+    /** zones of the rules of every device-group folder (zonesFromRules), parents first */
+    private function addZonesOfRules(PanoramaConf $pano, array $dgFolders)
+    {
+        if( !$this->zonesFromRules )
+            return;
+        foreach( $dgFolders as $dgName => $folder )
+        {
+            $pn = DH::findFirstElement('parent', $folder->xmlroot);
+            $this->addRuleZones($pano, $folder, $pn === FALSE ? null : $pn->textContent, "device-group '" . $dgName . "'");
+        }
+    }
+
+    /** folder name => zone names created in it (zones from rules) */
+    private $ruleZones = array();
+    /** zone name => definition in a template / template-stack (first found) */
+    private $templateZones = null;
+
+    /**
+     * zones of the security rules of $folder (from / to, not 'any') that are not in the folder or one of its parents yet:
+     * created in $folder with the definition of the templates (interfaces removed) or as empty layer3 zone
+     */
+    private function addRuleZones(PanoramaConf $pano, $folder, $parentName, $label)
+    {
+        if( $this->templateZones === null )
+        {
+            $this->templateZones = array();
+            $xp = new DOMXPath($pano->xmldoc);
+            foreach( array('template', 'template-stack') as $kind )
+                foreach( $xp->query("/config/devices/entry/" . $kind . "/entry/config/devices/entry/vsys/entry/zone/entry") as $z )
+                    if( !isset($this->templateZones[$z->getAttribute('name')]) )
+                        $this->templateZones[$z->getAttribute('name')] = $z;
+        }
+
+        $xp = new DOMXPath($folder->xmlroot->ownerDocument);
+        $used = array();
+        foreach( array('pre-rulebase', 'post-rulebase') as $rb )
+            foreach( $xp->query($rb . "/security/rules/entry/from/member|" . $rb . "/security/rules/entry/to/member", $folder->xmlroot) as $m )
+            {
+                $z = trim($m->textContent);
+                if( $z !== '' && $z !== 'any' )
+                    $used[$z] = TRUE;
+            }
+        if( empty($used) )
+            return;
+
+        // zones of the parent folders and of the snippets attached to the folder or its parents
+        // (created by this import or existing in the SCM configuration)
+        $inherited = array();
+        $sxp = new DOMXPath($folder->xmlroot->ownerDocument);
+        foreach( $sxp->query("snippets/member", $folder->xmlroot) as $m )
+            if( ($sn = $this->scm->findSnippet(trim($m->textContent))) !== null )
+                foreach( $sxp->query("zone/entry", $sn->xmlroot) as $z )
+                    $inherited[$z->getAttribute('name')] = TRUE;
+        for( $p = $parentName, $guard = 0; $p !== null && $guard < 20; $guard++ )
+        {
+            foreach( $this->ruleZones[$p] ?? array() as $z => $x )
+                $inherited[$z] = TRUE;
+            $c = $this->scm->findContainer($p);
+            if( $c === null )
+                break;
+            foreach( $xp->query("zone/entry", $c->xmlroot) as $z )
+                $inherited[$z->getAttribute('name')] = TRUE;
+            foreach( $sxp->query("snippets/member", $c->xmlroot) as $m )
+                if( ($sn = $this->scm->findSnippet(trim($m->textContent))) !== null )
+                    foreach( $sxp->query("zone/entry", $sn->xmlroot) as $z )
+                        $inherited[$z->getAttribute('name')] = TRUE;
+            $pn = DH::findFirstElement('parent', $c->xmlroot);
+            $p = $pn === FALSE ? null : $pn->textContent;
+        }
+
+        $parent = $this->ensurePath($folder->xmlroot, 'zone');
+        $existing = array();
+        foreach( $xp->query("entry", $parent) as $e )
+            $existing[$e->getAttribute('name')] = TRUE;
+        $created = array();
+        $empty = array();
+        foreach( array_keys($used) as $z )
+        {
+            if( isset($inherited[$z]) || isset($existing[$z]) )
+                continue;
+            if( isset($this->templateZones[$z]) )
+                $new = $parent->ownerDocument->importNode($this->templateZones[$z], TRUE);
+            else
+            {
+                $new = $parent->ownerDocument->createElement('entry');
+                $new->setAttribute('name', $z);
+                DH::createElement( DH::createElement($new, 'network'), 'layer3' );
+                $empty[] = $z;
+            }
+            $this->cleanEntry($new, 'zones', $label);
+            $parent->appendChild($new);
+            $this->ruleZones[$folder->name()][$z] = TRUE;
+            $created[] = $z;
+        }
+        if( !empty($created) )
+        {
+            $this->summary['objects']['zones'] = ($this->summary['objects']['zones'] ?? 0) + count($created);
+            $this->warnings[] = $label . ": zones of its rules created in folder '" . $folder->name() . "': " . implode(", ", $created)
+                . ( !empty($empty) ? " (not in a template, created as empty layer3 zone: " . implode(", ", $empty) . ")" : "" );
+        }
+    }
+
+    /** folder levels below the firewall folder (firewall folder = 0); null if it is not below it */
+    public function folderDepth($name)
+    {
+        $depth = 0;
+        for( $guard = 0; $guard < 20; $guard++ )
+        {
+            if( $name === $this->firewallFolder )
+                return $depth;
+            $c = $this->scm->findContainer($name);
+            if( $c === null )
+                return null;
+            $p = DH::findFirstElement('parent', $c->xmlroot);
+            if( $p === FALSE )
+                return null;
+            $name = $p->textContent;
+            $depth++;
+        }
+        return null;
+    }
+
+    private function reportSkippedShared(DOMElement $shared)
+    {
+        $n = 0;
+        foreach( array_merge(self::$objectPaths, array('pre-rulebase/security/rules', 'post-rulebase/security/rules')) as $rel )
+            $n += (new DOMXPath($shared->ownerDocument))->query($rel . "/entry", $shared)->length;
+        if( $n > 0 )
+            $this->warnings[] = "Panorama shared: " . $n . " object(s) / rule(s) not imported (shared=skip) - device-group objects / rules that use them fail";
     }
 
     private function stacksOfTemplate(PanoramaConf $pano, $template)
@@ -420,6 +685,27 @@ class SCMImporter
                 else
                     $this->warnings[] = $label . ": rule '" . $entry->getAttribute('name') . "' has a target (firewalls); SCM rules have no target";
             }
+            // display grouping of the rule list, no SCM field
+            $groupTag = DH::findFirstElement('group-tag', $entry);
+            if( $groupTag !== FALSE )
+            {
+                $this->groupTags[trim($groupTag->textContent)] = TRUE;
+                $entry->removeChild($groupTag);
+            }
+            // SaaS user / tenant lists with only 'any' are the PAN-OS default (no condition)
+            foreach( array('saas-user-list', 'saas-tenant-list') as $tag )
+            {
+                $node = DH::findFirstElement($tag, $entry);
+                if( $node === FALSE )
+                    continue;
+                $members = array();
+                foreach( $node->childNodes as $m )
+                    if( $m->nodeType == XML_ELEMENT_NODE )
+                        $members[] = trim($m->textContent);
+                if( empty($members) || $members == array('any') )
+                    $entry->removeChild($node);
+            }
+
             $ruleType = DH::findFirstElement('rule-type', $entry);
             if( $ruleType !== FALSE && trim($ruleType->textContent) == 'universal' )
                 $entry->removeChild($ruleType);

@@ -32,7 +32,8 @@ class SCMIMPORT extends UTIL
         $this->usageMsg = PH::boldText('USAGE: ') . "\n" .
             "  Panorama:\n" .
             "  - pan-os-php type=scm-import in=panorama.xml scm=SCM.xml out=SCM-import.xml changes=import.json\n" .
-            "        [shared=snippet|global] [shared-snippet=NAME]\n" .
+            "        [shared=snippet|global|folder|skip] [shared-snippet=NAME]\n" .
+            "        [scope=all|device-groups|templates] [dg-parent=FOLDER] [device-group=DG1,DG2]\n" .
             "  Firewall:\n" .
             "  - pan-os-php type=scm-import in=firewall.xml target=folder|snippet scm=SCM.xml out=SCM-import.xml changes=import.json\n" .
             "        [name=NAME] [vsys=vsys1] [serial=SERIAL]\n" .
@@ -41,7 +42,12 @@ class SCMIMPORT extends UTIL
             "            without it an empty SCM configuration is used\n" .
             "  out       SCM configuration with the import (XML)\n" .
             "  changes   SCM API requests that create the import in the tenant (see type=scm-apply)\n" .
-            "  shared    Panorama shared: 'snippet' (default, a snippet attached to All) or 'global' (directly into All)\n" .
+            "  shared    Panorama shared: 'snippet' (default, a snippet attached to All), 'global' (directly into All),\n" .
+            "            'folder' (into the dg-parent folder) or 'skip'\n" .
+            "  scope     Panorama: 'all' (default), 'device-groups' (shared + device-groups only) or 'templates'\n" .
+            "            (+ templates / stacks as snippets attached to the device-group folders, no firewalls)\n" .
+            "  dg-parent Panorama: folder below the firewall folder that holds the device-group tree (default: ngfw-shared)\n" .
+            "  device-group  Panorama: only these device-groups (and their parents)\n" .
             "  target    firewall: 'folder' (a new folder below the firewall folder) or 'snippet'\n" .
             "  name      firewall: name of the folder / snippet (default: hostname)\n" .
             "  serial    firewall with target=folder: attach this firewall (it must be onboarded in SCM)\n" .
@@ -66,7 +72,7 @@ class SCMIMPORT extends UTIL
     {
         $this->supportedArguments = array();
         foreach( array('in', 'scm', 'out', 'changes', 'shared', 'shared-snippet', 'target', 'name', 'vsys', 'serial',
-                     'keep-zone-interfaces', 'projectfolder', 'help') as $a )
+                     'keep-zone-interfaces', 'projectfolder', 'scope', 'dg-parent', 'device-group', 'help') as $a )
             $this->supportedArguments[$a] = array('niceName' => $a);
     }
 
@@ -119,8 +125,15 @@ class SCMIMPORT extends UTIL
         {
             PH::print_stdout(" - Panorama configuration: " . $in);
             $shared = PH::$args['shared'] ?? 'snippet';
-            if( !in_array($shared, array('snippet', 'global')) )
-                $this->display_error_usage_exit("shared= must be 'snippet' or 'global'");
+            if( !in_array($shared, array('snippet', 'global', 'folder', 'skip')) )
+                $this->display_error_usage_exit("shared= must be 'snippet', 'global', 'folder' or 'skip'");
+            $importer->panoramaScope = PH::$args['scope'] ?? 'all';
+            if( !in_array($importer->panoramaScope, array('all', 'device-groups', 'templates'), TRUE) )
+                $this->display_error_usage_exit("scope= must be 'all', 'device-groups' or 'templates'");
+            if( isset(PH::$args['dg-parent']) && !is_bool(PH::$args['dg-parent']) )
+                $importer->dgParentFolder = PH::$args['dg-parent'];
+            if( isset(PH::$args['device-group']) && !is_bool(PH::$args['device-group']) )
+                $importer->deviceGroupFilter = array_values(array_filter(array_map('trim', explode(",", PH::$args['device-group']))));
             $pano = new PanoramaConf();
             $pano->load_from_domxml($srcDoc);
             $importer->importPanorama($pano, $shared, PH::$args['shared-snippet'] ?? 'Panorama-Shared');
@@ -138,6 +151,8 @@ class SCMIMPORT extends UTIL
 
         PH::print_stdout();
         PH::print_stdout(" * imported: " . json_encode($importer->summary, JSON_UNESCAPED_SLASHES));
+        foreach( $importer->depthErrors as $w )
+            PH::print_stdout("   - ERROR: " . $w);
         foreach( $importer->warnings as $w )
             PH::print_stdout("   - WARNING: " . $w);
         PH::print_stdout(" * SCM configuration with the import: " . $out);

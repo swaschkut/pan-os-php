@@ -36,11 +36,16 @@ class SCMPrismaAccessChange
 {
     const FORMAT = 'pan-os-php-scm-change-request';
 
-    /** groups of config types that can be changed (rule bases, network and device settings: sync workflow) */
-    const SUPPORTED_GROUPS = array( 'objects', 'identity' );
+    /** groups of config types that can be changed (network and device settings: sync workflow) */
+    const SUPPORTED_GROUPS = array( 'objects', 'identity', 'policies' );
+    /** single types of other groups (zones: with the rules that use them, e.g. Panorama device-group import) */
+    const SUPPORTED_TYPES = array( 'zones', 'zone-protection-profiles' );
 
     /** folders below this one may be created (own folders exist only under "All Firewalls") */
     const NGFW_ROOT = 'ngfw-shared';
+
+    /** folder levels below NGFW_ROOT (as Panorama: max. 4 device-group levels below shared) */
+    const MAX_FOLDER_DEPTH = 4;
 
     /** directives in an entry - everything else is a field of the object */
     const DIRECTIVES = array( '_delete', '_append', '_remove', '_comment' );
@@ -103,7 +108,7 @@ class SCMPrismaAccessChange
         $req = array( 'folders' => array(), 'snippets' => array(), 'objects' => array() );
         foreach( $j as $key => $list )
         {
-            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment'), TRUE) )
+            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'warnings'), TRUE) )
                 continue;
             if( !is_array($list) || ( count($list) > 0 && array_keys($list) !== range(0, count($list) - 1) ) )
             {
@@ -159,8 +164,17 @@ class SCMPrismaAccessChange
                 continue;
             }
             $t = $this->types[$e['type']];
-            if( !in_array($t['group'], self::SUPPORTED_GROUPS, TRUE) || !empty($t['position']) )
+            if( !in_array($t['group'], self::SUPPORTED_GROUPS, TRUE) && !in_array($t['name'], self::SUPPORTED_TYPES, TRUE) )
                 $this->errors[] = $where . ": type " . $e['type'] . " (" . $t['group'] . ") is not supported by scm_pa_change.php - use the sync workflow (export, edit, compare, scm_pa_sync.php)";
+            if( !empty($t['position']) )
+            {
+                if( isset($e['snippet']) && isset($e['position']) )
+                    $this->errors[] = $where . " " . ( isset($e['name']) ? $e['name'] : '' ) . ": snippets have one rule base - no position";
+                elseif( isset($e['folder']) && isset($e['position']) && !in_array($e['position'], array('pre', 'post'), TRUE) )
+                    $this->errors[] = $where . " " . ( isset($e['name']) ? $e['name'] : '' ) . ": position must be pre or post";
+            }
+            elseif( isset($e['position']) )
+                $this->errors[] = $where . ": position only for rule bases";
             if( !isset($e['name']) || !is_string($e['name']) || $e['name'] === "" )
                 $this->errors[] = $where . ": name missing";
             if( isset($e['folder']) === isset($e['snippet']) )
@@ -175,7 +189,7 @@ class SCMPrismaAccessChange
                             if( !is_array($v) || array_keys($v) !== range(0, count($v) - 1) )
                                 $this->errors[] = $where . ": " . $d . "." . $f . " must be a list";
                 }
-            if( !empty($e['_delete']) && ( count( array_diff_key( self::fields($e), array_flip( array('name', 'folder', 'snippet') ) ) ) > 0 || isset($e['_append']) || isset($e['_remove']) ) )
+            if( !empty($e['_delete']) && ( count( array_diff_key( self::fields($e), array_flip( array('name', 'folder', 'snippet', 'position') ) ) ) > 0 || isset($e['_append']) || isset($e['_remove']) ) )
                 $this->errors[] = $where . " " . $e['name'] . ": _delete together with fields";
             foreach( array_keys($e) as $k )
                 if( $k !== '' && $k[0] == '_' && !in_array($k, self::DIRECTIVES, TRUE) )
@@ -301,7 +315,8 @@ class SCMPrismaAccessChange
             'mode' => $this->hasDeletes() ? 'mirror' : 'additive',
             'allow_delete' => $this->hasDeletes(),
             'allow_infra' => false,
-            'allow_network' => false,
+            //zones are the only network type a change request can contain
+            'allow_network' => count( array_intersect( self::SUPPORTED_TYPES, $this->scope()['types'] ) ) > 0,
             'areas' => array( SCMPrismaAccessExport::AREA_CONFIG ),
             'containers' => null,
             'types' => null,
@@ -355,6 +370,26 @@ class SCMPrismaAccessChange
             }
             $results[] = $r;
         }
+        //rule bases: the rules of soll must be in the same order in the tenant
+        $sollEps = $this->loadContainers( $this->sollDir );
+        $checked = array();
+        foreach( $this->changes as $c )
+        {
+            if( $c['kind'] !== 'object' || !preg_match('/-rules(-pre|-post)?$/', $c['type']) )
+                continue;
+            $k = $c['type'] . "|" . $c['container_kind'] . "|" . $c['container'];
+            if( isset($checked[$k]) || !isset($sollEps['objects'][$k]) )
+                continue;
+            $checked[$k] = true;
+            $want = array_map( function($o){ return $o['name']; }, $sollEps['objects'][$k] );
+            $have = isset($live['objects'][$k]) ? array_map( function($o){ return $o['name']; }, $live['objects'][$k] ) : array();
+            $have = array_values( array_filter( $have, function($n) use( $want ){ return in_array($n, $want, TRUE); } ) );
+            $r = array( 'change' => "order " . $c['type'] . " [" . $c['container_kind'] . " " . $c['container'] . "]", 'action' => 'order' );
+            $r['status'] = $have === $want ? 'verified' : 'failed';
+            if( $have !== $want )
+                $r['message'] = "tenant: " . implode(", ", $have) . " | expected: " . implode(", ", $want);
+            $results[] = $r;
+        }
         $this->writeJson( $this->runDir . "/verify.json", array( 'export' => $dir, 'results' => $results ) );
         return $results;
     }
@@ -377,6 +412,30 @@ class SCMPrismaAccessChange
             return $this->fail( "folders / snippets could not be exported - see " . $this->istDir . "/manifest.json" );
 
         $this->changes = array();
+
+        // snippets first: folders can attach them
+        foreach( $this->request['snippets'] as $s )
+        {
+            $idx = self::indexByName( $snippets, $s['name'] );
+            $label = "snippet " . $s['name'];
+            if( $idx === null )
+            {
+                $new = self::fields( $s );
+                $snippets[] = $new;
+                $this->changes[] = array( 'kind' => 'snippet', 'label' => $label, 'action' => 'create', 'entry' => $new, 'name' => $s['name'] );
+            }
+            else
+            {
+                if( isset($snippets[$idx]['type']) && $snippets[$idx]['type'] === 'predefined' )
+                {
+                    $this->errors[] = $label . ": predefined snippet cannot be changed";
+                    continue;
+                }
+                $before = $snippets[$idx];
+                $snippets[$idx] = array_merge( $snippets[$idx], self::fields($s) );
+                $this->changes[] = array( 'kind' => 'snippet', 'label' => $label, 'action' => $before == $snippets[$idx] ? 'unchanged' : 'update', 'entry' => self::fields($s), 'name' => $s['name'] );
+            }
+        }
 
         // folders (in file order: a new parent before its children)
         foreach( $this->request['folders'] as $f )
@@ -401,6 +460,15 @@ class SCMPrismaAccessChange
                     $this->errors[] = $label . ": parent '" . $f['parent'] . "' is not below '" . self::NGFW_ROOT . "' (All Firewalls) - own folders can only be created there";
                     continue;
                 }
+                foreach( isset($f['snippets']) ? (array)$f['snippets'] : array() as $sn )
+                    if( self::indexByName( $snippets, $sn ) === null )
+                        $this->errors[] = $label . ": snippet '" . $sn . "' does not exist (and is not created in this file)";
+                $depth = self::depthBelow( $folders, $f['parent'], self::NGFW_ROOT ) + 1;
+                if( $depth > self::MAX_FOLDER_DEPTH )
+                {
+                    $this->errors[] = $label . ": would be folder level " . $depth . " below '" . self::NGFW_ROOT . "' - SCM allows max. " . self::MAX_FOLDER_DEPTH;
+                    continue;
+                }
                 $new = self::fields( $f );
                 $folders[] = $new;
                 $this->changes[] = array( 'kind' => 'folder', 'label' => $label, 'action' => 'create', 'entry' => $new, 'name' => $f['name'] );
@@ -418,29 +486,6 @@ class SCMPrismaAccessChange
             }
         }
 
-        foreach( $this->request['snippets'] as $s )
-        {
-            $idx = self::indexByName( $snippets, $s['name'] );
-            $label = "snippet " . $s['name'];
-            if( $idx === null )
-            {
-                $new = self::fields( $s );
-                $snippets[] = $new;
-                $this->changes[] = array( 'kind' => 'snippet', 'label' => $label, 'action' => 'create', 'entry' => $new, 'name' => $s['name'] );
-            }
-            else
-            {
-                if( isset($snippets[$idx]['type']) && $snippets[$idx]['type'] === 'predefined' )
-                {
-                    $this->errors[] = $label . ": predefined snippet cannot be changed";
-                    continue;
-                }
-                $before = $snippets[$idx];
-                $snippets[$idx] = array_merge( $snippets[$idx], self::fields($s) );
-                $this->changes[] = array( 'kind' => 'snippet', 'label' => $label, 'action' => $before == $snippets[$idx] ? 'unchanged' : 'update', 'entry' => self::fields($s), 'name' => $s['name'] );
-            }
-        }
-
         $this->writeData( $this->sollDir . "/config/01_folders.json", $folders );
         $this->writeData( $this->sollDir . "/config/02_snippets.json", $snippets );
 
@@ -450,7 +495,8 @@ class SCMPrismaAccessChange
             $type = $this->types[$e['type']];
             $kind = isset($e['folder']) ? 'folder' : 'snippet';
             $cName = $kind == 'folder' ? $e['folder'] : $e['snippet'];
-            $label = $e['type'] . " " . $e['name'] . " [" . $kind . " " . $cName . "]";
+            $epName = $this->endpointName( $e );
+            $label = $epName . " " . $e['name'] . " [" . $kind . " " . $cName . "]";
 
             $exists = $kind == 'folder' ? self::indexByName($folders, $cName) !== null : self::indexByName($snippets, $cName) !== null;
             if( !$exists )
@@ -473,7 +519,7 @@ class SCMPrismaAccessChange
                 }
             }
 
-            $file = $this->ensureContainerFile( $manifest, $kind, $cName, $type );
+            $file = $this->ensureContainerFile( $manifest, $kind, $cName, $type, $epName );
             $data = $this->readData( $this->sollDir . "/" . $file );
             if( $data === null )
             {
@@ -481,7 +527,7 @@ class SCMPrismaAccessChange
                 continue;
             }
             $idx = self::indexByName( $data, $e['name'] );
-            $change = array( 'kind' => 'object', 'label' => $label, 'type' => $e['type'], 'container_kind' => $kind, 'container' => $cName, 'name' => $e['name'] );
+            $change = array( 'kind' => 'object', 'label' => $label, 'type' => $epName, 'container_kind' => $kind, 'container' => $cName, 'name' => $e['name'] );
 
             if( !empty($e['_delete']) )
             {
@@ -520,33 +566,42 @@ class SCMPrismaAccessChange
     }
 
     /** file of a container / type in soll; for a container created by this request: new file + manifest entry */
-    private function ensureContainerFile( &$manifest, $kind, $cName, $type )
+    private function ensureContainerFile( &$manifest, $kind, $cName, $type, $epName )
     {
         foreach( $manifest['endpoints'] as $ep )
             if( $ep['area'] == SCMPrismaAccessExport::AREA_CONFIG && isset($ep['container']) && $ep['container'] === $cName
-                && $ep['container_kind'] === $kind && $ep['name'] === $type['name'] )
+                && $ep['container_kind'] === $kind && $ep['name'] === $epName )
                 return $ep['file'];
 
-        $file = SCMPrismaAccessExport::AREA_CONFIG . "/" . $kind . "s/" . SCMPrismaAccessExport::slug($cName) . "/" . sprintf("%02d", $type['order']) . "_" . $type['name'] . ".json";
-        $url = $type['path'] . "?" . $kind . "=" . rawurlencode($cName);
-        $ep = array( 'area' => SCMPrismaAccessExport::AREA_CONFIG, 'order' => $type['order'], 'name' => $type['name'], 'group' => $type['group'],
+        $file = SCMPrismaAccessExport::AREA_CONFIG . "/" . $kind . "s/" . SCMPrismaAccessExport::slug($cName) . "/" . sprintf("%02d", $type['order']) . "_" . $epName . ".json";
+        $url = $type['path'] . "?" . $kind . "=" . rawurlencode($cName) . ( $epName !== $type['name'] ? "&position=" . substr($epName, strlen($type['name']) + 1) : "" );
+        $ep = array( 'area' => SCMPrismaAccessExport::AREA_CONFIG, 'order' => $type['order'], 'name' => $epName, 'group' => $type['group'],
             'container' => $cName, 'container_kind' => $kind, 'category' => 'dependency', 'scope' => $kind, 'optional' => true,
             'url' => $url, 'depends_on' => array(), 'fetched_as' => 'selected', 'file' => $file, 'http_code' => 200,
             'fetched_at' => date('c'), 'status' => 'ok', 'count' => 0, 'created_by' => 'scm_pa_change.php' );
         $manifest['endpoints'][] = $ep;
         if( !is_dir( dirname($this->sollDir . "/" . $file) ) )
             mkdir( dirname($this->sollDir . "/" . $file), 0700, TRUE );
-        $this->writeJson( $this->sollDir . "/" . $file, array( 'endpoint' => $type['name'], 'area' => SCMPrismaAccessExport::AREA_CONFIG,
+        $this->writeJson( $this->sollDir . "/" . $file, array( 'endpoint' => $epName, 'area' => SCMPrismaAccessExport::AREA_CONFIG,
             'url' => $url, 'tsg_id' => $this->tsg, 'fetched_at' => date('c'), 'http_code' => 200, 'status' => 'ok', 'error' => null,
             'container' => $cName, 'container_kind' => $kind, 'created_by' => 'scm_pa_change.php', 'data' => array() ) );
         return $file;
+    }
+
+    /** endpoint (file) name of an object entry: rule bases of folders are split in pre / post */
+    public function endpointName( $e )
+    {
+        $t = $this->types[$e['type']];
+        if( empty($t['position']) || isset($e['snippet']) )
+            return $t['name'];
+        return $t['name'] . "-" . ( isset($e['position']) ? $e['position'] : 'pre' );
     }
 
     /** fields set / appended / removed on an object */
     public static function applyEntry( $obj, $e )
     {
         foreach( self::fields($e) as $k => $v )
-            if( !in_array($k, array('type', 'folder', 'snippet'), TRUE) )
+            if( !in_array($k, array('type', 'folder', 'snippet', 'position'), TRUE) )
                 $obj[$k] = $v;
         if( isset($e['_append']) )
             foreach( $e['_append'] as $f => $values )
@@ -584,10 +639,17 @@ class SCMPrismaAccessChange
         $diffs = array();
         foreach( self::fields($entry) as $k => $v )
         {
-            if( in_array($k, array('folder', 'snippet'), TRUE) )
+            if( in_array($k, array('folder', 'snippet', 'position'), TRUE) )
                 continue;
             if( !array_key_exists($k, $obj) )
                 $diffs[] = $k . " missing";
+            elseif( $k === 'snippets' && is_array($v) && is_array($obj[$k]) )
+            {
+                //attached snippets: same order (the first wins)
+                $live = array_values( array_filter( $obj[$k], function($x) use( $v ){ return in_array($x, $v, TRUE); } ) );
+                if( $live !== array_values($v) )
+                    $diffs[] = "snippets = " . json_encode($obj[$k]) . " (expected order " . json_encode($v) . ")";
+            }
             elseif( self::norm($v) !== self::norm($obj[$k]) )
                 $diffs[] = $k . " = " . json_encode($obj[$k], JSON_UNESCAPED_SLASHES) . " (expected " . json_encode($v, JSON_UNESCAPED_SLASHES) . ")";
         }
@@ -660,6 +722,19 @@ class SCMPrismaAccessChange
             $folder = ( $i !== null && isset($folders[$i]['parent']) ) ? $folders[$i]['parent'] : null;
         }
         return false;
+    }
+
+    /** levels of $folder below $root ($root = 0) */
+    public static function depthBelow( $folders, $folder, $root )
+    {
+        $depth = 0;
+        for( $guard = 0; $folder !== null && $folder !== $root && $guard < 50; $guard++ )
+        {
+            $i = self::indexByName( $folders, $folder );
+            $folder = ( $i !== null && isset($folders[$i]['parent']) ) ? $folders[$i]['parent'] : null;
+            $depth++;
+        }
+        return $depth;
     }
 
     public static function indexByName( $list, $name )

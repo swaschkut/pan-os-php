@@ -1,0 +1,17 @@
+{
+  "description": "lab test 5: one address and two pre rules plus one post rule in pan-os-php-sub (rule order is verified)",
+  "addresses": [
+    { "folder": "pan-os-php-sub", "name": "h-10.2.2.2", "ip_netmask": "10.2.2.2/32" }
+  ],
+  "security-rules": [
+    { "folder": "pan-os-php-sub", "position": "pre", "name": "pan-os-php-rule-1",
+      "from": ["any"], "to": ["any"], "source": ["h-10.2.2.2"], "destination": ["any"], "source_user": ["any"],
+      "category": ["any"], "application": ["ssl"], "service": ["application-default"], "action": "allow" },
+    { "folder": "pan-os-php-sub", "position": "pre", "name": "pan-os-php-rule-2",
+      "from": ["any"], "to": ["any"], "source": ["h-10.2.2.2"], "destination": ["any"], "source_user": ["any"],
+      "category": ["any"], "application": ["any"], "service": ["any"], "action": "deny" },
+    { "folder": "pan-os-php-sub", "position": "post", "name": "pan-os-php-cleanup",
+      "from": ["any"], "to": ["any"], "source": ["any"], "destination": ["any"], "source_user": ["any"],
+      "category": ["any"], "application": ["any"], "service": ["any"], "action": "deny", "log_end": true }
+  ]
+}

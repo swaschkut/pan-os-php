@@ -793,8 +793,9 @@ class SCMPrismaAccessSync
         $exp = new SCMPrismaAccessExport( null, "", "/tmp" );
         foreach( $exp->getAllEndpoints() as $e )
             $endpointPos[$e['area'] . "/" . $e['name']] = $e['order'];
+        //snippets before folders: a new folder can be created with new snippets attached
+        $endpointPos['config/snippets'] = -0.5;
         $endpointPos['config/folders'] = 0;
-        $endpointPos['config/snippets'] = 0.5;
         foreach( SCMPrismaAccessExport::getConfigTypes() as $t )
             $endpointPos['config/' . $t['name']] = $t['order'];
 

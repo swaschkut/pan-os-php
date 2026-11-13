@@ -38,6 +38,7 @@ UTIL:
 * scm export area=config | optimisation | scm export memory optimisation | scm export application
 * scm export | explicit proxy via internal API - same as WebUI
 * scm-api:// | improvement if SCM API is not having info for VP / WFAV
+* scm extend for panorama NGFW import
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile
