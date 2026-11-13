@@ -366,24 +366,49 @@ Captured from the UI (HAR, lab tenant): the UI itself saved two changes while re
 
 ## 7. Next development steps
 
-| step | what | depends on |
-|---|---|---|
-| 1 | fixes from the verification (section 4) | live run |
-| 2a | `scm_pa_verify.php`: verify pan-os-php's SCM loading against the raw export – input: export directory + XML written by `pan-os-php in=scm-api://<TSG> out=…`; per container and type: count, names, selected fields; report: types pan-os-php does not load, missing / extra objects, field differences, wrong owner (folder / snippet) | export format verified (4.8) |
-| 2 | ✅ endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` – offline diff per area / container / endpoint, hierarchy diff, name map, `diff.json` / `DIFF_REPORT.md` / `diff-summary.csv` ([README_pa_compare.md](README_pa_compare.md)) | done – verify with 4.9 |
-| 3 | ✅ `scm_pa_sync.php plan`: `diff.json` + direction + mode (`additive` / `mirror` + `allow-delete` / `merge`) → `plan.json` / `PLAN_REPORT.md`; dependency closure, delete check, `backup_SC` follow-up, secrets as placeholders ([README_pa_sync.md](README_pa_sync.md)) | done – verify with 4.10 |
-| 4 | ✅ `scm_pa_sync.php apply`: dry-run by default, TSG check + confirmation, hash check, secrets from the lists, create / update / delete / move, ids of created objects, `push` + job polling, apply log | done – verify with 4.10 |
-| 4a | migration into a **new** tenant = export the new (empty) tenant, compare with the source, plan `additive`, apply – no separate import tool | steps 3 + 4 |
-| 5 | Prisma Browser sync (rule / section API, draft publish) | 4.10 |
-| 6 | ✅ Explicit Proxy area `explicit-proxy` (internal UI API, export / compare) – verify on a live tenant; sync of EP not planned | section 6 |
+Status 2026-11-13 – done and verified on a live tenant: export of all areas (infra, config in leaf mode incl. parallel
+queries, RN, SC, MU, Explicit Proxy, Prisma Browser, IAM), leaf vs. all compare without differences, internal UI API
+for Explicit Proxy / GlobalProtect portal / Clientless VPN / Prisma Access Agent, pan-os-php loader with complete
+vulnerability / WildFire-AV profiles from the internal API. **Not yet tested on a live tenant: everything that
+writes** (sync apply, push).
+
+### 7.1 Next steps (in this order)
+
+| # | step | what exactly | input from you | result |
+|---|---|---|---|---|
+| 1 | **Sync – first write test** | lab tenant: export a test folder (`container=<test folder> config-types=addresses,tags,security-rules`), second export with a few changes (1 create, 1 update, 1 delete, 1 rule moved), `scm_pa_compare.php`, `scm_pa_sync.php plan mode=mirror allow-delete`, `apply` dry-run, `apply execute` **without** push, re-export + compare (expect "No differences"), then `push` | lab test folder; `apply-log-*.json` + `PLAN_REPORT.md` (no secrets inside) | request formats of POST / PUT / DELETE / `:move` / `candidate:push` confirmed or fixed (4.10) |
+| 2 | **Sync – Prisma Access areas** | same as 1 for `remote-networks` (IKE / IPsec crypto, gateway with PSK from `psk-list.csv`, tunnel, RN) and `service-connections` incl. `backup_SC` follow-up | lab RN / SC that may be created / deleted | PSK handling via secret lists confirmed |
+| 3 | **Migration run** (4a) | export an empty target tenant, compare with the source, plan `additive`, apply in import order; checklist items as manual work list | target tenant (lab 2 or customer) | end-to-end migration procedure for the consultant guide |
+| 4 | **Config references in the metadata** | `refs` for rules → addresses / groups / services / profiles / tags / zones, so that the sync plan adds missing objects as dependencies and blocks deletes of referenced objects | – (offline) | sync safe for single-rule transfers |
+| 5 | **Export: complete security profiles** | in `area=config` add the sections missing in the public API (`decoder`, `mlav-engine-filebased-enabled`, `mica-engine-*`, rule action `default`) from the internal API, matched by `id` = `@uuid` (same mechanism as the loader) | – | export / compare of VP / WF-AV complete |
+| 6 | **`scm_pa_verify.php`** | compare pan-os-php's SCM loading (`in=scm-api://… out=…`) with the raw export: count / names / fields / owner per container and type | one export + XML of the same tenant | list of what pan-os-php does not load correctly |
+| 7 | **Classic GlobalProtect agent** | verify `tunnel-profiles.split_tunneling`, more `gp_app_config` options on a tenant with the GlobalProtect agent | customer / other tenant with GP agent | 6.2 complete |
+| 8 | **Region of the internal UI API** | find the `ui-api-host` per region automatically (e.g. from a tenant / region API) instead of `ui-api-host=` / `shadow-scmuiapihost=` | a non-EU tenant (HAR or probe) | no manual host for non-EU tenants |
+| 9 | Prisma Browser sync | rule / section API, draft publish | 1 done | – |
+| 10 | Certificates checklist | mark the certificates Prisma Access creates on a new tenant (cookie CA / cert, forward trust / untrust …) as "created automatically" | list of auto-created certificates | shorter manual list |
+
+Rules for all steps: patches on `beta_scm-extension` (no push from this side), documentation in English, secrets /
+tokens never in shared files (HAR: "Export HAR (sanitized)", no `debugapi` logs, no secret lists).
+
+### 7.2 Done (history)
+
+| step | what |
+|---|---|
+| ✅ | endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` ([README_pa_compare.md](README_pa_compare.md)) |
+| ✅ | `scm_pa_sync.php plan` / `apply` ([README_pa_sync.md](README_pa_sync.md)) – offline / mock only |
+| ✅ | config export: leaf mode, parallel queries, chunks, heavy types, owner aliases, snippet rule bases, PA deployment folders |
+| ✅ | area `explicit-proxy`, GlobalProtect portal / Clientless VPN / trusted zones, Prisma Access Agent (internal UI API) |
+| ✅ | pan-os-php loader: vulnerability / WildFire-AV profiles from the internal API ([SECURITY_PROFILES_public_vs_internal_api.md](SECURITY_PROFILES_public_vs_internal_api.md)) |
 
 ## 8. Known limitations
 
 - Private keys of certificates are not exported (manual import on the target tenant).
 - Service account secrets cannot be read (new service accounts on the target tenant).
 - IAM is documentation / compare only.
-- Not exported: Explicit Proxy, ZTNA connector, Cloud Identity Engine, Strata Logging Service, license allocation,
-  Prisma Browser assets (logos).
+- Not exported: ZTNA connector, Cloud Identity Engine, Strata Logging Service, license allocation, Prisma Browser
+  assets (logos).
+- Internal UI API (Explicit Proxy, GP portal / Clientless VPN, Prisma Access Agent, security profile sections): may
+  change without notice, region specific host, export / compare only – no sync.
 - `config` references in the endpoint metadata are partial (groups, profile groups) – dependencies of rules on
-  objects are not resolved by the sync plan yet.
+  objects are not resolved by the sync plan yet (7.1 step 4).
 - Sync of Prisma Browser is blocked in the plan; IAM is never written.
