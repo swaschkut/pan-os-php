@@ -359,6 +359,11 @@ snippet, `container=` filter, device folders, predefined snippets) are counted p
 and of the snippets attached on the way, so per type only the deepest eligible folders are queried; their answers
 are split by owner. Device folders and snippets that are not attached to a queried folder are queried directly.
 A type that answers 401 / 403 / 404 is not queried again for the same kind of container (folder / device / snippet).
+Rule bases: folders have a `pre` and a `post` rule base (files `<nn>_<type>-pre.json` / `-post.json`), snippets have
+one rule base, queried without `position` (file `<nn>_<type>.json`).
+Exceptions found on a live tenant: rule bases (`policies` group) – the folder answer does **not** contain the rules
+of attached snippets, so snippets are queried directly; `variables` (`CONFIG_ALL_MODE_TYPES`) – an override in a
+child folder hides the parent value, so every folder is queried.
 `all`: every container is queried (the previous behaviour – slower; both modes must give the same files, see
 [NEXT_STEPS](NEXT_STEPS_pa_export.md) §4.8). An explicit `container=` filter always queries exactly those containers.
 Every file lists the queries it was built from (`source_queries`); `manifest.json` → `config.mode`, `api_queries`,

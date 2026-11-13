@@ -326,7 +326,7 @@ class SCMPrismaAccessSync
         $meta = $ctx['meta'];
         $area = $ctx['entry']['area'];
         $obj = $this->mapper->translateObject( $srcObj, $meta );
-        unset( $obj['id'] );
+        unset( $obj['id'], $obj['overridden'], $obj['override_id'], $obj['override_loc'], $obj['override_type'] );
         foreach( $meta['ignore'] as $path )
             $obj = self::unsetPath( $obj, explode(".", $path) );
 
@@ -1068,6 +1068,9 @@ class SCMPrismaAccessSync
                         continue;
                     $moveBody = $prev === null ? array( 'destination' => 'top', 'rulebase' => $op['position'] )
                         : array( 'destination' => 'after', 'rulebase' => $op['position'], 'destination_rule' => $prev );
+                    //snippet rule base: no pre / post
+                    if( $op['position'] === null )
+                        unset( $moveBody['rulebase'] );
                     $requests[] = array( 'POST', $base . "/" . rawurlencode($rid) . ":move", $moveBody );
                     $prev = $rid;
                 }

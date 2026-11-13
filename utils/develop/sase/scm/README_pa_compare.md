@@ -22,7 +22,7 @@ php utils/develop/sase/scm/scm_pa_compare.php left=export/1111/20261113-090000 r
 | `out=` | result directory; default `<outdir>/compare-<leftTSG>-vs-<rightTSG>-<timestamp>` next to the TSG folders |
 | `area=` | only these areas (`infra`, `config`, `remote-networks`, `service-connections`, `mobile-users`, `prisma-browser`, `iam`) |
 | `container=` | config area: only these folders / snippets |
-| `config-types=` | config area: only these types, e.g. `addresses,security-rules` (`security-rules` covers `-pre` and `-post`) |
+| `config-types=` | config area: only these types, e.g. `addresses,security-rules` (`security-rules` covers the folder `-pre` / `-post` and the snippet rule base) |
 | `ignore-fields=` | additional dotted paths ignored for every endpoint, e.g. `description` |
 | `name-map=` | CSV with entries that are named differently in right (see below) |
 | `max-items=` | max. entries / changes per endpoint in `DIFF_REPORT.md` (default 50; `diff.json` is always complete) |
@@ -72,7 +72,8 @@ as `only_left` in one container and `only_right` in the other.
 
 Before comparing, both sides are normalised:
 
-1. removed everywhere: `id`, `folder`, `snippet` (`COMPARE_IGNORE_ALWAYS`)
+1. removed everywhere: `id`, `folder`, `snippet`, `device` and the view dependent override information
+   `overridden`, `override_id`, `override_loc`, `override_type` (`COMPARE_IGNORE_ALWAYS`)
 2. removed per endpoint: `ignore` paths of the endpoint metadata (derived / read-only, e.g. remote network `details`,
    `loopback_ips`, `api_key`) and `ignore-fields=`
 3. object keys sorted

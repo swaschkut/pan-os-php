@@ -1447,7 +1447,9 @@ class SCMPrismaAccessExport
         'ordered' => false, 'refs' => array(), 'write' => 'collection', 'compare' => true, 'keep_owner' => false );
 
     /** fields removed everywhere before compare */
-    const COMPARE_IGNORE_ALWAYS = array( 'id', 'folder', 'snippet', 'device' );
+    const COMPARE_IGNORE_ALWAYS = array( 'id', 'folder', 'snippet', 'device',
+        //override information depends on the queried folder (view), not on the object
+        'overridden', 'override_id', 'override_loc', 'override_type' );
 
     const ENDPOINT_META = array(
         'infra/shared-infrastructure-settings' => array( 'singleton' => true, 'write' => 'singleton',
@@ -1654,6 +1656,9 @@ class SCMPrismaAccessExport
      * config-heavy-types or named in config-types=
      */
     const CONFIG_HEAVY_TYPES = array( 'applications' );
+
+    /** config types queried for every container also in leaf mode (per folder overrides hide the parent value) */
+    const CONFIG_ALL_MODE_TYPES = array( 'variables' );
 
     /** owners of predefined content - not in the folder / snippet list, never exported (counted only) */
     const PREDEFINED_OWNERS = array( 'snippet:predefined', 'folder:predefined' );
@@ -1941,19 +1946,33 @@ class SCMPrismaAccessExport
             if( count($eligible) == 0 )
                 continue;
 
-            $queries = $mode == 'all' ? self::queryPlanAll($eligible) : self::queryPlanLeaf($eligible, $folderInfo);
+            //leaf plan per type: variables are overridden per folder (an override hides the parent value in the
+            //child answer) -> every folder; rule bases of attached snippets are not part of the folder answer
+            //(live tenant) -> snippets queried directly
+            $typeMode = ( $mode == 'leaf' && in_array($type['name'], self::CONFIG_ALL_MODE_TYPES, TRUE) ) ? 'all' : $mode;
+            $queries = $typeMode == 'all' ? self::queryPlanAll($eligible)
+                : self::queryPlanLeaf( $eligible, $folderInfo, empty($type['position']) && $type['group'] !== 'policies' );
             PH::print_stdout( " - [config " . sprintf("%03d", $type['order']) . "] " . $type['name'] . " ... " . count($queries) . " quer" . ( count($queries) == 1 ? "y" : "ies" ) . " for " . count($eligible) . " container(s)" );
 
             $typeStart = microtime(TRUE);
             $typeObjects = 0;
-            foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
+            $positionIds = array();      // queried container => pre|post => sorted ids
+            $positionHasField = array(); // queried container => objects carry a position field
+            foreach( self::rulePositions($type) as $position )
             {
                 $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
+                //rule bases: folders have pre / post, snippets one rule base (queried without position)
+                $posQueries = array();
+                foreach( $queries as $i => $q )
+                    if( in_array( $position, self::rulePositions($type, $q['container']['kind']), TRUE ) )
+                        $posQueries[$i] = $q;
+                if( count($posQueries) == 0 )
+                    continue;
 
                 //URLs of all queries; fetched in parallel: first one query per container class (to learn
                 //whether the type is available for that class), then all others
                 $jobs = array();
-                foreach( $queries as $i => $q )
+                foreach( $posQueries as $i => $q )
                 {
                     $c = $q['container'];
                     $class = $c['kind'] == 'snippet' ? 'snippet' : ( $c['device'] ? 'device' : 'folder' );
@@ -1981,7 +2000,7 @@ class SCMPrismaAccessExport
                 //(every leaf answer repeats all inherited objects - hundreds of thousands per type)
                 $chunkSize = max( 4, $this->configParallel * 2 );
 
-                foreach( $queries as $i => $q )
+                foreach( $posQueries as $i => $q )
                 {
                     $c = $q['container'];
                     $qkey = $c['kind'] . ":" . $c['name'];
@@ -2050,8 +2069,26 @@ class SCMPrismaAccessExport
 
                     $typeObjects += count($result['data']);
                     $notExportedQuery = array();
+                    //rule bases: answers that ignore "position" - use the object field if there is one, otherwise
+                    //remember the ids to detect identical pre / post answers
+                    if( $position !== null )
+                    {
+                        $ids = array();
+                        foreach( $result['data'] as $o )
+                            $ids[] = isset($o['id']) ? (string)$o['id'] : md5(json_encode($o));
+                        sort($ids);
+                        $positionIds[$qkey][$position] = $ids;
+                    }
                     foreach( $result['data'] as $obj )
                     {
+                        if( $position !== null && isset($obj['position']) && is_string($obj['position'])
+                            && in_array(strtolower($obj['position']), array('pre', 'post'), TRUE) && strtolower($obj['position']) !== $position )
+                        {
+                            $positionHasField[$qkey] = true;
+                            continue;
+                        }
+                        if( $position !== null && isset($obj['position']) )
+                            $positionHasField[$qkey] = true;
                         //owner: snippet, folder or device (a device is a folder of type cloud / on-prem)
                         if( isset($obj['snippet']) && $obj['snippet'] !== "" )
                             $ownerKey = "snippet:" . $obj['snippet'];
@@ -2105,12 +2142,18 @@ class SCMPrismaAccessExport
                 }
             }
 
+            foreach( $positionIds as $qk => $byPos )
+                if( isset($byPos['pre'], $byPos['post']) && count($byPos['pre']) > 0 && $byPos['pre'] === $byPos['post'] && !isset($positionHasField[$qk]) )
+                {
+                    $this->configStats['position_identical'][$type['name']][] = $qk;
+                    $this->warnings[] = "config " . $type['name'] . ": answers for pre and post of " . $qk . " are identical (" . count($byPos['pre']) . " rules) - the API seems to ignore 'position' here, both files contain the same rules";
+                }
             PH::print_stdout( "     " . $typeObjects . " objects received, " . round( microtime(TRUE) - $typeStart, 1 ) . "s, peak memory " . round( memory_get_peak_usage(TRUE) / 1048576 ) . " MB" );
 
             //one file per exported container and type
             foreach( $eligible as $ck => $c )
             {
-                foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
+                foreach( self::rulePositions($type, $c['kind']) as $position )
                 {
                     $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
                     $info = isset($collected[$ck][$name]) ? $collected[$ck][$name] : array();
@@ -2217,6 +2260,21 @@ class SCMPrismaAccessExport
     /**
      * every container is queried and covers itself
      */
+    /**
+     * rule base positions of a config type: folders pre / post, snippets have one rule base (null = no position);
+     * without container kind: every position used by any container
+     */
+    public static function rulePositions( $type, $kind = null )
+    {
+        if( empty($type['position']) )
+            return array( null );
+        if( $kind === 'snippet' )
+            return array( null );
+        if( $kind === null )
+            return array( 'pre', 'post', null );
+        return array( 'pre', 'post' );
+    }
+
     public static function queryPlanAll( $eligible )
     {
         $plan = array();
@@ -2230,7 +2288,7 @@ class SCMPrismaAccessExport
      * query only the deepest eligible (non device) folders - they cover their ancestors and the snippets attached
      * on the way; device folders and snippets that are not covered are queried as well
      */
-    public static function queryPlanLeaf( $eligible, $folderInfo )
+    public static function queryPlanLeaf( $eligible, $folderInfo, $coverSnippets = true )
     {
         $folders = array();
         $devices = array();
@@ -2266,6 +2324,8 @@ class SCMPrismaAccessExport
             foreach( $chain as $level )
             {
                 $lk = $level['kind'] . ":" . $level['name'];
+                if( $level['kind'] == 'snippet' && !$coverSnippets )
+                    continue;
                 if( isset($eligible[$lk]) && !( $level['kind'] == 'folder' && isset($devices[$lk]) ) )
                 {
                     $covers[] = $lk;
@@ -2346,6 +2406,7 @@ class SCMPrismaAccessExport
             'owned_objects_by_container' => $this->configStats['containers'],
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
+            'position_identical' => isset($this->configStats['position_identical']) ? $this->configStats['position_identical'] : array(),
             'owner_aliases' => self::countAliases( isset($this->configStats['owner_aliases']) ? $this->configStats['owner_aliases'] : array() ),
             'owners_not_in_hierarchy' => isset($this->configStats['owners_not_in_hierarchy']) ? $this->configStats['owners_not_in_hierarchy'] : array(),
             'types_skipped_heavy' => isset($this->configStats['skipped_heavy']) ? $this->configStats['skipped_heavy'] : array(),
@@ -2385,6 +2446,8 @@ class SCMPrismaAccessExport
             {
                 if( !empty($t['position']) )
                 {
+                    //snippet rule base (no position), then folder pre / post
+                    $config[] = 'config/' . $t['name'];
                     $config[] = 'config/' . $t['name'] . '-pre';
                     $config[] = 'config/' . $t['name'] . '-post';
                 }
