@@ -375,7 +375,9 @@ peak memory per type). Objects of owners that are not exported (predefined, filt
 (`owners_not_exported`: per owner the maximum of one answer – every answer that includes an owner contains all of its
 objects). Objects whose owner is not in the folder / snippet list at all (seen: `folder:Shared`) are kept in
 `config/owners-not-in-hierarchy.json` (`manifest.json` → `config.owners_not_in_hierarchy`, checklist item); they are
-not part of compare / sync.
+not part of compare / sync. `_seen_in` per owner lists the queried containers whose answer contained them – this shows
+where the owner sits in the inheritance (only leaves below `Prisma Access` → a Prisma Access level, leaves below
+other folders as well → `All` level).
 Types in `CONFIG_HEAVY_TYPES` (`applications`) are skipped unless requested
 (`manifest.json` → `config.types_skipped_heavy`, checklist item "Custom applications not exported").
 

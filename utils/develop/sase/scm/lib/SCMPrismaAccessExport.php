@@ -1908,6 +1908,7 @@ class SCMPrismaAccessExport
         foreach( $hierarchy['snippets'] as $sn )
             $knownOwners['snippet:' . $sn['name']] = true;
         $orphans = array();          // owner => type => id => object (owner not in the folder / snippet list)
+        $orphanSeen = array();       // owner => queried container => true (where the objects are visible)
         $notExportedIds = array();   // owner => type => objects (max. per query: every query that includes the owner returns all its objects)
         $unavailable = array();    // type name|class => first container
         $deviceParam = array();    // device container => 'folder' | 'device'
@@ -2059,6 +2060,7 @@ class SCMPrismaAccessExport
                         {
                             //owner unknown (e.g. folder "Shared"): keep the objects, they would be lost otherwise
                             $orphans[$ownerKey][$name][$id] = $obj;
+                            $orphanSeen[$ownerKey][$qkey] = true;
                             continue;
                         }
                         if( !isset($exported[$ownerKey]) )
@@ -2123,11 +2125,18 @@ class SCMPrismaAccessExport
         {
             $out = array();
             foreach( $orphans as $owner => $byType )
+            {
+                //queried containers whose answer contained objects of this owner: shows where the owner sits
+                //in the inheritance (e.g. only below "Prisma Access" or below "All")
+                $seen = array_keys($orphanSeen[$owner]);
+                sort($seen);
+                $out[$owner]['_seen_in'] = $seen;
                 foreach( $byType as $t => $objs )
                 {
                     $out[$owner][$t] = array_values($objs);
                     $this->configStats['owners_not_in_hierarchy'][$owner][$t] = count($objs);
                 }
+            }
             $this->writeJson( $a . '/owners-not-in-hierarchy.json', $out );
         }
         foreach( $notExportedIds as $owner => $byType )
