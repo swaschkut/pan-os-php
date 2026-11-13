@@ -87,6 +87,7 @@ Note: `debugapi` prints the bearer token and full API answers – do not share t
 | `locations`, `mobile-agent/locations` return a top-level array → counted as 1 entry | same fix |
 | `area=config` too slow on a large tenant | `config-mode=leaf` (default) + skip of unavailable types |
 | `config-scope=objects,policies` leaf: 101 queries for 134 containers per type, `tags` very slow (each answer repeats all inherited / predefined objects, 200 per page, one request after the other) | patch 14: parallel queries and pages (`config-parallel`, default 8), page size 1000 (`config-page-size`), retry on 429 / 5xx, objects / seconds per type on the console, `config.http_requests` / `seconds` in the manifest; pagination continues after the entries really received (server page cap) |
+| run with patch 14: `variables` 2,891 objects in 2.6 s, `tags` 506,839 objects (101 leaf answers, mostly inherited) in 49.5 s | patch 15: answers are fetched in chunks (2 × `config-parallel`) while processing, so only a few answers are in memory at a time; peak memory per type on the console |
 
 Re-run `area=iam` after patch 12: 0 errors, roles 35, permission sets 643, service accounts 4, access policies 122,
 permissions 6414 – list detection confirmed. Follow-ups (patch 13):

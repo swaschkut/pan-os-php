@@ -1917,13 +1917,23 @@ class SCMPrismaAccessExport
                 foreach( $jobs as $i => $j )
                     if( !isset($prefetched[$i]) && !isset($unavailable[$type['name'] . "|" . $j['class']]) )
                         $restUrls[$i] = $j['url'];
-                $prefetched = $prefetched + $this->fetchConfigQueries( $restUrls );
+                //fetched in chunks while processing: only a few answers in memory at a time
+                //(every leaf answer repeats all inherited objects - hundreds of thousands per type)
+                $chunkSize = max( 4, $this->configParallel * 2 );
 
                 foreach( $queries as $i => $q )
                 {
                     $c = $q['container'];
                     $qkey = $c['kind'] . ":" . $c['name'];
                     $class = $jobs[$i]['class'];
+
+                    if( !isset($prefetched[$i]) && isset($restUrls[$i]) )
+                    {
+                        $chunk = array_slice( $restUrls, 0, $chunkSize, TRUE );
+                        foreach( $chunk as $k => $u )
+                            unset( $restUrls[$k] );
+                        $prefetched = $prefetched + $this->fetchConfigQueries( $chunk );
+                    }
 
                     //type unavailable for this class of container: no further calls
                     if( !isset($prefetched[$i]) )
@@ -2017,7 +2027,7 @@ class SCMPrismaAccessExport
                 }
             }
 
-            PH::print_stdout( "     " . $typeObjects . " objects received, " . round( microtime(TRUE) - $typeStart, 1 ) . "s" );
+            PH::print_stdout( "     " . $typeObjects . " objects received, " . round( microtime(TRUE) - $typeStart, 1 ) . "s, peak memory " . round( memory_get_peak_usage(TRUE) / 1048576 ) . " MB" );
 
             //one file per exported container and type
             foreach( $eligible as $ck => $c )
