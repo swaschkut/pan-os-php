@@ -22,9 +22,14 @@ The public API returns only a subset. Missing in the public API:
 | WildFire / AV – **Inline Cloud Analysis** rules | `mica-engine-wildfire-rules.entry[]`: `@name`, `action`, `direction`, `application.member[]`, `file-type.member[]` | **missing** |
 | WildFire / AV – Inline Cloud Analysis on/off | `cloud-inline-analysis`: `yes` / `no` | `cloud_inline_analysis`: `true` / `false` |
 | WildFire / AV – rules | `rules.entry[]`: `analysis`, `direction`, `application.member[]`, `file-type.member[]` | `rules[]`: same fields (snake_case) |
-| Vulnerability – **Inline Cloud Analysis** models | `mica-engine-vulnerability-enabled.entry[]`: `@name` (e.g. `SQL Injection`, `Command Injection`), `inline-policy-action` | **missing** (to confirm with a custom profile) |
-| Vulnerability – Inline Cloud Analysis on/off | `cloud-inline-analysis` | **missing** (to confirm) |
-| Vulnerability – rules | `rules.entry[]`: `severity.member[]`, `cve.member[]`, `vendor-id.member[]`, `category`, `host`, `action`, `packet-capture`, `threat-name` | `rules[]`: `severity`, `cve`, `vendor_id`, `category`, `host` (+ `action`, `packet_capture`, `threat_name` – to confirm) |
+| Vulnerability – **Inline Cloud Analysis** models | `mica-engine-vulnerability-enabled.entry[]`: `@name` (e.g. `SQL Injection`, `Command Injection`), `inline-policy-action` | **missing** |
+| Vulnerability – Inline Cloud Analysis on/off | `cloud-inline-analysis`: `yes` / `no` | `cloud_inline_analysis`: `true` / `false` |
+| Vulnerability – rules | `rules.entry[]`: `severity.member[]`, `cve.member[]`, `vendor-id.member[]`, `category`, `host`, `action`, `packet-capture`, `threat-name` | `rules[]`: same fields (snake_case) |
+| Vulnerability – rule action **default** | `"action": { "default": [] }` | **`"action": []`** – the action name is lost (empty list instead of `{"default": …}`); `reset-both` etc. are returned as `{"reset_both": []}` |
+
+Example (vulnerability profile `best-practice-1`, copy of `best-practice`): public API → `cloud_inline_analysis`,
+10 rules with `action`, `packet_capture`, `threat_name`; rules with action `default` come as `"action": []`;
+`mica-engine-vulnerability-enabled` (SQL Injection / Command Injection → `alert`) missing.
 
 Example (custom profile `WF_AV_Sven`): public API → `rules`, `cloud_inline_analysis: true`, `description`;
 internal API → additionally 7 `decoder` entries (`alert`, `smb` `reset-both`), 7 `mlav-engine-filebased-enabled`
@@ -47,7 +52,7 @@ PAN-OS XML structure as JSON – directly convertible to the XML that pan-os-php
 | `"@name": "x"` | attribute `name="x"` |
 | `"entry": [ {...} ]` | `<entry name="…">…</entry>` per element |
 | `"member": [ "a", "b" ]` | `<member>a</member><member>b</member>` |
-| `"action": { "reset-both": {} }` | `<action><reset-both/></action>` |
+| `"action": { "reset-both": {} }` or `{ "reset-both": [] }` | `<action><reset-both/></action>` (empty object and empty list both mean "empty element") |
 | `"cloud-inline-analysis": "yes"` | `<cloud-inline-analysis>yes</cloud-inline-analysis>` |
 | `@loc`, `@snippet-loc`, `@type`, `@uuid`, `@plugin-predefined` | owner / meta data – not part of the profile XML |
 
@@ -65,7 +70,5 @@ PAN-OS XML structure as JSON – directly convertible to the XML that pan-os-php
 
 ## Open
 
-- A custom vulnerability profile with Inline Cloud Analysis models and rule actions – confirm which fields the
-  public API returns.
 - Public API owner of `best-practice` (snippet name).
 - Write support of the public API for the missing sections (otherwise these sections are manual on the target tenant).
