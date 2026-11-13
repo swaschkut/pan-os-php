@@ -45,6 +45,9 @@ class SCMPrismaAccessChange
     /** directives in an entry - everything else is a field of the object */
     const DIRECTIVES = array( '_delete', '_append', '_remove', '_comment' );
 
+    /** folder / snippet fields only returned by the single GET, not by the list */
+    const DETAIL_FIELDS = array( 'description', 'labels' );
+
     public $connector;
     public $tsg;
     public $outdir;
@@ -231,7 +234,50 @@ class SCMPrismaAccessChange
         $e->exportEndpoints();
         $e->exportConfig();
         $e->writeManifest( PH::frameworkVersion() );
+        $this->addDetailFields( $dir );
         return $dir;
+    }
+
+    /**
+     * the folder / snippet list does not return description / labels (live 2026-11-13), the single GET does:
+     * add them for the folders / snippets of the request, so that compare, plan and verification see them
+     */
+    private function addDetailFields( $dir )
+    {
+        foreach( array( 'folders' => '01_folders.json', 'snippets' => '02_snippets.json' ) as $kind => $file )
+        {
+            if( count($this->request[$kind]) == 0 )
+                continue;
+            $path = $dir . "/config/" . $file;
+            $list = $this->readData( $path );
+            if( $list === null )
+                continue;
+            $changed = false;
+            foreach( $this->request[$kind] as $req )
+            {
+                $i = self::indexByName( $list, $req['name'] );
+                if( $i === null || !isset($list[$i]['id']) )
+                    continue;
+                $missing = array_diff( self::DETAIL_FIELDS, array_keys($list[$i]) );
+                if( count($missing) == 0 )
+                    continue;
+                $r = $this->connector->sendSCMAPIRequest( "GET", rtrim($this->connector->url_api, "/") . "/config/setup/v1/" . $kind . "/" . rawurlencode($list[$i]['id']), false, FALSE );
+                if( $r['errors'] !== null || !is_array($r['json']) )
+                {
+                    $this->warnings[] = $kind . " " . $req['name'] . ": single GET failed (HTTP " . $r['http_code'] . ") - " . implode(", ", $missing) . " not known";
+                    continue;
+                }
+                $obj = isset($r['json']['data'][0]) ? $r['json']['data'][0] : $r['json'];
+                foreach( $missing as $f )
+                    if( array_key_exists($f, $obj) )
+                    {
+                        $list[$i][$f] = $obj[$f];
+                        $changed = true;
+                    }
+            }
+            if( $changed )
+                $this->writeData( $path, $list );
+        }
     }
 
     /**

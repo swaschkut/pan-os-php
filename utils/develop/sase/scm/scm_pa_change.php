@@ -92,6 +92,8 @@ PH::print_stdout();
 PH::print_stdout( PH::boldText(" * [2/4] changes") );
 foreach( $change->changes as $c )
     PH::print_stdout( sprintf( "   %-9s %s", $c['action'], $c['label'] ) );
+foreach( $change->warnings as $w )
+    PH::print_stdout( "   ! " . $w );
 
 $ops = $change->plan['operations'];
 PH::print_stdout();

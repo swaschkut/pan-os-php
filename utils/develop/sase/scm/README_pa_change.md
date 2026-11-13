@@ -83,6 +83,10 @@ Example output (dry-run):
  * dry-run - nothing was sent. Same command with 'execute' to apply.
 ```
 
+The folder / snippet list of the public API does not return `description` / `labels` (live 2026-11-13; the UI shows
+them, the single `GET /config/setup/v1/folders/{id}` returns them): for the folders / snippets of the request these
+fields are read with the single GET, in the first export and in the verification export.
+
 `verify` reports `verified` per change, or `failed` with the field that differs. A newly created folder has no
 firewall – push is neither possible nor needed (`not_pushable`); the candidate configuration is stored anyway.
 
