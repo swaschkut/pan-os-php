@@ -89,6 +89,7 @@ Shortcuts for one area: `scm_rn_export.php`, `scm_sc_export.php`, `scm_mu_export
 | `remote-networks` | IKE / IPsec crypto profiles, IKE gateways, IPsec tunnels, QoS, bandwidth allocations, remote networks |
 | `service-connections` | the same chain for service connections, QoS, service connection groups, traffic steering |
 | `mobile-users` | certificates, server / authentication profiles, local users, GlobalProtect settings |
+| `explicit-proxy` | Mobile Users Explicit Proxy settings, auth, block settings, upstream proxies, forwarding profiles / PAC – via the internal UI API (`ui-api-host=` for non-EU tenants), documentation / compare only |
 | `prisma-browser` | user / device groups, applications, browser policies |
 | `iam` | roles, service accounts, access policies – documentation only |
 
@@ -126,7 +127,7 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> outdir=/data
 <TSG>/<timestamp>/
     manifest.json               what was exported, counts, errors, hints, checklist
     MIGRATION_CHECKLIST.md
-    infra/ config/ remote-networks/ service-connections/ mobile-users/ prisma-browser/ iam/
+    infra/ config/ remote-networks/ service-connections/ mobile-users/ explicit-proxy/ prisma-browser/ iam/
         NN_<endpoint>.json      raw API data, NN = import order inside the area
         ip-mapping.csv/.json    (RN, SC, MU)
         psk-list.csv …          (only with psk-list)

@@ -21,7 +21,7 @@
 // Mobile Users (GlobalProtect), Prisma Browser, IAM (documentation), config (folders / snippets, objects, security) + migration checklist
 // see utils/develop/sase/scm/README_pa_export.md
 //
-// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
+// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,explicit-proxy,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...] [debugapi]
 
 require_once("lib/pan_php_framework.php");
 require_once("utils/lib/UTIL.php");
@@ -50,6 +50,7 @@ $supportedArguments['config-parallel'] = Array('niceName' => 'config-parallel', 
 $supportedArguments['config-page-size'] = Array('niceName' => 'config-page-size', 'shortHelp' => 'config area: entries per API page (default 1000; the server may cap it)', 'argDesc' => 'N');
 $supportedArguments['config-heavy-types'] = Array('niceName' => 'config-heavy-types', 'shortHelp' => 'config area: also export types whose answers contain the whole predefined catalog per folder (applications) - very slow');
 $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-predefined-snippets', 'shortHelp' => 'config area: also export predefined snippets (large)');
+$supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'explicit-proxy area: internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ', see browser developer tools: requests to /api/config/v9.2/...)', 'argDesc' => '[host]');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod (api.prod.datapath.prismaaccess.com, default) | prod6 (api.prod6.datapath.prismaaccess.com)', 'argDesc' => 'prod|prod6');
 $supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'write the secret lists (chmod 600) with the decrypted current value and an empty *_new column for the import: psk-list.csv + bgp-secret-list.csv (remote-networks, service-connections), secret-list.csv (mobile-users)');
@@ -57,7 +58,7 @@ $supportedArguments['master-key'] = Array('niceName' => 'master-key', 'shortHelp
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 
-$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
+$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,explicit-proxy,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod|prod6] [psk-list] [master-key=...]\n".
     "php ".basename(__FILE__)." help          : more help messages\n";
 ##############
 
@@ -123,6 +124,8 @@ if( $export->configOptions['types'] !== null )
         if( !in_array($t, $known, TRUE) )
             derr( "config-types: unknown type '" . $t . "' - supported: " . implode(",", $known), null, FALSE );
 }
+if( isset(PH::$args['ui-api-host']) && PH::$args['ui-api-host'] !== "" )
+    $export->uiApiHost = preg_replace( '#^https?://#', '', rtrim(PH::$args['ui-api-host'], "/") );
 $dir = $export->prepareDirectory();
 
 PH::print_stdout();

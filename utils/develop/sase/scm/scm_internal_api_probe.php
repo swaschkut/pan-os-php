@@ -90,7 +90,6 @@ foreach( $probes as $label => $path )
         $body = curl_exec($ch);
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err = $body === false ? curl_error($ch) : null;
-        curl_close($ch);
 
         $info = "";
         $json = is_string($body) ? json_decode($body, TRUE) : null;

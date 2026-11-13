@@ -65,8 +65,14 @@ class SCMPrismaAccessExport
     const AREA_PB = 'prisma-browser';
     const AREA_IAM = 'iam';
     const AREA_CONFIG = 'config';
-    /** area order == import order (iam: documentation only) */
-    const AREAS = array( self::AREA_INFRA, self::AREA_CONFIG, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_PB, self::AREA_IAM );
+    const AREA_EP = 'explicit-proxy';
+    /** area order == import order (iam, explicit-proxy: documentation / compare only) */
+    const AREAS = array( self::AREA_INFRA, self::AREA_CONFIG, self::AREA_RN, self::AREA_SC, self::AREA_MU, self::AREA_EP, self::AREA_PB, self::AREA_IAM );
+
+    /** internal UI API host (region specific, see browser developer tools: requests to /api/config/v9.2/...) */
+    const UI_API_HOST_DEFAULT = 'paas-3.prod.eu.panorama.paloaltonetworks.com';
+    public $uiApiHost = self::UI_API_HOST_DEFAULT;
+    const EP_FOLDER = 'Mobile Users Explicit Proxy';
 
     /** config area options, set by the CLI: container / type filter, device folders, predefined snippets */
     public $configOptions = array( 'containers' => null, 'types' => null, 'scope' => null, 'devices' => false, 'predefined_snippets' => false, 'mode' => 'leaf' );
@@ -187,6 +193,9 @@ class SCMPrismaAccessExport
         $iam = self::AREA_IAM;
         $seb = $this->saseApiUrl() . "/seb-api/v1/";
         $iamUrl = $this->saseApiUrl() . "/iam/v1/";
+        $ep = self::AREA_EP;
+        $epF = rawurlencode( self::EP_FOLDER );
+        $ui = "https://" . $this->uiApiHost;
 
         return array(
             //Prisma Access infrastructure - tenant wide, mostly single objects
@@ -259,6 +268,24 @@ class SCMPrismaAccessExport
             array( 'area' => $iam, 'order' => 4, 'name' => 'service-accounts', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "service_accounts", 'depends_on' => array() ),
             array( 'area' => $iam, 'order' => 5, 'name' => 'access-policies', 'category' => 'documentation', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "access_policies", 'depends_on' => array('iam/roles', 'iam/custom-roles', 'iam/service-accounts') ),
             array( 'area' => $iam, 'order' => 90, 'name' => 'permissions', 'category' => 'context', 'scope' => 'tenant', 'optional' => true, 'url' => $iamUrl . "permissions", 'depends_on' => array() ),
+
+            //Mobile Users Explicit Proxy - no public API: internal UI API (accepts the service account token,
+            //may change without notice); documentation / compare only
+            array( 'area' => $ep, 'order' => 1, 'name' => 'ep-settings', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Plugins/CloudServices/MobileUsersExplicitProxy?type=cloud&folder=" . $epF, 'depends_on' => array('mobile-users/mobile-agent-infrastructure-settings') ),
+            array( 'area' => $ep, 'order' => 2, 'name' => 'ep-auth-settings', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Plugins/CloudServices/MobileUsersExplicitProxy/AuthSettings?type=cloud&folder=" . $epF, 'depends_on' => array('explicit-proxy/ep-settings') ),
+            array( 'area' => $ep, 'order' => 3, 'name' => 'ep-auth-ip-access', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Plugins/CloudServices/MobileUsersExplicitProxy/AuthIPAccess?type=cloud&folder=" . $epF, 'depends_on' => array('explicit-proxy/ep-settings') ),
+            array( 'area' => $ep, 'order' => 4, 'name' => 'ep-block-settings', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/configByPath?type=cloud&folder=" . $epF . "&prefix=plugins/cloud_services/mobile-users-explicit-proxy/block-settings", 'depends_on' => array('explicit-proxy/ep-settings') ),
+            array( 'area' => $ep, 'order' => 5, 'name' => 'ep-users', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/configByPath?type=cloud&folder=" . $epF . "&prefix=plugins/cloud_services&subPath=mobile-users-explicit-proxy/users", 'depends_on' => array() ),
+            array( 'area' => $ep, 'order' => 10, 'name' => 'proxy-server-profiles', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/policies/proxy-server-profile?pagination=false&folder=" . $epF, 'depends_on' => array() ),
+            array( 'area' => $ep, 'order' => 11, 'name' => 'upstream-proxy-rules', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/policies/upstream-proxy-policy-rule?pagination=false&folder=" . $epF, 'depends_on' => array('explicit-proxy/proxy-server-profiles') ),
+            //forwarding profiles (GlobalProtect proxy / PAC) live in the Mobile Users folder
+            array( 'area' => $ep, 'order' => 20, 'name' => 'forwarding-destinations', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/sase-forwarding-profiles/destinations?pagination=false&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $ep, 'order' => 21, 'name' => 'forwarding-proxies', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/sase-forwarding-profiles/regional-and-custom-proxies?pagination=false&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $ep, 'order' => 22, 'name' => 'forwarding-user-locations', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/sase-forwarding-profiles/user-locations?pagination=false&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $ep, 'order' => 23, 'name' => 'forwarding-source-applications', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/sase-forwarding-profiles/source-applications?pagination=false&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $ep, 'order' => 24, 'name' => 'forwarding-profiles', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/device-config/sase-forwarding-profiles/forwarding-profile?pagination=false&folder=" . $muF, 'depends_on' => array('explicit-proxy/forwarding-destinations', 'explicit-proxy/forwarding-proxies', 'explicit-proxy/forwarding-user-locations', 'explicit-proxy/forwarding-source-applications') ),
+            //Mobile Users plugin settings: context (overlaps the public mobile-agent infrastructure settings)
+            array( 'area' => $ep, 'order' => 90, 'name' => 'mu-plugin-settings', 'category' => 'context', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Plugins/CloudServices/MobileUsers?type=cloud&folder=" . $muF, 'depends_on' => array() ),
         );
     }
 
@@ -333,6 +360,8 @@ class SCMPrismaAccessExport
 
             if( isset($endpoint['pagination']) && $endpoint['pagination'] == 'cursor' )
                 $result = $this->connector->getCursorResourceAll( $endpoint['url'] );
+            elseif( isset($endpoint['pagination']) && $endpoint['pagination'] == 'none' )
+                $result = $this->fetchInternal( $endpoint['url'] );
             else
                 $result = $this->connector->getSCMResourceAll( $endpoint['url'] );
 
@@ -381,6 +410,54 @@ class SCMPrismaAccessExport
 
             $this->results[self::key($endpoint['area'], $endpoint['name'])] = array( 'meta' => $meta, 'data' => $this->redactSecrets( $endpoint['name'], $result['data'], TRUE ) );
         }
+    }
+
+    /**
+     * one GET of the internal UI API (no limit / offset); answers:
+     * - /api/config/v9.2/...: {"@status", "@code", "result": {"@total-count", "entry": [...]}} or result fields (configByPath)
+     * - /api/sase/config/v1/...: top-level list or object
+     */
+    public function fetchInternal( $url )
+    {
+        $r = $this->connector->sendSCMAPIRequest( "GET", $url, false, FALSE );
+        $out = array( 'http_code' => $r['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => null, 'errors' => $r['errors'] );
+        $json = $r['json'];
+        if( $r['errors'] !== null || $r['http_code'] >= 400 || !is_array($json) )
+        {
+            if( $out['errors'] === null )
+                $out['errors'] = array( array( 'message' => 'HTTP ' . $r['http_code'] . ( is_array($json) ? '' : ' (no JSON answer)' ) ) );
+            return $out;
+        }
+        if( isset($json['@status']) && $json['@status'] !== 'success' )
+        {
+            $out['errors'] = array( array( 'message' => 'status ' . $json['@status'] . ( isset($json['@code']) ? ' code ' . $json['@code'] : '' ), 'details' => isset($json['msg']) ? $json['msg'] : null ) );
+            return $out;
+        }
+        if( array_key_exists('result', $json) && is_array($json['result']) )
+        {
+            $result = $json['result'];
+            if( isset($result['entry']) && is_array($result['entry']) )
+            {
+                $entries = array_keys($result['entry']) === range(0, count($result['entry']) - 1) ? $result['entry'] : array( $result['entry'] );
+                $out['data'] = $entries;
+                $out['is_list'] = true;
+                $out['total'] = isset($result['@total-count']) ? (int)$result['@total-count'] : count($entries);
+                return $out;
+            }
+            foreach( array('@total-count', '@count', '@currentTime') as $k )
+                unset( $result[$k] );
+            $out['data'] = $result;
+            return $out;
+        }
+        if( $json === array() || array_keys($json) === range(0, count($json) - 1) )
+        {
+            $out['data'] = $json;
+            $out['is_list'] = true;
+            $out['total'] = count($json);
+            return $out;
+        }
+        $out['data'] = $json;
+        return $out;
     }
 
     /**
@@ -883,6 +960,7 @@ class SCMPrismaAccessExport
             'pan_os_php_version' => $frameworkVersion,
             'tsg_id' => $this->tsg,
             'api_url' => $this->connector->url_api,
+            'ui_api_host' => $this->hasArea(self::AREA_EP) ? $this->uiApiHost : null,
             'folders' => $this->folders,
             'created_at' => date('c'),
             'import_order' => $this->buildImportOrder(),
@@ -1507,6 +1585,20 @@ class SCMPrismaAccessExport
         'iam/permission-sets' => array( 'write' => 'none' ),
         'iam/service-accounts' => array( 'write' => 'none', 'ignore' => array( 'client_id', 'created_at', 'updated_at' ) ),
         'iam/access-policies' => array( 'key' => array( 'principal', 'role', 'resource' ), 'write' => 'none' ),
+        //Explicit Proxy (internal UI API): PAN-OS style entries with @name / @uuid; no sync
+        'explicit-proxy/ep-settings' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
+        'explicit-proxy/ep-auth-settings' => array( 'singleton' => true, 'write' => 'none' ),
+        'explicit-proxy/ep-auth-ip-access' => array( 'singleton' => true, 'write' => 'none' ),
+        'explicit-proxy/ep-block-settings' => array( 'singleton' => true, 'write' => 'none' ),
+        'explicit-proxy/ep-users' => array( 'singleton' => true, 'write' => 'none' ),
+        'explicit-proxy/proxy-server-profiles' => array( 'write' => 'none' ),
+        'explicit-proxy/upstream-proxy-rules' => array( 'ordered' => true, 'write' => 'none' ),
+        'explicit-proxy/forwarding-destinations' => array( 'write' => 'none' ),
+        'explicit-proxy/forwarding-proxies' => array( 'write' => 'none' ),
+        'explicit-proxy/forwarding-user-locations' => array( 'write' => 'none' ),
+        'explicit-proxy/forwarding-source-applications' => array( 'write' => 'none' ),
+        'explicit-proxy/forwarding-profiles' => array( 'write' => 'none' ),
+        'explicit-proxy/mu-plugin-settings' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none', 'compare' => false ),
         'iam/permissions' => array( 'write' => 'none', 'compare' => false ),
 
         'config/folders' => array( 'write' => 'collection' ),
@@ -2814,9 +2906,12 @@ class SCMPrismaAccessExport
         if( $this->hasArea(self::AREA_INFRA) )
             $add( 'ztna_connector', count($ztna) > 0 ? 'action_required' : 'check', self::AREA_INFRA, 'ZTNA connector (not exported)',
                 'ZTNA connector groups / applications use a separate API and are not part of this export', $ztna );
-        if( $this->hasArea(self::AREA_MU) )
+        if( $this->hasArea(self::AREA_EP) )
+            $add( 'explicit_proxy', 'action_required', self::AREA_EP, 'Mobile Users Explicit Proxy',
+                'exported from the internal UI API (explicit-proxy/*.json, host ' . $this->uiApiHost . ') for documentation / compare - configure Explicit Proxy, forwarding profiles and upstream proxies on the target tenant manually (no sync)' );
+        elseif( $this->hasArea(self::AREA_MU) )
             $add( 'explicit_proxy', 'check', self::AREA_MU, 'Mobile Users Explicit Proxy (not exported)',
-                'no documented public API - configure manually or via the internal SCM API (to be added)' );
+                'export it with area=explicit-proxy (internal UI API, ui-api-host=<region host>)' );
         $add( 'identity_logging', 'check', 'tenant', 'Cloud Identity Engine, Strata Logging Service, log forwarding (not exported)',
             'tenant bound services - set up on the target tenant before the configuration that references them' );
         if( $this->hasArea(self::AREA_CONFIG) && isset($manifest['config']['devices']) && $manifest['config']['devices'] !== null )

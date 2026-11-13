@@ -211,6 +211,8 @@ was found; wrong items are fixed in the code afterwards.
 - [ ] Same slice with `config-parallel=1` and with default → compare → no differences.
 - [x] After patch 20 / 21: leaf vs all compare → identical except 2 variable values changed between the exports.
 - [x] Snippet rule bases: no pre / post (patch 21).
+- [ ] `area=explicit-proxy`: all endpoints `ok` (or `unavailable` where EP is not used); `01_ep-settings.json` matches
+      the EP setup page; forwarding profiles complete.
 - [ ] Snippet rule order in `83_security-rules.json` matches the SCM UI.
 - [x] `folder:Shared`: only below `Prisma Access` → legacy name of the Prisma Access folder (patch 19 maps it).
 - [ ] After patch 19: the url-category and the 4 post rules of `Shared` in `config/folders/Prisma_Access/`; check in the
@@ -323,7 +325,9 @@ folder names. The deployment folders have `type=cloud` (patch 23).
 | security profiles | `/api/config/v9.2/Objects/VulnerabilityProtectionSecurityProfiles`, `…/WildFireAndAntivirusSecurityProfiles` (PAN-OS XML structure as JSON: `rules.entry`, `decoder.entry`, `@loc`, `@snippet-loc`), `Objects/CustomVulnerabilitySignatures`, `Profile/CustomSignature` |
 | runtime / status (not configuration) | `/api/extensions/gpcs/*` (users, PAC URLs, regions, gateways, IP allow list status) |
 
-Next: `scm_internal_api_probe.php in=scm-api://<TSG> [host=…]` – checks whether these calls accept the service
+Result of `scm_internal_api_probe.php` on a live tenant: all probed calls answer HTTP 200 with the service account
+token (as `Authorization: Bearer` and as `x-auth-jwt`) → area `explicit-proxy` added (patch 25, `ui-api-host=`).
+Probe: `scm_internal_api_probe.php in=scm-api://<TSG> [host=…]` – checks whether these calls accept the service
 account token (`Authorization: Bearer` or `x-auth-jwt`). Only then an area `mobile-users-explicit-proxy` is possible;
 otherwise Explicit Proxy stays a manual / documented item.
 
@@ -338,7 +342,7 @@ otherwise Explicit Proxy stays a manual / documented item.
 | 4 | ✅ `scm_pa_sync.php apply`: dry-run by default, TSG check + confirmation, hash check, secrets from the lists, create / update / delete / move, ids of created objects, `push` + job polling, apply log | done – verify with 4.10 |
 | 4a | migration into a **new** tenant = export the new (empty) tenant, compare with the source, plan `additive`, apply – no separate import tool | steps 3 + 4 |
 | 5 | Prisma Browser sync (rule / section API, draft publish) | 4.10 |
-| 6 | Explicit Proxy area (internal API) | section 6 |
+| 6 | ✅ Explicit Proxy area `explicit-proxy` (internal UI API, export / compare) – verify on a live tenant; sync of EP not planned | section 6 |
 
 ## 8. Known limitations
 

@@ -36,6 +36,7 @@ UTIL:
 * SCM diff and import
 * scm pa sync - introduction
 * scm export area=config | optimisation | scm export memory optimisation | scm export application
+* scm export | explicit proxy via internal API - same as WebUI
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

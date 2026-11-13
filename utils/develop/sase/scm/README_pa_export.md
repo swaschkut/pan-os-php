@@ -452,11 +452,26 @@ Generated from the export (hints, counts, failed / unavailable endpoints) plus f
 export errors, secrets (PSK, BGP, MU), certificates with private key, new IPs for branch / DC / allow lists,
 `backup_SC`, ZTNA connector, Explicit Proxy, CIE / logging, objects / policies, Prisma Browser publish, IAM, push.
 
-### Explicit Proxy
+### explicit-proxy
 
-There is no documented public API for Mobile Users Explicit Proxy (only the admin guide). Next step: capture the
-internal SCM API calls of the Explicit Proxy pages (browser developer tools / network log) and add them as an area
-marked `internal`. Until then it is a manual item in the migration checklist.
+There is no documented public API for Mobile Users Explicit Proxy. The area uses the **internal UI API** of Strata
+Cloud Manager (calls captured from the UI, see [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) §6.1); it accepts
+the service account token (`Authorization: Bearer`). The host is region specific: `ui-api-host=` (default
+`paas-3.prod.eu.panorama.paloaltonetworks.com`; check with `scm_internal_api_probe.php` or the browser developer
+tools – requests to `/api/config/v9.2/...`). Endpoints are marked `internal` in `manifest.json` and may change without
+notice; HTTP 401 / 403 / 404 → `unavailable`.
+
+| file | content |
+|---|---|
+| `01_ep-settings.json` | proxy URL, cookie lifetime, DNS, TLS termination, Prisma Access Browser, deployment / locations |
+| `02_ep-auth-settings.json`, `03_ep-auth-ip-access.json`, `04_ep-block-settings.json`, `05_ep-users.json` | authentication, IP based access, block settings, licensed users |
+| `10_proxy-server-profiles.json`, `11_upstream-proxy-rules.json` | upstream proxies |
+| `20_…` – `24_forwarding-*.json` | forwarding profiles (GlobalProtect proxy / PAC): destinations, regional / custom proxies, user locations, source applications, profiles – folder `Mobile Users` |
+| `90_mu-plugin-settings.json` | context: Mobile Users plugin settings (overlap with `mobile-agent-infrastructure-settings`, not compared) |
+
+Answers of `/api/config/v9.2/...` are PAN-OS style: entries with `@name` / `@uuid` (compare key `@name`, `@uuid`
+ignored). Documentation / compare only: the sync blocks this area (`write: none`); configure Explicit Proxy on the
+target tenant manually (checklist item).
 
 ## Connector changes (`lib/misc-classes/PanSCMAPIConnector.php`)
 
