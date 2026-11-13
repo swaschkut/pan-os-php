@@ -93,6 +93,7 @@ Note: `debugapi` prints the bearer token and full API answers – do not share t
 | 95 "HA pairs" for 142 devices, many `<serial> / unknown` | standalone devices report `ha_peer_serial` "unknown" → ignored; peers not in the tenant marked |
 | console "owner_not_exported: 4 object(s)" counted owners | prints objects and owners |
 | **leaf vs all compare** (`config-scope=objects,policies`): 5,225 entries only in `all`: rule bases of 4 attached snippets (2,604 security / decryption rules) and 17 variables of `PALFINGER-Internal-Sites`; 56 changed: only `overridden` / `override_*` fields | patch 20: rule bases (`policies` group) query attached snippets directly – folder answers do not contain snippet rules; `variables` queried for every folder (an override in the child hides the parent value); `overridden` / `override_id` / `override_loc` / `override_type` ignored in compare and removed from sync bodies |
+| **leaf vs all compare after patch 20 / 21**: 5,307 endpoints, 24,167 equal entries, 0 only left / right, 2 changed (2 variable values of one folder, exports 2 h apart) | leaf mode confirmed; remaining difference = configuration change between the exports (to confirm in the SCM audit log) |
 | snippet rule bases: `pre` and `post` answers identical (e.g. 1,250 / 1,250 rules) | snippets have **no** pre / post rule base (confirmed): patch 21 queries snippet rule bases once without `position` → file `83_security-rules.json` (endpoint without suffix); folders keep `-pre` / `-post`; sync creates snippet rules without `position`, moves without `rulebase` |
 | run with patch 17 / 18 (448 s, 47 HA pairs): `snippet:predefined` is not in the snippet list → reported as unknown owner; `folder:Shared` (1 url-category, 4 post security rules) visible only in the one leaf below `Prisma Access` | patch 19: `snippet:predefined` / `folder:predefined` counted as predefined; `folder:Shared` mapped to `folder:Prisma Access` (legacy name), exported / compared / synced there |
 | run with patch 15: peak memory 326 MB; `addresses` 894,923 objects in 191 s, `services` 193,521 in 18 s; `applications`: every folder answer contains the whole predefined catalog (~100,000, with SaaS ~1,000,000) → not feasible for 101 leaves | patch 16: `applications` skipped by default (`config-heavy-types` or `config-types=applications` to export, best with `container=`), checklist item; objects of not exported owners only counted (no id sets) |
@@ -208,7 +209,7 @@ was found; wrong items are fixed in the code afterwards.
       errors in the console (otherwise `config-parallel=4`); page size: does the API accept `limit=1000`
       (`debugapi`: number of entries in the first answer)?
 - [ ] Same slice with `config-parallel=1` and with default → compare → no differences.
-- [ ] After patch 20: leaf vs all compare again → only `position_identical` related differences or none.
+- [x] After patch 20 / 21: leaf vs all compare → identical except 2 variable values changed between the exports.
 - [x] Snippet rule bases: no pre / post (patch 21).
 - [ ] Snippet rule order in `83_security-rules.json` matches the SCM UI.
 - [x] `folder:Shared`: only below `Prisma Access` → legacy name of the Prisma Access folder (patch 19 maps it).
