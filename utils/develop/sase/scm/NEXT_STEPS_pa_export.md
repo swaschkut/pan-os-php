@@ -87,6 +87,11 @@ Note: `debugapi` prints the bearer token and full API answers – do not share t
 | `locations`, `mobile-agent/locations` return a top-level array → counted as 1 entry | same fix |
 | `area=config` too slow on a large tenant | `config-mode=leaf` (default) + skip of unavailable types |
 | `config-scope=objects,policies` leaf: 101 queries for 134 containers per type, `tags` very slow (each answer repeats all inherited / predefined objects, 200 per page, one request after the other) | patch 14: parallel queries and pages (`config-parallel`, default 8), page size 1000 (`config-page-size`), retry on 429 / 5xx, objects / seconds per type on the console, `config.http_requests` / `seconds` in the manifest; pagination continues after the entries really received (server page cap) |
+| full run `config-scope=objects,policies`, patch 16, `config-parallel=16`: 507 s, 4,048 queries / 5,600 HTTP requests, peak 322 MB, 0 errors; 277 folders, 35 snippets, 134 containers, 21,408 owned objects, 142 devices | – |
+| checklist "Endpoints not available" listed `config/auto-tag-actions` 134 times | one line per type with the number of containers |
+| 5 objects owned by `folder:Shared`, which is not in the folder list → only counted, i.e. lost | patch 17: objects of owners not in the folder / snippet list are stored in `config/owners-not-in-hierarchy.json`, checklist item, `config.owners_not_in_hierarchy` |
+| 95 "HA pairs" for 142 devices, many `<serial> / unknown` | standalone devices report `ha_peer_serial` "unknown" → ignored; peers not in the tenant marked |
+| console "owner_not_exported: 4 object(s)" counted owners | prints objects and owners |
 | run with patch 15: peak memory 326 MB; `addresses` 894,923 objects in 191 s, `services` 193,521 in 18 s; `applications`: every folder answer contains the whole predefined catalog (~100,000, with SaaS ~1,000,000) → not feasible for 101 leaves | patch 16: `applications` skipped by default (`config-heavy-types` or `config-types=applications` to export, best with `container=`), checklist item; objects of not exported owners only counted (no id sets) |
 | run with patch 14: `variables` 2,891 objects in 2.6 s, `tags` 506,839 objects (101 leaf answers, mostly inherited) in 49.5 s | patch 15: answers are fetched in chunks (2 × `config-parallel`) while processing, so only a few answers are in memory at a time; peak memory per type on the console |
 
@@ -200,6 +205,8 @@ was found; wrong items are fixed in the code afterwards.
       errors in the console (otherwise `config-parallel=4`); page size: does the API accept `limit=1000`
       (`debugapi`: number of entries in the first answer)?
 - [ ] Same slice with `config-parallel=1` and with default → compare → no differences.
+- [ ] `config/owners-not-in-hierarchy.json`: what is `folder:Shared` in SCM (which objects, where visible in the UI)?
+- [ ] HA pairs after patch 17 plausible (≤ devices / 2).
 - [ ] `config/hierarchy.txt` matches the folder tree in SCM, incl. the order of the attached snippets per folder.
 - [ ] Every object returned for a container carries `folder` or `snippet` (otherwise it stays in the queried container
       – check files with `data` entries without these fields).

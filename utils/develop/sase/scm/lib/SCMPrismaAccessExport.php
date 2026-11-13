@@ -820,8 +820,22 @@ class SCMPrismaAccessExport
 
         if( $this->hasArea(self::AREA_CONFIG) && $this->configStats !== null && count($this->configStats['owners_not_exported']) > 0 )
             $hints[] = array( 'type' => 'owner_not_exported', 'area' => self::AREA_CONFIG,
+                'total' => array_sum( $this->configStats['owners_not_exported'] ),
                 'objects' => array_map( function($k, $v){ return $k . " (" . $v . ")"; }, array_keys($this->configStats['owners_not_exported']), $this->configStats['owners_not_exported'] ),
                 'message' => 'objects inherited from containers that are not exported (predefined / filtered) - counted only, reference them on import' );
+        if( $this->hasArea(self::AREA_CONFIG) && $this->configStats !== null && !empty($this->configStats['owners_not_in_hierarchy']) )
+        {
+            $objects = array();
+            $total = 0;
+            foreach( $this->configStats['owners_not_in_hierarchy'] as $owner => $byType )
+                foreach( $byType as $t => $n )
+                {
+                    $objects[] = $owner . " " . $t . " (" . $n . ")";
+                    $total += $n;
+                }
+            $hints[] = array( 'type' => 'owner_not_in_hierarchy', 'area' => self::AREA_CONFIG, 'total' => $total, 'objects' => $objects,
+                'message' => 'objects owned by a folder / snippet that is not in the folder / snippet list - stored in config/owners-not-in-hierarchy.json' );
+        }
 
         //service connection referencing another service connection as backup: create all first, set backup_SC afterwards
         $backup = array();
@@ -882,8 +896,7 @@ class SCMPrismaAccessExport
             'secret_lists' => count($secretStats) > 0 ? $secretStats : null,
             'import_hints' => $this->collectImportHints(),
             'errors' => count( array_filter($endpoints, function($e){ return isset($e['status']) && $e['status'] == 'error'; }) ),
-            'unavailable' => array_values( array_map( function($e){ return self::key($e['area'], $e['name']); },
-                array_filter($endpoints, function($e){ return isset($e['status']) && $e['status'] == 'unavailable'; }) ) ),
+            'unavailable' => self::unavailableList( $endpoints ),
         );
         $this->manifest['migration_checklist'] = $this->buildMigrationChecklist( $this->manifest );
 
@@ -1889,6 +1902,12 @@ class SCMPrismaAccessExport
             $folderInfo[$f['name']] = $f;
 
         $collected = array();      // ckey => name => ['objects' => [], 'seen' => [], 'status' => [], 'queries' => [], 'inherited' => 0, 'errors' => []]
+        $knownOwners = array();
+        foreach( $hierarchy['folders'] as $f )
+            $knownOwners['folder:' . $f['name']] = true;
+        foreach( $hierarchy['snippets'] as $sn )
+            $knownOwners['snippet:' . $sn['name']] = true;
+        $orphans = array();          // owner => type => id => object (owner not in the folder / snippet list)
         $notExportedIds = array();   // owner => type => objects (max. per query: every query that includes the owner returns all its objects)
         $unavailable = array();    // type name|class => first container
         $deviceParam = array();    // device container => 'folder' | 'device'
@@ -2036,6 +2055,12 @@ class SCMPrismaAccessExport
                                 $collected[$qkey][$name]['inherited'] = 0;
                             $collected[$qkey][$name]['inherited']++;
                         }
+                        if( !isset($exported[$ownerKey]) && !isset($knownOwners[$ownerKey]) )
+                        {
+                            //owner unknown (e.g. folder "Shared"): keep the objects, they would be lost otherwise
+                            $orphans[$ownerKey][$name][$id] = $obj;
+                            continue;
+                        }
                         if( !isset($exported[$ownerKey]) )
                         {
                             $notExportedQuery[$ownerKey] = ( isset($notExportedQuery[$ownerKey]) ? $notExportedQuery[$ownerKey] : 0 ) + 1;
@@ -2093,6 +2118,18 @@ class SCMPrismaAccessExport
             $collected = array();
         }
 
+        $this->configStats['owners_not_in_hierarchy'] = array();
+        if( count($orphans) > 0 )
+        {
+            $out = array();
+            foreach( $orphans as $owner => $byType )
+                foreach( $byType as $t => $objs )
+                {
+                    $out[$owner][$t] = array_values($objs);
+                    $this->configStats['owners_not_in_hierarchy'][$owner][$t] = count($objs);
+                }
+            $this->writeJson( $a . '/owners-not-in-hierarchy.json', $out );
+        }
         foreach( $notExportedIds as $owner => $byType )
         {
             $n = 0;
@@ -2275,6 +2312,7 @@ class SCMPrismaAccessExport
             'owned_objects_by_container' => $this->configStats['containers'],
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
+            'owners_not_in_hierarchy' => isset($this->configStats['owners_not_in_hierarchy']) ? $this->configStats['owners_not_in_hierarchy'] : array(),
             'types_skipped_heavy' => isset($this->configStats['skipped_heavy']) ? $this->configStats['skipped_heavy'] : array(),
             'devices' => $this->buildDeviceSummary(),
             'mode' => $this->configStats['mode'],
@@ -2395,6 +2433,9 @@ class SCMPrismaAccessExport
         $folderNames = array();
         foreach( (array)( $this->configHierarchy !== null ? $this->configHierarchy['folders'] : array() ) as $f )
             $folderNames[$f['name']] = true;
+        $serials = array();
+        foreach( $devices as $d )
+            $serials[(string)self::firstOf($d, array('serial_number', 'name'))] = true;
         foreach( $devices as $d )
         {
             $serial = (string)self::firstOf($d, array('serial_number', 'name'));
@@ -2408,9 +2449,10 @@ class SCMPrismaAccessExport
             else
                 $disconnected[] = $serial;
             $peer = self::get($d, 'ha_peer_serial');
-            if( $peer !== null && $peer !== "" )
+            //standalone devices report "unknown" / "none"
+            if( $peer !== null && !in_array( strtolower(trim((string)$peer)), array('', 'unknown', 'none', 'n/a', 'na', '-'), TRUE ) )
             {
-                $pair = array( $serial, (string)$peer );
+                $pair = array( $serial, (string)$peer . ( isset($serials[(string)$peer]) ? '' : ' (not in tenant)' ) );
                 sort($pair);
                 $ha[ implode(" / ", $pair) ] = true;
             }
@@ -2480,6 +2522,24 @@ class SCMPrismaAccessExport
         if( strpos($principal, '@') !== FALSE )
             return 'user';
         return '';
+    }
+
+    /**
+     * unavailable endpoints, once per area/endpoint; config types with the number of containers
+     */
+    public static function unavailableList( $endpoints )
+    {
+        $count = array();
+        foreach( $endpoints as $e )
+            if( isset($e['status']) && $e['status'] == 'unavailable' )
+            {
+                $k = self::key($e['area'], $e['name']);
+                $count[$k] = ( isset($count[$k]) ? $count[$k] : 0 ) + 1;
+            }
+        $list = array();
+        foreach( $count as $k => $n )
+            $list[] = $n > 1 ? $k . " (" . $n . " containers)" : $k;
+        return $list;
     }
 
     public function buildIAMSummary()
@@ -2666,7 +2726,16 @@ class SCMPrismaAccessExport
         if( $this->hasArea(self::AREA_CONFIG) && $this->configHierarchy !== null )
         {
             $add( 'objects_policies', 'check', self::AREA_CONFIG, 'Folders, snippets, objects and security policy',
-                'exported in config/ (owned objects per container, hierarchy.json with snippet order); import / verify with pan-os-php in=scm-api://<TSG>' );
+                'exported in config/ (owned objects per container, hierarchy.json with snippet order); compare with scm_pa_compare.php, transfer with scm_pa_sync.php' );
+            if( !empty($manifest['config']['owners_not_in_hierarchy']) )
+            {
+                $o = array();
+                foreach( $manifest['config']['owners_not_in_hierarchy'] as $owner => $byType )
+                    foreach( $byType as $t => $n )
+                        $o[] = $owner . " " . $t . " (" . $n . ")";
+                $add( 'config_owner_unknown', 'check', self::AREA_CONFIG, 'Objects owned by an unknown folder / snippet',
+                    'the owner is not in the folder / snippet list of the tenant (e.g. "Shared") - objects stored in config/owners-not-in-hierarchy.json, not part of compare / sync; check where they appear in SCM', $o );
+            }
             if( !empty($manifest['config']['types_skipped_heavy']) )
                 $add( 'config_heavy', 'check', self::AREA_CONFIG, 'Custom applications not exported',
                     'the applications API returns the complete predefined catalog for every folder - skipped by default; export custom applications with config-types=applications (optionally container=<folders with custom applications>) or config-heavy-types',

@@ -195,7 +195,7 @@ if( isset($manifest['ip_mapping'][SCMPrismaAccessExport::AREA_SC]) )
 if( $manifest['mobile_users'] !== null )
     PH::print_stdout( " * mobile users: portal " . json_encode($manifest['mobile_users']['portal_hostname']) . " | MU locations: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_MU]['locations'] . " | egress IPs matched: " . $manifest['ip_mapping'][SCMPrismaAccessExport::AREA_MU]['egress_matched'] );
 foreach( $manifest['import_hints'] as $hint )
-    PH::print_stdout( " ! [" . $hint['area'] . "] " . $hint['type'] . ": " . count($hint['objects']) . " object(s) - " . $hint['message'] );
+    PH::print_stdout( " ! [" . $hint['area'] . "] " . $hint['type'] . ": " . ( isset($hint['total']) ? $hint['total'] . " object(s) of " . count($hint['objects']) . " owner(s) / type(s)" : count($hint['objects']) . " object(s)" ) . " - " . $hint['message'] );
 if( $manifest['config'] !== null )
     PH::print_stdout( " * config: " . $manifest['config']['folders'] . " folder(s), " . $manifest['config']['snippets'] . " snippet(s), "
         . count($manifest['config']['containers_exported']) . " container(s) exported, " . array_sum($manifest['config']['owned_objects_by_type']) . " owned object(s) - see config/hierarchy.txt" );
