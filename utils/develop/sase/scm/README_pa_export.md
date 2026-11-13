@@ -460,6 +460,16 @@ application groups (`31_`, `32_`) and the trusted zones of Network Services (`33
 mechanism as `explicit-proxy` (`ui-api-host=`, `internal`, `optional`, `write: none`); checklist item "GlobalProtect
 settings without public API" when one of them contains data.
 
+### mobile-users: Prisma Access Agent (internal UI API)
+
+The Prisma Access Agent (successor of the GlobalProtect agent; internal names `ZTNAAgent` / `jupiter`) has no public
+API: `40_pa-agent-app-settings.json` (app config: connect method, ADEM, MTU, MFA …), `41_pa-agent-client-auth.json`
+(client authentication rules → authentication profiles), `42_pa-agent-global-settings.json` (re-authentication timers,
+authentication override / cookie certificate), `43_pa-agent-token-lifetime.json`, `44_pa-agent-staged-rollout.json`,
+context `91_pa-agent-tenant-settings.json`, `92_pa-agent-project-based-access.json`. Traffic steering of the agent
+(replacement of the GlobalProtect split tunnel) and of GlobalProtect with forwarding profiles: the forwarding profiles
+in `explicit-proxy/2x_forwarding-*.json` (profile type e.g. `global_protect_proxy`).
+
 ### explicit-proxy
 
 There is no documented public API for Mobile Users Explicit Proxy. The area uses the **internal UI API** of Strata

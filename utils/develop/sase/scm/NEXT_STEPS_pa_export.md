@@ -348,6 +348,8 @@ otherwise Explicit Proxy stays a manual / documented item.
 | GP app settings, HIP data collection, gateways | public `mobile-agent/agent-profiles` (`gp_app_config`, `hip_collection`, `gateways`) |
 | GP tunnel settings, split tunnel | public `mobile-agent/tunnel-profiles` (`split_tunneling` – to verify with a configured split tunnel) |
 | GP network services | DNS / IP pools public (`infrastructure-settings`); trusted zones internal (`gp-trusted-zones`) |
+| Prisma Access Agent (successor of the GP agent): app settings, client auth, auth timers, token lifetime, staged rollout | internal UI API – `mobile-users/pa-agent-*` |
+| agent traffic steering with forwarding profiles (Prisma Access Agent, GlobalProtect with forwarding profiles) | internal UI API – `explicit-proxy/forwarding-*` |
 | GP Clientless VPN | internal UI API – `mobile-users/gp-portals` (`clientless-vpn`), `gp-clientless-apps`, `gp-clientless-app-groups` |
 | DNS proxy in remote networks | public `deployment/internal-dns-servers` (infra) |
 | retrieve the IP addresses | egress-IP API (`egressip`) |

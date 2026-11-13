@@ -253,6 +253,16 @@ class SCMPrismaAccessExport
             array( 'area' => $mu, 'order' => 31, 'name' => 'gp-clientless-apps', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Network/GlobalProtectClientlessApps?type=cloud&folder=" . $muF, 'depends_on' => array() ),
             array( 'area' => $mu, 'order' => 32, 'name' => 'gp-clientless-app-groups', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Network/GlobalProtectClientlessAppGroups?type=cloud&folder=" . $muF, 'depends_on' => array('mobile-users/gp-clientless-apps') ),
             array( 'area' => $mu, 'order' => 33, 'name' => 'gp-trusted-zones', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/configByPath?type=cloud&folder=" . $muF . "&prefix=plugins/cloud_services&subPath=mobile-users/trusted-zones", 'depends_on' => array() ),
+            //Prisma Access Agent (successor of the GlobalProtect agent, internal names ZTNAAgent / jupiter) - no public
+            //API: app settings, client authentication, global (authentication) settings, token lifetime, staged
+            //rollout; split tunnel is replaced by the forwarding profiles (area explicit-proxy, forwarding-*)
+            array( 'area' => $mu, 'order' => 40, 'name' => 'pa-agent-app-settings', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Device/ZTNAAgent/AppSettings?type=cloud&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 41, 'name' => 'pa-agent-client-auth', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/jupiter/client-auth?pagination=false&folder=" . $muF, 'depends_on' => array('mobile-users/authentication-profiles') ),
+            array( 'area' => $mu, 'order' => 42, 'name' => 'pa-agent-global-settings', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/global-settings?pagination=false&ignoreContainer=false&folder=" . $muF, 'depends_on' => array('mobile-users/certificates') ),
+            array( 'area' => $mu, 'order' => 43, 'name' => 'pa-agent-token-lifetime', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Device/ZTNAAgent/Authentication/EpmTokenLifetime?type=cloud&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 44, 'name' => 'pa-agent-staged-rollout', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Device/ZTNAAgent/StagedRollout?type=cloud&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 91, 'name' => 'pa-agent-tenant-settings', 'category' => 'context', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/sase/config/v1/jupiter/jupiter-settings?folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 92, 'name' => 'pa-agent-project-based-access', 'category' => 'context', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/sase/config/v1/pba-enabled?folder=" . $muF, 'depends_on' => array() ),
             array( 'area' => $mu, 'order' => 27, 'name' => 'mobile-agent-enable', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "enable?folder=" . $muF, 'depends_on' => array('mobile-users/mobile-agent-infrastructure-settings', 'mobile-users/mobile-agent-agent-profiles') ),
 
             //Prisma Browser (Strata Enterprise Browser) - cursor pagination, draft / publish
@@ -461,6 +471,14 @@ class SCMPrismaAccessExport
                 return $out;
             }
             $out['data'] = $result;
+            return $out;
+        }
+        //{"data": [...], "offset", "total", "limit"}
+        if( isset($json['data']) && is_array($json['data']) && ( $json['data'] === array() || array_keys($json['data']) === range(0, count($json['data']) - 1) ) )
+        {
+            $out['data'] = $json['data'];
+            $out['is_list'] = true;
+            $out['total'] = isset($json['total']) ? (int)$json['total'] : count($json['data']);
             return $out;
         }
         if( $json === array() || array_keys($json) === range(0, count($json) - 1) )
@@ -1593,6 +1611,13 @@ class SCMPrismaAccessExport
         'mobile-users/gp-clientless-apps' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
         'mobile-users/gp-clientless-app-groups' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
         'mobile-users/gp-trusted-zones' => array( 'singleton' => true, 'write' => 'none' ),
+        'mobile-users/pa-agent-app-settings' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
+        'mobile-users/pa-agent-client-auth' => array( 'ordered' => true, 'write' => 'none' ),
+        'mobile-users/pa-agent-global-settings' => array( 'singleton' => true, 'ignore' => array( 'id' ), 'write' => 'none' ),
+        'mobile-users/pa-agent-token-lifetime' => array( 'singleton' => true, 'write' => 'none' ),
+        'mobile-users/pa-agent-staged-rollout' => array( 'singleton' => true, 'write' => 'none' ),
+        'mobile-users/pa-agent-tenant-settings' => array( 'singleton' => true, 'write' => 'none', 'compare' => false ),
+        'mobile-users/pa-agent-project-based-access' => array( 'singleton' => true, 'write' => 'none' ),
 
         'prisma-browser/policy-sign-in' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
         'prisma-browser/policy-access-and-data' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
@@ -2977,15 +3002,18 @@ class SCMPrismaAccessExport
         {
             $gpInternal = array();
             foreach( array( 'gp-portals' => 'portal / Clientless VPN', 'gp-clientless-apps' => 'clientless applications',
-                         'gp-clientless-app-groups' => 'clientless application groups', 'gp-trusted-zones' => 'trusted zones' ) as $ep => $label )
+                         'gp-clientless-app-groups' => 'clientless application groups', 'gp-trusted-zones' => 'trusted zones',
+                         'pa-agent-app-settings' => 'Prisma Access Agent app settings', 'pa-agent-client-auth' => 'Prisma Access Agent client authentication',
+                         'pa-agent-global-settings' => 'Prisma Access Agent authentication timers / override',
+                         'pa-agent-token-lifetime' => 'Prisma Access Agent token lifetime', 'pa-agent-staged-rollout' => 'Prisma Access Agent staged rollout' ) as $ep => $label )
             {
                 $res = isset($this->results[self::key(self::AREA_MU, $ep)]) ? $this->results[self::key(self::AREA_MU, $ep)] : null;
                 if( $res !== null && $res['meta']['status'] == 'ok' && !empty($res['data']) )
                     $gpInternal[] = $label;
             }
             if( count($gpInternal) > 0 )
-                $add( 'gp_internal', 'action_required', self::AREA_MU, 'GlobalProtect settings without public API',
-                    'exported from the internal UI API (mobile-users/3x_gp-*.json) for documentation / compare - configure them on the target tenant manually (no sync)', $gpInternal );
+                $add( 'gp_internal', 'action_required', self::AREA_MU, 'GlobalProtect / Prisma Access Agent settings without public API',
+                    'exported from the internal UI API (mobile-users/3x_gp-*.json, 4x_pa-agent-*.json; forwarding profiles: explicit-proxy/2x_forwarding-*.json) for documentation / compare - configure them on the target tenant manually (no sync)', $gpInternal );
         }
         if( $this->hasArea(self::AREA_EP) )
             $add( 'explicit_proxy', 'action_required', self::AREA_EP, 'Mobile Users Explicit Proxy',
