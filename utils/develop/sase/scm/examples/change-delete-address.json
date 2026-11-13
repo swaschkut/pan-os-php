@@ -1,0 +1,6 @@
+{
+  "description": "lab test 3: delete the address h-10.1.1.1 in pan-os-php-sub",
+  "addresses": [
+    { "folder": "pan-os-php-sub", "name": "h-10.1.1.1", "_delete": true }
+  ]
+}

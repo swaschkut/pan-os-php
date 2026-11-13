@@ -57,6 +57,10 @@ The request is idempotent: a second run with the same file finds nothing to do (
 Not supported (refused with a message; use the sync workflow): rule bases (`security-rules`, `nat-rules` … – position
 and order), network / device settings, Prisma Access infrastructure, deleting folders / snippets.
 
+Examples in `examples/` (lab folder `pan-os-php-test`, run in this order): `change-sub-folder.json` (sub folder, tag,
+address – verified live), `change-append-tag.json` (`_append` of a tag from the parent folder),
+`change-delete-address.json`, `change-delete-tag.json` (`_delete`; the tag after the address that uses it).
+
 ## What happens
 
 | step | what | files in `<outdir>/<TSG>/change-<timestamp>/` |

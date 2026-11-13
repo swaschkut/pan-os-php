@@ -380,8 +380,10 @@ compare → plan `additive` → dry-run (hash check) → execute: `POST /config/
 firewalls: HTTP 400 `push-to unexpected node` → push limited to folders with a push target (patch 40).
 
 One-step changes: `scm_pa_change.php changes=<file.json> [execute]` chains export → soll → compare → plan → dry-run →
-execute → verification for folders, snippets and objects ([README_pa_change.md](README_pa_change.md)); first live run:
-`examples/change-sub-folder.json` (sub folder below `pan-os-php-test`).
+execute → verification for folders, snippets and objects ([README_pa_change.md](README_pa_change.md)). Live (2026-11-13):
+`examples/change-sub-folder.json` – folder `PUT` (description), tag + address `POST` in the sub folder, all verified;
+second run "nothing to do". Folder list without `description` / `labels` → read with the single GET (patch 43).
+Next: `change-append-tag.json`, `change-delete-address.json`, `change-delete-tag.json` (in this order).
 
 | # | step | what exactly | input from you | result |
 |---|---|---|---|---|
