@@ -452,6 +452,14 @@ Generated from the export (hints, counts, failed / unavailable endpoints) plus f
 export errors, secrets (PSK, BGP, MU), certificates with private key, new IPs for branch / DC / allow lists,
 `backup_SC`, ZTNA connector, Explicit Proxy, CIE / logging, objects / policies, Prisma Browser publish, IAM, push.
 
+### mobile-users: GlobalProtect parts from the internal UI API
+
+Not available in the public API (status 2026-11): portal settings incl. **Clientless VPN** (`30_gp-portals.json`:
+`clientless-vpn` hostname, DNS proxy, security zone, login lifetime, crypto settings), clientless applications /
+application groups (`31_`, `32_`) and the trusted zones of Network Services (`33_gp-trusted-zones.json`). Same
+mechanism as `explicit-proxy` (`ui-api-host=`, `internal`, `optional`, `write: none`); checklist item "GlobalProtect
+settings without public API" when one of them contains data.
+
 ### explicit-proxy
 
 There is no documented public API for Mobile Users Explicit Proxy. The area uses the **internal UI API** of Strata

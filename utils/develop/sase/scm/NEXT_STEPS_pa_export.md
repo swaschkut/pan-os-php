@@ -339,6 +339,23 @@ Probe: `scm_internal_api_probe.php in=scm-api://<TSG> [host=…]` – checks whe
 account token (`Authorization: Bearer` or `x-auth-jwt`). Only then an area `mobile-users-explicit-proxy` is possible;
 otherwise Explicit Proxy stays a manual / documented item.
 
+### 6.2 Coverage of the items missing in 2023 (public API vs. internal)
+
+| item | source now |
+|---|---|
+| Explicit Proxy setup (URL, auth, PAC / forwarding, advanced security, locations) | internal UI API – area `explicit-proxy` |
+| GP infrastructure settings, locations | public `mobile-agent/infrastructure-settings` (`deployment.region[].locations`) |
+| GP app settings, HIP data collection, gateways | public `mobile-agent/agent-profiles` (`gp_app_config`, `hip_collection`, `gateways`) |
+| GP tunnel settings, split tunnel | public `mobile-agent/tunnel-profiles` (`split_tunneling` – to verify with a configured split tunnel) |
+| GP network services | DNS / IP pools public (`infrastructure-settings`); trusted zones internal (`gp-trusted-zones`) |
+| GP Clientless VPN | internal UI API – `mobile-users/gp-portals` (`clientless-vpn`), `gp-clientless-apps`, `gp-clientless-app-groups` |
+| DNS proxy in remote networks | public `deployment/internal-dns-servers` (infra) |
+| retrieve the IP addresses | egress-IP API (`egressip`) |
+| outbound routes of service connections | public `service-connections` (`subnets`, `protocol.bgp.do_not_export_routes`) and `infra/bgp-routing` (routing preference); the UI reads `configByPath …/routing-preference` (empty = default) |
+
+Captured from the UI (HAR, lab tenant): the UI itself saved two changes while recording (PUT `…/clientless-vpn`, PUT
+`Plugins/CloudServices/ServiceConnection`) – the internal API is writable as well; not used by the sync.
+
 ## 7. Next development steps
 
 | step | what | depends on |

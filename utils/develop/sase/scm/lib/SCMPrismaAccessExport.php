@@ -247,6 +247,12 @@ class SCMPrismaAccessExport
             array( 'area' => $mu, 'order' => 24, 'name' => 'mobile-agent-agent-profiles', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "agent-profiles?folder=" . $muF, 'depends_on' => array('mobile-users/certificates', 'mobile-users/mobile-agent-infrastructure-settings') ),
             array( 'area' => $mu, 'order' => 25, 'name' => 'mobile-agent-global-settings', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "global-settings?folder=" . $muF, 'depends_on' => array() ),
             array( 'area' => $mu, 'order' => 26, 'name' => 'mobile-agent-agent-versions', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "agent-versions?folder=" . $muF, 'depends_on' => array() ),
+            //GlobalProtect parts without public API (internal UI API, documentation / compare only): portal incl.
+            //Clientless VPN settings, clientless applications / groups, trusted zones (Network Services)
+            array( 'area' => $mu, 'order' => 30, 'name' => 'gp-portals', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Network/GlobalProtectPortals?type=cloud&folder=" . $muF, 'depends_on' => array('mobile-users/certificates', 'mobile-users/authentication-profiles') ),
+            array( 'area' => $mu, 'order' => 31, 'name' => 'gp-clientless-apps', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Network/GlobalProtectClientlessApps?type=cloud&folder=" . $muF, 'depends_on' => array() ),
+            array( 'area' => $mu, 'order' => 32, 'name' => 'gp-clientless-app-groups', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/Network/GlobalProtectClientlessAppGroups?type=cloud&folder=" . $muF, 'depends_on' => array('mobile-users/gp-clientless-apps') ),
+            array( 'area' => $mu, 'order' => 33, 'name' => 'gp-trusted-zones', 'category' => 'dependency', 'scope' => 'folder', 'optional' => true, 'internal' => true, 'pagination' => 'none', 'url' => $ui . "/api/config/v9.2/configByPath?type=cloud&folder=" . $muF . "&prefix=plugins/cloud_services&subPath=mobile-users/trusted-zones", 'depends_on' => array() ),
             array( 'area' => $mu, 'order' => 27, 'name' => 'mobile-agent-enable', 'category' => 'dependency', 'scope' => 'folder', 'url' => $ma . "enable?folder=" . $muF, 'depends_on' => array('mobile-users/mobile-agent-infrastructure-settings', 'mobile-users/mobile-agent-agent-profiles') ),
 
             //Prisma Browser (Strata Enterprise Browser) - cursor pagination, draft / publish
@@ -446,6 +452,14 @@ class SCMPrismaAccessExport
             }
             foreach( array('@total-count', '@count', '@currentTime') as $k )
                 unset( $result[$k] );
+            if( $result === array() )
+            {
+                //nothing configured (default)
+                $out['data'] = array();
+                $out['is_list'] = true;
+                $out['total'] = 0;
+                return $out;
+            }
             $out['data'] = $result;
             return $out;
         }
@@ -1574,6 +1588,11 @@ class SCMPrismaAccessExport
         'mobile-users/mobile-agent-global-settings' => array( 'singleton' => true, 'write' => 'singleton' ),
         'mobile-users/mobile-agent-agent-versions' => array( 'singleton' => true, 'write' => 'none' ),
         'mobile-users/mobile-agent-enable' => array( 'singleton' => true, 'write' => 'singleton' ),
+        //internal UI API (PAN-OS style entries)
+        'mobile-users/gp-portals' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
+        'mobile-users/gp-clientless-apps' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
+        'mobile-users/gp-clientless-app-groups' => array( 'key' => array( '@name' ), 'ignore' => array( '@uuid' ), 'write' => 'none' ),
+        'mobile-users/gp-trusted-zones' => array( 'singleton' => true, 'write' => 'none' ),
 
         'prisma-browser/policy-sign-in' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
         'prisma-browser/policy-access-and-data' => array( 'singleton' => true, 'write' => 'singleton', 'ordered' => array( 'rules', 'sections' ) ),
@@ -2954,6 +2973,20 @@ class SCMPrismaAccessExport
         if( $this->hasArea(self::AREA_INFRA) )
             $add( 'ztna_connector', count($ztna) > 0 ? 'action_required' : 'check', self::AREA_INFRA, 'ZTNA connector (not exported)',
                 'ZTNA connector groups / applications use a separate API and are not part of this export', $ztna );
+        if( $this->hasArea(self::AREA_MU) )
+        {
+            $gpInternal = array();
+            foreach( array( 'gp-portals' => 'portal / Clientless VPN', 'gp-clientless-apps' => 'clientless applications',
+                         'gp-clientless-app-groups' => 'clientless application groups', 'gp-trusted-zones' => 'trusted zones' ) as $ep => $label )
+            {
+                $res = isset($this->results[self::key(self::AREA_MU, $ep)]) ? $this->results[self::key(self::AREA_MU, $ep)] : null;
+                if( $res !== null && $res['meta']['status'] == 'ok' && !empty($res['data']) )
+                    $gpInternal[] = $label;
+            }
+            if( count($gpInternal) > 0 )
+                $add( 'gp_internal', 'action_required', self::AREA_MU, 'GlobalProtect settings without public API',
+                    'exported from the internal UI API (mobile-users/3x_gp-*.json) for documentation / compare - configure them on the target tenant manually (no sync)', $gpInternal );
+        }
         if( $this->hasArea(self::AREA_EP) )
             $add( 'explicit_proxy', 'action_required', self::AREA_EP, 'Mobile Users Explicit Proxy',
                 'exported from the internal UI API (explicit-proxy/*.json, host ' . $this->uiApiHost . ') for documentation / compare - configure Explicit Proxy, forwarding profiles and upstream proxies on the target tenant manually (no sync)' );
