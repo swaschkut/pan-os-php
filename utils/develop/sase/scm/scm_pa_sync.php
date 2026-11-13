@@ -26,6 +26,7 @@
 //                         [push] [continue-on-error] [ops=op-0001,..] [source-dir=<export dir>] [skip-hash-check]
 
 require_once("lib/pan_php_framework.php");
+require_once("utils/lib/UTIL.php");
 require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessSync.php");
 
 $isApply = in_array("apply", array_slice($argv, 1), TRUE);
