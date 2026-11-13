@@ -374,6 +374,11 @@ writes** (sync apply, push).
 
 ### 7.1 Next steps (in this order)
 
+First live write test (2026-11-13, lab tenant, folder `pan-os-php-test` below `ngfw-shared`): export → edited copy →
+compare → plan `additive` → dry-run (hash check) → execute: `POST /config/objects/v1/addresses` 201,
+`PUT …/addresses/{id}` 200 (body incl. `folder`, `tag`) → re-export → compare: no differences. Push of a folder without
+firewalls: HTTP 400 `push-to unexpected node` → push limited to folders with a push target (patch 40).
+
 | # | step | what exactly | input from you | result |
 |---|---|---|---|---|
 | 1 | **Sync – first write test** | lab tenant: export a test folder (`container=<test folder> config-types=addresses,tags,security-rules`), second export with a few changes (1 create, 1 update, 1 delete, 1 rule moved), `scm_pa_compare.php`, `scm_pa_sync.php plan mode=mirror allow-delete`, `apply` dry-run, `apply execute` **without** push, re-export + compare (expect "No differences"), then `push` | lab test folder; `apply-log-*.json` + `PLAN_REPORT.md` (no secrets inside) | request formats of POST / PUT / DELETE / `:move` / `candidate:push` confirmed or fixed (4.10) |

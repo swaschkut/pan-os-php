@@ -140,6 +140,12 @@ HTTP code, error – no bodies, no secrets) and the folders to push.
 `scm_pa_sync.php push in=scm-api://<TSG> folders=<f1,f2> [execute [yes]]` – dry-run unless `execute`, asks for the
 TSG, polls the job.
 
+**Push targets:** only folders with a firewall below them (or the firewall folder itself) and the Prisma Access
+folders can be pushed – SCM answers HTTP 400 `push-config -> push-to unexpected node` for others (in the UI the push
+button is greyed out). `push` reads the folder / device list and pushes only those folders; the others are listed as
+`not pushable`; their changes stay in the candidate configuration and go out with the next push of a folder with
+firewalls / Prisma Access (verified on a live tenant with a folder without firewalls).
+
 **Push:** `push` sends `POST /config/operations/v1/config-versions/candidate:push` with the touched folders
 (config containers; `Remote Networks`, `Service Connections`, `Mobile Users`, `Prisma Access` for the other areas)
 and polls `/config/operations/v1/jobs/<id>` up to 30 minutes. Without `push` the folders are listed – push in SCM.

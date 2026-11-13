@@ -178,6 +178,8 @@ if( $isPushOnly )
             derr( "aborted", null, FALSE );
     }
     $result = SCMPrismaAccessSync::push( $connector, $folders, $execute );
+    if( !empty($result['not_pushable']) )
+        PH::print_stdout( " * not pushable (no firewall / Prisma Access below): " . implode(", ", $result['not_pushable']) );
     PH::print_stdout( " * push: " . $result['status']
         . ( isset($result['http_code']) ? " (HTTP " . $result['http_code'] . ")" : "" )
         . ( isset($result['job_id']) ? ", job " . $result['job_id'] : "" )
@@ -185,7 +187,7 @@ if( $isPushOnly )
         . ( isset($result['error']) ? " - " . $result['error'] : "" ) );
     PH::print_stdout();
     PH::print_stdout("************* END OF SCRIPT " . basename(__FILE__) . " ************" );
-    exit( in_array($result['status'], array('done', 'dry-run', 'submitted'), TRUE) ? 0 : 1 );
+    exit( in_array($result['status'], array('done', 'dry-run', 'submitted', 'nothing to push'), TRUE) ? 0 : 1 );
 }
 
 if( !isset(PH::$args['plan']) || !is_readable(PH::$args['plan']) )
@@ -243,7 +245,9 @@ foreach( $log['summary'] as $k => $v )
     $summary[] = $k . " " . $v;
 PH::print_stdout( " * result: " . implode(", ", $summary) );
 if( $log['push'] !== null )
-    PH::print_stdout( " * push: " . $log['push']['status'] . " (" . implode(", ", $log['push']['folders']) . ")" );
+    PH::print_stdout( " * push: " . $log['push']['status'] . " (" . implode(", ", $log['push']['folders']) . ")"
+        . ( !empty($log['push']['not_pushable']) ? " - not pushable: " . implode(", ", $log['push']['not_pushable']) : "" )
+        . ( isset($log['push']['error']) ? " - " . $log['push']['error'] : "" ) );
 elseif( count($log['folders']) > 0 )
     PH::print_stdout( " * folders to push: " . implode(", ", $log['folders']) . ( $execute ? " (not pushed - use 'push' or push in SCM)" : "" ) );
 PH::print_stdout( " * log: " . $logFile );

@@ -1167,6 +1167,26 @@ class SCMPrismaAccessSync
     {
         $url = $connector->url_api . "/config/operations/v1/config-versions/candidate:push";
         $result = array( 'folders' => $folders, 'url' => $url );
+
+        //SCM rejects folders without a push target (no firewall below, not a Prisma Access folder):
+        //HTTP 400 "push-config -> push-to unexpected node" - in the UI the push button is greyed out
+        $pushable = self::pushableFolders( $connector );
+        if( $pushable !== null )
+        {
+            $skipped = array_values( array_diff( $folders, $pushable ) );
+            $folders = array_values( array_intersect( $folders, $pushable ) );
+            $result['folders'] = $folders;
+            if( count($skipped) > 0 )
+                $result['not_pushable'] = $skipped;
+            if( count($folders) == 0 )
+            {
+                $result['status'] = 'nothing to push';
+                $result['error'] = 'no push target (no firewall below these folders, no Prisma Access folder): ' . implode(", ", $skipped)
+                    . ' - the changes stay in the candidate configuration and go out with the next push of a folder with firewalls / Prisma Access';
+                return $result;
+            }
+        }
+
         if( !$execute )
         {
             $result['status'] = 'dry-run';
@@ -1201,6 +1221,36 @@ class SCMPrismaAccessSync
         while( time() - $start < $maxWait );
         $result['status'] = in_array(strtoupper($result['job_status']), array('FIN', 'OK', 'SUCCESS', 'COMPLETED'), TRUE) ? 'done' : 'check job ' . $jobId;
         return $result;
+    }
+
+    /**
+     * folders that can be pushed: folders with a firewall (device folder) and all their parents, the Prisma Access
+     * folders and their parents; null if the folder list cannot be read (then nothing is filtered)
+     */
+    public static function pushableFolders( $connector )
+    {
+        $f = $connector->getSCMResourceAll( "/config/setup/v1/folders" );
+        if( $f['errors'] !== null || !$f['is_list'] )
+            return null;
+        $d = $connector->getSCMResourceAll( "/config/setup/v1/devices" );
+        $devices = ( $d['errors'] === null && $d['is_list'] ) ? $d['data'] : array();
+        return self::pushableFromFolders( $f['data'], $devices );
+    }
+
+    public static function pushableFromFolders( $folders, $devices = array() )
+    {
+        $hierarchy = SCMPrismaAccessExport::buildHierarchy( $folders, array(), $devices );
+        $pa = array_merge( SCMPrismaAccessExport::PA_DEPLOYMENT_FOLDERS, array( 'Prisma Access', 'Mobile Users Container', 'Shared' ) );
+        $out = array();
+        foreach( $hierarchy['folders'] as $folder )
+        {
+            if( !SCMPrismaAccessExport::isDeviceFolder($folder) && !in_array($folder['name'], $pa, TRUE) )
+                continue;
+            foreach( (array)$folder['path'] as $name )
+                $out[$name] = true;
+            $out[$folder['name']] = true;
+        }
+        return array_keys( $out );
     }
 
     private static function absoluteUrl( $connector, $url )
