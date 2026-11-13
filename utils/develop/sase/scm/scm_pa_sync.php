@@ -30,6 +30,10 @@ require_once("utils/lib/UTIL.php");
 require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessSync.php");
 
 $isApply = in_array("apply", array_slice($argv, 1), TRUE);
+//"push" alone (without apply): push folders of the candidate configuration
+$isPushOnly = !$isApply && in_array("push", array_slice($argv, 1), TRUE);
+if( $isPushOnly )
+    $isApply = true;
 $isPlan = in_array("plan", array_slice($argv, 1), TRUE);
 
 $usage = "USAGE:\n"
@@ -42,7 +46,9 @@ $usage = "USAGE:\n"
     . "         additive: create + update · mirror: + delete (only with allow-delete) · merge: two plans, conflicts not sent\n"
     . "         allow-infra: also update infrastructure singletons (shared infrastructure settings, BGP routing)\n"
     . "         allow-network: also write NGFW network / device settings of the config area (interfaces, routing, device setup)\n"
-    . "  apply  dry-run unless 'execute'; 'execute' asks for confirmation unless 'yes'; 'push' pushes the touched folders\n";
+    . "  apply  dry-run unless 'execute'; 'execute' asks for confirmation unless 'yes'; 'push' pushes the touched folders\n"
+    . "  php " . basename(__FILE__) . " push in=scm-api://<TSG> folders=<f1,f2> [execute [yes]]\n"
+    . "         push only (e.g. after an apply without push): candidate:push of these folders, job polled; dry-run unless 'execute'\n";
 
 if( !$isApply && !$isPlan )
 {
@@ -142,6 +148,7 @@ $supportedArguments['ops'] = Array('niceName' => 'ops', 'shortHelp' => 'only the
 $supportedArguments['source-dir'] = Array('niceName' => 'source-dir', 'shortHelp' => 'source export directory with the secret lists (default: from the plan)', 'argDesc' => '[dir]');
 $supportedArguments['skip-hash-check'] = Array('niceName' => 'skip-hash-check', 'shortHelp' => 'do not check that target objects are unchanged since the export');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
+$supportedArguments['folders'] = Array('niceName' => 'folders', 'shortHelp' => 'push only: folders to push', 'argDesc' => '[f1,f2]');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 
 $util = new UTIL( "custom", $argv, $argc, __FILE__, $supportedArguments, $usage );
@@ -153,6 +160,33 @@ if( !is_object($connector) || get_class($connector) !== "PanSCMAPIConnector" )
     derr( "argument in=scm-api://<target TSG> is required", null, FALSE );
 if( isset(PH::$args['debugapi']) )
     $connector->setShowApiCalls( TRUE );
+
+if( $isPushOnly )
+{
+    $folders = $listArg( isset(PH::$args['folders']) ? PH::$args['folders'] : null );
+    if( $folders === null )
+        derr( "argument folders=<f1,f2> is required for push", null, FALSE );
+    $execute = isset(PH::$args['execute']);
+    PH::print_stdout( " * push of TSG " . $connector->apihost . ": " . implode(", ", $folders) );
+    if( !$execute )
+        PH::print_stdout( " * dry-run - nothing is pushed (use 'execute')" );
+    elseif( !isset(PH::$args['yes']) )
+    {
+        PH::print_stdout( " ** type the TSG id (" . $connector->apihost . ") to push:" );
+        $answer = trim( (string)fgets( fopen("php://stdin", "r") ) );
+        if( $answer !== (string)$connector->apihost )
+            derr( "aborted", null, FALSE );
+    }
+    $result = SCMPrismaAccessSync::push( $connector, $folders, $execute );
+    PH::print_stdout( " * push: " . $result['status']
+        . ( isset($result['http_code']) ? " (HTTP " . $result['http_code'] . ")" : "" )
+        . ( isset($result['job_id']) ? ", job " . $result['job_id'] : "" )
+        . ( isset($result['job_status']) ? ", job status " . $result['job_status'] : "" )
+        . ( isset($result['error']) ? " - " . $result['error'] : "" ) );
+    PH::print_stdout();
+    PH::print_stdout("************* END OF SCRIPT " . basename(__FILE__) . " ************" );
+    exit( in_array($result['status'], array('done', 'dry-run', 'submitted'), TRUE) ? 0 : 1 );
+}
 
 if( !isset(PH::$args['plan']) || !is_readable(PH::$args['plan']) )
     derr( "argument plan=<plan.json> is required / not readable", null, FALSE );

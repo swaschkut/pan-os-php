@@ -136,6 +136,10 @@ Stops at the first `failed` / `conflict` unless `continue-on-error`. Result: con
 `apply-log-<dry-run|execute>-<timestamp>.json` next to the plan (per operation: status, requests with method, URL,
 HTTP code, error – no bodies, no secrets) and the folders to push.
 
+**Push only** (e.g. after an apply without `push`, or a re-run whose operations are already applied):
+`scm_pa_sync.php push in=scm-api://<TSG> folders=<f1,f2> [execute [yes]]` – dry-run unless `execute`, asks for the
+TSG, polls the job.
+
 **Push:** `push` sends `POST /config/operations/v1/config-versions/candidate:push` with the touched folders
 (config containers; `Remote Networks`, `Service Connections`, `Mobile Users`, `Prisma Access` for the other areas)
 and polls `/config/operations/v1/jobs/<id>` up to 30 minutes. Without `push` the folders are listed – push in SCM.
