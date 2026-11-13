@@ -217,6 +217,12 @@ was found; wrong items are fixed in the code afterwards.
 - [x] `area=explicit-proxy` (lab tenant): all 13 endpoints `ok`, 0 errors (EP settings, auth, block settings, users,
       9 forwarding destinations, 2 proxies, 1 forwarding profile).
 - [ ] `01_ep-settings.json` matches the EP setup page in the UI.
+- [x] Patch 32 / 33 (lab tenant, Prisma Access Agent): `gp-portals` 1 (Clientless VPN), `gp-clientless-apps` /
+      `-app-groups` 0, `gp-trusted-zones` 1, `pa-agent-app-settings` 1, `pa-agent-client-auth` 2,
+      `pa-agent-global-settings`, `-token-lifetime`, tenant settings, project based access ok, staged rollout empty;
+      0 errors.
+- [ ] Classic GlobalProtect agent with split tunnel (`tunnel-profiles.split_tunneling`) – only on a tenant that still
+      uses the GlobalProtect agent.
 - [x] `area=mobile-users` (lab tenant): all endpoints `ok`, 0 errors; trusted CAs (346, mostly `snippet=predefined`)
       are summarised in the import hint (patch 26).
 - [ ] Certificates in the checklist: which of them (Authentication Cookie CA / Cert, Forward-Trust / -UnTrust CA …)
