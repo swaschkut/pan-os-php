@@ -727,6 +727,11 @@ class PLAYBOOK_VALIDATION__
                                 continue;
                             }
 
+                            // N/A: nothing checked, no statement
+                            if ($details['value'] === "N/A") {
+                                continue;
+                            }
+
                             // Condition B: Filter for values that are NOT 100
                             if ($details['value'] !== 100)
                             {

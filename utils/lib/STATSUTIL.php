@@ -282,7 +282,8 @@ class STATSUTIL extends RULEUTIL
                     $tmp_Array['info'] = "Adopted";
                     $categoriesArray = array();
                     foreach($stat['percentage']['adoption'] as $name => $info)
-                        $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
+                        if( is_numeric( $info['value'] ) ) // "N/A": not drawn
+                            $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
 
                     $tmp_Array['categories'] = $categoriesArray;
                     $mainArray[$filePrefix."-".$title] = $tmp_Array;
@@ -300,7 +301,8 @@ class STATSUTIL extends RULEUTIL
                     $tmp_Array['info'] = "Visible";
                     $categoriesArray = array();
                     foreach($stat['percentage']['visibility'] as $name => $info)
-                        $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
+                        if( is_numeric( $info['value'] ) ) // "N/A": not drawn
+                            $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
 
                     $tmp_Array['categories'] = $categoriesArray;
                     $mainArray[$filePrefix."-".$title] = $tmp_Array;
@@ -318,7 +320,8 @@ class STATSUTIL extends RULEUTIL
                     $tmp_Array['info'] = "Best Practice";
                     $categoriesArray = array();
                     foreach($stat['percentage']['best-practice'] as $name => $info)
-                        $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
+                        if( is_numeric( $info['value'] ) ) // "N/A": not drawn
+                            $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
 
                     $tmp_Array['categories'] = $categoriesArray;
                     $mainArray[$filePrefix."-".$title] = $tmp_Array;

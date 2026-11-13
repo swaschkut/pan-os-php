@@ -1368,6 +1368,39 @@ trait StatCollectorTrait
         return count( $sub_ruleStore->rules( $filter_array ) );
     }
 
+    /**
+     * FALSE when the BP JSON has no section for this visibility / best-practice check: nothing is checked,
+     * so the check is N/A for every rule (also for rules without a profile of that type) - never 0%.
+     * Adoption and checks not listed here are not affected.
+     */
+    public function bp_check_is_set( string $statKey ): bool
+    {
+        if( !preg_match( '/^(.+) (visibility|best-practice)$/', $statKey, $m ) )
+            return TRUE;
+        if( empty( PH::$shadow_bp_jsonfilename ) )
+            return TRUE;
+
+        $sections = array(
+            'data' => array( 'data-filtering' ),
+            'fb' => array( 'file-blocking' ),
+            'url-site-access' => array( 'url', 'site_access' ),
+            'url-credential' => array( 'url', 'user_credential_submission' ),
+            'dns-list' => array( 'spyware', 'lists' ),
+            'dns-security' => array( 'spyware', 'dns' ),
+        );
+        if( !isset( $sections[$m[1]] ) )
+            return TRUE;
+
+        $node = PH::getBPjsonFile();
+        foreach( $sections[$m[1]] as $key )
+        {
+            if( !is_array( $node ) || !isset( $node[$key] ) )
+                return FALSE;
+            $node = $node[$key];
+        }
+        return TRUE;
+    }
+
     public function bp_calculation( &$stdoutarray, $is_SCM = false ): void
     {
         if( get_class($this) == "BuckbeakConf"
@@ -1471,6 +1504,14 @@ trait StatCollectorTrait
             if($entry[0] == 'data best-practice')
             {
                 $stdoutarray['data best-practice'] = "NOT available";
+                continue;
+            }
+
+            // the BP JSON sets no check at all (no section): N/A for the whole scope, never 0%
+            if( !$this->bp_check_is_set( $entry[0] ) )
+            {
+                $stdoutarray[$entry[0].' calc'] = "N/A";
+                $stdoutarray[$entry[0].' percentage'] = "N/A";
                 continue;
             }
 
@@ -1706,11 +1747,8 @@ trait StatCollectorTrait
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 
-        // a check N/A for every rule (nothing listed in the BP JSON): left out, as 'included-in-bpa' false
-        foreach( $percentageArray as $bpa_key => $entries )
-            foreach( $entries as $name => $entry )
-                if( isset( $entry['value'] ) && $entry['value'] === "N/A" )
-                    unset( $percentageArray[$bpa_key][$name] );
+        // a check N/A for every rule keeps its slice, with "N/A" as value (as the 'calc' / 'percentage' keys);
+        // only 'included-in-bpa' false removes a slice (PH::validateIncludedInBPA)
 
         return $percentageArray;
     }
@@ -1794,6 +1832,11 @@ trait StatCollectorTrait
             if( strpos($value['value'], "---") !== False )
             {
                 $string = $value['value'];
+            }
+            elseif( !is_numeric( $value['value'] ) )
+            {
+                // "N/A": no bar
+                $string = "";
             }
             else
             {

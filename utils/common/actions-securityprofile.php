@@ -4288,7 +4288,14 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
         if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
-        $object->wf_inlineML_AlertOnlySet();
+        // AntiVirusProfile uses only sp_action_virus: wf_inlineML_AlertOnlySet() is not available there
+        if( get_class($object) === "AntiVirusProfile" )
+            $object->av_inlineML_AlertOnlySet();
+        else
+            $object->wf_inlineML_AlertOnlySet();
+
+        if( $context->isAPI )
+            $object->API_sync();
     }
 );
 

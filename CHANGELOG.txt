@@ -52,6 +52,7 @@ BUGFIX:
 * optimisation for all parts related to BP_JSON file - stats/exporttohtml
 * correction VP/Spyware BP - severity informational / low
 * sp_action_virus.php | bugfix for using $object instead of $this
+* bugfix to get N/A output correct running
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes
