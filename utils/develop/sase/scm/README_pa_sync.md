@@ -1,5 +1,9 @@
 # scm_pa_sync.php – sync the differences of two exports into a tenant
 
+
+For a few folders / snippets / objects without editing an export by hand: [README_pa_change.md](README_pa_change.md)
+(`scm_pa_change.php` - same plan / apply logic, one command).
+
 Technical reference. Step-by-step usage: [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md) §4.
 Inputs come from [scm_pa_export.php](README_pa_export.md) and [scm_pa_compare.php](README_pa_compare.md).
 
