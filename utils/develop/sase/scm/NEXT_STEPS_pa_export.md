@@ -214,8 +214,13 @@ was found; wrong items are fixed in the code afterwards.
       `Remote_Networks/`, `Service_Connections/` exist with objects / rules (MU security rules!).
 - [x] After patch 20 / 21: leaf vs all compare → identical except 2 variable values changed between the exports.
 - [x] Snippet rule bases: no pre / post (patch 21).
-- [ ] `area=explicit-proxy`: all endpoints `ok` (or `unavailable` where EP is not used); `01_ep-settings.json` matches
-      the EP setup page; forwarding profiles complete.
+- [x] `area=explicit-proxy` (lab tenant): all 13 endpoints `ok`, 0 errors (EP settings, auth, block settings, users,
+      9 forwarding destinations, 2 proxies, 1 forwarding profile).
+- [ ] `01_ep-settings.json` matches the EP setup page in the UI.
+- [x] `area=mobile-users` (lab tenant): all endpoints `ok`, 0 errors; trusted CAs (346, mostly `snippet=predefined`)
+      are summarised in the import hint (patch 26).
+- [ ] Certificates in the checklist: which of them (Authentication Cookie CA / Cert, Forward-Trust / -UnTrust CA …)
+      Prisma Access creates on a new tenant – those need no import.
 - [ ] Snippet rule order in `83_security-rules.json` matches the SCM UI.
 - [x] `folder:Shared`: only below `Prisma Access` → legacy name of the Prisma Access folder (patch 19 maps it).
 - [ ] After patch 19: the url-category and the 4 post rules of `Shared` in `config/folders/Prisma_Access/`; check in the

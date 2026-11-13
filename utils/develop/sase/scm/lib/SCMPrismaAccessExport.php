@@ -803,6 +803,7 @@ class SCMPrismaAccessExport
                     if( $snippet !== null || ( $entryFolder !== null && $entryFolder !== $folder ) )
                         $inherited[] = self::get($entry, 'name') . " [" . ( $snippet !== null ? "snippet=" . $snippet : "folder=" . $entryFolder ) . "]";
                 }
+                $inherited = self::compactInherited( $inherited );
                 if( count($inherited) > 0 )
                     $hints[] = array( 'type' => 'inherited_or_predefined', 'area' => $area, 'endpoint' => $type, 'objects' => $inherited,
                         'message' => 'entries not defined in folder "' . $folder . '" itself (predefined / snippet / parent folder) - reference only, do not create on import' );
@@ -824,6 +825,7 @@ class SCMPrismaAccessExport
                     if( $snippet !== null || ( $entryFolder !== null && $entryFolder !== $folder ) )
                         $inherited[] = self::get($entry, 'name') . " [" . ( $snippet !== null ? "snippet=" . $snippet : "folder=" . $entryFolder ) . "]";
                 }
+                $inherited = self::compactInherited( $inherited );
                 if( count($inherited) > 0 )
                     $hints[] = array( 'type' => 'inherited_or_predefined', 'area' => self::AREA_MU, 'endpoint' => $endpoint['name'], 'objects' => $inherited,
                         'message' => 'entries not defined in folder "' . $folder . '" itself (predefined / snippet / parent folder) - reference only, do not create on import' );
@@ -2746,6 +2748,29 @@ class SCMPrismaAccessExport
         foreach( $aliases as $k => $byType )
             foreach( $byType as $t => $ids )
                 $out[$k][$t] = count($ids);
+        return $out;
+    }
+
+    /**
+     * inherited entries "name [owner]": entries of predefined owners (e.g. ~340 trusted CAs of snippet=predefined)
+     * are summarised as one line "N entries [owner]"; all other entries are kept by name
+     */
+    public static function compactInherited( $inherited )
+    {
+        $out = array();
+        $predefined = array();
+        foreach( $inherited as $line )
+        {
+            if( preg_match( '/ \[(snippet|folder)=predefined\]$/', $line, $m ) )
+            {
+                $k = $m[1] . "=predefined";
+                $predefined[$k] = ( isset($predefined[$k]) ? $predefined[$k] : 0 ) + 1;
+                continue;
+            }
+            $out[] = $line;
+        }
+        foreach( $predefined as $k => $n )
+            $out[] = $n . " predefined entr" . ( $n == 1 ? "y" : "ies" ) . " [" . $k . "]";
         return $out;
     }
 
