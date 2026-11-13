@@ -35,6 +35,7 @@ UTIL:
 * scm export extend with SC / MU / RN / infra / prisma Browser / objects / security / NGFW
 * SCM diff and import
 * scm pa sync - introduction
+* scm export area=config | optimisation
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

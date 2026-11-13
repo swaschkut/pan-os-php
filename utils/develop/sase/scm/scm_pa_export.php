@@ -46,6 +46,8 @@ $supportedArguments['config-types'] = Array('niceName' => 'config-types', 'short
 $supportedArguments['config-scope'] = Array('niceName' => 'config-scope', 'shortHelp' => 'config area: comma separated groups ' . implode(",", SCMPrismaAccessExport::CONFIG_GROUPS) . ' (default: all)', 'argDesc' => '[group1,group2]');
 $supportedArguments['config-mode'] = Array('niceName' => 'config-mode', 'shortHelp' => 'config area: leaf (default, query only the deepest folders - their answers contain the parent objects) | all (query every container, slower; for verification)', 'argDesc' => 'leaf|all');
 $supportedArguments['config-devices'] = Array('niceName' => 'config-devices', 'shortHelp' => 'config area: also export device folders (type cloud / on-prem)');
+$supportedArguments['config-parallel'] = Array('niceName' => 'config-parallel', 'shortHelp' => 'config area: concurrent API requests (default 8, 1 = sequential)', 'argDesc' => 'N');
+$supportedArguments['config-page-size'] = Array('niceName' => 'config-page-size', 'shortHelp' => 'config area: entries per API page (default 1000; the server may cap it)', 'argDesc' => 'N');
 $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-predefined-snippets', 'shortHelp' => 'config area: also export predefined snippets (large)');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod (api.prod.datapath.prismaaccess.com, default) | prod6 (api.prod6.datapath.prismaaccess.com)', 'argDesc' => 'prod|prod6');
@@ -103,6 +105,8 @@ $export->configOptions = array(
     'mode' => isset(PH::$args['config-mode']) ? PH::$args['config-mode'] : 'leaf',
     'devices' => isset(PH::$args['config-devices']),
     'predefined_snippets' => isset(PH::$args['config-predefined-snippets']),
+    'parallel' => isset(PH::$args['config-parallel']) ? (int)PH::$args['config-parallel'] : 8,
+    'page_size' => isset(PH::$args['config-page-size']) ? (int)PH::$args['config-page-size'] : 1000,
 );
 if( !in_array($export->configOptions['mode'], array('leaf', 'all'), TRUE) )
     derr( "config-mode must be leaf or all", null, FALSE );

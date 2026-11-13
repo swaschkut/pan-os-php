@@ -86,6 +86,7 @@ Note: `debugapi` prints the bearer token and full API answers – do not share t
 | IAM lists come as `{"items": [...], "count": n}` → were stored as single object, IAM summary empty | list detection for `data` / `items` / top-level arrays (`PanSCMAPIConnector::listOfAnswer()`) |
 | `locations`, `mobile-agent/locations` return a top-level array → counted as 1 entry | same fix |
 | `area=config` too slow on a large tenant | `config-mode=leaf` (default) + skip of unavailable types |
+| `config-scope=objects,policies` leaf: 101 queries for 134 containers per type, `tags` very slow (each answer repeats all inherited / predefined objects, 200 per page, one request after the other) | patch 14: parallel queries and pages (`config-parallel`, default 8), page size 1000 (`config-page-size`), retry on 429 / 5xx, objects / seconds per type on the console, `config.http_requests` / `seconds` in the manifest; pagination continues after the entries really received (server page cap) |
 
 Re-run `area=iam` after patch 12: 0 errors, roles 35, permission sets 643, service accounts 4, access policies 122,
 permissions 6414 – list detection confirmed. Follow-ups (patch 13):
@@ -193,6 +194,10 @@ was found; wrong items are fixed in the code afterwards.
       answer does not contain all inherited objects (→ use `all` and report).
 - [ ] `manifest.json` → `config.api_queries` / runtime of `leaf` acceptable; `config.warnings` empty (objects
       without owner field).
+- [ ] Parallel export (patch 14): `config.seconds` / `config.http_requests` compared to the first run; no HTTP 429
+      errors in the console (otherwise `config-parallel=4`); page size: does the API accept `limit=1000`
+      (`debugapi`: number of entries in the first answer)?
+- [ ] Same slice with `config-parallel=1` and with default → compare → no differences.
 - [ ] `config/hierarchy.txt` matches the folder tree in SCM, incl. the order of the attached snippets per folder.
 - [ ] Every object returned for a container carries `folder` or `snippet` (otherwise it stays in the queried container
       – check files with `data` entries without these fields).

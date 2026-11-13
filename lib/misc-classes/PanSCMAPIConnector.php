@@ -2245,6 +2245,12 @@ class PanSCMAPIConnector
             $url .= "limit=" . $limit . "&offset=" . $offset;
 
             $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            //rate limit / server error: retry with backoff
+            for( $attempt = 0; $attempt < 4 && ( $result['http_code'] == 429 || $result['http_code'] >= 500 || $result['response'] === false ); $attempt++ )
+            {
+                sleep( (int)pow(2, $attempt + 1) );
+                $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            }
             $httpCode = $result['http_code'];
 
             //some deployment endpoints answer 'Access denied' / 400 on limit/offset - retry the first page without them
@@ -2290,10 +2296,198 @@ class PanSCMAPIConnector
                 break;
             if( $total === null && count($entries) < $limit )
                 break;
-            $offset += $limit;
+            //the server may cap the page size below $limit: continue after the entries really received
+            $offset += count($entries);
         }
 
         return array( 'http_code' => $httpCode, 'data' => $allData, 'total' => $total !== null ? $total : count($allData), 'is_list' => true, 'raw' => null, 'errors' => null );
+    }
+
+    /** @var int number of HTTP requests sent by getSCMResourceAllParallel() (statistics) */
+    public $parallelRequests = 0;
+
+    /**
+     * GET all entries of several SCM API list endpoints in parallel (curl_multi, limit/offset pagination)
+     *
+     * - the first page of every URL is requested in parallel (max. $parallel requests at the same time)
+     * - when the first page returns 'total', the remaining pages are requested in parallel as well
+     *   (offsets based on the number of entries really received - works if the server caps the page size)
+     * - HTTP 429 / 5xx / curl errors: retried up to 4 times with backoff (Retry-After honoured)
+     * - first page answers 400 / 403 or no list: the URL is fetched again sequentially with getSCMResourceAll()
+     *   (retry without limit / offset, single object answers)
+     *
+     * @param string[] $urls key => path incl. query (or absolute URL)
+     * @param int $limit page size
+     * @param int $parallel max. concurrent requests
+     * @return array key => same structure as getSCMResourceAll()
+     */
+    public function getSCMResourceAllParallel( $urls, $limit = 200, $parallel = 8 )
+    {
+        $parallel = max( 1, (int)$parallel );
+        $results = array();
+        $state = array();      // key => ['pages' => offset => entries, 'total' => int|null, 'http_code' => int, 'page_size' => int]
+        $queue = array();      // [key, offset, attempt, not_before]
+        $sequential = array();
+
+        foreach( $urls as $key => $u )
+        {
+            $state[$key] = array( 'pages' => array(), 'total' => null, 'http_code' => null, 'page_size' => null, 'error' => null );
+            $queue[] = array( $key, 0, 0, 0 );
+        }
+
+        $mh = curl_multi_init();
+        $running = array();    // (int)handle id => [handle, key, offset, attempt]
+
+        while( count($queue) > 0 || count($running) > 0 )
+        {
+            //start requests
+            $now = microtime(TRUE);
+            foreach( $queue as $i => $job )
+            {
+                if( count($running) >= $parallel )
+                    break;
+                if( $job[3] > $now )
+                    continue;
+                list( $key, $offset, $attempt ) = $job;
+                unset( $queue[$i] );
+                if( $state[$key]['error'] !== null )
+                    continue;
+
+                $this->getAccessToken();
+                $base = ( strpos($urls[$key], "https://") === 0 ) ? "" : $this->url_api;
+                $url = str_replace( ' ', '%20', $base . $urls[$key] );
+                $url .= ( strpos($url, "?") !== FALSE ) ? "&" : "?";
+                $url .= "limit=" . $limit . "&offset=" . $offset;
+                if( $this->showApiCalls )
+                    PH::print_stdout( "URL: " . $url . "\nMETHOD: GET (parallel)" );
+
+                $ch = curl_init();
+                curl_setopt( $ch, CURLOPT_URL, $url );
+                curl_setopt( $ch, CURLOPT_HTTPHEADER, array( "Authorization: Bearer {$this->access_token}" ) );
+                curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, FALSE );
+                curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE );
+                curl_setopt( $ch, CURLOPT_HEADER, TRUE );
+                curl_setopt( $ch, CURLOPT_TIMEOUT, 300 );
+                curl_multi_add_handle( $mh, $ch );
+                $running[(int)$ch] = array( $ch, $key, $offset, $attempt );
+                $this->parallelRequests++;
+            }
+            $queue = array_values( $queue );
+
+            if( count($running) == 0 )
+            {
+                usleep( 200000 );
+                continue;
+            }
+
+            do {
+                $status = curl_multi_exec( $mh, $active );
+            } while( $status === CURLM_CALL_MULTI_PERFORM );
+            if( $active )
+                curl_multi_select( $mh, 1.0 );
+
+            while( ( $info = curl_multi_info_read($mh) ) !== FALSE )
+            {
+                $ch = $info['handle'];
+                list( , $key, $offset, $attempt ) = $running[(int)$ch];
+                unset( $running[(int)$ch] );
+
+                $raw = curl_multi_getcontent( $ch );
+                $httpCode = (int)curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+                $headerSize = (int)curl_getinfo( $ch, CURLINFO_HEADER_SIZE );
+                $curlError = $info['result'] !== CURLE_OK ? curl_error($ch) : null;
+                curl_multi_remove_handle( $mh, $ch );
+
+                $headers = $raw !== null && $raw !== false ? substr( $raw, 0, $headerSize ) : '';
+                $body = $raw !== null && $raw !== false ? substr( $raw, $headerSize ) : '';
+                $json = $body !== '' && $body !== false ? json_decode( $body, TRUE ) : null;
+                if( $this->showApiCalls )
+                    PH::print_stdout( "HTTP: " . $httpCode . " (parallel) " . $urls[$key] . " offset " . $offset );
+
+                //retry: rate limit, server errors, connection problems
+                if( ( $curlError !== null || $httpCode == 429 || $httpCode >= 500 ) && $attempt < 4 )
+                {
+                    $wait = pow( 2, $attempt + 1 );
+                    if( preg_match( '/^Retry-After:\s*(\d+)/mi', $headers, $m ) )
+                        $wait = max( $wait, (int)$m[1] );
+                    $queue[] = array( $key, $offset, $attempt + 1, microtime(TRUE) + $wait );
+                    continue;
+                }
+
+                $list = ( $curlError === null && $httpCode < 400 && !isset($json['_errors']) ) ? self::listOfAnswer( $json ) : null;
+                if( $list === null )
+                {
+                    if( $offset == 0 && $curlError === null && ( $httpCode < 400 || in_array($httpCode, array(400, 403), TRUE) ) )
+                    {
+                        //single object or limit/offset not accepted: sequential path
+                        $sequential[$key] = true;
+                        $state[$key]['error'] = 'sequential';
+                        continue;
+                    }
+                    if( $curlError !== null )
+                        $errors = array( array( 'message' => 'curl error: ' . $curlError ) );
+                    elseif( isset($json['_errors']) )
+                        $errors = $json['_errors'];
+                    else
+                        $errors = array( array( 'message' => 'HTTP ' . $httpCode, 'details' => $json !== null ? $json : $body ) );
+                    $state[$key]['error'] = $errors;
+                    $state[$key]['http_code'] = $httpCode;
+                    continue;
+                }
+
+                $entries = $list['list'];
+                $state[$key]['pages'][$offset] = $entries;
+                $state[$key]['http_code'] = $httpCode;
+                if( $list['total'] !== null )
+                    $state[$key]['total'] = $list['total'];
+
+                if( $offset == 0 )
+                {
+                    $n = count($entries);
+                    $total = $state[$key]['total'];
+                    if( $n > 0 && $total !== null && $total > $n )
+                    {
+                        //all remaining pages at once
+                        $state[$key]['page_size'] = $n;
+                        for( $o = $n; $o < $total; $o += $n )
+                            $queue[] = array( $key, $o, 0, 0 );
+                    }
+                    elseif( $n > 0 && $total === null && $n >= $limit )
+                        $queue[] = array( $key, $n, 0, 0 );
+                }
+                elseif( $state[$key]['total'] === null && count($entries) >= $limit )
+                    $queue[] = array( $key, $offset + count($entries), 0, 0 );
+            }
+        }
+        curl_multi_close( $mh );
+
+        foreach( $urls as $key => $u )
+        {
+            if( isset($sequential[$key]) )
+            {
+                $results[$key] = $this->getSCMResourceAll( $u, $limit );
+                continue;
+            }
+            $st = $state[$key];
+            if( $st['error'] !== null )
+            {
+                $results[$key] = array( 'http_code' => $st['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => null, 'errors' => $st['error'] );
+                continue;
+            }
+            ksort( $st['pages'] );
+            $data = array();
+            foreach( $st['pages'] as $entries )
+                foreach( $entries as $e )
+                    $data[] = $e;
+            //incomplete (page missing / total changed while reading): sequential
+            if( $st['total'] !== null && count($data) < $st['total'] )
+            {
+                $results[$key] = $this->getSCMResourceAll( $u, $limit );
+                continue;
+            }
+            $results[$key] = array( 'http_code' => $st['http_code'], 'data' => $data, 'total' => $st['total'] !== null ? $st['total'] : count($data), 'is_list' => true, 'raw' => null, 'errors' => null );
+        }
+        return $results;
     }
 
     /**

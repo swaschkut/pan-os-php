@@ -52,6 +52,8 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `config-scope=` | config: groups `identity`, `objects`, `network`, `policies`, `device` (default: all) |
 | `config-mode=leaf\|all` | config: `leaf` (default) queries only the deepest folders, `all` every container (slower, for verification) |
 | `config-types=` | config: comma separated types, e.g. `addresses,security-rules` (default: all) |
+| `config-parallel=N` | config: concurrent API requests (default `8`, `1` = one after the other); HTTP 429 / 5xx are retried with backoff |
+| `config-page-size=N` | config: entries per API page (default `1000`; if the server returns fewer, the next offsets follow the received count) |
 | `config-devices` | config: also the device folders (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
 | `config-predefined-snippets` | config: also predefined snippets (large) |
 | `outdir=` | base directory, default `export` |
@@ -359,7 +361,14 @@ A type that answers 401 / 403 / 404 is not queried again for the same kind of co
 `all`: every container is queried (the previous behaviour – slower; both modes must give the same files, see
 [NEXT_STEPS](NEXT_STEPS_pa_export.md) §4.8). An explicit `container=` filter always queries exactly those containers.
 Every file lists the queries it was built from (`source_queries`); `manifest.json` → `config.mode`, `api_queries`,
-`skipped_unavailable`, `warnings`.
+`skipped_unavailable`, `http_requests`, `parallel`, `page_size`, `seconds`, `warnings`.
+
+**Speed.** Every leaf answer repeats all inherited objects (e.g. everything in `All` / `Shared` and the predefined
+objects), so the volume is roughly *queries × inherited objects*. Per type the queries run in parallel
+(`config-parallel`, default 8): first one query per container kind (folder / device / snippet) to find out whether the
+type is available, then all others; remaining pages of a query are requested in parallel as soon as the first page
+reports `total`. Large pages (`config-page-size`, default 1000) cut the number of requests. The console shows per type
+the number of objects received and the time. Lower `config-parallel` if the tenant answers with many HTTP 429.
 
 **Containers.** Folders of type `container` (device folders of type `cloud` / `on-prem` with `config-devices`), then
 snippets (predefined ones with `config-predefined-snippets`). A device folder is queried with `folder=<serial>`; if the

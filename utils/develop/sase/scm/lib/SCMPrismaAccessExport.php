@@ -1795,6 +1795,14 @@ class SCMPrismaAccessExport
     {
         $a = self::AREA_CONFIG;
         $opt = $this->configOptions;
+        $configStart = microtime(TRUE);
+        if( !property_exists($this->connector, 'parallelRequests') )
+            $this->connector->parallelRequests = 0;
+        $requestsBefore = $this->connector->parallelRequests;
+        if( isset($opt['parallel']) )
+            $this->configParallel = max( 1, (int)$opt['parallel'] );
+        if( isset($opt['page_size']) )
+            $this->configPageSize = max( 1, (int)$opt['page_size'] );
 
         $setup = array(
             array( 'area' => $a, 'order' => 1, 'name' => 'folders', 'category' => 'dependency', 'scope' => 'tenant', 'url' => "/config/setup/v1/folders", 'depends_on' => array(), 'fetched_as' => 'selected' ),
@@ -1876,17 +1884,49 @@ class SCMPrismaAccessExport
             $queries = $mode == 'all' ? self::queryPlanAll($eligible) : self::queryPlanLeaf($eligible, $folderInfo);
             PH::print_stdout( " - [config " . sprintf("%03d", $type['order']) . "] " . $type['name'] . " ... " . count($queries) . " quer" . ( count($queries) == 1 ? "y" : "ies" ) . " for " . count($eligible) . " container(s)" );
 
+            $typeStart = microtime(TRUE);
+            $typeObjects = 0;
             foreach( !empty($type['position']) ? array('pre', 'post') : array(null) as $position )
             {
                 $name = $type['name'] . ( $position !== null ? "-" . $position : "" );
-                foreach( $queries as $q )
+
+                //URLs of all queries; fetched in parallel: first one query per container class (to learn
+                //whether the type is available for that class), then all others
+                $jobs = array();
+                foreach( $queries as $i => $q )
+                {
+                    $c = $q['container'];
+                    $class = $c['kind'] == 'snippet' ? 'snippet' : ( $c['device'] ? 'device' : 'folder' );
+                    $paramName = $c['kind'] == 'snippet' ? 'snippet' : ( isset($deviceParam[$c['name']]) ? $deviceParam[$c['name']] : 'folder' );
+                    $jobs[$i] = array( 'class' => $class,
+                        'url' => $type['path'] . "?" . $paramName . "=" . rawurlencode($c['name']) . ( $position !== null ? "&position=" . $position : "" ) );
+                }
+                $prefetched = array();
+                $probe = array();
+                foreach( $jobs as $i => $j )
+                    if( !isset($unavailable[$type['name'] . "|" . $j['class']]) && !isset($probe[$j['class']]) )
+                        $probe[$j['class']] = $i;
+                $probeUrls = array();
+                foreach( $probe as $i )
+                    $probeUrls[$i] = $jobs[$i]['url'];
+                $prefetched = $this->fetchConfigQueries( $probeUrls );
+                foreach( $probe as $class => $i )
+                    if( $class !== 'device' && $prefetched[$i]['errors'] !== null && in_array($prefetched[$i]['http_code'], array(401, 403, 404), TRUE) )
+                        $unavailable[$type['name'] . "|" . $class] = $queries[$i]['container']['name'];
+                $restUrls = array();
+                foreach( $jobs as $i => $j )
+                    if( !isset($prefetched[$i]) && !isset($unavailable[$type['name'] . "|" . $j['class']]) )
+                        $restUrls[$i] = $j['url'];
+                $prefetched = $prefetched + $this->fetchConfigQueries( $restUrls );
+
+                foreach( $queries as $i => $q )
                 {
                     $c = $q['container'];
                     $qkey = $c['kind'] . ":" . $c['name'];
-                    $class = $c['kind'] == 'snippet' ? 'snippet' : ( $c['device'] ? 'device' : 'folder' );
+                    $class = $jobs[$i]['class'];
 
                     //type unavailable for this class of container: no further calls
-                    if( isset($unavailable[$type['name'] . "|" . $class]) )
+                    if( !isset($prefetched[$i]) )
                     {
                         $this->configStats['skipped_unavailable']++;
                         foreach( $q['covers'] as $ck )
@@ -1894,9 +1934,9 @@ class SCMPrismaAccessExport
                         continue;
                     }
 
-                    $paramName = $c['kind'] == 'snippet' ? 'snippet' : ( isset($deviceParam[$c['name']]) ? $deviceParam[$c['name']] : 'folder' );
-                    $url = $type['path'] . "?" . $paramName . "=" . rawurlencode($c['name']) . ( $position !== null ? "&position=" . $position : "" );
-                    $result = $this->connector->getSCMResourceAll( $url );
+                    $url = $jobs[$i]['url'];
+                    $result = $prefetched[$i];
+                    unset( $prefetched[$i] );
                     $this->configStats['queries']++;
 
                     //device folders: "folder=<serial>", fallback "device=<serial>"
@@ -1938,6 +1978,7 @@ class SCMPrismaAccessExport
                     if( !$result['is_list'] || !is_array($result['data']) )
                         continue;
 
+                    $typeObjects += count($result['data']);
                     foreach( $result['data'] as $obj )
                     {
                         //owner: snippet, folder or device (a device is a folder of type cloud / on-prem)
@@ -1975,6 +2016,8 @@ class SCMPrismaAccessExport
                     }
                 }
             }
+
+            PH::print_stdout( "     " . $typeObjects . " objects received, " . round( microtime(TRUE) - $typeStart, 1 ) . "s" );
 
             //one file per exported container and type
             foreach( $eligible as $ck => $c )
@@ -2021,7 +2064,33 @@ class SCMPrismaAccessExport
                 $n += count($ids);
             $this->configStats['owners_not_exported'][$owner] = $n;
         }
-        PH::print_stdout( " - [config] " . $this->configStats['queries'] . " API queries (mode " . $mode . "), " . $this->configStats['skipped_unavailable'] . " skipped (type unavailable)" );
+        $this->configStats['http_requests'] = $this->connector->parallelRequests - $requestsBefore;
+        $this->configStats['parallel'] = $this->configParallel;
+        $this->configStats['page_size'] = $this->configPageSize;
+        $this->configStats['seconds'] = round( microtime(TRUE) - $configStart, 1 );
+        PH::print_stdout( " - [config] " . $this->configStats['queries'] . " API queries (mode " . $mode . ", parallel " . $this->configParallel . ", page size " . $this->configPageSize . "), "
+            . $this->configStats['skipped_unavailable'] . " skipped (type unavailable), " . $this->configStats['seconds'] . "s" );
+    }
+
+    /** @var int config area: concurrent requests (config-parallel=) */
+    public $configParallel = 8;
+    /** @var int config area: page size (config-page-size=) */
+    public $configPageSize = 1000;
+
+    /**
+     * config queries: in parallel (curl_multi) or, with config-parallel=1, one after the other
+     * @param string[] $urls key => url
+     */
+    private function fetchConfigQueries( $urls )
+    {
+        if( count($urls) == 0 )
+            return array();
+        if( $this->configParallel > 1 && method_exists($this->connector, 'getSCMResourceAllParallel') )
+            return $this->connector->getSCMResourceAllParallel( $urls, $this->configPageSize, $this->configParallel );
+        $results = array();
+        foreach( $urls as $k => $u )
+            $results[$k] = $this->connector->getSCMResourceAll( $u, $this->configPageSize );
+        return $results;
     }
 
     /** @var string[] warnings of exportConfig() */
@@ -2174,6 +2243,10 @@ class SCMPrismaAccessExport
             'mode' => $this->configStats['mode'],
             'api_queries' => $this->configStats['queries'],
             'skipped_unavailable' => $this->configStats['skipped_unavailable'],
+            'http_requests' => isset($this->configStats['http_requests']) ? $this->configStats['http_requests'] : null,
+            'parallel' => isset($this->configStats['parallel']) ? $this->configStats['parallel'] : null,
+            'page_size' => isset($this->configStats['page_size']) ? $this->configStats['page_size'] : null,
+            'seconds' => isset($this->configStats['seconds']) ? $this->configStats['seconds'] : null,
             'warnings' => array_values( array_unique($this->warnings) ),
             'options' => $this->configOptions,
         );

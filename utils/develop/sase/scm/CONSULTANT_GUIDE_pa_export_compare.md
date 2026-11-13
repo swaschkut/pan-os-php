@@ -72,6 +72,7 @@ Result: `/data/pa-export/<TSG>/<YYYYmmdd-HHMMSS>/` – one directory per run, no
 | `container="Mobile Users"` / `config-types=addresses,security-rules` | the tenant is large and you only need part of the objects / policies |
 | `config-devices` | NGFW: include the device folders (device specific interfaces, routing, settings) |
 | `config-scope=objects,policies` | only some groups of the config area (`identity`, `objects`, `network`, `policies`, `device`) |
+| `config-parallel=4` | the tenant answers with HTTP 429 (rate limit) – default is 8 concurrent requests |
 | `config-mode=all` | only to cross-check: queries every folder instead of only the deepest ones (much slower) |
 | `debugapi` | troubleshooting only |
 
@@ -291,7 +292,7 @@ remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch 
 | endpoint `error` with HTTP 400 / 404 | API path or parameter not valid for this tenant → note it in the verification list ([NEXT_STEPS](NEXT_STEPS_pa_export.md) §4) |
 | egress IP error | try `egressip-env=prod6`; check the egress API key |
 | `psk-list.csv` shows `DECRYPT_FAILED` | normal for SCM tenants (own master key) → fill `psk_new`, check with `scm_pa_secret_check.php` (4.2); a known master key: `master-key=<key>` |
-| export of `config` takes long | default `config-mode=leaf` already queries only the deepest folders; further: `config-scope=` / `container=` / `config-types=` |
+| export of `config` takes long | default `config-mode=leaf` already queries only the deepest folders and runs 8 requests in parallel; further: `config-scope=` / `container=` / `config-types=`; try `config-parallel=16` if no HTTP 429 occurs |
 | compare: "not comparable – not exported in right" | the two exports used different areas / filters → export again with the same options |
 | compare: "format_version …" hint | an export from an older version → export again |
 | compare: everything "only in left / right" in one folder | the folder is named differently → name map `config,container,<left>,<right>` |
