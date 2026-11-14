@@ -132,6 +132,10 @@ class PanSCMAPIConnector
         {
             $folderNameArray[] = $folder['name'];
 
+            // entries without 'type' (seen in exports): a device has a serial number, everything else is a folder
+            if( !isset($folder['type']) || $folder['type'] === null || $folder['type'] === '' )
+                $folder['type'] = isset($folder['serial_number']) ? 'on-prem' : 'container';
+
             $display_more = false;
             if( $this->showApiCalls && $display_more )
             {
@@ -216,7 +220,7 @@ class PanSCMAPIConnector
                 if( $sub === null )
                     $sub = $pan->createDeviceCloud( $folder['name'], $parent );
             }
-            $sub->setSaseID($folder['id']);
+            $sub->setSaseID(isset($folder['id']) ? $folder['id'] : null);
 
             $this->Connector_addSnippet($pan, $sub, $folder);
         }
@@ -234,7 +238,7 @@ class PanSCMAPIConnector
             else
                 $sub = $pan->createContainer( $folder['name'], $parent );
         }
-        $sub->setSaseID($folder['id']);
+        $sub->setSaseID(isset($folder['id']) ? $folder['id'] : null);
 
         $this->Connector_addSnippet($pan, $sub, $folder);
 
@@ -286,7 +290,7 @@ class PanSCMAPIConnector
             $sub = $pan->findSnippet( $folder['name'] );
             if( $sub == null )
                 $sub = $pan->createSnippet( $folder['name'] );
-            $sub->setSaseID($folder['id']);
+            $sub->setSaseID(isset($folder['id']) ? $folder['id'] : null);
             if( isset($folder['type']) && $folder['type'] == "predefined" )
                 $sub->setPredefined( true );
 
