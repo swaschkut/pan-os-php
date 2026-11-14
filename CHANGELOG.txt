@@ -40,6 +40,7 @@ UTIL:
 * scm-api:// | improvement if SCM API is not having info for VP / WFAV
 * scm extend for panorama NGFW import
 * type=rule actions=securityProfile-replace-by-Group | extend with parent search
+* pan-os-php type=scm-xyz | introduction of "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync",
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

@@ -2263,6 +2263,7 @@ class PH
         "scm-changes",
         "scm-apply",
         "scm-export-xml",
+        "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync",
         "scm-import",
         "upload",
         "xml-issue",
@@ -2338,8 +2339,35 @@ class PH
         "device-config-bundle"
     );
 
+    /**
+     * SCM tool scripts (utils/develop/sase/scm/) started with pan-os-php type=...: run as their own PHP process with
+     * the remaining arguments (they are standalone scripts with their own argument handling, exit codes and the
+     * confirmation prompt of execute)
+     */
+    const SCM_SCRIPT_TYPES = array(
+        'scm-export' => 'scm_pa_export.php',
+        'scm-xml-to-change' => 'scm_pa_xml_to_change.php',
+        'scm-change' => 'scm_pa_change.php',
+        'scm-panorama-to-change' => 'scm_pa_panorama_to_change.php',
+        'scm-compare' => 'scm_pa_compare.php',
+        'scm-sync' => 'scm_pa_sync.php',
+    );
+
+    public static function runSCMScript( $type, $argv )
+    {
+        $script = dirname(__FILE__) . "/../../utils/develop/sase/scm/" . self::SCM_SCRIPT_TYPES[$type];
+        $cmd = escapeshellarg(PHP_BINARY) . " " . escapeshellarg($script);
+        foreach( array_slice($argv, 1) as $a )
+            $cmd .= " " . escapeshellarg($a);
+        passthru( $cmd, $rc );
+        exit( $rc );
+    }
+
     public static function callPANOSPHP( $type, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectfolder = "" )
     {
+        if( isset(self::SCM_SCRIPT_TYPES[$type]) )
+            self::runSCMScript( $type, $argv );
+
         if( $type == "rule" )
             $util = new RULEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

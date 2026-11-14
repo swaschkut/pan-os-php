@@ -25,6 +25,28 @@ php utils/develop/sase/scm/scm_pa_change.php in=scm-api://1234 changes=change.js
 php utils/develop/sase/scm/scm_pa_change.php in=scm-api://1234 changes=change.json execute
 ```
 
+All steps with `pan-os-php type=…` (the SCM scripts are registered as types; arguments as with `php <script>`):
+
+| type | script |
+|---|---|
+| `scm-export` | scm_pa_export.php |
+| `scm-export-xml` | the export as one XML (UTIL type) |
+| `scm-xml-to-change` | scm_pa_xml_to_change.php |
+| `scm-change` | scm_pa_change.php (`diff=`, `select=`, `execute`) |
+| `scm-panorama-to-change` | scm_pa_panorama_to_change.php |
+| `scm-compare` / `scm-sync` | scm_pa_compare.php / scm_pa_sync.php |
+
+```
+pan-os-php type=scm-export in=scm-api://1234 area=config outdir=export ui-api-host=<region host>
+pan-os-php type=scm-export-xml in=scm-export://export/1234/<timestamp> out=1234.xml
+pan-os-php type=playbook 'json=$$playbook$$/visibility.json' in=1234.xml out=1234_visible.xml
+pan-os-php type=scm-xml-to-change in=scm-export://export/1234/<timestamp> file2=1234_visible.xml out=change.json
+pan-os-php type=scm-change in=scm-api://1234 changes=change.json diff=diff.json          # dry-run + differences
+pan-os-php type=scm-change in=scm-api://1234 changes=change.json select=diff_selected.json execute
+```
+
+Use the same export folder (with timestamp) for `scm-export-xml` and `scm-xml-to-change`.
+
 ## in=scm-export://
 
 `<folder>`: the export folder `<outdir>/<TSG>/<timestamp>/`, or `<outdir>/<TSG>` – then the newest export of that TSG
