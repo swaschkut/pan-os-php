@@ -411,6 +411,19 @@ tokens never in shared files (HAR: "Export HAR (sanitized)", no `debugapi` logs,
 | ✅ | area `explicit-proxy`, GlobalProtect portal / Clientless VPN / trusted zones, Prisma Access Agent (internal UI API) |
 | ✅ | pan-os-php loader: vulnerability / WildFire-AV profiles from the internal API ([SECURITY_PROFILES_public_vs_internal_api.md](SECURITY_PROFILES_public_vs_internal_api.md)) |
 
+### Production export findings (2026-11-14)
+
+* Folder `Colo Connect`: in the folder list, the configuration API answers "Folder Colo Connect doesn't exist" →
+  detected once, reported as folder without configuration (manifest `config.folders_without_configuration`,
+  checklist info), not queried for the other types.
+* Leaf mode: a failing leaf query marked all containers it covers (All, ngfw-shared, snippets) as error with the
+  message of the leaf → now only the queried container gets the error; containers covered only by failed queries
+  are queried directly at the end.
+* Validation answers ("folder must be one of [Remote Networks, Service Connections]", "fails to match the required
+  pattern" – e.g. qos-profiles, Service Connections rules / profile groups) → unavailable, not error.
+* Mobile users internal endpoints: HTTP 500 "configuration cannot be loaded right now … ENOTFOUND paas-cfgserv-…" –
+  SCM backend answer for that tenant (retry later / open a case), not a tool error.
+
 ## 8. Known limitations
 
 - Private keys of certificates are not exported (manual import on the target tenant).

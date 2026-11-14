@@ -1795,6 +1795,9 @@ class SCMPrismaAccessExport
      */
     const CONFIG_HEAVY_TYPES = array( 'applications' );
 
+    /** folders of the folder list that answer "Folder … doesn't exist" for configuration (e.g. "Colo Connect") */
+    public $noConfigFolders = array();
+
     /** config types queried for every container also in leaf mode (per folder overrides hide the parent value) */
     const CONFIG_ALL_MODE_TYPES = array( 'variables' );
 
@@ -2080,7 +2083,7 @@ class SCMPrismaAccessExport
         {
             $eligible = array();
             foreach( $containers as $c )
-                if( self::configTypeEligible($c, $type) )
+                if( self::configTypeEligible($c, $type) && !( $c['kind'] == 'folder' && isset($this->noConfigFolders[$c['name']]) ) )
                     $eligible[$c['kind'] . ":" . $c['name']] = $c;
             if( count($eligible) == 0 )
                 continue;
@@ -2139,8 +2142,40 @@ class SCMPrismaAccessExport
                 //(every leaf answer repeats all inherited objects - hundreds of thousands per type)
                 $chunkSize = max( 4, $this->configParallel * 2 );
 
-                foreach( $posQueries as $i => $q )
+                //queue of the queries; at the end direct queries for containers whose covering (leaf) queries failed
+                $queue = array_keys( $posQueries );
+                $failedCover = array();      // container => covered only by failed queries so far
+                $fallbackDone = false;
+                while( TRUE )
                 {
+                    if( count($queue) == 0 )
+                    {
+                        if( $fallbackDone )
+                            break;
+                        $fallbackDone = true;
+                        foreach( $eligible as $fck => $fc )
+                        {
+                            if( !isset($failedCover[$fck]) || !in_array( $position, self::rulePositions($type, $fc['kind']), TRUE ) )
+                                continue;
+                            if( $fc['kind'] == 'folder' && isset($this->noConfigFolders[$fc['name']]) )
+                                continue;
+                            $st = isset($collected[$fck][$name]['status']) ? $collected[$fck][$name]['status'] : array();
+                            if( count($st) > 0 )
+                                continue;
+                            $fi = "fallback:" . $fck;
+                            $fclass = $fc['kind'] == 'snippet' ? 'snippet' : ( $fc['device'] ? 'device' : 'folder' );
+                            $fparam = $fc['kind'] == 'snippet' ? 'snippet' : ( isset($deviceParam[$fc['name']]) ? $deviceParam[$fc['name']] : 'folder' );
+                            $jobs[$fi] = array( 'class' => $fclass, 'url' => $type['path'] . "?" . $fparam . "=" . rawurlencode($fc['name']) . ( $position !== null ? "&position=" . $position : "" ) );
+                            $posQueries[$fi] = array( 'container' => $fc, 'covers' => array( $fck ) );
+                            $restUrls[$fi] = $jobs[$fi]['url'];
+                            $queue[] = $fi;
+                        }
+                        if( count($queue) == 0 )
+                            break;
+                        PH::print_stdout( "     " . count($queue) . " direct quer" . ( count($queue) == 1 ? "y" : "ies" ) . " (the leaf queries that cover these containers failed)" );
+                    }
+                    $i = array_shift( $queue );
+                    $q = $posQueries[$i];
                     $c = $q['container'];
                     $qkey = $c['kind'] . ":" . $c['name'];
                     $class = $jobs[$i]['class'];
@@ -2185,16 +2220,32 @@ class SCMPrismaAccessExport
 
                     if( $result['errors'] !== null )
                     {
+                        $msg = self::errorMessage($result['errors']);
                         $status = in_array($result['http_code'], array(401, 403, 404), TRUE) ? 'unavailable' : 'error';
                         if( $status == 'unavailable' )
                             $unavailable[$type['name'] . "|" . $class] = $c['name'];
-                        foreach( $q['covers'] as $ck )
+                        //folder in the folder list without configuration (e.g. "Colo Connect"): no further queries
+                        elseif( $c['kind'] == 'folder' && preg_match( "/Folder .* doesn.t exist/i", $msg ) )
                         {
-                            $collected[$ck][$name]['status'][] = $status;
-                            $collected[$ck][$name]['errors'][] = $url . ": " . self::errorMessage($result['errors']);
+                            $status = 'unavailable';
+                            if( !isset($this->noConfigFolders[$c['name']]) )
+                            {
+                                $this->noConfigFolders[$c['name']] = $msg;
+                                PH::print_stdout( "     ! folder '" . $c['name'] . "' has no configuration (API: doesn't exist) - not queried any more" );
+                            }
                         }
+                        //type not allowed in this folder (validation answer of the API)
+                        elseif( preg_match( "/must be one of \[|fails to match the required pattern/i", $msg ) )
+                            $status = 'unavailable';
+                        //only the queried container gets the result; the other containers this (leaf) query covers
+                        //are queried directly at the end if no other query covers them
+                        $collected[$qkey][$name]['status'][] = $status;
+                        $collected[$qkey][$name]['errors'][] = $url . ": " . $msg;
+                        foreach( $q['covers'] as $ck )
+                            if( $ck !== $qkey )
+                                $failedCover[$ck] = true;
                         if( $status == 'error' )
-                            PH::print_stdout( "     x ERROR " . $name . " " . $qkey . ": " . self::errorMessage($result['errors']) );
+                            PH::print_stdout( "     x ERROR " . $name . " " . $qkey . ": " . $msg );
                         continue;
                     }
 
@@ -2567,6 +2618,7 @@ class SCMPrismaAccessExport
             'owned_objects_by_container' => $this->configStats['containers'],
             'owners_not_exported' => $this->configStats['owners_not_exported'],
             'types_unavailable' => array_keys($unavailableTypes),
+            'folders_without_configuration' => array_keys($this->noConfigFolders),
             'position_identical' => isset($this->configStats['position_identical']) ? $this->configStats['position_identical'] : array(),
             'owner_aliases' => self::countAliases( isset($this->configStats['owner_aliases']) ? $this->configStats['owner_aliases'] : array() ),
             'owners_not_in_hierarchy' => isset($this->configStats['owners_not_in_hierarchy']) ? $this->configStats['owners_not_in_hierarchy'] : array(),
@@ -2931,7 +2983,11 @@ class SCMPrismaAccessExport
                 array_map( function($e){ return self::key($e['area'], $e['name']) . ": " . (isset($e['error']) ? $e['error'] : ''); },
                     array_filter( $manifest['endpoints'], function($e){ return isset($e['status']) && $e['status'] == 'error'; } ) ) );
         if( count($manifest['unavailable']) > 0 )
-            $add( 'unavailable', 'check', 'export', 'Endpoints not available', 'product not licensed or the service account has no permission (HTTP 401/403/404)', $manifest['unavailable'] );
+            $add( 'unavailable', 'check', 'export', 'Endpoints not available', 'product not licensed or the service account has no permission (HTTP 401/403/404), type not allowed in the folder, folder without configuration', $manifest['unavailable'] );
+        if( !empty($manifest['config']['folders_without_configuration']) )
+            $add( 'config_no_config_folders', 'info', self::AREA_CONFIG, 'Folders without configuration',
+                'listed in the folder list, but the configuration API answers "Folder … doesn\'t exist" (e.g. Colo Connect) - not exported, nothing to migrate there',
+                $manifest['config']['folders_without_configuration'] );
 
         //secrets
         foreach( array( self::AREA_RN, self::AREA_SC ) as $area )
