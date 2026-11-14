@@ -2263,7 +2263,7 @@ class PH
         "scm-changes",
         "scm-apply",
         "scm-export-xml",
-        "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync",
+        "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync", "scm-report",
         "scm-import",
         "upload",
         "xml-issue",
@@ -2351,6 +2351,7 @@ class PH
         'scm-panorama-to-change' => 'scm_pa_panorama_to_change.php',
         'scm-compare' => 'scm_pa_compare.php',
         'scm-sync' => 'scm_pa_sync.php',
+        'scm-report' => 'scm_pa_report.php',
     );
 
     public static function runSCMScript( $type, $argv )

@@ -1,6 +1,6 @@
 # Prisma Access lifecycle – from requirements to maturity report
 
-Concept / target picture. Status: **draft for discussion – nothing of the new parts is implemented yet.** Existing
+Concept / target picture. Status: **draft for discussion – nothing of the new parts is implemented yet** (updated 2026-11-14: report outline 4.1, project flow 4.2; steps A + B as first version: `scm_pa_report.php` / `type=scm-report`, README_pa_report.md). Existing
 building blocks are marked ✅ (see [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md)).
 
 ## 1. Goal
@@ -117,6 +117,39 @@ vs. design (bandwidth, MU count), every private-access RN has a route to an SC, 
 | as-built report | like the HLD, generated from an export | same generator |
 | maturity report | as-built report + diff design ↔ as-built (`scm_pa_compare.php`) + best practice / visibility results + checklist status, optional score | HTML / PDF |
 
+### 4.1 Report outline – as-built / maturity report (same structure as the HLD)
+
+Target: close to the maturity report Palo Alto Networks produces (structure to be aligned with a sample of the PANW
+report). Every section exists three times: from the **design** (HLD), from the **export** (as-built) and as **diff**
+design ↔ as-built (maturity). Data source = export area / endpoint (`<area>/NN_<endpoint>.json`).
+
+| # | section | content | export data |
+|---|---|---|---|
+| 1 | Summary | tenant (TSG), licences / units, components in use, maturity score, top findings, open checklist items | manifest, `infra/locations`, `remote-networks/bandwidth-allocations`, results of 2–8 |
+| 2 | Infrastructure | infrastructure subnet, infrastructure BGP AS, internal DNS servers / domains, egress IPs (allow lists), locations in use | `infra/shared-infrastructure-settings`, `infra/bgp-routing`, `infra/internal-dns-servers`, `infra/locations`, egress IP export |
+| 3 | Service connections | per SC: location, tunnels (primary / secondary = active / backup), backup SC, peer endpoints (IKE gateway, peer address), IKE / IPsec profiles, routing (BGP peer AS / static subnets, summarisation, no-export), QoS, SC groups, traffic steering; **network plan** DC ↔ SC ↔ Prisma Access with routing domains | `service-connections/*` (service-connections, ike-*, ipsec-*, qos-profiles, service-connection-groups, traffic-steering-rules), `ip-mapping.json` |
+| 4 | Remote networks | per RN: location / SPN / bandwidth pool, internet-only vs. private access, tunnels (HA / ECMP), peer endpoints, routing (BGP / static), DNS proxy; location overview (map / table); **network plan** branches ↔ RN ↔ Prisma Access | `remote-networks/*` (remote-networks, bandwidth-allocations, ike-*, ipsec-*, qos-profiles), `ip-mapping.json` |
+| 5 | Mobile users – gateways | locations / regions, IP pools (per region, overlap check), portal / gateway, authentication (SAML / CIE / local, authentication profiles, certificates), DNS, HIP | `mobile-users/mobile-agent-*`, `gp-portals`, authentication / certificate endpoints, `ip-mapping.json` |
+| 5a | GlobalProtect (GPA) | agent profiles / app settings (connect method, always-on, split tunnel), tunnel profiles, agent versions, clientless apps, trusted zones | `mobile-users/mobile-agent-agent-profiles`, `-tunnel-profiles`, `-agent-versions`, `-global-settings`, `gp-*` (internal UI API) |
+| 5b | Prisma Access Agent (PAA) | enabled, app settings, client authentication, forwarding profiles, staged rollout, token lifetime, project based access | `mobile-users/pa-agent-*`, `mobile-agent-enable`, `explicit-proxy/forwarding-*` |
+| 6 | Explicit Proxy | settings, authentication (IP access, users), block settings, proxy server profiles, upstream proxy rules, PAC / forwarding | `explicit-proxy/*` (internal UI API) |
+| 7 | Prisma Browser | user / device groups, applications / plugins, policies (sign-in, access & data, security, customization) | `prisma-browser/*` |
+| 8 | Security posture | folder / snippet structure, profile groups, best practice / visibility per profile type (AV, WF, AS, DNS, VP, URL, FB), rules without profiles / logging, zone protection, log forwarding (Strata Logging Service) | `config/*` + `config/internal/*` → pan-os-php BP / visibility (`exportsptohtml`, `bp-stats`) |
+| 9 | Administration | roles, service accounts, access policies (IAM) | `iam/*` |
+| 10 | Checklist / open points | manual items (certificates, IdP / CIE, licences), items the API cannot read, findings with recommendation | MIGRATION_CHECKLIST.md, design `decisions.json` |
+
+Network plans (3, 4 and an overview DC – SC – Prisma Access – RN – MU): generated from the same data – SVG / Mermaid
+first, draw.io / Lucidchart import later (7.4).
+
+### 4.2 Project flow (consultant view)
+
+| step | what | phase | tools |
+|---|---|---|---|
+| 1 | **Customer requirements** | 0 TRD | questionnaire → `trd.json` (new) |
+| 2 | **Design / HLD** | 1–2 | design wizard → design JSON + `decisions.json`; report generator (4.1) → HLD + network plans (new) |
+| 3 | **Generate / apply the configuration** | 3 | design JSON → `scm-sync` (infrastructure areas) / change file → `scm-change` (config) ✅ |
+| 4 | **Check: maturity report** | 5 | `scm-export` ✅ → report generator (4.1) as-built + `scm-compare` design ↔ as-built ✅ + BP / visibility ✅ + score (new) |
+
 ## 5. Components
 
 | component | what | status |
@@ -125,11 +158,12 @@ vs. design (bandwidth, MU count), every private-access RN has a route to an SC, 
 | compare | `scm_pa_compare.php` | ✅ |
 | apply | `scm_pa_sync.php` plan / apply | ✅ offline – write path to be tested (NEXT_STEPS 7.1 steps 1–3) |
 | best practice | pan-os-php BP / visibility checks, SCM loader with complete profiles | ✅ |
-| **report generator** | export / design → HLD / as-built document with tables and network plans | new |
-| **diagram generator** | network plans from the same data | new |
+| **report generator** | export / design → HLD / as-built document with tables and network plans | as-built from export ✅ first version (`scm-report`: Markdown, HTML, findings); from design new |
+| **diagram generator** | network plans from the same data | draw.io from export ✅ first version (Lucidchart import) |
 | **TRD questionnaire** | guided entry of the requirements → `trd.json` (+ document) | new |
 | **design wizard** | decisions per component, defaults, validation → `decisions.json` + design JSON | new |
-| **maturity report** | as-built + diff + BP + score | new (combination) |
+| **maturity report** | as-built + diff + BP + score (outline 4.1) | new (combination) |
+| Prisma Browser | export ✅ (`prisma-browser/*`), report section 7 | report new |
 
 Front end: a web page (HTML) that guides the consultant (questionnaire + wizard), works offline with local files
 (customer data stays local), reads / writes JSON. Engine / generators: PHP in pan-os-php (same code for design and
@@ -158,4 +192,5 @@ export), callable from the CLI and from the web page.
 7. Naming conventions / standards of the consultant team (folder / snippet structure, object names).
 8. Does the design also cover the security policy, or only the Prisma Access infrastructure?
 9. Maturity score: which criteria (BP checks, design deviation, open checklist items …)?
+11. PANW maturity report: sample (anonymised) to align sections, wording, scoring and layout.
 10. Where does the web page run (local file / internal web server) and who uses it (consultants only)?
