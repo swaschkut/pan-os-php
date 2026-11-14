@@ -43,7 +43,7 @@ php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.js
 | `folders` | `name`, `parent`, optional `description` / `labels`. New folders only below `ngfw-shared` (All Firewalls), max. 4 levels below it (as Panorama device-groups below shared); a new parent must come first in the list. Existing folder: fields are updated, moving (other `parent`) is refused. |
 | `snippets` | `name`, optional `description` / `labels`. Predefined snippets cannot be changed. |
 | `<config type>` | a list per type, e.g. `addresses`, `address-groups`, `tags`, `services`, `service-groups`, `external-dynamic-lists`, `url-categories`, security profiles, `profile-groups`, identity objects, rule bases (`security-rules`, `nat-rules` …) … (all types of the groups `objects`, `identity` and `policies` of `scm_pa_export.php`) |
-| `objects` | the same as one list, with `"type": "<config type>"` per entry |
+| `objects` | the same as one list, with `"type": "<config type>"` per entry – for a type with an SCM field `type` (e.g. `url-categories`) the config type goes into `"_type"` and `type` stays the SCM field |
 
 Per object:
 

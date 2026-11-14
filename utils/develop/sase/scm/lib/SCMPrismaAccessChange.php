@@ -49,7 +49,7 @@ class SCMPrismaAccessChange
     const MAX_FOLDER_DEPTH = 4;
 
     /** directives in an entry - everything else is a field of the object */
-    const DIRECTIVES = array( '_delete', '_append', '_remove', '_comment', '_internal' );
+    const DIRECTIVES = array( '_type', '_delete', '_append', '_remove', '_comment', '_internal' );
 
     /**
      * _internal: profile sections the public API does not have, written through the internal UI API after the public
@@ -141,11 +141,22 @@ class SCMPrismaAccessChange
             }
             if( $key == 'folders' || $key == 'snippets' )
                 $req[$key] = array_merge( $req[$key], $list );
+            // the config type of an entry is kept in '_type': 'type' is also an SCM field (url-categories,
+            // applications …) and must reach the API unchanged
             elseif( $key == 'objects' )
-                $req['objects'] = array_merge( $req['objects'], $list );
+                foreach( $list as $e )
+                {
+                    // 'objects' list: "type" is the config type; the SCM field 'type' then needs "_type" for the config type
+                    if( is_array($e) && !isset($e['_type']) && isset($e['_type']) )
+                    {
+                        $e['_type'] = $e['_type'];
+                        unset( $e['_type'] );
+                    }
+                    $req['objects'][] = $e;
+                }
             elseif( isset($this->types[$key]) )
                 foreach( $list as $e )
-                    $req['objects'][] = is_array($e) ? array( 'type' => $key ) + $e : $e;
+                    $req['objects'][] = is_array($e) ? array( '_type' => $key ) + $e : $e;
             else
                 $this->errors[] = "unknown key '" . $key . "' - use folders, snippets, objects or a config type (e.g. addresses)";
         }
@@ -182,14 +193,14 @@ class SCMPrismaAccessChange
                 $this->errors[] = $where . ": not an object";
                 continue;
             }
-            if( !isset($e['type']) || !isset($this->types[$e['type']]) )
+            if( !isset($e['_type']) || !isset($this->types[$e['_type']]) )
             {
-                $this->errors[] = $where . ": unknown or missing type '" . ( isset($e['type']) ? $e['type'] : '' ) . "'";
+                $this->errors[] = $where . ": unknown or missing type '" . ( isset($e['_type']) ? $e['_type'] : '' ) . "'";
                 continue;
             }
-            $t = $this->types[$e['type']];
+            $t = $this->types[$e['_type']];
             if( !in_array($t['group'], self::SUPPORTED_GROUPS, TRUE) && !in_array($t['name'], self::SUPPORTED_TYPES, TRUE) )
-                $this->errors[] = $where . ": type " . $e['type'] . " (" . $t['group'] . ") is not supported by scm_pa_change.php - use the sync workflow (export, edit, compare, scm_pa_sync.php)";
+                $this->errors[] = $where . ": type " . $e['_type'] . " (" . $t['group'] . ") is not supported by scm_pa_change.php - use the sync workflow (export, edit, compare, scm_pa_sync.php)";
             if( !empty($t['position']) )
             {
                 if( isset($e['snippet']) && isset($e['position']) )
@@ -241,7 +252,7 @@ class SCMPrismaAccessChange
         $containers = array();
         foreach( $this->request['objects'] as $e )
         {
-            $types[$e['type']] = true;
+            $types[$e['_type']] = true;
             $containers[ isset($e['folder']) ? $e['folder'] : $e['snippet'] ] = true;
         }
         foreach( $this->request['folders'] as $f )
@@ -298,10 +309,10 @@ class SCMPrismaAccessChange
         $manifest = json_decode( file_get_contents($dir . "/manifest.json"), TRUE );
         $wanted = array();
         foreach( $this->request['objects'] as $o )
-            if( in_array($o['type'], $types, TRUE) )
+            if( in_array($o['_type'], $types, TRUE) )
             {
                 $kind = isset($o['folder']) ? 'folder' : 'snippet';
-                $wanted[$o['type'] . "|" . $kind . "|" . $o[$kind]][] = $o['name'];
+                $wanted[$o['_type'] . "|" . $kind . "|" . $o[$kind]][] = $o['name'];
             }
         $n = 0;
         foreach( $wanted as $k => $names )
@@ -540,7 +551,7 @@ class SCMPrismaAccessChange
                 call_user_func( $progress, end($results) + array( 'internal' => true ), count($results), count($tasks) );
             $in = $e['_internal'];
             $folder = $e['folder'];
-            $r = array( 'type' => $e['type'], 'name' => $e['name'], 'folder' => $folder, 'prefix' => $in['prefix'] );
+            $r = array( 'type' => $e['_type'], 'name' => $e['name'], 'folder' => $folder, 'prefix' => $in['prefix'] );
             $live = $this->internalGet( $in['prefix'], $folder, $e['name'] );
             if( $live === false )
             {
@@ -647,7 +658,7 @@ class SCMPrismaAccessChange
         foreach( $this->internalTasks() as $e )
         {
             $live = $this->internalGet( $e['_internal']['prefix'], $e['folder'], $e['name'] );
-            $r = array( 'change' => "internal " . $e['type'] . " " . $e['name'] . " [folder " . $e['folder'] . "]", 'action' => 'internal' );
+            $r = array( 'change' => "internal " . $e['_type'] . " " . $e['name'] . " [folder " . $e['folder'] . "]", 'action' => 'internal' );
             if( !is_array($live) )
             {
                 $r['status'] = 'failed';
@@ -764,7 +775,7 @@ class SCMPrismaAccessChange
         // objects
         foreach( $this->request['objects'] as $e )
         {
-            $type = $this->types[$e['type']];
+            $type = $this->types[$e['_type']];
             $kind = isset($e['folder']) ? 'folder' : 'snippet';
             $cName = $kind == 'folder' ? $e['folder'] : $e['snippet'];
             $epName = $this->endpointName( $e );
@@ -863,7 +874,7 @@ class SCMPrismaAccessChange
     /** endpoint (file) name of an object entry: rule bases of folders are split in pre / post */
     public function endpointName( $e )
     {
-        $t = $this->types[$e['type']];
+        $t = $this->types[$e['_type']];
         if( empty($t['position']) || isset($e['snippet']) )
             return $t['name'];
         return $t['name'] . "-" . ( isset($e['position']) ? $e['position'] : 'pre' );
@@ -873,7 +884,7 @@ class SCMPrismaAccessChange
     public static function applyEntry( $obj, $e )
     {
         foreach( self::fields($e) as $k => $v )
-            if( !in_array($k, array('type', 'folder', 'snippet', 'position'), TRUE) )
+            if( !in_array($k, array('folder', 'snippet', 'position'), TRUE) )
                 $obj[$k] = $v;
         if( isset($e['_append']) )
             foreach( $e['_append'] as $f => $values )
@@ -900,7 +911,7 @@ class SCMPrismaAccessChange
     {
         $out = array();
         foreach( $e as $k => $v )
-            if( !( is_string($k) && $k !== '' && $k[0] == '_' ) && $k !== 'type' )
+            if( !( is_string($k) && $k !== '' && $k[0] == '_' ) )
                 $out[$k] = $v;
         return $out;
     }

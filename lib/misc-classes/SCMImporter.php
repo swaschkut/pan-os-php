@@ -700,6 +700,31 @@ class SCMImporter
             foreach( $gaps as $type => $paths )
                 foreach( $xp->query("profiles/" . $type . "/entry", $sc['node']) as $prof )
                 {
+                    // DNS sinkhole: SCM (public and internal API, live 2026-11-14) only knows the keywords
+                    // pan-sinkhole-default-ip / 127.0.0.1 and ::1 - the Palo Alto Networks sinkhole of PAN-OS
+                    // (sinkhole.paloaltonetworks.com / 2600:5200::1) is the keyword pan-sinkhole-default-ip / ::1
+                    $customSinkhole = array();
+                    if( $type == 'dns-security' && ($sk = $xp->query("botnet-domains/sinkhole", $prof)->item(0)) !== null )
+                        foreach( array( 'ipv4-address' => array('pan-sinkhole-default-ip', array('127.0.0.1', 'pan-sinkhole-default-ip'), array('sinkhole.paloaltonetworks.com')),
+                                        'ipv6-address' => array('::1', array('::1'), array('2600:5200::1')) ) as $tag => $def )
+                        {
+                            $v = $xp->query($tag, $sk)->item(0);
+                            if( $v === null )
+                            {
+                                DH::createElement($sk, $tag, $def[0]);
+                                continue;
+                            }
+                            $val = trim($v->textContent);
+                            if( in_array($val, $def[1], TRUE) )
+                                continue;
+                            if( !in_array($val, $def[2], TRUE) )
+                                $customSinkhole[] = $tag . " " . $val;
+                            else
+                                $this->markIncomplete($prof, "DNS sinkhole " . $tag . " '" . $val . "' written as SCM keyword '" . $def[0] . "' (same Palo Alto Networks sinkhole)");
+                            $v->textContent = $def[0];
+                        }
+                    foreach( $customSinkhole as $cs )
+                        $this->markIncomplete($prof, "DNS sinkhole " . $cs . ": SCM only knows pan-sinkhole-default-ip / 127.0.0.1 / ::1 - set to the default sinkhole, check the profile");
                     $orig = $prof->cloneNode(TRUE);
                     $defaults = 0;
                     $removed = array();
@@ -712,18 +737,6 @@ class SCMImporter
                         {
                             $prof->removeChild($rulesNode);
                             $removed['rules (action default)'] = TRUE;
-                        }
-                    }
-                    // DNS sinkhole: the public API takes only 127.0.0.1 / pan-sinkhole-default-ip and ::1
-                    if( $type == 'dns-security' && ($sk = $xp->query("botnet-domains/sinkhole", $prof)->item(0)) !== null )
-                    {
-                        $v4 = $xp->query("ipv4-address", $sk)->item(0);
-                        $v6 = $xp->query("ipv6-address", $sk)->item(0);
-                        if( ( $v4 !== null && !in_array(trim($v4->textContent), array('127.0.0.1', 'pan-sinkhole-default-ip'), TRUE) )
-                            || ( $v6 !== null && trim($v6->textContent) !== '::1' ) )
-                        {
-                            $sk->parentNode->removeChild($sk);
-                            $removed['botnet-domains/sinkhole'] = TRUE;
                         }
                     }
                     foreach( $paths as $path )
