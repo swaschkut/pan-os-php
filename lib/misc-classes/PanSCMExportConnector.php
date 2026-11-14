@@ -26,7 +26,8 @@
  * pan-os-php utility that works with scm-api:// works with the export. Nothing is ever sent: the result is written
  * with out=<file.xml>; scm_pa_xml_to_change.php turns the difference into a change file for scm_pa_change.php.
  *
- * Not in the export: the internal UI API sections of security profiles (only the public fields are loaded).
+ * Security profiles (vulnerability, virus-and-wildfire, anti-spyware, DNS security): complete from the internal UI
+ * API answers of the export (config/internal/<type>.json) when present, else the public fields only.
  */
 class PanSCMExportConnector extends PanSCMAPIConnector
 {
@@ -126,6 +127,43 @@ class PanSCMExportConnector extends PanSCMAPIConnector
             $loaded[get_class($sub) . "|" . $sub->name()] = $sub->name();
         }
         return array_values($loaded);
+    }
+
+    /** @var array type => uuid => internal UI API entry (config/internal/<type>.json), FALSE = not in the export */
+    private $internalEntries = array();
+
+    /**
+     * security profiles: complete entry of the internal UI API from the export (config/internal/<type>.json, written
+     * by scm_pa_export.php) - decoder, inline ML, inline cloud analysis, rule action default, advanced DNS; matched
+     * by @uuid = id, independent of the folder being loaded (snippet profiles as well). Without the file: public
+     * fields only.
+     */
+    protected function SCM_API_internal_profile_lookup( $type, $uuid )
+    {
+        $index = $this->internalIndex( $type );
+        return ( $index !== FALSE && isset($index[$uuid]) ) ? $index[$uuid] : null;
+    }
+
+    /** @return array|false uuid => entry, FALSE: the export has no internal answer of this type */
+    public function internalIndex( $type )
+    {
+        if( !array_key_exists($type, $this->internalEntries) )
+        {
+            $this->internalEntries[$type] = FALSE;
+            $f = $this->exportDir . "/config/internal/" . $type . ".json";
+            if( isset(self::INTERNAL_PROFILE_TYPES[$type]) && is_file($f) )
+            {
+                $j = json_decode(file_get_contents($f), TRUE);
+                if( is_array($j) && isset($j['data']) && is_array($j['data']) )
+                {
+                    $this->internalEntries[$type] = array();
+                    foreach( $j['data'] as $e )
+                        if( is_array($e) && isset($e['@uuid']) )
+                            $this->internalEntries[$type][$e['@uuid']] = $e;
+                }
+            }
+        }
+        return $this->internalEntries[$type];
     }
 
     /** export folders do not need credentials */

@@ -48,9 +48,10 @@ $supportedArguments['config-mode'] = Array('niceName' => 'config-mode', 'shortHe
 $supportedArguments['config-devices'] = Array('niceName' => 'config-devices', 'shortHelp' => 'config area: also export device folders (type cloud / on-prem)');
 $supportedArguments['config-parallel'] = Array('niceName' => 'config-parallel', 'shortHelp' => 'config area: concurrent API requests (default 8, 1 = sequential)', 'argDesc' => 'N');
 $supportedArguments['config-page-size'] = Array('niceName' => 'config-page-size', 'shortHelp' => 'config area: entries per API page (default 1000; the server may cap it)', 'argDesc' => 'N');
+$supportedArguments['config-internal'] = Array('niceName' => 'config-internal', 'shortHelp' => 'config area: security profile sections only the internal UI API returns (decoder, inline ML, inline cloud analysis, rule action default, advanced DNS) -> config/internal/<type>.json (default yes; host: ui-api-host=)', 'argDesc' => 'yes|no');
 $supportedArguments['config-heavy-types'] = Array('niceName' => 'config-heavy-types', 'shortHelp' => 'config area: also export types whose answers contain the whole predefined catalog per folder (applications) - very slow');
 $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-predefined-snippets', 'shortHelp' => 'config area: also export predefined snippets (large)');
-$supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'explicit-proxy area: internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ', see browser developer tools: requests to /api/config/v9.2/...)', 'argDesc' => '[host]');
+$supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'explicit-proxy area and config-internal: internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ', see browser developer tools: requests to /api/config/v9.2/...)', 'argDesc' => '[host]');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod (api.prod.datapath.prismaaccess.com, default) | prod6 (api.prod6.datapath.prismaaccess.com)', 'argDesc' => 'prod|prod6');
 $supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'write the secret lists (chmod 600) with the decrypted current value and an empty *_new column for the import: psk-list.csv + bgp-secret-list.csv (remote-networks, service-connections), secret-list.csv (mobile-users)');
@@ -108,6 +109,7 @@ $export->configOptions = array(
     'devices' => isset(PH::$args['config-devices']),
     'predefined_snippets' => isset(PH::$args['config-predefined-snippets']),
     'heavy_types' => isset(PH::$args['config-heavy-types']),
+    'internal' => !( isset(PH::$args['config-internal']) && in_array(strtolower((string)PH::$args['config-internal']), array('no', 'false', '0'), TRUE) ),
     'parallel' => isset(PH::$args['config-parallel']) ? (int)PH::$args['config-parallel'] : 8,
     'page_size' => isset(PH::$args['config-page-size']) ? (int)PH::$args['config-page-size'] : 1000,
 );

@@ -68,6 +68,8 @@ After the public requests the script reads the profile through the internal UI A
 complete entry (`POST /api/config/v9.2/multiConfigure`, `command: edit`, `prefix`, `subPath: entry[@name='…']` – the
 call of the SCM UI, HAR 2026-11-14) with the `@uuid` / `@loc` of the live entry. The dry-run shows `edit` /
 `unchanged` / `after create`; the verification compares the sections; `push` pushes after these edits.
+Optional `"base": { … }` (written by scm_pa_xml_to_change.php: the entry of the export the change was made on): a
+section the change touches that differs in SCM from `base` is reported as `conflict` and not overwritten.
 `ui-api-host=` sets the host of the tenant region (default `paas-3.prod.eu.panorama.paloaltonetworks.com`).
 
 `applications`: the export does not read the application list (the answer contains the PAN-OS predefined catalog of

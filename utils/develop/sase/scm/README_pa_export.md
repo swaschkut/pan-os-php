@@ -55,6 +55,7 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `config-parallel=N` | config: concurrent API requests (default `8`, `1` = one after the other); HTTP 429 / 5xx are retried with backoff |
 | `config-page-size=N` | config: entries per API page (default `1000`; if the server returns fewer, the next offsets follow the received count) |
 | `config-heavy-types` | config: also export `applications` – skipped by default because every folder answer contains the complete predefined catalog (~100,000 objects, with SaaS applications ~1,000,000); `config-types=applications` (best with `container=`) exports it as well |
+| `config-internal=no` | config: skip the internal UI API answers of the security profiles (default: exported, see `config/internal/` below; host of the tenant region: `ui-api-host=`) |
 | `config-devices` | config: also the NGFW device folders (Prisma Access deployment folders – Mobile Users GlobalProtect / Explicit Proxy, Remote Networks, Service Connections – are always exported, although their folder type is not `container`) (type `cloud` / `on-prem`): device specific interfaces, routing, settings (recommended for NGFW) |
 | `config-predefined-snippets` | config: also predefined snippets (large) |
 | `outdir=` | base directory, default `export` |
@@ -354,6 +355,16 @@ contains `container`, `container_kind`, `inherited_skipped` (objects of other ow
 (owned objects). Objects without owner field are kept. Inherited objects whose owner is not exported (predefined
 snippet, `container=` filter, device folders, predefined snippets) are counted per owner in
 `manifest.json` → `config.owners_not_exported` (each object once).
+
+**Internal UI API sections of security profiles (`config/internal/<type>.json`).** The public API returns only part
+of vulnerability, virus-and-wildfire, anti-spyware and DNS security profiles (missing: decoder actions, WildFire
+inline ML, inline cloud analysis, rule action `default`, advanced DNS categories – SECURITY_PROFILES_public_vs_internal_api.md).
+After the public types the export reads `GET /api/config/v9.2/Objects/<VulnerabilityProtectionSecurityProfiles |
+WildFireAndAntivirusSecurityProfiles | AntiSpywareSecurityProfiles | DnsSecurityProfiles>?folder=&type=container|cloud`
+once per exported folder (the answer contains the folder, its parents and attached snippets) and stores the entries
+(PAN-OS structure as JSON, one per `@uuid` = id of the public API) with `host`, `folders`, `errors`. `in=scm-export://`
+loads these profiles complete; `scm_pa_xml_to_change.php` turns changes of these sections into `_internal`. If the
+first folder is refused (wrong region host, no permission) the type is skipped with a message (`ui-api-host=`).
 
 **Query plan (`config-mode`).** `leaf` (default): the answer for a folder contains the objects of its parent folders
 and of the snippets attached on the way, so per type only the deepest eligible folders are queried; their answers

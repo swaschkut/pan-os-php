@@ -84,9 +84,91 @@ $pan->save_to_file($origFile, FALSE);
 PH::print_stdout( "   " . count($loaded) . " container(s) loaded" . ( isset($args['original']) ? ", written to " . $origFile : "" ) );
 
 PH::print_stdout( PH::boldText(" * [2/3] difference original <-> " . $args['file2']) );
+// security profile sections only the internal UI API has (SCMImporter::INTERNAL_GAPS): removed from both sides
+// before the public difference; a difference in them -> _internal (complete entry, written by scm_pa_change.php
+// through the internal UI API after the public request)
+$internalSide = function( $file, $outFile ){
+    $doc = new DOMDocument();
+    $doc->load($file, XML_PARSE_BIG_LINES);
+    $xp = new DOMXPath($doc);
+    $profiles = array();
+    foreach( SCMImporter::INTERNAL_GAPS as $xmlType => $paths )
+        foreach( $xp->query("/config/devices/entry/*/entry/profiles/" . $xmlType . "/entry") as $prof )
+        {
+            $owner = $prof->parentNode->parentNode->parentNode;
+            $kind = $owner->parentNode->nodeName;
+            $scopeType = ( $kind == 'container' || $kind == 'cloud' ) ? 'folder' : ( $kind == 'snippet' ? 'snippet' : 'device' );
+            $full = SCMImporter::domToInternal( $prof->cloneNode(TRUE) );
+            $removed = SCMImporter::stripInternalGaps( $xp, $prof, $xmlType );
+            $stripped = SCMImporter::domToInternal( $prof->cloneNode(TRUE) );
+            // the internal-only part: top-level sections that differ between complete and stripped entry
+            $gaps = array();
+            foreach( (array)$full as $k => $v )
+                if( $k !== '@name' && ( !is_array($stripped) || !array_key_exists($k, $stripped) || $stripped[$k] != $v ) )
+                    $gaps[$k] = $v;
+            $profiles[SCMImporter::INTERNAL_GAP_RESOURCES[$xmlType] . "|" . $scopeType . "|" . $owner->getAttribute('name') . "|" . $prof->getAttribute('name')] = array(
+                'type' => $xmlType, 'uuid' => $prof->getAttribute('uuid'), 'entry' => $full, 'gaps' => $gaps, 'removed' => $removed );
+        }
+    $doc->save($outFile);
+    return $profiles;
+};
+$normInternal = function( $v ) use( &$normInternal ){
+    if( is_object($v) )
+        $v = (array)$v;
+    if( !is_array($v) )
+        return (string)$v;
+    $out = array();
+    foreach( $v as $k => $x )
+        $out[$k] = $normInternal($x);
+    if( array_keys($out) !== range(0, count($out) - 1) )
+        ksort($out);
+    return $out;
+};
+$origStripped = tempnam(sys_get_temp_dir(), "scm-orig-pub-") . ".xml";
+$newStripped = tempnam(sys_get_temp_dir(), "scm-new-pub-") . ".xml";
+$origProfiles = $internalSide( $origFile, $origStripped );
+$newProfiles = $internalSide( $args['file2'], $newStripped );
+$internalChanges = array();     // resource|scope_type|scope|name => ['prefix', 'entry']
+$internalNotChanged = array();
+foreach( $newProfiles as $k => $np )
+{
+    $op = isset($origProfiles[$k]) ? $origProfiles[$k] : null;
+    if( $op === null ? count($np['gaps']) == 0 : $normInternal($op['gaps']) == $normInternal($np['gaps']) )
+        continue;
+    list( $resource, $scopeType, $scope, $name ) = explode("|", $k, 4);
+    $reason = null;
+    if( $scopeType != 'folder' )
+        $reason = "internal UI API sections changed (" . implode(", ", array_keys($np['gaps'])) . ") - only for objects in folders";
+    elseif( $op !== null )
+    {
+        // the original must be the complete internal entry of the export, else the edit would overwrite SCM values
+        // pan-os-php never saw
+        $index = $connector->internalIndex( $resource );
+        if( $index === FALSE || $op['uuid'] === '' || !isset($index[$op['uuid']]) )
+            $reason = "internal UI API sections changed (" . implode(", ", array_keys($np['gaps'])) . ") - the export has no internal UI API answer of this profile: export again (scm_pa_export.php, config-internal, ui-api-host=)";
+    }
+    if( $reason !== null )
+    {
+        $internalNotChanged[$k] = array( 'type' => $resource, 'name' => $name, $scopeType => $scope, 'reasons' => array( $reason ) );
+        continue;
+    }
+    $internalChanges[$k] = array( 'prefix' => "profiles/" . $np['type'], 'entry' => $np['entry'] );
+    // the export entry the change was made on: scm_pa_change.php reports a section changed in SCM since then as
+    // conflict instead of overwriting it
+    if( $op !== null )
+    {
+        $base = $connector->internalIndex( $resource )[$op['uuid']];
+        foreach( array_keys($base) as $bk )
+            if( is_string($bk) && $bk !== '' && $bk[0] == '@' && $bk !== '@name' )
+                unset( $base[$bk] );
+        $internalChanges[$k]['base'] = $base;
+    }
+}
 ob_start();
-$json = SCMCHANGES::generate( $origFile, $args['file2'] );
+$json = SCMCHANGES::generate( $origStripped, $newStripped );
 ob_end_clean();
+unlink($origStripped);
+unlink($newStripped);
 $gen = json_decode($json, TRUE);
 $newDoc = new DOMDocument();
 $newDoc->load($args['file2'], XML_PARSE_BIG_LINES);
@@ -209,10 +291,31 @@ foreach( $gen['requests'] as $r )
         if( $skip )
             continue;
     }
+    $ik = $resource . "|" . $obj['scope_type'] . "|" . $obj['scope'] . "|" . $obj['name'];
+    if( $r['method'] != 'DELETE' && isset($internalChanges[$ik]) )
+    {
+        $item['_internal'] = $internalChanges[$ik];
+        unset( $internalChanges[$ik] );
+    }
     $change[$resource][] = $item;
     $c = $r['method'] == 'DELETE' ? 'delete' : ( $r['method'] == 'POST' ? 'create' : 'update' );
     $counts[$resource][$c] = ( isset($counts[$resource][$c]) ? $counts[$resource][$c] : 0 ) + 1;
 }
+// profiles changed only in internal UI API sections: no public request, the internal edit alone
+foreach( $internalChanges as $ik => $in )
+{
+    list( $resource, $scopeType, $scope, $name ) = explode("|", $ik, 4);
+    $change[$resource][] = array( 'folder' => $scope, 'name' => $name, '_internal' => $in );
+    $counts[$resource]['update (internal only)'] = ( isset($counts[$resource]['update (internal only)']) ? $counts[$resource]['update (internal only)'] : 0 ) + 1;
+}
+$internalCount = 0;
+foreach( $change as $res => $items )
+    if( is_array($items) )
+        foreach( $items as $it )
+            if( is_array($it) && isset($it['_internal']) )
+                $internalCount++;
+foreach( $internalNotChanged as $nc )
+    $notChanged[] = $nc;
 if( count($notChanged) > 0 )
     $change['not_imported'] = $notChanged;
 // "changes below <x>" of a part the utility did not load (not in the changed XML at all): no change, not reported
@@ -238,6 +341,8 @@ foreach( $counts as $res => $c )
 }
 if( count($counts) == 0 )
     PH::print_stdout( "   no changes" );
+if( $internalCount > 0 )
+    PH::print_stdout( "   internal UI API sections (decoder, inline ML, inline cloud analysis, rule action default, advanced DNS): " . $internalCount . " profile(s) ('_internal')" );
 if( $skippedDeletes > 0 )
     PH::print_stdout( "   (" . $skippedDeletes . " object(s) of types the utility did not load - unchanged, no delete)" );
 if( count($notChanged) > 0 )

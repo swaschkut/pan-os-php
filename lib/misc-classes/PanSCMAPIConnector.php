@@ -48,6 +48,8 @@ class PanSCMAPIConnector
     const INTERNAL_PROFILE_TYPES = array(
         'vulnerability-protection-profiles' => 'VulnerabilityProtectionSecurityProfiles',
         'wildfire-anti-virus-profiles' => 'WildFireAndAntivirusSecurityProfiles',
+        'anti-spyware-profiles' => 'AntiSpywareSecurityProfiles',
+        'dns-security-profiles' => 'DnsSecurityProfiles',
     );
     /** @var array type => folder|type => uuid => internal entry | FALSE (not available) */
     private $internalProfileCache = array();
@@ -1723,7 +1725,9 @@ class PanSCMAPIConnector
             elseif( $type === "anti-spyware-profiles" )
             {
                 $profileStoreName = "AntiSpywareProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -1731,7 +1735,9 @@ class PanSCMAPIConnector
             elseif( $type === "dns-security-profiles" )
             {
                 $profileStoreName = "DNSSecurityProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -3015,7 +3021,7 @@ class PanSCMAPIConnector
      * internal entry of a security profile by uuid; the internal answer of the folder being loaded is read once per
      * type and folder
      */
-    private function SCM_API_internal_profile_lookup( $type, $uuid )
+    protected function SCM_API_internal_profile_lookup( $type, $uuid )
     {
         if( PH::$shadow_scm_no_internal_api || !isset(self::INTERNAL_PROFILE_TYPES[$type]) || $this->internalLookupFolder === null )
             return null;

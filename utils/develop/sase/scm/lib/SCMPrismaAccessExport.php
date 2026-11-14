@@ -2418,12 +2418,81 @@ class SCMPrismaAccessExport
                 $n += $count;
             $this->configStats['owners_not_exported'][$owner] = $n;
         }
+        // security profile sections the public API does not return (decoder, inline ML, inline cloud analysis,
+        // rule action default, advanced DNS categories): internal UI API, stored in config/internal/<type>.json
+        if( !isset($opt['internal']) || $opt['internal'] )
+            $this->exportConfigInternal( $containers, $types );
+
         $this->configStats['http_requests'] = $this->connector->parallelRequests - $requestsBefore;
         $this->configStats['parallel'] = $this->configParallel;
         $this->configStats['page_size'] = $this->configPageSize;
         $this->configStats['seconds'] = round( microtime(TRUE) - $configStart, 1 );
         PH::print_stdout( " - [config] " . $this->configStats['queries'] . " API queries (mode " . $mode . ", parallel " . $this->configParallel . ", page size " . $this->configPageSize . "), "
             . $this->configStats['skipped_unavailable'] . " skipped (type unavailable), " . $this->configStats['seconds'] . "s" );
+    }
+
+    /**
+     * config types whose complete content comes from the internal UI API (/api/config/v9.2/Objects/<name>, PAN-OS
+     * structure as JSON) - the public API lacks sections of them (SECURITY_PROFILES_public_vs_internal_api.md)
+     */
+    const CONFIG_INTERNAL_TYPES = array(
+        'vulnerability-protection-profiles' => 'VulnerabilityProtectionSecurityProfiles',
+        'wildfire-anti-virus-profiles' => 'WildFireAndAntivirusSecurityProfiles',
+        'anti-spyware-profiles' => 'AntiSpywareSecurityProfiles',
+        'dns-security-profiles' => 'DnsSecurityProfiles',
+    );
+
+    /**
+     * internal UI API answers of the security profile types: one query per exported folder (the answer holds the
+     * entries of the folder, its parents and attached snippets), entries collected by @uuid (= id of the public API)
+     * -> config/internal/<type>.json {host, folders, errors, data: [entries]}. Read by in=scm-export:// (the profile
+     * is loaded complete) and by scm_pa_xml_to_change.php (changes of these sections -> _internal).
+     */
+    public function exportConfigInternal( $containers, $types )
+    {
+        $typeNames = array();
+        foreach( $types as $t )
+            $typeNames[$t['name']] = TRUE;
+        $folders = array();
+        foreach( $containers as $c )
+            if( $c['kind'] == 'folder' && !$c['device'] && !isset($this->noConfigFolders[$c['name']]) )
+                $folders[] = $c['name'];
+        $this->configStats['internal'] = array();
+        foreach( self::CONFIG_INTERNAL_TYPES as $type => $object )
+        {
+            if( !isset($typeNames[$type]) || count($folders) == 0 )
+                continue;
+            $start = microtime(TRUE);
+            $byUuid = array();
+            $errors = array();
+            $queried = array();
+            foreach( $folders as $folder )
+            {
+                $url = "https://" . $this->uiApiHost . "/api/config/v9.2/Objects/" . $object . "?" . http_build_query(
+                    array( 'folder' => $folder, 'type' => in_array($folder, self::PA_DEPLOYMENT_FOLDERS, TRUE) ? 'cloud' : 'container' ), '', '&', PHP_QUERY_RFC3986 );
+                $r = $this->fetchInternal( $url );
+                $this->configStats['queries']++;
+                if( $r['errors'] !== null )
+                {
+                    $errors[$folder] = $r['errors'];
+                    // not reachable / not accepted (wrong region host, no permission): no further folders
+                    if( count($queried) == 0 && in_array($r['http_code'], array(0, 401, 403, 404), TRUE) )
+                        break;
+                    continue;
+                }
+                $queried[] = $folder;
+                foreach( (array)$r['data'] as $e )
+                    if( is_array($e) && isset($e['@uuid']) && !isset($byUuid[$e['@uuid']]) )
+                        $byUuid[$e['@uuid']] = $e;
+            }
+            $this->writeJson( self::AREA_CONFIG . "/internal/" . $type . ".json", array(
+                'source' => 'internal UI API', 'host' => $this->uiApiHost, 'object' => $object, 'fetched_at' => date('c'),
+                'folders' => $queried, 'errors' => count($errors) > 0 ? $errors : null, 'data' => array_values($byUuid) ) );
+            $this->configStats['internal'][$type] = array( 'entries' => count($byUuid), 'folders' => count($queried), 'errors' => count($errors) );
+            PH::print_stdout( " - [config internal] " . $type . " ... " . count($byUuid) . " entr" . ( count($byUuid) == 1 ? "y" : "ies" )
+                . " from " . count($queried) . " folder(s)" . ( count($errors) > 0 ? ", " . count($errors) . " error(s) (host " . $this->uiApiHost
+                . " - region specific host: ui-api-host=<host>; config-internal=no to skip)" : "" ) . ", " . round( microtime(TRUE) - $start, 1 ) . "s" );
+        }
     }
 
     /** @var int config area: concurrent requests (config-parallel=) */

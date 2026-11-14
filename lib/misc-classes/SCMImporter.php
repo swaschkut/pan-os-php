@@ -740,12 +740,7 @@ class SCMImporter
         // 4) public SCM API: rule action 'default' = empty action (as the public API returns it); sections the public
         //    API does not have are removed from the public request. The complete profile (PAN-OS structure) is kept for
         //    the internal UI API (multiConfigure edit, written by scm_pa_change.php after the public create)
-        $gaps = array(
-            'vulnerability' => array('mica-engine-vulnerability-enabled', 'cloud-inline-analysis'),
-            'spyware' => array('mica-engine-spyware-enabled/entry/local-deep-learning'),
-            'dns-security' => array('botnet-domains/advanced-dns-security-categories'),
-            'virus-and-wildfire-analysis' => array('decoder', 'mlav-engine-filebased-enabled', 'cloud-inline-analysis', 'mica-engine-wildfire-rules'),
-        );
+        $gaps = self::INTERNAL_GAPS;
         foreach( $scopes as $sc )
         {
             if( $sc['node'] === FALSE || $sc['node'] === null )
@@ -779,32 +774,14 @@ class SCMImporter
                     foreach( $customSinkhole as $cs )
                         $this->markIncomplete($prof, "DNS sinkhole " . $cs . ": SCM only knows pan-sinkhole-default-ip / 127.0.0.1 / ::1 - set to the default sinkhole, check the profile");
                     $orig = $prof->cloneNode(TRUE);
-                    $defaults = 0;
-                    $removed = array();
-                    // rule action 'default': the public API refuses an empty action (live: "action is missing") and
-                    // has no 'default' -> the rules are sent through the internal UI API only
-                    if( $type == 'vulnerability' || $type == 'spyware' )
-                    {
-                        $defaults = $xp->query("rules/entry/action/default", $prof)->length;
-                        if( $defaults > 0 && ($rulesNode = DH::findFirstElement('rules', $prof)) !== FALSE )
-                        {
-                            $prof->removeChild($rulesNode);
-                            $removed['rules (action default)'] = TRUE;
-                        }
-                    }
-                    foreach( $paths as $path )
-                        foreach( $xp->query($path, $prof) as $n )
-                        {
-                            $n->parentNode->removeChild($n);
-                            $removed[$path] = TRUE;
-                        }
-                    if( empty($removed) && $defaults == 0 )
+                    $removed = self::stripInternalGaps( $xp, $prof, $type );
+                    if( empty($removed) )
                         continue;
                     $prof->setAttribute(self::INTERNAL_ATTR, json_encode( array('prefix' => "profiles/" . $type,
                         'entry' => self::domToInternal($orig)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ));
                     // complete through the internal UI API (_internal) - not 'incomplete'
                     if( !empty($removed) )
-                        $this->apiGaps[$sc['label'] . "|" . $type . "|" . implode(", ", array_keys($removed))][] = $prof->getAttribute('name');
+                        $this->apiGaps[$sc['label'] . "|" . $type . "|" . implode(", ", $removed)][] = $prof->getAttribute('name');
                 }
         }
         foreach( $this->apiGaps as $k => $names )
@@ -813,6 +790,51 @@ class SCMImporter
             $this->warnings[] = $label . ": " . $type . " profiles " . implode(", ", $names) . ": " . $paths . " not in the public SCM API - internal UI API";
         }
 
+    }
+
+    /**
+     * sections of security profiles (XML type => paths) the public SCM API does not have - written through the
+     * internal UI API (_internal); also: rules with action 'default' (vulnerability / spyware), see stripInternalGaps()
+     */
+    const INTERNAL_GAPS = array(
+        'vulnerability' => array('mica-engine-vulnerability-enabled', 'cloud-inline-analysis'),
+        'spyware' => array('mica-engine-spyware-enabled/entry/local-deep-learning'),
+        'dns-security' => array('botnet-domains/advanced-dns-security-categories'),
+        'virus-and-wildfire-analysis' => array('decoder', 'mlav-engine-filebased-enabled', 'cloud-inline-analysis', 'mica-engine-wildfire-rules'),
+    );
+
+    /** XML profile type => SCM resource / internal UI API prefix */
+    const INTERNAL_GAP_RESOURCES = array(
+        'vulnerability' => 'vulnerability-protection-profiles',
+        'spyware' => 'anti-spyware-profiles',
+        'dns-security' => 'dns-security-profiles',
+        'virus-and-wildfire-analysis' => 'wildfire-anti-virus-profiles',
+    );
+
+    /**
+     * removes the sections of INTERNAL_GAPS[$type] from the profile entry; rule action 'default': the public API
+     * refuses an empty action (live: "action is missing") and has no 'default' -> the whole rules element goes
+     * through the internal UI API only
+     * @return string[] removed sections (empty: nothing to complete through the internal UI API)
+     */
+    public static function stripInternalGaps( DOMXPath $xp, DOMElement $prof, $type )
+    {
+        $removed = array();
+        if( $type == 'vulnerability' || $type == 'spyware' )
+        {
+            if( $xp->query("rules/entry/action/default", $prof)->length > 0 && ($rulesNode = DH::findFirstElement('rules', $prof)) !== FALSE )
+            {
+                $prof->removeChild($rulesNode);
+                $removed['rules (action default)'] = TRUE;
+            }
+        }
+        foreach( isset(self::INTERNAL_GAPS[$type]) ? self::INTERNAL_GAPS[$type] : array() as $path )
+            foreach( $xp->query($path, $prof) as $n )
+            {
+                $n->parentNode->removeChild($n);
+                $removed[$path] = TRUE;
+            }
+        return array_keys($removed);
     }
 
     const INCOMPLETE_ATTR = 'pan-os-php-scm-incomplete';

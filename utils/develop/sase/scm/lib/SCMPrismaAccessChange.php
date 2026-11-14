@@ -295,6 +295,8 @@ class SCMPrismaAccessChange
             'devices' => false,
             'predefined_snippets' => false,
             'heavy_types' => false,
+            // the internal UI API sections are read back per object by internalApply()
+            'internal' => false,
             'parallel' => $this->options['parallel'],
             'page_size' => $this->options['page_size'],
         );
@@ -545,6 +547,7 @@ class SCMPrismaAccessChange
     /**
      * dry-run: per task 'edit' (live differs), 'unchanged', 'after create' (object does not exist yet), 'error'
      * execute: 'done', 'unchanged', 'failed', 'skipped' (object not found after the public step)
+     * both: 'conflict' (a section of the change differs in SCM from _internal.base - not written)
      */
     public function internalApply( $execute, $progress = null )
     {
@@ -572,6 +575,23 @@ class SCMPrismaAccessChange
                     $r['message'] = 'object not found after the public request';
                 $results[] = $r;
                 continue;
+            }
+            // _internal.base (scm_pa_xml_to_change.php: the entry of the export the change was made on): a section
+            // the change touches that differs in SCM since the export is a conflict - not overwritten
+            if( isset($in['base']) && is_array($in['base']) )
+            {
+                $sectionNames = function( $list ){ return array_map( function($d){ return preg_replace('/ missing$/', '', $d); }, $list ); };
+                $touched = $sectionNames( array_merge( self::internalDiff( $in['entry'], $in['base'] ), self::internalDiff( $in['base'], $in['entry'] ) ) );
+                $drifted = $sectionNames( array_merge( self::internalDiff( $in['base'], $live ), self::internalDiff( $live, $in['base'] ) ) );
+                $conflict = array_values( array_unique( array_intersect( $touched, $drifted ) ) );
+                if( count($conflict) > 0 && count( self::internalDiff( $in['entry'], $live ) ) > 0 )
+                {
+                    $r['status'] = 'conflict';
+                    $r['sections'] = $conflict;
+                    $r['message'] = 'changed in SCM since the export: ' . implode(", ", $conflict) . ' - not overwritten (export again and rerun)';
+                    $results[] = $r;
+                    continue;
+                }
             }
             $diffs = self::internalDiff( $in['entry'], $live );
             $r['sections'] = $diffs;

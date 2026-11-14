@@ -38,8 +38,10 @@ with a config area is used (the tools print which one).
   schedules, application groups / filters / custom applications, log forwarding / zone protection / security profiles,
   profile groups, zones, security and NAT rules (the address / service types and the mergers load NAT rules too, so
   their references are replaced)
-* the internal UI API sections of security profiles are not in the export: profiles are loaded with their public
-  fields only (unchanged profiles produce no change)
+* security profiles (vulnerability, virus-and-wildfire, anti-spyware, DNS security) are loaded complete – decoder
+  actions, inline ML, inline cloud analysis, rule action `default`, advanced DNS – when the export has their internal
+  UI API answers (`config/internal/<type>.json`, scm_pa_export.php default, `ui-api-host=` for the tenant region);
+  an older export without them: public fields only
 
 The whole export as one XML (all containers, all types the loader knows – the original of
 `scm_pa_xml_to_change.php`):
@@ -92,10 +94,9 @@ pan-os-php type=playbook in=scm-export://export/1234 out=visibility.xml
 php utils/develop/sase/scm/scm_pa_xml_to_change.php in=scm-export://export/1234 file2=visibility.xml out=change.json
 ```
 
-Open: the antivirus enforcement actions (`decoder`), WildFire inline ML and inline cloud analysis of a
-virus-and-wildfire-analysis profile are internal UI API sections – not in the export, so the export based report
-shows them as "[SCM no export - missing settings]" and the playbook cannot change them (it does not create them:
-that would overwrite the real values). Needed: export and loader of these internal sections. Also open: the
+The antivirus enforcement actions (`decoder`), WildFire inline ML and inline cloud analysis are internal UI API
+sections: with an export that holds them (`config/internal/`) the playbook sets them and the change file writes them
+(`_internal`); with an older export the report shows "[SCM no export - missing settings]" – export again. Open: the
 iron-skillet content of some Alert-Only profiles (mica engine, cloud inline analysis, AV decoders,
 anti-spyware action `default`) has no public SCM field – those change requests are marked for review.
 
@@ -109,6 +110,7 @@ of the utilities show up:
 | new object | create (all fields) |
 | changed object | update with the changed fields (rules with `position`) |
 | object gone | `_delete` – only if the changed XML still holds objects of that type in that container (a type a utility did not load is never deleted) and the object is not referenced by a type pan-os-php does not load (NAT / decryption / … rules: the utility did not replace these references) – else listed in `not_imported` |
+| changed internal UI API section of a security profile (decoder, inline ML, inline cloud analysis, rule action `default`, advanced DNS) | `_internal` with the complete entry and `base` (the export entry) – scm_pa_change.php writes it through the internal UI API after the public request and reports a section changed in SCM since the export as conflict; only in folders and only if the export has the internal answer of the profile, else `not_imported` |
 | renamed object, removed scalar field, folder / snippet changes, requests to review | not in the change request → `not_imported` with the reason |
 
 `original=<file>` also writes the original XML.
