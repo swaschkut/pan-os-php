@@ -702,6 +702,47 @@ $change['placeholders'] = $placeholders;
 if( count($ifVariables) > 0 )
     $change['interface_variables'] = $ifVariables;
 
+/** address (ipv4 / ipv6, with or without prefix) - else an address object name */
+function isIpValue( $v )
+{
+    $a = explode('/', $v)[0];
+    return filter_var($a, FILTER_VALIDATE_IP) !== FALSE;
+}
+/** interface address given as address object name. Panorama: a template refers to shared objects only. SCM: the
+ *  snippet keeps the name, on the firewall the object of its folder (device-group) wins over the one of All -
+ *  value = closest object in the device-group hierarchy, else shared; a different device-group object is reported */
+function resolveAddressName( $pano, $name, $dgName, $serial, $var, array &$warnings )
+{
+    $shared = $pano->addressStore->find($name, null, false);
+    $dgObj = null;
+    $dgFound = null;
+    $dg = $dgName !== null ? $pano->findDeviceGroup($dgName) : null;
+    while( $dg !== null && $dgObj === null )
+    {
+        $o = $dg->addressStore->find($name, null, false);
+        if( $o !== null )
+        {
+            $dgObj = $o;
+            $dgFound = $dg->name();
+        }
+        $dg = $dg->parentDeviceGroup;
+    }
+    $valueOf = function( $o ){ return $o->isGroup() ? "group " . $o->name() : $o->value(); };
+    if( $dgObj !== null )
+    {
+        if( $shared !== null && $valueOf($shared) !== $valueOf($dgObj) )
+            $warnings[] = "firewall " . $serial . " " . $var . ": address object '" . $name . "' - Panorama template uses shared (" . $valueOf($shared)
+                . "), SCM uses the object of folder '" . $dgFound . "' (" . $valueOf($dgObj) . ") - the folder object wins over All";
+        return array( $valueOf($dgObj), "address object '" . $name . "' (device-group " . $dgFound . ( $shared !== null ? ", overrides shared" : "" ) . ")",
+            $shared !== null && $valueOf($shared) !== $valueOf($dgObj) ? $valueOf($shared) : null );
+    }
+    if( $shared !== null )
+        return array( $valueOf($shared), "address object '" . $name . "' (shared)", null );
+    $warnings[] = "firewall " . $serial . " " . $var . ": address object '" . $name . "' not found (shared / device-group hierarchy)";
+    return array( $name, "address object '" . $name . "' not found", null );
+}
+$fwWarnings = array();
+
 // managed firewalls: serial -> device-group folder, template-stack -> snippets, interface variables of these snippets
 // (for the device step: device in the folder, interface variable values per device) - not sent by scm_pa_change.php
 $firewalls = array();
@@ -771,21 +812,36 @@ foreach( array_keys($serials) as $serial )
             {
                 $resolved = array();
                 $src = array();
+                $objInfo = array();
                 foreach( $ips as $ip )
                 {
                     if( isset($tplVars[$ip]) )
                     {
-                        $resolved[] = $tplVars[$ip][0];
-                        $src[$tplVars[$ip][1] . " " . $ip] = TRUE;
+                        $val = $tplVars[$ip][0];
+                        $s1 = $tplVars[$ip][1] . " " . $ip;
                     }
                     else
                     {
-                        $resolved[] = $ip;
-                        $src['template ' . $sn] = TRUE;
+                        $val = $ip;
+                        $s1 = 'template ' . $sn;
                     }
+                    // address object name instead of an address: the name stays (SCM resolves it on the device -
+                    // object of the folder before All); the resolution is only shown, with a Panorama / SCM conflict
+                    if( !isIpValue($val) )
+                    {
+                        list($scmVal, $s2, $panoVal) = resolveAddressName( $pano, $val, isset($dgOfSerial[$serial]) ? $dgOfSerial[$serial] : null, $serial, $v['variable'], $fwWarnings );
+                        $s1 .= ", " . $s2;
+                        $objInfo[$val] = array( 'scm' => $scmVal ) + ( $panoVal !== null ? array( 'panorama' => $panoVal ) : array() );
+                    }
+                    $resolved[] = $val;
+                    $src[$s1] = TRUE;
                 }
                 $entry['ip'] = $resolved;
                 $entry['ip_source'] = implode(", ", array_keys($src));
+                // address object names: value SCM resolves (folder object before All) and, if different, the shared
+                // value the firewall got from Panorama
+                if( count($objInfo) > 0 )
+                    $entry['address_objects'] = $objInfo;
             }
             $vars[$v['variable']] = $entry;
         }
@@ -794,6 +850,7 @@ foreach( array_keys($serials) as $serial )
 }
 if( count($firewalls) > 0 )
     $change['firewalls'] = $firewalls;
+$warnings = array_merge( $warnings, $fwWarnings );
 $change['not_imported'] = $notImported;
 $warnings = array_merge( $warnings, $warningsApps );
 $change['warnings'] = $warnings;

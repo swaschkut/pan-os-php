@@ -26,6 +26,14 @@ detected (hash check) and not overwritten.
   `interfaces`: variable → `interface`, `ip` (as in the template, Panorama template variables resolved: device value
   of the stack > stack variable > template variable), `ip_source`
 
+  Interface address as address object name: Panorama – a template refers to shared objects only. SCM – the name is
+  kept (snippet and `firewalls[].interfaces[].ip`), SCM resolves it on the device: the object of the folder
+  (device-group hierarchy) wins over the one of `All`. `address_objects` only shows the resolution: `scm` (closest
+  object in the device-group hierarchy, else shared) and, if a device-group object with the same name has another
+  value than the shared one, `panorama` (what the firewall got from Panorama) plus a warning – a dependency of the
+  PAN-OS / SCM design, the consultant decides. To verify live: SCM accepts an address object name of `All` as
+  interface address in a snippet.
+
 ## 2) Onboarding of one firewall (new: `scm_pa_onboard.php`, planned)
 
 Precondition: the firewall is associated with the tenant (device association / ZTP – not possible through the

@@ -678,9 +678,19 @@ class SCMImporter
                             $grp->removeChild($n);
                     DH::createElement( DH::findFirstElementOrCreate('virus-and-wildfire-analysis', $grp), 'member', $name );
                 }
-                // data filtering profiles are not imported (SCM: enterprise DLP)
-                // data filtering: the reference stays - SCM has no API to create the profile (enterprise DLP), the
-                // generator lists the group (and what uses it) as not importable
+                // data filtering: SCM data filtering profiles belong to Enterprise DLP (license, DLP data profiles instead
+                // of PAN-OS data objects) - not created here. The group and the rules that use it are imported without
+                // the data filtering profile (a technical hurdle must never drop a security rule); listed in 'incomplete'
+                if( ($df = DH::findFirstElement('data-filtering', $grp)) !== FALSE )
+                {
+                    $dfNames = array();
+                    foreach( $df->getElementsByTagName('member') as $m )
+                        if( trim($m->textContent) !== '' )
+                            $dfNames[] = trim($m->textContent);
+                    $grp->removeChild($df);
+                    if( count($dfNames) > 0 )
+                        $this->markIncomplete($grp, "data filtering profile '" . implode(", ", $dfNames) . "' not set: SCM data filtering profiles come from Enterprise DLP (license) - create it in Data Loss Prevention and add it to the group");
+                }
                 $spy = $this->groupMember($grp, 'spyware');
                 if( $spy !== null && DH::findFirstElement('dns-security', $grp) === FALSE
                     && $this->findProfile($pano, $sc['dg'], 'dns-security', $spy) !== null )

@@ -72,7 +72,7 @@ Rules:
 | antivirus application exceptions | no SCM field known → `incomplete` |
 | profile in a profile group that is not in the configuration (e.g. `default`, `strict file blocking`) | created in the scope of the group: copy of the PAN-OS predefined profile (`lib/object-classes/predefined.xml`), else an empty placeholder → `placeholders` |
 | antivirus / WildFire part of a combined profile not in the configuration | PAN-OS predefined `default` content, else placeholder → `placeholders` |
-| data filtering profile in a profile group | SCM API cannot create data filtering profiles (enterprise DLP): reference kept, group and the rules that use it in `not_imported` |
+| data filtering profile in a profile group | SCM data filtering profiles belong to Enterprise DLP (license; DLP data profiles instead of PAN-OS data objects) – not created here. The profile group is imported without it and listed in `incomplete` (create the profile in Data Loss Prevention and add it to the group); the rules that use the group are imported – a technical hurdle never drops a security rule. Open: public SCM API `data-filtering-profiles` / DLP API (pan.dev) – to be checked with a HAR |
 | rule `group-tag` | no SCM field → rule in `incomplete` |
 | template interfaces | SCM interface variables in the snippet of the template / stack: `ethernet1/1` → `ethernet-interfaces` `$ethernet1_1` (layer3 ip / mtu / management profile, layer2, tap, comment, link settings); `ethernet1/2.1` → `layer3-subinterfaces` `$ethernet1_2.1` (`parent_interface: $ethernet1_2`, tag, ip – SCM requires `<parent>.<unit>`, `$ethernet1_2-1` is refused); layer2 units → `layer2-subinterfaces`; `tunnel.1` / `loopback.N` / `vlan.N` → `$tunnel-1` … (`tunnel-` / `loopback-` / `vlan-interfaces`); IP addresses of the template are kept in the snippet. Settings without SCM field (ipv6, lldp, ndp-proxy … with non default values) → `incomplete`; aggregate interfaces → `incomplete` (later). No `default_value`: SCM keeps it unique in the tenant (`'ethernet1/3' is already in use` when another snippet has it) and the value is set per firewall (DeviceOnPrem, later step); the Panorama interface of each variable is in `interface_variables` of the change file |
 | interface management profiles of the template | `interface-management-profiles` in the snippet |
@@ -100,7 +100,7 @@ The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
   per firewall later)
 * `firewalls`: per managed firewall `serial`, `folder` (its device-group), `template_stack`, `snippets` (stack, then its
   templates) and `interfaces` (interface variable → `interface`, `ip` with Panorama template variables resolved –
-  device value of the stack > stack variable > template variable –, `ip_source`) – input for the onboarding step
+  device value of the stack > stack variable > template variable –, address object names kept – SCM resolves them – with the resolution in `address_objects`, `ip_source`) – input for the onboarding step
   ([CONCEPT_panorama_migration.md](CONCEPT_panorama_migration.md)), not sent yet
 * `warnings`: what is not part of this step (NAT / decryption / … rules, data filtering profiles …)
 
