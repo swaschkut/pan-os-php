@@ -623,23 +623,30 @@ class SCMImporter
         foreach( $vawCreated as $label => $names )
             $this->warnings[] = $label . ": antivirus / WildFire profiles of profile groups combined into virus-and-wildfire-analysis profiles: " . implode(", ", $names);
 
-        // 4) fields of the public SCM API: rule action 'default' = empty action (as the public API returns it);
-        //    sections the public API does not have are removed with a warning (set them in SCM / internal API)
+        // 4) public SCM API: rule action 'default' = empty action (as the public API returns it); sections the public
+        //    API does not have are removed from the public request. The complete profile (PAN-OS structure) is kept for
+        //    the internal UI API (multiConfigure edit, written by scm_pa_change.php after the public create)
         $gaps = array(
             'vulnerability' => array('mica-engine-vulnerability-enabled', 'cloud-inline-analysis'),
             'spyware' => array('mica-engine-spyware-enabled/entry/local-deep-learning'),
             'dns-security' => array('botnet-domains/advanced-dns-security-categories'),
+            'virus-and-wildfire-analysis' => array('decoder', 'mlav-engine-filebased-enabled', 'cloud-inline-analysis', 'mica-engine-wildfire-rules'),
         );
         foreach( $scopes as $sc )
         {
             if( $sc['node'] === FALSE || $sc['node'] === null )
                 continue;
-            foreach( array('vulnerability', 'spyware') as $type )
-                foreach( $xp->query("profiles/" . $type . "/entry/rules/entry/action/default", $sc['node']) as $d )
-                    $d->parentNode->removeChild($d);
             foreach( $gaps as $type => $paths )
                 foreach( $xp->query("profiles/" . $type . "/entry", $sc['node']) as $prof )
                 {
+                    $orig = $prof->cloneNode(TRUE);
+                    $defaults = 0;
+                    if( $type == 'vulnerability' || $type == 'spyware' )
+                        foreach( $xp->query("rules/entry/action/default", $prof) as $d )
+                        {
+                            $d->parentNode->removeChild($d);
+                            $defaults++;
+                        }
                     $removed = array();
                     foreach( $paths as $path )
                         foreach( $xp->query($path, $prof) as $n )
@@ -647,17 +654,19 @@ class SCMImporter
                             $n->parentNode->removeChild($n);
                             $removed[$path] = TRUE;
                         }
+                    if( empty($removed) && $defaults == 0 )
+                        continue;
+                    $prof->setAttribute(self::INTERNAL_ATTR, json_encode( array('prefix' => "profiles/" . $type,
+                        'entry' => self::domToInternal($orig)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ));
+                    // complete through the internal UI API (_internal) - not 'incomplete'
                     if( !empty($removed) )
-                    {
                         $this->apiGaps[$sc['label'] . "|" . $type . "|" . implode(", ", array_keys($removed))][] = $prof->getAttribute('name');
-                        $this->markIncomplete($prof, implode(", ", array_keys($removed)) . " not imported (not in the public SCM API)");
-                    }
                 }
         }
         foreach( $this->apiGaps as $k => $names )
         {
             list($label, $type, $paths) = explode("|", $k, 3);
-            $this->warnings[] = $label . ": " . $type . " profiles " . implode(", ", $names) . ": " . $paths . " not in the public SCM API - set in SCM after the import";
+            $this->warnings[] = $label . ": " . $type . " profiles " . implode(", ", $names) . ": " . $paths . " not in the public SCM API - internal UI API";
         }
 
         if( $this->dropEmptyLogForwarding )
@@ -665,6 +674,46 @@ class SCMImporter
     }
 
     const INCOMPLETE_ATTR = 'pan-os-php-scm-incomplete';
+    const INTERNAL_ATTR = 'pan-os-php-scm-internal';
+
+    /** profiles to complete through the internal UI API: resource, name, scope_type, scope, prefix, entry (PAN-OS JSON) */
+    public $internal = array();
+
+    /**
+     * PAN-OS XML entry -> JSON structure of the internal UI API (/api/config/v9.2): name attribute -> "@name",
+     * <entry> children -> {"entry": [...]}, <member> children -> {"member": [...]}, text -> string, empty -> {}
+     */
+    static public function domToInternal(DOMElement $node, $top = TRUE)
+    {
+        $out = array();
+        if( $node->hasAttribute('name') )
+            $out['@name'] = $node->getAttribute('name');
+        $children = array();
+        foreach( $node->childNodes as $c )
+            if( $c->nodeType == XML_ELEMENT_NODE )
+                $children[] = $c;
+        if( empty($children) && !$node->hasAttribute('name') )
+        {
+            $text = trim($node->textContent);
+            return $text === '' ? new stdClass() : $text;
+        }
+        $tags = array();
+        foreach( $children as $c )
+            $tags[$c->tagName][] = $c;
+        foreach( $tags as $tag => $list )
+        {
+            if( $tag == 'entry' || $tag == 'member' )
+            {
+                $items = array();
+                foreach( $list as $c )
+                    $items[] = $tag == 'member' ? trim($c->textContent) : self::domToInternal($c, FALSE);
+                $out[$tag] = $items;
+            }
+            else
+                $out[$tag] = self::domToInternal($list[0], FALSE);
+        }
+        return $out;
+    }
     const INCOMPLETE_SEP = ' || ';
 
     /**
@@ -796,18 +845,16 @@ class SCMImporter
         $avNode = $av !== null ? $this->findProfile($pano, $sc['dg'], 'virus', $av) : null;
         if( $avNode !== null )
         {
-            foreach( array('threat-exception', 'mlav-exception', 'packet-capture') as $tag )
+            // sections of the SCM virus-and-wildfire-analysis profile (internal UI API structure, HAR 2026-11-14);
+            // decoder / inline ML / inline cloud analysis are completed through the internal UI API (step 4)
+            foreach( array('decoder', 'mlav-engine-filebased-enabled', 'cloud-inline-analysis', 'mica-engine-wildfire-rules',
+                         'threat-exception', 'mlav-exception', 'packet-capture') as $tag )
                 if( ($n = DH::findFirstElement($tag, $avNode)) !== FALSE )
                     $entry->appendChild($n->cloneNode(TRUE));
-            $lost = array();
-            foreach( array('decoder', 'application', 'mlav-engine-filebased-enabled') as $tag )
-                if( DH::findFirstElement($tag, $avNode) !== FALSE )
-                    $lost[] = $tag;
-            if( !empty($lost) )
+            if( DH::findFirstElement('application', $avNode) !== FALSE )
             {
-                $this->warnings[] = $sc['label'] . ": '" . $name . "': " . implode(", ", $lost) . " of antivirus profile '" . $av
-                    . "' not in the public SCM API - set them in SCM (decoder actions / inline ML)";
-                $this->markIncomplete($entry, implode(", ", $lost) . " of antivirus profile '" . $av . "' not imported (not in the public SCM API)");
+                $this->warnings[] = $sc['label'] . ": '" . $name . "': application exceptions of antivirus profile '" . $av . "' not imported";
+                $this->markIncomplete($entry, "application exceptions of antivirus profile '" . $av . "' not imported (no SCM field known)");
             }
         }
         elseif( $av !== null )
@@ -994,6 +1041,17 @@ class SCMImporter
     {
         // Panorama / PAN-OS uuids are not SCM ids
         $this->removeUuids($entry);
+
+        // complete profile for the internal UI API (prepareSecurityProfiles)
+        if( $entry->hasAttribute(self::INTERNAL_ATTR) )
+        {
+            $d = $this->currentDest;
+            $in = json_decode($entry->getAttribute(self::INTERNAL_ATTR), TRUE);
+            $this->internal[] = array( 'resource' => $resource, 'name' => $entry->getAttribute('name'),
+                'scope_type' => $d instanceof Snippet ? 'snippet' : 'folder', 'scope' => $d !== null ? $d->name() : null,
+                'prefix' => $in['prefix'], 'entry' => $in['entry'] );
+            $entry->removeAttribute(self::INTERNAL_ATTR);
+        }
 
         // content removed while the profiles were prepared for SCM (prepareSecurityProfiles)
         if( $entry->hasAttribute(self::INCOMPLETE_ATTR) )

@@ -118,8 +118,9 @@ removing entries must not require any other edit.
 | predefined objects (`best-practice`, `default`, snippet `predefined`) | cannot be changed | fix = **clone** (POST of a new profile) + reference the clone in the rules / profile groups (PUT) – one finding, several requests |
 
 Internal API writes: the UI writes with `PUT /api/config/v9.2/…` / `configByPath` (seen in a HAR: Clientless VPN,
-service connection). The write calls for security profile sections still have to be captured (HAR of editing a
-vulnerability / WildFire-AV profile in the UI) before internal requests are generated.
+service connection) and, for security profiles, `POST /api/config/v9.2/multiConfigure` (`command: edit`, complete
+entry) / `PUT …/Objects/WildFireAndAntivirusSecurityProfiles?name=` (HAR 2026-11-14) – implemented in
+`scm_pa_change.php` (`_internal`, see ../sase/scm/SECURITY_PROFILES_public_vs_internal_api.md).
 
 ## 5. Tools
 

@@ -199,6 +199,22 @@ if( count($change['snippets']) == 0 )
 $warnings = $importer->warnings;
 if( count($importer->groupTags) > 0 )
     $warnings[] = "rule group tags (display grouping, no SCM field) removed: " . implode(", ", array_keys($importer->groupTags));
+// profiles completed through the internal UI API by scm_pa_change.php: complete PAN-OS entry as _internal
+$internalCount = 0;
+foreach( $importer->internal as $in )
+{
+    $key = $in['scope_type'] == 'snippet' ? 'snippet' : 'folder';
+    if( !isset($change[$in['resource']]) )
+        continue;
+    foreach( $change[$in['resource']] as $idx => $item )
+        if( $item['name'] === $in['name'] && isset($item[$key]) && $item[$key] === $in['scope'] )
+        {
+            $change[$in['resource']][$idx]['_internal'] = array( 'prefix' => $in['prefix'], 'entry' => $in['entry'] );
+            $internalCount++;
+            break;
+        }
+}
+
 // objects in the change file that are imported without part of their content / references
 $incomplete = array();
 foreach( $importer->incomplete as $inc )
@@ -228,6 +244,7 @@ foreach( $counts as $t => $n )
     PH::print_stdout( sprintf( "   %-36s %4d", $t, $n ) );
 if( isset($importer->summary['skipped']) )
     PH::print_stdout( " * not part of this step: " . json_encode($importer->summary['skipped']) );
+PH::print_stdout( " * completed through the internal UI API (sections the public API does not have): " . $internalCount . " profile(s) ('_internal')" );
 PH::print_stdout( " * imported, but not complete: " . count($incomplete) . " - listed with the missing content / references in 'incomplete' of the change file" );
 $byType = array();
 foreach( $incomplete as $n )

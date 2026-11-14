@@ -86,7 +86,23 @@ analysis and rule action `default` are then available for `type=securityprofile`
 Verified offline with the internal answers of the lab tenant (`best-practice`, `best-practice-1`, `web-security-default`,
 custom `WF_AV_Sven`).
 
+## Write through the internal UI API (HAR 2026-11-14)
+
+The SCM UI writes a profile as complete entry (same PAN-OS JSON structure as the GET answer):
+
+* vulnerability: `POST /api/config/v9.2/multiConfigure`
+  `{"operations":[{"payload":{"entry":{…}},"command":"edit","prefix":"profiles/vulnerability","subPath":"entry[@name='<name>']","isNewOnly":"no","folder":"<folder>","type":"cloud|container"}]}`
+  → `{"@status":"success","@code":"20","@mutationid":"…"}`
+* WildFire / antivirus: `PUT /api/config/v9.2/Objects/WildFireAndAntivirusSecurityProfiles?type=cloud&folder=<folder>&name=<name>`
+  `{"entry":{…}}` → `{"@status":"success","@code":"20"}`
+
+Entry with `@name`, `@uuid` (= public id), `@loc`, `@type`; rule action default as `{"default":{}}`.
+Used by `scm_pa_change.php` for `_internal` (multiConfigure for all four profile types:
+`profiles/vulnerability`, `profiles/spyware`, `profiles/dns-security`, `profiles/virus-and-wildfire-analysis`).
+
 ## Open
 
 - Public API owner of `best-practice` (snippet name).
-- Write support of the public API for the missing sections (otherwise these sections are manual on the target tenant).
+- Write support of the public API for the missing sections – until then: internal UI API (see above).
+- multiConfigure for spyware / DNS security: same structure assumed (seen in the HAR: vulnerability; WildFire /
+  antivirus via PUT) – to be confirmed by the first live run.

@@ -58,6 +58,15 @@ Rules (`security-rules`, `nat-rules`, `decryption-rules` …): `"position": "pre
 position in a snippet. New rules are added at the end of the rule base in file order; the verification also checks the
 order of the rules of the file in the tenant. Moving existing rules is not part of this tool (sync workflow).
 
+`_internal` (security profiles in folders): `{ "prefix": "profiles/vulnerability|spyware|dns-security|virus-and-wildfire-analysis", "entry": { PAN-OS structure as JSON } }`
+– sections the public API does not have (inline ML, inline cloud analysis, decoder actions, rule action `default` …).
+After the public requests the script reads the profile through the internal UI API
+(`GET /api/config/v9.2/Objects/<type>?folder=&type=container|cloud&name=`) and, if a section differs, writes the
+complete entry (`POST /api/config/v9.2/multiConfigure`, `command: edit`, `prefix`, `subPath: entry[@name='…']` – the
+call of the SCM UI, HAR 2026-11-14) with the `@uuid` / `@loc` of the live entry. The dry-run shows `edit` /
+`unchanged` / `after create`; the verification compares the sections; `push` pushes after these edits.
+`ui-api-host=` sets the host of the tenant region (default `paas-3.prod.eu.panorama.paloaltonetworks.com`).
+
 Zones (`zones`) are the only network type a change request can contain (they belong to the rules that use them).
 
 Not supported (refused with a message; use the sync workflow): other network / device settings, Prisma Access

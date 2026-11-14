@@ -48,7 +48,19 @@ class SCMPrismaAccessChange
     const MAX_FOLDER_DEPTH = 4;
 
     /** directives in an entry - everything else is a field of the object */
-    const DIRECTIVES = array( '_delete', '_append', '_remove', '_comment' );
+    const DIRECTIVES = array( '_delete', '_append', '_remove', '_comment', '_internal' );
+
+    /**
+     * _internal: profile sections the public API does not have, written through the internal UI API after the public
+     * create / update (HAR 2026-11-14: POST /api/config/v9.2/multiConfigure, command edit, complete entry)
+     * prefix => internal object type (read back: GET /api/config/v9.2/Objects/<type>?folder=&type=&name=)
+     */
+    const INTERNAL_TYPES = array(
+        'profiles/vulnerability' => 'VulnerabilityProtectionSecurityProfiles',
+        'profiles/spyware' => 'AntiSpywareSecurityProfiles',
+        'profiles/dns-security' => 'DnsSecurityProfiles',
+        'profiles/virus-and-wildfire-analysis' => 'WildFireAndAntivirusSecurityProfiles',
+    );
 
     /** folder / snippet fields only returned by the single GET, not by the list */
     const DETAIL_FIELDS = array( 'description', 'labels' );
@@ -57,7 +69,10 @@ class SCMPrismaAccessChange
     public $tsg;
     public $outdir;
     public $runDir;
-    public $options = array( 'parallel' => 8, 'page_size' => 1000 );
+    public $options = array( 'parallel' => 8, 'page_size' => 1000, 'ui_api_host' => SCMPrismaAccessExport::UI_API_HOST_DEFAULT );
+    /** internal UI API steps: dry-run / execute results */
+    public $internalDry = array();
+    public $internalLog = array();
 
     /** normalized change request: folders[], snippets[], objects[] */
     public $request;
@@ -200,6 +215,16 @@ class SCMPrismaAccessChange
             foreach( array_keys($e) as $k )
                 if( $k !== '' && $k[0] == '_' && !in_array($k, self::DIRECTIVES, TRUE) )
                     $this->errors[] = $where . ": unknown directive " . $k;
+            if( isset($e['_internal']) )
+            {
+                $in = $e['_internal'];
+                if( !is_array($in) || !isset($in['prefix']) || !isset(self::INTERNAL_TYPES[$in['prefix']]) || !isset($in['entry']) || !is_array($in['entry']) )
+                    $this->errors[] = $where . ": _internal needs prefix (" . implode(", ", array_keys(self::INTERNAL_TYPES)) . ") and entry";
+                elseif( isset($e['snippet']) )
+                    $this->errors[] = $where . ": _internal only for objects in folders";
+                elseif( !empty($e['_delete']) )
+                    $this->errors[] = $where . ": _internal together with _delete";
+            }
             foreach( array('id', 'folder_id', 'snippet_id') as $k )
                 if( isset($e[$k]) )
                     $this->errors[] = $where . ": field " . $k . " is set by SCM - remove it";
@@ -334,15 +359,176 @@ class SCMPrismaAccessChange
 
         $this->dryRunLog = SCMPrismaAccessSync::apply( $this->connector, $this->plan, array( 'execute' => false ) );
         $this->writeJson( $this->runDir . "/apply-log-dry-run.json", $this->dryRunLog );
+        $this->internalDry = $this->internalApply( false );
+        if( count($this->internalDry) > 0 )
+            $this->writeJson( $this->runDir . "/internal-dry-run.json", $this->internalDry );
         return true;
     }
 
-    /** sends the plan; optional push of the touched folders */
+    /** sends the plan, then the internal UI API edits; optional push of the touched folders (after both) */
     public function execute( $push = false, $continueOnError = false )
     {
-        $log = SCMPrismaAccessSync::apply( $this->connector, $this->plan, array( 'execute' => true, 'push' => $push, 'continue_on_error' => $continueOnError ) );
+        $log = SCMPrismaAccessSync::apply( $this->connector, $this->plan, array( 'execute' => true, 'push' => false, 'continue_on_error' => $continueOnError ) );
+        $this->internalLog = $this->internalApply( true );
+        $log['internal'] = $this->internalLog;
+        if( $push )
+        {
+            $folders = $log['folders'];
+            foreach( $this->internalLog as $r )
+                if( $r['status'] == 'done' && !in_array($r['folder'], $folders, TRUE) )
+                    $folders[] = $r['folder'];
+            $log['push'] = SCMPrismaAccessSync::push( $this->connector, $folders, true );
+        }
         $this->writeJson( $this->runDir . "/apply-log-execute.json", $log );
         return $log;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // internal UI API
+
+    /** objects of the request with _internal */
+    private function internalTasks()
+    {
+        $tasks = array();
+        foreach( $this->request['objects'] as $e )
+            if( isset($e['_internal']) && isset($e['folder']) && empty($e['_delete']) )
+                $tasks[] = $e;
+        return $tasks;
+    }
+
+    private function internalFolderType( $folder )
+    {
+        return in_array( $folder, SCMPrismaAccessExport::PA_DEPLOYMENT_FOLDERS, TRUE ) ? 'cloud' : 'container';
+    }
+
+    /** live entry of the internal UI API; null = not found, false = error */
+    public function internalGet( $prefix, $folder, $name )
+    {
+        $url = "https://" . $this->options['ui_api_host'] . "/api/config/v9.2/Objects/" . self::INTERNAL_TYPES[$prefix] . "?"
+            . http_build_query( array( 'folder' => $folder, 'type' => $this->internalFolderType($folder), 'name' => $name ), '', '&', PHP_QUERY_RFC3986 );
+        $r = $this->connector->sendSCMAPIRequest( "GET", $url, false, FALSE );
+        if( $r['http_code'] == 404 )
+            return null;
+        if( $r['errors'] !== null || !is_array($r['json']) )
+            return false;
+        $entries = isset($r['json']['result']['entry']) ? $r['json']['result']['entry'] : array();
+        if( isset($entries['@name']) )
+            $entries = array( $entries );
+        foreach( (array)$entries as $en )
+            if( is_array($en) && isset($en['@name']) && $en['@name'] === $name )
+                return $en;
+        return null;
+    }
+
+    /** differences between the wanted entry and the live entry (sections of the wanted entry only, @ meta data ignored) */
+    public static function internalDiff( $want, $live, $path = '' )
+    {
+        $diffs = array();
+        foreach( $want as $k => $v )
+        {
+            if( is_string($k) && $k !== '' && $k[0] == '@' )
+                continue;
+            if( !is_array($live) || !array_key_exists($k, $live) )
+            {
+                $diffs[] = $path . $k . " missing";
+                continue;
+            }
+            if( self::internalNorm($v) !== self::internalNorm($live[$k]) )
+                $diffs[] = $path . $k;
+        }
+        return $diffs;
+    }
+
+    private static function internalNorm( $v )
+    {
+        if( is_object($v) )
+            $v = (array)$v;
+        if( !is_array($v) )
+            return json_encode( (string)$v );
+        if( count($v) == 0 )
+            return '{}';
+        $out = array();
+        foreach( $v as $k => $x )
+            if( !( is_string($k) && $k !== '' && $k[0] == '@' && $k !== '@name' ) )
+                $out[$k] = self::internalNorm($x);
+        if( array_keys($out) !== range(0, count($out) - 1) )
+            ksort( $out );
+        return json_encode( $out );
+    }
+
+    /** PHP arrays from JSON: empty [] that stood for an empty XML element -> {} (lists are always entry / member) */
+    public static function internalPayload( $v, $key = null )
+    {
+        if( !is_array($v) )
+            return $v;
+        if( count($v) == 0 )
+            return ( $key === 'entry' || $key === 'member' ) ? array() : new stdClass();
+        $out = array();
+        foreach( $v as $k => $x )
+            $out[$k] = self::internalPayload( $x, is_int($k) ? $key : $k );
+        return $out;
+    }
+
+    /**
+     * dry-run: per task 'edit' (live differs), 'unchanged', 'after create' (object does not exist yet), 'error'
+     * execute: 'done', 'unchanged', 'failed', 'skipped' (object not found after the public step)
+     */
+    public function internalApply( $execute )
+    {
+        $results = array();
+        foreach( $this->internalTasks() as $e )
+        {
+            $in = $e['_internal'];
+            $folder = $e['folder'];
+            $r = array( 'type' => $e['type'], 'name' => $e['name'], 'folder' => $folder, 'prefix' => $in['prefix'] );
+            $live = $this->internalGet( $in['prefix'], $folder, $e['name'] );
+            if( $live === false )
+            {
+                $r['status'] = $execute ? 'failed' : 'error';
+                $r['message'] = 'internal UI API not reachable / not accepted (host ' . $this->options['ui_api_host'] . ')';
+                $results[] = $r;
+                continue;
+            }
+            if( $live === null )
+            {
+                $r['status'] = $execute ? 'skipped' : 'after create';
+                if( $execute )
+                    $r['message'] = 'object not found after the public request';
+                $results[] = $r;
+                continue;
+            }
+            $diffs = self::internalDiff( $in['entry'], $live );
+            $r['sections'] = $diffs;
+            if( count($diffs) == 0 )
+            {
+                $r['status'] = 'unchanged';
+                $results[] = $r;
+                continue;
+            }
+            if( !$execute )
+            {
+                $r['status'] = 'edit';
+                $results[] = $r;
+                continue;
+            }
+            $entry = self::internalPayload( $in['entry'] );
+            foreach( $live as $k => $v )
+                if( is_string($k) && $k !== '' && $k[0] == '@' )
+                    $entry[$k] = $v;
+            $q = strpos($e['name'], "'") === FALSE ? "'" . $e['name'] . "'" : '"' . $e['name'] . '"';
+            $body = array( 'operations' => array( array( 'payload' => array( 'entry' => $entry ), 'command' => 'edit',
+                'prefix' => $in['prefix'], 'subPath' => "entry[@name=" . $q . "]", 'isNewOnly' => 'no',
+                'folder' => $folder, 'type' => $this->internalFolderType($folder) ) ) );
+            $url = "https://" . $this->options['ui_api_host'] . "/api/config/v9.2/multiConfigure";
+            $answer = $this->connector->sendSCMAPIRequest( "POST", $url, json_encode( $body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ), FALSE );
+            $ok = $answer['errors'] === null && is_array($answer['json']) && isset($answer['json']['@status']) && $answer['json']['@status'] == 'success';
+            $r['status'] = $ok ? 'done' : 'failed';
+            $r['http_code'] = $answer['http_code'];
+            if( !$ok )
+                $r['message'] = is_array($answer['json']) ? json_encode( $answer['json'], JSON_UNESCAPED_SLASHES ) : ( is_string($answer['errors']) ? $answer['errors'] : json_encode($answer['errors']) );
+            $results[] = $r;
+        }
+        return $results;
     }
 
     /** export again and check every change against the tenant */
@@ -394,6 +580,24 @@ class SCMPrismaAccessChange
             $r['status'] = $have === $want ? 'verified' : 'failed';
             if( $have !== $want )
                 $r['message'] = "tenant: " . implode(", ", $have) . " | expected: " . implode(", ", $want);
+            $results[] = $r;
+        }
+        foreach( $this->internalTasks() as $e )
+        {
+            $live = $this->internalGet( $e['_internal']['prefix'], $e['folder'], $e['name'] );
+            $r = array( 'change' => "internal " . $e['type'] . " " . $e['name'] . " [folder " . $e['folder'] . "]", 'action' => 'internal' );
+            if( !is_array($live) )
+            {
+                $r['status'] = 'failed';
+                $r['message'] = $live === null ? 'not found (internal UI API)' : 'internal UI API not reachable';
+            }
+            else
+            {
+                $diffs = self::internalDiff( $e['_internal']['entry'], $live );
+                $r['status'] = count($diffs) == 0 ? 'verified' : 'failed';
+                if( count($diffs) > 0 )
+                    $r['message'] = "differs: " . implode(", ", $diffs);
+            }
             $results[] = $r;
         }
         $this->writeJson( $this->runDir . "/verify.json", array( 'export' => $dir, 'results' => $results ) );

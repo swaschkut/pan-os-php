@@ -42,6 +42,7 @@ $supportedArguments['yes'] = Array('niceName' => 'yes', 'shortHelp' => 'no confi
 $supportedArguments['push'] = Array('niceName' => 'push', 'shortHelp' => 'push the touched folders after the changes (only folders with a push target)');
 $supportedArguments['continue-on-error'] = Array('niceName' => 'continue-on-error', 'shortHelp' => 'continue after a failed request (dependent requests are skipped)');
 $supportedArguments['config-parallel'] = Array('niceName' => 'config-parallel', 'shortHelp' => 'concurrent API requests of the exports (default 8)', 'argDesc' => 'N');
+$supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ') - for _internal profile sections', 'argDesc' => '[host]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 $usage = "php " . basename(__FILE__) . " in=scm-api://<TSG> changes=<file.json> [outdir=change] [execute [yes]] [push] [continue-on-error]";
@@ -61,6 +62,8 @@ if( !isset(PH::$args['changes']) )
 $execute = isset(PH::$args['execute']);
 $tsg = $connector->apihost;
 $change = new SCMPrismaAccessChange( $connector, $tsg, isset(PH::$args['outdir']) ? PH::$args['outdir'] : "change" );
+if( isset(PH::$args['ui-api-host']) && is_string(PH::$args['ui-api-host']) )
+    $change->options['ui_api_host'] = PH::$args['ui-api-host'];
 if( isset(PH::$args['config-parallel']) )
     $change->options['parallel'] = max( 1, (int)PH::$args['config-parallel'] );
 
@@ -101,7 +104,20 @@ foreach( $change->warnings as $w )
 $ops = $change->plan['operations'];
 PH::print_stdout();
 PH::print_stdout( PH::boldText(" * [3/4] requests (dry-run)") );
-if( count($ops) == 0 )
+$internalTodo = array_filter( $change->internalDry, function($r){ return $r['status'] !== 'unchanged'; } );
+$printInternal = function( $results, $title ){
+    if( count($results) == 0 )
+        return;
+    $sum = array();
+    foreach( $results as $r )
+        $sum[$r['status']] = ( isset($sum[$r['status']]) ? $sum[$r['status']] : 0 ) + 1;
+    PH::print_stdout( "   " . $title . ": " . implode(", ", array_map( function($k, $v){ return $k . " " . $v; }, array_keys($sum), $sum )) );
+    foreach( $results as $r )
+        if( $r['status'] !== 'unchanged' )
+            PH::print_stdout( sprintf( "   %-12s internal %s %s [folder %s]", $r['status'], $r['type'], $r['name'], $r['folder'] )
+                . ( !empty($r['sections']) ? " - " . implode(", ", $r['sections']) : "" ) . ( isset($r['message']) ? " - " . $r['message'] : "" ) );
+};
+if( count($ops) == 0 && count($internalTodo) == 0 )
 {
     PH::print_stdout( "   nothing to do - the tenant already matches the change request" );
     PH::print_stdout( " * run files: " . $change->runDir );
@@ -130,8 +146,10 @@ foreach( $change->dryRunLog['summary'] as $k => $v )
 PH::print_stdout( "   dry-run: " . implode(", ", $summary) );
 foreach( $change->plan['warnings'] as $w )
     PH::print_stdout( "   ! " . $w );
+$printInternal( $change->internalDry, "internal UI API (sections the public API does not have, after the public requests)" );
 $blocked = array_filter( $ops, function($o){ return $o['blocked'] !== null; } );
 $failedDry = array_filter( $change->dryRunLog['results'], function($r){ return in_array($r['status'], array('failed', 'conflict', 'error'), TRUE); } );
+$failedDry = array_merge( $failedDry, array_filter( $change->internalDry, function($r){ return $r['status'] == 'error'; } ) );
 
 if( !$execute )
 {
@@ -150,7 +168,7 @@ if( count($blocked) > 0 || count($failedDry) > 0 )
 
 // 3) execute
 PH::print_stdout();
-PH::print_stdout( PH::boldText(" * [4/4] EXECUTE - " . count($ops) . " request(s) to TSG " . $tsg) );
+PH::print_stdout( PH::boldText(" * [4/4] EXECUTE - " . count($ops) . " request(s)" . ( count($internalTodo) > 0 ? " + " . count($internalTodo) . " internal UI API edit(s)" : "" ) . " to TSG " . $tsg) );
 if( !isset(PH::$args['yes']) )
 {
     PH::print_stdout( " ** type the TSG id (" . $tsg . ") to continue:" );
@@ -174,6 +192,7 @@ $summary = array();
 foreach( $log['summary'] as $k => $v )
     $summary[] = $k . " " . $v;
 PH::print_stdout( "   result: " . implode(", ", $summary) );
+$printInternal( $change->internalLog, "internal UI API" );
 if( $log['push'] !== null )
     PH::print_stdout( "   push: " . $log['push']['status']
         . ( !empty($log['push']['not_pushable']) ? " - not pushable: " . implode(", ", $log['push']['not_pushable']) : "" )
