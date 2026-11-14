@@ -54,9 +54,14 @@ templates (SCM: NGFW network / device settings – a later step together with th
 
 ## Security profiles (prepared for SCM before the translation)
 
-Rule: a reference or content is never removed silently. Everything that is not imported completely is listed per
-object in `incomplete` of the change file (what is missing and why); objects that cannot be imported at all are in
-`not_imported`.
+Rules:
+
+* A reference is never removed because the referenced object is missing: the missing object is created – copy of the
+  PAN-OS predefined profile if there is one, else a placeholder (name, content unknown / not writable) – and listed
+  in `placeholders` of the change file.
+* Content that cannot be imported (no SCM field) is listed per object in `incomplete` (what is missing and why).
+* Objects that cannot be created at all (no SCM API) stay with their reference and are listed in `not_imported`,
+  together with what uses them.
 
 | Panorama | SCM |
 |---|---|
@@ -65,26 +70,29 @@ object in `incomplete` of the change file (what is missing and why); objects tha
 | spyware profile with `botnet-domains` | `botnet-domains` moved to a `dns-security-profiles` profile with the same name; profile groups with this spyware profile get it as `dns_security` |
 | spyware / vulnerability rule action `default`; antivirus decoder actions / inline ML / inline cloud analysis, vulnerability `mica-engine-vulnerability-enabled` / `cloud-inline-analysis`, spyware inline `local-deep-learning`, DNS `advanced-dns-security-categories` | not in the public SCM API: the public request creates the profile without them (action `default` as empty action), the complete profile (PAN-OS structure) is in `_internal` of the entry and `scm_pa_change.php` writes it through the internal UI API right after the public requests (`multiConfigure` edit, see README_pa_change.md); verification reads it back through the internal API |
 | antivirus application exceptions | no SCM field known → `incomplete` |
-| data filtering profile in a profile group | data filtering is not imported (SCM: enterprise DLP) → group in `incomplete` with the reference |
+| profile in a profile group that is not in the configuration (e.g. `default`, `strict file blocking`) | created in the scope of the group: copy of the PAN-OS predefined profile (`lib/object-classes/predefined.xml`), else an empty placeholder → `placeholders` |
+| antivirus / WildFire part of a combined profile not in the configuration | PAN-OS predefined `default` content, else placeholder → `placeholders` |
+| data filtering profile in a profile group | SCM API cannot create data filtering profiles (enterprise DLP): reference kept, group and the rules that use it in `not_imported` |
 | rule `group-tag` | no SCM field → rule in `incomplete` |
 | zone interfaces | → zone in `incomplete` (device variables per firewall, next step) |
-| log forwarding profile without match list | SCM requires a match list: not importable (`not_imported`, with the rules / zones that use it) – or `drop-empty-log-forwarding`: rules / zones are imported without the reference and listed in `incomplete` |
-
-References to predefined Panorama profiles (`default`, `strict file blocking` …) stay `not_imported`.
+| log forwarding profile without match list | SCM requires a match list: placeholder match list `pan-os-php-placeholder` (traffic, `All Logs`, no destination – forwards nothing, as before) → `placeholders` |
+| custom application | `applications` with category, subcategory, technology, risk, description and the characteristics (evasive, …); signatures, default ports, timeouts … not imported → `placeholders` |
+| zone used by rules, not in a template (`no-templates` / no stack) | empty layer3 zone → `placeholders` |
 
 ## change.json
 
 The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
 
 * `source`: file, date, `dg_parent`, import summary
-* `not_imported`: objects / rules that cannot be sent as they are (with the reason) – e.g. fields the public SCM API
-  does not have (vulnerability / anti-spyware inline cloud analysis, profile groups with antivirus / WildFire),
-  references to predefined profiles (`default`), rules with single security profiles instead of a profile group
-  (SCM rules only take a profile group), rules that use such an object
-* `warnings`: what is not imported at all (custom applications, antivirus / WildFire profiles, data filtering,
-  NAT / decryption / … rules), removed rule group tags
+* `_internal` at a profile: the complete profile for the internal UI API (see above)
+* `placeholders`: objects created because something refers to them (PAN-OS predefined copy / placeholder) with the
+  reason
+* `incomplete`: imported objects with content that has no SCM field
+* `not_imported`: objects that cannot be created (with the reason) and what refers to them
+* `warnings`: what is not part of this step (NAT / decryption / … rules, data filtering profiles …)
 
-`scm_pa_change.php` ignores `source`, `not_imported` and `warnings`.
+`scm_pa_change.php` does not send `source`, `placeholders`, `incomplete`, `not_imported`, `warnings` and shows their
+numbers.
 
 ## Translation details
 
@@ -108,8 +116,6 @@ with the name of a shared object, here URL category `Custom-No-Decrypt`) – bot
 
 ## Notes for the first run
 
-* Rules reference custom applications (not imported): SCM may refuse such rules. `continue-on-error` creates the
-  rest; `no-rules` uploads the objects only.
 * Panorama shared rules go to `All` with `shared=all` – they apply to Prisma Access as well (warning).
 * `dg-parent` below `ngfw-shared` (e.g. a lab folder `pan-os-php-test`): takes folder levels from the device-group
   tree – with a level-1 folder only 3 device-group levels fit. A deeper hierarchy is refused (converter and

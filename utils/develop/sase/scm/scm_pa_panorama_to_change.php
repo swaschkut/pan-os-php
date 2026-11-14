@@ -24,7 +24,7 @@
 // see utils/develop/sase/scm/README_pa_panorama_import.md
 //
 // php utils/develop/sase/scm/scm_pa_panorama_to_change.php in=panorama.xml out=change.json
-//     [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [drop-empty-log-forwarding]
+//     [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones]
 
 set_include_path(dirname(__FILE__) . '/../../../../' . PATH_SEPARATOR . get_include_path());
 require_once("lib/pan_php_framework.php");
@@ -33,7 +33,7 @@ require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessExport.php");
 if( !class_exists("SCMCHANGES") )
     require_once("utils/lib/SCMCHANGES.php");
 
-$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [drop-empty-log-forwarding]\n"
+$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones]\n"
     . "  in            Panorama configuration (XML file)\n"
     . "  out           change request for scm_pa_change.php\n"
     . "  dg-parent     folder that holds the device-group tree: ngfw-shared (default, 'All Firewalls')\n"
@@ -46,8 +46,7 @@ $usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json 
     . "  no-rules      objects only, no security rules (rules reference custom applications that are not imported)\n"
     . "  no-zones      do not create zones for the rules (default: a zone used by the rules of a device-group that is not\n"
     . "                in an attached snippet / parent folder is created in its folder - definition from the templates)\n"
-    . "  drop-empty-log-forwarding  log forwarding profiles without match list (forward nothing; SCM requires one):\n"
-    . "                not imported, their reference is removed from rules / zones (default: listed in not_imported)\n";
+;
 
 $args = array();
 foreach( array_slice($argv, 1) as $a )
@@ -56,7 +55,7 @@ foreach( array_slice($argv, 1) as $a )
     $args[strtolower($p === false ? $a : substr($a, 0, $p))] = $p === false ? true : substr($a, $p + 1);
 }
 foreach( array_keys($args) as $a )
-    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'drop-empty-log-forwarding', 'help'), TRUE) )
+    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'help'), TRUE) )
     {
         print "unknown argument '" . $a . "'\n\n" . $usage;
         exit(1);
@@ -98,7 +97,7 @@ $importer->dgParentFolder = $dgParent;
 $importer->zonesFromRules = !isset($args['no-rules']) && !isset($args['no-zones']);
 // SCM: rules take profile groups only, antivirus + WildFire combined, DNS security separate from spyware
 $importer->scmProfiles = TRUE;
-$importer->dropEmptyLogForwarding = isset($args['drop-empty-log-forwarding']);
+$importer->customApplicationsElsewhere = TRUE;
 if( isset($args['device-group']) && $args['device-group'] !== true )
     $importer->deviceGroupFilter = array_values( array_filter( array_map('trim', explode(",", $args['device-group'])) ) );
 $importer->importPanorama( $pano, $shared == 'all' ? 'global' : $shared );
@@ -199,6 +198,46 @@ if( count($change['snippets']) == 0 )
 $warnings = $importer->warnings;
 if( count($importer->groupTags) > 0 )
     $warnings[] = "rule group tags (display grouping, no SCM field) removed: " . implode(", ", array_keys($importer->groupTags));
+// custom applications: rules refer to them - created with the attributes the SCM applications API takes; signatures,
+// default ports, timeouts … are not imported -> placeholders list
+$appScopes = array();
+if( $shared !== 'skip' && ($sh = DH::findFirstElement('shared', $pano->xmlroot)) !== FALSE )
+    $appScopes[] = array( $shared == 'all' ? 'All' : $dgParent, $sh );
+$dgFolderNames = array_map( function($f){ return $f['name']; }, $change['folders'] );
+foreach( $pano->deviceGroups as $dg )
+    if( in_array($dg->name(), $dgFolderNames, TRUE) )
+        $appScopes[] = array( $dg->name(), $dg->xmlroot );
+$appFlags = array( 'evasive-behavior' => 'evasive', 'consume-big-bandwidth' => 'excessive_bandwidth_use', 'used-by-malware' => 'used_by_malware',
+    'able-to-transfer-file' => 'transfers_files', 'has-known-vulnerability' => 'has_known_vulnerabilities', 'tunnel-other-application' => 'tunnels_other_apps',
+    'prone-to-misuse' => 'prone_to_misuse', 'pervasive-use' => 'pervasive' );
+$appPlaceholders = array();
+$xpa = new DOMXPath($pano->xmldoc);
+foreach( $appScopes as $as )
+    foreach( $xpa->query("application/entry", $as[1]) as $app )
+    {
+        $item = array( 'folder' => $as[0], 'name' => $app->getAttribute('name') );
+        $missing = array();
+        foreach( $app->childNodes as $c )
+        {
+            if( $c->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $t = trim($c->textContent);
+            if( in_array($c->tagName, array('category', 'subcategory', 'technology', 'description'), TRUE) )
+                $item[$c->tagName] = $t;
+            elseif( $c->tagName == 'risk' )
+                $item['risk'] = (int)$t;
+            elseif( isset($appFlags[$c->tagName]) )
+                $item[$appFlags[$c->tagName]] = $t == 'yes';
+            else
+                $missing[] = $c->tagName;
+        }
+        $change['applications'][] = $item;
+        $counts['applications'] = ( isset($counts['applications']) ? $counts['applications'] : 0 ) + 1;
+        $appPlaceholders[] = array( 'type' => 'applications', 'name' => $item['name'], 'folder' => $as[0],
+            'content' => array( "custom application created with category / subcategory / technology / risk / characteristics"
+                . ( count($missing) ? " - not imported: " . implode(", ", $missing) . " (application identification not complete)" : "" ) ) );
+    }
+
 // profiles completed through the internal UI API by scm_pa_change.php: complete PAN-OS entry as _internal
 $internalCount = 0;
 foreach( $importer->internal as $in )
@@ -230,6 +269,23 @@ foreach( $importer->incomplete as $inc )
         }
 }
 $change['incomplete'] = $incomplete;
+
+// objects created because something refers to them (references are never removed): PAN-OS predefined copies,
+// placeholders with unknown / not writable content
+$placeholders = $appPlaceholders;
+foreach( $importer->placeholders as $ph )
+{
+    $key = $ph['scope_type'] == 'snippet' ? 'snippet' : 'folder';
+    if( !isset($change[$ph['resource']]) )
+        continue;
+    foreach( $change[$ph['resource']] as $item )
+        if( $item['name'] === $ph['name'] && isset($item[$key]) && $item[$key] === $ph['scope'] )
+        {
+            $placeholders[] = array( 'type' => $ph['resource'], 'name' => $ph['name'], $key => $ph['scope'], 'content' => $ph['content'] );
+            break;
+        }
+}
+$change['placeholders'] = $placeholders;
 $change['not_imported'] = $notImported;
 $change['warnings'] = $warnings;
 
@@ -245,6 +301,12 @@ foreach( $counts as $t => $n )
 if( isset($importer->summary['skipped']) )
     PH::print_stdout( " * not part of this step: " . json_encode($importer->summary['skipped']) );
 PH::print_stdout( " * completed through the internal UI API (sections the public API does not have): " . $internalCount . " profile(s) ('_internal')" );
+PH::print_stdout( " * created because they are referenced (PAN-OS predefined copy / placeholder): " . count($placeholders) . " - listed in 'placeholders' of the change file" );
+$byType = array();
+foreach( $placeholders as $n )
+    $byType[$n['type']] = ( isset($byType[$n['type']]) ? $byType[$n['type']] : 0 ) + 1;
+foreach( $byType as $t => $n )
+    PH::print_stdout( sprintf( "   %-36s %4d", $t, $n ) );
 PH::print_stdout( " * imported, but not complete: " . count($incomplete) . " - listed with the missing content / references in 'incomplete' of the change file" );
 $byType = array();
 foreach( $incomplete as $n )

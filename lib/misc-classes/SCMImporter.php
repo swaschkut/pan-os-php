@@ -123,6 +123,8 @@ class SCMImporter
     /** Panorama: prepare security profiles for SCM before the import (SCM rules take profile groups only, SCM combines
      *  antivirus + WildFire, DNS security is its own profile): see prepareSecurityProfiles() */
     public $scmProfiles = FALSE;
+    /** custom applications are created by the caller (scm_pa_panorama_to_change.php) - not reported as not imported */
+    public $customApplicationsElsewhere = FALSE;
 
     /** device-groups not imported because the folder level would exceed MAX_FOLDER_DEPTH */
     public $depthErrors = array();
@@ -465,7 +467,7 @@ class SCMImporter
             $this->currentDest = $folder;
             $this->cleanEntry($new, 'zones', $label);
             if( !isset($this->templateZones[$z]) )
-                $this->addIncomplete('zones', $z, "not in a template - created as empty layer3 zone");
+                $this->addPlaceholder('zones', $z, "placeholder: zone used by rules, not in a template - empty layer3 zone");
             $parent->appendChild($new);
             $this->ruleZones[$folder->name()][$z] = TRUE;
             $created[] = $z;
@@ -559,6 +561,47 @@ class SCMImporter
 
         $xp = new DOMXPath($pano->xmldoc);
 
+        // 0) references are never removed: a profile a group refers to that is not in the configuration is created in
+        //    the scope of the group - copy of the PAN-OS predefined profile, else an empty placeholder (both listed)
+        foreach( $scopes as $sc )
+        {
+            if( $sc['node'] === FALSE || $sc['node'] === null )
+                continue;
+            foreach( $xp->query("profile-group/entry", $sc['node']) as $grp )
+                foreach( array('spyware', 'vulnerability', 'url-filtering', 'file-blocking') as $type )
+                {
+                    $m = $this->groupMember($grp, $type);
+                    if( $m === null || $this->findProfile($pano, $sc['dg'], $type, $m) !== null )
+                        continue;
+                    $parent = DH::findFirstElementOrCreate($type, DH::findFirstElementOrCreate('profiles', $sc['node']));
+                    $pre = $this->predefinedProfile($type, $m);
+                    if( $pre !== null )
+                    {
+                        $new = $pano->xmldoc->importNode($pre, TRUE);
+                        $this->markPlaceholder($new, "copy of the PAN-OS predefined " . $type . " profile '" . $m . "' (referenced by profile group '" . $grp->getAttribute('name') . "')");
+                    }
+                    else
+                    {
+                        $new = $pano->xmldoc->createElement('entry');
+                        $new->setAttribute('name', $m);
+                        $this->markPlaceholder($new, "placeholder: " . $type . " profile '" . $m . "' is not in the configuration and not PAN-OS predefined - content unknown (referenced by profile group '" . $grp->getAttribute('name') . "')");
+                    }
+                    $parent->appendChild($new);
+                    $this->warnings[] = $sc['label'] . ": " . $type . " profile '" . $m . "' referenced by profile group '" . $grp->getAttribute('name') . "' created " . ( $pre !== null ? "as copy of the PAN-OS predefined profile" : "as placeholder" );
+                }
+            // log forwarding profiles without match list: SCM requires one - placeholder match list (forwards nothing, as before)
+            foreach( $xp->query("log-settings/profiles/entry", $sc['node']) as $lfp )
+                if( $xp->query("match-list/entry", $lfp)->length == 0 )
+                {
+                    $ml = DH::findFirstElementOrCreate('match-list', $lfp);
+                    $e = DH::createElement($ml, 'entry');
+                    $e->setAttribute('name', 'pan-os-php-placeholder');
+                    DH::createElement($e, 'log-type', 'traffic');
+                    DH::createElement($e, 'filter', 'All Logs');
+                    $this->markPlaceholder($lfp, "log forwarding profile without match list (SCM requires one): placeholder match list 'pan-os-php-placeholder' (traffic, All Logs, no destination - forwards nothing)");
+                }
+        }
+
         // 3) spyware -> spyware + DNS security (per spyware profile, in its scope)
         $dnsCreated = array();
         foreach( $scopes as $sc )
@@ -608,12 +651,8 @@ class SCMImporter
                     DH::createElement( DH::findFirstElementOrCreate('virus-and-wildfire-analysis', $grp), 'member', $name );
                 }
                 // data filtering profiles are not imported (SCM: enterprise DLP)
-                if( ($df = DH::findFirstElement('data-filtering', $grp)) !== FALSE )
-                {
-                    $this->markIncomplete($grp, "data_filtering '" . $this->groupMember($grp, 'data-filtering') . "' not imported (data filtering profiles: SCM enterprise DLP) - reference removed");
-                    $grp->removeChild($df);
-                    $this->warnings[] = $sc['label'] . ": profile group '" . $grp->getAttribute('name') . "': data filtering profile removed (not imported; SCM: enterprise DLP)";
-                }
+                // data filtering: the reference stays - SCM has no API to create the profile (enterprise DLP), the
+                // generator lists the group (and what uses it) as not importable
                 $spy = $this->groupMember($grp, 'spyware');
                 if( $spy !== null && DH::findFirstElement('dns-security', $grp) === FALSE
                     && $this->findProfile($pano, $sc['dg'], 'dns-security', $spy) !== null )
@@ -669,8 +708,6 @@ class SCMImporter
             $this->warnings[] = $label . ": " . $type . " profiles " . implode(", ", $names) . ": " . $paths . " not in the public SCM API - internal UI API";
         }
 
-        if( $this->dropEmptyLogForwarding )
-            $this->dropEmptyLogForwardingProfiles($pano, $scopes);
     }
 
     const INCOMPLETE_ATTR = 'pan-os-php-scm-incomplete';
@@ -736,6 +773,28 @@ class SCMImporter
             $this->incomplete[$k]['missing'][] = $what;
     }
 
+    const PLACEHOLDER_ATTR = 'pan-os-php-scm-placeholder';
+
+    /** objects created because something refers to them, without (or with not original) content:
+     *  ['resource', 'name', 'scope_type', 'scope', 'content' => [..]] */
+    public $placeholders = array();
+
+    private function addPlaceholder($resource, $name, $what)
+    {
+        $d = $this->currentDest;
+        $k = $resource . "|" . ( $d instanceof Snippet ? 'snippet' : 'folder' ) . "|" . ( $d !== null ? $d->name() : '' ) . "|" . $name;
+        if( !isset($this->placeholders[$k]) )
+            $this->placeholders[$k] = array( 'resource' => $resource, 'name' => $name, 'scope_type' => $d instanceof Snippet ? 'snippet' : 'folder',
+                'scope' => $d !== null ? $d->name() : null, 'content' => array() );
+        $this->placeholders[$k]['content'][] = $what;
+    }
+
+    private function markPlaceholder(DOMElement $entry, $what)
+    {
+        $cur = $entry->getAttribute(self::PLACEHOLDER_ATTR);
+        $entry->setAttribute(self::PLACEHOLDER_ATTR, $cur === '' ? $what : $cur . self::INCOMPLETE_SEP . $what);
+    }
+
     /** marks a Panorama entry: this content is not imported (recorded per object when the entry is copied) */
     private function markIncomplete(DOMElement $entry, $what)
     {
@@ -746,39 +805,6 @@ class SCMImporter
     /** public API gaps removed from profiles, reported */
     public $apiGaps = array();
 
-    /** log forwarding profiles without match list (forward nothing; SCM requires a match list): not imported, references removed */
-    public $dropEmptyLogForwarding = FALSE;
-
-    private function dropEmptyLogForwardingProfiles(PanoramaConf $pano, array $scopes)
-    {
-        $xp = new DOMXPath($pano->xmldoc);
-        $empty = array();
-        foreach( $scopes as $sc )
-        {
-            if( $sc['node'] === FALSE || $sc['node'] === null )
-                continue;
-            foreach( $xp->query("log-settings/profiles/entry", $sc['node']) as $lfp )
-                if( $xp->query("match-list/entry", $lfp)->length == 0 )
-                {
-                    $empty[$lfp->getAttribute('name')] = TRUE;
-                    $lfp->parentNode->removeChild($lfp);
-                }
-        }
-        if( empty($empty) )
-            return;
-        $users = array();
-        $nodes = $xp->query("//pre-rulebase/security/rules/entry/log-setting|//post-rulebase/security/rules/entry/log-setting|//zone/entry/network/log-setting");
-        foreach( $nodes as $ls )
-            if( isset($empty[trim($ls->textContent)]) )
-            {
-                $user = $ls->parentNode->tagName == 'network' ? $ls->parentNode->parentNode : $ls->parentNode;
-                $this->markIncomplete($user, "log_setting '" . trim($ls->textContent) . "' not imported (log forwarding profile without match list; SCM requires one) - reference removed");
-                $users[] = $ls->parentNode->tagName == 'network' ? "zone " . $ls->parentNode->parentNode->getAttribute('name') : "rule " . $ls->parentNode->getAttribute('name');
-                $ls->parentNode->removeChild($ls);
-            }
-        $this->warnings[] = "log forwarding profiles without match list (forward nothing, SCM requires a match list) not imported: "
-            . implode(", ", array_keys($empty)) . " - reference removed from " . count($users) . " rule(s) / zone(s)";
-    }
 
     /** rules -> profile group created / used, per scope (reported) */
     private $spgCreated = array();
@@ -808,6 +834,25 @@ class SCMImporter
         return null;
     }
 
+    private $predefinedDoc = null;
+
+    /** PAN-OS predefined profile (lib/object-classes/predefined.xml: virus / wildfire-analysis / spyware / vulnerability /
+     *  url-filtering / file-blocking 'default', 'strict', 'basic file blocking' …); null if there is none */
+    public function predefinedProfile($type, $name)
+    {
+        if( $this->predefinedDoc === null )
+        {
+            $this->predefinedDoc = new DOMDocument();
+            $this->predefinedDoc->load(dirname(__FILE__) . "/../object-classes/predefined.xml", XML_PARSE_BIG_LINES);
+        }
+        $xp = new DOMXPath($this->predefinedDoc);
+        foreach( $xp->query("//" . $type . "/entry[@name=" . $this->xpathLiteral($name) . "]") as $n )
+            if( $n->parentNode->parentNode !== null && in_array($n->parentNode->parentNode->nodeName, array('profiles', 'predefined'), TRUE)
+                || DH::findFirstElement('rules', $n) !== FALSE || DH::findFirstElement('decoder', $n) !== FALSE || $type == 'file-blocking' || $type == 'url-filtering' )
+                return $n;
+        return null;
+    }
+
     private function xpathLiteral($s)
     {
         if( strpos($s, "'") === FALSE )
@@ -826,9 +871,14 @@ class SCMImporter
         $entry->setAttribute('name', $name);
 
         $wfNode = $wf !== null ? $this->findProfile($pano, $sc['dg'], 'wildfire-analysis', $wf) : null;
+        if( $wf !== null && $wfNode === null && ($pre = $this->predefinedProfile('wildfire-analysis', $wf)) !== null )
+        {
+            $wfNode = $pre;
+            $this->markPlaceholder($entry, "WildFire part: copy of the PAN-OS predefined WildFire profile '" . $wf . "'");
+        }
         $rules = $wfNode !== null ? DH::findFirstElement('rules', $wfNode) : FALSE;
         if( $rules !== FALSE )
-            $entry->appendChild($rules->cloneNode(TRUE));
+            $entry->appendChild($doc->importNode($rules, TRUE));
         elseif( $wf !== null && $wfNode === null )
         {
             // no WildFire profile in the group (or the predefined 'default'): forward all file types of all applications
@@ -838,11 +888,16 @@ class SCMImporter
             DH::createElement( DH::createElement($r, 'file-type'), 'member', 'any' );
             DH::createElement($r, 'direction', 'both');
             DH::createElement($r, 'analysis', 'public-cloud');
-            $this->warnings[] = $sc['label'] . ": WildFire profile '" . $wf . "' not in the configuration (predefined?) - '" . $name . "' uses the default rule (any / any / both / public-cloud)";
-            $this->markIncomplete($entry, "WildFire profile '" . $wf . "' not in the configuration (predefined?) - default rule any / any / both / public-cloud used");
+            $this->warnings[] = $sc['label'] . ": WildFire profile '" . $wf . "' not in the configuration - '" . $name . "' uses the default rule (any / any / both / public-cloud)";
+            $this->markPlaceholder($entry, "WildFire profile '" . $wf . "' not in the configuration and not PAN-OS predefined - content unknown, default rule any / any / both / public-cloud");
         }
 
         $avNode = $av !== null ? $this->findProfile($pano, $sc['dg'], 'virus', $av) : null;
+        if( $av !== null && $avNode === null && ($pre = $this->predefinedProfile('virus', $av)) !== null )
+        {
+            $avNode = $pre;
+            $this->markPlaceholder($entry, "antivirus part: copy of the PAN-OS predefined antivirus profile '" . $av . "'");
+        }
         if( $avNode !== null )
         {
             // sections of the SCM virus-and-wildfire-analysis profile (internal UI API structure, HAR 2026-11-14);
@@ -850,7 +905,7 @@ class SCMImporter
             foreach( array('decoder', 'mlav-engine-filebased-enabled', 'cloud-inline-analysis', 'mica-engine-wildfire-rules',
                          'threat-exception', 'mlav-exception', 'packet-capture') as $tag )
                 if( ($n = DH::findFirstElement($tag, $avNode)) !== FALSE )
-                    $entry->appendChild($n->cloneNode(TRUE));
+                    $entry->appendChild($doc->importNode($n, TRUE));
             if( DH::findFirstElement('application', $avNode) !== FALSE )
             {
                 $this->warnings[] = $sc['label'] . ": '" . $name . "': application exceptions of antivirus profile '" . $av . "' not imported";
@@ -859,8 +914,8 @@ class SCMImporter
         }
         elseif( $av !== null )
         {
-            $this->warnings[] = $sc['label'] . ": antivirus profile '" . $av . "' not in the configuration (predefined?) - '" . $name . "' without antivirus exceptions";
-            $this->markIncomplete($entry, "antivirus profile '" . $av . "' not in the configuration (predefined?) - its content is not imported");
+            $this->warnings[] = $sc['label'] . ": antivirus profile '" . $av . "' not in the configuration - '" . $name . "' without antivirus part";
+            $this->markPlaceholder($entry, "antivirus profile '" . $av . "' not in the configuration and not PAN-OS predefined - content unknown");
         }
 
         $parent->appendChild($entry);
@@ -1053,6 +1108,16 @@ class SCMImporter
             $entry->removeAttribute(self::INTERNAL_ATTR);
         }
 
+        if( $entry->hasAttribute(self::PLACEHOLDER_ATTR) )
+        {
+            $d = $this->currentDest;
+            $k = $resource . "|" . ( $d instanceof Snippet ? 'snippet' : 'folder' ) . "|" . ( $d !== null ? $d->name() : '' ) . "|" . $entry->getAttribute('name');
+            $this->placeholders[$k] = array( 'resource' => $resource, 'name' => $entry->getAttribute('name'),
+                'scope_type' => $d instanceof Snippet ? 'snippet' : 'folder', 'scope' => $d !== null ? $d->name() : null,
+                'content' => explode(self::INCOMPLETE_SEP, $entry->getAttribute(self::PLACEHOLDER_ATTR)) );
+            $entry->removeAttribute(self::PLACEHOLDER_ATTR);
+        }
+
         // content removed while the profiles were prepared for SCM (prepareSecurityProfiles)
         if( $entry->hasAttribute(self::INCOMPLETE_ATTR) )
         {
@@ -1180,6 +1245,8 @@ class SCMImporter
         foreach( self::$notImported as $rel => $what )
         {
             if( $this->scmProfiles && in_array($rel, array('profiles/virus', 'profiles/wildfire-analysis'), TRUE) )
+                continue;
+            if( $this->customApplicationsElsewhere && $rel == 'application' )
                 continue;
             $n = $xp->query($rel . "/entry", $src)->length;
             if( $n > 0 )

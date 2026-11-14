@@ -451,6 +451,9 @@ class SCMChangeGenerator
 
         $this->addDroppedWarnings($r, $dropped, TRUE);
         // SCM requires at least one match list (live: "missing node 'match-list'")
+        // data filtering profiles cannot be created through the SCM API (enterprise DLP): the reference stays
+        if( $obj['resource'] == 'profile-groups' && !empty($body['data_filtering']) )
+            $this->markReview($r, "data filtering profile '" . implode(", ", (array)$body['data_filtering']) . "' cannot be created through the SCM API (enterprise DLP) - reference kept, group not importable");
         if( $obj['resource'] == 'log-forwarding-profiles' && empty($body['match_list']) )
             $this->markReview($r, "log forwarding profile without match list - SCM requires at least one");
         $this->checkScope($r, $obj);

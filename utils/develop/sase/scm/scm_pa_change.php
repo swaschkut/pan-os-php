@@ -84,8 +84,9 @@ $scope = $change->scope();
 PH::print_stdout( " * TSG " . $tsg . " | changes: " . count($change->request['folders']) . " folder(s), " . count($change->request['snippets']) . " snippet(s), "
     . count($change->request['objects']) . " object(s) | types: " . ( count($scope['types']) ? implode(",", $scope['types']) : "-" )
     . " | containers: " . implode(", ", $scope['containers']) );
-if( count($change->incomplete) > 0 || count($change->notImported) > 0 )
-    PH::print_stdout( PH::boldText( " ! change file lists " . count($change->incomplete) . " object(s) imported without part of their content / references ('incomplete') and "
+if( count($change->placeholders) > 0 || count($change->incomplete) > 0 || count($change->notImported) > 0 )
+    PH::print_stdout( PH::boldText( " ! change file lists " . count($change->placeholders) . " object(s) created because they are referenced ('placeholders'), "
+        . count($change->incomplete) . " object(s) without part of their content ('incomplete'), "
         . count($change->notImported) . " object(s) not importable ('not_imported') - see the change file" ) );
 PH::print_stdout();
 

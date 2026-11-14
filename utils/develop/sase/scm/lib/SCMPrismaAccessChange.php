@@ -80,6 +80,7 @@ class SCMPrismaAccessChange
     /** from the change file (not sent): incomplete objects / objects not importable */
     public $incomplete = array();
     public $notImported = array();
+    public $placeholders = array();
     public $warnings = array();
 
     /** per change: what was done in soll (create / update / delete / unchanged / absent) */
@@ -127,9 +128,10 @@ class SCMPrismaAccessChange
         //generated change files (e.g. Panorama import): objects imported without part of their content / references
         $this->incomplete = isset($j['incomplete']) && is_array($j['incomplete']) ? $j['incomplete'] : array();
         $this->notImported = isset($j['not_imported']) && is_array($j['not_imported']) ? $j['not_imported'] : array();
+        $this->placeholders = isset($j['placeholders']) && is_array($j['placeholders']) ? $j['placeholders'] : array();
         foreach( $j as $key => $list )
         {
-            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'incomplete', 'warnings'), TRUE) )
+            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'incomplete', 'placeholders', 'warnings'), TRUE) )
                 continue;
             if( !is_array($list) || ( count($list) > 0 && array_keys($list) !== range(0, count($list) - 1) ) )
             {
