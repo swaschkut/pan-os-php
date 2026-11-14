@@ -22,6 +22,21 @@
 
 class ObjStore
 {
+
+    /**
+     * store of a SCM snippet / container by the store property name; network stores (zone protection profiles,
+     * interface management profiles ...) live below ->network with a lower case first letter
+     */
+    static public function scmStoreOf( $sub, $storeType )
+    {
+        if( isset($sub->$storeType) )
+            return $sub->$storeType;
+        $net = lcfirst($storeType);
+        if( isset($sub->network) && is_object($sub->network) && isset($sub->network->$net) )
+            return $sub->network->$net;
+        return null;
+    }
+
     use PathableName;
     use XmlConvertible;
 
@@ -115,13 +130,14 @@ class ObjStore
                     {
                         foreach ($attachedSnippets as $snippet)
                         {
-                            if (!isset($snippet->$storeType))
+                            $snippetStore = self::scmStoreOf( $snippet, $storeType );
+                            if( $snippetStore === null )
                             {
                                 PH::print_stdout( "STORE: ".$storeType." NOT set");
                                 continue;
                             }
 
-                            $f = $snippet->$storeType->findbyName($name, $ref, false);
+                            $f = $snippetStore->findbyName($name, $ref, false);
                             if ($f !== null)
                                 return $f;
                         }
@@ -131,9 +147,9 @@ class ObjStore
                 {
                     $f = null;
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    if( $snippet !== null && $snippet !== $this->owner && isset($snippet->$storeType) )
+                    if( $snippet !== null && $snippet !== $this->owner && self::scmStoreOf($snippet, $storeType) !== null )
                     {
-                        $f = $snippet->$storeType->findbyName($name, $ref, false);
+                        $f = self::scmStoreOf($snippet, $storeType)->findbyName($name, $ref, false);
                         if( $f !== null )
                             return $f;
                     }

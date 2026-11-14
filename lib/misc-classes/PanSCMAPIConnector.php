@@ -1138,6 +1138,15 @@ class PanSCMAPIConnector
             $this->internalLookupFolder = null;
 
         $typeArray = $this->getTypeArray($utilType);
+        // referenced types first, so the objects that refer to them get their references while loading
+        // (zone -> zone protection profile / log forwarding profile, rule -> log forwarding profile, tags)
+        $first = array( 'tags' => 0, 'zone-protection-profiles' => 1, 'log-forwarding-profiles' => 1 );
+        $pos = array_flip( array_values($typeArray) );
+        usort( $typeArray, function( $a, $b ) use( $first, $pos ){
+            $ra = isset($first[$a]) ? $first[$a] : 2;
+            $rb = isset($first[$b]) ? $first[$b] : 2;
+            return $ra != $rb ? $ra - $rb : $pos[$a] - $pos[$b];
+        } );
         foreach( $typeArray as $type )
         {
             if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )

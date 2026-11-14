@@ -87,8 +87,10 @@ class PanSCMExportConnector extends PanSCMAPIConnector
     }
 
     /** UTIL types whose SCM types together cover everything the loader knows */
-    const ALL_UTIL_TYPES = array( 'upload', 'rule', 'application', 'schedule', 'zone', 'zone-protection-profile',
-        'securityprofile', 'securityprofilegroup', 'log-profile', 'tag', 'address', 'service' );
+    // order: referenced types first (log forwarding / zone protection profiles, tags) - the objects that refer to
+    // them get their references while loading
+    const ALL_UTIL_TYPES = array( 'log-profile', 'zone-protection-profile', 'tag', 'upload', 'rule', 'application',
+        'schedule', 'zone', 'securityprofile', 'securityprofilegroup', 'address', 'service' );
 
     /**
      * the whole export into a BuckbeakConf (all containers, all types the loader knows) - e.g. as the original for
