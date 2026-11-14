@@ -18,7 +18,7 @@ change.json  ──►  scm_pa_change.php in=scm-api://<TSG> changes=change.json
 Example – address merger of one folder:
 
 ```
-php utils/develop/sase/scm/scm_pa_export.php in=scm-api://1234 outdir=export
+php utils/develop/sase/scm/scm_pa_export.php in=scm-api://1234 area=config outdir=export     # -> export/1234/<timestamp>/
 php utils/pan-os-php.php type=address-merger in=scm-export://export/1234 location=Lab out=merged.xml
 php utils/develop/sase/scm/scm_pa_xml_to_change.php in=scm-export://export/1234 file2=merged.xml out=change.json
 php utils/develop/sase/scm/scm_pa_change.php in=scm-api://1234 changes=change.json              # dry-run
@@ -26,6 +26,9 @@ php utils/develop/sase/scm/scm_pa_change.php in=scm-api://1234 changes=change.js
 ```
 
 ## in=scm-export://
+
+`<folder>`: the export folder `<outdir>/<TSG>/<timestamp>/`, or `<outdir>/<TSG>` – then the newest export of that TSG
+with a config area is used (the tools print which one).
 
 * every utility that works with `in=scm-api://` (UTIL based types, the mergers) – containers, snippets, devices and
   objects from `config/01_folders.json`, `config/02_snippets.json` and `config/folders|snippets|devices/<container>/`

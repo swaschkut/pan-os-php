@@ -41,7 +41,7 @@ class PanSCMExportConnector extends PanSCMAPIConnector
 
     public function __construct( $dir )
     {
-        $dir = rtrim($dir, "/");
+        $dir = self::resolveDir( $dir );
         if( !is_dir($dir) || !is_file($dir . "/manifest.json") )
             derr( "scm-export://: '" . $dir . "' is no scm_pa_export.php folder (manifest.json missing)", null, FALSE );
         $this->exportDir = $dir;
@@ -63,6 +63,27 @@ class PanSCMExportConnector extends PanSCMAPIConnector
                     $t = preg_replace('/^\d+_/', '', basename($f, ".json"));
                     $this->files[$kind][basename($cDir)][$t] = $f;
                 }
+    }
+
+    /**
+     * scm_pa_export.php writes <outdir>/<TSG>/<timestamp>/: the folder itself, <outdir>/<TSG> (newest export with a
+     * config area) or <outdir> with one TSG are accepted
+     */
+    public static function resolveDir( $dir )
+    {
+        $dir = rtrim($dir, "/");
+        for( $i = 0; $i < 2 && is_dir($dir) && !is_file($dir . "/manifest.json"); $i++ )
+        {
+            $subs = array();
+            foreach( glob($dir . "/*", GLOB_ONLYDIR) as $d )
+                if( is_file($d . "/manifest.json") ? is_dir($d . "/config") : count(glob($d . "/*/manifest.json")) > 0 )
+                    $subs[] = $d;
+            if( count($subs) == 0 )
+                break;
+            sort($subs);    // timestamps sort chronologically
+            $dir = end($subs);
+        }
+        return $dir;
     }
 
     /** UTIL types whose SCM types together cover everything the loader knows */

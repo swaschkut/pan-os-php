@@ -68,8 +68,9 @@ $dir = strpos($args['in'], 'scm-export://') === 0 ? substr($args['in'], strlen('
 if( !is_file($args['file2']) )
     derr( "file2 not found: " . $args['file2'], null, FALSE );
 
-PH::print_stdout( PH::boldText(" * [1/3] original from the export: " . $dir) );
 $connector = new PanSCMExportConnector($dir);
+$dir = $connector->exportDir;
+PH::print_stdout( PH::boldText(" * [1/3] original from the export: " . $dir) );
 $pan = new BuckbeakConf();
 $doc = new DOMDocument();
 if( !$doc->load(dirname(__FILE__) . "/../../buckbeak_baseconfig.xml", XML_PARSE_BIG_LINES) )
