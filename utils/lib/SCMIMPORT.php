@@ -48,6 +48,8 @@ class SCMIMPORT extends UTIL
             "            (+ templates / stacks as snippets attached to the device-group folders, no firewalls)\n" .
             "  dg-parent Panorama: folder below the firewall folder that holds the device-group tree (default: ngfw-shared)\n" .
             "  device-group  Panorama: only these device-groups (and their parents)\n" .
+            "  scm-profiles  Panorama: rules with single security profiles -> profile group, antivirus + WildFire ->\n" .
+            "                virus-and-wildfire-analysis, spyware DNS security -> DNS security profile\n" .
             "  target    firewall: 'folder' (a new folder below the firewall folder) or 'snippet'\n" .
             "  name      firewall: name of the folder / snippet (default: hostname)\n" .
             "  serial    firewall with target=folder: attach this firewall (it must be onboarded in SCM)\n" .
@@ -72,7 +74,7 @@ class SCMIMPORT extends UTIL
     {
         $this->supportedArguments = array();
         foreach( array('in', 'scm', 'out', 'changes', 'shared', 'shared-snippet', 'target', 'name', 'vsys', 'serial',
-                     'keep-zone-interfaces', 'projectfolder', 'scope', 'dg-parent', 'device-group', 'help') as $a )
+                     'keep-zone-interfaces', 'projectfolder', 'scope', 'dg-parent', 'device-group', 'scm-profiles', 'help') as $a )
             $this->supportedArguments[$a] = array('niceName' => $a);
     }
 
@@ -132,6 +134,7 @@ class SCMIMPORT extends UTIL
                 $this->display_error_usage_exit("scope= must be 'all', 'device-groups' or 'templates'");
             if( isset(PH::$args['dg-parent']) && !is_bool(PH::$args['dg-parent']) )
                 $importer->dgParentFolder = PH::$args['dg-parent'];
+            $importer->scmProfiles = isset(PH::$args['scm-profiles']);
             if( isset(PH::$args['device-group']) && !is_bool(PH::$args['device-group']) )
                 $importer->deviceGroupFilter = array_values(array_filter(array_map('trim', explode(",", PH::$args['device-group']))));
             $pano = new PanoramaConf();

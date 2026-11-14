@@ -52,6 +52,26 @@ php scm_pa_change.php in=scm-api://<TSG> changes=change.json execute continue-on
 Not in the snippets yet: interfaces, virtual routers / logical routers, other network and device settings of the
 templates (SCM: NGFW network / device settings – a later step together with the firewalls).
 
+## Security profiles (prepared for SCM before the translation)
+
+Rule: a reference or content is never removed silently. Everything that is not imported completely is listed per
+object in `incomplete` of the change file (what is missing and why); objects that cannot be imported at all are in
+`not_imported`.
+
+| Panorama | SCM |
+|---|---|
+| rule with single security profiles | SCM rules take profile groups only: the rule gets a profile group – an existing one with the same profiles, else a new `secProfGroupN` in the scope of the rule (same logic as the rule action `securityProfile-replace-by-Group`) |
+| profile group with antivirus and / or WildFire profile | one `wildfire-anti-virus-profiles` profile in the scope of the group, name: the antivirus or WildFire profile name, both: `<AV>_<WF>`. Content: WildFire rules (predefined `default`: any / any / both / public-cloud; antivirus only: no WildFire rule), antivirus threat / MLAV exceptions and packet capture |
+| spyware profile with `botnet-domains` | `botnet-domains` moved to a `dns-security-profiles` profile with the same name; profile groups with this spyware profile get it as `dns_security` |
+| spyware / vulnerability rule action `default` | empty action (as the public SCM API returns rules with the default action) |
+| antivirus decoder actions / application exceptions / inline ML, vulnerability `mica-engine-vulnerability-enabled` / `cloud-inline-analysis`, spyware inline `local-deep-learning`, DNS `advanced-dns-security-categories` | not in the public SCM API → `incomplete` (next step: write them through the internal UI API, after a HAR of the UI write calls) |
+| data filtering profile in a profile group | data filtering is not imported (SCM: enterprise DLP) → group in `incomplete` with the reference |
+| rule `group-tag` | no SCM field → rule in `incomplete` |
+| zone interfaces | → zone in `incomplete` (device variables per firewall, next step) |
+| log forwarding profile without match list | SCM requires a match list: not importable (`not_imported`, with the rules / zones that use it) – or `drop-empty-log-forwarding`: rules / zones are imported without the reference and listed in `incomplete` |
+
+References to predefined Panorama profiles (`default`, `strict file blocking` …) stay `not_imported`.
+
 ## change.json
 
 The usual change request of [scm_pa_change.php](README_pa_change.md) plus:

@@ -24,7 +24,7 @@
 // see utils/develop/sase/scm/README_pa_panorama_import.md
 //
 // php utils/develop/sase/scm/scm_pa_panorama_to_change.php in=panorama.xml out=change.json
-//     [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones]
+//     [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [drop-empty-log-forwarding]
 
 set_include_path(dirname(__FILE__) . '/../../../../' . PATH_SEPARATOR . get_include_path());
 require_once("lib/pan_php_framework.php");
@@ -33,7 +33,7 @@ require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessExport.php");
 if( !class_exists("SCMCHANGES") )
     require_once("utils/lib/SCMCHANGES.php");
 
-$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones]\n"
+$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [drop-empty-log-forwarding]\n"
     . "  in            Panorama configuration (XML file)\n"
     . "  out           change request for scm_pa_change.php\n"
     . "  dg-parent     folder that holds the device-group tree: ngfw-shared (default, 'All Firewalls')\n"
@@ -45,7 +45,9 @@ $usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json 
     . "  no-templates  device-groups only: no snippets of templates / template-stacks\n"
     . "  no-rules      objects only, no security rules (rules reference custom applications that are not imported)\n"
     . "  no-zones      do not create zones for the rules (default: a zone used by the rules of a device-group that is not\n"
-    . "                in an attached snippet / parent folder is created in its folder - definition from the templates)\n";
+    . "                in an attached snippet / parent folder is created in its folder - definition from the templates)\n"
+    . "  drop-empty-log-forwarding  log forwarding profiles without match list (forward nothing; SCM requires one):\n"
+    . "                not imported, their reference is removed from rules / zones (default: listed in not_imported)\n";
 
 $args = array();
 foreach( array_slice($argv, 1) as $a )
@@ -54,7 +56,7 @@ foreach( array_slice($argv, 1) as $a )
     $args[strtolower($p === false ? $a : substr($a, 0, $p))] = $p === false ? true : substr($a, $p + 1);
 }
 foreach( array_keys($args) as $a )
-    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'help'), TRUE) )
+    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'drop-empty-log-forwarding', 'help'), TRUE) )
     {
         print "unknown argument '" . $a . "'\n\n" . $usage;
         exit(1);
@@ -94,6 +96,9 @@ $importer = new SCMImporter( $scm );
 $importer->panoramaScope = isset($args['no-templates']) ? 'device-groups' : 'templates';
 $importer->dgParentFolder = $dgParent;
 $importer->zonesFromRules = !isset($args['no-rules']) && !isset($args['no-zones']);
+// SCM: rules take profile groups only, antivirus + WildFire combined, DNS security separate from spyware
+$importer->scmProfiles = TRUE;
+$importer->dropEmptyLogForwarding = isset($args['drop-empty-log-forwarding']);
 if( isset($args['device-group']) && $args['device-group'] !== true )
     $importer->deviceGroupFilter = array_values( array_filter( array_map('trim', explode(",", $args['device-group'])) ) );
 $importer->importPanorama( $pano, $shared == 'all' ? 'global' : $shared );
@@ -194,6 +199,21 @@ if( count($change['snippets']) == 0 )
 $warnings = $importer->warnings;
 if( count($importer->groupTags) > 0 )
     $warnings[] = "rule group tags (display grouping, no SCM field) removed: " . implode(", ", array_keys($importer->groupTags));
+// objects in the change file that are imported without part of their content / references
+$incomplete = array();
+foreach( $importer->incomplete as $inc )
+{
+    $key = $inc['scope_type'] == 'snippet' ? 'snippet' : 'folder';
+    if( !isset($change[$inc['resource']]) )
+        continue;
+    foreach( $change[$inc['resource']] as $item )
+        if( $item['name'] === $inc['name'] && isset($item[$key]) && $item[$key] === $inc['scope'] )
+        {
+            $incomplete[] = array( 'type' => $inc['resource'], 'name' => $inc['name'], $key => $inc['scope'], 'missing' => $inc['missing'] );
+            break;
+        }
+}
+$change['incomplete'] = $incomplete;
 $change['not_imported'] = $notImported;
 $change['warnings'] = $warnings;
 
@@ -208,6 +228,12 @@ foreach( $counts as $t => $n )
     PH::print_stdout( sprintf( "   %-36s %4d", $t, $n ) );
 if( isset($importer->summary['skipped']) )
     PH::print_stdout( " * not part of this step: " . json_encode($importer->summary['skipped']) );
+PH::print_stdout( " * imported, but not complete: " . count($incomplete) . " - listed with the missing content / references in 'incomplete' of the change file" );
+$byType = array();
+foreach( $incomplete as $n )
+    $byType[$n['type']] = ( isset($byType[$n['type']]) ? $byType[$n['type']] : 0 ) + 1;
+foreach( $byType as $t => $n )
+    PH::print_stdout( sprintf( "   %-36s %4d", $t, $n ) );
 PH::print_stdout( " * not importable (review): " . count($notImported) . " - listed in 'not_imported' of the change file" );
 $byType = array();
 foreach( $notImported as $n )
