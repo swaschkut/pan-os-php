@@ -290,6 +290,15 @@ foreach( $gen['requests'] as $r )
         }
         if( $skip )
             continue;
+        // custom URL category without entries: SCM refuses an empty list ("list is invalid") - placeholder entry
+        // empty.empty, as the Panorama import (SCMImporter) and the SCM UI do
+        if( $resource == 'url-categories' && isset($item['list']) && $item['list'] === array() )
+        {
+            $item['list'] = array( 'empty.empty' );
+            $bl = isset($before['list']) ? $before['list'] : null;
+            if( $r['method'] == 'PUT' && $bl == array( 'empty.empty' ) && count( array_diff_key( $item, array_flip( array( $scopeKey, 'name', 'list' ) ) ) ) == 0 )
+                continue;     // only the placeholder differed: no change
+        }
     }
     $ik = $resource . "|" . $obj['scope_type'] . "|" . $obj['scope'] . "|" . $obj['name'];
     if( $r['method'] != 'DELETE' && isset($internalChanges[$ik]) )
