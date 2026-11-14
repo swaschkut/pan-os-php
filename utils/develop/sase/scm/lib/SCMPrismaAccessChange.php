@@ -72,10 +72,10 @@ class SCMPrismaAccessChange
     public $outdir;
     public $runDir;
     public $options = array( 'parallel' => 8, 'page_size' => 1000, 'ui_api_host' => SCMPrismaAccessExport::UI_API_HOST_DEFAULT,
-        'psk_list' => null );
+        'psk_list' => null, 'secret_list' => null );
 
-    /** secret fields: not in the change file (placeholder value), cleartext from the secret list, not verified */
-    const SECRET_FIELDS = array( 'ike-gateways' => array( 'authentication.pre_shared_key.key' ) );
+    /** value of a secret field in the change file: the apply takes the cleartext from psk-list / secret-list */
+    const SECRET_MARKERS = array( 'from-secret-list', 'from-psk-list' );
     /** internal UI API steps: dry-run / execute results */
     public $internalDry = array();
     public $internalLog = array();
@@ -633,10 +633,8 @@ class SCMPrismaAccessChange
             }
             else
             {
-                $entry = $c['entry'];
-                foreach( isset($c['type']) && isset(self::SECRET_FIELDS[$c['type']]) ? self::SECRET_FIELDS[$c['type']] : array() as $sp )
-                    $entry = self::unsetDotted( $entry, $sp );
-                $diffs = self::subsetDiff( $entry, $obj );
+                // secret fields are not compared (marker in the file, encrypted value in the tenant)
+                $diffs = self::subsetDiff( self::withoutMarkers( $c['entry'] ), self::withoutMarkers( $obj, $c['entry'] ) );
                 $r['status'] = count($diffs) == 0 ? 'verified' : 'failed';
                 if( count($diffs) > 0 )
                     $r['message'] = implode("; ", $diffs);
@@ -693,13 +691,14 @@ class SCMPrismaAccessChange
         $this->sollDir = $this->runDir . "/soll";
         self::copyDir( $this->istDir, $this->sollDir );
         // IKE pre-shared keys: the apply takes them from config/psk-list.csv of the source (= soll) export
-        if( $this->options['psk_list'] !== null )
-        {
-            if( !is_readable($this->options['psk_list']) )
-                return $this->fail( "psk-list not readable: " . $this->options['psk_list'] );
-            copy( $this->options['psk_list'], $this->sollDir . "/config/psk-list.csv" );
-            chmod( $this->sollDir . "/config/psk-list.csv", 0600 );
-        }
+        foreach( array( 'psk_list' => 'psk-list.csv', 'secret_list' => 'secret-list.csv' ) as $opt => $file )
+            if( $this->options[$opt] !== null )
+            {
+                if( !is_readable($this->options[$opt]) )
+                    return $this->fail( str_replace('_', '-', $opt) . " not readable: " . $this->options[$opt] );
+                copy( $this->options[$opt], $this->sollDir . "/config/" . $file );
+                chmod( $this->sollDir . "/config/" . $file, 0600 );
+            }
         //the hierarchy is derived from 01_folders / 02_snippets - not compared here
         @unlink( $this->sollDir . "/config/hierarchy.json" );
         @unlink( $this->sollDir . "/config/hierarchy.txt" );
@@ -845,8 +844,7 @@ class SCMPrismaAccessChange
                 // secret fields of an existing object stay as they are (the change file has only a placeholder;
                 // a new secret is not detectable) - a new object takes the cleartext from the secret list
                 if( $idx !== null )
-                    foreach( isset(self::SECRET_FIELDS[$e['_type']]) ? self::SECRET_FIELDS[$e['_type']] : array() as $sp )
-                        $e = self::unsetDotted( $e, $sp );
+                    $e = self::keepSecrets( $e, $base );
                 $new = self::applyEntry( $base, $e );
                 if( $idx === null )
                 {
@@ -938,21 +936,44 @@ class SCMPrismaAccessChange
     }
 
     /** differences between what the change asked for and the live object (empty = verified) */
-    private static function unsetDotted( $a, $path )
+    /** secret marker leaves of the change entry replaced by the value of the existing object (no diff, no new
+     *  secret sent); a marker without existing value is removed */
+    private static function keepSecrets( $e, $base )
     {
-        $parts = explode('.', $path);
-        $k = array_shift($parts);
-        if( !is_array($a) || !array_key_exists($k, $a) )
-            return $a;
-        if( count($parts) == 0 )
-            unset( $a[$k] );
-        else
+        foreach( $e as $k => $v )
         {
-            $a[$k] = self::unsetDotted( $a[$k], implode('.', $parts) );
-            if( $a[$k] === array() )
-                unset( $a[$k] );
+            if( is_string($k) && $k !== '' && $k[0] == '_' )
+                continue;
+            if( is_string($v) && in_array($v, self::SECRET_MARKERS, TRUE) )
+            {
+                if( is_array($base) && array_key_exists($k, $base) )
+                    $e[$k] = $base[$k];
+                else
+                    unset( $e[$k] );
+            }
+            elseif( is_array($v) )
+                $e[$k] = self::keepSecrets( $v, is_array($base) && isset($base[$k]) ? $base[$k] : null );
         }
-        return $a;
+        return $e;
+    }
+
+    /** a value without the leaves that are secret markers in $ref (default: in the value itself) */
+    private static function withoutMarkers( $v, $ref = null )
+    {
+        if( $ref === null )
+            $ref = $v;
+        if( !is_array($v) || !is_array($ref) )
+            return $v;
+        foreach( $ref as $k => $r )
+        {
+            if( !array_key_exists($k, $v) )
+                continue;
+            if( is_string($r) && in_array($r, self::SECRET_MARKERS, TRUE) )
+                unset( $v[$k] );
+            elseif( is_array($r) )
+                $v[$k] = self::withoutMarkers( $v[$k], $r );
+        }
+        return $v;
     }
 
     public static function subsetDiff( $entry, $obj )

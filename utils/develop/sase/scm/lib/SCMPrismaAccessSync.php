@@ -35,6 +35,10 @@ class SCMPrismaAccessSync
     const FORMAT_VERSION = 1;
     const SECRET_PLACEHOLDER = '__secret__';
 
+    /** config endpoints whose secret fields come from config/secret-list.csv (endpoint, object, path) */
+    const CONFIG_SECRET_ENDPOINTS = array( 'external-dynamic-lists', 'ldap-server-profiles', 'radius-server-profiles',
+        'tacacs-server-profiles', 'http-server-profiles' );
+
     /** phases: order of execution */
     const PHASE_CREATE_UPDATE = 1;
     const PHASE_FOLLOWUP = 2;
@@ -396,6 +400,9 @@ class SCMPrismaAccessSync
         $ep = $ctx['entry']['endpoint'];
         if( $ep == 'ike-gateways' && $path == 'authentication.pre_shared_key.key' )
             return array( 'list' => $area . '/psk-list.csv', 'kind' => 'psk', 'key' => $srcName );
+        // NGFW configuration secrets (Panorama import: decrypted with the master key into secret-list.csv)
+        if( $area == SCMPrismaAccessExport::AREA_CONFIG && in_array($ep, self::CONFIG_SECRET_ENDPOINTS, TRUE) )
+            return array( 'list' => $area . '/secret-list.csv', 'kind' => 'secret', 'key' => $ep . "|" . $srcName . "|" . $path );
         if( in_array($ep, array('remote-networks', 'service-connections'), TRUE) && in_array($path, array('protocol.bgp.secret', 'bgp_peer.secret'), TRUE) )
             return array( 'list' => $area . '/bgp-secret-list.csv', 'kind' => 'bgp', 'key' => $srcName . "|" . $path );
         if( $area == SCMPrismaAccessExport::AREA_MU )

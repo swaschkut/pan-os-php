@@ -45,8 +45,8 @@ php scm_pa_change.php in=scm-api://<TSG> changes=change.json execute continue-on
 | firewall → device-group + template-stack | `snippets` of the device-group folder: stack, then its templates |
 | objects: tags, addresses, address groups, services, service groups, schedules, log forwarding profiles, custom URL categories, external dynamic lists, decryption profiles, security profiles (anti-spyware, vulnerability, URL, file blocking, DNS security), profile groups | objects of the folder (SCM field names) |
 | security, NAT, decryption, application override, PBF, QoS, authentication pre / post rules | `security-rules`, `nat-rules`, `decryption-rules`, `app-override-rules`, `pbf-rules`, `qos-policy-rules`, `authentication-rules` with `position` pre / post, in Panorama order (`group-tag` kept where SCM has the field: application override, authentication). PBF: interfaces → interface variables. NAT: `destination-translation` → `translated_address` / `translated_port` / `dns_rewrite` of the rule, interfaces (`to-interface`, source translation `interface-address`) → interface variables (`$ethernet1_1`) |
-| server profiles (syslog, HTTP, LDAP, RADIUS, TACACS+, Kerberos), authentication profiles (shared, device-groups, templates) | `syslog-server-profiles`, `http-server-profiles`, `ldap-server-profiles`, `radius-server-profiles`, `tacacs-server-profiles`, `kerberos-server-profiles`, `authentication-profiles`; secrets (LDAP bind password, RADIUS / TACACS+ secret, HTTP password) are encrypted in the export → not imported, `incomplete`. SAML IdP profiles need certificates – not yet |
-| external dynamic list with authentication | the password is encrypted in the Panorama export: imported without `auth` → `incomplete` (set it in SCM) |
+| server profiles (syslog, HTTP, LDAP, RADIUS, TACACS+, Kerberos), authentication profiles (shared, device-groups, templates) | `syslog-server-profiles`, `http-server-profiles`, `ldap-server-profiles`, `radius-server-profiles`, `tacacs-server-profiles`, `kerberos-server-profiles`, `authentication-profiles`; secrets: see "Secrets" below. SAML IdP profiles need certificates – not yet |
+| external dynamic list with authentication | username imported, password: see "Secrets" below |
 | zone of a rule that is in no attached snippet / parent folder | created in the device-group folder (definition from the templates or empty layer3 zone); `no-zones` switches it off |
 
 `no-templates`: device-groups only – then the zones of the rules are created in the device-group folders.
@@ -79,7 +79,7 @@ Rules:
 | template interfaces | SCM interface variables in the snippet of the template / stack: `ethernet1/1` → `ethernet-interfaces` `$ethernet1_1` (layer3 ip / mtu / management profile, layer2, tap, comment, link settings); `ethernet1/2.1` → `layer3-subinterfaces` `$ethernet1_2.1` (`parent_interface: $ethernet1_2`, tag, ip – SCM requires `<parent>.<unit>`, `$ethernet1_2-1` is refused); layer2 units → `layer2-subinterfaces`; `tunnel.1` / `loopback.N` / `vlan.N` → `$tunnel-1` … (`tunnel-` / `loopback-` / `vlan-interfaces`); IP addresses of the template are kept in the snippet. Settings without SCM field (ipv6, lldp, ndp-proxy … with non default values) → `incomplete`; aggregate interfaces → `incomplete` (later). No `default_value`: SCM keeps it unique in the tenant (`'ethernet1/3' is already in use` when another snippet has it) and the value is set per firewall (DeviceOnPrem, later step); the Panorama interface of each variable is in `interface_variables` of the change file |
 | interface management profiles of the template | `interface-management-profiles` in the snippet |
 | virtual routers / logical routers of the template | `virtual-routers` (PAN-OS legacy routing engine, 1:1) / `logical-routers` (advanced routing) in the snippet: interfaces and static route interfaces → interface variables; disabled routing protocols (BGP / OSPF / RIP with `enable no`) not imported (warning) |
-| IKE crypto / IPsec crypto profiles, IKE gateways, IPsec tunnels of the template | `ike-crypto-profiles`, `ipsec-crypto-profiles`, `ike-gateways`, `ipsec-tunnels` in the snippet; local interface / tunnel interface → interface variables. Pre-shared keys are encrypted in the Panorama export: the converter writes `<out>-psk-list.csv` (one row per gateway, fill `psk_new`), `scm_pa_change.php psk-list=<file>` sends the keys (never in the change file; an existing gateway keeps its key) → `incomplete`. IPsec manual keys not imported → `incomplete` |
+| IKE crypto / IPsec crypto profiles, IKE gateways, IPsec tunnels of the template | `ike-crypto-profiles`, `ipsec-crypto-profiles`, `ike-gateways`, `ipsec-tunnels` in the snippet; local interface / tunnel interface → interface variables. Pre-shared keys: see "Secrets" below. IPsec manual keys not imported → `incomplete` |
 | zone interfaces | the zone references the interface variables (`outside` → `$ethernet1_1`); an interface a zone uses that is not in the template → placeholder `ethernet-interfaces` entry → `placeholders` |
 | log forwarding profile without match list | SCM requires a match list and always logs to Strata Logging Service: one match list per log type (`traffic-sls`, `threat-sls`, `wildfire-sls`, `url-sls`, `data-sls`, `tunnel-sls`, `auth-sls`, `decryption-sls`, filter `All Logs`, no other destination) → all logs of the rules that use the profile go to Strata Logging Service; listed in `incomplete` |
 | DNS sinkhole | SCM (public and internal API) only knows `pan-sinkhole-default-ip` / `127.0.0.1` and `::1`: the Palo Alto Networks sinkhole of PAN-OS (`sinkhole.paloaltonetworks.com` / `2600:5200::1`) → `pan-sinkhole-default-ip` / `::1` (same sinkhole, noted in `incomplete`); another address → default sinkhole, `incomplete` (check) |
@@ -89,6 +89,21 @@ Rules:
 | application group / application filter | `application-groups` (members) / `application-filters` (category, sub_category, technology, risk, characteristics) |
 | application used by a rule / application group | resolved in this order: custom / group / filter of the configuration; PAN-OS predefined (`lib/object-classes/predefined.xml`, incl. containers – exists in SCM, nothing created); cloud App-ID / SaaS application (exists in SCM, nothing created) – checked with the cloud App-ID API helper (github.com/swaschkut/pan-os_cloud-appid-API-helper): `cloud-appid-api=auto` (default) uses `http://localhost:8080` / `http://host.docker.internal:8080` and, when it is not reachable and only when an application has to be checked, starts the container with docker (`docker start panos_cloud-appid_mock`, else `docker run -d -p 8080:80 --name panos_cloud-appid_mock swaschkut/pan-os_cloud-appid_api-helper`; inside the pan-os-php container docker needs the mounted `/var/run/docker.sock`); `cloud-appid-api=<URL>` a given helper; `off` / helper not available: the list `lib/object-classes/cloud-appid/cloud-appid.txt`; else placeholder custom application → `placeholders` |
 | zone used by rules, not in a template (`no-templates` / no stack) | empty layer3 zone → `placeholders` |
+
+## Secrets
+
+IKE pre-shared keys, EDL passwords, LDAP bind password, RADIUS / TACACS+ secrets and HTTP server profile passwords are
+encrypted with the master key in the Panorama export. The converter decrypts them with the PAN-OS default master key
+(`PanosCrypto`), or with `master-key=<key>` / `master-key=file:<path>` (key of the customer's Panorama, no key in the
+shell history). The cleartext never goes into the change file (there the field holds `from-secret-list`), only into:
+
+* `<out>-psk-list.csv` – IKE gateways (`ike_gateway`, `psk_current`, `psk_new`, `psk_sha1`)
+* `<out>-secret-list.csv` – other secrets (`endpoint`, `object`, `path`, `secret_current`, `secret_new`, `secret_sha1`)
+
+both chmod 600 (do not share). A value that cannot be decrypted (other master key) stays empty and is listed in
+`incomplete` – fill `psk_new` / `secret_new` (or run again with the right `master-key=`). `scm_pa_change.php`
+takes the lists with `psk-list=` / `secret-list=`; an object that already exists in SCM keeps its secret; the
+verification does not compare secrets.
 
 ## change.json
 

@@ -33,7 +33,7 @@ require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessExport.php");
 if( !class_exists("SCMCHANGES") )
     require_once("utils/lib/SCMCHANGES.php");
 
-$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [cloud-appid-api=URL]\n"
+$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [cloud-appid-api=URL] [master-key=KEY|file:PATH]\n"
     . "  in            Panorama configuration (XML file)\n"
     . "  out           change request for scm_pa_change.php\n"
     . "  dg-parent     folder that holds the device-group tree: ngfw-shared (default, 'All Firewalls')\n"
@@ -49,6 +49,9 @@ $usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json 
     . "                container is started with docker (docker start / docker run -d -p 8080:80 --name\n"
     . "                panos_cloud-appid_mock swaschkut/pan-os_cloud-appid_api-helper); URL: this helper; 'off': only the\n"
     . "                list lib/object-classes/cloud-appid/cloud-appid.txt\n"
+    . "  master-key    master key of the Panorama to decrypt the secrets of the export (IKE pre-shared keys, EDL / server\n"
+    . "                profile passwords); default: the PAN-OS default master key. 'file:PATH' reads it from a file\n"
+    . "                (no key in the shell history). Cleartext goes only to <out>-psk-list.csv / <out>-secret-list.csv\n"
     . "  no-zones      do not create zones for the rules (default: a zone used by the rules of a device-group that is not\n"
     . "                in an attached snippet / parent folder is created in its folder - definition from the templates)\n"
 ;
@@ -60,7 +63,7 @@ foreach( array_slice($argv, 1) as $a )
     $args[strtolower($p === false ? $a : substr($a, 0, $p))] = $p === false ? true : substr($a, $p + 1);
 }
 foreach( array_keys($args) as $a )
-    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'cloud-appid-api', 'help'), TRUE) )
+    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'cloud-appid-api', 'master-key', 'help'), TRUE) )
     {
         print "unknown argument '" . $a . "'\n\n" . $usage;
         exit(1);
@@ -105,6 +108,17 @@ $importer->scmProfiles = TRUE;
 $importer->customApplicationsElsewhere = TRUE;
 // zones of the templates reference the interface variables created below ($ethernet1_1 …)
 $importer->interfaceVariables = !isset($args['no-templates']);
+if( isset($args['master-key']) && is_string($args['master-key']) && $args['master-key'] !== '' )
+{
+    $mk = $args['master-key'];
+    if( strpos($mk, 'file:') === 0 )
+    {
+        if( !is_readable(substr($mk, 5)) )
+            derr( "master-key file not readable: " . substr($mk, 5), null, FALSE );
+        $mk = trim(file_get_contents(substr($mk, 5)));
+    }
+    $importer->masterKey = $mk;
+}
 if( isset($args['device-group']) && $args['device-group'] !== true )
     $importer->deviceGroupFilter = array_values( array_filter( array_map('trim', explode(",", $args['device-group'])) ) );
 $importer->importPanorama( $pano, $shared == 'all' ? 'global' : $shared );
@@ -852,22 +866,46 @@ foreach( array_keys($serials) as $serial )
 if( count($firewalls) > 0 )
     $change['firewalls'] = $firewalls;
 
-// IKE gateways with pre-shared key: template of the psk-list for scm_pa_change.php psk-list= (keys are encrypted in
-// the Panorama export, the consultant fills psk_new - the file is never part of the change file)
-$pskGateways = array();
-foreach( isset($change['ike-gateways']) ? $change['ike-gateways'] : array() as $gw )
-    if( isset($gw['authentication']['pre_shared_key']) )
-        $pskGateways[$gw['name']] = TRUE;
+// secrets of the export (IKE pre-shared keys, EDL / server profile passwords): decrypted with the master key, the
+// cleartext only in the secret lists for scm_pa_change.php psk-list= / secret-list= (chmod 600) - never in the change
+// file (there the field holds a marker). Not decryptable: empty value, the consultant fills psk_new / secret_new
 $pskFile = null;
-if( count($pskGateways) > 0 )
+$secretFile = null;
+$secretStats = array( 'decrypted' => 0, 'missing' => 0 );
+$base = preg_replace('/\.json$/', '', $args['out']);
+$psk = array();
+$other = array();
+foreach( $importer->secrets as $sec )
 {
-    $pskFile = preg_replace('/\.json$/', '', $args['out']) . "-psk-list.csv";
-    $fh = fopen($pskFile, 'w');
-    fputcsv($fh, array('ike_gateway', 'psk_current', 'psk_new', 'psk_sha1'), ',', '"', '');
-    foreach( array_keys($pskGateways) as $g )
-        fputcsv($fh, array($g, '', '', ''), ',', '"', '');
+    $secretStats[ $sec['cleartext'] === null ? 'missing' : 'decrypted' ]++;
+    if( $sec['resource'] == 'ike-gateways' )
+        $psk[$sec['name']] = $sec['cleartext'];
+    else
+        $other[] = $sec;
+}
+$writeCsv = function( $file, $header, $rows ){
+    $fh = fopen($file, 'w');
+    chmod($file, 0600);
+    fputcsv($fh, $header, ',', '"', '');
+    foreach( $rows as $r )
+        fputcsv($fh, $r, ',', '"', '');
     fclose($fh);
-    chmod($pskFile, 0600);
+};
+if( count($psk) > 0 )
+{
+    $pskFile = $base . "-psk-list.csv";
+    $rows = array();
+    foreach( $psk as $g => $clear )
+        $rows[] = array( $g, (string)$clear, '', '' );
+    $writeCsv( $pskFile, array('ike_gateway', 'psk_current', 'psk_new', 'psk_sha1'), $rows );
+}
+if( count($other) > 0 )
+{
+    $secretFile = $base . "-secret-list.csv";
+    $rows = array();
+    foreach( $other as $sec )
+        $rows[] = array( $sec['resource'], $sec['name'], $sec['path'], (string)$sec['cleartext'], '', '' );
+    $writeCsv( $secretFile, array('endpoint', 'object', 'path', 'secret_current', 'secret_new', 'secret_sha1'), $rows );
 }
 $warnings = array_merge( $warnings, $fwWarnings );
 $change['not_imported'] = $notImported;
@@ -911,7 +949,10 @@ foreach( $warnings as $w )
     PH::print_stdout( "   ! " . $w );
 PH::print_stdout();
 PH::print_stdout( " * change file: " . $args['out'] );
-if( $pskFile !== null )
-    PH::print_stdout( " * IKE pre-shared keys: fill psk_new in " . $pskFile . " (" . count($pskGateways) . " gateway(s)) and add psk-list=" . $pskFile );
-PH::print_stdout( " * next: php scm_pa_change.php in=scm-api://<TSG> changes=" . $args['out'] . ( $pskFile !== null ? " psk-list=" . $pskFile : "" ) . "   (dry-run, then 'execute')" );
+if( $pskFile !== null || $secretFile !== null )
+    PH::print_stdout( " * secrets: " . $secretStats['decrypted'] . " decrypted with the " . ( $importer->masterKey === null ? "PAN-OS default" : "given" )
+        . " master key, " . $secretStats['missing'] . " not decryptable (fill psk_new / secret_new) - cleartext only in: "
+        . implode(", ", array_filter(array($pskFile, $secretFile))) . " (chmod 600, do not share)" );
+PH::print_stdout( " * next: php scm_pa_change.php in=scm-api://<TSG> changes=" . $args['out'] . ( $pskFile !== null ? " psk-list=" . $pskFile : "" )
+    . ( $secretFile !== null ? " secret-list=" . $secretFile : "" ) . "   (dry-run, then 'execute')" );
 PH::print_stdout();

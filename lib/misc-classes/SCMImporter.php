@@ -55,13 +55,24 @@ class SCMImporter
         'server-profile/tacplus', 'server-profile/kerberos', 'authentication-profile',
     );
 
-    /** secrets of server profiles: encrypted in the Panorama export - removed, listed in 'incomplete' */
+    /** secret fields (PAN-OS encrypted with the master key): relative XPath per resource. Decrypted with the
+     *  master key (PAN-OS default key unless given); the cleartext goes to the secret lists, never into the change
+     *  file - there the field holds SECRET_MARKER */
     static public $secretRefs = array(
+        'ike-gateways' => array( 'authentication/pre-shared-key/key' ),
+        'external-dynamic-lists' => array( 'type/*/auth/password' ),
         'ldap-server-profiles' => array( 'bind-password' ),
         'radius-server-profiles' => array( 'server/entry/secret' ),
         'tacacs-server-profiles' => array( 'server/entry/secret' ),
         'http-server-profiles' => array( 'server/entry/password' ),
     );
+    const SECRET_MARKER = 'from-secret-list';
+
+    /** master key of the Panorama (null: PAN-OS default key) */
+    public $masterKey = null;
+
+    /** secrets found: ['resource', 'name', 'scope_type', 'scope', 'path' (SCM JSON path), 'cleartext' (or null)] */
+    public $secrets = array();
 
     /** template network configuration imported into the snippet (below devices/entry of the template) */
     static public $networkPaths = array(
@@ -1283,13 +1294,52 @@ class SCMImporter
                 $entry->removeChild($mk);
                 $this->addIncomplete($resource, $name, "manual key not imported (keys encrypted in the Panorama export) - configure it in SCM");
             }
-        if( $resource == 'ike-gateways' )
-            foreach( $xp->query("authentication/pre-shared-key/key", $entry) as $k )
+    }
+
+    /** SCM JSON path of an XML node below the entry: tags -> snake_case, entry -> index in its list */
+    private static function scmPath(DOMElement $node, DOMElement $entry)
+    {
+        $parts = array();
+        for( $n = $node; $n !== null && !$n->isSameNode($entry); $n = $n->parentNode )
+        {
+            if( $n->tagName == 'entry' )
             {
-                // the key is encrypted in the Panorama export: never in the change file - the apply takes the
-                // cleartext from psk-list.csv (scm_pa_change.php psk-list=); the value here only marks the field
-                $k->textContent = 'from-psk-list';
-                $this->addIncomplete($resource, $name, "pre-shared key not in the Panorama export (encrypted): psk-list.csv (ike_gateway, psk_new) + scm_pa_change.php psk-list=<file>");
+                $i = 0;
+                for( $p = $n->previousSibling; $p !== null; $p = $p->previousSibling )
+                    if( $p->nodeType == XML_ELEMENT_NODE && $p->tagName == 'entry' )
+                        $i++;
+                $parts[] = (string)$i;
+            }
+            else
+                $parts[] = str_replace('-', '_', $n->tagName);
+        }
+        return implode('.', array_reverse($parts));
+    }
+
+    /** secret fields: decrypt with the master key, cleartext to $this->secrets, marker into the entry */
+    private function collectSecrets(DOMElement $entry, $resource)
+    {
+        static $crypto = null;
+        if( $crypto === null )
+            $crypto = new PanosCrypto();
+        $d = $this->currentDest;
+        foreach( self::$secretRefs[$resource] as $rel )
+            foreach( (new DOMXPath($entry->ownerDocument))->query($rel, $entry) as $sn )
+            {
+                $enc = trim($sn->textContent);
+                // PanosCrypto::decrypt returns '' (string return type) when the key / format does not match
+                $clear = ( $enc !== '' && $enc[0] == '-' ) ? $crypto->decrypt($enc, $this->masterKey) : false;
+                if( $clear === '' )
+                    $clear = false;
+                $path = self::scmPath($sn, $entry);
+                $this->secrets[] = array( 'resource' => $resource, 'name' => $entry->getAttribute('name'),
+                    'scope_type' => $d instanceof Snippet ? 'snippet' : 'folder', 'scope' => $d !== null ? $d->name() : null,
+                    'path' => $path, 'cleartext' => $clear === false ? null : $clear );
+                $sn->textContent = self::SECRET_MARKER;
+                if( $clear === false )
+                    $this->addIncomplete($resource, $entry->getAttribute('name'), $path . ": not decryptable with the "
+                        . ( $this->masterKey === null ? "PAN-OS default master key" : "given master key" )
+                        . " - fill it in the secret list (psk_new / secret_new) or give master-key=");
             }
     }
 
@@ -1334,22 +1384,7 @@ class SCMImporter
         if( isset(self::$interfaceRefs[$resource]) )
             $this->cleanNetworkObject($entry, $resource);
         if( isset(self::$secretRefs[$resource]) )
-            foreach( self::$secretRefs[$resource] as $rel )
-                foreach( (new DOMXPath($entry->ownerDocument))->query($rel, $entry) as $sn )
-                {
-                    $sn->parentNode->removeChild($sn);
-                    $this->addIncomplete($resource, $entry->getAttribute('name'), str_replace('/entry/', '.', $rel) . " not imported - encrypted in the Panorama export, set it in SCM");
-                }
-
-        if( $resource == 'external-dynamic-lists' )
-        {
-            // the password of the EDL authentication is encrypted in the Panorama export - not importable
-            foreach( (new DOMXPath($entry->ownerDocument))->query("type/*/auth", $entry) as $auth )
-            {
-                $auth->parentNode->removeChild($auth);
-                $this->addIncomplete($resource, $entry->getAttribute('name'), "authentication (username / password) not imported - the password is encrypted in the Panorama export, set it in SCM");
-            }
-        }
+            $this->collectSecrets($entry, $resource);
 
         if( $resource == 'security-rules' )
         {
