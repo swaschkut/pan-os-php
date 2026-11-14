@@ -4,11 +4,13 @@ Creates an as-built documentation of a Prisma Access / SCM tenant from an export
 (offline, read only). It follows the report outline of CONCEPT_prisma_access_lifecycle.md 4.1.
 
 ```
-pan-os-php type=scm-report in=scmtest/<TSG>/<timestamp> [out=<directory>]
-php utils/develop/sase/scm/scm_pa_report.php in=scmtest/<TSG>/<timestamp> [out=<directory>]
+pan-os-php type=scm-report in=scm-export://scmtest/<TSG>/<timestamp> [out=<directory>]
+php utils/develop/sase/scm/scm_pa_report.php in=scm-export://scmtest/<TSG>/<timestamp> [out=<directory>]
 ```
 
-* `in` – export folder (`<outdir>/<TSG>/<timestamp>`; `<outdir>/<TSG>` = newest export; `scm-export://` prefix allowed)
+* `in` – export folder as `scm-export://<outdir>/<TSG>/<timestamp>` (`scm-export://<outdir>/<TSG>` = newest export) – same
+  notation as `scm-export-xml` and `scm-xml-to-change`; a plain path works as well (the report reads the export files
+  directly, it does not load the configuration through the pan-os-php loader)
 * `out` – output directory, default `<export>/report`
 
 Recommended export for the report: `pan-os-php type=scm-export in=scm-api://<TSG> area=all outdir=scmtest ui-api-host=<ui-host> egress-api-key=<key>`

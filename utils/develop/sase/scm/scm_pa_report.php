@@ -20,8 +20,8 @@
 /**
  * scm_pa_report.php - as-built documentation of a Prisma Access / SCM tenant from a scm_pa_export.php folder
  *
- * php scm_pa_report.php in=<export folder> [out=<directory>]
- * pan-os-php type=scm-report in=<export folder> [out=<directory>]
+ * pan-os-php type=scm-report in=scm-export://<export folder> [out=<directory>]
+ * php scm_pa_report.php in=scm-export://<export folder> [out=<directory>]   (the scm-export:// prefix is optional)
  *
  * writes report.md, report.html and prisma-access.drawio (network plans; draw.io, Lucidchart import)
  */
@@ -31,8 +31,9 @@ require_once("lib/pan_php_framework.php");
 require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessExport.php");
 require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessReport.php");
 
-$usage = "USAGE: php " . basename(__FILE__) . " in=<export folder> [out=<directory>]\n"
-    . "  in    folder written by scm_pa_export.php (<outdir>/<TSG>/<timestamp>, or <outdir>/<TSG> = newest export)\n"
+$usage = "USAGE: php " . basename(__FILE__) . " in=scm-export://<export folder> [out=<directory>]\n"
+    . "  in    folder written by scm_pa_export.php: scm-export://<outdir>/<TSG>/<timestamp> (scm-export://<outdir>/<TSG> = newest export;\n"
+    . "        same notation as scm-export-xml / scm-xml-to-change, the prefix is optional)\n"
     . "  out   output directory (default: report next to the export: <export>/report)\n"
     . "  writes report.md (Markdown), report.html (self-contained, print to PDF), prisma-access.drawio (network plans:\n"
     . "  draw.io / diagrams.net, Lucidchart: File > Import > draw.io)\n";
