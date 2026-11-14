@@ -2256,6 +2256,7 @@ class PH
         "diff",
         "scm-changes",
         "scm-apply",
+        "scm-export-xml",
         "scm-import",
         "upload",
         "xml-issue",
@@ -2400,6 +2401,8 @@ class PH
             $util = new DIFF($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "scm-changes" )
             $util = new SCMCHANGES($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-export-xml" )
+            $util = new SCMEXPORTXML($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "scm-apply" )
             $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "scm-import" )

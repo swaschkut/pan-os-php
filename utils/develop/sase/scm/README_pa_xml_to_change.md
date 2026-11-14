@@ -37,6 +37,13 @@ with a config area is used (the tools print which one).
 * the internal UI API sections of security profiles are not in the export: profiles are loaded with their public
   fields only (unchanged profiles produce no change)
 
+The whole export as one XML (all containers, all types the loader knows – the original of
+`scm_pa_xml_to_change.php`):
+
+```
+pan-os-php type=scm-export-xml in=scm-export://export/1234 out=1234.xml
+```
+
 ## scm_pa_xml_to_change.php
 
 The original is loaded from the same export with the same loader (all containers, all types), so only the changes
