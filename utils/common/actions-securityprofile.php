@@ -4899,7 +4899,8 @@ SecurityProfileCallContext::$supportedActions['virus-and-wildfire.alert-only-set
         #$f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set']['MainFunction'];
         #$f($context );
 
-        $add_WF_alert = false;
+        // add a WildFire rule (public cloud, both directions, any) if no rule covers it - as wildfire.alert-only-set
+        $add_WF_alert = true;
         $object->wf_rules_AlertOnlySet($add_WF_alert);
         ///////////////////////////////////////////////////////////////////////////////////////
         /// Rules

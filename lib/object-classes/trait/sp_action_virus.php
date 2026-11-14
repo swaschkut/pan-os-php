@@ -660,6 +660,8 @@ trait sp_action_virus
         foreach($this->tmp_virus_prof_array as $decoder )
         {
             $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
+            if( $xmlNode === FALSE || $xmlNode === null )
+                continue;
 
             foreach( $actionTypeArray as $actionType )
             {
@@ -671,10 +673,11 @@ trait sp_action_virus
                     if( str_contains( $final_check, "!" ) )
                         $final_check = str_replace("!", "", $final_check);
 
-                    if (isset($object->$decoder[$actionType]) && $object->$decoder[$actionType] == $final_check)
+                    // $this: the profile ($object was undefined here - the decoder actions were never changed)
+                    if( isset($this->$decoder[$actionType]) && $this->$decoder[$actionType] == $final_check )
                     {
-                        $object->$decoder[$actionType] = $decoder_action;
-                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $this->$decoder[$actionType] = $decoder_action;
+                        $action_xmlNode = DH::findFirstElementOrCreate($actionType, $xmlNode);
                         $action_xmlNode->textContent = $decoder_action;
                     }
                 }

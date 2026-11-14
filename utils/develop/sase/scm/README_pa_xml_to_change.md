@@ -77,8 +77,10 @@ On an SCM configuration the PAN-OS names map to it:
 * `"scm": { "actions": …, "filter": …, … }` replaces these arguments on SCM; `"scm": false` skips the step on SCM
 * `"platform": "scm"` / `"panos"` runs the step only on that platform
 
-`visibility.json` uses it: rule steps with single profiles are skipped (SCM rules reference profile groups only),
-the group steps set `Alert-Only-AVWF` and `Alert-Only-DNSSEC`. On SCM `logforwardingprofile-create-bp` creates
+`visibility.json` uses it: rule steps with single profiles are skipped (SCM rules reference profile groups only);
+the profile steps use `virus-and-wildfire.alert-only-set` (instead of `virus.` / `wildfire.alert-only-set`, which
+only change PAN-OS antivirus / wildfire profiles) and `dns-security.alert-only-set` (`spyware.alert-only-set` changes
+anti-spyware profiles only); the group steps set `Alert-Only-AVWF` and `Alert-Only-DNSSEC`. On SCM `logforwardingprofile-create-bp` creates
 `default` in folder `All` (one match list per log type, All Logs – Strata Logging Service) and
 `zpp-create-alert-only-bp` creates `Alert_Only_Zone_Protection` in `All`.
 
@@ -87,7 +89,11 @@ pan-os-php type=playbook in=scm-export://export/1234 out=visibility.xml
 php utils/develop/sase/scm/scm_pa_xml_to_change.php in=scm-export://export/1234 file2=visibility.xml out=change.json
 ```
 
-Open: the iron-skillet content of some Alert-Only profiles (mica engine, cloud inline analysis, AV decoders,
+Open: the antivirus enforcement actions (`decoder`), WildFire inline ML and inline cloud analysis of a
+virus-and-wildfire-analysis profile are internal UI API sections – not in the export, so the export based report
+shows them as "[SCM no export - missing settings]" and the playbook cannot change them (it does not create them:
+that would overwrite the real values). Needed: export and loader of these internal sections. Also open: the
+iron-skillet content of some Alert-Only profiles (mica engine, cloud inline analysis, AV decoders,
 anti-spyware action `default`) has no public SCM field – those change requests are marked for review.
 
 ## scm_pa_xml_to_change.php

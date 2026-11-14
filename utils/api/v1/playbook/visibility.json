@@ -117,6 +117,11 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=virus",
       "actions": "actions=virus.alert-only-set",
+      "scm": {
+        "securityprofiletype": "securityprofiletype=virus-and-wildfire-analysis",
+        "actions": "actions=virus-and-wildfire.alert-only-set",
+        "pie_slice": "Virus and Wildfire Profiles"
+      },
       "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Antivirus Profiles"
@@ -128,6 +133,15 @@
       "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Anti-Spyware Profiles"
+    },
+    {
+      "type": "securityprofile",
+      "platform": "scm",
+      "securityprofiletype": "securityprofiletype=dns-security",
+      "actions": "actions=dns-security.alert-only-set",
+      "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
+      "location": "location=any",
+      "pie_slice": "DNS Security Profiles"
     },
     {
       "type": "securityprofile",
@@ -157,6 +171,7 @@
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=wildfire-analysis",
       "actions": "actions=wildfire.alert-only-set",
+      "scm": false,
       "filter": "filter=!((object is.unused) or (object is.unused.recursive))",
       "location": "location=any",
       "pie_slice": "Wildfire Analysis Profiles"
