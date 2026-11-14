@@ -1052,6 +1052,14 @@ trait sp_action_spyware
         }
         else
         {
+            // SCM: the DNS part of PAN-OS anti-spyware is a dns-security profile (DNSSecurityProfile checks it) -
+            // an anti-spyware profile is checked without it
+            if( $this instanceof AntiSpywareProfile )
+            {
+                if( $this->owner->owner->version >= 102 )
+                    return PH::bpCombine( array( $this->spyware_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
+                return PH::bpCombine( array( $this->spyware_rules_best_practice() ) );
+            }
             if( $this->owner->owner->version >= 102 )
             {
                 return PH::bpCombine( array( $this->spyware_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file), $this->spyware_dns_security_best_practice(), $this->spyware_advanced_dns_security_best_practice() ) );
@@ -1083,6 +1091,13 @@ trait sp_action_spyware
         else
         {
             //Todo: validation for SCM needed - what version
+            // SCM: the DNS part of PAN-OS anti-spyware is a dns-security profile (DNSSecurityProfile checks it)
+            if( $this instanceof AntiSpywareProfile )
+            {
+                if( $this->owner->owner->version >= 102 )
+                    return PH::bpCombine( array( $this->spyware_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
+                return PH::bpCombine( array( $this->spyware_rules_visibility() ) );
+            }
             if( $this->owner->owner->version >= 102 )
             {
                 return PH::bpCombine( array( $this->spyware_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file), $this->spyware_dnslist_visibility(), $this->spyware_dns_security_visibility(), $this->spyware_advanced_dns_security_visibility() ) );

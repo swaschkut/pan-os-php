@@ -22,6 +22,7 @@ class PLAYBOOK__
 {
 
     public $isAPI = false;
+    public $isSCM = false;
     public $debugAPI = false;
     public $debugMemory = false;
     public $outputformatset = false;
@@ -298,6 +299,14 @@ class PLAYBOOK__
         {
             $this->mainLocation = PH::$args['location'];
         }
+
+        // SCM (Strata Cloud Manager / Prisma Access) input: per step "scm" overrides the step arguments
+        // ({"actions": ..., "filter": ..., "securityprofiletype": ...}) or is false (step not run on SCM);
+        // "platform": "scm" | "panos" runs a step only on that platform
+        $this->isSCM = self::inputIsSCM( $input );
+        if( $this->isSCM )
+            PH::print_stdout( "SCM configuration: SCM variants of the playbook steps are used" );
+        $command_array = self::platformCommands( $command_array, $this->isSCM );
 
 ###############################################################################
 //EXECUTION
@@ -827,6 +836,66 @@ class PLAYBOOK__
             if( $currentContainerTotalMemory !== null )
                 PH::print_stdout(" - currentTotalContainer-Memory=".$memMBtotal." MB");
         }
+    }
+
+    /**
+     * in= is an SCM configuration: scm-api:// / sase-api:// / scm-export://, or an XML file whose <config> carries the
+     * buckbeak / fawkes attributes
+     */
+    public static function inputIsSCM( $input )
+    {
+        if( !is_string($input) || $input === "" )
+            return FALSE;
+        foreach( array( 'scm-api://', 'sase-api://', 'scm-export://' ) as $prefix )
+            if( stripos($input, $prefix) !== FALSE )
+                return TRUE;
+        if( !is_file($input) )
+            return FALSE;
+        $fh = fopen($input, 'r');
+        if( $fh === FALSE )
+            return FALSE;
+        $head = fread($fh, 4096);
+        fclose($fh);
+        return preg_match('/<config\b[^>]*\b(buckbeak|fawkes-config-version|fawkes-config)=/', $head) === 1;
+    }
+
+    /**
+     * drop the steps of the other platform, apply the "scm" overrides on SCM; the keys "scm" and "platform" are never
+     * passed to the utilities
+     */
+    public static function platformCommands( $commands, $isSCM )
+    {
+        $ret = array();
+        foreach( $commands as $command )
+        {
+            if( isset($command['platform']) )
+            {
+                $platform = strtolower($command['platform']);
+                unset($command['platform']);
+                if( ($platform == 'scm') !== $isSCM )
+                    continue;
+            }
+            if( array_key_exists('scm', $command) )
+            {
+                $scm = $command['scm'];
+                unset($command['scm']);
+                if( $isSCM )
+                {
+                    if( $scm === FALSE )
+                        continue;
+                    if( is_array($scm) )
+                        foreach( $scm as $k => $v )
+                        {
+                            if( $v === null || $v === FALSE )
+                                unset($command[$k]);
+                            else
+                                $command[$k] = $v;
+                        }
+                }
+            }
+            $ret[] = $command;
+        }
+        return $ret;
     }
 
     function printCOMMENTS( $string )

@@ -289,6 +289,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $ret = $secprofgroup->setSecProf_Spyware($profName);
         elseif( $type == 'wildfire' )
             $ret = $secprofgroup->setSecProf_Wildfire($profName);
+        elseif( $type == 'virus-and-wildfire' )
+            $ret = $secprofgroup->setSecProf_AVWF($profName);
+        elseif( $type == 'dns-security' )
+            $ret = $secprofgroup->setSecProf_DNSSEC($profName);
         else
             derr("unsupported profile type '{$type}'");
 
@@ -315,7 +319,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
     },
     'args' => array('type' => array('type' => 'string', 'default' => 'any',
-        'choices' => array('any', 'virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire'))
+        'choices' => array('any', 'virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', 'virus-and-wildfire', 'dns-security'))
     )
 );
 

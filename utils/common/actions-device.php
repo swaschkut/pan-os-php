@@ -3368,6 +3368,36 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
 
                 $context->first = false;
             }
+            elseif( $classtype == "Container" && $context->subSystem->isBuckbeak() )
+            {
+                // SCM: profile 'default' in folder 'All' (every folder sees it); SCM always logs to Strata Logging
+                // Service - one match list per log type, 'All Logs', as the predefined profile 'Cortex Data Lake'
+                if( $object->name() != "All" )
+                    return;
+                $context->first = false;
+
+                $lfp = $object->LogProfileStore->find( "default", null, FALSE );
+                if( $lfp !== null )
+                {
+                    PH::ACTIONstatus( $context, "SKIPPED", "LogForwardingProfile 'default' already available. BestPractise LogForwardingProfile 'default' not created" );
+                    return;
+                }
+                $lfp = $object->LogProfileStore->createLogProfile( "default" );
+                // createLogProfile() adds a traffic match list 'all traffic' - replaced by the SLS match lists
+                foreach( $lfp->type_available as $logType )
+                    $lfp->type[$logType] = array( 'notSet' => '--' );
+                $matchList = DH::findFirstElement( 'match-list', $lfp->xmlroot );
+                if( $matchList !== FALSE )
+                    DH::clearDomNodeChilds( $matchList );
+                foreach( SCMImporter::SLS_LOG_TYPES as $logType )
+                    $lfp->add_log_filter( $logType, $logType . "-sls", "All Logs", TRUE );
+                // no SCM field (SCM sends every match list to Strata Logging Service)
+                foreach( iterator_to_array( $lfp->xmlroot->getElementsByTagName('send-to-panorama') ) as $node )
+                    $node->parentNode->removeChild( $node );
+                PH::print_stdout( " * LogForwardingProfile create: 'default' (folder All, Strata Logging Service: " . implode(", ", SCMImporter::SLS_LOG_TYPES) . ")" );
+                if( $context->isAPI )
+                    derr( "LogForwardingProfile create via API not supported for SCM - use the offline XML and scm_pa_xml_to_change.php", null, false );
+            }
         }
     },
     'args' => array(
@@ -3491,6 +3521,51 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
 
                 //create for all VSYS and all templates
                 #$context->first = false;
+            }
+            elseif( $classtype == "Container" && $context->subSystem->isBuckbeak() )
+            {
+                // SCM: profile in folder 'All' (every folder sees it)
+                if( $object->name() != "All" )
+                    return;
+                $context->first = false;
+
+                $store = $object->network->zoneProtectionProfileStore;
+                if( $validateZPPavailable )
+                {
+                    $create = FALSE;
+                    foreach( array_merge( $context->subSystem->getContainers(), $context->subSystem->getSnippets(),
+                                 $context->subSystem->getDeviceClouds(), $context->subSystem->getDeviceOnPrems() ) as $scmSub )
+                        if( isset($scmSub->zoneStore) )
+                            foreach( $scmSub->zoneStore->zones() as $zoneOBJ )
+                                if( !$zoneOBJ->isTmp() && $zoneOBJ->zoneProtectionProfile == null )
+                                    $create = TRUE;
+                    if( !$create )
+                    {
+                        PH::ACTIONstatus( $context, "SKIPPED", "every zone has a ZoneProtectionProfile - '" . $entryProfileName . "' not created" );
+                        return;
+                    }
+                }
+                if( $store->find( $entryProfileName ) !== null )
+                {
+                    PH::ACTIONstatus( $context, "SKIPPED", "ZoneProtectionProfile '" . $entryProfileName . "' already available. BestPractise ZoneProtectionProfile '" . $entryProfileName . "' not created" );
+                    return;
+                }
+
+                $newdoc = new DOMDocument;
+                $newdoc->loadXML($zpp_bp_xmlstring, XML_PARSE_BIG_LINES);
+                $node = DH::findFirstElementByNameAttr("entry", $entryProfileName, $newdoc->firstChild);
+                if( $node === false || $node === null )
+                    derr("there is an error with the Iron-Skillet update - Profile: " . $entryProfileName . " does not exist", null, false);
+                $node = $object->xmlroot->ownerDocument->importNode($node, TRUE);
+
+                $zpp = new ZoneProtectionProfile( $entryProfileName, $store );
+                $zpp->load_from_domxml( $node );
+                $zpp->owner = null;
+                $store->addProfil( $zpp );
+                PH::print_stdout( " * ZoneProtectionProfile create: '" . $entryProfileName . "' (folder All)" );
+
+                if( $context->isAPI )
+                    derr( "ZoneProtectionProfile create via API not supported for SCM - use the offline XML and scm_pa_xml_to_change.php", null, false );
             }
         }
     }

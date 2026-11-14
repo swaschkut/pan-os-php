@@ -68,6 +68,7 @@
     {
       "type": "rule",
       "actions": "actions=securityProfile-Profile-Set:vulnerability,Alert-Only-VP",
+      "scm": false,
       "filter": "filter=(secprof type.is.profile) and !(secprof vuln-profile.is.set) and (action is.allow) and (rule is.enabled)",
       "location": "location=any",
       "pie_slice": "Vulnerability Profiles"
@@ -75,6 +76,7 @@
     {
       "type": "rule",
       "actions": "actions=securityProfile-Profile-Set:spyware,Alert-Only-AS",
+      "scm": false,
       "filter": "filter=(secprof type.is.profile) and !(secprof as-profile.is.set) and (action is.allow) and (rule is.enabled)",
       "location": "location=any",
       "pie_slice": "Anti-Spyware Profiles"
@@ -82,6 +84,7 @@
     {
       "type": "rule",
       "actions": "actions=securityProfile-Profile-Set:virus,Alert-Only-AV",
+      "scm": false,
       "filter": "filter=(secprof type.is.profile) and !(secprof av-profile.is.set) and (action is.allow) and (rule is.enabled)",
       "location": "location=any",
       "pie_slice": "Antivirus Profiles"
@@ -89,6 +92,7 @@
     {
       "type": "rule",
       "actions": "actions=securityProfile-Profile-Set:url-filtering,Alert-Only-URL",
+      "scm": false,
       "filter": "filter=(secprof type.is.profile) and !(secprof url-profile.is.set) and (action is.allow) and (rule is.enabled)",
       "location": "location=any",
       "pie_slice": "URL Filtering Profiles"
@@ -96,6 +100,7 @@
     {
       "type": "rule",
       "actions": "actions=securityProfile-Profile-Set:file-blocking,Alert-Only-FB",
+      "scm": false,
       "filter": "filter=(secprof type.is.profile) and !(secprof file-profile.is.set) and (action is.allow) and (rule is.enabled)",
       "location": "location=any",
       "pie_slice": "File Blocking Profiles"
@@ -103,6 +108,7 @@
     {
       "type": "rule",
       "actions": "actions=securityProfile-Profile-Set:wildfire,Alert-Only-WF",
+      "scm": false,
       "filter": "filter=(secprof type.is.profile) and !(secprof wf-profile.is.set) and (action is.allow) and (rule is.enabled)",
       "location": "location=any",
       "pie_slice": "Wildfire Analysis Profiles"
@@ -159,6 +165,11 @@
       "type": "securityprofilegroup",
       "actions": "actions=securityprofile-set:virus,Alert-Only-AV",
       "filter": "filter=!(secprof av-profile.is.set ) and !(object is.unused)",
+      "scm": {
+        "actions": "actions=securityprofile-set:virus-and-wildfire,Alert-Only-AVWF",
+        "filter": "filter=!(secprof avwf-profile.is.set ) and !(object is.unused)",
+        "pie_slice": "Virus and Wildfire Profiles"
+      },
       "location": "location=any",
       "pie_slice": "Antivirus Profiles"
     },
@@ -192,8 +203,17 @@
     },
     {
       "type": "securityprofilegroup",
+      "platform": "scm",
+      "actions": "actions=securityprofile-set:dns-security,Alert-Only-DNSSEC",
+      "filter": "filter=!(secprof dnssec-profile.is.set ) and !(object is.unused)",
+      "location": "location=any",
+      "pie_slice": "DNS Security Profiles"
+    },
+    {
+      "type": "securityprofilegroup",
       "actions": "actions=securityprofile-set:wildfire,Alert-Only-WF",
       "filter": "filter=!(secprof wf-profile.is.set ) and !(object is.unused)",
+      "scm": false,
       "location": "location=any",
       "pie_slice": "Wildfire Analysis Profiles"
     },

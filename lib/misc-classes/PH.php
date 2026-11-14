@@ -826,10 +826,16 @@ class PH
         PH::$loadArrayMem = array( "0", "b");
         PH::print_DEBUG_loadtime_reset();
 
-        // Force garbage collection multiple times to handle circular references
+        // Force garbage collection multiple times to handle circular references. The released configurations'
+        // rule containers are destroyed here; their references to the predefined objects were dropped above, so their
+        // destructors (ObjRuleContainer: removeReference) would only warn 'tried to unreference an object that is not
+        // referenced' - skipped for these, the configuration is gone anyway
+        $ignoreDestructors = PH::$ignoreDestructors;
+        PH::$ignoreDestructors = TRUE;
         gc_collect_cycles();
         gc_collect_cycles();
         gc_collect_cycles();
+        PH::$ignoreDestructors = $ignoreDestructors;
 
         // Release cached memory back to system (PHP 7.0+)
         if( function_exists('gc_mem_caches') )

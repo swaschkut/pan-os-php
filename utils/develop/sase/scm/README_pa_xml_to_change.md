@@ -48,6 +48,48 @@ The whole export as one XML (all containers, all types the loader knows – the 
 pan-os-php type=scm-export-xml in=scm-export://export/1234 out=1234.xml
 ```
 
+## SCM profile semantics in pan-os-php
+
+SCM has no antivirus and no wildfire profiles and splits PAN-OS anti-spyware:
+
+| PAN-OS | SCM (BuckbeakConf) |
+|---|---|
+| antivirus + wildfire-analysis | one virus-and-wildfire-analysis profile |
+| anti-spyware (incl. DNS signatures / botnet domains) | anti-spyware + dns-security profile |
+
+On an SCM configuration the PAN-OS names map to it:
+
+* `type=securityprofile securityprofiletype=virus` / `wildfire-analysis` → virus-and-wildfire-analysis profiles
+  (the `virus.*` / `wildfire.*` actions support them); `securityprofiletype=spyware` → anti-spyware and dns-security
+  profiles
+* profile groups: `securityProfile-Set` / `-Remove` with `virus` / `wildfire` set the virus-and-wildfire-analysis
+  slot (also `virus-and-wildfire`, `dns-security`); filters `av-profile.is.set` / `wf-profile.is.set` test that
+  slot (`avwf-profile.is.set`, `dnssec-profile.is.set` as well)
+* BP / visibility / adoption of a group: virus-and-wildfire-analysis, anti-spyware, dns-security, vulnerability,
+  url-filtering, file-blocking must be set and pass; an anti-spyware profile is checked without its DNS part (that
+  is the dns-security profile)
+
+## Playbooks on SCM
+
+`type=playbook` detects an SCM input (`scm-api://`, `scm-export://`, or an XML whose `<config>` carries
+`buckbeak` / `fawkes-config-version`). Per step of the playbook JSON:
+
+* `"scm": { "actions": …, "filter": …, … }` replaces these arguments on SCM; `"scm": false` skips the step on SCM
+* `"platform": "scm"` / `"panos"` runs the step only on that platform
+
+`visibility.json` uses it: rule steps with single profiles are skipped (SCM rules reference profile groups only),
+the group steps set `Alert-Only-AVWF` and `Alert-Only-DNSSEC`. On SCM `logforwardingprofile-create-bp` creates
+`default` in folder `All` (one match list per log type, All Logs – Strata Logging Service) and
+`zpp-create-alert-only-bp` creates `Alert_Only_Zone_Protection` in `All`.
+
+```
+pan-os-php type=playbook in=scm-export://export/1234 out=visibility.xml
+php utils/develop/sase/scm/scm_pa_xml_to_change.php in=scm-export://export/1234 file2=visibility.xml out=change.json
+```
+
+Open: the iron-skillet content of some Alert-Only profiles (mica engine, cloud inline analysis, AV decoders,
+anti-spyware action `default`) has no public SCM field – those change requests are marked for review.
+
 ## scm_pa_xml_to_change.php
 
 The original is loaded from the same export with the same loader (all containers, all types), so only the changes
