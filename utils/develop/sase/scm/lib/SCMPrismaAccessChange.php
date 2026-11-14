@@ -984,7 +984,11 @@ class SCMPrismaAccessChange
             if( in_array($k, array('folder', 'snippet', 'position'), TRUE) )
                 continue;
             if( !array_key_exists($k, $obj) )
-                $diffs[] = $k . " missing";
+            {
+                // SCM leaves out empty lists / objects in its answer (live: virtual router 'default' without interfaces)
+                if( $v !== array() )
+                    $diffs[] = $k . " missing";
+            }
             elseif( $k === 'snippets' && is_array($v) && is_array($obj[$k]) )
             {
                 //attached snippets: same order (the first wins)
