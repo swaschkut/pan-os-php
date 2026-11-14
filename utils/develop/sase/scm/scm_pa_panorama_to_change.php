@@ -736,10 +736,59 @@ foreach( array_keys($serials) as $serial )
                 $snips[] = $sn;
     }
     $fw['snippets'] = $snips;
+    // Panorama template variables for this firewall: device value (stack devices/entry) > stack > templates (stack order)
+    $tplVars = array();
+    $varSources = array();
+    if( isset($stackOfSerial[$serial]) )
+    {
+        $st = "/config/devices/entry/template-stack/entry[@name='" . $stackOfSerial[$serial] . "']";
+        $varSources[] = array( $st . "/devices/entry[@name='" . $serial . "']/variable/entry", 'template variable (device)' );
+        $varSources[] = array( $st . "/variable/entry", 'template variable (stack)' );
+        foreach( $xpf->query($st . "/templates/member") as $m )
+            $varSources[] = array( "/config/devices/entry/template/entry[@name='" . trim($m->textContent) . "']/variable/entry", 'template variable (template ' . trim($m->textContent) . ')' );
+    }
+    foreach( $varSources as $vs )
+        foreach( $xpf->query($vs[0]) as $ve )
+            if( !isset($tplVars[$ve->getAttribute('name')]) && ($val = $xpf->query("type/*", $ve)->item(0)) !== null )
+                $tplVars[$ve->getAttribute('name')] = array( trim($val->textContent), $vs[1] );
+    // interface addresses as imported into the snippets (first snippet in stack order wins)
+    $ifIps = array();
+    foreach( array('ethernet-interfaces', 'layer3-subinterfaces', 'tunnel-interfaces', 'loopback-interfaces', 'vlan-interfaces') as $t )
+        foreach( isset($change[$t]) ? $change[$t] : array() as $it )
+        {
+            $ips = isset($it['layer3']['ip']) ? $it['layer3']['ip'] : ( isset($it['ip']) ? $it['ip'] : array() );
+            $ifIps[$it['snippet'] . "|" . $it['name']] = array_map( function($x){ return is_array($x) ? $x['name'] : $x; }, $ips );
+        }
     $vars = array();
-    foreach( $ifVariables as $v )
-        if( in_array($v['snippet'], $snips, TRUE) && !isset($vars[$v['variable']]) )
-            $vars[$v['variable']] = $v['interface'];
+    foreach( $snips as $sn )
+        foreach( $ifVariables as $v )
+        {
+            if( $v['snippet'] !== $sn || isset($vars[$v['variable']]) )
+                continue;
+            $entry = array( 'interface' => $v['interface'] );
+            $ips = isset($ifIps[$sn . "|" . $v['variable']]) ? $ifIps[$sn . "|" . $v['variable']] : array();
+            if( count($ips) > 0 )
+            {
+                $resolved = array();
+                $src = array();
+                foreach( $ips as $ip )
+                {
+                    if( isset($tplVars[$ip]) )
+                    {
+                        $resolved[] = $tplVars[$ip][0];
+                        $src[$tplVars[$ip][1] . " " . $ip] = TRUE;
+                    }
+                    else
+                    {
+                        $resolved[] = $ip;
+                        $src['template ' . $sn] = TRUE;
+                    }
+                }
+                $entry['ip'] = $resolved;
+                $entry['ip_source'] = implode(", ", array_keys($src));
+            }
+            $vars[$v['variable']] = $entry;
+        }
     $fw['interfaces'] = $vars;
     $firewalls[] = $fw;
 }

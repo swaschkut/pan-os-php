@@ -99,8 +99,9 @@ The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
 * `interface_variables`: `[{snippet, variable, interface}]` – the Panorama interface of every interface variable (the value
   per firewall later)
 * `firewalls`: per managed firewall `serial`, `folder` (its device-group), `template_stack`, `snippets` (stack, then its
-  templates) and `interfaces` (interface variable → Panorama interface) – input for the device step (device in the
-  folder, interface variable values per device), not sent yet
+  templates) and `interfaces` (interface variable → `interface`, `ip` with Panorama template variables resolved –
+  device value of the stack > stack variable > template variable –, `ip_source`) – input for the onboarding step
+  ([CONCEPT_panorama_migration.md](CONCEPT_panorama_migration.md)), not sent yet
 * `warnings`: what is not part of this step (NAT / decryption / … rules, data filtering profiles …)
 
 `scm_pa_change.php` does not send `source`, `placeholders`, `incomplete`, `not_imported`, `interface_variables`,
