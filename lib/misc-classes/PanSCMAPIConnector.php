@@ -2281,7 +2281,9 @@ class PanSCMAPIConnector
 
             $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
             //rate limit / server error: retry with backoff
-            for( $attempt = 0; $attempt < 4 && ( $result['http_code'] == 429 || $result['http_code'] >= 500 || $result['response'] === false ); $attempt++ )
+            // HTTP 500 is usually not transient (endpoint not available for the tenant): one retry only;
+            // 429 / 502 / 503 / 504 / connection problems: up to 4 retries with backoff
+            for( $attempt = 0; $attempt < ( $result['http_code'] == 500 ? 1 : 4 ) && ( $result['http_code'] == 429 || $result['http_code'] >= 500 || $result['response'] === false ); $attempt++ )
             {
                 sleep( (int)pow(2, $attempt + 1) );
                 $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
@@ -2440,7 +2442,7 @@ class PanSCMAPIConnector
                     PH::print_stdout( "HTTP: " . $httpCode . " (parallel) " . $urls[$key] . " offset " . $offset );
 
                 //retry: rate limit, server errors, connection problems
-                if( ( $curlError !== null || $httpCode == 429 || $httpCode >= 500 ) && $attempt < 4 )
+                if( ( $curlError !== null || $httpCode == 429 || $httpCode >= 500 ) && $attempt < ( $httpCode == 500 ? 1 : 4 ) )
                 {
                     $wait = pow( 2, $attempt + 1 );
                     if( preg_match( '/^Retry-After:\s*(\d+)/mi', $headers, $m ) )

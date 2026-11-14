@@ -2146,6 +2146,8 @@ class SCMPrismaAccessExport
                 $queue = array_keys( $posQueries );
                 $failedCover = array();      // container => covered only by failed queries so far
                 $fallbackDone = false;
+                $typeOk = 0;                 // successful queries of this type / position
+                $typeServerError = 0;        // queries answered with HTTP 5xx
                 while( TRUE )
                 {
                     if( count($queue) == 0 )
@@ -2153,6 +2155,14 @@ class SCMPrismaAccessExport
                         if( $fallbackDone )
                             break;
                         $fallbackDone = true;
+                        // every query of this type answered with a server error (e.g. the device setting types of a
+                        // tenant without them): direct queries would fail the same way - only cost time
+                        if( $typeOk == 0 && $typeServerError > 0 )
+                        {
+                            if( count($failedCover) > 0 )
+                                PH::print_stdout( "     no direct queries: every query of this type answered HTTP 5xx (server error, not a missing container)" );
+                            break;
+                        }
                         foreach( $eligible as $fck => $fc )
                         {
                             if( !isset($failedCover[$fck]) || !in_array( $position, self::rulePositions($type, $fc['kind']), TRUE ) )
@@ -2218,6 +2228,10 @@ class SCMPrismaAccessExport
                     if( $c['device'] && !isset($deviceParam[$c['name']]) && $result['errors'] === null )
                         $deviceParam[$c['name']] = 'folder';
 
+                    if( $result['errors'] !== null && $result['http_code'] >= 500 )
+                        $typeServerError++;
+                    if( $result['errors'] === null )
+                        $typeOk++;
                     if( $result['errors'] !== null )
                     {
                         $msg = self::errorMessage($result['errors']);

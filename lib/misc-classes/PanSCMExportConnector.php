@@ -120,9 +120,10 @@ class PanSCMExportConnector extends PanSCMAPIConnector
                 continue;
             foreach( $utilTypes === null ? self::ALL_UTIL_TYPES : $utilTypes as $ut )
                 $this->loadSCMConfig( $folder, $sub, $ut );
-            $loaded[] = $folder;
+            // one entry per container (the static folder list and the folder answer overlap)
+            $loaded[get_class($sub) . "|" . $sub->name()] = $sub->name();
         }
-        return $loaded;
+        return array_values($loaded);
     }
 
     /** export folders do not need credentials */
