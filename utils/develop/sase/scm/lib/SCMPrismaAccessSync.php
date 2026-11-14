@@ -1298,9 +1298,24 @@ class SCMPrismaAccessSync
             self::$schema = isset($j['resources']) ? $j['resources'] : array();
         }
         $resource = preg_replace( '/-(pre|post)$/', '', $endpoint );
-        if( !is_array($body) || !isset(self::$schema[$resource]['schema']) )
+        if( !is_array($body) )
             return $body;
+        if( !isset(self::$schema[$resource]['schema']) )
+            return self::emptyObjectsByKey( $body );
         return self::emptyObjectsBySchema( $body, self::$schema[$resource]['schema'] );
+    }
+
+    /** resources without schema (interfaces …): mode / setting keys that are objects in the SCM API */
+    const OBJECT_KEYS = array( 'layer2', 'layer3', 'tap', 'dhcp_client', 'arp', 'ddns_config', 'poe', 'pppoe' );
+
+    private static function emptyObjectsByKey( $value )
+    {
+        foreach( $value as $k => $v )
+            if( is_string($k) && in_array($k, self::OBJECT_KEYS, TRUE) && $v === array() )
+                $value[$k] = new stdClass();
+            elseif( is_array($v) )
+                $value[$k] = self::emptyObjectsByKey( $v );
+        return $value;
     }
 
     private static function emptyObjectsBySchema( $value, $schema )

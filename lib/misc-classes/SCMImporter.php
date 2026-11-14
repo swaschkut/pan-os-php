@@ -106,6 +106,24 @@ class SCMImporter
     public $summary = array();
 
     public $keepZoneInterfaces = FALSE;
+    /** zones: interfaces as SCM interface variables ($ethernet1_1, $ethernet1_2-1 …) - the interfaces themselves are
+     *  created by the caller (scm_pa_panorama_to_change.php) in the snippet of the template */
+    public $interfaceVariables = FALSE;
+
+    /** PAN-OS interface name -> SCM interface variable: ethernet1/1 -> $ethernet1_1, ethernet1/2.1 -> $ethernet1_2-1 */
+    static public function interfaceVariable($name)
+    {
+        $name = trim($name);
+        if( $name === '' || $name[0] == '$' )
+            return $name;
+        return '$' . str_replace(array('/', '.'), array('_', '-'), $name);
+    }
+
+    /** snippet created for a template ('template') / template-stack ('stack'); null if none */
+    public function snippetNameOf($kind, $name)
+    {
+        return isset($this->snippetNames[$kind . "|" . $name]) ? $this->snippetNames[$kind . "|" . $name] : null;
+    }
     public $firewallFolder = self::FIREWALL_FOLDER;
 
     /** Panorama: 'all' (default), 'device-groups' (shared + device-groups only: no templates, stacks, firewalls) or
@@ -1203,7 +1221,21 @@ class SCMImporter
             }
         }
 
-        if( $resource == 'zones' && !$this->keepZoneInterfaces )
+        if( $resource == 'zones' && $this->interfaceVariables )
+        {
+            $network = DH::findFirstElement('network', $entry);
+            if( $network !== FALSE )
+                foreach( array('layer3', 'layer2', 'virtual-wire', 'tap', 'tunnel', 'external') as $type )
+                {
+                    $node = DH::findFirstElement($type, $network);
+                    if( $node === FALSE )
+                        continue;
+                    foreach( $node->childNodes as $m )
+                        if( $m->nodeType == XML_ELEMENT_NODE )
+                            $m->nodeValue = self::interfaceVariable($m->textContent);
+                }
+        }
+        elseif( $resource == 'zones' && !$this->keepZoneInterfaces )
         {
             $network = DH::findFirstElement('network', $entry);
             if( $network !== FALSE )

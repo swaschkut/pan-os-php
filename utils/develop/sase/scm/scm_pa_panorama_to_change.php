@@ -103,6 +103,8 @@ $importer->zonesFromRules = !isset($args['no-rules']) && !isset($args['no-zones'
 // SCM: rules take profile groups only, antivirus + WildFire combined, DNS security separate from spyware
 $importer->scmProfiles = TRUE;
 $importer->customApplicationsElsewhere = TRUE;
+// zones of the templates reference the interface variables created below ($ethernet1_1 …)
+$importer->interfaceVariables = !isset($args['no-templates']);
 if( isset($args['device-group']) && $args['device-group'] !== true )
     $importer->deviceGroupFilter = array_values( array_filter( array_map('trim', explode(",", $args['device-group'])) ) );
 $importer->importPanorama( $pano, $shared == 'all' ? 'global' : $shared );
@@ -250,6 +252,185 @@ foreach( $appScopes as $as )
             'content' => array( "custom application created with category / subcategory / technology / risk / characteristics"
                 . ( count($missing) ? " - not imported: " . implode(", ", $missing) . " (application identification not complete)" : "" ) ) );
     }
+
+// interfaces of the templates / template-stacks -> SCM interface variables in the snippet ($ethernet1_1 with
+// default_value ethernet1/1, sub interfaces $ethernet1_2-1, tunnel $tunnel-1 …), IP addresses included; the value per
+// firewall (DeviceOnPrem) comes with the firewalls (later step). Interface management profiles of the template as well.
+$ifIncomplete = array();
+$ifCreated = array();          // snippet => [variable => true]
+/** text leaves of a node are only "no" / "disable" / empty: PAN-OS defaults, nothing lost */
+function onlyDefaults( DOMElement $n )
+{
+    foreach( $n->getElementsByTagName('*') as $c )
+    {
+        $hasChild = FALSE;
+        foreach( $c->childNodes as $cc )
+            if( $cc->nodeType == XML_ELEMENT_NODE )
+                $hasChild = TRUE;
+        if( !$hasChild && !in_array( trim($c->textContent), array('', 'no', 'disable', 'disabled'), TRUE ) )
+            return FALSE;
+    }
+    return TRUE;
+}
+/** layer3 settings of an interface / unit node: ip, mtu, management profile; unsupported children -> $missing */
+function layer3Body( DOMElement $l3, array &$missing, array $skip = array() )
+{
+    $b = array();
+    foreach( $l3->childNodes as $c )
+    {
+        if( $c->nodeType != XML_ELEMENT_NODE || in_array($c->tagName, $skip, TRUE) )
+            continue;
+        if( $c->tagName == 'ip' )
+        {
+            $ips = array();
+            foreach( $c->childNodes as $e )
+                if( $e->nodeType == XML_ELEMENT_NODE )
+                    $ips[] = array( 'name' => $e->getAttribute('name') );
+            if( count($ips) > 0 )
+                $b['ip'] = $ips;
+        }
+        elseif( $c->tagName == 'mtu' )
+            $b['mtu'] = (int)trim($c->textContent);
+        elseif( $c->tagName == 'interface-management-profile' )
+            $b['interface_management_profile'] = trim($c->textContent);
+        elseif( $c->tagName == 'dhcp-client' )
+            $b['dhcp_client'] = array( 'enable' => TRUE );
+        elseif( $c->tagName == 'comment' || $c->tagName == 'tag' )
+            continue;
+        elseif( !onlyDefaults($c) )
+            $missing[] = $c->tagName;
+    }
+    return $b;
+}
+$ifScopes = array();
+if( $importer->panoramaScope == 'templates' )
+{
+    foreach( $pano->templates as $t )
+        if( ($sn = $importer->snippetNameOf('template', $t->name())) !== null )
+            $ifScopes[] = array( $sn, $t->xmlroot );
+    foreach( $pano->templatestacks as $t )
+        if( ($sn = $importer->snippetNameOf('stack', $t->name())) !== null )
+            $ifScopes[] = array( $sn, $t->xmlroot );
+}
+$xpi = new DOMXPath($pano->xmldoc);
+foreach( $ifScopes as $is )
+{
+    list($sn, $root) = $is;
+    $base = "config/devices/entry/network/";
+    foreach( $xpi->query($base . "profiles/interface-management-profile/entry", $root) as $p )
+    {
+        $item = array( 'snippet' => $sn, 'name' => $p->getAttribute('name') );
+        foreach( $p->childNodes as $c )
+        {
+            if( $c->nodeType != XML_ELEMENT_NODE )
+                continue;
+            if( $c->tagName == 'permitted-ip' )
+            {
+                $item['permitted_ip'] = array();
+                foreach( $c->childNodes as $e )
+                    if( $e->nodeType == XML_ELEMENT_NODE )
+                        $item['permitted_ip'][] = array( 'name' => $e->getAttribute('name') );
+            }
+            else
+                $item[str_replace('-', '_', $c->tagName)] = trim($c->textContent) == 'yes';
+        }
+        $change['interface-management-profiles'][] = $item;
+        $counts['interface-management-profiles'] = ( isset($counts['interface-management-profiles']) ? $counts['interface-management-profiles'] : 0 ) + 1;
+    }
+    $add = function( $type, $item, $missing ) use( &$change, &$counts, &$ifIncomplete, &$ifCreated, $sn ){
+        $change[$type][] = $item;
+        $counts[$type] = ( isset($counts[$type]) ? $counts[$type] : 0 ) + 1;
+        $ifCreated[$sn][$item['name']] = TRUE;
+        if( count($missing) > 0 )
+            $ifIncomplete[] = array( 'type' => $type, 'name' => $item['name'], 'snippet' => $sn, 'missing' => array( "not imported: " . implode(", ", array_unique($missing)) ) );
+    };
+    foreach( $xpi->query($base . "interface/ethernet/entry", $root) as $eth )
+    {
+        $name = $eth->getAttribute('name');
+        $item = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($name), 'default_value' => $name );
+        $missing = array();
+        $units = array();
+        foreach( $eth->childNodes as $c )
+        {
+            if( $c->nodeType != XML_ELEMENT_NODE )
+                continue;
+            if( $c->tagName == 'comment' )
+                $item['comment'] = trim($c->textContent);
+            elseif( in_array($c->tagName, array('link-speed', 'link-duplex', 'link-state'), TRUE) )
+                $item[str_replace('-', '_', $c->tagName)] = trim($c->textContent);
+            elseif( $c->tagName == 'layer3' )
+            {
+                $item['layer3'] = layer3Body( $c, $missing, array('units') );
+                foreach( $xpi->query("units/entry", $c) as $u )
+                    $units[] = array( 'layer3', $u );
+            }
+            elseif( $c->tagName == 'layer2' )
+            {
+                $item['layer2'] = new stdClass();
+                foreach( $xpi->query("units/entry", $c) as $u )
+                    $units[] = array( 'layer2', $u );
+            }
+            elseif( $c->tagName == 'tap' )
+                $item['tap'] = new stdClass();
+            elseif( !onlyDefaults($c) )
+                $missing[] = $c->tagName;
+        }
+        $add( 'ethernet-interfaces', $item, $missing );
+        foreach( $units as $uu )
+        {
+            list($mode, $u) = $uu;
+            $uname = $u->getAttribute('name');
+            $umissing = array();
+            $tag = $xpi->query("tag", $u)->item(0);
+            if( $mode == 'layer3' )
+            {
+                $sub = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($uname), 'parent_interface' => $item['name'] )
+                    + ( $tag !== null ? array( 'tag' => (int)trim($tag->textContent) ) : array() ) + layer3Body( $u, $umissing );
+                if( ($cm = $xpi->query("comment", $u)->item(0)) !== null )
+                    $sub['comment'] = trim($cm->textContent);
+                $add( 'layer3-subinterfaces', $sub, $umissing );
+            }
+            else
+            {
+                $sub = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($uname), 'parent_interface' => $item['name'] )
+                    + ( $tag !== null ? array( 'vlan_tag' => trim($tag->textContent) ) : array() );
+                $add( 'layer2-subinterfaces', $sub, $umissing );
+            }
+        }
+    }
+    foreach( array( 'tunnel' => 'tunnel-interfaces', 'loopback' => 'loopback-interfaces', 'vlan' => 'vlan-interfaces' ) as $tag => $type )
+        foreach( $xpi->query($base . "interface/" . $tag . "/units/entry", $root) as $u )
+        {
+            $missing = array();
+            $item = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($u->getAttribute('name')), 'default_value' => $u->getAttribute('name') )
+                + layer3Body( $u, $missing );
+            if( ($cm = $xpi->query("comment", $u)->item(0)) !== null )
+                $item['comment'] = trim($cm->textContent);
+            $add( $type, $item, $missing );
+        }
+    foreach( array('aggregate-ethernet') as $tag )
+        foreach( $xpi->query($base . "interface/" . $tag . "/entry", $root) as $ae )
+            $ifIncomplete[] = array( 'type' => 'aggregate-interfaces', 'name' => SCMImporter::interfaceVariable($ae->getAttribute('name')), 'snippet' => $sn,
+                'missing' => array( "aggregate interface not imported yet (template '" . $sn . "')" ) );
+}
+// zones that reference an interface variable not created above: placeholder ethernet interface (the reference stays)
+$ifPlaceholders = array();
+foreach( isset($change['zones']) ? $change['zones'] : array() as $z )
+{
+    if( !isset($z['snippet']) || !isset($z['network']) || !is_array($z['network']) )
+        continue;
+    foreach( $z['network'] as $mode => $members )
+        if( is_array($members) && array_keys($members) === range(0, count($members) - 1) )
+            foreach( $members as $m )
+                if( is_string($m) && $m !== '' && $m[0] == '$' && !isset($ifCreated[$z['snippet']][$m]) )
+                {
+                    $change['ethernet-interfaces'][] = array( 'snippet' => $z['snippet'], 'name' => $m );
+                    $counts['ethernet-interfaces'] = ( isset($counts['ethernet-interfaces']) ? $counts['ethernet-interfaces'] : 0 ) + 1;
+                    $ifCreated[$z['snippet']][$m] = TRUE;
+                    $ifPlaceholders[] = array( 'type' => 'ethernet-interfaces', 'name' => $m, 'snippet' => $z['snippet'],
+                        'content' => array( "placeholder: interface used by zone '" . $z['name'] . "', not in the template - no configuration" ) );
+                }
+}
 
 // application groups / filters
 $filterMap = array( 'subcategory' => 'sub_category' );
@@ -456,11 +637,11 @@ foreach( $importer->incomplete as $inc )
             break;
         }
 }
-$change['incomplete'] = $incomplete;
+$change['incomplete'] = array_merge( $incomplete, $ifIncomplete );
 
 // objects created because something refers to them (references are never removed): PAN-OS predefined copies,
 // placeholders with unknown / not writable content
-$placeholders = $appPlaceholders;
+$placeholders = array_merge( $appPlaceholders, $ifPlaceholders );
 foreach( $importer->placeholders as $ph )
 {
     $key = $ph['scope_type'] == 'snippet' ? 'snippet' : 'folder';

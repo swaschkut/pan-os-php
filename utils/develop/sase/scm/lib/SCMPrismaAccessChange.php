@@ -39,7 +39,8 @@ class SCMPrismaAccessChange
     /** groups of config types that can be changed (network and device settings: sync workflow) */
     const SUPPORTED_GROUPS = array( 'objects', 'identity', 'policies' );
     /** single types of other groups (zones: with the rules that use them, e.g. Panorama device-group import) */
-    const SUPPORTED_TYPES = array( 'zones', 'zone-protection-profiles' );
+    const SUPPORTED_TYPES = array( 'zones', 'zone-protection-profiles', 'interface-management-profiles', 'ethernet-interfaces',
+        'layer2-subinterfaces', 'layer3-subinterfaces', 'loopback-interfaces', 'tunnel-interfaces', 'vlan-interfaces' );
 
     /** folders below this one may be created (own folders exist only under "All Firewalls") */
     const NGFW_ROOT = 'ngfw-shared';
