@@ -116,6 +116,9 @@ class SCMImporter
         $name = trim($name);
         if( $name === '' || $name[0] == '$' )
             return $name;
+        // ethernet / aggregate sub interfaces: SCM requires "<parent>.<unit>" (live: '$ethernet1_2-1' is invalid)
+        if( preg_match('/^(ethernet\d+\/\d+(?:\/\d+)?|ae\d+)\.(\d+)$/', $name, $m) )
+            return '$' . str_replace('/', '_', $m[1]) . '.' . $m[2];
         return '$' . str_replace(array('/', '.'), array('_', '-'), $name);
     }
 
@@ -699,13 +702,30 @@ class SCMImporter
                 {
                     $orig = $prof->cloneNode(TRUE);
                     $defaults = 0;
-                    if( $type == 'vulnerability' || $type == 'spyware' )
-                        foreach( $xp->query("rules/entry/action/default", $prof) as $d )
-                        {
-                            $d->parentNode->removeChild($d);
-                            $defaults++;
-                        }
                     $removed = array();
+                    // rule action 'default': the public API refuses an empty action (live: "action is missing") and
+                    // has no 'default' -> the rules are sent through the internal UI API only
+                    if( $type == 'vulnerability' || $type == 'spyware' )
+                    {
+                        $defaults = $xp->query("rules/entry/action/default", $prof)->length;
+                        if( $defaults > 0 && ($rulesNode = DH::findFirstElement('rules', $prof)) !== FALSE )
+                        {
+                            $prof->removeChild($rulesNode);
+                            $removed['rules (action default)'] = TRUE;
+                        }
+                    }
+                    // DNS sinkhole: the public API takes only 127.0.0.1 / pan-sinkhole-default-ip and ::1
+                    if( $type == 'dns-security' && ($sk = $xp->query("botnet-domains/sinkhole", $prof)->item(0)) !== null )
+                    {
+                        $v4 = $xp->query("ipv4-address", $sk)->item(0);
+                        $v6 = $xp->query("ipv6-address", $sk)->item(0);
+                        if( ( $v4 !== null && !in_array(trim($v4->textContent), array('127.0.0.1', 'pan-sinkhole-default-ip'), TRUE) )
+                            || ( $v6 !== null && trim($v6->textContent) !== '::1' ) )
+                        {
+                            $sk->parentNode->removeChild($sk);
+                            $removed['botnet-domains/sinkhole'] = TRUE;
+                        }
+                    }
                     foreach( $paths as $path )
                         foreach( $xp->query($path, $prof) as $n )
                         {
@@ -1162,6 +1182,17 @@ class SCMImporter
                     $this->addIncomplete($resource, $entry->getAttribute('name'), "target (firewalls) - SCM rules have no target, review");
                 }
             }
+            // <profile-setting><group/></profile-setting>: no profile (PAN-OS) - SCM refuses an empty group
+            $ps = DH::findFirstElement('profile-setting', $entry);
+            if( $ps !== FALSE )
+            {
+                $hasMember = FALSE;
+                foreach( $ps->getElementsByTagName('member') as $m )
+                    if( trim($m->textContent) !== '' )
+                        $hasMember = TRUE;
+                if( !$hasMember )
+                    $entry->removeChild($ps);
+            }
             // display grouping of the rule list, no SCM field
             $groupTag = DH::findFirstElement('group-tag', $entry);
             if( $groupTag !== FALSE )
@@ -1218,6 +1249,22 @@ class SCMImporter
                 foreach( iterator_to_array($c->childNodes) as $cc )
                     $renamed->appendChild($cc);
                 $entry->replaceChild($renamed, $c);
+            }
+        }
+
+        // custom URL category without entries: SCM refuses an empty list - placeholder entry empty.empty (as the SCM UI accepts it, HAR 2026-11-14)
+        if( $resource == 'url-categories' )
+        {
+            $type = DH::findFirstElement('type', $entry);
+            $isList = $type === FALSE || trim($type->textContent) == 'URL List';
+            $list = DH::findFirstElement('list', $entry);
+            $members = $list === FALSE ? 0 : $list->getElementsByTagName('member')->length;
+            if( $isList && $members == 0 )
+            {
+                if( $list === FALSE )
+                    $list = DH::createElement($entry, 'list');
+                DH::createElement($list, 'member', 'empty.empty');
+                $this->addPlaceholder($resource, $entry->getAttribute('name'), "custom URL category without entries (SCM refuses an empty list): placeholder entry 'empty.empty'");
             }
         }
 

@@ -10,6 +10,9 @@ compare. The script only chains the existing building blocks (`scm_pa_export.php
 * push only with `push` (and only folders with a push target)
 * after `execute`: export again and check every change against the tenant
 
+`execute` prints one line per request while it runs (number / total, seconds since the start, status, request; then
+the internal UI API edits) – a long run is never silent – and at the end the requests that did not work together.
+
 ```
 php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.json>             # dry-run
 php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.json> execute     # send + verify

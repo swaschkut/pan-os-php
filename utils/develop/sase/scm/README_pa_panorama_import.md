@@ -68,16 +68,18 @@ Rules:
 | rule with single security profiles | SCM rules take profile groups only: the rule gets a profile group – an existing one with the same profiles – in the device-group of the rule, its parent device-groups or shared (a group of a parent is only taken if its profiles are the same objects, i.e. not overridden below) – else a new `secProfGroupN` in the scope of the rule (same logic as the rule action `securityProfile-replace-by-Group`) |
 | profile group with antivirus and / or WildFire profile | one `wildfire-anti-virus-profiles` profile in the scope of the group, name: the antivirus or WildFire profile name, both: `<AV>_<WF>`. Content: WildFire rules (predefined `default`: any / any / both / public-cloud; antivirus only: no WildFire rule), antivirus threat / MLAV exceptions and packet capture |
 | spyware profile with `botnet-domains` | `botnet-domains` moved to a `dns-security-profiles` profile with the same name; profile groups with this spyware profile get it as `dns_security` |
-| spyware / vulnerability rule action `default`; antivirus decoder actions / inline ML / inline cloud analysis, vulnerability `mica-engine-vulnerability-enabled` / `cloud-inline-analysis`, spyware inline `local-deep-learning`, DNS `advanced-dns-security-categories` | not in the public SCM API: the public request creates the profile without them (action `default` as empty action), the complete profile (PAN-OS structure) is in `_internal` of the entry and `scm_pa_change.php` writes it through the internal UI API right after the public requests (`multiConfigure` edit, see README_pa_change.md); verification reads it back through the internal API |
+| spyware / vulnerability rules when one of them has action `default`; DNS sinkhole other than `127.0.0.1` / `pan-sinkhole-default-ip` / `::1`; antivirus decoder actions / inline ML / inline cloud analysis, vulnerability `mica-engine-vulnerability-enabled` / `cloud-inline-analysis`, spyware inline `local-deep-learning`, DNS `advanced-dns-security-categories` | not in the public SCM API (live: an empty action is refused with "is missing 'action'", the sinkhole only takes the listed values): the public request creates the profile without them (spyware / vulnerability without `rules`, DNS without `sinkhole`), the complete profile (PAN-OS structure) is in `_internal` of the entry and `scm_pa_change.php` writes it through the internal UI API right after the public requests (`multiConfigure` edit, see README_pa_change.md); verification reads it back through the internal API |
 | antivirus application exceptions | no SCM field known → `incomplete` |
 | profile in a profile group that is not in the configuration (e.g. `default`, `strict file blocking`) | created in the scope of the group: copy of the PAN-OS predefined profile (`lib/object-classes/predefined.xml`), else an empty placeholder → `placeholders` |
 | antivirus / WildFire part of a combined profile not in the configuration | PAN-OS predefined `default` content, else placeholder → `placeholders` |
 | data filtering profile in a profile group | SCM API cannot create data filtering profiles (enterprise DLP): reference kept, group and the rules that use it in `not_imported` |
 | rule `group-tag` | no SCM field → rule in `incomplete` |
-| template interfaces | SCM interface variables in the snippet of the template / stack: `ethernet1/1` → `ethernet-interfaces` `$ethernet1_1` (`default_value: ethernet1/1`, layer3 ip / mtu / management profile, layer2, tap, comment, link settings); `ethernet1/2.1` → `layer3-subinterfaces` `$ethernet1_2-1` (`parent_interface: $ethernet1_2`, tag, ip); layer2 units → `layer2-subinterfaces`; `tunnel.1` / `loopback.N` / `vlan.N` → `$tunnel-1` … (`tunnel-` / `loopback-` / `vlan-interfaces`); IP addresses of the template are kept in the snippet. Settings without SCM field (ipv6, lldp, ndp-proxy … with non default values) → `incomplete`; aggregate interfaces → `incomplete` (later). The value per firewall (DeviceOnPrem) comes with the firewalls (later step) |
+| template interfaces | SCM interface variables in the snippet of the template / stack: `ethernet1/1` → `ethernet-interfaces` `$ethernet1_1` (layer3 ip / mtu / management profile, layer2, tap, comment, link settings); `ethernet1/2.1` → `layer3-subinterfaces` `$ethernet1_2.1` (`parent_interface: $ethernet1_2`, tag, ip – SCM requires `<parent>.<unit>`, `$ethernet1_2-1` is refused); layer2 units → `layer2-subinterfaces`; `tunnel.1` / `loopback.N` / `vlan.N` → `$tunnel-1` … (`tunnel-` / `loopback-` / `vlan-interfaces`); IP addresses of the template are kept in the snippet. Settings without SCM field (ipv6, lldp, ndp-proxy … with non default values) → `incomplete`; aggregate interfaces → `incomplete` (later). No `default_value`: SCM keeps it unique in the tenant (`'ethernet1/3' is already in use` when another snippet has it) and the value is set per firewall (DeviceOnPrem, later step); the Panorama interface of each variable is in `interface_variables` of the change file |
 | interface management profiles of the template | `interface-management-profiles` in the snippet |
 | zone interfaces | the zone references the interface variables (`outside` → `$ethernet1_1`); an interface a zone uses that is not in the template → placeholder `ethernet-interfaces` entry → `placeholders` |
 | log forwarding profile without match list | SCM requires a match list: placeholder match list `pan-os-php-placeholder` (traffic, `All Logs`, no destination – forwards nothing, as before) → `placeholders` |
+| custom URL category without entries | SCM refuses an empty list: placeholder entry `empty.empty` (matches no real URL) → `placeholders`; the URL access profiles that use the category can be created |
+| rule `profile-setting` with an empty `group` (PAN-OS: no profile) | removed – SCM refuses an empty group |
 | custom application (not PAN-OS predefined – a custom application with a predefined name is not created, warning) | `applications` with category, subcategory, technology, risk, description and the characteristics (evasive, …); signatures, default ports, timeouts … not imported → `placeholders` |
 | application group / application filter | `application-groups` (members) / `application-filters` (category, sub_category, technology, risk, characteristics) |
 | application used by a rule / application group | resolved in this order: custom / group / filter of the configuration; PAN-OS predefined (`lib/object-classes/predefined.xml`, incl. containers – exists in SCM, nothing created); cloud App-ID / SaaS application (exists in SCM, nothing created) – checked with the cloud App-ID API helper (github.com/swaschkut/pan-os_cloud-appid-API-helper): `cloud-appid-api=auto` (default) uses `http://localhost:8080` / `http://host.docker.internal:8080` and, when it is not reachable and only when an application has to be checked, starts the container with docker (`docker start panos_cloud-appid_mock`, else `docker run -d -p 8080:80 --name panos_cloud-appid_mock swaschkut/pan-os_cloud-appid_api-helper`; inside the pan-os-php container docker needs the mounted `/var/run/docker.sock`); `cloud-appid-api=<URL>` a given helper; `off` / helper not available: the list `lib/object-classes/cloud-appid/cloud-appid.txt`; else placeholder custom application → `placeholders` |
@@ -93,10 +95,12 @@ The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
   reason
 * `incomplete`: imported objects with content that has no SCM field
 * `not_imported`: objects that cannot be created (with the reason) and what refers to them
+* `interface_variables`: `[{snippet, variable, interface}]` – the Panorama interface of every interface variable (the value
+  per firewall later)
 * `warnings`: what is not part of this step (NAT / decryption / … rules, data filtering profiles …)
 
-`scm_pa_change.php` does not send `source`, `placeholders`, `incomplete`, `not_imported`, `warnings` and shows their
-numbers.
+`scm_pa_change.php` does not send `source`, `placeholders`, `incomplete`, `not_imported`, `interface_variables`,
+`warnings` and shows their numbers.
 
 ## Translation details
 
@@ -117,6 +121,21 @@ numbers.
 
 Open: whether SCM accepts an object in a folder with the name of an object in `All` (Panorama: device-group object
 with the name of a shared object, here URL category `Custom-No-Decrypt`) – both failed for the missing type.
+
+## Live findings, run 2 (lab tenant, 2026-11-14, 163 requests + 32 internal edits)
+
+| SCM answer | cause | fix |
+|---|---|---|
+| URL category `list is invalid` | custom URL category without entries | placeholder entry (see above) |
+| ethernet interface `default-value 'ethernet1/3' is already in use` | default value unique in the tenant | no `default_value`, `interface_variables` list |
+| layer3 sub interface `'$ethernet1_2-1' is invalid` | SCM name pattern for sub interfaces | `$ethernet1_2.1` |
+| spyware / vulnerability `rules -> … -> action is missing 'action'` | action `default` sent as empty action | `rules` only through the internal UI API |
+| DNS security `sinkhole.ipv4_address must be one of [127.0.0.1, pan-sinkhole-default-ip]` | Panorama sinkhole `sinkhole.paloaltonetworks.com` / `2600:5200::1` | sinkhole only through the internal UI API |
+| rule `profile-setting is invalid` | `<group/>` empty in Panorama | `profile-setting` removed |
+| profile groups / rules / zones / URL access profiles `… is not a valid reference` | follow-up of the above | – |
+
+`execute` shows one line per request while it runs (`[  n/total  seconds] status action endpoint name`, then the
+internal edits) and at the end the requests that did not work, together.
 
 ## Notes for the first run
 

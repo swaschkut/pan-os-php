@@ -132,7 +132,7 @@ class SCMPrismaAccessChange
         $this->placeholders = isset($j['placeholders']) && is_array($j['placeholders']) ? $j['placeholders'] : array();
         foreach( $j as $key => $list )
         {
-            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'incomplete', 'placeholders', 'warnings'), TRUE) )
+            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'incomplete', 'placeholders', 'warnings', 'interface_variables'), TRUE) )
                 continue;
             if( !is_array($list) || ( count($list) > 0 && array_keys($list) !== range(0, count($list) - 1) ) )
             {
@@ -422,10 +422,11 @@ class SCMPrismaAccessChange
     }
 
     /** sends the plan, then the internal UI API edits; optional push of the touched folders (after both) */
-    public function execute( $push = false, $continueOnError = false )
+    public function execute( $push = false, $continueOnError = false, $progress = null )
     {
-        $log = SCMPrismaAccessSync::apply( $this->connector, $this->plan, array( 'execute' => true, 'push' => false, 'continue_on_error' => $continueOnError ) );
-        $this->internalLog = $this->internalApply( true );
+        $log = SCMPrismaAccessSync::apply( $this->connector, $this->plan, array( 'execute' => true, 'push' => false, 'continue_on_error' => $continueOnError,
+            'progress' => $progress ) );
+        $this->internalLog = $this->internalApply( true, $progress );
         $log['internal'] = $this->internalLog;
         if( $push )
         {
@@ -529,11 +530,14 @@ class SCMPrismaAccessChange
      * dry-run: per task 'edit' (live differs), 'unchanged', 'after create' (object does not exist yet), 'error'
      * execute: 'done', 'unchanged', 'failed', 'skipped' (object not found after the public step)
      */
-    public function internalApply( $execute )
+    public function internalApply( $execute, $progress = null )
     {
         $results = array();
-        foreach( $this->internalTasks() as $e )
+        $tasks = $this->internalTasks();
+        foreach( $tasks as $e )
         {
+            if( $progress !== null && count($results) > 0 )
+                call_user_func( $progress, end($results) + array( 'internal' => true ), count($results), count($tasks) );
             $in = $e['_internal'];
             $folder = $e['folder'];
             $r = array( 'type' => $e['type'], 'name' => $e['name'], 'folder' => $folder, 'prefix' => $in['prefix'] );
@@ -584,6 +588,8 @@ class SCMPrismaAccessChange
                 $r['message'] = is_array($answer['json']) ? json_encode( $answer['json'], JSON_UNESCAPED_SLASHES ) : ( is_string($answer['errors']) ? $answer['errors'] : json_encode($answer['errors']) );
             $results[] = $r;
         }
+        if( $progress !== null && count($results) > 0 )
+            call_user_func( $progress, end($results) + array( 'internal' => true ), count($results), count($tasks) );
         return $results;
     }
 

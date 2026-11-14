@@ -975,6 +975,13 @@ class SCMPrismaAccessSync
      * @param array $opts execute (bool), continue_on_error, push, ops (null | list of op ids), source_dir (override)
      * @return array apply log
      */
+    /** opts['progress']: callable( $result, $n, $total ) after every operation (live output while executing) */
+    private static function progress( $opts, $res, $n, $total )
+    {
+        if( isset($opts['progress']) && is_callable($opts['progress']) )
+            call_user_func( $opts['progress'], $res, $n, $total );
+    }
+
     public static function apply( $connector, $plan, $opts )
     {
         $opts += array( 'execute' => false, 'continue_on_error' => false, 'push' => false, 'ops' => null, 'source_dir' => null, 'skip_hash_check' => false );
@@ -1002,6 +1009,7 @@ class SCMPrismaAccessSync
             {
                 $res['status'] = $op['blocked'] !== null ? 'blocked' : 'skipped';
                 $log['results'][] = $res;
+                self::progress( $opts, $res, count($log['results']), count($plan['operations']) );
                 continue;
             }
             foreach( $op['depends_on'] as $dep )
@@ -1014,6 +1022,7 @@ class SCMPrismaAccessSync
             {
                 $res['status'] = isset($res['status']) ? $res['status'] : 'skipped';
                 $log['results'][] = $res;
+                self::progress( $opts, $res, count($log['results']), count($plan['operations']) );
                 continue;
             }
 
@@ -1036,6 +1045,7 @@ class SCMPrismaAccessSync
                     $res['status'] = 'failed';
                     $res['message'] = 'secret missing: ' . $missing;
                     $log['results'][] = $res;
+                self::progress( $opts, $res, count($log['results']), count($plan['operations']) );
                     $failed = true;
                     continue;
                 }
@@ -1140,6 +1150,7 @@ class SCMPrismaAccessSync
             elseif( $res['status'] == 'failed' || $res['status'] == 'conflict' )
                 $failed = true;
             $log['results'][] = $res;
+                self::progress( $opts, $res, count($log['results']), count($plan['operations']) );
         }
 
         unset( $folders[""] );

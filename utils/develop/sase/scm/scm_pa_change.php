@@ -177,9 +177,31 @@ if( !isset(PH::$args['yes']) )
     if( $answer !== (string)$tsg )
         derr( "aborted - nothing was sent", null, FALSE );
 }
-$log = $change->execute( isset(PH::$args['push']), isset(PH::$args['continue-on-error']) );
+// live output: one line per request while it runs (the summary follows at the end)
+$started = microtime(TRUE);
+$progress = function( $r, $n, $total ) use( $started ){
+    $elapsed = (int)( microtime(TRUE) - $started );
+    if( !empty($r['internal']) )
+        $line = sprintf( "   [internal %3d/%-3d %4ds] %-8s %s %s [folder %s]", $n, $total, $elapsed, $r['status'], $r['type'], $r['name'], $r['folder'] );
+    else
+        $line = sprintf( "   [%4d/%-4d %4ds] %-8s %-7s %s %s", $n, $total, $elapsed, $r['status'], $r['action'], $r['endpoint'], $r['name'] );
+    if( isset($r['message']) )
+        $line .= " - " . $r['message'];
+    if( isset($r['requests']) )
+        foreach( $r['requests'] as $q )
+            if( isset($q['error']) )
+                $line .= " - HTTP " . $q['http_code'] . " " . $q['error'];
+    PH::print_stdout( $line );
+};
+PH::print_stdout( "   (one line per request while it runs; summary at the end)" );
+$log = $change->execute( isset(PH::$args['push']), isset(PH::$args['continue-on-error']), $progress );
+PH::print_stdout();
+PH::print_stdout( PH::boldText(" * result") );
+// the requests were shown while they ran - here only the ones that did not work, together
 foreach( $log['results'] as $r )
 {
+    if( $r['status'] == 'done' )
+        continue;
     $line = sprintf( "   %-8s %-8s %-7s %s %s", $r['op'], $r['status'], $r['action'], $r['endpoint'], $r['name'] );
     if( isset($r['message']) )
         $line .= " - " . $r['message'];

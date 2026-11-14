@@ -253,10 +253,13 @@ foreach( $appScopes as $as )
                 . ( count($missing) ? " - not imported: " . implode(", ", $missing) . " (application identification not complete)" : "" ) ) );
     }
 
-// interfaces of the templates / template-stacks -> SCM interface variables in the snippet ($ethernet1_1 with
-// default_value ethernet1/1, sub interfaces $ethernet1_2-1, tunnel $tunnel-1 …), IP addresses included; the value per
-// firewall (DeviceOnPrem) comes with the firewalls (later step). Interface management profiles of the template as well.
+// interfaces of the templates / template-stacks -> SCM interface variables in the snippet ($ethernet1_1, sub interfaces
+// $ethernet1_2.1, tunnel $tunnel-1 …), IP addresses included. No default_value: SCM keeps it unique in the tenant
+// (live: "'ethernet1/3' is already in use") and the value is set per firewall (DeviceOnPrem, later step) - the
+// Panorama interface of each variable is listed in 'interface_variables' of the change file (not sent).
+// Interface management profiles of the template as well.
 $ifIncomplete = array();
+$ifVariables = array();        // [snippet, variable, interface]
 $ifCreated = array();          // snippet => [variable => true]
 /** text leaves of a node are only "no" / "disable" / empty: PAN-OS defaults, nothing lost */
 function onlyDefaults( DOMElement $n )
@@ -337,8 +340,9 @@ foreach( $ifScopes as $is )
         $change['interface-management-profiles'][] = $item;
         $counts['interface-management-profiles'] = ( isset($counts['interface-management-profiles']) ? $counts['interface-management-profiles'] : 0 ) + 1;
     }
-    $add = function( $type, $item, $missing ) use( &$change, &$counts, &$ifIncomplete, &$ifCreated, $sn ){
+    $add = function( $type, $item, $missing, $panosName ) use( &$change, &$counts, &$ifIncomplete, &$ifCreated, &$ifVariables, $sn ){
         $change[$type][] = $item;
+        $ifVariables[] = array( 'snippet' => $sn, 'variable' => $item['name'], 'interface' => $panosName );
         $counts[$type] = ( isset($counts[$type]) ? $counts[$type] : 0 ) + 1;
         $ifCreated[$sn][$item['name']] = TRUE;
         if( count($missing) > 0 )
@@ -347,7 +351,7 @@ foreach( $ifScopes as $is )
     foreach( $xpi->query($base . "interface/ethernet/entry", $root) as $eth )
     {
         $name = $eth->getAttribute('name');
-        $item = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($name), 'default_value' => $name );
+        $item = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($name) );
         $missing = array();
         $units = array();
         foreach( $eth->childNodes as $c )
@@ -375,7 +379,7 @@ foreach( $ifScopes as $is )
             elseif( !onlyDefaults($c) )
                 $missing[] = $c->tagName;
         }
-        $add( 'ethernet-interfaces', $item, $missing );
+        $add( 'ethernet-interfaces', $item, $missing, $name );
         foreach( $units as $uu )
         {
             list($mode, $u) = $uu;
@@ -388,13 +392,13 @@ foreach( $ifScopes as $is )
                     + ( $tag !== null ? array( 'tag' => (int)trim($tag->textContent) ) : array() ) + layer3Body( $u, $umissing );
                 if( ($cm = $xpi->query("comment", $u)->item(0)) !== null )
                     $sub['comment'] = trim($cm->textContent);
-                $add( 'layer3-subinterfaces', $sub, $umissing );
+                $add( 'layer3-subinterfaces', $sub, $umissing, $uname );
             }
             else
             {
                 $sub = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($uname), 'parent_interface' => $item['name'] )
                     + ( $tag !== null ? array( 'vlan_tag' => trim($tag->textContent) ) : array() );
-                $add( 'layer2-subinterfaces', $sub, $umissing );
+                $add( 'layer2-subinterfaces', $sub, $umissing, $uname );
             }
         }
     }
@@ -402,11 +406,11 @@ foreach( $ifScopes as $is )
         foreach( $xpi->query($base . "interface/" . $tag . "/units/entry", $root) as $u )
         {
             $missing = array();
-            $item = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($u->getAttribute('name')), 'default_value' => $u->getAttribute('name') )
+            $item = array( 'snippet' => $sn, 'name' => SCMImporter::interfaceVariable($u->getAttribute('name')) )
                 + layer3Body( $u, $missing );
             if( ($cm = $xpi->query("comment", $u)->item(0)) !== null )
                 $item['comment'] = trim($cm->textContent);
-            $add( $type, $item, $missing );
+            $add( $type, $item, $missing, $u->getAttribute('name') );
         }
     foreach( array('aggregate-ethernet') as $tag )
         foreach( $xpi->query($base . "interface/" . $tag . "/entry", $root) as $ae )
@@ -655,6 +659,8 @@ foreach( $importer->placeholders as $ph )
         }
 }
 $change['placeholders'] = $placeholders;
+if( count($ifVariables) > 0 )
+    $change['interface_variables'] = $ifVariables;
 $change['not_imported'] = $notImported;
 $warnings = array_merge( $warnings, $warningsApps );
 $change['warnings'] = $warnings;
