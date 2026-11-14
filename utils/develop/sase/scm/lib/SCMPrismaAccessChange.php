@@ -265,10 +265,14 @@ class SCMPrismaAccessChange
     public function export( $label )
     {
         $scope = $this->scope();
+        // heavy types (applications: the list answer contains the predefined catalog of every folder) are not
+        // exported as list - only the objects of the request are looked up by name
+        $lookupTypes = array_values( array_intersect( $scope['types'], SCMPrismaAccessExport::CONFIG_HEAVY_TYPES ) );
+        $listTypes = array_values( array_diff( $scope['types'], $lookupTypes ) );
         $e = new SCMPrismaAccessExport( $this->connector, $this->tsg, $this->outdir, null, array( SCMPrismaAccessExport::AREA_CONFIG ) );
         $e->configOptions = array(
             'containers' => $scope['containers'],
-            'types' => $scope['types'],
+            'types' => count($listTypes) > 0 ? $listTypes : array( '-' ),
             'scope' => null,
             'mode' => 'all',
             'devices' => false,
@@ -282,7 +286,56 @@ class SCMPrismaAccessChange
         $e->exportConfig();
         $e->writeManifest( PH::frameworkVersion() );
         $this->addDetailFields( $dir );
+        if( count($lookupTypes) > 0 )
+            $this->lookupByName( $dir, $lookupTypes );
         return $dir;
+    }
+
+    /** objects of the request of these types: GET <path>?folder|snippet=&name= per object, written like an export */
+    private function lookupByName( $dir, array $types )
+    {
+        $manifest = json_decode( file_get_contents($dir . "/manifest.json"), TRUE );
+        $wanted = array();
+        foreach( $this->request['objects'] as $o )
+            if( in_array($o['type'], $types, TRUE) )
+            {
+                $kind = isset($o['folder']) ? 'folder' : 'snippet';
+                $wanted[$o['type'] . "|" . $kind . "|" . $o[$kind]][] = $o['name'];
+            }
+        $n = 0;
+        foreach( $wanted as $k => $names )
+        {
+            list($type, $kind, $cName) = explode("|", $k, 3);
+            $t = $this->types[$type];
+            $data = array();
+            foreach( array_unique($names) as $name )
+            {
+                $url = $this->connector->url_api . $t['path'] . "?" . http_build_query( array( $kind => $cName, 'name' => $name ), '', '&', PHP_QUERY_RFC3986 );
+                $r = $this->connector->sendSCMAPIRequest( "GET", $url, false, FALSE );
+                $n++;
+                if( !is_array($r['json']) )
+                    continue;
+                $list = isset($r['json']['data']) ? $r['json']['data'] : ( isset($r['json']['name']) ? array( $r['json'] ) : array() );
+                foreach( $list as $obj )
+                    if( is_array($obj) && isset($obj['name']) && $obj['name'] === $name && isset($obj[$kind]) && $obj[$kind] === $cName )
+                        $data[] = $obj;
+            }
+            $file = SCMPrismaAccessExport::AREA_CONFIG . "/" . $kind . "s/" . SCMPrismaAccessExport::slug($cName) . "/" . sprintf("%02d", $t['order']) . "_" . $type . ".json";
+            if( !is_dir( dirname($dir . "/" . $file) ) )
+                mkdir( dirname($dir . "/" . $file), 0700, TRUE );
+            $this->writeJson( $dir . "/" . $file, array( 'endpoint' => $type, 'area' => SCMPrismaAccessExport::AREA_CONFIG,
+                'url' => $t['path'] . "?" . $kind . "=" . rawurlencode($cName), 'tsg_id' => $this->tsg, 'fetched_at' => date('c'),
+                'http_code' => 200, 'status' => 'ok', 'error' => null, 'container' => $cName, 'container_kind' => $kind,
+                'fetched_as' => 'by name (scm_pa_change.php)', 'data' => $data ) );
+            $manifest['endpoints'][] = array( 'area' => SCMPrismaAccessExport::AREA_CONFIG, 'order' => $t['order'], 'name' => $type,
+                'group' => $t['group'], 'container' => $cName, 'container_kind' => $kind, 'category' => 'dependency', 'scope' => $kind,
+                'optional' => true, 'url' => $t['path'] . "?" . $kind . "=" . rawurlencode($cName), 'depends_on' => array(),
+                'fetched_as' => 'by name', 'file' => $file, 'http_code' => 200, 'fetched_at' => date('c'), 'status' => 'ok', 'count' => count($data) );
+        }
+        $opt = isset($manifest['config']['options']['types']) && is_array($manifest['config']['options']['types']) ? $manifest['config']['options']['types'] : array();
+        $manifest['config']['options']['types'] = array_values( array_unique( array_merge( array_diff($opt, array('-')), $types ) ) );
+        $this->writeJson( $dir . "/manifest.json", $manifest );
+        PH::print_stdout( " - [config] " . implode(", ", $types) . ": " . $n . " lookup(s) by name (no list export - predefined catalog)" );
     }
 
     /**

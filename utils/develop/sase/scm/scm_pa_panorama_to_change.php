@@ -216,10 +216,18 @@ $appFlags = array( 'evasive-behavior' => 'evasive', 'consume-big-bandwidth' => '
     'able-to-transfer-file' => 'transfers_files', 'has-known-vulnerability' => 'has_known_vulnerabilities', 'tunnel-other-application' => 'tunnels_other_apps',
     'prone-to-misuse' => 'prone_to_misuse', 'pervasive-use' => 'pervasive' );
 $appPlaceholders = array();
+$warningsApps = array();
+$predefinedApps = AppStore::getPredefinedStore( $pano );
 $xpa = new DOMXPath($pano->xmldoc);
 foreach( $appScopes as $as )
     foreach( $xpa->query("application/entry", $as[1]) as $app )
     {
+        // only applications that are not PAN-OS predefined (they exist in SCM)
+        if( $predefinedApps->find($app->getAttribute('name'), null, false) !== null )
+        {
+            $warningsApps[] = "custom application '" . $app->getAttribute('name') . "' (" . $as[0] . ") has the name of a PAN-OS predefined application - not created, SCM uses the predefined one";
+            continue;
+        }
         $item = array( 'folder' => $as[0], 'name' => $app->getAttribute('name') );
         $missing = array();
         foreach( $app->childNodes as $c )
@@ -290,7 +298,6 @@ foreach( isset($change['security-rules']) ? $change['security-rules'] : array() 
 foreach( isset($change['application-groups']) ? $change['application-groups'] : array() as $g )
     foreach( $g['members'] as $a )
         $refs[$a][] = array( $g['folder'], "application group '" . $g['name'] . "'" );
-$predefinedApps = AppStore::getPredefinedStore( $pano );
 
 /** GET without PHP warnings (the pan-os-php error handler stops on warnings); false if not reachable */
 function httpGetQuiet( $url, $timeout = 5 )
@@ -468,6 +475,7 @@ foreach( $importer->placeholders as $ph )
 }
 $change['placeholders'] = $placeholders;
 $change['not_imported'] = $notImported;
+$warnings = array_merge( $warnings, $warningsApps );
 $change['warnings'] = $warnings;
 
 file_put_contents( $args['out'], json_encode( $change, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" );

@@ -67,6 +67,11 @@ call of the SCM UI, HAR 2026-11-14) with the `@uuid` / `@loc` of the live entry.
 `unchanged` / `after create`; the verification compares the sections; `push` pushes after these edits.
 `ui-api-host=` sets the host of the tenant region (default `paas-3.prod.eu.panorama.paloaltonetworks.com`).
 
+`applications`: the export does not read the application list (the answer contains the PAN-OS predefined catalog of
+every folder, ~45000 objects); only the applications of the change file are looked up by name
+(`GET /config/objects/v1/applications?folder=&name=`). Predefined / cloud App-ID applications are never part of a
+change file.
+
 Zones (`zones`) are the only network type a change request can contain (they belong to the rules that use them).
 
 Not supported (refused with a message; use the sync workflow): other network / device settings, Prisma Access
