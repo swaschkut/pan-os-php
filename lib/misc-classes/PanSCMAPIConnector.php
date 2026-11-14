@@ -3011,7 +3011,7 @@ class PanSCMAPIConnector
         if( $entry === null )
             return null;
 
-        if( $sub->$profileStoreName->find($object['name']) !== null )
+        if( self::SCM_profileAlreadyLoaded( $sub, $profileStoreName, $object['name'] ) )
             return "continue";
 
         // virus-and-wildfire-analysis without decoder (e.g. created through the public API): SCM applies the
@@ -3131,12 +3131,25 @@ class PanSCMAPIConnector
         }
     }
 
+    /**
+     * a profile of this name is already loaded here or in a parent (folder answers contain the inherited objects as
+     * well) - a pan-os-php predefined profile (predefined.xml, PAN-OS content) does not count: SCM profiles with the
+     * name of a PAN-OS predefined profile (e.g. 'default' created as copy by the Panorama import) are loaded
+     */
+    public static function SCM_profileAlreadyLoaded( $sub, $profileStoreName, $name )
+    {
+        $f = $sub->$profileStoreName->find( $name );
+        if( $f === null )
+            return FALSE;
+        $root = is_object($f->owner) ? $f->owner->owner : null;
+        return !( $root instanceof BuckbeakConf || $root instanceof FawkesConf );
+    }
+
     private function SCM_API_object_import_preperation($object, $sub, $profileStoreName)
     {
         if( isset( $object['id'] ) )
         {
-            $tmp_url = $sub->$profileStoreName->find($object['name']);
-            if ($tmp_url !== null)
+            if( self::SCM_profileAlreadyLoaded( $sub, $profileStoreName, $object['name'] ) )
                 return "continue";
 
 
