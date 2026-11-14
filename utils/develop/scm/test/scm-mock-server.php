@@ -34,7 +34,7 @@ if( ($_SERVER['HTTP_AUTHORIZATION'] ?? '') !== 'Bearer mock-token' )
     err(401, 'missing or wrong token');
 
 $st = json_decode(file_get_contents($STATE), TRUE);
-if( !preg_match('#^/config/(objects|security|network|setup)/v1/([a-z-]+)(?:/([^/]+))?$#', $path, $m) )
+if( !preg_match('#^/config/(objects|security|network|setup|identity|device)/v1/([a-z-]+)(?:/([^/]+))?$#', $path, $m) )
     err(404, 'unknown path ' . $path);
 $res = $m[2];
 $id = $m[3] ?? null;

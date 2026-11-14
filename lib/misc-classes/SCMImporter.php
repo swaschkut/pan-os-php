@@ -50,28 +50,50 @@ class SCMImporter
         'log-settings/profiles',
         'profiles/custom-url-category', 'profiles/spyware', 'profiles/vulnerability', 'profiles/url-filtering',
         'profiles/file-blocking', 'profiles/dns-security', 'profiles/virus-and-wildfire-analysis',
-        'profile-group',
+        'profile-group', 'external-list', 'profiles/decryption',
+        'log-settings/syslog', 'log-settings/http', 'server-profile/ldap', 'server-profile/radius',
+        'server-profile/tacplus', 'server-profile/kerberos', 'authentication-profile',
     );
+
+    /** secrets of server profiles: encrypted in the Panorama export - removed, listed in 'incomplete' */
+    static public $secretRefs = array(
+        'ldap-server-profiles' => array( 'bind-password' ),
+        'radius-server-profiles' => array( 'server/entry/secret' ),
+        'tacacs-server-profiles' => array( 'server/entry/secret' ),
+        'http-server-profiles' => array( 'server/entry/password' ),
+    );
+
+    /** template network configuration imported into the snippet (below devices/entry of the template) */
+    static public $networkPaths = array(
+        'network/ike/crypto-profiles/ike-crypto-profiles', 'network/ike/crypto-profiles/ipsec-crypto-profiles',
+        'network/ike/gateway', 'network/tunnel/ipsec', 'network/virtual-router', 'network/logical-router',
+    );
+
+    /** interface names in network objects -> interface variables (relative XPath per resource) */
+    static public $interfaceRefs = array(
+        'virtual-routers' => array( 'interface/member', 'routing-table/ip/static-route/entry/interface',
+            'routing-table/ipv6/static-route/entry/interface' ),
+        'logical-routers' => array( 'vrf/entry/interface/member', 'vrf/entry/routing-table/ip/static-route/entry/interface',
+            'vrf/entry/routing-table/ipv6/static-route/entry/interface' ),
+        'ike-gateways' => array( 'local-address/interface' ),
+        'ipsec-tunnels' => array( 'tunnel-interface' ),
+        'pbf-rules' => array( 'from/interface/member', 'action/forward/egress-interface' ),
+    );
+
+    /** rule bases imported (pre / post below Panorama device-groups / shared, rulebase of a firewall vsys) */
+    static public $ruleTypes = array( 'security', 'nat', 'decryption', 'application-override', 'pbf', 'qos', 'authentication' );
+
+    /** rule bases whose SCM rules have a group_tag field */
+    static public $groupTagRules = array( 'app-override-rules', 'authentication-rules' );
 
     /** configuration that exists in Panorama / PAN-OS but is not imported; reported with the number of entries */
     static public $notImported = array(
-        'external-list' => 'external dynamic lists',
         'application' => 'custom applications',
         'application-group' => 'application groups',
         'application-filter' => 'application filters',
         'profiles/virus' => 'antivirus profiles (SCM: wildfire-anti-virus-profiles, combined with WildFire)',
         'profiles/wildfire-analysis' => 'WildFire profiles (SCM: wildfire-anti-virus-profiles, combined with antivirus)',
         'profiles/data-filtering' => 'data filtering profiles',
-        'profiles/decryption' => 'decryption profiles',
-        'pre-rulebase/nat/rules' => 'NAT pre-rules', 'post-rulebase/nat/rules' => 'NAT post-rules',
-        'rulebase/nat/rules' => 'NAT rules',
-        'pre-rulebase/decryption/rules' => 'decryption pre-rules', 'post-rulebase/decryption/rules' => 'decryption post-rules',
-        'rulebase/decryption/rules' => 'decryption rules',
-        'pre-rulebase/application-override/rules' => 'application override pre-rules',
-        'rulebase/application-override/rules' => 'application override rules',
-        'pre-rulebase/pbf/rules' => 'PBF pre-rules', 'rulebase/pbf/rules' => 'PBF rules',
-        'pre-rulebase/qos/rules' => 'QoS pre-rules', 'rulebase/qos/rules' => 'QoS rules',
-        'pre-rulebase/authentication/rules' => 'authentication pre-rules', 'rulebase/authentication/rules' => 'authentication rules',
     );
 
     /** zone protection profile: PAN-OS field => SCM field (same setting, other name) */
@@ -432,7 +454,8 @@ class SCMImporter
         $xp = new DOMXPath($folder->xmlroot->ownerDocument);
         $used = array();
         foreach( array('pre-rulebase', 'post-rulebase') as $rb )
-            foreach( $xp->query($rb . "/security/rules/entry/from/member|" . $rb . "/security/rules/entry/to/member", $folder->xmlroot) as $m )
+            foreach( $xp->query($rb . "/*[self::security or self::nat or self::decryption]/rules/entry/from/member|"
+                . $rb . "/*[self::security or self::nat or self::decryption]/rules/entry/to/member", $folder->xmlroot) as $m )
             {
                 $z = trim($m->textContent);
                 if( $z !== '' && $z !== 'any' )
@@ -524,7 +547,10 @@ class SCMImporter
     private function reportSkippedShared(DOMElement $shared)
     {
         $n = 0;
-        foreach( array_merge(self::$objectPaths, array('pre-rulebase/security/rules', 'post-rulebase/security/rules')) as $rel )
+        $rulePaths = array();
+        foreach( self::$ruleTypes as $rt )
+            $rulePaths = array_merge( $rulePaths, array('pre-rulebase/' . $rt . '/rules', 'post-rulebase/' . $rt . '/rules') );
+        foreach( array_merge(self::$objectPaths, $rulePaths) as $rel )
             $n += (new DOMXPath($shared->ownerDocument))->query($rel . "/entry", $shared)->length;
         if( $n > 0 )
             $this->warnings[] = "Panorama shared: " . $n . " object(s) / rule(s) not imported (shared=skip) - device-group objects / rules that use them fail";
@@ -1074,13 +1100,14 @@ class SCMImporter
         foreach( self::$objectPaths as $rel )
             $this->copyEntries($src, $rel, $dest, $rel, $label);
 
-        if( $panorama )
-        {
-            $this->copyEntries($src, 'pre-rulebase/security/rules', $dest, 'pre-rulebase/security/rules', $label);
-            $this->copyEntries($src, 'post-rulebase/security/rules', $dest, 'post-rulebase/security/rules', $label);
-        }
-        else
-            $this->copyEntries($src, 'rulebase/security/rules', $dest, 'pre-rulebase/security/rules', $label);
+        foreach( self::$ruleTypes as $rt )
+            if( $panorama )
+            {
+                $this->copyEntries($src, 'pre-rulebase/' . $rt . '/rules', $dest, 'pre-rulebase/' . $rt . '/rules', $label);
+                $this->copyEntries($src, 'post-rulebase/' . $rt . '/rules', $dest, 'post-rulebase/' . $rt . '/rules', $label);
+            }
+            else
+                $this->copyEntries($src, 'rulebase/' . $rt . '/rules', $dest, 'pre-rulebase/' . $rt . '/rules', $label);
 
         $this->reportNotImported($src, $label);
     }
@@ -1106,7 +1133,11 @@ class SCMImporter
             foreach( self::$objectPaths as $rel )
                 $this->copyEntries($shared, $rel, $dest, $rel, $label . " shared");
         foreach( $xp->query("devices/entry", $config) as $dev )
+        {
             $this->copyZPP($dev, $dest, $label);
+            foreach( self::$networkPaths as $rel )
+                $this->copyEntries($dev, $rel, $dest, 'devices/entry/' . $rel, $label);
+        }
     }
 
     private function copyZones(DOMElement $vsys, $dest, $label)
@@ -1163,6 +1194,105 @@ class SCMImporter
      * PAN-OS fields without an SCM counterpart that carry no configuration of their own are removed,
      * so they do not mark the request for review. Anything else stays and is checked by type=scm-changes.
      */
+    /** target and group-tag of NAT / decryption rules (as for security rules) */
+    private function cleanRuleCommon(DOMElement $entry, $resource, $label)
+    {
+        $target = DH::findFirstElement('target', $entry);
+        if( $target !== FALSE )
+        {
+            $devices = DH::findFirstElement('devices', $target);
+            $negate = DH::findFirstElement('negate', $target);
+            if( ( $devices === FALSE || DH::firstChildElement($devices) === FALSE ) && ( $negate === FALSE || trim($negate->textContent) != 'yes' ) )
+                $entry->removeChild($target);
+            else
+            {
+                $entry->removeChild($target);
+                $this->warnings[] = $label . ": rule '" . $entry->getAttribute('name') . "' has a target (firewalls); SCM rules have no target";
+                $this->addIncomplete($resource, $entry->getAttribute('name'), "target (firewalls) - SCM rules have no target, review");
+            }
+        }
+        $groupTag = DH::findFirstElement('group-tag', $entry);
+        if( $groupTag !== FALSE && !in_array($resource, self::$groupTagRules, TRUE) )
+        {
+            $this->groupTags[trim($groupTag->textContent)] = TRUE;
+            $this->addIncomplete($resource, $entry->getAttribute('name'), "group_tag '" . trim($groupTag->textContent) . "' not imported (no SCM field)");
+            $entry->removeChild($groupTag);
+        }
+    }
+
+    /** NAT rule: PAN-OS destination-translation -> SCM translated_address / translated_port / dns_rewrite at the
+     *  rule; interfaces -> interface variables of the snippets */
+    private function cleanNatRule(DOMElement $entry, $resource)
+    {
+        $dt = DH::findFirstElement('destination-translation', $entry);
+        if( $dt !== FALSE )
+        {
+            foreach( array('translated-address', 'translated-port', 'dns-rewrite') as $tag )
+                if( ($n = DH::findFirstElement($tag, $dt)) !== FALSE )
+                    $entry->appendChild($n);
+            if( DH::firstChildElement($dt) !== FALSE )
+                $this->addIncomplete($resource, $entry->getAttribute('name'), "destination translation: settings without SCM field not imported");
+            $entry->removeChild($dt);
+        }
+        if( $this->interfaceVariables )
+        {
+            $xp = new DOMXPath($entry->ownerDocument);
+            foreach( $xp->query("to-interface|source-translation/*/interface-address/interface|source-translation/*/fallback/interface-address/interface", $entry) as $n )
+            {
+                $v = trim($n->textContent);
+                if( $v !== '' && $v !== 'any' )
+                    $n->textContent = self::interfaceVariable($v);
+            }
+        }
+    }
+
+    /** routers, IKE gateways, IPsec tunnels of a template: interfaces -> interface variables, disabled routing
+     *  protocols removed, keys (encrypted in the Panorama export) removed -> incomplete */
+    private function cleanNetworkObject(DOMElement $entry, $resource)
+    {
+        $xp = new DOMXPath($entry->ownerDocument);
+        $name = $entry->getAttribute('name');
+        if( $this->interfaceVariables )
+            foreach( self::$interfaceRefs[$resource] as $rel )
+                foreach( $xp->query($rel, $entry) as $n )
+                {
+                    $v = trim($n->textContent);
+                    if( $v !== '' && $v[0] !== '$' )
+                        $n->textContent = self::interfaceVariable($v);
+                }
+        if( $resource == 'virtual-routers' || $resource == 'logical-routers' )
+        {
+            $removed = array();
+            foreach( $xp->query("protocol/*|vrf/entry/*[self::bgp or self::ospf or self::ospfv3 or self::rip]", $entry) as $proto )
+            {
+                $en = DH::findFirstElement('enable', $proto);
+                if( $en !== FALSE && trim($en->textContent) == 'no' )
+                {
+                    $removed[] = $proto->tagName;
+                    $proto->parentNode->removeChild($proto);
+                }
+            }
+            if( ($p = DH::findFirstElement('protocol', $entry)) !== FALSE && DH::firstChildElement($p) === FALSE )
+                $entry->removeChild($p);
+            if( count($removed) > 0 )
+                $this->warnings[] = $resource . " '" . $name . "': disabled routing protocols not imported: " . implode(", ", array_unique($removed));
+        }
+        if( $resource == 'ipsec-tunnels' )
+            foreach( $xp->query("manual-key", $entry) as $mk )
+            {
+                $entry->removeChild($mk);
+                $this->addIncomplete($resource, $name, "manual key not imported (keys encrypted in the Panorama export) - configure it in SCM");
+            }
+        if( $resource == 'ike-gateways' )
+            foreach( $xp->query("authentication/pre-shared-key/key", $entry) as $k )
+            {
+                // the key is encrypted in the Panorama export: never in the change file - the apply takes the
+                // cleartext from psk-list.csv (scm_pa_change.php psk-list=); the value here only marks the field
+                $k->textContent = 'from-psk-list';
+                $this->addIncomplete($resource, $name, "pre-shared key not in the Panorama export (encrypted): psk-list.csv (ike_gateway, psk_new) + scm_pa_change.php psk-list=<file>");
+            }
+    }
+
     private function cleanEntry(DOMElement $entry, $resource, $label)
     {
         // Panorama / PAN-OS uuids are not SCM ids
@@ -1195,6 +1325,30 @@ class SCMImporter
             foreach( explode(self::INCOMPLETE_SEP, $entry->getAttribute(self::INCOMPLETE_ATTR)) as $what )
                 $this->addIncomplete($resource, $entry->getAttribute('name'), $what);
             $entry->removeAttribute(self::INCOMPLETE_ATTR);
+        }
+
+        if( in_array($resource, array('nat-rules', 'decryption-rules', 'app-override-rules', 'pbf-rules', 'qos-policy-rules', 'authentication-rules'), TRUE) )
+            $this->cleanRuleCommon($entry, $resource, $label);
+        if( $resource == 'nat-rules' )
+            $this->cleanNatRule($entry, $resource);
+        if( isset(self::$interfaceRefs[$resource]) )
+            $this->cleanNetworkObject($entry, $resource);
+        if( isset(self::$secretRefs[$resource]) )
+            foreach( self::$secretRefs[$resource] as $rel )
+                foreach( (new DOMXPath($entry->ownerDocument))->query($rel, $entry) as $sn )
+                {
+                    $sn->parentNode->removeChild($sn);
+                    $this->addIncomplete($resource, $entry->getAttribute('name'), str_replace('/entry/', '.', $rel) . " not imported - encrypted in the Panorama export, set it in SCM");
+                }
+
+        if( $resource == 'external-dynamic-lists' )
+        {
+            // the password of the EDL authentication is encrypted in the Panorama export - not importable
+            foreach( (new DOMXPath($entry->ownerDocument))->query("type/*/auth", $entry) as $auth )
+            {
+                $auth->parentNode->removeChild($auth);
+                $this->addIncomplete($resource, $entry->getAttribute('name'), "authentication (username / password) not imported - the password is encrypted in the Panorama export, set it in SCM");
+            }
         }
 
         if( $resource == 'security-rules' )

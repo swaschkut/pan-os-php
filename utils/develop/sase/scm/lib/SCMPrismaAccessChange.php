@@ -40,7 +40,8 @@ class SCMPrismaAccessChange
     const SUPPORTED_GROUPS = array( 'objects', 'identity', 'policies' );
     /** single types of other groups (zones: with the rules that use them, e.g. Panorama device-group import) */
     const SUPPORTED_TYPES = array( 'zones', 'zone-protection-profiles', 'interface-management-profiles', 'ethernet-interfaces',
-        'layer2-subinterfaces', 'layer3-subinterfaces', 'loopback-interfaces', 'tunnel-interfaces', 'vlan-interfaces' );
+        'layer2-subinterfaces', 'layer3-subinterfaces', 'loopback-interfaces', 'tunnel-interfaces', 'vlan-interfaces',
+        'ike-crypto-profiles', 'ipsec-crypto-profiles', 'ike-gateways', 'ipsec-tunnels', 'virtual-routers', 'logical-routers' );
 
     /** folders below this one may be created (own folders exist only under "All Firewalls") */
     const NGFW_ROOT = 'ngfw-shared';
@@ -70,7 +71,11 @@ class SCMPrismaAccessChange
     public $tsg;
     public $outdir;
     public $runDir;
-    public $options = array( 'parallel' => 8, 'page_size' => 1000, 'ui_api_host' => SCMPrismaAccessExport::UI_API_HOST_DEFAULT );
+    public $options = array( 'parallel' => 8, 'page_size' => 1000, 'ui_api_host' => SCMPrismaAccessExport::UI_API_HOST_DEFAULT,
+        'psk_list' => null );
+
+    /** secret fields: not in the change file (placeholder value), cleartext from the secret list, not verified */
+    const SECRET_FIELDS = array( 'ike-gateways' => array( 'authentication.pre_shared_key.key' ) );
     /** internal UI API steps: dry-run / execute results */
     public $internalDry = array();
     public $internalLog = array();
@@ -628,7 +633,10 @@ class SCMPrismaAccessChange
             }
             else
             {
-                $diffs = self::subsetDiff( $c['entry'], $obj );
+                $entry = $c['entry'];
+                foreach( isset($c['type']) && isset(self::SECRET_FIELDS[$c['type']]) ? self::SECRET_FIELDS[$c['type']] : array() as $sp )
+                    $entry = self::unsetDotted( $entry, $sp );
+                $diffs = self::subsetDiff( $entry, $obj );
                 $r['status'] = count($diffs) == 0 ? 'verified' : 'failed';
                 if( count($diffs) > 0 )
                     $r['message'] = implode("; ", $diffs);
@@ -684,6 +692,14 @@ class SCMPrismaAccessChange
     {
         $this->sollDir = $this->runDir . "/soll";
         self::copyDir( $this->istDir, $this->sollDir );
+        // IKE pre-shared keys: the apply takes them from config/psk-list.csv of the source (= soll) export
+        if( $this->options['psk_list'] !== null )
+        {
+            if( !is_readable($this->options['psk_list']) )
+                return $this->fail( "psk-list not readable: " . $this->options['psk_list'] );
+            copy( $this->options['psk_list'], $this->sollDir . "/config/psk-list.csv" );
+            chmod( $this->sollDir . "/config/psk-list.csv", 0600 );
+        }
         //the hierarchy is derived from 01_folders / 02_snippets - not compared here
         @unlink( $this->sollDir . "/config/hierarchy.json" );
         @unlink( $this->sollDir . "/config/hierarchy.txt" );
@@ -826,6 +842,11 @@ class SCMPrismaAccessChange
             else
             {
                 $base = $idx === null ? array( 'name' => $e['name'], $kind => $cName ) : $data[$idx];
+                // secret fields of an existing object stay as they are (the change file has only a placeholder;
+                // a new secret is not detectable) - a new object takes the cleartext from the secret list
+                if( $idx !== null )
+                    foreach( isset(self::SECRET_FIELDS[$e['_type']]) ? self::SECRET_FIELDS[$e['_type']] : array() as $sp )
+                        $e = self::unsetDotted( $e, $sp );
                 $new = self::applyEntry( $base, $e );
                 if( $idx === null )
                 {
@@ -917,6 +938,23 @@ class SCMPrismaAccessChange
     }
 
     /** differences between what the change asked for and the live object (empty = verified) */
+    private static function unsetDotted( $a, $path )
+    {
+        $parts = explode('.', $path);
+        $k = array_shift($parts);
+        if( !is_array($a) || !array_key_exists($k, $a) )
+            return $a;
+        if( count($parts) == 0 )
+            unset( $a[$k] );
+        else
+        {
+            $a[$k] = self::unsetDotted( $a[$k], implode('.', $parts) );
+            if( $a[$k] === array() )
+                unset( $a[$k] );
+        }
+        return $a;
+    }
+
     public static function subsetDiff( $entry, $obj )
     {
         $diffs = array();

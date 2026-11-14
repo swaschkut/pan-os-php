@@ -43,13 +43,15 @@ php scm_pa_change.php in=scm-api://<TSG> changes=change.json execute continue-on
 | child device-group | folder below the folder of its parent device-group |
 | template / template-stack | snippet (same name; a stack with the name of a template: `<name>-stack`) with zones (interfaces removed), zone protection profiles, objects of vsys1 / shared of the template |
 | firewall → device-group + template-stack | `snippets` of the device-group folder: stack, then its templates |
-| objects: tags, addresses, address groups, services, service groups, schedules, log forwarding profiles, custom URL categories, security profiles (anti-spyware, vulnerability, URL, file blocking, DNS security), profile groups | objects of the folder (SCM field names) |
-| security pre / post rules | `security-rules` with `position` pre / post, in Panorama order |
+| objects: tags, addresses, address groups, services, service groups, schedules, log forwarding profiles, custom URL categories, external dynamic lists, decryption profiles, security profiles (anti-spyware, vulnerability, URL, file blocking, DNS security), profile groups | objects of the folder (SCM field names) |
+| security, NAT, decryption, application override, PBF, QoS, authentication pre / post rules | `security-rules`, `nat-rules`, `decryption-rules`, `app-override-rules`, `pbf-rules`, `qos-policy-rules`, `authentication-rules` with `position` pre / post, in Panorama order (`group-tag` kept where SCM has the field: application override, authentication). PBF: interfaces → interface variables. NAT: `destination-translation` → `translated_address` / `translated_port` / `dns_rewrite` of the rule, interfaces (`to-interface`, source translation `interface-address`) → interface variables (`$ethernet1_1`) |
+| server profiles (syslog, HTTP, LDAP, RADIUS, TACACS+, Kerberos), authentication profiles (shared, device-groups, templates) | `syslog-server-profiles`, `http-server-profiles`, `ldap-server-profiles`, `radius-server-profiles`, `tacacs-server-profiles`, `kerberos-server-profiles`, `authentication-profiles`; secrets (LDAP bind password, RADIUS / TACACS+ secret, HTTP password) are encrypted in the export → not imported, `incomplete`. SAML IdP profiles need certificates – not yet |
+| external dynamic list with authentication | the password is encrypted in the Panorama export: imported without `auth` → `incomplete` (set it in SCM) |
 | zone of a rule that is in no attached snippet / parent folder | created in the device-group folder (definition from the templates or empty layer3 zone); `no-zones` switches it off |
 
 `no-templates`: device-groups only – then the zones of the rules are created in the device-group folders.
 
-Not in the snippets yet: interfaces, virtual routers / logical routers, other network and device settings of the
+Not in the snippets yet: other network and device settings of the
 templates (SCM: NGFW network / device settings – a later step together with the firewalls).
 
 ## Security profiles (prepared for SCM before the translation)
@@ -76,6 +78,8 @@ Rules:
 | rule `group-tag` | no SCM field → rule in `incomplete` |
 | template interfaces | SCM interface variables in the snippet of the template / stack: `ethernet1/1` → `ethernet-interfaces` `$ethernet1_1` (layer3 ip / mtu / management profile, layer2, tap, comment, link settings); `ethernet1/2.1` → `layer3-subinterfaces` `$ethernet1_2.1` (`parent_interface: $ethernet1_2`, tag, ip – SCM requires `<parent>.<unit>`, `$ethernet1_2-1` is refused); layer2 units → `layer2-subinterfaces`; `tunnel.1` / `loopback.N` / `vlan.N` → `$tunnel-1` … (`tunnel-` / `loopback-` / `vlan-interfaces`); IP addresses of the template are kept in the snippet. Settings without SCM field (ipv6, lldp, ndp-proxy … with non default values) → `incomplete`; aggregate interfaces → `incomplete` (later). No `default_value`: SCM keeps it unique in the tenant (`'ethernet1/3' is already in use` when another snippet has it) and the value is set per firewall (DeviceOnPrem, later step); the Panorama interface of each variable is in `interface_variables` of the change file |
 | interface management profiles of the template | `interface-management-profiles` in the snippet |
+| virtual routers / logical routers of the template | `virtual-routers` (PAN-OS legacy routing engine, 1:1) / `logical-routers` (advanced routing) in the snippet: interfaces and static route interfaces → interface variables; disabled routing protocols (BGP / OSPF / RIP with `enable no`) not imported (warning) |
+| IKE crypto / IPsec crypto profiles, IKE gateways, IPsec tunnels of the template | `ike-crypto-profiles`, `ipsec-crypto-profiles`, `ike-gateways`, `ipsec-tunnels` in the snippet; local interface / tunnel interface → interface variables. Pre-shared keys are encrypted in the Panorama export: the converter writes `<out>-psk-list.csv` (one row per gateway, fill `psk_new`), `scm_pa_change.php psk-list=<file>` sends the keys (never in the change file; an existing gateway keeps its key) → `incomplete`. IPsec manual keys not imported → `incomplete` |
 | zone interfaces | the zone references the interface variables (`outside` → `$ethernet1_1`); an interface a zone uses that is not in the template → placeholder `ethernet-interfaces` entry → `placeholders` |
 | log forwarding profile without match list | SCM requires a match list and always logs to Strata Logging Service: one match list per log type (`traffic-sls`, `threat-sls`, `wildfire-sls`, `url-sls`, `data-sls`, `tunnel-sls`, `auth-sls`, `decryption-sls`, filter `All Logs`, no other destination) → all logs of the rules that use the profile go to Strata Logging Service; listed in `incomplete` |
 | DNS sinkhole | SCM (public and internal API) only knows `pan-sinkhole-default-ip` / `127.0.0.1` and `::1`: the Palo Alto Networks sinkhole of PAN-OS (`sinkhole.paloaltonetworks.com` / `2600:5200::1`) → `pan-sinkhole-default-ip` / `::1` (same sinkhole, noted in `incomplete`); another address → default sinkhole, `incomplete` (check) |
@@ -102,7 +106,7 @@ The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
   templates) and `interfaces` (interface variable → `interface`, `ip` with Panorama template variables resolved –
   device value of the stack > stack variable > template variable –, address object names kept – SCM resolves them – with the resolution in `address_objects`, `ip_source`) – input for the onboarding step
   ([CONCEPT_panorama_migration.md](CONCEPT_panorama_migration.md)), not sent yet
-* `warnings`: what is not part of this step (NAT / decryption / … rules, data filtering profiles …)
+* `warnings`: what is not part of this step (data filtering profiles, device settings …)
 
 `scm_pa_change.php` does not send `source`, `placeholders`, `incomplete`, `not_imported`, `interface_variables`,
 `firewalls`, `warnings` and shows their numbers.

@@ -145,7 +145,8 @@ $change = array(
     'snippets' => array(),
     'folders' => array(),
 );
-$supportedOther = array( 'zones', 'zone-protection-profiles' );
+$supportedOther = array( 'zones', 'zone-protection-profiles', 'ike-crypto-profiles', 'ipsec-crypto-profiles', 'ike-gateways',
+    'ipsec-tunnels', 'virtual-routers', 'logical-routers' );
 $notImported = array();
 $counts = array();
 $folderIdx = array();
@@ -850,6 +851,24 @@ foreach( array_keys($serials) as $serial )
 }
 if( count($firewalls) > 0 )
     $change['firewalls'] = $firewalls;
+
+// IKE gateways with pre-shared key: template of the psk-list for scm_pa_change.php psk-list= (keys are encrypted in
+// the Panorama export, the consultant fills psk_new - the file is never part of the change file)
+$pskGateways = array();
+foreach( isset($change['ike-gateways']) ? $change['ike-gateways'] : array() as $gw )
+    if( isset($gw['authentication']['pre_shared_key']) )
+        $pskGateways[$gw['name']] = TRUE;
+$pskFile = null;
+if( count($pskGateways) > 0 )
+{
+    $pskFile = preg_replace('/\.json$/', '', $args['out']) . "-psk-list.csv";
+    $fh = fopen($pskFile, 'w');
+    fputcsv($fh, array('ike_gateway', 'psk_current', 'psk_new', 'psk_sha1'), ',', '"', '');
+    foreach( array_keys($pskGateways) as $g )
+        fputcsv($fh, array($g, '', '', ''), ',', '"', '');
+    fclose($fh);
+    chmod($pskFile, 0600);
+}
 $warnings = array_merge( $warnings, $fwWarnings );
 $change['not_imported'] = $notImported;
 $warnings = array_merge( $warnings, $warningsApps );
@@ -892,5 +911,7 @@ foreach( $warnings as $w )
     PH::print_stdout( "   ! " . $w );
 PH::print_stdout();
 PH::print_stdout( " * change file: " . $args['out'] );
-PH::print_stdout( " * next: php scm_pa_change.php in=scm-api://<TSG> changes=" . $args['out'] . "   (dry-run, then 'execute')" );
+if( $pskFile !== null )
+    PH::print_stdout( " * IKE pre-shared keys: fill psk_new in " . $pskFile . " (" . count($pskGateways) . " gateway(s)) and add psk-list=" . $pskFile );
+PH::print_stdout( " * next: php scm_pa_change.php in=scm-api://<TSG> changes=" . $args['out'] . ( $pskFile !== null ? " psk-list=" . $pskFile : "" ) . "   (dry-run, then 'execute')" );
 PH::print_stdout();

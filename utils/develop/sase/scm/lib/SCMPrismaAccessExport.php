@@ -1758,7 +1758,7 @@ class SCMPrismaAccessExport
                 'route-path-access-lists' => $net, 'bgp-route-maps' => $net, 'bgp-route-map-redistributions' => $net,
                 'bgp-address-family-profiles' => $net, 'bgp-authentication-profiles' => $net,
                 'bgp-filtering-profiles' => $net, 'bgp-redistribution-profiles' => $net,
-                'ospf-auth-profiles' => $net, 'logical-routers' => $net, 'dns-proxies' => $net,
+                'ospf-auth-profiles' => $net, 'logical-routers' => $net, 'virtual-routers' => $net, 'dns-proxies' => $net,
                 'ike-crypto-profiles' => $net, 'ipsec-crypto-profiles' => $net, 'ike-gateways' => $net,
                 'ipsec-tunnels' => $net, 'qos-profiles' => $net,
                 'sdwan-path-quality-profiles' => $net, 'sdwan-saas-quality-profiles' => $net,

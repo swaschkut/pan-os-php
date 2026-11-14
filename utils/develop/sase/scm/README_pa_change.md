@@ -16,7 +16,7 @@ the internal UI API edits) – a long run is never silent – and at the end the
 ```
 php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.json>             # dry-run
 php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.json> execute     # send + verify
-    [outdir=change] [yes] [push] [continue-on-error] [config-parallel=8] [debugapi]
+    [outdir=change] [yes] [push] [continue-on-error] [config-parallel=8] [psk-list=<file>] [debugapi]
 ```
 
 ## Change request file
@@ -75,7 +75,13 @@ every folder, ~45000 objects); only the applications of the change file are look
 (`GET /config/objects/v1/applications?folder=&name=`). Predefined / cloud App-ID applications are never part of a
 change file.
 
-Zones (`zones`) are the only network type a change request can contain (they belong to the rules that use them).
+Network types a change request can contain: zones, zone protection profiles, interface management profiles,
+interfaces (ethernet, layer2 / layer3 sub interfaces, loopback, tunnel, VLAN), IKE / IPsec crypto profiles, IKE
+gateways, IPsec tunnels, virtual routers, logical routers.
+
+`psk-list=<file>`: IKE pre-shared keys (`ike_gateway`, `psk_new` – format of the export `psk-list.csv`). The change
+file only marks the field; the apply takes the cleartext from this list (copied into the run folder, chmod 600). An
+existing gateway keeps its key; the verification does not compare keys.
 
 Not supported (refused with a message; use the sync workflow): other network / device settings, Prisma Access
 infrastructure, deleting folders / snippets.

@@ -38,6 +38,7 @@ $supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'tenant: in
 $supportedArguments['changes'] = Array('niceName' => 'changes', 'shortHelp' => 'change request JSON (folders, snippets, objects) - see README_pa_change.md', 'argDesc' => '[file]');
 $supportedArguments['outdir'] = Array('niceName' => 'outdir', 'shortHelp' => 'base directory; run files go to <outdir>/<TSG>/change-<timestamp>/ (default: change)', 'argDesc' => '[directory]');
 $supportedArguments['execute'] = Array('niceName' => 'execute', 'shortHelp' => 'send the requests (default: dry-run)');
+$supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'psk-list.csv with the IKE pre-shared keys (columns ike_gateway, psk_new) - never in the change file', 'argDesc' => '[file]');
 $supportedArguments['yes'] = Array('niceName' => 'yes', 'shortHelp' => 'no confirmation prompt for execute');
 $supportedArguments['push'] = Array('niceName' => 'push', 'shortHelp' => 'push the touched folders after the changes (only folders with a push target)');
 $supportedArguments['continue-on-error'] = Array('niceName' => 'continue-on-error', 'shortHelp' => 'continue after a failed request (dependent requests are skipped)');
@@ -64,6 +65,8 @@ $tsg = $connector->apihost;
 $change = new SCMPrismaAccessChange( $connector, $tsg, isset(PH::$args['outdir']) ? PH::$args['outdir'] : "change" );
 if( isset(PH::$args['ui-api-host']) && is_string(PH::$args['ui-api-host']) )
     $change->options['ui_api_host'] = PH::$args['ui-api-host'];
+if( isset(PH::$args['psk-list']) && is_string(PH::$args['psk-list']) )
+    $change->options['psk_list'] = PH::$args['psk-list'];
 if( isset(PH::$args['config-parallel']) )
     $change->options['parallel'] = max( 1, (int)PH::$args['config-parallel'] );
 

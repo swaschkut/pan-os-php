@@ -64,9 +64,40 @@ class SCMChangeGenerator
         'devices/entry/network/profiles/zone-protection-profiles' => 'zone-protection-profiles',
         'devices/entry/network/profiles/zone-protection-profile' => 'zone-protection-profiles',
         'zone' => 'zones',
+        'devices/entry/network/ike/crypto-profiles/ike-crypto-profiles' => 'ike-crypto-profiles',
+        'devices/entry/network/ike/crypto-profiles/ipsec-crypto-profiles' => 'ipsec-crypto-profiles',
+        'devices/entry/network/ike/gateway' => 'ike-gateways',
+        'devices/entry/network/tunnel/ipsec' => 'ipsec-tunnels',
+        'devices/entry/network/virtual-router' => 'virtual-routers',
+        'devices/entry/network/logical-router' => 'logical-routers',
+        'external-list' => 'external-dynamic-lists',
+        'log-settings/syslog' => 'syslog-server-profiles',
+        'log-settings/http' => 'http-server-profiles',
+        'server-profile/ldap' => 'ldap-server-profiles',
+        'server-profile/radius' => 'radius-server-profiles',
+        'server-profile/tacplus' => 'tacacs-server-profiles',
+        'server-profile/kerberos' => 'kerberos-server-profiles',
+        'authentication-profile' => 'authentication-profiles',
+        'profiles/decryption' => 'decryption-profiles',
         'pre-rulebase/security/rules' => 'security-rules',
         'post-rulebase/security/rules' => 'security-rules',
+        'pre-rulebase/nat/rules' => 'nat-rules',
+        'post-rulebase/nat/rules' => 'nat-rules',
+        'pre-rulebase/decryption/rules' => 'decryption-rules',
+        'post-rulebase/decryption/rules' => 'decryption-rules',
+        'pre-rulebase/application-override/rules' => 'app-override-rules',
+        'post-rulebase/application-override/rules' => 'app-override-rules',
+        'pre-rulebase/pbf/rules' => 'pbf-rules',
+        'post-rulebase/pbf/rules' => 'pbf-rules',
+        'pre-rulebase/qos/rules' => 'qos-policy-rules',
+        'post-rulebase/qos/rules' => 'qos-policy-rules',
+        'pre-rulebase/authentication/rules' => 'authentication-rules',
+        'post-rulebase/authentication/rules' => 'authentication-rules',
     );
+
+    /** rule bases: pre / post position, POST query 'position' */
+    static public $ruleResources = array( 'security-rules', 'nat-rules', 'decryption-rules', 'app-override-rules', 'pbf-rules',
+        'qos-policy-rules', 'authentication-rules' );
 
     /** PAN-OS paths that exist in the XML but have no SCM resource of their own */
     static public $unsupportedPaths = array(
@@ -77,11 +108,17 @@ class SCMChangeGenerator
     /** order of POST / PUT (referenced objects first); DELETE runs in reverse order */
     static public $resourceRank = array(
         'snippets' => 1, 'folders' => 2, 'devices' => 200,
-        'tags' => 10, 'addresses' => 20, 'address-groups' => 30, 'services' => 40, 'service-groups' => 50,
-        'schedules' => 55, 'log-forwarding-profiles' => 60, 'url-categories' => 65,
+        'tags' => 10, 'addresses' => 20, 'external-dynamic-lists' => 25, 'address-groups' => 30, 'services' => 40, 'service-groups' => 50,
+        'schedules' => 55, 'syslog-server-profiles' => 57, 'http-server-profiles' => 57, 'ldap-server-profiles' => 57,
+        'radius-server-profiles' => 57, 'tacacs-server-profiles' => 57, 'kerberos-server-profiles' => 57,
+        'authentication-profiles' => 58, 'log-forwarding-profiles' => 60, 'url-categories' => 65,
         'anti-spyware-profiles' => 70, 'vulnerability-protection-profiles' => 70, 'wildfire-anti-virus-profiles' => 70,
-        'url-access-profiles' => 70, 'file-blocking-profiles' => 70, 'dns-security-profiles' => 70,
+        'url-access-profiles' => 70, 'file-blocking-profiles' => 70, 'dns-security-profiles' => 70, 'decryption-profiles' => 70,
         'profile-groups' => 80, 'zone-protection-profiles' => 85, 'zones' => 90, 'security-rules' => 100,
+        'nat-rules' => 110, 'decryption-rules' => 110, 'app-override-rules' => 120, 'pbf-rules' => 120,
+        'qos-policy-rules' => 120, 'authentication-rules' => 120,
+        'ike-crypto-profiles' => 86, 'ipsec-crypto-profiles' => 86, 'ike-gateways' => 87, 'ipsec-tunnels' => 88,
+        'virtual-routers' => 95, 'logical-routers' => 95,
     );
 
     /** XML children pan-os-php writes by default that have no SCM field and carry no configuration of their own */
@@ -96,6 +133,12 @@ class SCMChangeGenerator
             'virus_and_wildfire_analysis' => 'wildfire-anti-virus-profiles', 'url_filtering' => 'url-access-profiles',
             'file_blocking' => 'file-blocking-profiles', 'dns_security' => 'dns-security-profiles'),
         'security-rules' => array('profile_setting.group' => 'profile-groups', 'log_setting' => 'log-forwarding-profiles'),
+        'decryption-rules' => array('profile' => 'decryption-profiles', 'log_setting' => 'log-forwarding-profiles'),
+        'authentication-profiles' => array('method.ldap.server_profile' => 'ldap-server-profiles', 'method.radius.server_profile' => 'radius-server-profiles',
+            'method.tacplus.server_profile' => 'tacacs-server-profiles', 'method.kerberos.server_profile' => 'kerberos-server-profiles'),
+        'authentication-rules' => array('authentication_enforcement' => 'authentication-profiles', 'log_setting' => 'log-forwarding-profiles'),
+        'ike-gateways' => array('protocol.ikev1.ike_crypto_profile' => 'ike-crypto-profiles', 'protocol.ikev2.ike_crypto_profile' => 'ike-crypto-profiles'),
+        'ipsec-tunnels' => array('auto_key.ike_gateway' => 'ike-gateways', 'auto_key.ipsec_crypto_profile' => 'ipsec-crypto-profiles'),
         'zones' => array('network.zone_protection_profile' => 'zone-protection-profiles', 'network.log_setting' => 'log-forwarding-profiles'),
         'url-access-profiles' => array('alert' => 'url-categories', 'allow' => 'url-categories', 'block' => 'url-categories',
             'continue' => 'url-categories'),
@@ -297,7 +340,7 @@ class SCMChangeGenerator
                 /** @var DOMElement $node */
                 $name = $node->getAttribute('name');
                 $position = null;
-                if( $resource == 'security-rules' )
+                if( in_array($resource, self::$ruleResources, TRUE) )
                     $position = strpos($rel, 'post-') === 0 ? 'post' : 'pre';
 
                 // one name per resource and location (pre and post rules share the name space)
@@ -446,7 +489,7 @@ class SCMChangeGenerator
                 $ordered[$k] = $v;
         $r['body'] = $ordered;
 
-        if( $obj['resource'] == 'security-rules' )
+        if( in_array($obj['resource'], self::$ruleResources, TRUE) && in_array('position', $this->schema[$obj['resource']]['post_query'] ?? array(), TRUE) )
             $r['query'] = array('position' => $obj['position']);
 
         $this->addDroppedWarnings($r, $dropped, TRUE);
@@ -838,7 +881,15 @@ class SCMChangeGenerator
         if( is_string($v) )
             return array($v);
         if( is_array($v) )
-            return array_values(array_filter($v, 'is_string'));
+        {
+            $names = array();
+            foreach( $v as $x )
+                if( is_string($x) )
+                    $names[] = $x;
+                elseif( is_array($x) && isset($x['name']) && is_string($x['name']) )
+                    $names[] = $x['name'];
+            return $names;
+        }
         return array();
     }
 
