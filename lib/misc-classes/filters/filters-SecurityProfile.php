@@ -670,6 +670,10 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.best-practice'
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
+        // SCM virus-and-wildfire-analysis profile: only its antivirus part
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->av_is_best_practice();
+
         return $object->is_best_practice();
     },
     'arg' => false,
@@ -683,6 +687,10 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.visibility'] =
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
+        // SCM virus-and-wildfire-analysis profile: only its antivirus part
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->av_is_visibility();
+
         return $object->is_visibility();
     },
     'arg' => false,
@@ -695,6 +703,10 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.adoption'] = a
 
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
+
+        // SCM virus-and-wildfire-analysis profile: only its antivirus part
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->av_is_adoption();
 
         return $object->is_adoption();
     },
@@ -1206,6 +1218,10 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.best-practice'
         if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
+        // SCM virus-and-wildfire-analysis profile: only its WildFire part
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->wf_is_best_practice();
+
         return $object->is_best_practice();
     },
     'arg' => false,
@@ -1219,6 +1235,10 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.visibility'] =
         if( is_string($object) || ( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
+        // SCM virus-and-wildfire-analysis profile: only its WildFire part
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->wf_is_visibility();
+
         return $object->is_visibility();
     },
     'arg' => false,
@@ -1231,6 +1251,10 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.adoption'] = a
 
         if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
+
+        // SCM virus-and-wildfire-analysis profile: only its WildFire part
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->wf_is_adoption();
 
         return $object->is_adoption();
     },

@@ -68,6 +68,9 @@ On an SCM configuration the PAN-OS names map to it:
 * BP / visibility / adoption of a group: virus-and-wildfire-analysis, anti-spyware, dns-security, vulnerability,
   url-filtering, file-blocking must be set and pass; an anti-spyware profile is checked without its DNS part (that
   is the dns-security profile)
+* filters / statistics `av ...` and `wf ...` on a virus-and-wildfire-analysis profile check only its antivirus part
+  (decoder actions, cloud inline analysis) or its WildFire part (rules, cloud inline analysis 11.2+); `avwf ...`
+  checks the whole profile
 
 ## Playbooks on SCM
 

@@ -203,6 +203,55 @@ class VirusAndWildfireProfile extends SecurityProfile2
         return PH::bpCombine( $results );
     }
 
+    /**
+     * the antivirus part of the profile (as AntiVirusProfile::is_*): decoder actions (action, wildfire-action,
+     * mlav-action), cloud inline analysis (10.2+) - the filters 'av ...' and the AV columns of the reports use it, so
+     * a WildFire finding does not count against antivirus and vice versa
+     */
+    public function av_is_best_practice(): ?bool
+    {
+        $results = array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() );
+        if( $this->owner->owner->version >= 102 )
+            $results[] = $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file);
+        return PH::bpCombine( $results );
+    }
+
+    public function av_is_visibility(): ?bool
+    {
+        $results = array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() );
+        if( $this->owner->owner->version >= 102 )
+            $results[] = $this->cloud_inline_analysis_visibility($this->owner->bp_json_file);
+        return PH::bpCombine( $results );
+    }
+
+    /** as AntiVirusProfile: every antivirus profile used in a rule is adoption */
+    public function av_is_adoption(): bool
+    {
+        return true;
+    }
+
+    /** the WildFire part of the profile (as WildfireProfile::is_*): rules, cloud inline analysis (11.2+) */
+    public function wf_is_best_practice(): ?bool
+    {
+        $results = array( $this->wildfire_rules_best_practice() );
+        if( $this->owner->owner->version >= 112 )
+            $results[] = $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file);
+        return PH::bpCombine( $results );
+    }
+
+    public function wf_is_visibility(): ?bool
+    {
+        $results = array( $this->wildfire_rules_visibility() );
+        if( $this->owner->owner->version >= 112 )
+            $results[] = $this->cloud_inline_analysis_visibility($this->owner->bp_json_file);
+        return PH::bpCombine( $results );
+    }
+
+    public function wf_is_adoption(): bool
+    {
+        return count($this->rules_obj) > 0;
+    }
+
     public function is_adoption(): bool
     {
         //Todo - swaschkut 20260629
