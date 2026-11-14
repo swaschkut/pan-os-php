@@ -33,7 +33,7 @@ require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessExport.php");
 if( !class_exists("SCMCHANGES") )
     require_once("utils/lib/SCMCHANGES.php");
 
-$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones]\n"
+$usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json [dg-parent=ngfw-shared] [device-group=DG1,DG2] [shared=all|folder|skip] [no-templates] [no-rules] [no-zones] [cloud-appid-api=URL]\n"
     . "  in            Panorama configuration (XML file)\n"
     . "  out           change request for scm_pa_change.php\n"
     . "  dg-parent     folder that holds the device-group tree: ngfw-shared (default, 'All Firewalls')\n"
@@ -44,6 +44,8 @@ $usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json 
     . "                'folder' (into dg-parent) or 'skip'\n"
     . "  no-templates  device-groups only: no snippets of templates / template-stacks\n"
     . "  no-rules      objects only, no security rules (rules reference custom applications that are not imported)\n"
+    . "  cloud-appid-api  URL of the cloud App-ID API helper (github.com/swaschkut/pan-os_cloud-appid-API-helper, e.g.\n"
+    . "                http://localhost:8080) to check SaaS applications; default: list lib/object-classes/cloud-appid\n"
     . "  no-zones      do not create zones for the rules (default: a zone used by the rules of a device-group that is not\n"
     . "                in an attached snippet / parent folder is created in its folder - definition from the templates)\n"
 ;
@@ -55,7 +57,7 @@ foreach( array_slice($argv, 1) as $a )
     $args[strtolower($p === false ? $a : substr($a, 0, $p))] = $p === false ? true : substr($a, $p + 1);
 }
 foreach( array_keys($args) as $a )
-    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'help'), TRUE) )
+    if( !in_array($a, array('in', 'out', 'dg-parent', 'device-group', 'shared', 'no-templates', 'no-rules', 'no-zones', 'cloud-appid-api', 'help'), TRUE) )
     {
         print "unknown argument '" . $a . "'\n\n" . $usage;
         exit(1);
@@ -238,6 +240,111 @@ foreach( $appScopes as $as )
                 . ( count($missing) ? " - not imported: " . implode(", ", $missing) . " (application identification not complete)" : "" ) ) );
     }
 
+// application groups / filters
+$filterMap = array( 'subcategory' => 'sub_category' );
+foreach( $appScopes as $as )
+{
+    foreach( $xpa->query("application-group/entry", $as[1]) as $g )
+    {
+        $members = array();
+        foreach( $xpa->query("members/member|member", $g) as $m )
+            $members[] = trim($m->textContent);
+        $change['application-groups'][] = array( 'folder' => $as[0], 'name' => $g->getAttribute('name'), 'members' => $members );
+        $counts['application-groups'] = ( isset($counts['application-groups']) ? $counts['application-groups'] : 0 ) + 1;
+    }
+    foreach( $xpa->query("application-filter/entry", $as[1]) as $f )
+    {
+        $item = array( 'folder' => $as[0], 'name' => $f->getAttribute('name') );
+        foreach( $f->childNodes as $c )
+        {
+            if( $c->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $k = isset($filterMap[$c->tagName]) ? $filterMap[$c->tagName] : str_replace('-', '_', $c->tagName);
+            $members = array();
+            foreach( $c->childNodes as $m )
+                if( $m->nodeType == XML_ELEMENT_NODE )
+                    $members[] = trim($m->textContent);
+            if( count($members) > 0 )
+                $item[$k] = $k == 'risk' ? array_map('intval', $members) : $members;
+            else
+                $item[$k] = trim($c->textContent) == 'yes';
+        }
+        $change['application-filters'][] = $item;
+        $counts['application-filters'] = ( isset($counts['application-filters']) ? $counts['application-filters'] : 0 ) + 1;
+    }
+}
+
+// applications referenced by rules / application groups: custom (created above), application group / filter,
+// PAN-OS predefined (predefined.xml incl. containers), cloud App-ID (SaaS: API helper or list) - else placeholder
+$known = array();
+foreach( array('applications', 'application-groups', 'application-filters') as $t )
+    foreach( isset($change[$t]) ? $change[$t] : array() as $it )
+        $known[$it['name']] = $t;
+$refs = array();
+foreach( isset($change['security-rules']) ? $change['security-rules'] : array() as $r )
+    foreach( isset($r['application']) ? (array)$r['application'] : array() as $a )
+        $refs[$a][] = array( $r['folder'], "rule '" . $r['name'] . "'" );
+foreach( isset($change['application-groups']) ? $change['application-groups'] : array() as $g )
+    foreach( $g['members'] as $a )
+        $refs[$a][] = array( $g['folder'], "application group '" . $g['name'] . "'" );
+$predefinedApps = AppStore::getPredefinedStore( $pano );
+$cloudList = null;
+$appResolution = array( 'custom / group / filter' => 0, 'predefined' => 0, 'cloud App-ID' => 0, 'placeholder' => 0 );
+foreach( $refs as $a => $users )
+{
+    if( $a === 'any' )
+        continue;
+    if( isset($known[$a]) )
+    {
+        $appResolution['custom / group / filter']++;
+        continue;
+    }
+    if( $predefinedApps->find($a, null, false) !== null )
+    {
+        $appResolution['predefined']++;
+        continue;
+    }
+    $cloud = null;
+    if( isset($args['cloud-appid-api']) && is_string($args['cloud-appid-api']) )
+    {
+        $url = rtrim($args['cloud-appid-api'], '/') . "/?type=op&cmd=" . rawurlencode("<show><cloud-appid><application>" . htmlspecialchars($a, ENT_XML1) . "</application></cloud-appid></show>");
+        $answer = @file_get_contents($url);
+        if( $answer !== false )
+            $cloud = strpos($answer, 'status="success"') !== false && preg_match('/<(entry|application)[^>]*>/', $answer) && strpos($answer, $a) !== false;
+    }
+    if( $cloud === null )
+    {
+        if( $cloudList === null )
+        {
+            $cloudList = array();
+            foreach( @file(dirname(__FILE__) . "/../../../../lib/object-classes/cloud-appid/cloud-appid.txt") ?: array() as $line )
+                if( preg_match('/^\d+\s+(\S+)/', $line, $mm) )
+                    $cloudList[$mm[1]] = TRUE;
+        }
+        $cloud = isset($cloudList[$a]);
+        if( !$cloud )
+            foreach( array_keys($cloudList) as $n )
+                if( strlen($n) == 20 && strpos($a, $n) === 0 )      // the list truncates names to 20 characters
+                {
+                    $cloud = TRUE;
+                    break;
+                }
+    }
+    if( $cloud )
+    {
+        $appResolution['cloud App-ID']++;
+        continue;
+    }
+    // not known: placeholder custom application in the folder of the first user
+    $appResolution['placeholder']++;
+    $change['applications'][] = array( 'folder' => $users[0][0], 'name' => $a, 'category' => 'networking', 'subcategory' => 'ip-protocol',
+        'technology' => 'network-protocol', 'risk' => 1, 'description' => 'pan-os-php placeholder - application not in the configuration, not predefined, not cloud App-ID' );
+    $counts['applications'] = ( isset($counts['applications']) ? $counts['applications'] : 0 ) + 1;
+    $appPlaceholders[] = array( 'type' => 'applications', 'name' => $a, 'folder' => $users[0][0],
+        'content' => array( "placeholder: application not in the configuration, not in predefined.xml, not a cloud App-ID application - content unknown (used by "
+            . implode(", ", array_map( function($u){ return $u[1]; }, $users )) . ")" ) );
+}
+
 // profiles completed through the internal UI API by scm_pa_change.php: complete PAN-OS entry as _internal
 $internalCount = 0;
 foreach( $importer->internal as $in )
@@ -301,6 +408,7 @@ foreach( $counts as $t => $n )
 if( isset($importer->summary['skipped']) )
     PH::print_stdout( " * not part of this step: " . json_encode($importer->summary['skipped']) );
 PH::print_stdout( " * completed through the internal UI API (sections the public API does not have): " . $internalCount . " profile(s) ('_internal')" );
+PH::print_stdout( " * applications used by rules / groups: " . implode(", ", array_map( function($k, $v){ return $k . " " . $v; }, array_keys($appResolution), $appResolution )) );
 PH::print_stdout( " * created because they are referenced (PAN-OS predefined copy / placeholder): " . count($placeholders) . " - listed in 'placeholders' of the change file" );
 $byType = array();
 foreach( $placeholders as $n )

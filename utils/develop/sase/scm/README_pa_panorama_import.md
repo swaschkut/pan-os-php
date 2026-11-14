@@ -77,6 +77,8 @@ Rules:
 | zone interfaces | → zone in `incomplete` (device variables per firewall, next step) |
 | log forwarding profile without match list | SCM requires a match list: placeholder match list `pan-os-php-placeholder` (traffic, `All Logs`, no destination – forwards nothing, as before) → `placeholders` |
 | custom application | `applications` with category, subcategory, technology, risk, description and the characteristics (evasive, …); signatures, default ports, timeouts … not imported → `placeholders` |
+| application group / application filter | `application-groups` (members) / `application-filters` (category, sub_category, technology, risk, characteristics) |
+| application used by a rule / application group | resolved in this order: custom / group / filter of the configuration; PAN-OS predefined (`lib/object-classes/predefined.xml`, incl. containers – exists in SCM, nothing created); cloud App-ID / SaaS application (exists in SCM, nothing created) – checked with the cloud App-ID API helper (`cloud-appid-api=http://localhost:8080`, github.com/swaschkut/pan-os_cloud-appid-API-helper, docker `swaschkut/pan-os_cloud-appid_api-helper`), without it with the list `lib/object-classes/cloud-appid/cloud-appid.txt`; else placeholder custom application → `placeholders` |
 | zone used by rules, not in a template (`no-templates` / no stack) | empty layer3 zone → `placeholders` |
 
 ## change.json
