@@ -150,6 +150,18 @@ class SCMPrismaAccessSync
 
             foreach( $entry['changed'] as $item )
             {
+                // differences in the internal UI API sections of security profiles ('_internal', compare): not part
+                // of the public request - reported, not synced
+                $internalChanges = array_filter( $item['changes'], function($c){ return strpos($c['path'], '_internal') === 0; } );
+                if( count($internalChanges) > 0 )
+                {
+                    $this->warnings[] = $entry['endpoint'] . " '" . $item['key'] . "' [" . $ctx['tgt_container'] . "]: internal UI API sections differ ("
+                        . implode(", ", array_unique( array_map( function($c){ $p = explode(".", $c['path']); return isset($p[1]) ? $p[1] : $p[0]; }, $internalChanges ) ))
+                        . ") - not synced (use scm_pa_xml_to_change.php / scm_pa_change.php _internal)";
+                    $item['changes'] = array_values( array_filter( $item['changes'], function($c){ return strpos($c['path'], '_internal') !== 0; } ) );
+                    if( count($item['changes']) == 0 )
+                        continue;
+                }
                 $srcName = $source == 'left' ? ( isset($item['left_name']) ? $item['left_name'] : $item['key'] ) : $item['key'];
                 $tgtName = $source == 'left' ? $item['key'] : ( isset($item['left_name']) ? $item['left_name'] : $item['key'] );
                 if( $mode == 'merge' )

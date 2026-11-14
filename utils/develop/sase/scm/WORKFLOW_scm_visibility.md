@@ -105,11 +105,13 @@ pan-os-php type=scm-change in=scm-api://<TSG> changes=change.json ui-api-host=<u
 
 ## Known limits (2026-11-14)
 
-* the Alert-Only DNS security profile template contains fields SCM does not know → listed in `not_imported`
-  (and the objects that depend on it)
-* references from snippet objects (zones) to profiles in folder `All` – live acceptance by SCM to be confirmed
-* SCM configurations are evaluated as PAN-OS 11.1 (version of the base configuration) – the WildFire inline cloud
-  analysis check counts as compliant there
-* the export compare (`scm-compare`) does not evaluate the internal UI API files yet
+* references from snippet objects (zones) to profiles in folder `All` (zone protection / log forwarding profile
+  created by the playbook) – live acceptance by SCM to be confirmed with the first execute
+* URL access profiles that use newer predefined URL categories (e.g. `browser-runtime-attack`) are listed in
+  `not_imported` ("not in the configuration") – the predefined category list of the change generator is older than SCM
+
+Fixed: the Alert-Only DNS security profile contains only DNS sections; SCM configurations are evaluated with the
+current feature set for inline cloud analysis (WildFire inline cloud analysis is really checked and set by the
+playbook); `scm-compare` compares the internal UI API sections (`_internal.<section>`).
 
 Details: README_pa_export.md, README_pa_xml_to_change.md, README_pa_change.md.

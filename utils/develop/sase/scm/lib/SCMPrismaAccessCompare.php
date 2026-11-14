@@ -290,7 +290,53 @@ class SCMPrismaAccessCompare
             return null;
         }
         $content = json_decode( file_get_contents($path), TRUE );
-        return is_array($content) && array_key_exists('data', $content) ? $content['data'] : null;
+        $data = is_array($content) && array_key_exists('data', $content) ? $content['data'] : null;
+        // security profiles: sections of the internal UI API (config/internal/<type>.json, scm_pa_export.php) as
+        // field '_internal' of the object (matched by id = @uuid, meta data removed) - compared like a field
+        if( is_array($data) && preg_match('#^config/(folders|snippets|devices)/[^/]+/\d+_(.+)\.json$#', $file, $m)
+            && isset(SCMPrismaAccessExport::CONFIG_INTERNAL_TYPES[$m[2]]) )
+        {
+            $index = $this->internalIndex( $dir, $m[2] );
+            if( $index !== null )
+                foreach( $data as $i => $o )
+                    if( is_array($o) && isset($o['id']) && isset($index[$o['id']]) )
+                        $data[$i]['_internal'] = $index[$o['id']];
+        }
+        return $data;
+    }
+
+    /** @var array dir|type => uuid => internal entry without meta data, null = no internal file */
+    private $internalCache = array();
+
+    private function internalIndex( $dir, $type )
+    {
+        $k = $dir . "|" . $type;
+        if( !array_key_exists($k, $this->internalCache) )
+        {
+            $this->internalCache[$k] = null;
+            $f = $dir . "/config/internal/" . $type . ".json";
+            $j = is_readable($f) ? json_decode( file_get_contents($f), TRUE ) : null;
+            if( is_array($j) && isset($j['data']) && is_array($j['data']) )
+            {
+                $this->internalCache[$k] = array();
+                foreach( $j['data'] as $e )
+                    if( is_array($e) && isset($e['@uuid']) )
+                        $this->internalCache[$k][$e['@uuid']] = self::stripInternalMeta( $e );
+            }
+        }
+        return $this->internalCache[$k];
+    }
+
+    /** internal UI API entry without meta data (@uuid, @loc, @type … - @name stays below the top level) */
+    public static function stripInternalMeta( $v, $top = TRUE )
+    {
+        if( !is_array($v) )
+            return $v;
+        $out = array();
+        foreach( $v as $k => $x )
+            if( !( is_string($k) && $k !== '' && $k[0] == '@' && ( $top || $k !== '@name' ) ) )
+                $out[$k] = self::stripInternalMeta( $x, FALSE );
+        return $out;
     }
 
     ////////////////////////////////////////////////////////////////////////////////

@@ -304,7 +304,7 @@ trait sp_action_wildfire
     {
         $sendAPI = false;
         $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $this->xmlroot);
-        if ($this->owner->owner->version >= 112)
+        if ($this->inlineVersion() >= 112)
         {
             if ($tmp_mlav_engine === False)
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
@@ -315,7 +315,7 @@ trait sp_action_wildfire
 
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $this->xmlroot);
-        if ($this->owner->owner->version >= 112)
+        if ($this->inlineVersion() >= 112)
         {
             if ($tmp_mlav_engine === False)
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $this->xmlroot);
@@ -344,10 +344,10 @@ trait sp_action_wildfire
    <direction>both</direction>
    <action>allow</action>
   </entry>';
-                //if ($this->owner->owner->version == 111 )
+                //if ($this->inlineVersion() == 111 )
                 //    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString2);
                 //else
-                if ($this->owner->owner->version >= 112 )
+                if ($this->inlineVersion() >= 112 )
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString1);
 
                 $tmp_mlav_engine->appendChild($xmlElement);
@@ -366,7 +366,7 @@ trait sp_action_wildfire
                 $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
                 if ($action_xmlNode->textContent == "allow")
                 {
-                    if ($this->owner->owner->version >= 112)
+                    if ($this->inlineVersion() >= 112)
                     {
                         $action_xmlNode->textContent = "alert";
                         $this->additional['mica-engine-wildfire-rules'][$name]['action'] = "alert";

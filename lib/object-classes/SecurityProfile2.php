@@ -172,6 +172,22 @@ class SecurityProfile2
         return $bp_set;
     }
 
+    /**
+     * PAN-OS version for the inline cloud analysis checks: SCM / Prisma Access (BuckbeakConf, FawkesConf) always has
+     * the current feature set - its XML carries the version of the base configuration (11.1), with which the WildFire
+     * inline cloud analysis would count as compliant without a check
+     */
+    public function inlineVersion()
+    {
+        $sub = is_object($this->owner) ? $this->owner->owner : null;
+        $root = $sub;
+        for( $i = 0; $i < 5 && is_object($root) && !( $root instanceof BuckbeakConf || $root instanceof FawkesConf || $root instanceof PANConf || $root instanceof PanoramaConf ); $i++ )
+            $root = isset($root->owner) ? $root->owner : null;
+        if( $root instanceof BuckbeakConf || $root instanceof FawkesConf )
+            return 121;
+        return is_object($sub) ? $sub->version : null;
+    }
+
     public function cloud_inline_analysis_visibility( $bp_json_file = null )
     {
         $this->bp_json_file = $bp_json_file;
@@ -213,7 +229,7 @@ class SecurityProfile2
             }
             else
             {
-                if ( $this->secprof_type == 'vulnerability' && $this->owner->owner->version < 110)
+                if ( $this->secprof_type == 'vulnerability' && $this->inlineVersion() < 110)
                 {
                     return null;
                 }
@@ -243,7 +259,7 @@ class SecurityProfile2
             }
             else
             {
-                if ( $this->secprof_type == 'spyware' && $this->owner->owner->version < 102)
+                if ( $this->secprof_type == 'spyware' && $this->inlineVersion() < 102)
                 {
                     return null;
                 }
@@ -251,9 +267,9 @@ class SecurityProfile2
 
             if( isset($this->additional['mica-engine-wildfire-rules']) )
             {
-                if ( $this->owner->owner->version < 111 )
+                if ( $this->inlineVersion() < 111 )
                     return null;
-                elseif ( $this->owner->owner->version == 111 )
+                elseif ( $this->inlineVersion() == 111 )
                     return true;
 
                 foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
@@ -294,11 +310,11 @@ class SecurityProfile2
             }
             else
             {
-                if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
+                if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->inlineVersion() < 112)
                 {
-                    if ( $this->owner->owner->version < 111 )
+                    if ( $this->inlineVersion() < 111 )
                         return null;
-                    elseif ( $this->owner->owner->version == 111 )
+                    elseif ( $this->inlineVersion() == 111 )
                     {
                         //>=111 wf mica-engine but always allow!!!
                         return true;
@@ -310,9 +326,9 @@ class SecurityProfile2
         {
             if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
             {
-                if ( $this->owner->owner->version < 111 )
+                if ( $this->inlineVersion() < 111 )
                     return null;
-                elseif ( $this->owner->owner->version == 111 )
+                elseif ( $this->inlineVersion() == 111 )
                 {
                     //>=111 wf mica-engine but always allow!!!
                     return true;
@@ -348,7 +364,7 @@ class SecurityProfile2
         {
             if ( ($this->secprof_type == 'virus' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
             {
-                if( $this->owner->owner->version < 102 )
+                if( $this->inlineVersion() < 102 )
                 {
                     return null;
                 }

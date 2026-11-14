@@ -2355,8 +2355,10 @@ class PH
 
     public static function runSCMScript( $type, $argv )
     {
-        $script = dirname(__FILE__) . "/../../utils/develop/sase/scm/" . self::SCM_SCRIPT_TYPES[$type];
-        $cmd = escapeshellarg(PHP_BINARY) . " " . escapeshellarg($script);
+        $root = realpath( dirname(__FILE__) . "/../.." );
+        $script = $root . "/utils/develop/sase/scm/" . self::SCM_SCRIPT_TYPES[$type];
+        // the repository root on the include path: some scripts require "lib/pan_php_framework.php" relative to it
+        $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " " . escapeshellarg($script);
         foreach( array_slice($argv, 1) as $a )
             $cmd .= " " . escapeshellarg($a);
         passthru( $cmd, $rc );

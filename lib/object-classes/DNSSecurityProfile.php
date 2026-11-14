@@ -149,6 +149,23 @@ class DNSSecurityProfile extends SecurityProfile2
         return true;
     }
 
+    /**
+     * a DNS security profile only has the DNS part of PAN-OS anti-spyware (botnet-domains: lists, DNS security
+     * categories, sinkhole) - the anti-spyware parts of sp_action_spyware (inline ML / mica-engine-spyware-enabled,
+     * cloud-inline-analysis, rules) are not added (SCM refuses them: unknown to the dns-security-profiles schema)
+     */
+    public function AlertOnlySet(): void
+    {
+        $this->dns_AlertOnlySet();
+        $this->botnet_AlertOnlySet();
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->dns_BestPracticeSet();
+        $this->botnet_BestPracticeSet();
+    }
+
     /** @deprecated typo, use is_adoption() */
     public function is_adaption(): bool
     {
