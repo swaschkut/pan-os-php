@@ -611,16 +611,22 @@ class SCMImporter
                     $parent->appendChild($new);
                     $this->warnings[] = $sc['label'] . ": " . $type . " profile '" . $m . "' referenced by profile group '" . $grp->getAttribute('name') . "' created " . ( $pre !== null ? "as copy of the PAN-OS predefined profile" : "as placeholder" );
                 }
-            // log forwarding profiles without match list: SCM requires one - placeholder match list (forwards nothing, as before)
+            // log forwarding profiles without match list (Panorama: logs stay on the firewall / Panorama): SCM requires a
+            // match list and always logs to Strata Logging Service - one match list per log type, 'All Logs', no other
+            // destination -> all logs of the rules that use the profile go to Strata Logging Service
             foreach( $xp->query("log-settings/profiles/entry", $sc['node']) as $lfp )
                 if( $xp->query("match-list/entry", $lfp)->length == 0 )
                 {
                     $ml = DH::findFirstElementOrCreate('match-list', $lfp);
-                    $e = DH::createElement($ml, 'entry');
-                    $e->setAttribute('name', 'pan-os-php-placeholder');
-                    DH::createElement($e, 'log-type', 'traffic');
-                    DH::createElement($e, 'filter', 'All Logs');
-                    $this->markPlaceholder($lfp, "log forwarding profile without match list (SCM requires one): placeholder match list 'pan-os-php-placeholder' (traffic, All Logs, no destination - forwards nothing)");
+                    foreach( self::SLS_LOG_TYPES as $lt )
+                    {
+                        $e = DH::createElement($ml, 'entry');
+                        $e->setAttribute('name', $lt . '-sls');
+                        DH::createElement($e, 'log-type', $lt);
+                        DH::createElement($e, 'filter', 'All Logs');
+                    }
+                    $this->markIncomplete($lfp, "log forwarding profile without match list: match lists " . implode(", ", array_map(function($t){ return $t . "-sls"; }, self::SLS_LOG_TYPES))
+                        . " added (All Logs, Strata Logging Service only)");
                 }
         }
 
@@ -826,6 +832,9 @@ class SCMImporter
     }
 
     const PLACEHOLDER_ATTR = 'pan-os-php-scm-placeholder';
+
+    /** log types of the match lists added to log forwarding profiles without match list (Strata Logging Service) */
+    const SLS_LOG_TYPES = array('traffic', 'threat', 'wildfire', 'url', 'data', 'tunnel', 'auth', 'decryption');
 
     /** objects created because something refers to them, without (or with not original) content:
      *  ['resource', 'name', 'scope_type', 'scope', 'content' => [..]] */

@@ -77,11 +77,11 @@ Rules:
 | template interfaces | SCM interface variables in the snippet of the template / stack: `ethernet1/1` → `ethernet-interfaces` `$ethernet1_1` (layer3 ip / mtu / management profile, layer2, tap, comment, link settings); `ethernet1/2.1` → `layer3-subinterfaces` `$ethernet1_2.1` (`parent_interface: $ethernet1_2`, tag, ip – SCM requires `<parent>.<unit>`, `$ethernet1_2-1` is refused); layer2 units → `layer2-subinterfaces`; `tunnel.1` / `loopback.N` / `vlan.N` → `$tunnel-1` … (`tunnel-` / `loopback-` / `vlan-interfaces`); IP addresses of the template are kept in the snippet. Settings without SCM field (ipv6, lldp, ndp-proxy … with non default values) → `incomplete`; aggregate interfaces → `incomplete` (later). No `default_value`: SCM keeps it unique in the tenant (`'ethernet1/3' is already in use` when another snippet has it) and the value is set per firewall (DeviceOnPrem, later step); the Panorama interface of each variable is in `interface_variables` of the change file |
 | interface management profiles of the template | `interface-management-profiles` in the snippet |
 | zone interfaces | the zone references the interface variables (`outside` → `$ethernet1_1`); an interface a zone uses that is not in the template → placeholder `ethernet-interfaces` entry → `placeholders` |
-| log forwarding profile without match list | SCM requires a match list: placeholder match list `pan-os-php-placeholder` (traffic, `All Logs`, no destination – forwards nothing, as before) → `placeholders` |
+| log forwarding profile without match list | SCM requires a match list and always logs to Strata Logging Service: one match list per log type (`traffic-sls`, `threat-sls`, `wildfire-sls`, `url-sls`, `data-sls`, `tunnel-sls`, `auth-sls`, `decryption-sls`, filter `All Logs`, no other destination) → all logs of the rules that use the profile go to Strata Logging Service; listed in `incomplete` |
 | DNS sinkhole | SCM (public and internal API) only knows `pan-sinkhole-default-ip` / `127.0.0.1` and `::1`: the Palo Alto Networks sinkhole of PAN-OS (`sinkhole.paloaltonetworks.com` / `2600:5200::1`) → `pan-sinkhole-default-ip` / `::1` (same sinkhole, noted in `incomplete`); another address → default sinkhole, `incomplete` (check) |
 | custom URL category without entries | SCM refuses an empty list: placeholder entry `empty.empty` (matches no real URL) → `placeholders`; the URL access profiles that use the category can be created |
 | rule `profile-setting` with an empty `group` (PAN-OS: no profile) | removed – SCM refuses an empty group |
-| custom application (not PAN-OS predefined – a custom application with a predefined name is not created, warning) | `applications` with category, subcategory, technology, risk, description and the characteristics (evasive, …); signatures, default ports, timeouts … not imported → `placeholders` |
+| custom application (not PAN-OS predefined – a custom application with a predefined name is not created, warning) | `applications` as in Panorama: category, subcategory, technology, risk, description, characteristics, `default` (`port`, `ident_by_ip_protocol`, `ident_by_icmp_type` / `ident_by_icmp6_type` with type / code), timeouts, `parent_app`, `alg_disable_capability`, `no_appid_caching`, `file_type_ident`, `virus_ident`, `data_ident`; signatures not yet → `placeholders` |
 | application group / application filter | `application-groups` (members) / `application-filters` (category, sub_category, technology, risk, characteristics) |
 | application used by a rule / application group | resolved in this order: custom / group / filter of the configuration; PAN-OS predefined (`lib/object-classes/predefined.xml`, incl. containers – exists in SCM, nothing created); cloud App-ID / SaaS application (exists in SCM, nothing created) – checked with the cloud App-ID API helper (github.com/swaschkut/pan-os_cloud-appid-API-helper): `cloud-appid-api=auto` (default) uses `http://localhost:8080` / `http://host.docker.internal:8080` and, when it is not reachable and only when an application has to be checked, starts the container with docker (`docker start panos_cloud-appid_mock`, else `docker run -d -p 8080:80 --name panos_cloud-appid_mock swaschkut/pan-os_cloud-appid_api-helper`; inside the pan-os-php container docker needs the mounted `/var/run/docker.sock`); `cloud-appid-api=<URL>` a given helper; `off` / helper not available: the list `lib/object-classes/cloud-appid/cloud-appid.txt`; else placeholder custom application → `placeholders` |
 | zone used by rules, not in a template (`no-templates` / no stack) | empty layer3 zone → `placeholders` |
@@ -98,10 +98,13 @@ The usual change request of [scm_pa_change.php](README_pa_change.md) plus:
 * `not_imported`: objects that cannot be created (with the reason) and what refers to them
 * `interface_variables`: `[{snippet, variable, interface}]` – the Panorama interface of every interface variable (the value
   per firewall later)
+* `firewalls`: per managed firewall `serial`, `folder` (its device-group), `template_stack`, `snippets` (stack, then its
+  templates) and `interfaces` (interface variable → Panorama interface) – input for the device step (device in the
+  folder, interface variable values per device), not sent yet
 * `warnings`: what is not part of this step (NAT / decryption / … rules, data filtering profiles …)
 
 `scm_pa_change.php` does not send `source`, `placeholders`, `incomplete`, `not_imported`, `interface_variables`,
-`warnings` and shows their numbers.
+`firewalls`, `warnings` and shows their numbers.
 
 ## Translation details
 

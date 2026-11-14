@@ -205,8 +205,8 @@ if( count($change['snippets']) == 0 )
 $warnings = $importer->warnings;
 if( count($importer->groupTags) > 0 )
     $warnings[] = "rule group tags (display grouping, no SCM field) removed: " . implode(", ", array_keys($importer->groupTags));
-// custom applications: rules refer to them - created with the attributes the SCM applications API takes; signatures,
-// default ports, timeouts … are not imported -> placeholders list
+// custom applications: rules refer to them - created as in Panorama (category … characteristics, default ports /
+// IP protocol / ICMP type + code, timeouts, parent app); what is not taken yet (signatures) -> placeholders list
 $appScopes = array();
 if( $shared !== 'skip' && ($sh = DH::findFirstElement('shared', $pano->xmlroot)) !== FALSE )
     $appScopes[] = array( $shared == 'all' ? 'All' : $dgParent, $sh );
@@ -243,14 +243,54 @@ foreach( $appScopes as $as )
                 $item['risk'] = (int)$t;
             elseif( isset($appFlags[$c->tagName]) )
                 $item[$appFlags[$c->tagName]] = $t == 'yes';
+            elseif( $c->tagName == 'default' )
+            {
+                // identification without signature: ports, IP protocol, ICMP / ICMPv6 type + code
+                $def = array();
+                foreach( $c->childNodes as $d )
+                {
+                    if( $d->nodeType != XML_ELEMENT_NODE )
+                        continue;
+                    if( $d->tagName == 'port' )
+                    {
+                        $ports = array();
+                        foreach( $d->getElementsByTagName('member') as $m )
+                            $ports[] = trim($m->textContent);
+                        $def['port'] = $ports;
+                    }
+                    elseif( $d->tagName == 'ident-by-ip-protocol' )
+                        $def['ident_by_ip_protocol'] = trim($d->textContent);
+                    elseif( $d->tagName == 'ident-by-icmp-type' || $d->tagName == 'ident-by-icmp6-type' )
+                    {
+                        $ic = array();
+                        foreach( array('type', 'code') as $k )
+                            if( ($v = DH::findFirstElement($k, $d)) !== FALSE && trim($v->textContent) !== '' )
+                                $ic[$k] = trim($v->textContent);
+                        $def[str_replace('-', '_', $d->tagName)] = $ic;
+                    }
+                    else
+                        $missing[] = 'default/' . $d->tagName;
+                }
+                if( count($def) > 0 )
+                    $item['default'] = $def;
+            }
+            elseif( in_array($c->tagName, array('timeout', 'tcp-timeout', 'udp-timeout', 'tcp-half-closed-timeout', 'tcp-time-wait-timeout'), TRUE) )
+                $item[str_replace('-', '_', $c->tagName)] = (int)$t;
+            elseif( $c->tagName == 'parent-app' )
+                $item['parent_app'] = $t;
+            elseif( in_array($c->tagName, array('alg-disable-capability'), TRUE) )
+                $item['alg_disable_capability'] = $t;
+            elseif( in_array($c->tagName, array('no-appid-caching', 'file-type-ident', 'virus-ident', 'data-ident'), TRUE) )
+                $item[str_replace('-', '_', $c->tagName)] = $t == 'yes';
             else
                 $missing[] = $c->tagName;
         }
         $change['applications'][] = $item;
         $counts['applications'] = ( isset($counts['applications']) ? $counts['applications'] : 0 ) + 1;
-        $appPlaceholders[] = array( 'type' => 'applications', 'name' => $item['name'], 'folder' => $as[0],
-            'content' => array( "custom application created with category / subcategory / technology / risk / characteristics"
-                . ( count($missing) ? " - not imported: " . implode(", ", $missing) . " (application identification not complete)" : "" ) ) );
+        // what the SCM applications API cannot take yet (e.g. signatures): listed, the application is created anyway
+        if( count($missing) > 0 )
+            $appPlaceholders[] = array( 'type' => 'applications', 'name' => $item['name'], 'folder' => $as[0],
+                'content' => array( "custom application created without: " . implode(", ", $missing) . " (application identification not complete)" ) );
     }
 
 // interfaces of the templates / template-stacks -> SCM interface variables in the snippet ($ethernet1_1, sub interfaces
@@ -661,6 +701,50 @@ foreach( $importer->placeholders as $ph )
 $change['placeholders'] = $placeholders;
 if( count($ifVariables) > 0 )
     $change['interface_variables'] = $ifVariables;
+
+// managed firewalls: serial -> device-group folder, template-stack -> snippets, interface variables of these snippets
+// (for the device step: device in the folder, interface variable values per device) - not sent by scm_pa_change.php
+$firewalls = array();
+$xpf = new DOMXPath($pano->xmldoc);
+$dgOfSerial = array();
+foreach( $xpf->query("/config/devices/entry/device-group/entry") as $dgE )
+    foreach( $xpf->query("devices/entry", $dgE) as $d )
+        $dgOfSerial[$d->getAttribute('name')] = $dgE->getAttribute('name');
+$stackOfSerial = array();
+foreach( $xpf->query("/config/devices/entry/template-stack/entry") as $stE )
+    foreach( $xpf->query("devices/entry", $stE) as $d )
+        $stackOfSerial[$d->getAttribute('name')] = $stE->getAttribute('name');
+$serials = array();
+foreach( $xpf->query("/config/mgt-config/devices/entry") as $d )
+    $serials[$d->getAttribute('name')] = TRUE;
+$serials += array_fill_keys( array_keys($dgOfSerial), TRUE ) + array_fill_keys( array_keys($stackOfSerial), TRUE );
+foreach( array_keys($serials) as $serial )
+{
+    $fw = array( 'serial' => (string)$serial );
+    if( isset($dgOfSerial[$serial]) && in_array($dgOfSerial[$serial], $dgFolderNames, TRUE) )
+        $fw['folder'] = $dgOfSerial[$serial];
+    elseif( isset($dgOfSerial[$serial]) )
+        $fw['device_group'] = $dgOfSerial[$serial] . " (not imported)";
+    $snips = array();
+    if( isset($stackOfSerial[$serial]) )
+    {
+        $fw['template_stack'] = $stackOfSerial[$serial];
+        if( ($sn = $importer->snippetNameOf('stack', $stackOfSerial[$serial])) !== null )
+            $snips[] = $sn;
+        foreach( $xpf->query("/config/devices/entry/template-stack/entry[@name='" . $stackOfSerial[$serial] . "']/templates/member") as $m )
+            if( ($sn = $importer->snippetNameOf('template', trim($m->textContent))) !== null )
+                $snips[] = $sn;
+    }
+    $fw['snippets'] = $snips;
+    $vars = array();
+    foreach( $ifVariables as $v )
+        if( in_array($v['snippet'], $snips, TRUE) && !isset($vars[$v['variable']]) )
+            $vars[$v['variable']] = $v['interface'];
+    $fw['interfaces'] = $vars;
+    $firewalls[] = $fw;
+}
+if( count($firewalls) > 0 )
+    $change['firewalls'] = $firewalls;
 $change['not_imported'] = $notImported;
 $warnings = array_merge( $warnings, $warningsApps );
 $change['warnings'] = $warnings;

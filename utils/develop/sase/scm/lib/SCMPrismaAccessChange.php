@@ -132,7 +132,7 @@ class SCMPrismaAccessChange
         $this->placeholders = isset($j['placeholders']) && is_array($j['placeholders']) ? $j['placeholders'] : array();
         foreach( $j as $key => $list )
         {
-            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'incomplete', 'placeholders', 'warnings', 'interface_variables'), TRUE) )
+            if( in_array($key, array('format', 'version', 'description', 'comment', '_comment', 'source', 'not_imported', 'incomplete', 'placeholders', 'warnings', 'interface_variables', 'firewalls'), TRUE) )
                 continue;
             if( !is_array($list) || ( count($list) > 0 && array_keys($list) !== range(0, count($list) - 1) ) )
             {
