@@ -89,7 +89,7 @@ class PanSCMExportConnector extends PanSCMAPIConnector
     /** UTIL types whose SCM types together cover everything the loader knows */
     // order: referenced types first (log forwarding / zone protection profiles, tags) - the objects that refer to
     // them get their references while loading
-    const ALL_UTIL_TYPES = array( 'log-profile', 'zone-protection-profile', 'tag', 'upload', 'rule', 'application',
+    const ALL_UTIL_TYPES = array( 'log-profile', 'zone-protection-profile', 'tag', 'application', 'upload', 'rule',
         'schedule', 'zone', 'securityprofile', 'securityprofilegroup', 'address', 'service' );
 
     /**

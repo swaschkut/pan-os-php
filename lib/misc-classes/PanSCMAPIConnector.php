@@ -1507,15 +1507,9 @@ class PanSCMAPIConnector
                 }
                 $tmp_schedule->setSaseID( $object['id'] );
             }
-            elseif( $type === "application-groups" )
+            elseif( $type === "application-groups" || $type === "application-filters" )
             {
-                //pan-os-php has no newApplicationGroup method
-                PH::print_stdout($type . " - not implemented yet");
-            }
-            elseif( $type === "application-filters" )
-            {
-                //pan-os-php has no newApplicationFilters method
-                PH::print_stdout($type . " - not implemented yet");
+                $this->SCM_API_app_import( $type, $object, $sub );
             }
             elseif( $type === "regions" )
             {
@@ -1524,8 +1518,8 @@ class PanSCMAPIConnector
             }
             elseif( $type === "applications" )
             {
-                //pan-os-php has no newApplication method
-                PH::print_stdout($type . " - not implemented yet");
+                // custom applications only (the answer also contains the predefined catalog: folder 'predefined')
+                $this->SCM_API_app_import( $type, $object, $sub );
             }
             elseif( $type === "hip-objects" )
             {
@@ -2802,6 +2796,114 @@ class PanSCMAPIConnector
      * security profile from the internal UI API (complete PAN-OS structure), matched by id = @uuid
      * @return string|bool|null "continue" (already loaded), TRUE (imported), null (not available - use the public API)
      */
+    /** SCM field -> PAN-OS tag of custom applications / application filters (booleans yes / no) */
+    const SCM_APP_FLAGS = array(
+        'applications' => array( 'evasive' => 'evasive-behavior', 'excessive_bandwidth_use' => 'consume-big-bandwidth',
+            'used_by_malware' => 'used-by-malware', 'transfers_files' => 'able-to-transfer-file',
+            'has_known_vulnerabilities' => 'has-known-vulnerability', 'tunnels_other_apps' => 'tunnel-other-application',
+            'prone_to_misuse' => 'prone-to-misuse', 'pervasive' => 'pervasive-use', 'no_appid_caching' => 'no-appid-caching',
+            'file_type_ident' => 'file-type-ident', 'virus_ident' => 'virus-ident', 'data_ident' => 'data-ident' ),
+        'application-filters' => array( 'evasive' => 'evasive', 'excessive_bandwidth_use' => 'excessive-bandwidth-use',
+            'used_by_malware' => 'used-by-malware', 'transfers_files' => 'transfers-files',
+            'has_known_vulnerabilities' => 'has-known-vulnerabilities', 'tunnels_other_apps' => 'tunnels-other-apps',
+            'prone_to_misuse' => 'prone-to-misuse', 'pervasive' => 'pervasive', 'is_saas' => 'is-saas',
+            'new_appid' => 'new-appid' ),
+    );
+
+    /**
+     * application group / application filter / custom application: SCM JSON -> PAN-OS XML entry below the container
+     * (application-group / application-filter / application) and into its appStore
+     */
+    private function SCM_API_app_import( $type, $object, $sub )
+    {
+        if( !isset($object['name']) || !isset($sub->appStore) )
+            return;
+        if( isset($object['folder']) && $object['folder'] === 'predefined' )
+            return;
+        if( $sub->appStore->find($object['name'], null, false) !== null )
+            return;
+
+        $tags = array( 'application-groups' => 'application-group', 'application-filters' => 'application-filter', 'applications' => 'application' );
+        $root = DH::findFirstElementOrCreate( $tags[$type], $sub->xmlroot );
+        $entry = DH::createElement( $root, 'entry' );
+        $entry->setAttribute( 'name', $object['name'] );
+
+        $flags = isset(self::SCM_APP_FLAGS[$type]) ? self::SCM_APP_FLAGS[$type] : array();
+        $members = function( DOMElement $parent, $tag, $list ){
+            $n = DH::createElement( $parent, $tag );
+            foreach( (array)$list as $v )
+                DH::createElement( $n, 'member', is_bool($v) ? ( $v ? 'yes' : 'no' ) : (string)$v );
+        };
+        foreach( $object as $k => $v )
+        {
+            if( in_array($k, array('id', 'name', 'folder', 'snippet', 'device'), TRUE) )
+                continue;
+            if( $type == 'application-groups' && $k == 'members' )
+                $members( $entry, 'members', $v );
+            elseif( isset($flags[$k]) )
+                DH::createElement( $entry, $flags[$k], $v ? 'yes' : 'no' );
+            elseif( $type == 'application-filters' && in_array($k, array('category', 'sub_category', 'technology', 'risk', 'saas_certifications', 'saas_risk', 'exclude'), TRUE) )
+                $members( $entry, $k == 'sub_category' ? 'subcategory' : str_replace('_', '-', $k), $v );
+            elseif( $type == 'application-filters' && $k == 'tagging' && is_array($v) )
+            {
+                $t = DH::createElement( $entry, 'tagging' );
+                if( isset($v['no_tag']) )
+                    DH::createElement( $t, 'no-tag', $v['no_tag'] ? 'yes' : 'no' );
+                if( isset($v['tag']) )
+                    $members( $t, 'tag', $v['tag'] );
+            }
+            elseif( $type == 'applications' && in_array($k, array('category', 'subcategory', 'technology', 'description', 'parent_app', 'alg_disable_capability'), TRUE) )
+                DH::createElement( $entry, str_replace('_', '-', $k), (string)$v );
+            elseif( $type == 'applications' && in_array($k, array('risk', 'timeout', 'tcp_timeout', 'udp_timeout', 'tcp_half_closed_timeout', 'tcp_time_wait_timeout'), TRUE) )
+                DH::createElement( $entry, str_replace('_', '-', $k), (string)$v );
+            elseif( $type == 'applications' && $k == 'default' && is_array($v) )
+            {
+                $d = DH::createElement( $entry, 'default' );
+                if( isset($v['port']) )
+                    $members( $d, 'port', $v['port'] );
+                if( isset($v['ident_by_ip_protocol']) )
+                    DH::createElement( $d, 'ident-by-ip-protocol', (string)$v['ident_by_ip_protocol'] );
+                foreach( array('ident_by_icmp_type' => 'ident-by-icmp-type', 'ident_by_icmp6_type' => 'ident-by-icmp6-type') as $sk => $tag )
+                    if( isset($v[$sk]) && is_array($v[$sk]) )
+                    {
+                        $ic = DH::createElement( $d, $tag );
+                        foreach( array('type', 'code') as $f )
+                            if( isset($v[$sk][$f]) )
+                                DH::createElement( $ic, $f, (string)$v[$sk][$f] );
+                    }
+            }
+            // other fields (signatures …): not translated - the object exists for the references
+        }
+
+        $store = $sub->appStore;
+        if( $type == 'application-groups' )
+        {
+            $store->appGroupRoot = $root;
+            $app = new AppGroup( $object['name'], $store );
+            $app->type = 'application-group';
+            $store->app_groups[$app->name()] = $app;
+        }
+        elseif( $type == 'application-filters' )
+        {
+            $store->appFilterRoot = $root;
+            $app = new AppFilter( $object['name'], $store );
+            $app->type = 'application-filter';
+            $store->app_filters[$app->name()] = $app;
+        }
+        else
+        {
+            $store->appCustomRoot = $root;
+            $app = new AppCustom( $object['name'], $store );
+            $app->type = 'application-custom';
+            $store->apps_custom[$app->name()] = $app;
+        }
+        $app->xmlroot = $entry;
+        $store->addApp( $app );
+        $app->load_from_domxml( $entry );
+        if( isset($object['id']) && method_exists($app, 'setSaseID') )
+            $app->setSaseID( $object['id'] );
+    }
+
     private function SCM_API_internal_profile_import( $type, $object, $sub, $profileStoreName )
     {
         if( !isset($object['id']) || !isset($object['name']) )
