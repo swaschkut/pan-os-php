@@ -61,6 +61,7 @@ BUGFIX:
 * optimisation for all parts related to BP_JSON file - stats/exporttohtml
 * correction VP/Spyware BP - severity informational / low
 * SCM export after first production run / IAM patch
+* class SecurityProfileStore | bugfix for predefined URL
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes

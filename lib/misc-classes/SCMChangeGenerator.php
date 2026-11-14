@@ -876,22 +876,13 @@ class SCMChangeGenerator
      * Predefined objects (e.g. url categories) are not objects of the configuration; only a name
      * the change adds is checked, a name that was referenced before was accepted by SCM already.
      */
-    /** @var array|null names of the predefined URL categories */
-    private static $predefinedUrlCategories = null;
-
     /**
      * predefined URL category (pan-os-php predefined URL store, predefined.xml - updated with the predefined content)
      * - exists in SCM without being in the configuration
      */
     public static function isPredefinedUrlCategory($name)
     {
-        if( self::$predefinedUrlCategories === null )
-        {
-            self::$predefinedUrlCategories = array();
-            foreach( SecurityProfileStore::getURLPredefinedStore(null)->getAll() as $o )
-                self::$predefinedUrlCategories[$o->name()] = TRUE;
-        }
-        return isset(self::$predefinedUrlCategories[$name]);
+        return SecurityProfileStore::getURLPredefinedStore(null)->find( $name, null, FALSE ) !== null;
     }
 
     private function isChangedReference(array $req, $field, $refName)

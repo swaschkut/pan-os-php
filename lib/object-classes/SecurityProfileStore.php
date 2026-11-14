@@ -847,6 +847,10 @@ class SecurityProfileStore extends ObjStore
             #$app->type = 'predefined';
 
             $this->add($app);
+            // the index find() uses - without it no predefined URL category was found (rule URL categories lost
+            // their predefined members on rewriteXML(), checks saw them as unknown)
+            $this->fastNameToIndex[$app->name()] = $app;
+            $this->_SecurityProfiles[ $app->name() ] = $app;
         }
 
         sort($this->o);
