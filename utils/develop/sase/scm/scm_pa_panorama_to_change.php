@@ -44,8 +44,11 @@ $usage = "USAGE: php " . basename(__FILE__) . " in=panorama.xml out=change.json 
     . "                'folder' (into dg-parent) or 'skip'\n"
     . "  no-templates  device-groups only: no snippets of templates / template-stacks\n"
     . "  no-rules      objects only, no security rules (rules reference custom applications that are not imported)\n"
-    . "  cloud-appid-api  URL of the cloud App-ID API helper (github.com/swaschkut/pan-os_cloud-appid-API-helper, e.g.\n"
-    . "                http://localhost:8080) to check SaaS applications; default: list lib/object-classes/cloud-appid\n"
+    . "  cloud-appid-api  cloud App-ID API helper to check SaaS applications (github.com/swaschkut/pan-os_cloud-appid-API-helper):\n"
+    . "                'auto' (default): http://localhost:8080 / http://host.docker.internal:8080; not reachable -> the\n"
+    . "                container is started with docker (docker start / docker run -d -p 8080:80 --name\n"
+    . "                panos_cloud-appid_mock swaschkut/pan-os_cloud-appid_api-helper); URL: this helper; 'off': only the\n"
+    . "                list lib/object-classes/cloud-appid/cloud-appid.txt\n"
     . "  no-zones      do not create zones for the rules (default: a zone used by the rules of a device-group that is not\n"
     . "                in an attached snippet / parent folder is created in its folder - definition from the templates)\n"
 ;
@@ -288,6 +291,77 @@ foreach( isset($change['application-groups']) ? $change['application-groups'] : 
     foreach( $g['members'] as $a )
         $refs[$a][] = array( $g['folder'], "application group '" . $g['name'] . "'" );
 $predefinedApps = AppStore::getPredefinedStore( $pano );
+
+/** GET without PHP warnings (the pan-os-php error handler stops on warnings); false if not reachable */
+function httpGetQuiet( $url, $timeout = 5 )
+{
+    $ch = curl_init( $url );
+    curl_setopt_array( $ch, array( CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => $timeout, CURLOPT_PROXY => '' ) );
+    $r = curl_exec( $ch );
+    $code = (int)curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+    return ( $r === false || $code < 200 || $code >= 300 ) ? false : $r;
+}
+
+/**
+ * base URL of the cloud App-ID API helper; started with docker when it is not reachable (only when needed)
+ * @return string|null
+ */
+function cloudAppidApi( array $args, array &$messages )
+{
+    static $base = false;
+    if( $base !== false )
+        return $base;
+    $base = null;
+    $mode = isset($args['cloud-appid-api']) && is_string($args['cloud-appid-api']) ? $args['cloud-appid-api'] : 'auto';
+    if( $mode === 'off' )
+        return null;
+    $reachable = function( $url ){
+        return httpGetQuiet( rtrim($url, '/') . "/?type=op&cmd=" . rawurlencode("<show><cloud-appid><application>ssl</application></cloud-appid></show>"), 3 ) !== false;
+    };
+    if( $mode !== 'auto' )
+    {
+        if( $reachable($mode) )
+            return $base = rtrim($mode, '/');
+        $messages[] = "cloud App-ID API helper " . $mode . " not reachable - list cloud-appid.txt used";
+        return null;
+    }
+    $candidates = array( 'http://localhost:8080', 'http://host.docker.internal:8080' );
+    foreach( $candidates as $c )
+        if( $reachable($c) )
+            return $base = $c;
+
+    // start the container (docker on this host, or the docker socket mounted into the pan-os-php container)
+    exec( "docker version --format '{{.Server.Version}}' 2>/dev/null", $out, $rc );
+    if( $rc !== 0 )
+    {
+        $messages[] = "cloud App-ID API helper not reachable and docker not available here (in the pan-os-php container: mount "
+            . "/var/run/docker.sock, or start it on the host: docker run -d -p 8080:80 --name panos_cloud-appid_mock "
+            . "swaschkut/pan-os_cloud-appid_api-helper) - list cloud-appid.txt used";
+        return null;
+    }
+    $name = 'panos_cloud-appid_mock';
+    exec( "docker ps -a -q -f name=^/" . $name . "$ 2>/dev/null", $ids );
+    if( count($ids) > 0 )
+        exec( "docker start " . $name . " 2>&1", $o2, $rc2 );
+    else
+        exec( "docker run -d -p 8080:80 --name " . $name . " swaschkut/pan-os_cloud-appid_api-helper 2>&1", $o2, $rc2 );
+    if( $rc2 !== 0 )
+    {
+        $messages[] = "cloud App-ID API helper: docker could not start " . $name . " (" . implode(" ", array_slice($o2, -2)) . ") - list cloud-appid.txt used";
+        return null;
+    }
+    $messages[] = "cloud App-ID API helper: container " . $name . ( count($ids) > 0 ? " started" : " created and started" );
+    for( $i = 0; $i < 30; $i++ )
+    {
+        foreach( $candidates as $c )
+            if( $reachable($c) )
+                return $base = $c;
+        sleep(2);
+    }
+    $messages[] = "cloud App-ID API helper: container started, but not reachable on port 8080 within 60 s - list cloud-appid.txt used";
+    return null;
+}
+$appidMessages = array();
 $cloudList = null;
 $appResolution = array( 'custom / group / filter' => 0, 'predefined' => 0, 'cloud App-ID' => 0, 'placeholder' => 0 );
 foreach( $refs as $a => $users )
@@ -305,10 +379,10 @@ foreach( $refs as $a => $users )
         continue;
     }
     $cloud = null;
-    if( isset($args['cloud-appid-api']) && is_string($args['cloud-appid-api']) )
+    if( ($api = cloudAppidApi( $args, $appidMessages )) !== null )
     {
-        $url = rtrim($args['cloud-appid-api'], '/') . "/?type=op&cmd=" . rawurlencode("<show><cloud-appid><application>" . htmlspecialchars($a, ENT_XML1) . "</application></cloud-appid></show>");
-        $answer = @file_get_contents($url);
+        $url = $api . "/?type=op&cmd=" . rawurlencode("<show><cloud-appid><application>" . htmlspecialchars($a, ENT_XML1) . "</application></cloud-appid></show>");
+        $answer = httpGetQuiet($url, 10);
         if( $answer !== false )
             $cloud = strpos($answer, 'status="success"') !== false && preg_match('/<(entry|application)[^>]*>/', $answer) && strpos($answer, $a) !== false;
     }
@@ -408,6 +482,8 @@ foreach( $counts as $t => $n )
 if( isset($importer->summary['skipped']) )
     PH::print_stdout( " * not part of this step: " . json_encode($importer->summary['skipped']) );
 PH::print_stdout( " * completed through the internal UI API (sections the public API does not have): " . $internalCount . " profile(s) ('_internal')" );
+foreach( $appidMessages as $m )
+    PH::print_stdout( "   ! " . $m );
 PH::print_stdout( " * applications used by rules / groups: " . implode(", ", array_map( function($k, $v){ return $k . " " . $v; }, array_keys($appResolution), $appResolution )) );
 PH::print_stdout( " * created because they are referenced (PAN-OS predefined copy / placeholder): " . count($placeholders) . " - listed in 'placeholders' of the change file" );
 $byType = array();

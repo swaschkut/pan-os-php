@@ -39,6 +39,7 @@ UTIL:
 * scm export | explicit proxy via internal API - same as WebUI
 * scm-api:// | improvement if SCM API is not having info for VP / WFAV
 * scm extend for panorama NGFW import
+* type=rule actions=securityProfile-replace-by-Group | extend with parent search
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

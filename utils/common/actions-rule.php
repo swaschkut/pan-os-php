@@ -2993,7 +2993,8 @@ RuleCallContext::$supportedActions[] = Array(
 
         $rule_secprof = $rule->owner->owner->securityProfileGroupStore->calculateHash( $profiles );
 
-        $secprofgroup = $rule->owner->owner->securityProfileGroupStore->findByHash( $rule_secprof );
+        // also the profile groups of the parent device-groups / shared (same profile objects only)
+        $secprofgroup = $rule->owner->owner->securityProfileGroupStore->findByHash( $rule_secprof, TRUE, $profiles_obj );
         if( $secprofgroup == null )
         {
             #PH::print_stdout( PH::boldText(  "SecurityProfileGroup not found\n" );

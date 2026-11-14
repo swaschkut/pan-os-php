@@ -546,7 +546,8 @@ class SCMImporter
                     $store->load_securityprofile_groups_from_domxml($node);
                 }
                 $profiles = $rule->securityProfiles();
-                $group = $store->findByHash( $store->calculateHash($profiles) );
+                // also the profile groups of the parent device-groups / shared (same profile objects only)
+                $group = $store->findByHash( $store->calculateHash($profiles), TRUE, $rule->securityProfiles_obj() );
                 if( $group === null )
                     $group = $store->createSecurityProfileGroup_based_Profile( $profiles, $rule->securityProfiles_obj() );
                 $rule->setSecurityProfileGroup( $group->name() );
