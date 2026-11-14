@@ -1021,7 +1021,7 @@ class UTIL
 
         $this->location_provided();
 
-        if( $this->configInput['type'] == 'sase-api' || $this->configInput['type'] == 'scm-api' )
+        if( $this->configInput['type'] == 'sase-api' || $this->configInput['type'] == 'scm-api' || $this->configInput['type'] == 'scm-export' )
             $this->location_filter_scm_object();
     }
 
@@ -1153,6 +1153,29 @@ class UTIL
                     $this->origXmlDoc = $this->configInput['connector']->getSavedConfig($this->configInput['filename']);
             }
         }
+        elseif( $this->configInput['type'] == 'scm-export' )
+        {
+            // offline SCM configuration from a scm_pa_export.php folder: same loader as scm-api://, nothing is sent,
+            // the result is saved with out= (like an XML file)
+            $this->scope = $this->configInput['connector']->scope;
+            if( isset(PH::$args['out']) )
+            {
+                $this->configOutput = PH::$args['out'];
+                if( !is_string($this->configOutput) || strlen($this->configOutput) < 1 )
+                    $this->display_error_usage_exit('"out" argument is not a valid string');
+            }
+            $baseFile = dirname(__FILE__)."/../develop/buckbeak_baseconfig.xml";
+            $this->configType = 'buckbeak';
+            $this->pan = new BuckbeakConf();
+            $this->xmlDoc = new DOMDocument();
+            PH::print_stdout( " - SCM export folder: " . $this->configInput['connector']->exportDir . " (TSG " . str_replace("tsg_id:", "", $this->scope) . ", offline)" );
+            if( !$this->xmlDoc->load($baseFile, XML_PARSE_BIG_LINES) )
+                derr("error while reading xml config file");
+            if( $this->outputformatset )
+                $this->origXmlDoc->load($baseFile, XML_PARSE_BIG_LINES);
+            $this->pan->load_from_domxml($this->xmlDoc);
+            $this->sase_connector = $this->configInput['connector'];
+        }
         elseif( $this->configInput['type'] == 'sase-api' || $this->configInput['type'] == 'scm-api')
         {
             if( $this->debugAPI )
@@ -1276,7 +1299,7 @@ class UTIL
         unset($xpathResult);
 
 
-        if( isset($this->configInput['type']) && $this->configInput['type'] !== 'sase-api' && $this->configInput['type'] !== 'scm-api')
+        if( isset($this->configInput['type']) && $this->configInput['type'] !== 'sase-api' && $this->configInput['type'] !== 'scm-api' && $this->configInput['type'] !== 'scm-export' )
         {
             if( $this->configType == 'panos' )
             {
@@ -1549,12 +1572,12 @@ class UTIL
         //
         // load the config
         //
-        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" )
+        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" && $this->configInput['type'] !== "scm-export" )
             PH::print_stdout( " - Loading configuration through PAN-OS-PHP library... " );
 
         $this->loadStart();
 
-        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" )
+        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" && $this->configInput['type'] !== "scm-export" )
             $this->pan->load_from_domxml($this->xmlDoc, $this->debugLoadTime);
 
         if( $this->debugLoadTime )
@@ -1842,7 +1865,7 @@ class UTIL
         {
             $folderArray = PanSaseAPIConnector::$folderArray;
         }
-        elseif( $this->configInput['type'] == 'scm-api' )
+        elseif( $this->configInput['type'] == 'scm-api' || $this->configInput['type'] == 'scm-export' )
         {
             $folderArray = PanSCMAPIConnector::$folderArray;
 
@@ -1921,7 +1944,7 @@ class UTIL
             //Todo: 20240326 swaschkut - do not always load full config
             if( $this->configInput['type'] == 'sase-api' )
                 $this->sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
-            elseif( $this->configInput['type'] == 'scm-api' )
+            elseif( $this->configInput['type'] == 'scm-api' || $this->configInput['type'] == 'scm-export' )
                 $this->sase_connector->loadSCMConfig($folder, $sub, $this->utilType);
 
             //time end

@@ -915,6 +915,16 @@ class PH
         $ret = array('status' => 'fail');
         $ret['filename'] = null;
 
+        // offline SCM configuration: folder written by scm_pa_export.php
+        if( strpos($str, 'scm-export://') === 0 )
+        {
+            $dir = substr($str, strlen('scm-export://'));
+            $ret['status'] = 'ok';
+            $ret['type'] = 'scm-export';
+            $ret['connector'] = new PanSCMExportConnector($dir);
+            return $ret;
+        }
+
         $pos_sase = strpos($str, 'sase-api://');
         $pos_scm = strpos($str, 'scm-api://');
         $pos = strpos($str, 'api://');

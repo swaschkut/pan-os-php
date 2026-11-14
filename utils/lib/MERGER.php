@@ -201,6 +201,9 @@ class MERGER extends UTIL
         $this->inDebugapiArgument();
         $this->inputValidation();
         $this->location_provided();
+        // SCM / Prisma Access (API or scm_pa_export.php folder): containers and objects are loaded per location
+        if( in_array($this->configInput['type'], array('sase-api', 'scm-api', 'scm-export'), TRUE) )
+            $this->location_filter_scm_object();
 
         $this->load_config();
 

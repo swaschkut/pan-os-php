@@ -251,6 +251,19 @@ class SCMChangeGenerator
         return $this->result();
     }
 
+    /** number of objects per container and resource: ['<scope_type>|<scope>|<resource>' => n] */
+    public function objectCounts(DOMDocument $doc)
+    {
+        $counts = array();
+        foreach( $this->collectScopes($doc) as $scope )
+            foreach( $this->collectObjects($scope) as $obj )
+            {
+                $k = $obj['scope_type'] . "|" . $obj['scope'] . "|" . $obj['resource'];
+                $counts[$k] = ( isset($counts[$k]) ? $counts[$k] : 0 ) + 1;
+            }
+        return $counts;
+    }
+
     public function result()
     {
         $summary = array('POST' => 0, 'PUT' => 0, 'DELETE' => 0, 'review' => 0);

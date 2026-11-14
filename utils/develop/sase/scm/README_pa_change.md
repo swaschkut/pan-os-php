@@ -128,6 +128,8 @@ firewall – push is neither possible nor needed (`not_pushable`); the candidate
 
 * Panorama device-groups → SCM: [README_pa_panorama_import.md](README_pa_panorama_import.md)
   (`scm_pa_panorama_to_change.php` writes the change file)
+* pan-os-php utilities (merger, playbooks, actions) on an export: [README_pa_xml_to_change.md](README_pa_xml_to_change.md)
+  (`in=scm-export://`, `scm_pa_xml_to_change.php` writes the change file)
 
 * bigger changes, reordering rule bases, Prisma Access areas, tenant → tenant: export / edit / `scm_pa_compare.php` /
   `scm_pa_sync.php` ([README_pa_sync.md](README_pa_sync.md))
