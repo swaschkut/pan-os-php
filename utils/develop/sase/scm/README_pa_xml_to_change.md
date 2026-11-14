@@ -34,6 +34,10 @@ with a config area is used (the tools print which one).
   objects from `config/01_folders.json`, `config/02_snippets.json` and `config/folders|snippets|devices/<container>/`
 * `location=` works as with `scm-api://`; the result is written with `out=` like an XML file
 * offline: no credentials, no API request – a utility that would send something stops with a message
+* loaded types: tags, addresses, address groups, external dynamic lists, regions, services, service groups,
+  schedules, application groups / filters / custom applications, log forwarding / zone protection / security profiles,
+  profile groups, zones, security and NAT rules (the address / service types and the mergers load NAT rules too, so
+  their references are replaced)
 * the internal UI API sections of security profiles are not in the export: profiles are loaded with their public
   fields only (unchanged profiles produce no change)
 

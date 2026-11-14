@@ -919,7 +919,19 @@ class SCMChangeGenerator
     {
         $schema = $this->schema[$obj['resource']]['schema'];
         $ignored = self::$ignoredFields[$obj['resource']] ?? array();
-        $body = $this->convertElement($obj['node'], $schema, "", $dropped, $ignored);
+        $node = $obj['node'];
+        // NAT: PAN-OS destination-translation = SCM translated_address / translated_port / dns_rewrite at the rule
+        if( $obj['resource'] == 'nat-rules' && ($dt = DH::findFirstElement('destination-translation', $node)) !== FALSE )
+        {
+            $node = $node->cloneNode(TRUE);
+            $dt = DH::findFirstElement('destination-translation', $node);
+            foreach( array('translated-address', 'translated-port', 'dns-rewrite') as $tag )
+                if( ($c = DH::findFirstElement($tag, $dt)) !== FALSE )
+                    $node->appendChild($c);
+            if( DH::firstChildElement($dt) === FALSE )
+                $node->removeChild($dt);
+        }
+        $body = $this->convertElement($node, $schema, "", $dropped, $ignored);
         if( !is_array($body) )
             $body = array();
         $body = array('name' => $obj['name']) + $body;

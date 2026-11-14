@@ -215,6 +215,15 @@ foreach( $gen['requests'] as $r )
 }
 if( count($notChanged) > 0 )
     $change['not_imported'] = $notChanged;
+// "changes below <x>" of a part the utility did not load (not in the changed XML at all): no change, not reported
+$xpNew = new DOMXPath($newDoc);
+$gen['warnings'] = array_values(array_filter( isset($gen['warnings']) ? $gen['warnings'] : array(), function( $w ) use( $xpNew ){
+    if( !preg_match("/^(folder|snippet|device) '(.*)': changes below <([^>]+)>/", $w, $m) )
+        return TRUE;
+    $kind = array( 'folder' => 'container', 'snippet' => 'snippet', 'device' => 'device/*' );
+    $q = "/config/devices/entry/" . $kind[$m[1]] . "/entry[@name=" . ( strpos($m[2], "'") === FALSE ? "'" . $m[2] . "'" : '"' . $m[2] . '"' ) . "]/" . $m[3];
+    return $xpNew->query($q)->length > 0;
+} ));
 if( !empty($gen['warnings']) )
     $change['warnings'] = $gen['warnings'];
 

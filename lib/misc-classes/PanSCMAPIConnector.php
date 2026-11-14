@@ -688,6 +688,10 @@ class PanSCMAPIConnector
         {
             $this->typeArray[] = "zone-protection-profiles";
         }
+        elseif( $utilType == "edl" )
+        {
+            $this->typeArray[] = "external-dynamic-lists";
+        }
         else
         {
             derr("PAN-OS-PHP connection method 'scm-api://' - do not yet support this UTIL type: '" . $utilType . "'", null, FALSE);
@@ -705,6 +709,19 @@ class PanSCMAPIConnector
         #"dns-security-profiles",
         #"file-blocking-profiles",
         #"decryption-profiles",
+
+        // external dynamic lists next to the addresses (rules refer to them), NAT rules next to the security rules
+        // (they refer to addresses / services - the mergers must see these references)
+        $extended = array();
+        foreach( $this->typeArray as $t )
+        {
+            $extended[] = $t;
+            if( $t === "address-groups" && !in_array("external-dynamic-lists", $this->typeArray, TRUE) )
+                $extended[] = "external-dynamic-lists";
+            if( $t === "security-rules" && !in_array("nat-rules", $this->typeArray, TRUE) )
+                $extended[] = "nat-rules";
+        }
+        $this->typeArray = $extended;
 
         return $this->typeArray;
     }
@@ -844,7 +861,9 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        if( $type !== null
+        if( $type === "nat-rules" )
+            $url .= "/config/network/v1/" . $type . "?".$foldertype."=" . $folderName;
+        elseif( $type !== null
             && ( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
             && $type !== "log-forwarding-profiles"
         )
@@ -1506,6 +1525,10 @@ class PanSCMAPIConnector
                     }
                 }
                 $tmp_schedule->setSaseID( $object['id'] );
+            }
+            elseif( $type === "nat-rules" || $type === "external-dynamic-lists" )
+            {
+                $this->SCM_API_xml_import( $type, $object, $sub );
             }
             elseif( $type === "application-groups" || $type === "application-filters" )
             {
@@ -2792,10 +2815,6 @@ class PanSCMAPIConnector
             $entry->setAttribute( 'uuid', $data['id'] );
     }
 
-    /**
-     * security profile from the internal UI API (complete PAN-OS structure), matched by id = @uuid
-     * @return string|bool|null "continue" (already loaded), TRUE (imported), null (not available - use the public API)
-     */
     /** SCM field -> PAN-OS tag of custom applications / application filters (booleans yes / no) */
     const SCM_APP_FLAGS = array(
         'applications' => array( 'evasive' => 'evasive-behavior', 'excessive_bandwidth_use' => 'consume-big-bandwidth',
@@ -2904,6 +2923,78 @@ class PanSCMAPIConnector
             $app->setSaseID( $object['id'] );
     }
 
+    /**
+     * NAT rule / external dynamic list: SCM JSON -> PAN-OS XML entry, loaded with the pan-os-php classes (references to
+     * zones, addresses, services, tags are resolved like for an XML configuration)
+     */
+    private function SCM_API_xml_import( $type, $object, $sub )
+    {
+        if( !isset($object['name']) )
+            return;
+        $data = $object;
+        foreach( array('position', 'id', 'folder', 'snippet', 'device') as $k )
+            unset( $data[$k] );
+
+        if( $type === 'nat-rules' )
+        {
+            if( $sub->natRules->find($object['name']) !== null )
+                return;
+            // SCM: translated_address / translated_port / dns_rewrite at the rule = PAN-OS destination-translation
+            $dt = array();
+            foreach( array('translated_address', 'translated_port', 'dns_rewrite') as $k )
+                if( isset($data[$k]) )
+                {
+                    $dt[$k] = $data[$k];
+                    unset( $data[$k] );
+                }
+            if( count($dt) > 0 )
+                $data['destination_translation'] = $dt;
+            if( isset($data['disabled']) )
+                $data['disabled'] = $data['disabled'] ? 'yes' : 'no';
+            if( isset($data['source_translation']['static_ip']['bi_directional']) )
+            {
+                $b = $data['source_translation']['static_ip']['bi_directional'];
+                $data['source_translation']['static_ip']['bi_directional'] = ( $b === true || $b === 'yes' ) ? 'yes' : 'no';
+            }
+            if( isset($data['translated_port']) )
+                $data['translated_port'] = (string)$data['translated_port'];
+        }
+        elseif( $type === 'external-dynamic-lists' )
+        {
+            if( $sub->EDLStore->find($object['name'], null, false) !== null )
+                return;
+        }
+
+        $dom = null;
+        $root = null;
+        $this->SCM_API_prepareMethodForImport( $object, $dom, $root );
+        $this->SCM_API_arrayToXml( $dom, $root, $data );
+        if( isset($object['description']) && $object['description'] !== '' )
+            DH::createElement( $root, 'description', $object['description'] );
+        $node = $sub->xmlroot->ownerDocument->importNode( $root, TRUE );
+
+        if( $type === 'nat-rules' )
+        {
+            $post = isset($object['position']) && $object['position'] === 'post';
+            $rule = new NatRule( $sub->natRules );
+            $rule->load_from_domxml( $node );
+            $rule->owner = null;
+            $sub->natRules->addRule( $rule, $post );
+        }
+        else
+        {
+            $edl = new EDL( $object['name'], $sub->EDLStore );
+            $edl->xmlroot = $node;
+            $edl->load_from_domxml( $node );
+            $edl->owner = null;
+            $sub->EDLStore->addEDL( $edl );
+        }
+    }
+
+    /**
+     * security profile from the internal UI API (complete PAN-OS structure), matched by id = @uuid
+     * @return string|bool|null "continue" (already loaded), TRUE (imported), null (not available - use the public API)
+     */
     private function SCM_API_internal_profile_import( $type, $object, $sub, $profileStoreName )
     {
         if( !isset($object['id']) || !isset($object['name']) )
