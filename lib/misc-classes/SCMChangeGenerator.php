@@ -827,7 +827,9 @@ class SCMChangeGenerator
                             foreach( $created[$k] as $seq )
                                 $deps[] = $seq;
                         }
-                        elseif( !isset($this->existing[$targetResource][$refName]) && $this->isChangedReference($req, $field, $refName) )
+                        elseif( !isset($this->existing[$targetResource][$refName])
+                            && !( $targetResource == 'url-categories' && self::isPredefinedUrlCategory($refName) )
+                            && $this->isChangedReference($req, $field, $refName) )
                             $this->markReview($req, "references " . $targetResource . " '" . $refName . "', which is not in the configuration");
                     }
                 }
@@ -874,6 +876,24 @@ class SCMChangeGenerator
      * Predefined objects (e.g. url categories) are not objects of the configuration; only a name
      * the change adds is checked, a name that was referenced before was accepted by SCM already.
      */
+    /** @var array|null names of the predefined URL categories */
+    private static $predefinedUrlCategories = null;
+
+    /**
+     * predefined URL category (pan-os-php predefined URL store, predefined.xml - updated with the predefined content)
+     * - exists in SCM without being in the configuration
+     */
+    public static function isPredefinedUrlCategory($name)
+    {
+        if( self::$predefinedUrlCategories === null )
+        {
+            self::$predefinedUrlCategories = array();
+            foreach( SecurityProfileStore::getURLPredefinedStore(null)->getAll() as $o )
+                self::$predefinedUrlCategories[$o->name()] = TRUE;
+        }
+        return isset(self::$predefinedUrlCategories[$name]);
+    }
+
     private function isChangedReference(array $req, $field, $refName)
     {
         if( $req['method'] == 'POST' )
