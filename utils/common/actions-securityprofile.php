@@ -2413,6 +2413,46 @@ SecurityProfileCallContext::$supportedActions[] = array(
             }
 
 
+            // virus-and-wildfire-analysis: AV inline ML (models) and WF inline ML (inline cloud analysis) checked
+            // separately against the BP JSON sections 'virus' / 'wildfire' (the generic check above has no section)
+            if( get_class($object) == "VirusAndWildfireProfile" )
+            {
+                foreach( array( 'av_inline_ml' => 'av', 'inline_ml' => 'wf' ) as $col => $part )
+                    foreach( array( '' => 'visibility', 'bp_' => 'best_practice' ) as $pre => $kind )
+                    {
+                        $check = $object->{$part . "_inline_ml_" . $kind}();
+                        if( $check === null )
+                        {
+                            $info[$pre . $col] = 'N/A';
+                            $info[$pre . $col . '_detail'] = 'N/A';
+                        }
+                        elseif( $check )
+                        {
+                            $info[$pre . $col] = $info['count'];
+                            $info[$pre . $col . '_detail'] = $pre == '' ? 'Compliant' : 'BP Compliant';
+                        }
+                        else
+                        {
+                            $info[$pre . $col] = 0;
+                            $lines = array();
+                            if( $part == 'av' )
+                            {
+                                foreach( isset($object->additional['mlav-engine-filebased-enabled']) ? $object->additional['mlav-engine-filebased-enabled'] : array() as $model => $m )
+                                    $lines[] = $model . " - mlav-policy-action: '" . ( is_array($m) && isset($m['mlav-policy-action']) ? $m['mlav-policy-action'] : ( is_string($m) ? $m : '' ) ) . "'";
+                                if( count($lines) == 0 )
+                                    $lines[] = "[no WildFire inline ML models]";
+                            }
+                            else
+                            {
+                                $lines[] = "cloud-inline-analysis: " . ( $object->cloud_inline_analysis_enabled ? "[yes]" : "[no]" );
+                                foreach( isset($object->additional['mica-engine-wildfire-rules']) ? $object->additional['mica-engine-wildfire-rules'] : array() as $rname => $r )
+                                    $lines[] = $rname . ( is_array($r) && isset($r['action']) ? " - action: '" . $r['action'] . "'" : "" ) . ( is_array($r) && isset($r['direction']) ? " - direction: '" . $r['direction'] . "'" : "" );
+                            }
+                            $info[$pre . $col . '_detail'] = implode("\n", $lines);
+                        }
+                    }
+            }
+
             $info['rules']                    = 0;
             $info['rules_detail']             = 'Compliant';
             $info['bp_rules']                    = 0;

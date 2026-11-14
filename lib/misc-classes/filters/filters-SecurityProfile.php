@@ -644,6 +644,9 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.be
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
 
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->av_inline_ml_best_practice();
+
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
@@ -656,6 +659,9 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.vi
 
         if( is_string($object) || ($object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' ))
             return null;
+
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->av_inline_ml_visibility();
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
@@ -1295,6 +1301,9 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.be
         if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
 
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->wf_inline_ml_best_practice();
+
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
@@ -1307,6 +1316,9 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.vi
 
         if( is_string($object) || ($object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' ) )
             return null;
+
+        if( $object instanceof VirusAndWildfireProfile )
+            return $object->wf_inline_ml_visibility();
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },

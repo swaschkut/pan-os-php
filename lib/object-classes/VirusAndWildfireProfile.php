@@ -153,75 +153,66 @@ class VirusAndWildfireProfile extends SecurityProfile2
         $this->display_wildfire();
     }
 
-    public function is_best_practice(): ?bool
+    /**
+     * inline checks of one part: the BP JSON has no section 'virus-and-wildfire-analysis' - the antivirus part
+     * (WildFire inline ML models, mlav-engine-filebased-enabled) is checked with the section 'virus', the WildFire part
+     * (inline cloud analysis, mica-engine-wildfire-rules) with 'wildfire'; the section of the other part is left out
+     * @param string $method cloud_inline_analysis_visibility | cloud_inline_analysis_best_practice
+     */
+    private function inlinePart( $method, $part )
     {
-        //Todo - swaschkut 20260629
-        $results = array();
-        if( $this->owner->owner->version >= 102 )
+        $jsonType = $part == 'av' ? 'virus' : 'wildfire';
+        $hide = $part == 'av' ? 'mica-engine-wildfire-rules' : 'mlav-engine-filebased-enabled';
+        $savedType = $this->secprof_type;
+        $savedSection = array_key_exists($hide, $this->additional) ? $this->additional[$hide] : null;
+        unset( $this->additional[$hide] );
+        $this->secprof_type = $jsonType;
+        try
         {
-            $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
+            $ret = $this->$method( $this->owner->bp_json_file );
         }
-        else
+        finally
         {
-            $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
+            $this->secprof_type = $savedType;
+            if( $savedSection !== null )
+                $this->additional[$hide] = $savedSection;
         }
-
-        if( $this->owner->owner->version >= 112 )
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_best_practice() ) );
-        }
-
-        return PH::bpCombine( $results );
+        return $ret;
     }
 
-    public function is_visibility(): ?bool
+    public function av_inline_ml_visibility(): ?bool
     {
-        $results = array();
-        //Todo - swaschkut 20260629
-        if( $this->owner->owner->version >= 102 )
-        {
-            $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
-        }
+        return $this->inlinePart( 'cloud_inline_analysis_visibility', 'av' );
+    }
 
-        if( $this->owner->owner->version >= 112 )
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_visibility() ) );
-        }
+    public function av_inline_ml_best_practice(): ?bool
+    {
+        return $this->inlinePart( 'cloud_inline_analysis_best_practice', 'av' );
+    }
 
-        return PH::bpCombine( $results );
+    public function wf_inline_ml_visibility(): ?bool
+    {
+        return $this->inlinePart( 'cloud_inline_analysis_visibility', 'wf' );
+    }
+
+    public function wf_inline_ml_best_practice(): ?bool
+    {
+        return $this->inlinePart( 'cloud_inline_analysis_best_practice', 'wf' );
     }
 
     /**
      * the antivirus part of the profile (as AntiVirusProfile::is_*): decoder actions (action, wildfire-action,
-     * mlav-action), cloud inline analysis (10.2+) - the filters 'av ...' and the AV columns of the reports use it, so
-     * a WildFire finding does not count against antivirus and vice versa
+     * mlav-action), WildFire inline ML models (mlav-engine-filebased-enabled) - the filters 'av ...' and the AV columns
+     * of the reports use it, so a WildFire finding does not count against antivirus and vice versa
      */
     public function av_is_best_practice(): ?bool
     {
-        $results = array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() );
-        if( $this->owner->owner->version >= 102 )
-            $results[] = $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file);
-        return PH::bpCombine( $results );
+        return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->av_inline_ml_best_practice() ) );
     }
 
     public function av_is_visibility(): ?bool
     {
-        $results = array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() );
-        if( $this->owner->owner->version >= 102 )
-            $results[] = $this->cloud_inline_analysis_visibility($this->owner->bp_json_file);
-        return PH::bpCombine( $results );
+        return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->av_inline_ml_visibility() ) );
     }
 
     /** as AntiVirusProfile: every antivirus profile used in a rule is adoption */
@@ -230,26 +221,31 @@ class VirusAndWildfireProfile extends SecurityProfile2
         return true;
     }
 
-    /** the WildFire part of the profile (as WildfireProfile::is_*): rules, cloud inline analysis (11.2+) */
+    /** the WildFire part of the profile (as WildfireProfile::is_*): rules, inline cloud analysis (mica-engine-wildfire-rules) */
     public function wf_is_best_practice(): ?bool
     {
-        $results = array( $this->wildfire_rules_best_practice() );
-        if( $this->owner->owner->version >= 112 )
-            $results[] = $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file);
-        return PH::bpCombine( $results );
+        return PH::bpCombine( array( $this->wildfire_rules_best_practice(), $this->wf_inline_ml_best_practice() ) );
     }
 
     public function wf_is_visibility(): ?bool
     {
-        $results = array( $this->wildfire_rules_visibility() );
-        if( $this->owner->owner->version >= 112 )
-            $results[] = $this->cloud_inline_analysis_visibility($this->owner->bp_json_file);
-        return PH::bpCombine( $results );
+        return PH::bpCombine( array( $this->wildfire_rules_visibility(), $this->wf_inline_ml_visibility() ) );
     }
 
     public function wf_is_adoption(): bool
     {
         return count($this->rules_obj) > 0;
+    }
+
+    /** whole profile: antivirus part and WildFire part (av_is_* / wf_is_*) */
+    public function is_best_practice(): ?bool
+    {
+        return PH::bpCombine( array( $this->av_is_best_practice(), $this->wf_is_best_practice() ) );
+    }
+
+    public function is_visibility(): ?bool
+    {
+        return PH::bpCombine( array( $this->av_is_visibility(), $this->wf_is_visibility() ) );
     }
 
     public function is_adoption(): bool
