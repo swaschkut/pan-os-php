@@ -51,6 +51,8 @@ class PanSCMAPIConnector
         'anti-spyware-profiles' => 'AntiSpywareSecurityProfiles',
         'dns-security-profiles' => 'DnsSecurityProfiles',
     );
+    /** protocols of the antivirus decoder (enforcement actions) of a virus-and-wildfire-analysis profile */
+    const SCM_AV_DECODERS = array( 'ftp', 'http', 'http2', 'imap', 'pop3', 'smb', 'smtp' );
     /** @var array type => folder|type => uuid => internal entry | FALSE (not available) */
     private $internalProfileCache = array();
     /** @var array|null folder used for internal lookups: array( name, type container|cloud ) */
@@ -3011,6 +3013,16 @@ class PanSCMAPIConnector
 
         if( $sub->$profileStoreName->find($object['name']) !== null )
             return "continue";
+
+        // virus-and-wildfire-analysis without decoder (e.g. created through the public API): SCM applies the
+        // default action per protocol - written explicitly, so the checks see the actions SCM uses
+        if( $type === 'wildfire-anti-virus-profiles' && !isset($entry['decoder']) )
+        {
+            $decoder = array();
+            foreach( self::SCM_AV_DECODERS as $protocol )
+                $decoder[] = array( '@name' => $protocol, 'action' => 'default', 'wildfire-action' => 'default', 'mlav-action' => 'default' );
+            $entry['decoder'] = array( 'entry' => $decoder );
+        }
 
         $dom = self::SCM_internalEntryToDom( $entry, $object['name'], $object['id'] );
         $this->SCM_API_SP_object_import( $dom, $sub, $profileStoreName, $object );
