@@ -45,6 +45,8 @@ $supportedArguments['push'] = Array('niceName' => 'push', 'shortHelp' => 'push t
 $supportedArguments['continue-on-error'] = Array('niceName' => 'continue-on-error', 'shortHelp' => 'continue after a failed request (dependent requests are skipped)');
 $supportedArguments['config-parallel'] = Array('niceName' => 'config-parallel', 'shortHelp' => 'concurrent API requests of the exports (default 8)', 'argDesc' => 'N');
 $supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ') - for _internal profile sections', 'argDesc' => '[host]');
+$supportedArguments['diff'] = Array('niceName' => 'diff', 'shortHelp' => 'write the real differences against the tenant (only objects that change: action, fields before / after, internal UI API sections, blocked) as JSON - e.g. for the CDSS portal; written in dry-run and execute', 'argDesc' => '[file]');
+$supportedArguments['select'] = Array('niceName' => 'select', 'shortHelp' => 'apply only these objects: a diff file (diff=) reduced to the objects to implement, or a JSON list of ids', 'argDesc' => '[file]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 $usage = "php " . basename(__FILE__) . " in=scm-api://<TSG> changes=<file.json> [outdir=change] [execute [yes]] [push] [continue-on-error]";
@@ -86,6 +88,23 @@ $stop = function( $title ) use( $change ){
 // 1) change request
 if( !$change->loadRequest( PH::$args['changes'] ) )
     $stop( "change file " . PH::$args['changes'] );
+if( isset(PH::$args['select']) )
+{
+    $sel = json_decode( (string)@file_get_contents(PH::$args['select']), TRUE );
+    if( !is_array($sel) )
+        $stop( "select file " . PH::$args['select'] . " (not readable / no JSON)" );
+    $ids = array();
+    foreach( isset($sel['objects']) && is_array($sel['objects']) ? $sel['objects'] : $sel as $o )
+        if( is_string($o) )
+            $ids[] = $o;
+        elseif( is_array($o) && isset($o['id']) )
+            $ids[] = $o['id'];
+    $before = count($change->request['objects']);
+    $unknown = $change->selectObjects( $ids );
+    PH::print_stdout( " * select " . PH::$args['select'] . ": " . count($change->request['objects']) . " of " . $before . " object(s) of the change file" );
+    foreach( $unknown as $u )
+        PH::print_stdout( "   ! selected id not in the change file: " . $u );
+}
 $scope = $change->scope();
 PH::print_stdout( " * TSG " . $tsg . " | changes: " . count($change->request['folders']) . " folder(s), " . count($change->request['snippets']) . " snippet(s), "
     . count($change->request['objects']) . " object(s) | types: " . ( count($scope['types']) ? implode(",", $scope['types']) : "-" )
@@ -100,6 +119,12 @@ PH::print_stdout();
 PH::print_stdout( PH::boldText(" * [1/4] export (read only)") );
 if( !$change->prepare() )
     $stop( "change request does not fit the tenant" );
+
+if( isset(PH::$args['diff']) )
+{
+    $diff = $change->diffReport( PH::$args['changes'] );
+    file_put_contents( PH::$args['diff'], json_encode( $diff, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" );
+}
 
 PH::print_stdout();
 PH::print_stdout( PH::boldText(" * [2/4] changes") );
@@ -161,6 +186,16 @@ $failedDry = array_merge( $failedDry, array_filter( $change->internalDry, functi
 if( !$execute )
 {
     PH::print_stdout();
+    if( count($blocked) > 0 || count($failedDry) > 0 )
+    {
+        // execute refuses to start with these - say so already in the dry-run
+        PH::print_stdout( PH::boldText(" x " . count($blocked) . " blocked / " . count($failedDry) . " failed request(s) - 'execute' will not send anything until they are resolved (see PLAN_REPORT.md)") );
+        foreach( $blocked as $o )
+            PH::print_stdout( "   " . $o["id"] . "  " . $o["action"] . " " . $o["endpoint"] . " " . $o["name"] . ": " . $o["blocked"] );
+    }
+    if( isset(PH::$args['diff']) )
+        PH::print_stdout( " * differences against the tenant: " . PH::$args['diff'] . " (" . count($diff['objects']) . " object(s): "
+            . implode(", ", array_map( function($k, $v){ return $k . " " . $v; }, array_keys($diff['summary']), $diff['summary'] )) . ")" );
     PH::print_stdout( " * dry-run - nothing was sent. Same command with 'execute' to apply." );
     PH::print_stdout( " * run files: " . $change->runDir . " (soll/, compare/DIFF_REPORT.md, PLAN_REPORT.md, plan.json)" );
     PH::print_stdout();

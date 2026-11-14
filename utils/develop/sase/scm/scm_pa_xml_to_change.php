@@ -174,6 +174,7 @@ $newDoc = new DOMDocument();
 $newDoc->load($args['file2'], XML_PARSE_BIG_LINES);
 $counter = new SCMChangeGenerator();
 $newCounts = $counter->objectCounts($newDoc);
+$xpNew = new DOMXPath($newDoc);
 if( !isset($args['original']) )
     unlink($origFile);
 
@@ -244,6 +245,17 @@ foreach( $gen['requests'] as $r )
         if( !isset($newCounts[$obj['scope_type'] . "|" . $obj['scope'] . "|" . $resource]) )
         {
             $skippedDeletes++;
+            continue;
+        }
+        // still referenced in the changed XML (e.g. file2 made from an XML of an older loader that did not have the
+        // object, the reference resolved to a predefined object of the same name): not deleted
+        $q = strpos($obj['name'], "'") === FALSE ? "'" . $obj['name'] . "'" : '"' . $obj['name'] . '"';
+        $stillRef = $xpNew->query("/config/devices/entry/*/entry//member[normalize-space(text())=" . $q . "]")->length;
+        if( $stillRef > 0 )
+        {
+            $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], $scopeKey => $obj['scope'],
+                'reasons' => array( "not deleted: the name is still referenced " . $stillRef . "x in " . basename($args['file2'])
+                    . " - was file2 made from the same export with the same pan-os-php version (type=scm-export-xml)?" ) );
             continue;
         }
         if( isset($foreignRefs[$obj['name']]) )
@@ -328,7 +340,6 @@ foreach( $internalNotChanged as $nc )
 if( count($notChanged) > 0 )
     $change['not_imported'] = $notChanged;
 // "changes below <x>" of a part the utility did not load (not in the changed XML at all): no change, not reported
-$xpNew = new DOMXPath($newDoc);
 $gen['warnings'] = array_values(array_filter( isset($gen['warnings']) ? $gen['warnings'] : array(), function( $w ) use( $xpNew ){
     if( !preg_match("/^(folder|snippet|device) '(.*)': changes below <([^>]+)>/", $w, $m) )
         return TRUE;

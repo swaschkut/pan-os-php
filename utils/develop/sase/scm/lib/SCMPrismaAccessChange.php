@@ -595,6 +595,14 @@ class SCMPrismaAccessChange
             }
             $diffs = self::internalDiff( $in['entry'], $live );
             $r['sections'] = $diffs;
+            // values of the differing sections (diff report)
+            $r['diff'] = array();
+            foreach( $diffs as $d )
+            {
+                $sec = preg_replace('/ missing$/', '', $d);
+                $r['diff'][$sec] = array( 'before' => is_array($live) && array_key_exists($sec, $live) ? self::internalStrip($live[$sec]) : null,
+                    'after' => isset($in['entry'][$sec]) ? self::internalStrip($in['entry'][$sec]) : null );
+            }
             if( count($diffs) == 0 )
             {
                 $r['status'] = 'unchanged';
@@ -627,6 +635,114 @@ class SCMPrismaAccessChange
         if( $progress !== null && count($results) > 0 )
             call_user_func( $progress, end($results) + array( 'internal' => true ), count($results), count($tasks) );
         return $results;
+    }
+
+    /** internal UI API value without meta data (@loc, @uuid, @type … - @name stays) */
+    public static function internalStrip( $v )
+    {
+        if( !is_array($v) )
+            return $v;
+        $out = array();
+        foreach( $v as $k => $x )
+            if( !( is_string($k) && $k !== '' && $k[0] == '@' && $k !== '@name' ) )
+                $out[$k] = self::internalStrip($x);
+        return $out;
+    }
+
+    /** stable id of a change request object: <config type>|<folder|snippet>|<container>|<name>[|<position>] */
+    public static function objectId( $configType, $kind, $container, $name, $position = null )
+    {
+        return $configType . "|" . $kind . "|" . $container . "|" . $name . ( $position !== null ? "|" . $position : "" );
+    }
+
+    /**
+     * the real differences against the tenant (after prepare(): export ist, soll, dry-run of the internal edits) -
+     * only objects that change: per object action, changed fields (before / after), internal UI API sections (before /
+     * after), blocked reason; ids are the ones select= takes (subset for the CDSS portal)
+     */
+    public function diffReport( $changeFile = null )
+    {
+        $objects = array();
+        $index = array();
+        $blocked = array();
+        if( isset($this->plan['operations']) )
+            foreach( $this->plan['operations'] as $op )
+                if( !empty($op['blocked']) )
+                    $blocked[$op['container'] . "|" . $op['name']][] = $op['blocked'];
+        foreach( $this->changes as $c )
+        {
+            if( $c['kind'] != 'object' || $c['action'] == 'unchanged' || $c['action'] == 'absent' )
+                continue;
+            $position = $c['type'] !== $c['config_type'] ? substr($c['type'], strlen($c['config_type']) + 1) : null;
+            $id = self::objectId( $c['config_type'], $c['container_kind'], $c['container'], $c['name'], $position );
+            $before = is_array($c['before']) ? $c['before'] : array();
+            $after = isset($c['after']) && is_array($c['after']) ? $c['after'] : array();
+            $fields = array();
+            if( $c['action'] != 'delete' )
+                foreach( array_unique( array_merge( array_keys($before), array_keys($after) ) ) as $k )
+                {
+                    if( in_array($k, array('id', 'folder', 'snippet', 'name', 'position'), TRUE) )
+                        continue;
+                    $b = array_key_exists($k, $before) ? $before[$k] : null;
+                    $a = array_key_exists($k, $after) ? $after[$k] : null;
+                    if( $b != $a )
+                        $fields[] = array( 'field' => $k, 'before' => $b, 'after' => $a );
+                }
+            $o = array( 'id' => $id, 'type' => $c['config_type'], 'position' => $position, 'container_kind' => $c['container_kind'],
+                'container' => $c['container'], 'name' => $c['name'], 'action' => $c['action'], 'fields' => $fields );
+            if( isset($blocked[$c['container'] . "|" . $c['name']]) )
+                $o['blocked'] = implode("; ", $blocked[$c['container'] . "|" . $c['name']]);
+            $index[$c['config_type'] . "|" . $c['container_kind'] . "|" . $c['container'] . "|" . $c['name']] = count($objects);
+            $objects[] = $o;
+        }
+        foreach( $this->internalDry as $r )
+        {
+            if( $r['status'] == 'unchanged' )
+                continue;
+            $k = $r['type'] . "|folder|" . $r['folder'] . "|" . $r['name'];
+            $in = array( 'status' => $r['status'], 'sections' => isset($r['diff']) ? $r['diff'] : array() );
+            if( isset($r['message']) )
+                $in['message'] = $r['message'];
+            if( isset($index[$k]) )
+                $objects[$index[$k]]['internal'] = $in;
+            else
+                $objects[] = array( 'id' => self::objectId( $r['type'], 'folder', $r['folder'], $r['name'] ), 'type' => $r['type'], 'position' => null,
+                    'container_kind' => 'folder', 'container' => $r['folder'], 'name' => $r['name'], 'action' => 'update (internal)', 'fields' => array(), 'internal' => $in );
+        }
+        $summary = array();
+        foreach( $objects as $o )
+            $summary[$o['action']] = ( isset($summary[$o['action']]) ? $summary[$o['action']] : 0 ) + 1;
+        $summary['blocked'] = count( array_filter( $objects, function($o){ return isset($o['blocked']); } ) );
+        $summary['internal'] = count( array_filter( $objects, function($o){ return isset($o['internal']); } ) );
+        return array( 'format' => 'pan-os-php-scm-diff', 'version' => 1, 'tsg_id' => (string)$this->tsg, 'created_at' => date('c'),
+            'change_file' => $changeFile !== null ? basename($changeFile) : null, 'run_dir' => $this->runDir,
+            'note' => 'differences against the tenant at ' . date('c') . ' (dry-run of scm_pa_change.php); select a subset by keeping objects (id) and pass the file as select= to scm_pa_change.php',
+            'summary' => $summary, 'objects' => $objects );
+    }
+
+    /**
+     * keep only the request objects whose id is in the list (select= of scm_pa_change.php: a diff report reduced by
+     * the CDSS portal, or a plain list of ids); folders / snippets of the request stay
+     * @return string[] ids of the selection that match no request object
+     */
+    public function selectObjects( $ids )
+    {
+        $want = array_flip( $ids );
+        $hit = array();
+        $keep = array();
+        foreach( $this->request['objects'] as $e )
+        {
+            $kind = isset($e['folder']) ? 'folder' : 'snippet';
+            $id = self::objectId( $e['_type'], $kind, $e[$kind], $e['name'], isset($e['position']) ? $e['position'] : ( isset($e['folder']) && !empty($this->types[$e['_type']]['position']) ? 'pre' : null ) );
+            $idNoPos = self::objectId( $e['_type'], $kind, $e[$kind], $e['name'] );
+            if( isset($want[$id]) || isset($want[$idNoPos]) )
+            {
+                $keep[] = $e;
+                $hit[isset($want[$id]) ? $id : $idNoPos] = TRUE;
+            }
+        }
+        $this->request['objects'] = $keep;
+        return array_values( array_diff( $ids, array_keys($hit) ) );
     }
 
     /** export again and check every change against the tenant */
@@ -845,7 +961,8 @@ class SCMPrismaAccessChange
                 continue;
             }
             $idx = self::indexByName( $data, $e['name'] );
-            $change = array( 'kind' => 'object', 'label' => $label, 'type' => $epName, 'container_kind' => $kind, 'container' => $cName, 'name' => $e['name'] );
+            $change = array( 'kind' => 'object', 'label' => $label, 'type' => $epName, 'config_type' => $type['name'], 'container_kind' => $kind, 'container' => $cName, 'name' => $e['name'],
+                'before' => $idx === null ? null : $data[$idx] );
 
             if( !empty($e['_delete']) )
             {
@@ -877,6 +994,7 @@ class SCMPrismaAccessChange
                     $data[$idx] = $new;
                 }
                 $change['entry'] = $e;
+                $change['after'] = $new;
             }
             $this->changes[] = $change;
             $this->writeData( $this->sollDir . "/" . $file, $data );

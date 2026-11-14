@@ -126,6 +126,43 @@ fields are read with the single GET, in the first export and in the verification
 `verify` reports `verified` per change, or `failed` with the field that differs. A newly created folder has no
 firewall – push is neither possible nor needed (`not_pushable`); the candidate configuration is stored anyway.
 
+## Differences report and selection (`diff=`, `select=`) – e.g. for the CDSS portal
+
+A change file (e.g. from scm_pa_xml_to_change.php) holds the wanted state of every object a utility touched. What
+really differs from the tenant is only known after the export of the dry-run. `diff=<file>` writes exactly that:
+
+```
+php scm_pa_change.php in=scm-api://<TSG> changes=change.json diff=diff.json            # dry-run, nothing sent
+```
+
+```json
+{ "format": "pan-os-php-scm-diff", "version": 1, "tsg_id": "…", "change_file": "change.json",
+  "summary": { "update": 40, "create": 12, "update (internal)": 2, "blocked": 0, "internal": 27 },
+  "objects": [
+    { "id": "wildfire-anti-virus-profiles|folder|dg1|Inbound-AV", "type": "wildfire-anti-virus-profiles",
+      "position": null, "container_kind": "folder", "container": "dg1", "name": "Inbound-AV", "action": "update",
+      "fields": [ { "field": "rules", "before": null, "after": [ … ] } ],
+      "internal": { "status": "edit", "sections": { "decoder": { "before": { … }, "after": { … } } } } } ] }
+```
+
+* only objects that change (`create`, `update`, `delete`, `update (internal)` = only internal UI API sections);
+  unchanged objects of the change file are left out
+* `fields`: top-level fields with the tenant value (`before`) and the new value (`after`)
+* `internal`: internal UI API sections that differ (live value / new value), status `edit` / `after create` /
+  `conflict`
+* `blocked`: reason when the request would be refused (e.g. delete of a referenced object)
+
+The portal keeps the objects to implement (or writes a list of ids) and the same change file is applied with only
+those:
+
+```
+php scm_pa_change.php in=scm-api://<TSG> changes=change.json select=diff_selected.json [execute]
+```
+
+`select=` takes a diff file (its `objects[].id`) or a JSON list of ids; ids that match no object of the change file
+are reported. Folders / snippets of the change file are always kept. The dependency check of the dry-run stays: a
+selected group that refers to a profile that was not selected and does not exist is blocked.
+
 ## Relation to the other tools
 
 * Panorama device-groups → SCM: [README_pa_panorama_import.md](README_pa_panorama_import.md)
