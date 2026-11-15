@@ -1659,6 +1659,103 @@ class SecurityProfile2
         return $changed;
     }
 
+    /**
+     * the value to set from a BP JSON value list, as the DNS / list checks read it: positive values ('sinkhole',
+     * 'single-packet'): the current one is kept when listed, else the first; negated ones only ('!none', '!allow'):
+     * the current one is kept when not excluded, else $fallback (null when $fallback is excluded as well)
+     * @return string|null null: no change
+     */
+    public static function bpListTarget( $list, $current, string $fallback ): ?string
+    {
+        $list = (array)$list;
+        $positive = array();
+        $negated = array();
+        foreach( $list as $value )
+        {
+            if( strpos( (string)$value, '!' ) === 0 )
+                $negated[] = substr( $value, 1 );
+            else
+                $positive[] = (string)$value;
+        }
+        if( !empty( $positive ) )
+            return in_array( (string)$current, $positive, TRUE ) ? null : $positive[0];
+        if( empty( $negated ) || !in_array( (string)$current, $negated, TRUE ) )
+            return null;
+        return in_array( $fallback, $negated, TRUE ) ? null : $fallback;
+    }
+
+    /**
+     * DNS security category / DNS list (DNSPolicy): set action, packet-capture or log-level in the XML and the object.
+     * The action keeps its XML form: text (dns-security-categories) or an element (<action><sinkhole/></action>, lists).
+     */
+    public function dnsPolicy_setValue( $rule, string $field, string $value, bool $actionAsElement = false ): void
+    {
+        if( $field == 'action' )
+        {
+            $node = DH::findFirstElement( 'action', $rule->xmlroot );
+            if( $node !== FALSE && $node !== null )
+                $asElement = ( DH::firstChildElement( $node ) !== FALSE && DH::firstChildElement( $node ) !== null );
+            else
+            {
+                $node = DH::findFirstElementOrCreate( 'action', $rule->xmlroot );
+                $asElement = $actionAsElement;
+            }
+            if( $asElement )
+            {
+                while( ( $child = DH::firstChildElement( $node ) ) !== FALSE && $child !== null )
+                    $node->removeChild( $child );
+                $node->textContent = '';
+                $node->appendChild( DH::importXmlStringOrDie( $rule->xmlroot->ownerDocument, '<'.$value.'/>' ) );
+            }
+            else
+                $node->textContent = $value;
+            $rule->action = $value;
+        }
+        elseif( $field == 'packet-capture' )
+        {
+            DH::findFirstElementOrCreate( 'packet-capture', $rule->xmlroot )->textContent = $value;
+            $rule->packetCapture = $value;
+        }
+        elseif( $field == 'log-level' )
+        {
+            DH::findFirstElementOrCreate( 'log-level', $rule->xmlroot )->textContent = $value;
+            $rule->logLevel = $value;
+        }
+    }
+
+    /**
+     * Set-actions for one DNS security category / DNS list (DNSPolicy) from its BP JSON entry (the first entry whose
+     * 'type' names it, as the checks): action, packet-capture, log-level - each where the entry lists it.
+     * @param array $fallbacks field => value for a negated condition ('!none' -> 'default')
+     * @return bool TRUE: changed
+     */
+    public function dnsPolicy_setFromJSONEntries( $rule, $entries, array $fallbacks, bool $actionAsElement = false ): bool
+    {
+        $entry = null;
+        foreach( (array)$entries as $candidate )
+            if( in_array( $rule->name(), (array)( $candidate['type'] ?? array() ), TRUE ) )
+            {
+                $entry = $candidate;
+                break;
+            }
+        if( $entry === null )
+            return FALSE;
+
+        $current = array( 'action' => $rule->action(), 'packet-capture' => $rule->packetCapture(), 'log-level' => $rule->logLevel() );
+        $changed = FALSE;
+        foreach( array( 'action', 'packet-capture', 'log-level' ) as $field )
+        {
+            if( !isset( $entry[$field] ) || ( $field == 'packet-capture' && !empty( $rule->advanced ) ) )
+                continue;
+            $target = self::bpListTarget( $entry[$field], $current[$field], $fallbacks[$field] ?? '' );
+            if( $target === null || $target === '' )
+                continue;
+            $this->dnsPolicy_setValue( $rule, $field, $target, $actionAsElement );
+            $changed = TRUE;
+        }
+        return $changed;
+    }
+
     public static function cloud_inline_listed( $check_array ): bool
     {
         if( !isset( $check_array['inline-policy-action'] ) || !is_array( $check_array['inline-policy-action'] ) )

@@ -438,7 +438,8 @@ trait sp_action_spyware
 </entry>
 </dns-security-categories>';
 
-                if( $this->owner->owner->version >= 100 )
+                // PAN-OS default categories, from the version the checks use (SecurityProfile2::$bpFeatureMinVersion)
+                if( $this->bpFeatureSupported( 'spyware-dns' ) )
                 {
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
                     $tmp_rule->appendChild($xmlElement);
@@ -516,7 +517,8 @@ trait sp_action_spyware
 </entry>
 </advanced-dns-security-categories>';
 
-                if( $this->owner->owner->version >= 112 )
+                // PAN-OS default categories, from the version the checks use (SCM: always - SecurityProfile2::inlineVersion())
+                if( $this->bpFeatureSupported( 'spyware-advanced-dns' ) )
                 {
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
                     $tmp_rule->appendChild($xmlElement);
@@ -1147,141 +1149,81 @@ trait sp_action_spyware
             function() { return $this->spyware_rules_best_practice(); } );
     }
 
+    /**
+     * best-practice-set of the DNS security categories (and advanced DNS security categories): action,
+     * packet-capture and log-level of every category as the BP JSON spyware -> dns / advanced-dns -> bp lists them.
+     * Without a DNS license: allow, disable, none.
+     */
     public function dns_BestPracticeSet( $hasDNSlicense = true ): void
     {
+        $this->dns_setFromJSON( 'bp', $hasDNSlicense );
+    }
+
+    private function dns_setFromJSON( string $section, $hasDNSlicense ): void
+    {
+        $fallbacks = array( 'action' => 'default', 'packet-capture' => 'disable', 'log-level' => 'default' );
         foreach( $this->dns_rules_obj as $rule )
         {
-            $tmp_action = DH::findFirstElementOrCreate("action", $rule->xmlroot);
-
-            if( !$rule->advanced )
-            {
-                $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
-                if( $tmp_packet_capture === FALSE )
-                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
-            }
-
-            $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             /** @var DNSPolicy $rule */
-            if( $rule->name() == "pan-dns-sec-adtracking"
-                || $rule->name() == "pan-dns-sec-ddns"
-                || $rule->name() == "pan-dns-sec-recent"
-            )
+            if( !$this->bpFeatureSupported( $rule->advanced ? 'spyware-advanced-dns' : 'spyware-dns' ) )
+                continue;
+
+            if( !$hasDNSlicense )
             {
-                if( $hasDNSlicense )
-                {
-                    if( $tmp_action->textContent == "" )
-                        $tmp_action->textContent = "allow";
-                    if( $tmp_packet_capture->textContent == "" )
-                        $tmp_packet_capture->textContent = "single-packet";
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
+                // no DNS security license: the categories do not apply
+                $this->dnsPolicy_setValue( $rule, 'action', 'allow' );
+                if( !$rule->advanced )
+                    $this->dnsPolicy_setValue( $rule, 'packet-capture', 'disable' );
+                $this->dnsPolicy_setValue( $rule, 'log-level', 'none' );
+                continue;
             }
-            elseif( $rule->name() == "pan-dns-sec-parked" )
-            {
-                if( $hasDNSlicense )
-                {
-                    if( $tmp_action->textContent == "" )
-                        $tmp_action->textContent = "allow";
-                    if( $tmp_packet_capture->textContent == "" )
-                        $tmp_packet_capture->textContent = "disable";
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
-            }
-            elseif( $rule->name() == "pan-dns-sec-cc" )
-            {
-                if( $hasDNSlicense )
-                {
-                    $tmp_action->textContent = "sinkhole";
-                    $tmp_packet_capture->textContent = "extended-capture";
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
-            }
+
+            $entries = PH::getBPjsonFile()['spyware'][$rule->advanced ? 'advanced-dns' : 'dns'][$section]['action'] ?? array();
+            $this->dnsPolicy_setFromJSONEntries( $rule, $entries, $fallbacks );
+        }
+
+        if( $hasDNSlicense )
+        {
+            if( $section == 'bp' )
+                $this->bpSetVerify( $section, 'DNS security', PH::bpCombine( array( $this->spyware_dns_security_best_practice(), $this->spyware_advanced_dns_security_best_practice() ) ) );
             else
-            {
-                if( $hasDNSlicense )
-                {
-                    $tmp_action->textContent = "sinkhole";
-                    $tmp_packet_capture->textContent = "single-packet";
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
-            }
+                $this->bpSetVerify( $section, 'DNS security', PH::bpCombine( array( $this->spyware_dns_security_visibility(), $this->spyware_advanced_dns_security_visibility() ) ) );
         }
     }
 
+    /**
+     * best-practice-set of the DNS lists (botnet-domains -> lists): action and packet-capture of every list as the
+     * BP JSON spyware -> lists -> bp lists them. Without a DNS license: allow, disable.
+     */
     public function botnet_BestPracticeSet( $hasDNSlicense = true ): void
     {
-        $tmp_rule = DH::findFirstElement('botnet-domains', $this->xmlroot);
-        if( $tmp_rule !== FALSE )
+        $this->botnet_setFromJSON( 'bp', $hasDNSlicense );
+    }
+
+    private function botnet_setFromJSON( string $section, $hasDNSlicense ): void
+    {
+        if( empty( $this->additional['botnet-domain']['lists'] ) )
+            return;
+
+        $entries = PH::getBPjsonFile()['spyware']['lists'][$section]['action'] ?? array();
+        $fallbacks = array( 'action' => 'alert', 'packet-capture' => 'disable' );
+        foreach( $this->additional['botnet-domain']['lists'] as $name => $rule )
         {
-            $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
-            if ($tmp_lists !== FALSE)
+            /** @var DNSPolicy $rule */
+            if( !is_object( $rule ) || $rule->xmlroot === null )
+                continue;
+
+            if( !$hasDNSlicense )
             {
-                foreach ($tmp_lists->childNodes as $tmp_entry1)
-                {
-                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
-                        continue;
-
-                    $name = DH::findAttribute("name", $tmp_entry1);
-                    $tmp_dnsobj = $this->additional['botnet-domain']['lists'][$name];
-                    if( $name == "default-paloalto-dns" )
-                    {
-                        $tmp = DH::findFirstElement("action", $tmp_entry1);
-                        if ($tmp !== FALSE)
-                        {
-                            $tmp_action = DH::firstChildElement($tmp);
-                            if ($tmp_action !== FALSE) {
-                                $tmp->removeChild($tmp_action);
-
-                                if( $hasDNSlicense )
-                                {
-                                    //swaschkut 20251109 - clarified with roland
-                                    //this should be kept as sinkhole - also if block is set, change it to sinkhole
-                                    $tmp_actionString = "sinkhole";
-                                }
-                                else
-                                    $tmp_actionString = "allow";
-                                $xmlString = '<'.$tmp_actionString.'/>';
-                                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                                $tmp->appendChild($xmlElement);
-
-                                $tmp_dnsobj->action = $tmp_actionString;
-                            }
-                        }
-                        $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
-                        if ($tmp !== FALSE)
-                        {
-                            if( $hasDNSlicense )
-                            {
-                                #$tmp->textContent = "single-packet";
-                                $tmp->textContent = "extended-capture";
-                            }
-                            else
-                                $tmp->textContent = "disable";
-                        }
-                    }
-                }
+                $this->dnsPolicy_setValue( $rule, 'action', 'allow', TRUE );
+                $this->dnsPolicy_setValue( $rule, 'packet-capture', 'disable' );
+                continue;
             }
+            $this->dnsPolicy_setFromJSONEntries( $rule, $entries, $fallbacks, TRUE );
         }
+
+        if( $hasDNSlicense )
+            $this->bpSetVerify( $section, 'DNS lists', $section == 'bp' ? $this->spyware_dnslist_best_practice() : $this->spyware_dnslist_visibility() );
     }
 
 
@@ -1309,180 +1251,23 @@ trait sp_action_spyware
             function() { return $this->spyware_rules_visibility(); } );
     }
 
+    /**
+     * alert-only-set of the DNS security categories (and advanced DNS security categories): action, packet-capture
+     * and log-level of every category as the BP JSON spyware -> dns / advanced-dns -> visibility lists them
+     * (dnsPolicy_setFromJSONEntries(); '!none' -> 'default'). Without a DNS license: allow, disable, none.
+     */
     public function dns_AlertOnlySet( $hasDNSlicense = true): void
     {
-        foreach( $this->dns_rules_obj as $rule )
-        {
-            $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
-
-            if( !$rule->advanced )
-            {
-                $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
-                if( $tmp_packet_capture === FALSE )
-                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
-            }
-
-            $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
-            if( $tmp_log_level === FALSE )
-                $tmp_log_level = DH::findFirstElementOrCreate("log-level", $rule->xmlroot);
-
-            /** @var DNSPolicy $rule */
-            if( $rule->action() == "allow" )
-            {
-                $rule->action = "allow";
-
-                //move this to DNSPolicy create method "setAction($name)"
-                if( $hasDNSlicense )
-                {
-                    if( $tmp_action->textContent == "" )
-                        $tmp_action->textContent = "allow";
-                    if( $tmp_packet_capture->textContent == "" )
-                        $tmp_packet_capture->textContent = "disable";
-                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
-                        $tmp_log_level->textContent = "default";
-
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
-            }
-            elseif( $rule->action() == "default" )
-            {
-                if( $rule->name() == "pan-dns-sec-adtracking"
-                    || $rule->name() == "pan-dns-sec-ddns"
-                    || $rule->name() == "pan-dns-sec-parked"
-                    || $rule->name() == "pan-dns-sec-recent"
-                )
-                {
-                    if( $hasDNSlicense )
-                    {
-                        if( $tmp_action->textContent == "" )
-                            $tmp_action->textContent = "allow";
-                        if( $tmp_packet_capture->textContent == "" )
-                            $tmp_packet_capture->textContent = "disable";
-                        if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
-                            $tmp_log_level->textContent = "default";
-                    }
-                    else
-                    {
-                        $tmp_action->textContent = "allow";
-                        $tmp_packet_capture->textContent = "disable";
-                        $tmp_log_level->textContent = "none";
-                    }
-                }
-                else
-                {
-                    if( $hasDNSlicense )
-                    {
-                        if( $tmp_action->textContent == "" )
-                            $tmp_action->textContent = "allow";
-                        if( $tmp_packet_capture->textContent == "" )
-                            $tmp_packet_capture->textContent = "disable";
-                        if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
-                            $tmp_log_level->textContent = "default";
-                    }
-                    else
-                    {
-                        $tmp_action->textContent = "allow";
-                        $tmp_packet_capture->textContent = "disable";
-                        $tmp_log_level->textContent = "none";
-                    }
-                }
-            }
-            elseif( $rule->action() == "sinkhole" )
-            {
-                if( $hasDNSlicense )
-                {
-                    if( $tmp_action->textContent == "" )
-                        $tmp_action->textContent = "sinkhole";
-                    if( $tmp_packet_capture->textContent == "" )
-                        $tmp_packet_capture->textContent = "disable";
-                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
-                        $tmp_log_level->textContent = "default";
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
-            }
-            elseif( $rule->action() == "block" )
-            {
-                if( $hasDNSlicense )
-                {
-                    if( $tmp_action->textContent == "" )
-                        $tmp_action->textContent = "block";
-                    if( $tmp_packet_capture->textContent == "" )
-                        $tmp_packet_capture->textContent = "block";
-                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
-                        $tmp_log_level->textContent = "default";
-                }
-                else
-                {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
-                    $tmp_log_level->textContent = "none";
-                }
-            }
-        }
+        $this->dns_setFromJSON( 'visibility', $hasDNSlicense );
     }
 
+    /**
+     * alert-only-set of the DNS lists (botnet-domains -> lists): action and packet-capture of every list as the
+     * BP JSON spyware -> lists -> visibility lists them ('!allow' -> 'alert'). Without a DNS license: allow, disable.
+     */
     public function botnet_AlertOnlySet( $hasDNSlicense = true): void
     {
-        $tmp_rule = DH::findFirstElement('botnet-domains', $this->xmlroot);
-        if( $tmp_rule !== FALSE )
-        {
-            $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
-            if ($tmp_lists !== FALSE)
-            {
-                foreach ($tmp_lists->childNodes as $tmp_entry1)
-                {
-                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
-                        continue;
-
-                    $name = DH::findAttribute("name", $tmp_entry1);
-                    /** @var DNSPolicy $tmp_dnsobj */
-                    $tmp_dnsobj = $this->additional['botnet-domain']['lists'][$name];
-                    if( $tmp_dnsobj->action() == "allow" )
-                    {
-                        $tmp = DH::findFirstElement("action", $tmp_entry1);
-                        if ($tmp !== FALSE)
-                        {
-                            $tmp_action = DH::firstChildElement($tmp);
-                            if ($tmp_action !== FALSE) {
-                                $tmp->removeChild($tmp_action);
-
-                                if( $hasDNSlicense )
-                                    $tmp_actionString = "alert";
-                                else
-                                    $tmp_actionString = "allow";
-
-                                $xmlString = '<'.$tmp_actionString.'/>';
-                                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                                $tmp->appendChild($xmlElement);
-
-                                $tmp_dnsobj->action = $tmp_actionString;
-                            }
-                        }
-                        $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
-                        if ($tmp !== FALSE)
-                        {
-                            if( $hasDNSlicense )
-                            {
-                                //keep what is there before!!!!
-                                //$tmp->textContent = "disable";
-                            }
-                            else
-                                $tmp->textContent = "disable";
-                        }
-                    }
-                }
-            }
-        }
+        $this->botnet_setFromJSON( 'visibility', $hasDNSlicense );
     }
 
     public function AlertOnlySet(): void
