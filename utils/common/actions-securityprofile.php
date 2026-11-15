@@ -636,6 +636,34 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $tmp_type !== null && in_array( $tmp_type, $types, TRUE ) )
                     $addColumns[$group] = TRUE;
         }
+        // the types the command names (securityprofiletype=...) keep their own column groups also when no
+        // profile of them is found: an export with no rows has the same header as one with rows.
+        // 'any' / no securityprofiletype=: the found profiles alone decide, as before.
+        $argTypes = array(
+            'virus' => 'virus', 'predefined-virus' => 'virus',
+            'spyware' => 'spyware', 'predefined-spyware' => 'spyware',
+            'vulnerability' => 'vulnerability', 'predefined-vulnerability' => 'vulnerability',
+            'file-blocking' => 'file-blocking', 'predefined-file-blocking' => 'file-blocking',
+            'wildfire-analysis' => 'wildfire', 'predefined-wildfire-analysis' => 'wildfire',
+            'virus-and-wildfire-analysis' => 'virus-and-wildfire-analysis',
+            'data-filtering' => 'data-filtering', 'predefined-data-filtering' => 'data-filtering',
+            'dns-security' => 'dns-security',
+            'url-filtering' => 'url-filtering', 'predefined-url-filtering' => 'url-filtering',
+            'custom-url-category' => 'customURL',
+            'predefined-url' => 'predefinedSecProfURL',
+        );
+        if( isset( PH::$args['securityprofiletype'] ) )
+        {
+            foreach( explode( ',', strtolower( PH::$args['securityprofiletype'] ) ) as $argType )
+            {
+                $argType = trim( $argType );
+                if( !isset( $argTypes[$argType] ) )
+                    continue;
+                foreach( $columnGroupTypes as $group => $types )
+                    if( in_array( $argTypes[$argType], $types, TRUE ) )
+                        $addColumns[$group] = TRUE;
+            }
+        }
         // URL members: only without BP / visibility (or asked for)
         $showURLmembers = $addColumns['url-members'] && ( $addURLmembers || ( !$bestPractice && !$visibility ) || $context->debug );
         $isColumnType = function( $object, $group ) use ( $columnGroupTypes, $typeOf )
