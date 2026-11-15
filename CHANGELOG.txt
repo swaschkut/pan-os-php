@@ -53,6 +53,7 @@ BUGFIX:
 * correction VP/Spyware BP - severity informational / low
 * sp_action_virus.php | bugfix for using $object instead of $this
 * bugfix to get N/A output correct running
+* type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes

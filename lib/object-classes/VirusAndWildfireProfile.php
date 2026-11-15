@@ -157,23 +157,10 @@ class VirusAndWildfireProfile extends SecurityProfile2
     {
         //Todo - swaschkut 20260629
         $results = array();
-        if( $this->owner->owner->version >= 102 )
-        {
-            $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
-        }
-
-        if( $this->owner->owner->version >= 112 )
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_best_practice() ) );
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion);
+        // cloud_inline_analysis_*() covers the AV inline ML and, where the version has it, the WildFire inline ML
+        $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
+        $results = array_merge( $results, array( $this->wildfire_rules_best_practice() ) );
 
         return PH::bpCombine( $results );
     }
@@ -182,23 +169,10 @@ class VirusAndWildfireProfile extends SecurityProfile2
     {
         $results = array();
         //Todo - swaschkut 20260629
-        if( $this->owner->owner->version >= 102 )
-        {
-            $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
-        }
-
-        if( $this->owner->owner->version >= 112 )
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            $results = array_merge( $results, array( $this->wildfire_rules_visibility() ) );
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion);
+        // cloud_inline_analysis_*() covers the AV inline ML and, where the version has it, the WildFire inline ML
+        $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
+        $results = array_merge( $results, array( $this->wildfire_rules_visibility() ) );
 
         return PH::bpCombine( $results );
     }

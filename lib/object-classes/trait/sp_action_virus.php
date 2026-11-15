@@ -515,6 +515,10 @@ trait sp_action_virus
         if( $av_action_type != "action" && $av_action_type != "wildfire-action" && $av_action_type != "mlav-action")
             derr( "only support specific valued like action / wildfire-action / mlav-action" );
 
+        // the PAN-OS version has no mlav-action: N/A
+        if( $av_action_type == "mlav-action" && !$this->bpFeatureSupported( 'mlav-action' ) )
+            return null;
+
         $bestpractise = FALSE;
 
         #if( $this->secprof_type != 'virus' )
@@ -553,6 +557,10 @@ trait sp_action_virus
     {
         if( $av_action_type != "action" && $av_action_type != "wildfire-action" && $av_action_type != "mlav-action")
             derr( "only support specific valued like action / wildfire-action / mlav-action" );
+
+        // the PAN-OS version has no mlav-action: N/A
+        if( $av_action_type == "mlav-action" && !$this->bpFeatureSupported( 'mlav-action' ) )
+            return null;
 
         $bestpractise = FALSE;
 
@@ -612,8 +620,9 @@ trait sp_action_virus
                             $string .= $tmp_string;
 
                         // the same checks as av_general_action_best_practice() / _visibility();
-                        // not listed in the JSON (null): no sign
-                        if( $bestPractice )
+                        // not listed in the JSON (null) or no such setting in this PAN-OS version: no sign
+                        $versionHasIt = ( $actionType != 'mlav-action' || $this->bpFeatureSupported( 'mlav-action' ) );
+                        if( $bestPractice && $versionHasIt )
                         {
                             $check_array = PH::getBPjsonFile()['virus']['rule']['bp'][$actionType] ?? array();
                             if( !empty( $check_array ) && $this->check_bp_json( $type, $check_array, $actionType ) === FALSE )
@@ -625,7 +634,7 @@ trait sp_action_virus
                                     $string .= $tmp_string;
                             }
                         }
-                        if( $visibility )
+                        if( $visibility && $versionHasIt )
                         {
                             $check_array = PH::getBPjsonFile()['virus']['rule']['visibility'][$actionType] ?? array();
                             if( $this->check_visibility_json( $type, $check_array, $actionType ) === FALSE )

@@ -146,26 +146,14 @@ class AntiVirusProfile extends SecurityProfile2
 
     public function is_best_practice(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
-        {
-            return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice() ) );
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion)
+        return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
     }
 
     public function is_visibility(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
-        {
-            return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility() ) );
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion)
+        return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
     }
 
     public function is_adoption(): bool

@@ -37,6 +37,54 @@ class SecurityProfile2
 
     public $bp_json_file = null;
 
+    /**
+     * The one place for the PAN-OS version a visibility / best-practice setting exists from.
+     * Below it the check of the setting returns null (N/A), for visibility and best practice alike;
+     * the filters ('is.visibility', 'is.best-practice', '.na'), the profile exports and the BP statistics
+     * (StatCollectorTrait::bp_check_definitions()) all read it from here.
+     */
+    public static $bpFeatureMinVersion = array(
+        'virus-mica' => 100,                // AV inline ML (mlav-engine-filebased-enabled)
+        'mlav-action' => 100,               // AV decoder mlav-action
+        'spyware-dns' => 100,               // AS DNS security categories (botnet-domains dns-security-categories)
+        'spyware-mica' => 102,              // AS inline cloud analysis (mica-engine-spyware-enabled)
+        'url-mica' => 102,                  // URL local-inline-cat / cloud-inline-cat
+        'vulnerability-mica' => 110,        // VP inline cloud analysis (mica-engine-vulnerability-enabled)
+        'wildfire-mica' => 112,             // WF inline cloud analysis (mica-engine-wildfire-rules)
+        'spyware-advanced-dns' => 112,      // AS advanced DNS security categories
+    );
+
+    /** TRUE when PAN-OS version $version has the setting $feature (key of $bpFeatureMinVersion); version 0: unknown, TRUE */
+    public static function bpFeatureSupportedInVersion( string $feature, int $version ): bool
+    {
+        if( !isset( self::$bpFeatureMinVersion[$feature] ) )
+            derr( "unknown BP feature '".$feature."'" );
+        return $version <= 0 || $version >= self::$bpFeatureMinVersion[$feature];
+    }
+
+    /** TRUE when the PAN-OS version of this profile's location has the setting $feature */
+    public function bpFeatureSupported( string $feature ): bool
+    {
+        $version = 0;
+        if( isset( $this->owner ) && is_object( $this->owner ) && isset( $this->owner->owner ) && is_object( $this->owner->owner )
+            && isset( $this->owner->owner->version ) && is_numeric( $this->owner->owner->version ) )
+            $version = intval( $this->owner->owner->version );
+        return self::bpFeatureSupportedInVersion( $feature, $version );
+    }
+
+    /** the $bpFeatureMinVersion key of the inline-ML (cloud-inline) setting of a profile type; null: none */
+    public static function cloud_inline_feature( $secprof_type ): ?string
+    {
+        $map = array(
+            'virus' => 'virus-mica',
+            'virus-and-wildfire-analysis' => 'virus-mica',
+            'spyware' => 'spyware-mica',
+            'vulnerability' => 'vulnerability-mica',
+            'wildfire' => 'wildfire-mica',
+        );
+        return $map[$secprof_type] ?? null;
+    }
+
 
     /**
      * @return string
@@ -65,6 +113,11 @@ class SecurityProfile2
             and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire'
             and $this->secprof_type != 'dns-security' and $this->secprof_type != 'virus-and-wildfire-analysis'
         )
+            return null;
+
+        // the PAN-OS version has no inline ML for this type: N/A
+        $feature = self::cloud_inline_feature( $this->secprof_type );
+        if( $feature !== null && !$this->bpFeatureSupported( $feature ) )
             return null;
 
         $check_array = $this->bp_visibility_JSON( "bp", $this->secprof_type);
@@ -113,7 +166,8 @@ class SecurityProfile2
                 }
             }
 
-            if( isset($this->additional['mica-engine-wildfire-rules']) )
+            // virus-and-wildfire-analysis: its WildFire part only where the PAN-OS version has it
+            if( isset($this->additional['mica-engine-wildfire-rules']) && $this->bpFeatureSupported( 'wildfire-mica' ) )
             {
                 foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
                 {
@@ -185,6 +239,11 @@ class SecurityProfile2
         )
             return null;
 
+        // the PAN-OS version has no inline ML for this type: N/A
+        $feature = self::cloud_inline_feature( $this->secprof_type );
+        if( $feature !== null && !$this->bpFeatureSupported( $feature ) )
+            return null;
+
         $check_array = $this->bp_visibility_JSON( "visibility", $this->secprof_type);
         // not listed in the visibility JSON: not checked -> N/A
         if( !self::cloud_inline_listed( $check_array ) )
@@ -211,13 +270,6 @@ class SecurityProfile2
                     }
                 }
             }
-            else
-            {
-                if ( $this->secprof_type == 'vulnerability' && $this->owner->owner->version < 110)
-                {
-                    return null;
-                }
-            }
 
             if( isset($this->additional['mica-engine-spyware-enabled']) )
             {
@@ -241,21 +293,10 @@ class SecurityProfile2
                     }
                 }
             }
-            else
-            {
-                if ( $this->secprof_type == 'spyware' && $this->owner->owner->version < 102)
-                {
-                    return null;
-                }
-            }
 
-            if( isset($this->additional['mica-engine-wildfire-rules']) )
+            // virus-and-wildfire-analysis: its WildFire part only where the PAN-OS version has it
+            if( isset($this->additional['mica-engine-wildfire-rules']) && $this->bpFeatureSupported( 'wildfire-mica' ) )
             {
-                if ( $this->owner->owner->version < 111 )
-                    return null;
-                elseif ( $this->owner->owner->version == 111 )
-                    return true;
-
                 foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
                 {
                     if( isset($check_array['inline-policy-action'] ) )
@@ -292,32 +333,6 @@ class SecurityProfile2
                     }
                 }
             }
-            else
-            {
-                if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
-                {
-                    if ( $this->owner->owner->version < 111 )
-                        return null;
-                    elseif ( $this->owner->owner->version == 111 )
-                    {
-                        //>=111 wf mica-engine but always allow!!!
-                        return true;
-                    }
-                }
-            }
-        }
-        else
-        {
-            if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
-            {
-                if ( $this->owner->owner->version < 111 )
-                    return null;
-                elseif ( $this->owner->owner->version == 111 )
-                {
-                    //>=111 wf mica-engine but always allow!!!
-                    return true;
-                }
-            }
         }
 
         //AV iii) Wildfire Inline ML Tab
@@ -344,16 +359,6 @@ class SecurityProfile2
                 }
             }
         }
-        else
-        {
-            if ( ($this->secprof_type == 'virus' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
-            {
-                if( $this->owner->owner->version < 102 )
-                {
-                    return null;
-                }
-            }
-        }
 
         return $bp_set;
     }
@@ -362,6 +367,14 @@ class SecurityProfile2
 
     public function mica_getFullTextHTML(&$string_mica_engine, $bestPractice = false, $visibility = false, $bp_NOT_sign = "", $visible_NOT_sign = "")
     {
+        // the PAN-OS version has no inline ML for this type: list the settings, but mark nothing as not BP / not visible
+        $feature = self::cloud_inline_feature( $this->secprof_type ?? null );
+        if( $feature !== null && !$this->bpFeatureSupported( $feature ) )
+        {
+            $bestPractice = false;
+            $visibility = false;
+        }
+
         if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
         {
             if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )

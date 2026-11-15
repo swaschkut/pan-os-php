@@ -1369,35 +1369,158 @@ trait StatCollectorTrait
     }
 
     /**
-     * FALSE when the BP JSON has no section for this visibility / best-practice check: nothing is checked,
-     * so the check is N/A for every rule (also for rules without a profile of that type) - never 0%.
-     * Adoption and checks not listed here are not affected.
+     * When a visibility / best-practice check is N/A for the whole scope, independent of the profiles in it.
+     * Then rules without a profile of the type must not turn the figure into 0%: the figure is N/A.
+     * Profile-dependent N/A (a single profile's check returns null) stays per rule, see bp_na_count().
+     *
+     * Every '<check> visibility' / '<check> best-practice' key of bp_calculation() needs an entry here
+     * (bp_calculation() warns about a missing one). Per check, one of:
+     *  'json'         => list of BP JSON paths; '{X}' is 'visibility' or 'bp'. N/A when every path is empty.
+     *                    The paths are those the profile checks test before they return null.
+     *                    A path can be array( 'path' => array( ... ), 'feature' => <key> ): where the PAN-OS
+     *                    version lacks that setting the path counts as empty.
+     *  'cloud-inline' => <BP JSON type>: N/A when <type> -> cloud-inline -> {X} lists no inline-policy-action
+     *                    (SecurityProfile2::cloud_inline_listed(), the test of cloud_inline_analysis_*()).
+     *  'any'          => list of other checks: the combined check is N/A when each of them is N/A (PH::bpCombine()).
+     * and optional:
+     *  'feature'      => key of SecurityProfile2::$bpFeatureMinVersion: where the PAN-OS version lacks the setting,
+     *                    N/A for visibility and best practice alike. The versions are kept there only, so the
+     *                    profile checks (filters, exports) and these figures agree.
+     */
+    public static function bp_check_definitions(): array
+    {
+        return array(
+            'wf rules' => array( 'json' => array( array( 'wildfire', 'rule', '{X}' ) ) ),
+            'wf mica-engine' => array( 'cloud-inline' => 'wildfire', 'feature' => 'wildfire-mica' ),
+            'wf' => array( 'any' => array( 'wf rules', 'wf mica-engine' ) ),
+
+            'av actions' => array( 'json' => array(
+                array( 'virus', 'rule', '{X}', 'action' ),
+                array( 'virus', 'rule', '{X}', 'wildfire-action' ),
+                array( 'path' => array( 'virus', 'rule', '{X}', 'mlav-action' ), 'feature' => 'mlav-action' ) ) ),
+            'av mica-engine' => array( 'cloud-inline' => 'virus', 'feature' => 'virus-mica' ),
+            'av' => array( 'any' => array( 'av actions', 'av mica-engine' ) ),
+
+            'as rules' => array( 'json' => array( array( 'spyware', 'rule', '{X}' ) ) ),
+            'as mica-engine' => array( 'cloud-inline' => 'spyware', 'feature' => 'spyware-mica' ),
+            'as' => array( 'any' => array( 'as rules', 'as mica-engine', 'dns-list', 'dns-security' ) ),
+
+            'vp rules' => array( 'json' => array( array( 'vulnerability', 'rule', '{X}' ) ) ),
+            'vp mica-engine' => array( 'cloud-inline' => 'vulnerability', 'feature' => 'vulnerability-mica' ),
+            'vp' => array( 'any' => array( 'vp rules', 'vp mica-engine' ) ),
+
+            'fb' => array( 'json' => array( array( 'file-blocking', 'rule', '{X}' ) ) ),
+            'data' => array( 'json' => array( array( 'data-filtering', '{X}' ) ) ),
+
+            'url-site-access' => array( 'json' => array( array( 'url', 'site_access', '{X}' ) ) ),
+            'url-credential' => array( 'json' => array(
+                array( 'url', 'user_credential_submission', '{X}', 'category' ),
+                array( 'url', 'user_credential_submission', '{X}', 'tab', 'mode' ) ) ),
+            'url-mica-engine' => array( 'json' => array( array( 'url', 'mica-engine', '{X}' ) ), 'feature' => 'url-mica' ),
+
+            'dns-list' => array( 'json' => array( array( 'spyware', 'lists', '{X}', 'action' ) ) ),
+            'dns-security' => array( 'json' => array(
+                array( 'path' => array( 'spyware', 'dns', '{X}', 'action' ), 'feature' => 'spyware-dns' ),
+                array( 'path' => array( 'spyware', 'advanced-dns', '{X}', 'action' ), 'feature' => 'spyware-advanced-dns' ) ) ),
+
+            // SCM only
+            'avwf' => array( 'any' => array( 'av actions', 'av mica-engine', 'wf rules', 'wf mica-engine' ) ),
+            'dnssec' => array( 'any' => array( 'dns-list', 'dns-security' ) ),
+        );
+    }
+
+    /**
+     * FALSE when the visibility / best-practice check '$statKey' (e.g. 'url-mica-engine visibility') is N/A for
+     * the whole scope: the BP JSON lists nothing to check for it, or the PAN-OS version has no such setting.
+     * See bp_check_definitions(). Adoption and keys without a definition are not affected (TRUE).
      */
     public function bp_check_is_set( string $statKey ): bool
     {
-        if( !preg_match( '/^(.+) (visibility|best-practice)$/', $statKey, $m ) )
+        $parsed = self::bp_check_parse( $statKey );
+        if( $parsed === null )
             return TRUE;
+
+        $version = ( isset( $this->version ) && is_numeric( $this->version ) ) ? intval( $this->version ) : 0;
+
+        return self::bp_check_applies( $parsed[0], $parsed[1], $version );
+    }
+
+    /**
+     * 'wf visibility mica-engine' -> array( 'wf mica-engine', 'visibility' ); 'url-mica-engine best-practice' ->
+     * array( 'url-mica-engine', 'bp' ). null: not a visibility / best-practice key (e.g. adoption).
+     */
+    public static function bp_check_parse( string $statKey ): ?array
+    {
+        if( !preg_match( '/^(\S+) (visibility|best-practice)(?: (.+))?$/', $statKey, $m ) )
+            return null;
+        $check = $m[1] . ( isset( $m[3] ) && $m[3] !== '' ? ' ' . $m[3] : '' );
+        return array( $check, $m[2] == 'visibility' ? 'visibility' : 'bp' );
+    }
+
+    /**
+     * @param string $check   key of bp_check_definitions(), e.g. 'wf mica-engine'
+     * @param string $section 'visibility' or 'bp'
+     * @param int $version    PAN-OS version of the scope (e.g. 112); 0: unknown, not tested
+     */
+    public static function bp_check_applies( string $check, string $section, int $version = 0, int $depth = 0 ): bool
+    {
+        $definitions = self::bp_check_definitions();
+        if( !isset( $definitions[$check] ) || $depth > 3 )
+            return TRUE;
+        $def = $definitions[$check];
+
+        if( isset( $def['feature'] ) && !SecurityProfile2::bpFeatureSupportedInVersion( $def['feature'], $version ) )
+            return FALSE;
+
+        if( isset( $def['any'] ) )
+        {
+            foreach( $def['any'] as $sub )
+                if( self::bp_check_applies( $sub, $section, $version, $depth + 1 ) )
+                    return TRUE;
+            return FALSE;
+        }
+
+        // without a BP JSON file nothing is customised: every check applies, as before
         if( empty( PH::$shadow_bp_jsonfilename ) )
             return TRUE;
-
-        $sections = array(
-            'data' => array( 'data-filtering' ),
-            'fb' => array( 'file-blocking' ),
-            'url-site-access' => array( 'url', 'site_access' ),
-            'url-credential' => array( 'url', 'user_credential_submission' ),
-            'dns-list' => array( 'spyware', 'lists' ),
-            'dns-security' => array( 'spyware', 'dns' ),
-        );
-        if( !isset( $sections[$m[1]] ) )
+        $json = PH::getBPjsonFile();
+        if( !is_array( $json ) )
             return TRUE;
 
-        $node = PH::getBPjsonFile();
-        foreach( $sections[$m[1]] as $key )
+        if( isset( $def['cloud-inline'] ) )
         {
-            if( !is_array( $node ) || !isset( $node[$key] ) )
-                return FALSE;
-            $node = $node[$key];
+            $node = $json[$def['cloud-inline']]['cloud-inline'][$section] ?? null;
+            return is_array( $node ) && SecurityProfile2::cloud_inline_listed( $node );
         }
+
+        if( isset( $def['json'] ) )
+        {
+            foreach( $def['json'] as $path )
+            {
+                if( isset( $path['path'] ) )
+                {
+                    if( isset( $path['feature'] ) && !SecurityProfile2::bpFeatureSupportedInVersion( $path['feature'], $version ) )
+                        continue;
+                    $path = $path['path'];
+                }
+                $node = $json;
+                foreach( $path as $key )
+                {
+                    if( $key === '{X}' )
+                        $key = $section;
+                    if( !is_array( $node ) || !isset( $node[$key] ) )
+                    {
+                        $node = null;
+                        break;
+                    }
+                    $node = $node[$key];
+                }
+                if( !empty( $node ) )
+                    return TRUE;
+            }
+            return FALSE;
+        }
+
         return TRUE;
     }
 
@@ -1507,7 +1630,12 @@ trait StatCollectorTrait
                 continue;
             }
 
-            // the BP JSON sets no check at all (no section): N/A for the whole scope, never 0%
+            // a new visibility / best-practice figure without a scope-wide N/A definition would read 0% where it is N/A
+            $parsed = self::bp_check_parse( $entry[0] );
+            if( $parsed !== null && !isset( self::bp_check_definitions()[$parsed[0]] ) )
+                mwarning( "BP statistics: '".$entry[0]."' has no entry in bp_check_definitions(), scope-wide N/A is not detected", null, FALSE );
+
+            // N/A for the whole scope (the BP JSON lists nothing to check, or the PAN-OS version has no such setting), never 0%
             if( !$this->bp_check_is_set( $entry[0] ) )
             {
                 $stdoutarray[$entry[0].' calc'] = "N/A";

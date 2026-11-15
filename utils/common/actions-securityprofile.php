@@ -1326,14 +1326,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
                     else
                     {
-                        if( $object->owner->owner->version >= 102 )
+                        if( $object->bpFeatureSupported( 'url-mica' ) )
                             $string_mica_engine[] = "local-inline-cat=no";
                     }
                     if( $object->cloud_inline_cat !== null )
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
                     else
                     {
-                        if( $object->owner->owner->version >= 102 )
+                        if( $object->bpFeatureSupported( 'url-mica' ) )
                             $string_mica_engine[] = "cloud-inline-cat=no";
                     }
                 }
@@ -1409,11 +1409,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction($string_mica_engine);
                     if( $bestPractice || $visibility)
                     {
-                        if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
-                            || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
-                            || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 112 )
+                        // the profile types with an inline-ML setting; where the PAN-OS version has none the
+                        // check returns null and the cell reads N/A (SecurityProfile2::$bpFeatureMinVersion)
+                        if( get_class($object) == "AntiSpywareProfile"
+                            || get_class($object) == "VulnerabilityProfile"
+                            || get_class($object) == "WildfireProfile"
                             || get_class($object) == "AntiVirusProfile"
-                            || (get_class($object) == "URLProfile" && $object->owner->owner->version >= 102 )
+                            || get_class($object) == "URLProfile"
                             || get_class($object) == "VirusAndWildfireProfile"
                         )
                         {
@@ -2302,27 +2304,27 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( empty( $info['inline_ml_detail'] ) || empty( $info['av_inline_ml_detail'] ) )
                     {
                         if( get_class($object) == "VulnerabilityProfile"
-                            && $object->owner->owner->version < 110
+                            && !$object->bpFeatureSupported( 'vulnerability-mica' )
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "WildfireProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && $object->owner->owner->version < 111
+                            && !$object->bpFeatureSupported( 'wildfire-mica' )
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "AntiVirusProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'virus-mica' )
                         )
                         {
                             $info['av_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( get_class($object) == "AntiSpywareProfile"
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'spyware-mica' )
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
@@ -2381,27 +2383,27 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( empty( $info['bp_inline_ml_detail'] ) || empty( $info['bp_av_inline_ml_detail'] ) )
                     {
                         if( get_class($object) == "VulnerabilityProfile"
-                            && $object->owner->owner->version < 110
+                            && !$object->bpFeatureSupported( 'vulnerability-mica' )
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "WildfireProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && $object->owner->owner->version < 111
+                            && !$object->bpFeatureSupported( 'wildfire-mica' )
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "AntiVirusProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'virus-mica' )
                         )
                         {
                             $info['bp_av_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( get_class($object) == "AntiSpywareProfile"
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'spyware-mica' )
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
@@ -2904,7 +2906,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
 
                     $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
-                    if($object->owner->owner->version < 102)
+                    if( !$object->bpFeatureSupported( 'url-mica' ) )
                         $info['inline_ml_detail']             = '[Feature not available]';
                 }
 
@@ -2926,7 +2928,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
 
                     $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
-                    if($object->owner->owner->version < 102)
+                    if( !$object->bpFeatureSupported( 'url-mica' ) )
                         $info['bp_inline_ml_detail']             = '[Feature not available]';
                 }
             }

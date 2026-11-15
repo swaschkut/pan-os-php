@@ -1305,7 +1305,7 @@ class URLProfile extends SecurityProfile2
     public function url_mica_engine_visibility()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "visibility", "url" );
-        if( empty( $check_array ) || !is_array( $check_array ) || $this->owner->owner->version < 102 )
+        if( empty( $check_array ) || !is_array( $check_array ) || !$this->bpFeatureSupported( 'url-mica' ) )
             return null;
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
 
@@ -1318,7 +1318,7 @@ class URLProfile extends SecurityProfile2
     public function url_mica_engine_best_practice()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "bp", "url" );
-        if( empty( $check_array ) || !is_array( $check_array ) || $this->owner->owner->version < 102 )
+        if( empty( $check_array ) || !is_array( $check_array ) || !$this->bpFeatureSupported( 'url-mica' ) )
             return null;
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
 
