@@ -43,6 +43,7 @@ UTIL:
 * pan-os-php type=scm-xyz | introduction of "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync",
 * xyz.alert-only-set / BP JSON settings file | optimisation ml inline
 * xyz.alert-only-set / BP JSON settings file | optimisation for rules of AS, VP, WF, FB and AV-Decoder
+* xyz.alert-only-set / BP JSON settings file | optimisation for spwyare dns part
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile
