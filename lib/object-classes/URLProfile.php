@@ -60,13 +60,13 @@ class URLProfile extends SecurityProfile2
     public $credential_mode = null;
     public $credential_log = null;
 
-    /** 'yes' / 'no' as PAN-OS applies it: from the XML, or the PAN-OS default where the element is absent; null: PAN-OS < 10.2 */
+    /** 'yes' / 'no' as PAN-OS applies it: from the XML, or the PAN-OS default (then also written into the XML); null: PAN-OS < 10.2 */
     public $local_inline_cat = null;
     public $cloud_inline_cat = null;
     /** PAN-OS defaults of the inline categorization of a URL profile, applied where the XML has no element */
-    const LOCAL_INLINE_CAT_DEFAULT = 'yes';
+    const LOCAL_INLINE_CAT_DEFAULT = 'no';
     const CLOUD_INLINE_CAT_DEFAULT = 'no';
-    /** TRUE: the value above is the PAN-OS default, the XML has no such element */
+    /** TRUE: the value above is the PAN-OS default, the original XML had no such element */
     public $local_inline_cat_isDefault = false;
     public $cloud_inline_cat_isDefault = false;
 
@@ -369,7 +369,8 @@ class URLProfile extends SecurityProfile2
                 $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
-        // an absent element takes its PAN-OS default (local: yes, cloud: no); reading never writes to the XML
+        // an absent element takes its PAN-OS default (local: no, cloud: no), written into the XML so that the
+        // analysis (visibility / best practice) and the output show the value PAN-OS applies
         $this->local_inline_cat_isDefault = false;
         $this->cloud_inline_cat_isDefault = false;
 
@@ -378,6 +379,8 @@ class URLProfile extends SecurityProfile2
             $this->local_inline_cat = $tmp_local_inline_cat->textContent;
         elseif( $this->bpFeatureSupported( 'url-mica' ) )
         {
+            $tmp_local_inline_cat = DH::findFirstElementOrCreate("local-inline-cat", $xml);
+            $tmp_local_inline_cat->textContent = self::LOCAL_INLINE_CAT_DEFAULT;
             $this->local_inline_cat = self::LOCAL_INLINE_CAT_DEFAULT;
             $this->local_inline_cat_isDefault = true;
         }
@@ -387,6 +390,8 @@ class URLProfile extends SecurityProfile2
             $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
         elseif( $this->bpFeatureSupported( 'url-mica' ) )
         {
+            $tmp_cloud_inline_cat = DH::findFirstElementOrCreate("cloud-inline-cat", $xml);
+            $tmp_cloud_inline_cat->textContent = self::CLOUD_INLINE_CAT_DEFAULT;
             $this->cloud_inline_cat = self::CLOUD_INLINE_CAT_DEFAULT;
             $this->cloud_inline_cat_isDefault = true;
         }
@@ -897,22 +902,16 @@ class URLProfile extends SecurityProfile2
 
         if( $this->bpFeatureSupported( 'url-mica' ) )
         {
-            // write only what PAN-OS does not already apply: an absent element at its default stays absent
-            if( $this->local_inline_cat !== $bool_value )
-            {
-                $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $this->xmlroot);
-                $xmlnode->textContent = $bool_value;
-                $this->local_inline_cat = $bool_value;
-                $this->local_inline_cat_isDefault = false;
-            }
+            // both elements are in the XML since loading (value or PAN-OS default)
+            $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $this->xmlroot);
+            $xmlnode->textContent = $bool_value;
+            $this->local_inline_cat = $bool_value;
+            $this->local_inline_cat_isDefault = false;
 
-            if( $this->cloud_inline_cat !== $bool_value )
-            {
-                $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $this->xmlroot);
-                $xmlnode->textContent = $bool_value;
-                $this->cloud_inline_cat = $bool_value;
-                $this->cloud_inline_cat_isDefault = false;
-            }
+            $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $this->xmlroot);
+            $xmlnode->textContent = $bool_value;
+            $this->cloud_inline_cat = $bool_value;
+            $this->cloud_inline_cat_isDefault = false;
         }
     }
 
