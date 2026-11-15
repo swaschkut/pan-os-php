@@ -1484,9 +1484,11 @@ class URLProfile extends SecurityProfile2
 
     public function credential_is_adoption()
     {
-        if( $this->credential_mode !== null && $this->credential_mode !== "disabled")
-            return TRUE;
-        return False;
+        #if( $this->credential_mode !== null && $this->credential_mode !== "disabled")
+        #    return TRUE;
+        #return False;
+
+        return TRUE:
     }
 
     /** @return bool|null null: not listed in the visibility JSON (N/A) */
