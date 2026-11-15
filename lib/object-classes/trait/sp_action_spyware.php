@@ -1132,41 +1132,19 @@ trait sp_action_spyware
             $this->bpSetVerify( $section, 'AS inline ML', $section == 'bp' ? $this->cloud_inline_analysis_best_practice() : $this->cloud_inline_analysis_visibility() );
     }
 
+    /**
+     * best-practice-set of the AS rules: action / packet-capture as the BP JSON spyware -> rule -> bp lists them,
+     * for the severities it lists (categories in category-exclude left out) - see threatRules_setFromJSON().
+     */
     public function rules_BestPracticeSet(): void
     {
-        foreach( $this->rules_obj as $rule )
-        {
-            /** @var ThreatPolicy $rule */
-            if( in_array("high", $rule->severity()) || in_array("critical", $rule->severity()) || in_array("medium", $rule->severity()) )
-            {
-                if( !in_array("low", $rule->severity()) && !in_array("informational", $rule->severity()) )
-                {
-                    if( $rule->category() != "brute-force" && $rule->category() != "app-id-change")
-                    {
-                        $rule->action = "reset-both";
-
-                        //move this to threatPolicyvulnerability create method "setAction($name)"
-                        $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                        if( $tmp !== FALSE )
-                        {
-                            $tmp_action = DH::firstChildElement($tmp);
-                            if( $tmp_action !== FALSE )
-                            {
-                                $tmp->removeChild($tmp_action);
-
-                                $xmlString = '<reset-both/>';
-                                $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
-                                $tmp->appendChild($xmlElement);
-                            }
-                        }
-
-                        $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
-                        $tmp_packet_capture->textContent = "single-packet";
-                        $rule->packetCapture = "single-packet";
-                    }
-                }
-            }
-        }
+        // the best-practice check asks for the visibility check first: visibility, then best practice
+        $this->threatRules_setFromJSON( 'visibility', 'spyware', 'ThreatPolicySpyware', array( null ),
+            function( $severity, $host, $category ) { return $this->spyware_rules_first_match( $severity, $category ); },
+            function() { return $this->spyware_rules_visibility(); } );
+        $this->threatRules_setFromJSON( 'bp', 'spyware', 'ThreatPolicySpyware', array( null ),
+            function( $severity, $host, $category ) { return $this->spyware_rules_first_match( $severity, $category ); },
+            function() { return $this->spyware_rules_best_practice(); } );
     }
 
     public function dns_BestPracticeSet( $hasDNSlicense = true ): void
@@ -1320,53 +1298,15 @@ trait sp_action_spyware
         $this->spyware_inlineML_setFromJSON( 'visibility', 'alert' );
     }
 
+    /**
+     * alert-only-set of the AS rules: the rules check of the BP JSON spyware -> rule -> visibility must pass
+     * afterwards (SecurityProfile2::threatRules_setFromJSON(): first matching rule per severity / category).
+     */
     public function rules_AlertOnlySet(): void
     {
-        foreach( $this->rules_obj as $rule )
-        {
-            /** @var ThreatPolicy $rule */
-            if( $rule->action() == "allow" )
-            {
-                $rule->action = "alert";
-
-                //move this to threatPolicyvulnerability create method "setAction($name)"
-                $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                if( $tmp !== FALSE )
-                {
-                    $tmp_action = DH::firstChildElement($tmp);
-                    if( $tmp_action !== FALSE )
-                    {
-                        $tmp->removeChild($tmp_action);
-
-                        $xmlString = '<alert/>';
-                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
-                        $tmp->appendChild($xmlElement);
-                    }
-                }
-            }
-        }
-        // add a rule only for a severity no rule matches (PAN-OS first match); after the loop above every rule logs
-        foreach( array( "critical", "high", "medium", "low", "informational" ) as $rule )
-        {
-            if( $this->spyware_rules_first_match( $rule, ThreatPolicy::OTHER_CATEGORY ) !== null )
-                continue;
-
-            $ruleName = ThreatPolicy::uniqueRuleName( $this->xmlroot, $rule );
-            $threadPolicy_obj = new ThreatPolicySpyware( $ruleName, $this);
-            $threadPolicy_obj->type = "ThreatPolicySpyware";
-
-            if( $rule == "critical" || $rule == "high" || $rule == "medium" )
-                $threadPolicy_obj->action = "alert";
-            elseif( $rule == "low" || $rule == "informational" )
-                $threadPolicy_obj->action = "default";
-
-            $this->rules_obj[] = $threadPolicy_obj;
-            $threadPolicy_obj->addReference( $this );
-
-            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $ruleName, $rule, $threadPolicy_obj->action);
-        }
+        $this->threatRules_setFromJSON( 'visibility', 'spyware', 'ThreatPolicySpyware', array( null ),
+            function( $severity, $host, $category ) { return $this->spyware_rules_first_match( $severity, $category ); },
+            function() { return $this->spyware_rules_visibility(); } );
     }
 
     public function dns_AlertOnlySet( $hasDNSlicense = true): void

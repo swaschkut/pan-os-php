@@ -300,43 +300,54 @@ trait sp_action_wildfire
         $this->wf_inlineML_setFromJSON( 'visibility', 'alert' );
     }
 
+    /**
+     * alert-only-set of the WildFire rules: when no rule passes the BP JSON wildfire -> rule -> visibility check
+     * (wildfire_rules_visibility()), a rule is added with the values of its first entry: application, file type,
+     * direction and analysis ('!x' for analysis: the other cloud). Nothing listed in the BP JSON: no change.
+     * @param bool $add_WF_alert out: TRUE when a rule was added
+     */
     public function wf_rules_AlertOnlySet(&$add_WF_alert): void
     {
-        foreach( $this->rules_obj as $rule )
+        $add_WF_alert = false;
+
+        $check_array = PH::getBPjsonFile()['wildfire']['rule']['visibility'] ?? array();
+        $entry = is_array( $check_array ) ? reset( $check_array ) : null;
+        if( empty( $entry ) || !is_array( $entry ) )
+            return;
+        if( $this->wildfire_rules_visibility() === TRUE )
+            return;
+
+        $first = function( $value, $default )
         {
-            /** @var ThreatPolicyWildfire $rule */
-            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
-                && $rule->direction() == "both"
-                && in_array("any", $rule->application() )
-                && in_array("any", $rule->filetype() )
-            )
-            {
-                $add_WF_alert = false;
-                break;
-            }
+            if( is_array( $value ) )
+                return isset( $value[0] ) ? (string)$value[0] : $default;
+            return ( $value === null || $value === '' ) ? $default : (string)$value;
+        };
+        $analysis = $first( $entry['analysis'] ?? null, 'public-cloud' );
+        if( strpos( $analysis, '!' ) === 0 )
+            $analysis = ( substr( $analysis, 1 ) == 'public-cloud' ) ? 'private-cloud' : 'public-cloud';
 
+        $tmp_name = ThreatPolicy::uniqueRuleName( $this->xmlroot, "alert_vcp" );
+        $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $this);
+        $threadPolicy_obj->type = "ThreatPolicyWildfire";
 
-        }
+        $threadPolicy_obj->analysis = $analysis;
+        $threadPolicy_obj->direction = $first( $entry['direction'] ?? null, 'both' );
+        foreach( (array)( $entry['filetype'] ?? array( 'any' ) ) as $filetype )
+            $threadPolicy_obj->filetype[] = $filetype;
+        foreach( (array)( $entry['application'] ?? array( 'any' ) ) as $application )
+            $threadPolicy_obj->application[] = $application;
 
-        if( $add_WF_alert )
-        {
-            $tmp_name = "alert_vcp";
-            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $this);
-            $threadPolicy_obj->type = "ThreatPolicyWildfire";
+        $this->rules_obj[] = $threadPolicy_obj;
+        $threadPolicy_obj->addReference( $this );
 
-            $threadPolicy_obj->analysis = "public-cloud";
-            $threadPolicy_obj->direction = "both";
-            $threadPolicy_obj->filetype[] = "any";
-            $threadPolicy_obj->application[] = "any";
+        $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-            $this->rules_obj[] = $threadPolicy_obj;
-            $threadPolicy_obj->addReference( $this );
+        $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+        $add_WF_alert = true;
 
-            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
-
-        }
+        if( $this->secprof_type == 'wildfire' )
+            $this->bpSetVerify( 'visibility', 'WF rules', $this->wildfire_rules_visibility() );
     }
 
     /**

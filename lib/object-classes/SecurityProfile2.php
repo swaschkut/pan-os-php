@@ -1454,6 +1454,211 @@ class SecurityProfile2
         return $changed;
     }
 
+    /** threat rule (AS / VP): set the action element and the object */
+    public function threatRule_setAction( $rule, string $action ): void
+    {
+        $rule->action = $action;
+        $tmp = DH::findFirstElementOrCreate( "action", $rule->xmlroot );
+        while( ( $child = DH::firstChildElement( $tmp ) ) !== FALSE && $child !== null )
+            $tmp->removeChild( $child );
+        $tmp->appendChild( DH::importXmlStringOrDie( $rule->xmlroot->ownerDocument, '<'.$action.'/>' ) );
+    }
+
+    /** threat rule (AS / VP): set packet-capture */
+    public function threatRule_setPacketCapture( $rule, string $packetCapture ): void
+    {
+        $tmp = DH::findFirstElementOrCreate( "packet-capture", $rule->xmlroot );
+        $tmp->textContent = $packetCapture;
+        $rule->packetCapture = $packetCapture;
+    }
+
+    /**
+     * threat rule (AS / VP): a new rule with threat-name any, the given severities, category and host;
+     * appended, or inserted directly before $beforeRule (PAN-OS first match: it then decides for these severities)
+     */
+    public function threatRule_new( string $ruleClass, array $severities, string $action, ?string $packetCapture, string $category = 'any', string $host = 'any', $beforeRule = null )
+    {
+        $ruleName = ThreatPolicy::uniqueRuleName( $this->xmlroot, implode( "-", $severities ) . ( $host !== 'any' ? "_".$host : "" ) );
+        $rule = new $ruleClass( $ruleName, $this );
+        $rule->type = $ruleClass;
+        $rule->action = $action;
+        if( $host !== 'any' || $ruleClass == 'ThreatPolicyVulnerability' )
+            $rule->host = $host;
+
+        $entry = $rule->newThreatPolicyXML( $this->xmlroot, $ruleName, $severities[0], $action, $host );
+        $rule->xmlroot = $entry;
+
+        $severityNode = DH::findFirstElementOrCreate( 'severity', $entry );
+        foreach( array_slice( $severities, 1 ) as $severity )
+        {
+            $member = $entry->ownerDocument->createElement( 'member' );
+            $member->textContent = $severity;
+            $severityNode->appendChild( $member );
+            $rule->severity[] = $severity;
+        }
+        if( $category !== 'any' )
+        {
+            DH::findFirstElementOrCreate( 'category', $entry )->textContent = $category;
+            $rule->category = $category;
+        }
+        if( $packetCapture !== null )
+            $this->threatRule_setPacketCapture( $rule, $packetCapture );
+
+        // position: in the XML and in rules_obj (first match reads both in this order)
+        $position = count( $this->rules_obj );
+        if( $beforeRule !== null )
+        {
+            $entry->parentNode->insertBefore( $entry, $beforeRule->xmlroot );
+            $index = array_search( $beforeRule, array_values( $this->rules_obj ), TRUE );
+            if( $index !== FALSE )
+                $position = $index;
+        }
+        $rules = array_values( $this->rules_obj );
+        array_splice( $rules, $position, 0, array( $rule ) );
+        $this->rules_obj = $rules;
+
+        $rule->addReference( $this );
+        $this->owner->owner->ThreatPolicyStore->add( $rule );
+
+        return $rule;
+    }
+
+    /**
+     * Set-actions for the threat rules of AS / VP (alert-only-set: $section 'visibility', best-practice-set: 'bp'),
+     * the reverse of the rules check (spyware_rules_check() / vulnerability_rules_check()): PAN-OS reads the rules
+     * top-down, the first rule matching a threat's severity, host and category decides. For every severity the BP
+     * JSON <jsonType> -> rule -> $section lists, every host and every category, the first matching rule must pass:
+     *  - no rule matches: a new rule is appended (severity, host any, category any)
+     *  - the rule fails and applies only to listed severities: its action / packet-capture is set
+     *  - the rule fails and applies to other severities as well (e.g. 'any'): a new rule for the listed severities
+     *    is inserted directly before it, so the other severities keep their action
+     * Action / packet-capture: a listed value is kept, else the first listed one ('block-ip' only when it is the only
+     * one, it needs more settings); visibility '!allow': 'alert' ('default' for a new low / informational rule).
+     * Nothing listed in the BP JSON: no change.
+     * @param callable $firstMatch function( $severity, $host, $category ): ?ThreatPolicy
+     * @param callable $check      function(): ?bool, the profile's rules check of $section
+     * @return bool TRUE: changed
+     */
+    public function threatRules_setFromJSON( string $section, string $jsonType, string $ruleClass, array $hosts, callable $firstMatch, callable $check ): bool
+    {
+        $check_array = PH::getBPjsonFile()[$jsonType]['rule'][$section] ?? array();
+        $severities = ThreatPolicy::checkedSeverities( $check_array );
+        if( count( $severities ) == 0 )
+            return FALSE;
+
+        $all = array( "critical", "high", "medium", "low", "informational" );
+        $anyMode = in_array( 'any', $severities, TRUE );
+        $listed = $anyMode ? $all : $severities;
+        $exclude = ( $section == 'bp' ) ? ( $check_array['category-exclude'] ?? array() ) : array();
+        $actions = (array)( $check_array['action'] ?? array() );
+        $captures = ( $section == 'bp' ) ? (array)( $check_array['packet-capture'] ?? array() ) : array();
+
+        $passes = function( $rule, $severity ) use ( $section, $check_array )
+        {
+            $check = $check_array;
+            $check['severity'] = array( $severity );
+            $ret = ( $section == 'bp' ) ? $rule->check_bp_json( $check ) : $rule->check_visibility_json( $check );
+            return $ret !== FALSE;
+        };
+        // the action a rule must get for $severity; null: the current one complies / nothing listed
+        $targetAction = function( $current, $severity, $isNew ) use ( $section, $actions )
+        {
+            if( empty( $actions ) )
+                return $isNew ? ( in_array( $severity, array( "low", "informational" ) ) ? "default" : "alert" ) : null;
+            if( $section == 'bp' )
+            {
+                if( !$isNew && in_array( $current, $actions, TRUE ) )
+                    return null;
+                foreach( $actions as $action )
+                    if( $action !== 'block-ip' )
+                        return $action;
+                mwarning( "BP JSON rule -> bp -> action lists only 'block-ip', which needs more settings - '".$this->name()."' not changed", null, FALSE );
+                return null;
+            }
+            // visibility: '!x' entries; a positive entry is not a value the action can set
+            $negated = array();
+            foreach( $actions as $action )
+            {
+                if( strpos( $action, '!' ) !== 0 )
+                {
+                    mwarning( "BP JSON rule -> visibility -> action '".$action."' is not a negated condition - '".$this->name()."' not changed", null, FALSE );
+                    return null;
+                }
+                $negated[] = substr( $action, 1 );
+            }
+            if( !$isNew && !in_array( $current, $negated, TRUE ) )
+                return null;
+            $fallback = ( $isNew && in_array( $severity, array( "low", "informational" ) ) ) ? "default" : "alert";
+            return in_array( $fallback, $negated, TRUE ) ? null : $fallback;
+        };
+        $targetCapture = function( $current, $isNew ) use ( $captures )
+        {
+            if( empty( $captures ) || ( !$isNew && in_array( $current, $captures, TRUE ) ) )
+                return null;
+            return $captures[0];
+        };
+
+        $changed = FALSE;
+        for( $step = 0; $step < 100 && $check() === FALSE; $step++ )
+        {
+            $fixed = FALSE;
+            foreach( $listed as $severity )
+            {
+                $categories = $anyMode ? array( ThreatPolicy::OTHER_CATEGORY ) : ThreatPolicy::categoriesOf( $this->rules_obj );
+                foreach( $hosts as $host )
+                {
+                    foreach( $categories as $category )
+                    {
+                        if( in_array( $category, $exclude, TRUE ) )
+                            continue;
+                        $rule = $firstMatch( $severity, $host, $category );
+                        if( $rule !== null && $passes( $rule, $severity ) && ( !$anyMode || ( $rule->category() ?? 'any' ) === 'any' ) )
+                            continue;
+
+                        if( $rule === null )
+                        {
+                            $action = $targetAction( null, $severity, TRUE );
+                            if( $action === null )
+                                return $changed;
+                            $this->threatRule_new( $ruleClass, array( $severity ), $action, $targetCapture( null, TRUE ) );
+                        }
+                        else
+                        {
+                            $covered = ( empty( $rule->severity() ) || in_array( 'any', $rule->severity(), TRUE ) ) ? $all : array_values( $rule->severity() );
+                            $action = $targetAction( $rule->action(), $severity, FALSE );
+                            $capture = $targetCapture( $rule->packetCapture(), FALSE );
+                            if( $action === null && $capture === null )
+                                return $changed;     // fails for another reason this action cannot fix
+                            if( count( array_diff( $covered, $listed ) ) == 0 )
+                            {
+                                if( $action !== null )
+                                    $this->threatRule_setAction( $rule, $action );
+                                if( $capture !== null )
+                                    $this->threatRule_setPacketCapture( $rule, $capture );
+                            }
+                            else
+                            {
+                                $newAction = $targetAction( null, $severity, TRUE );
+                                if( $newAction === null )
+                                    return $changed;
+                                $this->threatRule_new( $ruleClass, array_values( array_intersect( $covered, $listed ) ), $newAction, $targetCapture( null, TRUE ),
+                                    $rule->category() ?? 'any', $rule->host ?? 'any', $rule );
+                            }
+                        }
+                        $changed = TRUE;
+                        $fixed = TRUE;
+                        break 3;    // the rules changed: start again
+                    }
+                }
+            }
+            if( !$fixed )
+                break;
+        }
+
+        $this->bpSetVerify( $section, ucfirst( $jsonType )." rules", $check() );
+        return $changed;
+    }
+
     public static function cloud_inline_listed( $check_array ): bool
     {
         if( !isset( $check_array['inline-policy-action'] ) || !is_array( $check_array['inline-policy-action'] ) )

@@ -656,42 +656,14 @@ trait sp_action_virus
         }
     }
 
+    /**
+     * alert-only-set of the AV decoders: action / wildfire-action / mlav-action of every decoder that fails the
+     * BP JSON virus -> rule -> visibility check (check_visibility_json()) gets 'alert' ('!allow': not allow).
+     * Nothing listed for an action type, or mlav-action on a PAN-OS version without it: not changed.
+     */
     public function av_decoder_AlertOnlySet()
     {
-        $decoder_action = "alert";
-        $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
-
-
-        $tmp_decoder = DH::findFirstElement('decoder', $this->xmlroot);
-        if( $tmp_decoder === False)
-            return null;
-
-        foreach($this->tmp_virus_prof_array as $decoder )
-        {
-            $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
-            if( $xmlNode === FALSE || $xmlNode === null )
-                continue;
-
-            foreach( $actionTypeArray as $actionType )
-            {
-                $check_array = $this->virus_bp_visibility_JSON( "visibility", "virus", $actionType );
-
-                foreach( $check_array as $check )
-                {
-                    $final_check = $check;
-                    if( str_contains( $final_check, "!" ) )
-                        $final_check = str_replace("!", "", $final_check);
-
-                    // $this: the profile ($object was undefined here - the decoder actions were never changed)
-                    if( isset($this->$decoder[$actionType]) && $this->$decoder[$actionType] == $final_check )
-                    {
-                        $this->$decoder[$actionType] = $decoder_action;
-                        $action_xmlNode = DH::findFirstElementOrCreate($actionType, $xmlNode);
-                        $action_xmlNode->textContent = $decoder_action;
-                    }
-                }
-            }
-        }
+        $this->av_decoder_setFromJSON( 'visibility' );
     }
 
     /**
@@ -723,42 +695,74 @@ trait sp_action_virus
             $this->bpSetVerify( 'bp', 'AV inline ML', $this->cloud_inline_analysis_best_practice() );
     }
 
+    /**
+     * best-practice-set of the AV decoders: action / wildfire-action / mlav-action of every decoder that fails the
+     * BP JSON virus -> rule -> bp check (check_bp_json()) gets the first action listed for it ('action' for the
+     * decoders in 'type', 'action-not-matching-type' for the others). Nothing listed: not changed.
+     */
     public function av_decoder_BestPracticeSet(): void
     {
-        $decoder_action_bp = "reset-both";
-        $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
-        $decoder_array_default_allow = array( "http", "https", "ftp", "smb" );
+        $this->av_decoder_setFromJSON( 'bp' );
+    }
 
-        $tmp_decoder = DH::findFirstElement('decoder', $this->xmlroot);
-        foreach($this->tmp_virus_prof_array as $decoder )
+    private function av_decoder_setFromJSON( string $section ): void
+    {
+        $tmp_decoder = DH::findFirstElement( 'decoder', $this->xmlroot );
+        if( $tmp_decoder === FALSE || empty( $this->tmp_virus_prof_array ) )
+            return;
+
+        foreach( array( "action", "wildfire-action", "mlav-action" ) as $actionType )
         {
-            $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
+            if( $actionType == "mlav-action" && !$this->bpFeatureSupported( 'mlav-action' ) )
+                continue;
+            $check_array = PH::getBPjsonFile()['virus']['rule'][$section][$actionType] ?? array();
+            if( empty( $check_array ) )
+                continue;
 
-            if( in_array($decoder, $decoder_array_default_allow) )
+            foreach( $this->tmp_virus_prof_array as $decoder )
             {
-                foreach( $actionTypeArray as $actionType )
+                if( !isset( $this->$decoder[$actionType] ) )
+                    continue;
+                $ok = ( $section == 'bp' ) ? $this->check_bp_json( $decoder, $check_array, $actionType ) : $this->check_visibility_json( $decoder, $check_array, $actionType );
+                if( $ok !== FALSE )
+                    continue;
+
+                $target = null;
+                if( $section == 'bp' )
                 {
-                    if( $this->$decoder[$actionType] != "default" && $this->$decoder[$actionType] != $decoder_action_bp  )
-                    {
-                        $this->$decoder[$actionType] = $decoder_action_bp;
-                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
-                        $action_xmlNode->textContent = $decoder_action_bp;
-                    }
+                    $allowed = in_array( $decoder, $check_array['type'] ?? array() ) ? ( $check_array['action'] ?? array() ) : ( $check_array['action-not-matching-type'] ?? array() );
+                    foreach( (array)$allowed as $value )
+                        if( strpos( $value, '!' ) !== 0 )
+                        {
+                            $target = $value;
+                            break;
+                        }
                 }
-            }
-            else
-            {
-                foreach( $actionTypeArray as $actionType )
+                else
                 {
-                    if( $this->$decoder[$actionType] != $decoder_action_bp  )
-                    {
-                        $this->$decoder[$actionType] = $decoder_action_bp;
-                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
-                        $action_xmlNode->textContent = $decoder_action_bp;
-                    }
+                    $negated = TRUE;
+                    foreach( (array)$check_array as $value )
+                        if( strpos( $value, '!' ) !== 0 )
+                            $negated = FALSE;
+                    if( $negated && !in_array( '!alert', (array)$check_array, TRUE ) )
+                        $target = 'alert';
                 }
+                if( $target === null )
+                {
+                    mwarning( "'".$this->name()."' decoder ".$decoder." ".$actionType.": the BP JSON ".$section." condition gives no value to set - not changed", null, FALSE );
+                    continue;
+                }
+
+                $xmlNode = DH::findFirstElementByNameAttr( "entry", $decoder, $tmp_decoder );
+                if( $xmlNode === FALSE || $xmlNode === null )
+                    continue;
+                $this->$decoder[$actionType] = $target;
+                DH::findFirstElementOrCreate( $actionType, $xmlNode )->textContent = $target;
             }
         }
+
+        if( $this->secprof_type == 'virus' )
+            $this->bpSetVerify( $section, 'AV decoders', $section == 'bp' ? $this->av_actions_best_practice() : $this->av_actions_visibility() );
     }
 
     public function BestPracticeSet(): void
