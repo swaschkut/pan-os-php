@@ -320,7 +320,7 @@ class SCMPrismaAccessReport
             }
             foreach( $this->rows( $MU, 'mobile-agent-agent-profiles' ) as $p )
             {
-                $cm = self::get($p, 'gp_app_config.connect_method', self::get($p, 'connect_method'));
+                $cm = self::gpConfig($p, 'connect-method');
                 if( $cm !== null && !in_array($cm, array('user-logon', 'pre-logon'), TRUE) )
                     $this->finding( 'medium', 'mobile users', "agent profile " . self::get($p, 'name') . ": connect method " . $cm, "always-on (user-logon / pre-logon) for consistent protection" );
             }
@@ -674,7 +674,10 @@ class SCMPrismaAccessReport
         foreach( $this->rows( $A, 'mobile-agent-agent-profiles' ) as $p )
         {
             $kv = array();
-            foreach( array( 'connect_method', 'gp_app_config.connect_method', 'gp_app_config.always_on', 'tunnel_profile', 'os', 'match.os', 'authentication_override' ) as $k )
+            foreach( array( 'connect-method', 'agent-user-override', 'uninstall', 'client-upgrade', 'enforce-globalprotect' ) as $k )
+                if( self::gpConfig($p, $k) !== null )
+                    $kv[] = array( $k, self::fmt(self::gpConfig($p, $k)) );
+            foreach( array( 'source_user', 'os', 'hip_collection.collect_hip_data' ) as $k )
                 if( self::get($p, $k) !== null )
                     $kv[] = array( $k, self::fmt(self::get($p, $k)) );
             if( count($kv) )
@@ -1096,6 +1099,405 @@ class SCMPrismaAccessReport
         return $h . "</body></html>\n";
     }
 
+    /** value of an app setting of a GlobalProtect agent profile (gp_app_config.config[] = {name, value[]}) */
+    public static function gpConfig( $profile, $name )
+    {
+        foreach( (array)self::get($profile, 'gp_app_config.config', array()) as $c )
+            if( is_array($c) && isset($c['name']) && $c['name'] == $name )
+                return isset($c['value']) ? ( is_array($c['value']) && count($c['value']) == 1 ? $c['value'][0] : $c['value'] ) : null;
+        $v = self::get($profile, 'gp_app_config.' . str_replace('-', '_', $name));
+        return $v;
+    }
+
+    /** first value of a key (regex) anywhere in a nested structure - for internal UI API answers with unknown shape */
+    public static function findKey( $data, $regex, $depth = 0 )
+    {
+        if( !is_array($data) || $depth > 8 )
+            return null;
+        foreach( $data as $k => $v )
+            if( is_string($k) && preg_match($regex, $k) && !preg_match(self::SECRET_KEYS, $k) )
+                return $v;
+        foreach( $data as $v )
+        {
+            $r = self::findKey( $v, $regex, $depth + 1 );
+            if( $r !== null )
+                return $r;
+        }
+        return null;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // as-built data (document builder: fills the tables of the Prisma Access as-built template)
+
+    const NC = 'Not Configured';
+    const PAD = 'Prisma Access Default';
+    const NIE = 'not in export';
+    const REGION_DISPLAY = array( 'europe' => 'Africa, Europe & Middle East', 'apac' => 'Asia, Australia & Japan', 'americas' => 'North America & South America', 'worldwide' => 'Worldwide' );
+
+    private static function v( $v, $default = self::NC )
+    {
+        if( $v === null || $v === '' || $v === array() )
+            return $default;
+        if( is_bool($v) )
+            return $v ? 'Enabled' : 'Disabled';
+        if( is_array($v) )
+        {
+            if( isset($v['member']) )
+                $v = $v['member'];
+            if( array_keys($v) === range(0, count($v) - 1) )
+                return implode("\n", array_map(function($x){ return is_array($x) ? ( isset($x['name']) ? $x['name'] : json_encode($x, JSON_UNESCAPED_SLASHES) ) : (string)$x; }, $v));
+            return implode("\n", array_keys($v));
+        }
+        return (string)$v;
+    }
+
+    private static function tf( $v, $default = self::PAD )
+    {
+        if( $v === null )
+            return $default;
+        return $v ? 'True' : 'False';
+    }
+
+    private static function hours( $l )
+    {
+        if( !is_array($l) )
+            return $l === null ? self::PAD : (string)$l;
+        foreach( $l as $k => $v )
+            return $v . " " . str_replace(array('lifetime_in_', '_'), array('', ' '), $k);
+        return self::PAD;
+    }
+
+    private function regionName( $r )
+    {
+        return isset(self::REGION_DISPLAY[$r]) ? self::REGION_DISPLAY[$r] : $r;
+    }
+
+    private function locationDisplay( $value )
+    {
+        foreach( $this->rows( SCMPrismaAccessExport::AREA_INFRA, 'locations' ) as $l )
+            if( isset($l['value']) && $l['value'] == $value )
+                return isset($l['display']) ? $l['display'] : $value;
+        return $value;
+    }
+
+    /** peer IP(s) of one tunnel from the ip-mapping peer list ("<tunnel> / <gateway>: ip=x") */
+    private static function peerOf( $list, $tunnel )
+    {
+        $out = array();
+        foreach( (array)$list as $p )
+            if( $tunnel !== null && strpos((string)$p, $tunnel . " / ") === 0 )
+                $out[] = preg_replace('/^(ip|fqdn)=/', '', substr($p, strrpos($p, ": ") + 2));
+        return count($out) ? implode("\n", $out) : self::NC;
+    }
+
+    private function egress( $types, $addressTypes = array('active') )
+    {
+        $rows = array();
+        foreach( $this->rows( SCMPrismaAccessExport::AREA_INFRA, 'egress-ip' ) as $z )
+        {
+            $ips = array();
+            foreach( (array)self::get($z, 'address_details', array()) as $a )
+                if( in_array(self::get($a, 'serviceType'), $types, TRUE) && in_array(self::get($a, 'addressType', 'active'), $addressTypes, TRUE) )
+                    $ips[] = $a['address'];
+            if( count($ips) )
+                $rows[self::get($z, 'zone')] = implode("\n", $ips);
+        }
+        return $rows;
+    }
+
+    /**
+     * tables of the as-built template, each with the heading it stands under (and the parent heading / position where
+     * a heading has several tables): list (columns + rows), kv (label => value), matrix (columns = profiles,
+     * values "category|parameter" => [value per profile]); select = row label / value that identifies the table
+     */
+    public function buildAsBuiltData()
+    {
+        $A = SCMPrismaAccessExport::AREA_INFRA; $MU = SCMPrismaAccessExport::AREA_MU; $EP = SCMPrismaAccessExport::AREA_EP;
+        $SC = SCMPrismaAccessExport::AREA_SC; $RN = SCMPrismaAccessExport::AREA_RN; $IAM = SCMPrismaAccessExport::AREA_IAM;
+        $m = $this->manifest; $tsg = isset($m['tsg_id']) ? (string)$m['tsg_id'] : self::NIE;
+        $t = array();
+        $list = function( $id, $heading, $columns, $rows, $extra = array() ) use ( &$t ) { $t[] = array_merge( array( 'id' => $id, 'heading' => $heading, 'type' => 'list', 'columns' => $columns, 'rows' => array_values($rows) ), $extra ); };
+        $kv = function( $id, $heading, $values, $extra = array() ) use ( &$t ) { $t[] = array_merge( array( 'id' => $id, 'heading' => $heading, 'type' => 'kv', 'values' => (object)$values ), $extra ); };
+
+        // common services
+        $list( 'subscriptions', 'Subscriptions', array( 'CSP Account ID', 'TSG', 'Instance name', 'Subscription and Add-ons' ), array( array( self::NIE, $tsg, self::NIE, self::NIE ) ) );
+        if( $this->hasArea($IAM) )
+        {
+            $rows = array();
+            foreach( $this->rows( $IAM, 'access-policies' ) as $p )
+            {
+                $pr = (string)self::get($p, 'principal');
+                $res = (string)self::get($p, 'resource');
+                $app = preg_match('/^prn:(\d+):([^:]*)/', $res, $mm) ? "TSG ID: " . $mm[1] . "\nAPP ID: " . ( $mm[2] !== '' ? $mm[2] : 'All' ) : $res;
+                $rows[] = array( $pr, strpos($pr, 'iam.panserviceaccount.com') !== FALSE ? 'service_account' : 'user', $app, self::v(self::get($p, 'role')) );
+            }
+            $list( 'administrators', 'Platform Administration', array( 'Name', 'Type (User/Service Account)', 'Application', 'Role' ), $rows );
+        }
+        $list( 'tenant', 'Tenant ID(s)', array( 'TSG Name', 'TSG ID', 'Parent TSG ID' ), array( array( self::NIE, $tsg, self::NIE ) ) );
+
+        // infrastructure
+        if( $this->hasArea($A) )
+        {
+            $si = $this->data( $A, 'shared-infrastructure-settings' );
+            $kv( 'infra-settings', 'Prisma Access Setup', array(
+                'Infrastructure Subnet IPv4' => self::v(self::get($si, 'infrastructure_subnet')),
+                'Infrastructure Subnet IPv6' => self::v(self::get($si, 'infrastructure_subnet_ipv6')),
+                'Infrastructure BGP AS' => self::v(self::get($si, 'infra_bgp_as')),
+                'Tunnel Monitor IP Address' => self::v(self::get($si, 'tunnel_monitor_ip_address')),
+                'ZTNA Connector Application IP Blocks' => self::v(self::findKey($si, '/application.*block/i')),
+                'ZTNA Connector Connector IP Blocks' => self::v(self::findKey($si, '/connector_connector_block|connector.*ip.*block/i')),
+            ) );
+            $rows = array();
+            foreach( $this->rows( $A, 'internal-dns-servers' ) as $d )
+                $rows[] = array( self::v(self::get($d, 'name')), self::v(self::get($d, 'domain_name')), self::v(self::get($d, 'primary')), self::v(self::get($d, 'secondary')) );
+            $list( 'internal-dns', 'Internal DNS Servers', array( 'Role Name', 'Domain Names', 'Primary DNS', 'Secondary DNS' ), $rows );
+            $bgp = $this->data( $A, 'bgp-routing' );
+            $pref = self::get($bgp, 'routing_preference');
+            $kv( 'routing', 'Routing', array(
+                'Routing Preference' => is_array($pref) && count($pref) ? str_replace('_', '-', implode(", ", array_keys($pref))) : 'default',
+                'Backbone Routing' => self::v(self::get($bgp, 'backbone_routing')),
+                'Withdraw Static Routes' => self::v((bool)self::get($bgp, 'withdraw_static_route', false)),
+                'Enable Auto IKE peer host routes' => self::v((bool)self::get($bgp, 'add_host_route_to_ike_peer', false)),
+                'Outbound Routes for the Service' => self::v(self::get($bgp, 'outbound_routes_for_services')),
+            ) );
+            $kv( 'traffic-steering-general', 'General Settings', array( 'Accept Default Route over Service Connections' => self::v((bool)self::get($bgp, 'accept_route_over_SC', false)) ), array( 'parent' => 'Traffic Steering' ) );
+        }
+
+        // service connections
+        if( $this->hasArea($SC) )
+        {
+            $rows = array();
+            foreach( $this->scRows() as $c )
+                $rows[] = array( $c['service_connection'], self::v($this->locationDisplay($c['region'])), self::v($c['ipsec_tunnel']), self::peerOf($c['peer_address'], $c['ipsec_tunnel']),
+                    self::v($c['secondary_ipsec_tunnel']), self::peerOf($c['peer_address'], $c['secondary_ipsec_tunnel']), self::v($c['subnets']),
+                    !empty($c['bgp_enabled']) ? self::v($c['bgp_peer_ip_address']) : self::NC, self::v(isset($c['bgp_peer_peer_ip_address']) ? $c['bgp_peer_peer_ip_address'] : null) );
+            $list( 'sc-onboarding', 'Onboarding', array( 'Site', 'Location', 'Primary IPSec Tunnel', 'Primary Peer IP Address', 'Secondary IPSec Tunnel', 'Secondary Peer IP Address', 'Corporate Subnets', 'BGP Primary', 'BGP Secondary' ), $rows, array( 'parent' => 'Service Connections' ) );
+            $backup = array();
+            foreach( $this->scRows() as $c )
+                if( !empty($c['backup_SC']) )
+                    $backup[$c['backup_SC']] = TRUE;
+            $rows = array();
+            $grp = $this->rows( $SC, 'service-connection-groups' );
+            foreach( $grp as $g )
+                foreach( (array)self::get($g, 'target', array()) as $sc )
+                    $rows[] = array( self::v(self::get($g, 'name')), $sc, isset($backup[$sc]) ? 'Backup' : 'Active' );
+            if( !count($grp) )
+                foreach( $this->scRows() as $c )
+                    $rows[] = array( self::NC, $c['service_connection'], isset($backup[$c['service_connection']]) ? 'Backup' : 'Active' );
+            $list( 'sc-site-management', 'Site Management', array( 'Name', 'Service Connection', 'Active/Backup' ), $rows );
+            $list( 'ztna-connectors', 'Connectors', array( 'Name', 'Connector Group', 'PA Location', 'Tunnel Status', 'Control-Plane Status', 'Autoscale', 'Version' ), array(), array( 'parent' => 'ZTNA Connector', 'empty_text' => 'ZTNA connectors are not part of the export' ) );
+            $rows = array();
+            foreach( $grp as $g )
+                $rows[] = array( self::v(self::get($g, 'name')), self::v(self::get($g, 'target')), self::v((bool)self::get($g, 'pbf_only', false)), self::v((bool)self::get($g, 'disable_snat', false)) );
+            $list( 'ts-targets', 'Target Service Connections for Traffic Steering', array( 'Group Name', 'Service Connection', 'Dedicated for Traffic Steering', 'Disable Source NAT' ), $rows );
+            $rows = array();
+            foreach( $this->rows( $SC, 'traffic-steering-rules' ) as $r )
+            {
+                $act = self::get($r, 'action');
+                $action = is_array($act) && isset($act['forward']) ? "Forward to the target: " . self::v(self::get($act, 'forward.target')) : self::v($act);
+                $rows[] = array( self::v(self::get($r, 'name')), self::v(self::get($r, 'source')), self::v(self::get($r, 'source_user')), self::v(self::get($r, 'destination')), self::v(self::get($r, 'category')), self::v(self::get($r, 'service')), $action );
+            }
+            $list( 'ts-rules', 'Traffic Steering Rules', array( 'Rule Name', 'Source Address', 'User', 'Destination', 'URL Category', 'Service', 'Action' ), $rows );
+        }
+
+        // mobile users
+        if( $this->hasArea($MU) )
+        {
+            $is = $this->rows( $MU, 'mobile-agent-infrastructure-settings' );
+            $is = count($is) ? $is[0] : array();
+            $gs = $this->data( $MU, 'mobile-agent-global-settings' );
+            $host = self::get($is, 'portal_hostname.custom_domain.hostname');
+            if( $host === null && self::get($is, 'portal_hostname.default_domain.hostname') !== null )
+                $host = self::get($is, 'portal_hostname.default_domain.hostname') . ".gpcloudservice.com";
+            $kv( 'mu-general', 'General', array(
+                'Portal Host Name' => self::v($host !== null ? $host : self::get($is, 'name')),
+                'Portal DNS CNAME' => self::v(self::get($is, 'portal_hostname.custom_domain.cname')),
+                'SSL-TLS Service Profile' => self::v(self::get($is, 'portal_hostname.custom_domain.ssl_tls_service_profile')),
+                'Prisma Access Agent Domain Name' => self::v(self::findKey($this->data($MU, 'pa-agent-tenant-settings'), '/domain/i'), self::NIE),
+                'GlobalProtect App Version' => self::v(self::get($gs, 'agent_version')),
+            ), array( 'parent' => 'Onboarding' ) );
+            $rows = array();
+            foreach( $this->rows( $MU, 'mobile-agent-authentication-settings' ) as $a )
+                $rows[] = array( self::v(self::get($a, 'os', 'Any'), 'Any'), self::v(self::findKey($a, '/method/i'), self::NIE), self::v(self::get($a, 'authentication_profile')) );
+            $list( 'gp-auth', 'GlobalProtect', array( 'Authentication User OS', 'Authentication Method', 'Authentication Profile' ), $rows, array( 'nth' => 0 ) );
+            // app settings (agent profiles) and tunnel settings (tunnel profiles): one column per profile
+            $ap = $this->rows( $MU, 'mobile-agent-agent-profiles' );
+            $cols = array(); $vals = array();
+            foreach( $ap as $p )
+            {
+                $cols[] = (string)self::get($p, 'name');
+                $ext = array();
+                foreach( (array)self::get($p, 'gateways.external.list', array()) as $g )
+                    $ext[] = self::get($g, 'name');
+                $row = array(
+                    'Source User' => self::v(self::get($p, 'source_user'), 'any'), 'OS' => self::v(self::get($p, 'os'), 'any'),
+                    'External Gateway' => self::v($ext, self::PAD),
+                    'Generate Cookie' => self::tf(self::get($p, 'authentication_override.generate_cookie')),
+                    'Cookie Lifetime' => self::hours(self::get($p, 'authentication_override.accept_cookie.cookie_lifetime')),
+                    'Cookie Certificate' => self::v(self::get($p, 'authentication_override.cookie_encrypt_decrypt_cert'), self::PAD),
+                    'Save User Credentials' => self::v(self::get($p, 'save_user_credentials'), self::PAD),
+                    'Collect HIP Data' => self::tf(self::get($p, 'hip_collection.collect_hip_data')),
+                    'HIP Certificate Profile' => self::v(self::get($p, 'hip_collection.certificate_profile'), self::PAD),
+                    'HIP Exclusion' => self::v(self::get($p, 'hip_collection.exclusion'), self::PAD),
+                    'Local Certificate' => self::v(self::get($p, 'client_certificate.local'), self::PAD),
+                    'IP Address' => self::v(self::get($p, 'internal_host_detection.ip_address'), self::PAD),
+                    'Hostname' => self::v(self::get($p, 'internal_host_detection.hostname'), self::PAD),
+                    'Agent User Override' => self::v(self::gpConfig($p, 'agent-user-override'), self::PAD),
+                    'Uninstall' => self::v(self::gpConfig($p, 'uninstall'), self::PAD),
+                    'Max User Overrides' => self::v(self::gpConfig($p, 'max-agent-user-overrides'), self::PAD),
+                    'Override Timeout' => self::v(self::gpConfig($p, 'agent-user-override-timeout'), self::PAD),
+                );
+                foreach( array( 'agent-proxy-mode', 'dem-agent', 'dem-agent-action', 'can-change-portal', 'connect-method', 'client-upgrade', 'enforce-globalprotect' ) as $k )
+                    $row[$k] = self::v(self::gpConfig($p, $k), self::PAD);
+                foreach( (array)self::get($p, 'gp_app_config.config', array()) as $c )
+                    if( isset($c['name']) && !isset($row[$c['name']]) )
+                        $row[$c['name']] = self::v(isset($c['value']) ? $c['value'] : null, self::PAD);
+                foreach( $row as $k => $v )
+                    $vals[$k][] = $v;
+            }
+            $t[] = array( 'id' => 'gp-app-settings', 'heading' => 'GlobalProtect', 'type' => 'matrix', 'header' => 'Setting Category', 'columns' => $cols, 'values' => $vals, 'default' => self::PAD );
+            $tp = $this->rows( $MU, 'mobile-agent-tunnel-profiles' );
+            $cols = array(); $vals = array();
+            foreach( $tp as $p )
+            {
+                $cols[] = (string)self::get($p, 'name');
+                $row = array(
+                    'Source User' => self::v(self::get($p, 'source_user'), 'any'), 'Operating System' => self::v(self::get($p, 'os'), 'any'),
+                    'Generate Cookie' => self::tf(self::get($p, 'authentication_override.generate_cookie')),
+                    'Cookie Lifetime' => self::hours(self::get($p, 'authentication_override.accept_cookie.cookie_lifetime')),
+                    'Cookie Certificate' => self::v(self::get($p, 'authentication_override.cookie_encrypt_decrypt_cert'), self::PAD),
+                    'Region' => self::v(self::get($p, 'source_address.region'), self::PAD),
+                    'IP Address' => self::v(self::get($p, 'source_address.ip_address'), self::PAD),
+                    'Direct Local Network Access' => self::get($p, 'no_direct_access_to_local_network') === null ? self::PAD : ( self::get($p, 'no_direct_access_to_local_network') ? 'Disabled' : 'Enabled' ),
+                    'Included Access Route' => self::v(self::get($p, 'split_tunneling.access_route'), self::PAD),
+                    'Included Domains' => self::v(self::get($p, 'split_tunneling.include_domains.list'), self::PAD),
+                    'Excluded Access Route' => self::v(self::get($p, 'split_tunneling.exclude_access_route'), self::PAD),
+                    'Excluded Domains' => self::v(self::get($p, 'split_tunneling.exclude_domains.list'), self::PAD),
+                );
+                foreach( $row as $k => $v )
+                    $vals[$k][] = $v;
+            }
+            $t[] = array( 'id' => 'gp-tunnel-settings', 'heading' => 'GlobalProtect', 'type' => 'matrix', 'header' => 'Category', 'columns' => $cols, 'values' => $vals, 'default' => self::PAD );
+            // Prisma Access Agent
+            $rows = array();
+            $ca = $this->data( $MU, 'pa-agent-client-auth' );
+            foreach( is_array($ca) ? ( array_keys($ca) === range(0, count($ca) - 1) ? $ca : array( $ca ) ) : array() as $a )
+                if( is_array($a) )
+                    $rows[] = array( self::v(self::findKey($a, '/^os$/i'), 'Any'), self::v(self::findKey($a, '/method|type/i'), self::NIE), self::v(self::findKey($a, '/auth.*profile|profile/i'), self::NIE) );
+            if( count($rows) || $this->status($MU, 'pa-agent-client-auth') == 'ok' )
+                $list( 'paa-auth', 'Prisma Access Agent', array( 'Authentication User OS', 'Authentication Method', 'Authentication Profile' ), $rows, array( 'nth' => 0 ) );
+            $rows = array();
+            foreach( $this->rows( $EP, 'forwarding-profiles' ) as $f )
+                $rows[] = array( self::v(self::get($f, 'name')), self::v(self::findKey($f, '/application/i'), self::PAD), self::v(self::findKey($f, '/user.?location/i'), self::PAD), self::v(self::findKey($f, '/destination/i'), self::PAD), self::v(self::findKey($f, '/connectivity|forward|proxy/i'), self::PAD) );
+            if( $this->status($EP, 'forwarding-profiles') == 'ok' )
+                $list( 'paa-forwarding', 'Prisma Access Agent', array( 'Name', 'Application', 'User Location', 'Destination', 'Connectivity' ), $rows, array( 'header_col' => 'Name', 'empty_text' => 'No forwarding rules configured' ) );
+            // locations, IP pools, network services per region
+            $loc = array();
+            foreach( (array)self::get($is, 'deployment.region', array()) as $r )
+                $loc[$this->regionName(self::get($r, 'name'))] = implode("\n", array_map(array($this, 'locationDisplay'), (array)self::get($r, 'locations', array())));
+            $kv( 'mu-locations', 'Locations', $loc, array( 'parent' => 'Onboarding', 'nth' => 0, 'default' => self::NC ) );
+            $pools = array(); $pools6 = array();
+            foreach( (array)self::get($is, 'ip_pools', array()) as $p )
+            {
+                $pools[$this->regionName(self::get($p, 'name'))] = self::v(self::get($p, 'ip_pool'));
+                $pools6[$this->regionName(self::get($p, 'name'))] = self::v(self::get($p, 'ip_pool_ipv6', self::get($p, 'ipv6_pool')));
+            }
+            $kv( 'mu-ip-pools-v4', 'IP Pools', $pools, array( 'nth' => 0 ) );
+            $kv( 'mu-ip-pools-v6', 'IP Pools', $pools6, array( 'nth' => 1 ) );
+            $dnsSeen = array();
+            foreach( (array)self::get($is, 'dns_servers', array()) as $d )
+            {
+                $dnsSeen[$this->regionName(self::get($d, 'name'))] = TRUE;
+                $int = array();
+                foreach( (array)self::get($d, 'internal_dns_match', array()) as $x )
+                    $int[] = self::v(self::get($x, 'domain_list'), '') . ( self::get($x, 'primary') ? " (" . self::v(self::get($x, 'primary')) . ")" : "" );
+                $pub = self::get($d, 'primary_public_dns.dns_server') !== null ? "PRI: " . self::get($d, 'primary_public_dns.dns_server') . ( self::get($d, 'secondary_public_dns.dns_server') ? "\nSEC: " . self::get($d, 'secondary_public_dns.dns_server') : "" ) : self::PAD;
+                $kv( 'mu-network-services-' . self::get($d, 'name'), 'Network Services', array(
+                    'Internal Domains' => count($int) ? implode("\n", $int) : self::PAD, 'Public Domains' => $pub,
+                    'Client DNS Suffix Search List' => self::v(self::get($d, 'dns_suffix'), self::PAD) ), array( 'select' => array( 'Region' => $this->regionName(self::get($d, 'name')) ) ) );
+            }
+            foreach( self::REGION_DISPLAY as $r )
+                if( !isset($dnsSeen[$r]) )
+                    $kv( 'mu-network-services-' . preg_replace('/[^a-z]+/', '-', strtolower($r)), 'Network Services', array( 'Internal Domains' => self::PAD, 'Public Domains' => self::PAD, 'Client DNS Suffix Search List' => self::PAD ), array( 'select' => array( 'Region' => $r ) ) );
+            $mg = array();
+            foreach( (array)self::get($gs, 'manual_gateway.region', self::get($gs, 'manual_gateway', array())) as $r )
+                if( is_array($r) && isset($r['name']) )
+                    $mg[$this->regionName($r['name'])] = self::v(self::get($r, 'locations'), self::PAD);
+            $kv( 'mu-manual-gateways', 'Manual Gateway Locations', $mg, array( 'default' => self::PAD ) );
+        }
+
+        // explicit proxy
+        if( $this->hasArea($EP) && $this->status($EP, 'ep-settings') == 'ok' )
+        {
+            $es = $this->data( $EP, 'ep-settings' );
+            $kv( 'ep-settings', 'Mobile Users – Explicit Proxy', array(
+                'Explicit Proxy URL' => self::v(self::findKey($es, '/proxy.?url|url$/i')),
+                'Enable Agent Proxy' => self::v(self::findKey($es, '/agent.?proxy/i')),
+                'Enable Private App Access for Explicit Proxy' => self::v(self::findKey($es, '/private.?app/i')),
+                'Enable Private IP based visibility and enforcement' => self::v(self::findKey($es, '/private.?ip|visibility/i')),
+                'Authentication Profile' => self::v(self::findKey($this->data($EP, 'ep-auth-settings'), '/profile/i')),
+                'Cookie Lifetime' => self::hours(self::findKey($this->data($EP, 'ep-auth-settings'), '/cookie.?life/i')),
+            ) );
+            $pac = self::findKey($es, '/pac/i');
+            $kv( 'ep-pac', 'Client DNS', array( 'PAC (Proxy Auto-Configuration) File' => self::v($pac, self::PAD) ), array( 'parent' => 'Mobile Users – Explicit Proxy' ) );
+            $epLoc = self::findKey($es, '/^locations?$|region/i');
+            if( is_array($epLoc) )
+            {
+                $loc = array();
+                foreach( $epLoc as $r )
+                    if( is_array($r) && isset($r['name']) )
+                        $loc[$this->regionName($r['name'])] = implode("\n", array_map(array($this, 'locationDisplay'), (array)self::findKey($r, '/locations?|member/i')));
+                if( count($loc) )
+                    $kv( 'ep-locations', 'Locations', $loc, array( 'parent' => 'Client DNS' ) );
+            }
+        }
+
+        // remote networks
+        if( $this->hasArea($RN) )
+        {
+            $rows = array();
+            foreach( $this->rows( $RN, 'bandwidth-allocations' ) as $b )
+                $rows[] = array( self::v(self::get($b, 'allocated_bandwidth')), self::v($this->locationDisplay(self::get($b, 'name'))), self::v(self::get($b, 'spn_name_list')) );
+            $list( 'rn-bandwidth', 'Aggregate Bandwidth', array( 'Bandwidth Allocation (Mbps)', 'Compute Location', 'Prisma Access Locations' ), $rows );
+            $raw = array();
+            foreach( $this->rows( $RN, 'remote-networks' ) as $r )
+                if( isset($r['name']) )
+                    $raw[$r['name']] = $r;
+            $rows = array();
+            foreach( $this->rnRows() as $c )
+            {
+                $r = isset($raw[$c['remote_network']]) ? $raw[$c['remote_network']] : array();
+                $ecmp = self::get($r, 'ecmp_load_balancing') == 'enable';
+                $tun = $ecmp ? self::names((array)self::get($r, 'ecmp_tunnels', array())) : array_filter(array( $c['ipsec_tunnel'], $c['secondary_ipsec_tunnel'] ));
+                $peers = array();
+                foreach( $tun as $tn )
+                    $peers[] = self::peerOf($c['branch_peer_address'], $tn);
+                $rows[] = array( $c['remote_network'], self::v($c['location_display'] ?: $c['region']), self::v($c['spn_name']), $ecmp ? 'Enabled' : 'Disabled',
+                    self::v(array_values($tun)), implode("\n", $peers) ?: self::NC, !empty($c['bgp_enabled']) ? self::v($c['bgp_peer_ip_address']) : self::NC, self::NC );
+            }
+            $list( 'rn-onboarding', 'Remote Networks Onboarding', array( 'Connection Name', 'Location', 'IPSec Termination Node', 'ECMP', 'Tunnel Name', 'Peer IP', 'BGP Primary', 'BGP Secondary' ), $rows );
+        }
+
+        // egress IP addresses (allow lists)
+        if( count($this->rows( $A, 'egress-ip' )) )
+        {
+            $toRows = function( $by ) { $r = array(); foreach( $by as $z => $ips ) $r[] = array( $z, $ips ); return $r; };
+            $list( 'ip-gp-portal', 'Retrieve IP Addresses for Prisma Access', array( 'Locations', 'Active IPs' ), $toRows($this->egress(array('gp_portal'))), array( 'nth' => 0 ) );
+            $gw = $this->egress(array('gp_gateway')); $nlb = $this->egress(array('gp_gateway'), array('nlb', 'network_load_balancer', 'loadbalancer'));
+            $rows = array();
+            foreach( $gw as $z => $ips )
+                $rows[] = array( $z, $ips, isset($nlb[$z]) ? $nlb[$z] : self::NC );
+            $list( 'ip-mu-locations', 'Retrieve IP Addresses for Prisma Access', array( 'Locations', 'Active IPs', 'Network Load Balancer IPs' ), $rows, array( 'nth' => 1 ) );
+            $list( 'ip-explicit-proxy', 'Retrieve IP Addresses for Prisma Access', array( 'Locations', 'Active IPs' ), $toRows($this->egress(array('swg_proxy', 'explicit_proxy', 'ep'))), array( 'nth' => 2 ) );
+            $list( 'ip-remote-networks', 'Retrieve IP Addresses for Prisma Access', array( 'Locations', 'Active IPs' ), $toRows($this->egress(array('remote_network'))), array( 'nth' => 3 ) );
+        }
+
+        return array( 'schema' => 'pan-os-php-asbuilt-data', 'version' => 1, 'tsg_id' => $tsg,
+            'export_created_at' => isset($m['created_at']) ? $m['created_at'] : null, 'created_at' => date('c'),
+            'conventions' => array( 'not_configured' => self::NC, 'default' => self::PAD, 'not_in_export' => self::NIE ),
+            'tables' => $t );
+    }
+
     /** writes report.md, report.html, prisma-access.drawio into $outDir */
     public function write( $outDir )
     {
@@ -1104,6 +1506,7 @@ class SCMPrismaAccessReport
         file_put_contents( $outDir . "/report.md", $this->renderMarkdown() );
         file_put_contents( $outDir . "/report.html", $this->renderHtml() );
         file_put_contents( $outDir . "/prisma-access.drawio", $this->renderDrawio() );
-        return array( $outDir . "/report.md", $outDir . "/report.html", $outDir . "/prisma-access.drawio" );
+        file_put_contents( $outDir . "/asbuilt-data.json", json_encode( $this->buildAsBuiltData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+        return array( $outDir . "/report.md", $outDir . "/report.html", $outDir . "/prisma-access.drawio", $outDir . "/asbuilt-data.json" );
     }
 }

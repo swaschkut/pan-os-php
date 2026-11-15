@@ -1,6 +1,6 @@
 # Prisma Access lifecycle – from requirements to maturity report
 
-Concept / target picture. Status: **draft for discussion – nothing of the new parts is implemented yet** (updated 2026-11-14: report outline 4.1, project flow 4.2; steps A + B as first version: `scm_pa_report.php` / `type=scm-report`, README_pa_report.md). Existing
+Concept / target picture. Status: **draft for discussion – nothing of the new parts is implemented yet** (updated 2026-11-14: report outline 4.1, project flow 4.2, templates / text blocks 4.3; steps A + B as first version: `scm_pa_report.php` / `type=scm-report`, README_pa_report.md). Existing
 building blocks are marked ✅ (see [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md)).
 
 ## 1. Goal
@@ -145,10 +145,52 @@ first, draw.io / Lucidchart import later (7.4).
 
 | step | what | phase | tools |
 |---|---|---|---|
-| 1 | **Customer requirements** | 0 TRD | questionnaire → `trd.json` (new) |
+| 1 | **Customer requirements** | 0 TRD | document builder (4.3): TRD template, scope, question tables → TRD document ✅ first version; `trd.json` (new) |
 | 2 | **Design / HLD** | 1–2 | design wizard → design JSON + `decisions.json`; report generator (4.1) → HLD + network plans (new) |
 | 3 | **Generate / apply the configuration** | 3 | design JSON → `scm-sync` (infrastructure areas) / change file → `scm-change` (config) ✅ |
 | 4 | **Check: maturity report** | 5 | `scm-export` ✅ → report generator (4.1) as-built + `scm-compare` design ↔ as-built ✅ + BP / visibility ✅ + score (new) |
+
+### 4.3 Document templates and text blocks (TRD, HLD, as-built)
+
+The Word templates of the consulting team (TRD, HLD, Prisma Access as-built) are **not** stored in this repository;
+they and the block libraries derived from them live in the claude.ai project folder (`templates/`). This repository
+only describes the format and the generators.
+
+Template conventions (found in the current templates):
+
+| template | structure | template text |
+|---|---|---|
+| TRD | chapters per service ("… (Remove if not in scope)"), two-column question tables `Configuration Requirements / Description` with an empty answer column | red = guidance / example text, `Customer_Name`, `Consultant_Name`, `[customer]`, `[number]` … |
+| HLD | modular: chapters correspond to the HLD generator blocks `{{begin "Service Connections"}} … {{end …}}` (marker names are still visible in the table of contents) – NGFW / VM-Series / SASE / Prisma Browser / CDSS … | orange italic = instruction, `<customer>`, `[LEGACY VENDOR]` … |
+| As-built | chapters along the SCM navigation (Prisma Access setup, SC, ZTNA, traffic steering, MU GlobalProtect / Access Agent, Explicit Proxy, RN, IP addresses); setting / value and list tables | green italic = instruction, dark red = example text, `[CUSTOMER]` |
+
+**Block model.** A block is a heading of the template with everything below it up to the next heading of the same or
+a higher level (tree by heading level). Each block gets scope tags from its heading (`sc`, `ztna`, `rn`, `sdwan`,
+`mu-gp`, `mu-paa`, `mu-ep`, `pb`, `mt`, `ngfw`, `cdss`, `data`, `adem`, `pra`, `decrypt`, `log`, `qos`); children
+inherit the tags of the parent. Block library file (`pan-os-php-doc-blocks` v1): `doc_type`, `palette` (template
+colours with role instruction / example / text and output action), `placeholders`, `blocks[]` with `id` (path slug),
+`title`, `level`, `parent`, `tags`, `content[]` (`p` / `li` with role, `table` with header or setting labels,
+`questions` for TRD tables, `image`, `toc`). Table rows are left out by default (as-built tables carry customer data).
+Own text blocks: `pan-os-php-doc-snippets` v1 (`title`, `level`, `text` with `{{customer}}` …, `after_title`,
+`doc_type`). Session: `pan-os-php-doc-session` v1 (project values, per template: scope, manual block selection,
+placeholder replacements, answers, own blocks, colour actions).
+
+**Document builder (web page, first version).** Guided steps Templates → Project → Scope → Blocks → Questions →
+Output; runs in the browser, templates are read locally and never uploaded. Output from a Word master keeps layout,
+styles, images, headers / footers: unselected blocks removed, placeholders replaced (also split across runs),
+TRD answers written into the answer column, own text inserted after the chosen block, template colours kept /
+normalised / removed, table of contents refreshed when Word opens the file. A block library without the master
+gives a Word file with a simple layout (composing new templates from blocks).
+
+Next steps for the builder:
+
+1. ~~as-built data binding~~ ✅ first version: `scm-report` writes `asbuilt-data.json` (tables of the as-built
+   document: list / setting-value / profile matrix, matched by heading); the builder fills the as-built template.
+   The as-built and HLD Word files are filled customer documents – `make_templates.py` (project `templates/tools/`)
+   turns them into templates (table data removed, customer name → `[CUSTOMER]`)
+2. TRD answers → `trd.json` (3.2) and from there defaults for the design wizard (3.3) / HLD block selection
+3. HLD: block selection from the TRD scope; HLD marker names as block ids when a master with markers is available
+4. composing across templates (blocks of TRD + HLD in one document) with the styles of one master
 
 ## 5. Components
 
@@ -183,7 +225,7 @@ export), callable from the CLI and from the web page.
 
 ## 7. Open points / to clarify
 
-1. TRD template: format, current content – can it be shared (without customer data)?
+1. ~~TRD template~~ – received (Word); templates and block libraries kept in the claude.ai project, not in the repository (4.3).
 2. Language of the customer documents (German / English / both)?
 3. Report format the customer receives: Word, PDF, HTML?
 4. Lucidchart: account / API available? Otherwise draw.io / SVG as the first target.
@@ -193,4 +235,5 @@ export), callable from the CLI and from the web page.
 8. Does the design also cover the security policy, or only the Prisma Access infrastructure?
 9. Maturity score: which criteria (BP checks, design deviation, open checklist items …)?
 11. PANW maturity report: sample (anonymised) to align sections, wording, scoring and layout.
-10. Where does the web page run (local file / internal web server) and who uses it (consultants only)?
+10. Where does the web page run (local file / internal web server) and who uses it (consultants only)? First version: claude.ai artifact (private) or the HTML file opened locally.
+12. HLD master with the `{{begin}}` / `{{end}}` markers (the test HLD is a generated output without markers in the body).

@@ -23,6 +23,7 @@ Recommended export for the report: `pan-os-php type=scm-export in=scm-api://<TSG
 | `report.md` | Markdown (Word / PDF: `pandoc report.md -o report.docx`) |
 | `report.html` | self-contained HTML, print to PDF from the browser (one section per page) |
 | `prisma-access.drawio` | network plans, pages *Overview*, *Service connections*, *Remote networks*, *Mobile users* |
+| `asbuilt-data.json` | tables of the Prisma Access as-built template filled from the export (`pan-os-php-asbuilt-data` v1) – input of the document builder, see below |
 
 `prisma-access.drawio` opens in draw.io / diagrams.net (desktop or web) and imports into Lucidchart
 (*File > Import > draw.io*). The plans are a generated starting point – arrange and extend them there.
@@ -59,6 +60,24 @@ Recommended export for the report: `pan-os-php type=scm-export in=scm-api://<TSG
 
 Security profile best practice / visibility is not repeated here – use `scm-export-xml` and
 `type=securityprofile actions=exportsptohtml` (WORKFLOW_scm_visibility.md).
+
+## As-built document (asbuilt-data.json)
+
+`asbuilt-data.json` follows the table logic of the Prisma Access as-built document (SCM navigation: Prisma Access
+setup, service connections, ZTNA, traffic steering, mobile users GlobalProtect / Prisma Access Agent, Explicit Proxy,
+remote networks, IP addresses). Every entry names the heading the table stands under (plus parent heading / position
+where needed) and has one of three shapes:
+
+| type | content | example |
+|---|---|---|
+| `list` | `columns` + `rows` (an empty list gives "No data found for this table in the export") | service connection onboarding, administrators, internal DNS servers |
+| `kv` | `values` label → value, optional `select` (row that identifies the table, e.g. `Region = Worldwide`) | infrastructure settings, routing, IP pools, network services per region |
+| `matrix` | `columns` = profiles, `values` "parameter" → value per profile | GlobalProtect app settings (agent profiles), tunnel settings (tunnel profiles) |
+
+Values follow the conventions of the document: `Not Configured`, `Prisma Access Default`, `Enabled` / `Disabled`;
+`not in export` marks what the export does not contain (CSP account, licences, tenant name, ZTNA connectors, Cloud
+Identity Engine). The document builder (claude.ai project, `templates/`) fills the as-built Word template with it:
+load the template and `asbuilt-data.json`, document type *As-built*, output step.
 
 ## Secrets
 
