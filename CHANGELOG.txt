@@ -69,6 +69,7 @@ BUGFIX:
 * bugfix to get N/A output correct running
 * type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
 * type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
+* SCM based validation spyware / dns -> for spyware.dns now correct return n/a
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes

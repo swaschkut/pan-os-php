@@ -237,13 +237,19 @@ class SecurityProfile2
      */
     public function inlineVersion()
     {
+        if( $this->isCloudManaged() )
+            return 121;
         $sub = is_object($this->owner) ? $this->owner->owner : null;
-        $root = $sub;
+        return is_object($sub) ? $sub->version : null;
+    }
+
+    /** TRUE: the profile belongs to an SCM / Prisma Access configuration (BuckbeakConf, FawkesConf) */
+    public function isCloudManaged(): bool
+    {
+        $root = is_object($this->owner) ? $this->owner->owner : null;
         for( $i = 0; $i < 5 && is_object($root) && !( $root instanceof BuckbeakConf || $root instanceof FawkesConf || $root instanceof PANConf || $root instanceof PanoramaConf ); $i++ )
             $root = isset($root->owner) ? $root->owner : null;
-        if( $root instanceof BuckbeakConf || $root instanceof FawkesConf )
-            return 121;
-        return is_object($sub) ? $sub->version : null;
+        return ( $root instanceof BuckbeakConf || $root instanceof FawkesConf );
     }
 
     public function cloud_inline_analysis_visibility( $bp_json_file = null )

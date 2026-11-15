@@ -757,8 +757,19 @@ trait sp_action_spyware
         return $checkArray;
     }
 
+    /**
+     * FALSE for an anti-spyware profile of an SCM / Prisma Access configuration: there the DNS part (DNS lists,
+     * DNS security categories) is a dns-security profile, the anti-spyware profile has none - its DNS checks are N/A
+     */
+    public function spyware_dnsPartApplies(): bool
+    {
+        return !( $this instanceof AntiSpywareProfile && $this->isCloudManaged() );
+    }
+
     public function spyware_dnslist_best_practice(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->secprof_type != 'spyware' && $this->secprof_type != 'dns-security' )
             return null;
 
@@ -784,6 +795,8 @@ trait sp_action_spyware
 
     public function spyware_dnslist_visibility(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->secprof_type != 'spyware' && $this->secprof_type != 'dns-security' )
             return null;
 
@@ -811,7 +824,10 @@ trait sp_action_spyware
 
     public function spyware_dnslist_adoption(): ?bool
     {
-        if ($this->secprof_type != 'spyware')
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
+        // anti-spyware (PAN-OS) or dns-security profile (SCM): both hold the DNS lists
+        if( $this->secprof_type != 'spyware' && $this->secprof_type != 'dns-security' )
             return null;
 
         return TRUE;
@@ -924,6 +940,8 @@ trait sp_action_spyware
 
     public function spyware_dns_security_best_practice(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->bpFeatureSupported( 'spyware-dns' ) )
         {
             // spyware -> dns -> bp not listed: not checked -> N/A
@@ -950,6 +968,8 @@ trait sp_action_spyware
 
     public function spyware_dns_security_visibility(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->bpFeatureSupported( 'spyware-dns' ) )
         {
             // spyware -> dns -> visibility not listed: not checked -> N/A
@@ -976,6 +996,8 @@ trait sp_action_spyware
 
     public function spyware_advanced_dns_security_best_practice(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->bpFeatureSupported( 'spyware-advanced-dns' ) )
         {
             // spyware -> advanced-dns -> bp not listed: not checked -> N/A
@@ -1002,6 +1024,8 @@ trait sp_action_spyware
 
     public function spyware_advanced_dns_security_visibility(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->bpFeatureSupported( 'spyware-advanced-dns' ) )
         {
             // spyware -> advanced-dns -> visibility not listed: not checked -> N/A
@@ -1029,6 +1053,8 @@ trait sp_action_spyware
 
     public function spyware_dns_security_adoption(): ?bool
     {
+        if( !$this->spyware_dnsPartApplies() )
+            return null;     // SCM anti-spyware profile: its DNS part is a dns-security profile
         if( $this->bpFeatureSupported( 'spyware-dns' ) )
         {
             return TRUE;
