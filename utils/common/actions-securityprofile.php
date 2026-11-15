@@ -1327,14 +1327,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     else
                     {
                         if( $object->bpFeatureSupported( 'url-mica' ) )
-                            $string_mica_engine[] = "local-inline-cat=no";
+                            $string_mica_engine[] = "local-inline-cat=".URLProfile::LOCAL_INLINE_CAT_DEFAULT;
                     }
                     if( $object->cloud_inline_cat !== null )
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
                     else
                     {
                         if( $object->bpFeatureSupported( 'url-mica' ) )
-                            $string_mica_engine[] = "cloud-inline-cat=no";
+                            $string_mica_engine[] = "cloud-inline-cat=".URLProfile::CLOUD_INLINE_CAT_DEFAULT;
                     }
                 }
 

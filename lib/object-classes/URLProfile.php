@@ -60,8 +60,15 @@ class URLProfile extends SecurityProfile2
     public $credential_mode = null;
     public $credential_log = null;
 
+    /** 'yes' / 'no' as PAN-OS applies it: from the XML, or the PAN-OS default where the element is absent; null: PAN-OS < 10.2 */
     public $local_inline_cat = null;
     public $cloud_inline_cat = null;
+    /** PAN-OS defaults of the inline categorization of a URL profile, applied where the XML has no element */
+    const LOCAL_INLINE_CAT_DEFAULT = 'yes';
+    const CLOUD_INLINE_CAT_DEFAULT = 'no';
+    /** TRUE: the value above is the PAN-OS default, the XML has no such element */
+    public $local_inline_cat_isDefault = false;
+    public $cloud_inline_cat_isDefault = false;
 
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
 
@@ -362,24 +369,26 @@ class URLProfile extends SecurityProfile2
                 $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
+        // an absent element takes its PAN-OS default (local: yes, cloud: no); reading never writes to the XML
+        $this->local_inline_cat_isDefault = false;
+        $this->cloud_inline_cat_isDefault = false;
+
         $tmp_local_inline_cat = DH::findFirstElement("local-inline-cat", $xml);
         if( $tmp_local_inline_cat != null )
             $this->local_inline_cat = $tmp_local_inline_cat->textContent;
-        elseif( $this->owner->owner->version >= 102  )
+        elseif( $this->bpFeatureSupported( 'url-mica' ) )
         {
-            $tmp_local_inline_cat = DH::findFirstElementOrCreate("local-inline-cat", $xml);
-            $tmp_local_inline_cat->textContent = "no";
-            $this->local_inline_cat = $tmp_local_inline_cat->textContent;
+            $this->local_inline_cat = self::LOCAL_INLINE_CAT_DEFAULT;
+            $this->local_inline_cat_isDefault = true;
         }
 
         $tmp_cloud_inline_cat = DH::findFirstElement("cloud-inline-cat", $xml);
         if( $tmp_cloud_inline_cat != null )
             $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
-        elseif( $this->owner->owner->version >= 102  )
+        elseif( $this->bpFeatureSupported( 'url-mica' ) )
         {
-            $tmp_cloud_inline_cat = DH::findFirstElementOrCreate("cloud-inline-cat", $xml);
-            $tmp_cloud_inline_cat->textContent = "no";
-            $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
+            $this->cloud_inline_cat = self::CLOUD_INLINE_CAT_DEFAULT;
+            $this->cloud_inline_cat_isDefault = true;
         }
 
         return TRUE;
@@ -418,9 +427,9 @@ class URLProfile extends SecurityProfile2
             PH::print_stdout(  "       - log-severity: " . $this->credential_log );
 
         if( $this->local_inline_cat !== null )
-            PH::print_stdout(  "       - local-inline-cat: " . $this->local_inline_cat );
+            PH::print_stdout(  "       - local-inline-cat: " . $this->local_inline_cat . ( $this->local_inline_cat_isDefault ? " (PAN-OS default)" : "" ) );
         if( $this->cloud_inline_cat !== null )
-            PH::print_stdout(  "       - cloud-inline-cat: " . $this->cloud_inline_cat );
+            PH::print_stdout(  "       - cloud-inline-cat: " . $this->cloud_inline_cat . ( $this->cloud_inline_cat_isDefault ? " (PAN-OS default)" : "" ) );
     }
 
     public function getAllow()
@@ -886,13 +895,24 @@ class URLProfile extends SecurityProfile2
         if($bool)
             $bool_value = "yes";
 
-        if( $this->owner->owner->version >= 102 )
+        if( $this->bpFeatureSupported( 'url-mica' ) )
         {
-            $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $this->xmlroot);
-            $xmlnode->textContent = $bool_value;
+            // write only what PAN-OS does not already apply: an absent element at its default stays absent
+            if( $this->local_inline_cat !== $bool_value )
+            {
+                $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $this->xmlroot);
+                $xmlnode->textContent = $bool_value;
+                $this->local_inline_cat = $bool_value;
+                $this->local_inline_cat_isDefault = false;
+            }
 
-            $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $this->xmlroot);
-            $xmlnode->textContent = $bool_value;
+            if( $this->cloud_inline_cat !== $bool_value )
+            {
+                $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $this->xmlroot);
+                $xmlnode->textContent = $bool_value;
+                $this->cloud_inline_cat = $bool_value;
+                $this->cloud_inline_cat_isDefault = false;
+            }
         }
     }
 
