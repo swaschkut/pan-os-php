@@ -269,26 +269,14 @@ trait sp_action_wildfire
 
     public function is_best_practice(): ?bool
     {
-        if( $this->owner->owner->version >= 112 )
-        {
-            return PH::bpCombine( array( $this->wildfire_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            return PH::bpCombine( array( $this->wildfire_rules_best_practice() ) );
-        }
+        // the inline-ML part returns null where the PAN-OS version has none (SecurityProfile2::$bpFeatureMinVersion)
+        return PH::bpCombine( array( $this->wildfire_rules_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
     }
 
     public function is_visibility(): ?bool
     {
-        if( $this->owner->owner->version >= 112 )
-        {
-            return PH::bpCombine( array( $this->wildfire_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
-        }
-        else
-        {
-            return PH::bpCombine( array( $this->wildfire_rules_visibility() ) );
-        }
+        // the inline-ML part returns null where the PAN-OS version has none (SecurityProfile2::$bpFeatureMinVersion)
+        return PH::bpCombine( array( $this->wildfire_rules_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
     }
 
     public function is_adoption(): bool

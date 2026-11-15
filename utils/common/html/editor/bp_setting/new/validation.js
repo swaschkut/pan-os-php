@@ -167,6 +167,16 @@ const BP_VALIDATION = {
                     "mode": { "multi": false, "options": ["!disabled"] }
                 }
             }
+        },
+        "mica-engine": {
+            "bp": {
+                "local-inline-cat": { "multi": false, "options": ["yes", "no"] },
+                "cloud-inline-cat": { "multi": false, "options": ["yes", "no"] }
+            },
+            "visibility": {
+                "local-inline-cat": { "multi": false, "options": ["yes", "no"] },
+                "cloud-inline-cat": { "multi": false, "options": ["yes", "no"] }
+            }
         }
     },
     "file-blocking": {

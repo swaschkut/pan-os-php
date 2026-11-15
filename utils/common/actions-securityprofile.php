@@ -636,6 +636,34 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $tmp_type !== null && in_array( $tmp_type, $types, TRUE ) )
                     $addColumns[$group] = TRUE;
         }
+        // the types the command names (securityprofiletype=...) keep their own column groups also when no
+        // profile of them is found: an export with no rows has the same header as one with rows.
+        // 'any' / no securityprofiletype=: the found profiles alone decide, as before.
+        $argTypes = array(
+            'virus' => 'virus', 'predefined-virus' => 'virus',
+            'spyware' => 'spyware', 'predefined-spyware' => 'spyware',
+            'vulnerability' => 'vulnerability', 'predefined-vulnerability' => 'vulnerability',
+            'file-blocking' => 'file-blocking', 'predefined-file-blocking' => 'file-blocking',
+            'wildfire-analysis' => 'wildfire', 'predefined-wildfire-analysis' => 'wildfire',
+            'virus-and-wildfire-analysis' => 'virus-and-wildfire-analysis',
+            'data-filtering' => 'data-filtering', 'predefined-data-filtering' => 'data-filtering',
+            'dns-security' => 'dns-security',
+            'url-filtering' => 'url-filtering', 'predefined-url-filtering' => 'url-filtering',
+            'custom-url-category' => 'customURL',
+            'predefined-url' => 'predefinedSecProfURL',
+        );
+        if( isset( PH::$args['securityprofiletype'] ) )
+        {
+            foreach( explode( ',', strtolower( PH::$args['securityprofiletype'] ) ) as $argType )
+            {
+                $argType = trim( $argType );
+                if( !isset( $argTypes[$argType] ) )
+                    continue;
+                foreach( $columnGroupTypes as $group => $types )
+                    if( in_array( $argTypes[$argType], $types, TRUE ) )
+                        $addColumns[$group] = TRUE;
+            }
+        }
         // URL members: only without BP / visibility (or asked for)
         $showURLmembers = $addColumns['url-members'] && ( $addURLmembers || ( !$bestPractice && !$visibility ) || $context->debug );
         $isColumnType = function( $object, $group ) use ( $columnGroupTypes, $typeOf )
@@ -1326,15 +1354,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
                     else
                     {
-                        if( $object->owner->owner->version >= 102 )
-                            $string_mica_engine[] = "local-inline-cat=no";
+                        if( $object->bpFeatureSupported( 'url-mica' ) )
+                            $string_mica_engine[] = "local-inline-cat=".URLProfile::LOCAL_INLINE_CAT_DEFAULT;
                     }
                     if( $object->cloud_inline_cat !== null )
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
                     else
                     {
-                        if( $object->owner->owner->version >= 102 )
-                            $string_mica_engine[] = "cloud-inline-cat=no";
+                        if( $object->bpFeatureSupported( 'url-mica' ) )
+                            $string_mica_engine[] = "cloud-inline-cat=".URLProfile::CLOUD_INLINE_CAT_DEFAULT;
                     }
                 }
 
@@ -1409,11 +1437,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction($string_mica_engine);
                     if( $bestPractice || $visibility)
                     {
-                        if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
-                            || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
-                            || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 112 )
+                        // the profile types with an inline-ML setting; where the PAN-OS version has none the
+                        // check returns null and the cell reads N/A (SecurityProfile2::$bpFeatureMinVersion)
+                        if( get_class($object) == "AntiSpywareProfile"
+                            || get_class($object) == "VulnerabilityProfile"
+                            || get_class($object) == "WildfireProfile"
                             || get_class($object) == "AntiVirusProfile"
-                            || (get_class($object) == "URLProfile" && $object->owner->owner->version >= 102 )
+                            || get_class($object) == "URLProfile"
                             || get_class($object) == "VirusAndWildfireProfile"
                         )
                         {
@@ -2302,27 +2332,27 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( empty( $info['inline_ml_detail'] ) || empty( $info['av_inline_ml_detail'] ) )
                     {
                         if( get_class($object) == "VulnerabilityProfile"
-                            && $object->owner->owner->version < 110
+                            && !$object->bpFeatureSupported( 'vulnerability-mica' )
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "WildfireProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && $object->owner->owner->version < 111
+                            && !$object->bpFeatureSupported( 'wildfire-mica' )
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "AntiVirusProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'virus-mica' )
                         )
                         {
                             $info['av_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( get_class($object) == "AntiSpywareProfile"
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'spyware-mica' )
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
@@ -2381,27 +2411,27 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( empty( $info['bp_inline_ml_detail'] ) || empty( $info['bp_av_inline_ml_detail'] ) )
                     {
                         if( get_class($object) == "VulnerabilityProfile"
-                            && $object->owner->owner->version < 110
+                            && !$object->bpFeatureSupported( 'vulnerability-mica' )
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "WildfireProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && $object->owner->owner->version < 111
+                            && !$object->bpFeatureSupported( 'wildfire-mica' )
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "AntiVirusProfile"
                             || get_class($object) == "VirusAndWildfireProfile" )
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'virus-mica' )
                         )
                         {
                             $info['bp_av_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( get_class($object) == "AntiSpywareProfile"
-                            && ($object->owner->owner->version < 102)
+                            && !$object->bpFeatureSupported( 'spyware-mica' )
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
@@ -2944,7 +2974,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
 
                     $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
-                    if($object->owner->owner->version < 102)
+                    if( !$object->bpFeatureSupported( 'url-mica' ) )
                         $info['inline_ml_detail']             = '[Feature not available]';
                 }
 
@@ -2966,7 +2996,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
 
                     $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
-                    if($object->owner->owner->version < 102)
+                    if( !$object->bpFeatureSupported( 'url-mica' ) )
                         $info['bp_inline_ml_detail']             = '[Feature not available]';
                 }
             }
@@ -4328,7 +4358,14 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
         if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
-        $object->wf_inlineML_AlertOnlySet();
+        // AntiVirusProfile uses only sp_action_virus: wf_inlineML_AlertOnlySet() is not available there
+        if( get_class($object) === "AntiVirusProfile" )
+            $object->av_inlineML_AlertOnlySet();
+        else
+            $object->wf_inlineML_AlertOnlySet();
+
+        if( $context->isAPI )
+            $object->API_sync();
     }
 );
 

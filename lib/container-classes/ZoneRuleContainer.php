@@ -224,8 +224,9 @@ class ZoneRuleContainer extends ObjRuleContainer
                 // per serial/vsys reading: resolved on first use, see targetsForZone()
                 $this->perTargetZones[$zoneName] = $isDG ? 'dg' : 'shared';
 
-                // $this->o keeps the 2.1.60 reading (first template-stack, templates before stack, first vsys
-                // holding the name). Used by 'zone protection', 'from-visible', 'from-zone-location', 'from has'.
+                // $this->o: first template-stack, PAN-OS precedence (the stack itself first, then its templates
+                // top to bottom, first entry found wins), first vsys holding the name.
+                // Used by 'zone protection', 'from-visible', 'from-zone-location', 'from has'.
                 // The per-target reading above is only used by 'all.targets' / 'targets' filters,
                 // 'zone protection all-targets' and the '*-all-targets' export columns.
                 if( $isDG )
@@ -488,8 +489,10 @@ class ZoneRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * 2.1.60 zone lookup for $this->o - kept unchanged on purpose (stats 'zone protection', export 'from-visible').
-     * first template-stack of the DG firewalls, its templates read before the stack, first vsys holding the name
+     * zone lookup for $this->o (stats 'zone protection', export 'from-visible').
+     * first template-stack of the DG firewalls; PAN-OS precedence: the stack itself first, then its templates
+     * top to bottom, the first entry found wins (the zone and its zone-protection profile that reach the firewall);
+     * first vsys holding the name. A local override on the firewall is not considered.
      */
     private function load_zone_legacy_first_stack(DeviceGroup $actualDG, $zoneName)
     {
