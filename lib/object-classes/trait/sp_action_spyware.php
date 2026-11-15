@@ -1085,64 +1085,51 @@ trait sp_action_spyware
             return false;
     }
 
+    /**
+     * best-practice-set of the AS inline cloud analysis (mica-engine-spyware-enabled).
+     * The action comes from the BP JSON spyware -> cloud-inline -> bp (entry with type 'any', as the checks);
+     * a negated condition ('!allow') keeps a compliant value, else 'reset-both'. Nothing listed in the BP JSON or a
+     * PAN-OS version without inline ML: no change.
+     */
     public function inlineML_BestPracticeSet(): void
     {
-        $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $this->xmlroot);
-        if( $tmp_mlav_engine !== False )
+        $this->spyware_inlineML_setFromJSON( 'bp', 'reset-both' );
+    }
+
+    private function spyware_inlineML_setFromJSON( string $section, string $fallback ): void
+    {
+        $validate = $this->inlineML_jsonAction( $section, 'spyware' );
+        if( $validate === null )
+            return;
+
+        $container = DH::findFirstElement( 'mica-engine-spyware-enabled', $this->xmlroot );
+        if( $container === False )
         {
-            $tmp_mlav_engine_enable = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-            $tmp_mlav_engine_enable->textContent = "yes";
-
-            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
-            {
-                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $name = DH::findAttribute( "name", $mlav_engine_entry);
-
-                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
-                $action_xmlNode->textContent = "reset-both";
-
-                $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
-            }
+            $value = self::inlineML_newValue( $validate, $fallback );
+            $detectors = array( 'HTTP Command and Control detector', 'HTTP2 Command and Control detector', 'SSL Command and Control detector',
+                'Unknown-TCP Command and Control detector', 'Unknown-UDP Command and Control detector' );
+            $xmlString = '<mica-engine-spyware-enabled>';
+            foreach( $detectors as $detector )
+                $xmlString .= '<entry name="'.$detector.'"><inline-policy-action>'.$value.'</inline-policy-action></entry>';
+            $xmlString .= '</mica-engine-spyware-enabled>';
+            $xmlElement = DH::importXmlStringOrDie( $this->xmlroot->ownerDocument, $xmlString );
+            $this->xmlroot->appendChild( $xmlElement );
+            foreach( $detectors as $detector )
+                $this->additional['mica-engine-spyware-enabled'][$detector]['inline-policy-action'] = $value;
         }
         else
-        {
-            $xmlString = '   <mica-engine-spyware-enabled>
-  <entry name="HTTP Command and Control detector">
-     <inline-policy-action>reset-both</inline-policy-action>
-  </entry>
-  <entry name="HTTP2 Command and Control detector">
-     <inline-policy-action>reset-both</inline-policy-action>
-  </entry>
-  <entry name="SSL Command and Control detector">
-     <inline-policy-action>reset-both</inline-policy-action>
-  </entry>
-  <entry name="Unknown-TCP Command and Control detector">
-     <inline-policy-action>reset-both</inline-policy-action>
-  </entry>
-  <entry name="Unknown-UDP Command and Control detector">
-     <inline-policy-action>reset-both</inline-policy-action>
-  </entry>
-</mica-engine-spyware-enabled>';
+            $this->inlineML_setEntriesFromJSON( $section, 'spyware', 'mica-engine-spyware-enabled', 'inline-policy-action', $fallback,
+                $section == 'visibility' && empty( $this->cloud_inline_analysis_enabled ) );
 
-            if( $this->owner->owner->version >= 102 )
-            {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                $this->xmlroot->appendChild($xmlElement);
+        // local-deep-learning of the detectors the BP JSON lists (from PAN-OS 11.2)
+        $this->inlineML_localDeepLearningSetFromJSON( $section );
 
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-                $this->cloud_inline_analysis_enabled = true;
+        $tmp_enable = DH::findFirstElementOrCreate( 'cloud-inline-analysis', $this->xmlroot );
+        $tmp_enable->textContent = "yes";
+        $this->cloud_inline_analysis_enabled = true;
 
-                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "reset-both";
-                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "reset-both";
-                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "reset-both";
-
-                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "reset-both";
-                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "reset-both";
-            }
-        }
+        if( $this->secprof_type == 'spyware' )
+            $this->bpSetVerify( $section, 'AS inline ML', $section == 'bp' ? $this->cloud_inline_analysis_best_practice() : $this->cloud_inline_analysis_visibility() );
     }
 
     public function rules_BestPracticeSet(): void
@@ -1320,86 +1307,17 @@ trait sp_action_spyware
     }
 
 
+    /**
+     * alert-only-set of the AS inline cloud analysis (mica-engine-spyware-enabled).
+     * The action comes from the BP JSON spyware -> cloud-inline -> visibility (entry with type 'any', as the checks);
+     * a negated condition ('!allow') keeps a compliant value, else 'alert'. Nothing listed in the BP JSON or a
+     * PAN-OS version without inline ML: no change.
+     * Inline analysis still off: every detector gets 'alert' before it is enabled (enabling must not start blocking).
+     * local-deep-learning of the detectors the BP JSON lists is set as well (from PAN-OS 11.2).
+     */
     public function inlineML_AlertOnlySet(): void
     {
-        $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $this->xmlroot);
-        if( $tmp_mlav_engine !== False )
-        {
-            $action_other_then_allow_alert = false;
-            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
-            {
-                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $name = DH::findAttribute( "name", $mlav_engine_entry);
-
-                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
-
-                if( $action_xmlNode->textContent == "allow" )
-                {
-                    $action_xmlNode->textContent = "alert";
-                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
-                }
-                elseif( $action_xmlNode->textContent == "alert" )
-                {
-                }
-                elseif( !$this->cloud_inline_analysis_enabled )
-                {
-                    //explanation:
-                    //inline analysis is disabled -> but action is set to block -> not enabled, will not help
-                    $action_xmlNode->textContent = "alert";
-                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
-                }
-                else
-                {
-                    $action_other_then_allow_alert = true;
-                }
-            }
-
-            if( !$action_other_then_allow_alert )
-            {
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-                $this->cloud_inline_analysis_enabled = true;
-            }
-        }
-        else
-        {
-            $xmlString = '   <mica-engine-spyware-enabled>
-  <entry name="HTTP Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
-  </entry>
-  <entry name="HTTP2 Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
-  </entry>
-  <entry name="SSL Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
-  </entry>
-  <entry name="Unknown-TCP Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
-  </entry>
-  <entry name="Unknown-UDP Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
-  </entry>
-</mica-engine-spyware-enabled>';
-
-            if( $this->owner->owner->version >= 102 )
-            {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                $this->xmlroot->appendChild($xmlElement);
-
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-                $this->cloud_inline_analysis_enabled = true;
-
-                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "alert";
-                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "alert";
-                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "alert";
-
-                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
-                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
-            }
-        }
+        $this->spyware_inlineML_setFromJSON( 'visibility', 'alert' );
     }
 
     public function rules_AlertOnlySet(): void

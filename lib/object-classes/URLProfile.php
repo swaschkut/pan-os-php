@@ -894,6 +894,45 @@ class URLProfile extends SecurityProfile2
         $this->allow_credential = array();
     }
 
+    /**
+     * Set-actions (alert-only-set: $section 'visibility', best-practice-set: 'bp') for local-inline-cat and
+     * cloud-inline-cat: each gets the value the BP JSON url -> mica-engine -> $section gives for it (the check
+     * compares equality; '!no' means 'yes', '!yes' means 'no'). A key not in the BP JSON, or a PAN-OS version
+     * without inline categorization: that setting is not changed.
+     */
+    public function url_inline_cat_setFromJSON( string $section ): void
+    {
+        if( !$this->bpFeatureSupported( 'url-mica' ) )
+            return;
+
+        $check_array = $this->url_mica_engine_bp_visibility_JSON( $section, "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return;
+
+        foreach( array( 'local-inline-cat' => 'local_inline_cat', 'cloud-inline-cat' => 'cloud_inline_cat' ) as $key => $property )
+        {
+            if( !isset( $check_array[$key] ) || !is_string( $check_array[$key] ) || $check_array[$key] === '' )
+                continue;
+
+            $value = $check_array[$key];
+            if( strpos( $value, '!' ) === 0 )
+                $value = ( substr( $value, 1 ) == 'yes' ) ? 'no' : 'yes';
+            if( $value !== 'yes' && $value !== 'no' )
+            {
+                mwarning( "BP JSON url -> mica-engine -> ".$section." -> ".$key.": '".$check_array[$key]."' is not yes / no - '".$this->name()."' not changed", null, FALSE );
+                continue;
+            }
+
+            $xmlnode = DH::findFirstElementOrCreate( $key, $this->xmlroot );
+            $xmlnode->textContent = $value;
+            $this->$property = $value;
+            $isDefault = $property.'_isDefault';
+            $this->$isDefault = false;
+        }
+
+        $this->bpSetVerify( $section, 'URL inline ML', $section == 'bp' ? $this->url_mica_engine_best_practice() : $this->url_mica_engine_visibility() );
+    }
+
     public function url_inline_cat_set( $bool = true )
     {
         $bool_value = "no";
@@ -1649,7 +1688,8 @@ class URLProfile extends SecurityProfile2
         $this->url_credential_set_alertonly();
 
         ////////////////////////////
-        $this->url_inline_cat_set(true);
+        // inline categorization: what the BP JSON url -> mica-engine -> visibility asks for
+        $this->url_inline_cat_setFromJSON( 'visibility' );
 
         ////////////
         $this->url_credential_mode_alertonly();
@@ -1660,6 +1700,9 @@ class URLProfile extends SecurityProfile2
         $this->AlertOnlySet();
 
         $this->site_access_BestPracticeSet();
+
+        // inline categorization: what the BP JSON url -> mica-engine -> bp asks for
+        $this->url_inline_cat_setFromJSON( 'bp' );
     }
 }
 

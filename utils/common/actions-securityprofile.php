@@ -5093,7 +5093,8 @@ SecurityProfileCallContext::$supportedActions['url.inline-ml.alert-only-set'] = 
         if (get_class($object) !== "URLProfile")
             return null;
 
-        $object->url_inline_cat_set(true);
+        // what the BP JSON url -> mica-engine -> visibility asks for
+        $object->url_inline_cat_setFromJSON( 'visibility' );
 
         if( $context->isAPI )
         {
