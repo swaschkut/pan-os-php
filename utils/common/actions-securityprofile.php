@@ -1063,11 +1063,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             if( $bestPractice )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->av_actions_best_practice(), $bp_text_yes.' BP AV actions set', $bp_text_no.' NO BP AV actions' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->av_actions_best_practice(), $bp_text_yes.' BP AV actions set', $bp_text_no.' BP AV actions' ) );
                             }
                             if( $visibility )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->av_actions_visibility(), $bp_text_yes.' Visibility AV actions set', $bp_text_no.' NO Visibility AV actions' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->av_actions_visibility(), $bp_text_yes.' Visibility AV actions set', $bp_text_no.' Visibility AV actions' ) );
                             }
                             if( $adoption )
                             {
@@ -1084,7 +1084,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 elseif( $tmp_check )
                                     $lines .= $context->encloseFunction($bp_text_yes.' BP AS rules set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO BP AS rules');
+                                    $lines .= $context->encloseFunction($bp_text_no.' BP AS rules');
                             }
                             if( $visibility )
                             {
@@ -1094,14 +1094,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 elseif( $tmp_check )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Visibility AS rules set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS rules');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Visibility AS rules');
                             }
                             if( $adoption )
                             {
                                 if( $object->is_adoption() )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Adoption AS set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Adoption AS set');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Adoption AS set');
                             }
                         }
                         elseif( get_class($object) == "VulnerabilityProfile" )
@@ -1114,7 +1114,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 elseif( $tmp_check )
                                     $lines .= $context->encloseFunction($bp_text_yes.' BP VP rules set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO BP VP rules');
+                                    $lines .= $context->encloseFunction($bp_text_no.' BP VP rules');
                             }
                             if( $visibility )
                             {
@@ -1124,51 +1124,51 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 elseif( $tmp_check )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Visibility VP rules set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Visibility VP rules');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Visibility VP rules');
                             }
                             if( $adoption )
                             {
                                 if( $object->is_adoption() )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Adoption VP set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Adoption VP set');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Adoption VP set');
                             }
                         }
                         elseif( get_class($object) == "FileBlockingProfile" )
                         {
                             if( $bestPractice )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->fileblocking_rules_best_practice(), $bp_text_yes.' BP FB rules set', $bp_text_no.' NO BP FB rules' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->fileblocking_rules_best_practice(), $bp_text_yes.' BP FB rules set', $bp_text_no.' BP FB rules' ) );
 
                             }
                             if( $visibility )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->fileblocking_rules_visibility(), $bp_text_yes.' Visibility FB rules set', $bp_text_no.' NO Visibility FB rules' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->fileblocking_rules_visibility(), $bp_text_yes.' Visibility FB rules set', $bp_text_no.' Visibility FB rules' ) );
                             }
                             if( $adoption )
                             {
                                 if( $object->is_adoption() )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Adoption FB set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Adoption FB set');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Adoption FB set');
                             }
                         }
                         elseif( get_class($object) == "WildfireProfile" )
                         {
                             if( $bestPractice )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->wildfire_rules_best_practice(), $bp_text_yes.' BP WF rules set', $bp_text_no.' NO BP WF rules' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->wildfire_rules_best_practice(), $bp_text_yes.' BP WF rules set', $bp_text_no.' BP WF rules' ) );
                             }
                             if( $visibility )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->wildfire_rules_visibility(), $bp_text_yes.' Visibility WF rules set', $bp_text_no.' NO Visibility WF rules' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->wildfire_rules_visibility(), $bp_text_yes.' Visibility WF rules set', $bp_text_no.' Visibility WF rules' ) );
                             }
                             if( $adoption )
                             {
                                 if( $object->is_adoption() )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Adoption WF set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Adoption WF set');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Adoption WF set');
                             }
                         }
                         elseif( get_class($object) == "VirusAndWildfireProfile" )
@@ -1176,19 +1176,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( $bestPractice )
                             {
                                 $lines .= $context->encloseFunction( $bpCell( PH::bpCombine( array( $object->av_actions_best_practice(), $object->wildfire_rules_best_practice() ) ),
-                                    $bp_text_yes.' BP AV/WF rules set', $bp_text_no.' NO BP AV/WF rules' ) );
+                                    $bp_text_yes.' BP AV/WF rules set', $bp_text_no.' BP AV/WF rules' ) );
                             }
                             if( $visibility )
                             {
                                 $lines .= $context->encloseFunction( $bpCell( PH::bpCombine( array( $object->av_actions_visibility(), $object->wildfire_rules_visibility() ) ),
-                                    $bp_text_yes.' Visibility AV/WF rules set', $bp_text_no.' NO Visibility AV/WF rules' ) );
+                                    $bp_text_yes.' Visibility AV/WF rules set', $bp_text_no.' Visibility AV/WF rules' ) );
                             }
                             if( $adoption )
                             {
                                 if( $object->is_adoption() )
                                     $lines .= $context->encloseFunction($bp_text_yes.' Adoption AV/WF set');
                                 else
-                                    $lines .= $context->encloseFunction($bp_text_no.' NO Adoption AV/WF set');
+                                    $lines .= $context->encloseFunction($bp_text_no.' Adoption AV/WF set');
                             }
                         }
                         else
@@ -1383,11 +1383,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             if( $bestPractice )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->spyware_dnslist_best_practice(), $bp_text_yes.' BP AS dns_list set', $bp_text_no.' NO BP AS dns_list' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->spyware_dnslist_best_practice(), $bp_text_yes.' BP AS dns_list set', $bp_text_no.' BP AS dns_list' ) );
                             }
                             if( $visibility )
                             {
-                                $lines .= $context->encloseFunction( $bpCell( $object->spyware_dnslist_visibility(), $bp_text_yes.' Visibility AS dns_list set', $bp_text_no.' NO Visibility AS dns_list' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $object->spyware_dnslist_visibility(), $bp_text_yes.' Visibility AS dns_list set', $bp_text_no.' Visibility AS dns_list' ) );
                             }
                         }
                         else
@@ -1415,12 +1415,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( $bestPractice )
                             {
                                 $lines .= $context->encloseFunction( $bpCell( PH::bpCombine( array( $object->spyware_dns_security_best_practice(), $object->spyware_advanced_dns_security_best_practice() ) ),
-                                    $bp_text_yes.' BP AS dns_security set', $bp_text_no.' NO BP AS dns_security' ) );
+                                    $bp_text_yes.' BP AS dns_security set', $bp_text_no.' BP AS dns_security' ) );
                             }
                             if( $visibility )
                             {
                                 $lines .= $context->encloseFunction( $bpCell( PH::bpCombine( array( $object->spyware_dns_security_visibility(), $object->spyware_advanced_dns_security_visibility() ) ),
-                                    $bp_text_yes.' Visibility AS dns_security set', $bp_text_no.' NO Visibility AS dns_security' ) );
+                                    $bp_text_yes.' Visibility AS dns_security set', $bp_text_no.' Visibility AS dns_security' ) );
                             }
                         }
                         else
@@ -1454,7 +1454,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $tmp_check = $object->url_mica_engine_best_practice();
                                 else
                                     $tmp_check = $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
-                                $lines .= $context->encloseFunction( $bpCell( $tmp_check, $bp_text_yes.' BP mica_engine set', $bp_text_no.' NO BP mica_engine' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $tmp_check, $bp_text_yes.' BP mica_engine set', $bp_text_no.' BP mica_engine' ) );
 
                             }
                             if( $visibility )
@@ -1463,7 +1463,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $tmp_check = $object->url_mica_engine_visibility();
                                 else
                                     $tmp_check = $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
-                                $lines .= $context->encloseFunction( $bpCell( $tmp_check, $bp_text_yes . ' Visibility mica_engine set', $bp_text_no . ' NO Visibility mica_engine' ) );
+                                $lines .= $context->encloseFunction( $bpCell( $tmp_check, $bp_text_yes . ' Visibility mica_engine set', $bp_text_no . ' Visibility mica_engine' ) );
                             }
                         }
                         else
@@ -1556,7 +1556,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( $object->is_adoption() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Adoption URL set');
                             else
-                                $lines .= $context->encloseFunction($bp_text_no.' NO Adoption URL set');
+                                $lines .= $context->encloseFunction($bp_text_no.' Adoption URL set');
                         }
                     }
                     else
