@@ -1488,7 +1488,7 @@ class URLProfile extends SecurityProfile2
         #    return TRUE;
         #return False;
 
-        return TRUE:
+        return TRUE;
     }
 
     /** @return bool|null null: not listed in the visibility JSON (N/A) */
