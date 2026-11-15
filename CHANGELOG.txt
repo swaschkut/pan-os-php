@@ -44,6 +44,7 @@ UTIL:
 * xyz.alert-only-set / BP JSON settings file | optimisation ml inline
 * xyz.alert-only-set / BP JSON settings file | optimisation for rules of AS, VP, WF, FB and AV-Decoder
 * xyz.alert-only-set / BP JSON settings file | optimisation for spwyare dns part
+* different SP classes - move to single SecurityProfile2 defined PAN-OS version check
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile

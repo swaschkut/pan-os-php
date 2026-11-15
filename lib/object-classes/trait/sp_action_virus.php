@@ -188,14 +188,14 @@ trait sp_action_virus
   <mlav-policy-action>disable</mlav-policy-action>
 </entry>';
 
-            if( !$tmp_mica_MSOffice_found && $this->owner->owner->version >= 100)
+            if( !$tmp_mica_MSOffice_found && $this->bpFeatureSupported( 'virus-mica' ))
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MSOFFICE_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mlav-engine-filebased-enabled']['MSOffice']['mlav-policy-action'] = "disable";
             }
-            if( !$tmp_mica_Shell_found && $this->owner->owner->version >= 100)
+            if( !$tmp_mica_Shell_found && $this->bpFeatureSupported( 'virus-mica' ))
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Shell_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
@@ -269,13 +269,13 @@ trait sp_action_virus
 
             if( $this->owner->owner->version >= 111 )
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_111);
-            elseif( $this->owner->owner->version >= 100 )
+            elseif( $this->bpFeatureSupported( 'virus-mica' ) )
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
 
-            if( $this->owner->owner->version >= 100 )
+            if( $this->bpFeatureSupported( 'virus-mica' ) )
                 $xml->appendChild($xmlElement);
 
-            if( $this->owner->owner->version >= 100 )
+            if( $this->bpFeatureSupported( 'virus-mica' ) )
             {
                 $this->additional['mlav-engine-filebased-enabled']['Windows Executables']['mlav-policy-action'] = "disable";
                 $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 1']['mlav-policy-action'] = "disable";

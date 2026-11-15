@@ -1254,7 +1254,7 @@ class URLProfile extends SecurityProfile2
 
     public function check_mica_engine_visibility_json( $check_array )
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->bpFeatureSupported( 'url-mica' ) )
         {
             //Todo: this is visible and bp
             foreach( $check_array as $key => $validation )

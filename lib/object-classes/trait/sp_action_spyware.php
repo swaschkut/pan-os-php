@@ -83,7 +83,7 @@ trait sp_action_spyware
                     $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = $tmp_local_deep_learning->textContent;
                 else
                 {
-                    if( $this->owner->owner->version >= 112 )
+                    if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
                     {
                         $tmp_local_deep_learning = DH::findFirstElementOrCreate("local-deep-learning", $tmp_entry1);
                         $tmp_local_deep_learning->textContent = "disable";
@@ -108,28 +108,28 @@ trait sp_action_spyware
   <inline-policy-action>alert</inline-policy-action>
   <local-deep-learning>disable</local-deep-learning>
 </entry>';
-            if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 102)
+            if( !$tmp_mica_Unknown_TCP_found && $this->bpFeatureSupported( 'spyware-mica' ))
             {
-                if( $this->owner->owner->version >= 112 )
+                if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring_112);
                 else
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
-                if( $this->owner->owner->version >= 112 )
+                if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
                     $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "disable";
             }
-            if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 102 )
+            if( !$tmp_mica_Unknown_UDP_found && $this->bpFeatureSupported( 'spyware-mica' ) )
             {
-                if( $this->owner->owner->version >= 112 )
+                if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring_112);
                 else
                     $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
-                if( $this->owner->owner->version >= 112 )
+                if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
                     $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "disable";
             }
         }
@@ -176,18 +176,18 @@ trait sp_action_spyware
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner !== null && $this->owner->owner->version >= 112 )
+            if( $this->owner !== null && $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_112);
                 $xml->appendChild($xmlElement);
             }
-            elseif( $this->owner !== null && $this->owner->owner->version >= 102 )
+            elseif( $this->owner !== null && $this->bpFeatureSupported( 'spyware-mica' ) )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_102);
                 $xml->appendChild($xmlElement);
             }
 
-            if( $this->owner !== null && $this->owner->owner->version >= 102 )
+            if( $this->owner !== null && $this->bpFeatureSupported( 'spyware-mica' ) )
             {
                 $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
@@ -196,7 +196,7 @@ trait sp_action_spyware
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
 
-                if( $this->owner !== null && $this->owner->owner->version >= 112 )
+                if( $this->owner !== null && $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
                 {
                     $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['local-deep-learning'] = "enable";
                     $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['local-deep-learning'] = "enable";
@@ -217,7 +217,7 @@ trait sp_action_spyware
         }
         else
         {
-            if( $this->owner !== null && $this->owner->owner->version >= 102 )
+            if( $this->owner !== null && $this->bpFeatureSupported( 'spyware-mica' ) )
             {
                 $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
                 $tmp_rule->textContent = "no";
