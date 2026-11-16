@@ -1,5 +1,28 @@
 CHANGELOG
 
+2.1.63
+UTIL:
+* scm export extend with SC / MU / RN / infra / prisma Browser / objects / security / NGFW
+* SCM diff and import
+* scm pa sync - introduction
+* scm export area=config | optimisation | scm export memory optimisation | scm export application
+* scm export | explicit proxy via internal API - same as WebUI
+* scm-api:// | improvement if SCM API is not having info for VP / WFAV
+* scm extend for panorama NGFW import
+* type=rule actions=securityProfile-replace-by-Group | extend with parent search
+* pan-os-php type=scm-xyz | introduction of "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync",
+* type=scm-report in=scm-export:// | introduction - Prisma Access as-built report (md/html) with findings, network plans as draw.io (Lucidchart import), asbuilt-data.json for the document builder
+* xyz.alert-only-set / BP JSON settings file | optimisation ml inline
+* xyz.alert-only-set / BP JSON settings file | optimisation for rules of AS, VP, WF, FB and AV-Decoder
+* xyz.alert-only-set / BP JSON settings file | optimisation for spwyare dns part
+* different SP classes - move to single SecurityProfile2 defined PAN-OS version check
+
+BUGFIX:
+* SCM export after first production run / IAM patch
+* class SecurityProfileStore | bugfix for predefined URL
+* SCM based validation spyware / dns -> for spyware.dns now correct return n/a
+* introduce predefinedServiceStore - to handle serviceGroup merging and support service-http/-https
+
 2.1.62
 UTIL:
 * type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
@@ -32,19 +55,7 @@ UTIL:
 * type=profile profiletype=hip-profile/-object | extend differnet classes to support these object, like common filter, refernceableObject
 * class AntiVirusProfile/AntiSpywareProfile/WildfireProfile/FileBlockingProfile/UrlFilteringProfile - move actions to methods
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
-* scm export extend with SC / MU / RN / infra / prisma Browser / objects / security / NGFW
-* SCM diff and import
-* scm pa sync - introduction
-* scm export area=config | optimisation | scm export memory optimisation | scm export application
-* scm export | explicit proxy via internal API - same as WebUI
-* scm-api:// | improvement if SCM API is not having info for VP / WFAV
-* scm extend for panorama NGFW import
-* type=rule actions=securityProfile-replace-by-Group | extend with parent search
-* pan-os-php type=scm-xyz | introduction of "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync",
-* xyz.alert-only-set / BP JSON settings file | optimisation ml inline
-* xyz.alert-only-set / BP JSON settings file | optimisation for rules of AS, VP, WF, FB and AV-Decoder
-* xyz.alert-only-set / BP JSON settings file | optimisation for spwyare dns part
-* different SP classes - move to single SecurityProfile2 defined PAN-OS version check
+* type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile
@@ -64,14 +75,10 @@ BUGFIX:
 * class Vulnerability/Anti-Spyware | correction if BP JSON file has no visibility/best-practice setting
 * optimisation for all parts related to BP_JSON file - stats/exporttohtml
 * correction VP/Spyware BP - severity informational / low
-* SCM export after first production run / IAM patch
-* class SecurityProfileStore | bugfix for predefined URL
 * sp_action_virus.php | bugfix for using $object instead of $this
 * bugfix to get N/A output correct running
 * type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
 * type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
-* SCM based validation spyware / dns -> for spyware.dns now correct return n/a
-* introduce predefinedServiceStore - to handle serviceGroup merging and support service-http/-https
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes
