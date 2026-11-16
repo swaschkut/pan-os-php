@@ -552,6 +552,14 @@ class Service
     }
 
     /**
+     * @return bool TRUE for the predefined service objects service-http / service-https (ServiceStore::getPredefinedStore)
+     */
+    public function isPredefined()
+    {
+        return $this->owner !== null && is_object($this->owner) && get_class($this->owner) == 'ServiceStore' && $this->owner->isPredefinedStore();
+    }
+
+    /**
      * @return string
      */
     public function protocol()
@@ -577,7 +585,7 @@ class Service
         if( $this->isTmpSrv() )
         {
             if( $this->name() == 'service-http' )
-                return '80';
+                return '80,8080';
             if( $this->name() == 'service-https' )
                 return '443';
         }
@@ -732,7 +740,7 @@ class Service
         if( $this->isTmpSrv() )
         {
             if( $this->name() == 'service-http' )
-                return ServiceDstPortMapping::mappingFromText('80', TRUE);
+                return ServiceDstPortMapping::mappingFromText('80,8080', TRUE);
             if( $this->name() == 'service-https' )
                 return ServiceDstPortMapping::mappingFromText('443', TRUE);
 

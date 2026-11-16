@@ -2379,11 +2379,6 @@ class RuleCallContext extends CallContext
                     $port_mapping = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
                     $mapping_texts = $port_mapping->mappingToText();
 
-                    //TODO: handle predefined service objects in a different way
-                    if( $tmp_member->name() == 'service-http' )
-                        $mapping_texts = 'tcp/80';
-                    if( $tmp_member->name() == 'service-https' )
-                        $mapping_texts = 'tcp/443';
 
                     $strMapping[] = $mapping_texts;
                     #$strMapping[] = "group";
@@ -2397,11 +2392,6 @@ class RuleCallContext extends CallContext
                 $port_mapping = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
                 $mapping_texts = $port_mapping->mappingToText();
 
-                //TODO: handle predefined service objects in a different way
-                if( $tmp_member->name() == 'service-http' )
-                    $mapping_texts = 'tcp/80';
-                if( $tmp_member->name() == 'service-https' )
-                    $mapping_texts = 'tcp/443';
 
                 $strMapping[] = $mapping_texts;
 

@@ -335,7 +335,7 @@ ServiceCallContext::$supportedActions[] = array(
                         if( $object->name() == "service-http" )
                         {
                             $lines .= $context->encloseFunction('service-tcp');
-                            $lines .= $context->encloseFunction('40');
+                            $lines .= $context->encloseFunction('80,8080');
                         }
                         elseif( $object->name() == "service-https" )
                         {
@@ -410,11 +410,6 @@ ServiceCallContext::$supportedActions[] = array(
                     $port_mapping = $object->dstPortMapping();
                     $mapping_texts = $port_mapping->mappingToText();
 
-                    //TODO: handle predefined service objects in a different way
-                    if( $object->name() == 'service-http' )
-                        $mapping_texts = 'tcp/80';
-                    if( $object->name() == 'service-https' )
-                        $mapping_texts = 'tcp/443';
 
 
                     if( strpos($mapping_texts, " ") !== FALSE )

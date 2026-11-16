@@ -928,7 +928,7 @@ class MergeSafety
             if( $object->isTmpSrv() )
             {
                 if( $object->name() == 'service-http' )
-                    $c['ports']['tcp||||'] = array( array( 80, 80 ) );
+                    $c['ports']['tcp||||'] = array( array( 80, 80 ), array( 8080, 8080 ) );
                 elseif( $object->name() == 'service-https' )
                     $c['ports']['tcp||||'] = array( array( 443, 443 ) );
                 else
