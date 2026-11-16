@@ -552,6 +552,9 @@
             }
         }
     },
+    "data-filtering": {
+        "visibility": true
+    },
     "included-in-bpa":
     {
         "adoption": {
@@ -592,7 +595,7 @@
             "Vulnerability Rules": false,
             "Vulnerability InLine ML": false,
             "File Blocking Profiles": true,
-            "Data Filtering": false,
+            "Data Filtering": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
             "URL InLine ML": false,
