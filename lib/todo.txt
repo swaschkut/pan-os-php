@@ -18,3 +18,5 @@ appid-toolbox:
 - p2 rule filter
 - p5 rule activation - what about rule renaming and clear of rule hit count? in the past rule rename cleared hit.count, nowadays not
 
+- type=rule-compare - switch to utils/common/RuleResolver.php (more fields, IPv6, EDL, other rule types)
+  => plan / open decisions: rule-compare-ruleresolver.md
