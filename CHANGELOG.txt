@@ -33,6 +33,7 @@ UTIL:
 * class AntiVirusProfile/AntiSpywareProfile/WildfireProfile/FileBlockingProfile/UrlFilteringProfile - move actions to methods
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
 * type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
+* type=zone actions=exportToExcel | new columns zpp-template-stack / zpp-template - where the zone-protection-profile the firewall receives is defined
 
 BUGFIX:
 * bugfix for filter missing GPGatewayTunnel / profile
