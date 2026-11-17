@@ -791,33 +791,18 @@ DeviceCallContext::$supportedActions['Template-delete'] = array(
                 return null;
             }
             /** @var Template $object */
-            //if template is used in Template-Stack -> skip
-            /*
-            $childDG = $object->_childDeviceGroups;
-            if( count($childDG) != 0 )
+            // a template used by a template stack is refused by removeTemplate() as well
+            $string ="     * delete Template: " . $name;
+            PH::ACTIONlog( $context, $string );
+
+            $xpath = DH::elementToPanXPath($object->xmlroot);
+            if( !$pan->removeTemplate($object) )
             {
-                $string = "Template with name: '" . $name . "' is used in TemplateStack. Template can not removed";
-                PH::ACTIONstatus($context, "SKIPPED", $string);
+                PH::ACTIONstatus( $context, "SKIPPED", "Template '" . $name . "' is used in a TemplateStack and can NOT be removed" );
+                return null;
             }
-            else
-            {
-            */
-                $string ="     * delete Template: " . $name;
-                PH::ACTIONlog( $context, $string );
-
-
-                if( $context->isAPI )
-                {
-                    $con = findConnectorOrDie($object);
-                    $xpath = DH::elementToPanXPath($object->xmlroot);
-
-                    $pan->removeTemplate($object);
-                    $con->sendDeleteRequest($xpath);
-                }
-                else
-                    $pan->removeTemplate($object);
-
-            //}
+            if( $context->isAPI )
+                findConnectorOrDie($pan)->sendDeleteRequest($xpath);
         }
     }
 );
@@ -970,34 +955,13 @@ DeviceCallContext::$supportedActions['TemplateStack-delete'] = array(
                 PH::ACTIONlog( $context, $string );
                 return null;
             }
-            /** @var Template $object */
-            //if template is used in Template-Stack -> skip
-            /*
-            $childDG = $object->_childDeviceGroups;
-            if( count($childDG) != 0 )
-            {
-                $string = "Template with name: '" . $name . "' is used in TemplateStack. Template can not removed";
-                PH::ACTIONstatus($context, "SKIPPED", $string);
-            }
-            else
-            {
-            */
+            /** @var TemplateStack $object */
             $string ="     * delete TemplateStack: " . $name;
             PH::ACTIONlog( $context, $string );
 
-
-            if( $context->isAPI )
-            {
-                $con = findConnectorOrDie($object);
-                $xpath = DH::elementToPanXPath($object->xmlroot);
-
-                $pan->removeTemplateStack($object);
-                $con->sendDeleteRequest($xpath);
-            }
-            else
-                $pan->removeTemplateStack($object);
-
-            //}
+            $xpath = DH::elementToPanXPath($object->xmlroot);
+            if( $pan->removeTemplateStack($object) && $context->isAPI )
+                findConnectorOrDie($pan)->sendDeleteRequest($xpath);
         }
     }
 );

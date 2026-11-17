@@ -2483,43 +2483,64 @@ class PanoramaConf
     }
 
     /**
-     * Remove a template.
+     * Template stacks that list $template (object or name) in their templates.
+     * @param Template|string $template
+     * @return TemplateStack[]
+     **/
+    public function templateStacksUsingTemplate( $template )
+    {
+        $name = is_object($template) ? $template->name() : $template;
+        $out = array();
+        foreach( $this->templatestacks as $stack )
+            foreach( $stack->templates as $t )
+                if( $t !== null && ( $t === $template || $t->name() === $name ) )
+                {
+                    $out[] = $stack;
+                    break;
+                }
+        return $out;
+    }
+
+    /**
+     * Remove a template: XML entry, readonly entry and the object. Refused (warning, FALSE) while a template stack still
+     * lists the template - remove it from the stack or remove the stack first (like removeDeviceGroup() with child
+     * device groups). A device group that names the template in reference-templates gets a warning.
      * @param Template $template
+     * @return bool TRUE when removed
      **/
     public function removeTemplate( $template )
     {
         $Templatename = $template->name();
 
-        #$template->display_references();
-
-        /*
-         * //warning if template is used in TemplateStack
-         * //implementation missing also in actions-device line 294
-         * DeviceCallContext::$supportedActions['Template-delete'] = array(
-         *
-        $childDGs = $DG->_childDeviceGroups;
-        if( count( $childDGs ) !== 0 )
+        $stacks = $this->templateStacksUsingTemplate( $template );
+        if( count($stacks) > 0 )
         {
-            mwarning("DeviceGroup '$DGname' has ChildDGs. Delete of DG not possible.");
-            return;
+            $names = array();
+            foreach( $stacks as $stack )
+                $names[] = $stack->name();
+            mwarning( "Template '" . $Templatename . "' is used in TemplateStack(s) '" . implode("', '", $names) . "'. Delete of Template not possible.", null, FALSE );
+            return FALSE;
         }
-        else
-        {
-        */
-            //remove Template from XML
-            $xPath = "/config/devices/entry[@name='localhost.localdomain']/template";
-            $dgNode = DH::findXPathSingleEntryOrDie($xPath, $this->xmlroot);
 
-            $remove = DH::findFirstElementByNameAttrOrDie('entry', $Templatename, $dgNode);
-            $dgNode->removeChild( $remove );
+        //remove Template from XML
+        $xPath = "/config/devices/entry[@name='localhost.localdomain']/template";
+        $tNode = DH::findXPathSingleEntryOrDie($xPath, $this->xmlroot);
+        $remove = DH::findFirstElementByNameAttrOrDie('entry', $Templatename, $tNode);
+        $tNode->removeChild( $remove );
 
         $this->removeReadonlyEntry( 'template', $Templatename );
+
+        $this->warnReferenceTemplates( 'Template', $Templatename );
+
         // the list is numerically indexed
         foreach( $this->templates as $k => $obj )
             if( $obj === $template )
                 unset($this->templates[$k]);
-            //Todo: cleanup memory
-        //}
+
+        // references between the template and the managed firewalls
+        $this->unlinkReferences( $template );
+
+        return TRUE;
     }
 
 
@@ -2578,43 +2599,65 @@ class PanoramaConf
     }
 
     /**
-     * Remove a template.
+     * Remove a template stack: XML entry, readonly entry and the object; the templates of the stack stay (they are no
+     * longer referenced by this stack). A device group that names the stack in reference-templates gets a warning.
      * @param TemplateStack $templateStack
+     * @return bool TRUE when removed
      **/
     public function removeTemplateStack( $templateStack )
     {
         $TemplateStackname = $templateStack->name();
 
-        #$templateStack->display_references();
-
-        /*
-         * //warning if template is used in TemplateStack
-         * //implementation missing also in actions-device line 294
-         * DeviceCallContext::$supportedActions['Template-delete'] = array(
-         *
-        $childDGs = $DG->_childDeviceGroups;
-        if( count( $childDGs ) !== 0 )
-        {
-            mwarning("DeviceGroup '$DGname' has ChildDGs. Delete of DG not possible.");
-            return;
-        }
-        else
-        {
-        */
-        //remove TemplateSTack from XML
+        //remove TemplateStack from XML
         $xPath = "/config/devices/entry[@name='localhost.localdomain']/template-stack";
-        $dgNode = DH::findXPathSingleEntryOrDie($xPath, $this->xmlroot);
-
-        $remove = DH::findFirstElementByNameAttrOrDie('entry', $TemplateStackname, $dgNode);
-        $dgNode->removeChild( $remove );
+        $tsNode = DH::findXPathSingleEntryOrDie($xPath, $this->xmlroot);
+        $remove = DH::findFirstElementByNameAttrOrDie('entry', $TemplateStackname, $tsNode);
+        $tsNode->removeChild( $remove );
 
         $this->removeReadonlyEntry( 'template-stack', $TemplateStackname );
+
+        $this->warnReferenceTemplates( 'TemplateStack', $TemplateStackname );
+
         // the list is numerically indexed
         foreach( $this->templatestacks as $k => $obj )
             if( $obj === $templateStack )
                 unset($this->templatestacks[$k]);
-        
-        //}
+
+        // the templates of the stack are no longer used by it (removeTemplate() checks the remaining stacks)
+        foreach( $templateStack->templates as $template )
+            if( $template !== null )
+                $template->removeReference( $templateStack );
+
+        // references between the stack and the managed firewalls
+        $this->unlinkReferences( $templateStack );
+
+        return TRUE;
+    }
+
+    /** device groups that still name a removed template / template stack in reference-templates: warning */
+    private function warnReferenceTemplates( $kind, $name )
+    {
+        foreach( $this->deviceGroups as $dg )
+        {
+            $rt = DH::findFirstElement( 'reference-templates', $dg->xmlroot );
+            if( $rt === FALSE )
+                continue;
+            foreach( $rt->childNodes as $m )
+                if( $m->nodeType == XML_ELEMENT_NODE && trim($m->textContent) === $name )
+                    mwarning( "DeviceGroup '" . $dg->name() . "' references the removed " . $kind . " '" . $name . "' in reference-templates.", null, FALSE );
+        }
+    }
+
+    /** drop the references between a removed template / template stack and the objects referencing it (managed firewalls) */
+    private function unlinkReferences( $object )
+    {
+        foreach( $object->getReferences() as $ref )
+        {
+            // only where the reference is mutual (removeReference() warns about unknown references)
+            if( is_object($ref) && method_exists($ref, 'getReferences') && isset( $ref->getReferences()[spl_object_id($object)] ) )
+                $ref->removeReference( $object );
+            $object->removeReference( $ref );
+        }
     }
 
     /**
