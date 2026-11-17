@@ -6,6 +6,9 @@
  * as float, which made neighbouring IPv6 addresses equal (wrong merges, float values in the map, dumpToString() dying
  * after substract()). IPv4 (int) has to behave as before.
  *
+ * intersection(): returned the other map unchanged ($this was not used) - IP4Map and IP6Map; checked with a next-vr
+ * route of VirtualRouter::getIPtoZoneRouteMapping().
+ *
  *   cd tests && php test_ipmap.php          exit code 0 = passed
  */
 
@@ -111,6 +114,35 @@ eq( merged( 'IP6Map', array( '2001:db8::1', '2001:db8::' ) )->equals( IP6Map::ma
 eq( cidr::netMatch( '2001:db8::1', '2001:db8::/127' ), 1, 'netMatch included' );
 eq( cidr::netMatch( '2001:db8::2', '2001:db8::/127' ), 0, 'netMatch neighbour not included' );
 eq( cidr::netMatch( '2001:db8::1-2001:db8::2', '2001:db8::/127' ), 2, 'netMatch partial' );
+
+print "  intersection (IP4Map / IP6Map)\n";
+eq( IP4Map::mapFromText('10.0.0.0/24')->intersection( IP4Map::mapFromText('0.0.0.0/0') )->dumpToString(), '10.0.0.0-10.0.0.255', 'IPv4: route inside a default route' );
+eq( IP4Map::mapFromText('10.0.0.0/24')->intersection( IP4Map::mapFromText('203.0.113.0/24') )->count(), 0, 'IPv4: no overlap - empty' );
+eq( IP4Map::mapFromText('10.0.0.0/24')->intersection( IP4Map::mapFromText('10.0.0.128-10.0.1.10') )->dumpToString(), '10.0.0.128-10.0.0.255', 'IPv4: partial overlap' );
+eq( IP6Map::mapFromText('2001:db8::/126')->intersection( IP6Map::mapFromText('2001:db8::2-2001:db8::9') )->dumpToString(), '2001:db8::2-2001:db8::3', 'IPv6: partial overlap' );
+eq( IP6Map::mapFromText('2001:db8::/126')->intersection( IP6Map::mapFromText('::/0') )->dumpToString(), '2001:db8::-2001:db8::3', 'IPv6: inside ::/0' );
+
+print "  VirtualRouter next-vr route -> zone (uses intersection)\n";
+// vr-in: 10.0.0.0/24 next-vr default; default: 0.0.0.0/0 via ethernet1/1 (zone external, connected 203.0.113.0/24)
+$d = new DOMDocument(); $d->load( dirname(__FILE__) . '/../examples/sample-configs/panos-example-2.xml' ); $x = new DOMXPath($d);
+$add = function( $parentQ, $xml ) use ( $d, $x ) { $p = $x->query($parentQ)->item(0); $f = $d->createDocumentFragment(); $f->appendXML($xml); $p->appendChild($f); };
+$net = '/config/devices/entry/network';
+$eth1 = $x->query($net . '/interface/ethernet/entry[@name="ethernet1/1"]')->item(0);
+foreach( iterator_to_array($eth1->childNodes) as $c ) if( $c->nodeName == 'layer3' ) $eth1->removeChild($c);
+$add( $net . '/interface/ethernet/entry[@name="ethernet1/1"]', '<layer3><ip><entry name="203.0.113.2/24"/></ip></layer3>' );
+$add( $net . '/interface/ethernet', '<entry name="ethernet1/2"><layer3><ip><entry name="192.168.1.1/24"/></ip></layer3></entry>' );
+$add( '/config/devices/entry/vsys/entry[@name="vsys1"]/zone/entry[@name="internal"]/network', '<layer3><member>ethernet1/2</member></layer3>' );
+$x->query('/config/devices/entry/vsys/entry[@name="vsys1"]/import/network/interface')->item(0)->appendChild( $d->createElement('member', 'ethernet1/2') );
+$add( $net . '/virtual-router/entry[@name="default"]', '<routing-table><ip><static-route><entry name="default-route"><destination>0.0.0.0/0</destination><interface>ethernet1/1</interface><nexthop><ip-address>203.0.113.1</ip-address></nexthop></entry></static-route></ip></routing-table>' );
+$add( $net . '/virtual-router', '<entry name="vr-in"><interface><member>ethernet1/2</member></interface><routing-table><ip><static-route><entry name="to-dc"><destination>10.0.0.0/24</destination><nexthop><next-vr>default</next-vr></nexthop></entry></static-route></ip></routing-table></entry>' );
+$xml = $d->saveXML();
+$fw = new PANConf();
+$fw->load_from_xmlstring( $xml );
+$map = $fw->network->virtualRouterStore->findVirtualRouter('vr-in')->getIPtoZoneRouteMapping( $fw->findVirtualSystem('vsys1') );
+$zones = array();
+foreach( $map['ipv4'] as $r ) $zones[long2ip($r['start']) . '-' . long2ip($r['end'])] = $r['zone'];
+ksort( $zones );
+eq( $zones, array( '10.0.0.0-10.0.0.255' => 'external', '192.168.1.0-192.168.1.255' => 'internal' ), 'next-vr route mapped with its own destination (not the other router\'s networks)' );
 
 print "  IPv4 unchanged\n";
 eq( merged( 'IP4Map', array( '10.0.0.0/24', '10.0.1.0/24', '10.0.3.1' ) )->dumpToString(), '10.0.0.0-10.0.1.255,10.0.3.1', 'IPv4 merge' );

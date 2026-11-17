@@ -40,7 +40,9 @@ class IP6Map extends IPMap
     public function intersection(IP6Map $otherMap)
     {
         $invertedMap = IP6Map::mapFromText('::/0');
-        $invertedMap->substract($otherMap);
+        // everything outside $this, removed from $otherMap = $this ∩ $otherMap (was: $otherMap substracted, so the
+        // result was always $otherMap)
+        $invertedMap->substract($this);
 
         $result = clone $otherMap;
         $result->substract($invertedMap);

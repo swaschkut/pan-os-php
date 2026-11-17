@@ -40,7 +40,9 @@ class IP4Map extends IPMap
     public function intersection(IP4Map $otherMap)
     {
         $invertedMap = IP4Map::mapFromText('0.0.0.0-255.255.255.255');
-        $invertedMap->substract($otherMap);
+        // everything outside $this, removed from $otherMap = $this ∩ $otherMap (was: $otherMap substracted, so the
+        // result was always $otherMap)
+        $invertedMap->substract($this);
 
         $result = clone $otherMap;
         $result->substract($invertedMap);
