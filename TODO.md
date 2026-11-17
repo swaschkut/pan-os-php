@@ -4,6 +4,9 @@ Central list of planned work. One file per topic in [todo/](todo/), named `<area
 reference, plan and open decisions. Finished topics move to [todo/done/](todo/done/). Small items without their own
 file are listed below.
 
+Known bugs and limitations (open GitHub issues and limitations without issue): [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Loose scripts in `utils/develop/`: [TODO-develop-scripts.md](TODO-develop-scripts.md).
+
 Documentation of an existing tool (`README_*.md`, guides) stays next to its code; `utils/develop/` keeps the code
 under development.
 
