@@ -1,6 +1,7 @@
 # Concept: move device groups from one Panorama to another (panorama-move)
 
-Status: draft for review (2026-11-17), checked against branch `alpha` (2.1.63.alpha).
+Status: first version implemented (2026-11-17, branch `alpha`) – README_panorama_move.md; steps 1 – 5 of section 10 done,
+decisions D4 / D5 (rename) open.
 Script (planned): `utils/develop/panorama_move/panorama_to_panorama_move.php`, `pan-os-php type=panorama-move`.
 
 ## 1. Goal

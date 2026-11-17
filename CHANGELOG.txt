@@ -16,12 +16,14 @@ UTIL:
 * xyz.alert-only-set / BP JSON settings file | optimisation for rules of AS, VP, WF, FB and AV-Decoder
 * xyz.alert-only-set / BP JSON settings file | optimisation for spwyare dns part
 * different SP classes - move to single SecurityProfile2 defined PAN-OS version check
+* pan-os-php type=panorama-move | introduction - move device groups incl. parents, firewalls, template stacks, templates and shared objects from one Panorama XML to another, check run with shared rule impact and name problems
 
 BUGFIX:
 * SCM export after first production run / IAM patch
 * class SecurityProfileStore | bugfix for predefined URL
 * SCM based validation spyware / dns -> for spyware.dns now correct return n/a
 * introduce predefinedServiceStore - to handle serviceGroup merging and support service-http/-https
+* class PanoramaConf | removeDeviceGroup / removeTemplate / removeTemplateStack - remove the object from the internal list, the parent's child list and the readonly entry
 
 2.1.62
 UTIL:

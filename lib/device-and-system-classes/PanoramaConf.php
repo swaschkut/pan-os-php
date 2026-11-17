@@ -2372,10 +2372,16 @@ class PanoramaConf
             else
                 $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
 
-            $DGmetaData = DH::findFirstElementByNameAttrOrDie('entry', $DGname, $dgMetaDataNode);
-            $dgMetaDataNode->removeChild( $DGmetaData );
+            $DGmetaData = DH::findFirstElementByNameAttr('entry', $DGname, $dgMetaDataNode);
+            if( $DGmetaData !== null )
+                $dgMetaDataNode->removeChild( $DGmetaData );
 
-            unset($this->deviceGroups[ $DGname ]);
+            // the list is numerically indexed
+            foreach( $this->deviceGroups as $k => $obj )
+                if( $obj === $DG )
+                    unset($this->deviceGroups[$k]);
+            if( $DG->parentDeviceGroup !== null )
+                unset($DG->parentDeviceGroup->_childDeviceGroups[$DGname]);
         }
 
 
@@ -2396,6 +2402,23 @@ class PanoramaConf
 
 
     }
+    /**
+     * remove the entry of a template / template-stack in /config/readonly (PAN-OS >= 8.0)
+     * @param string $type 'template' | 'template-stack' | 'device-group'
+     * @param string $name
+     */
+    public function removeReadonlyEntry( $type, $name )
+    {
+        if( $this->version < 80 )
+            return;
+        $node = DH::findXPathSingleEntry('/config/readonly/devices/entry[@name="localhost.localdomain"]/' . $type, $this->xmlroot);
+        if( $node === FALSE || $node === null )
+            return;
+        $entry = DH::findFirstElementByNameAttr('entry', $name, $node);
+        if( $entry !== null )
+            $node->removeChild( $entry );
+    }
+
     /**
      * @return DeviceGroup[]
      */
@@ -2490,8 +2513,11 @@ class PanoramaConf
             $remove = DH::findFirstElementByNameAttrOrDie('entry', $Templatename, $dgNode);
             $dgNode->removeChild( $remove );
 
-
-        unset($this->templates[$Templatename]);
+        $this->removeReadonlyEntry( 'template', $Templatename );
+        // the list is numerically indexed
+        foreach( $this->templates as $k => $obj )
+            if( $obj === $template )
+                unset($this->templates[$k]);
             //Todo: cleanup memory
         //}
     }
@@ -2582,7 +2608,11 @@ class PanoramaConf
         $remove = DH::findFirstElementByNameAttrOrDie('entry', $TemplateStackname, $dgNode);
         $dgNode->removeChild( $remove );
 
-        unset($this->templatestacks[$TemplateStackname]);
+        $this->removeReadonlyEntry( 'template-stack', $TemplateStackname );
+        // the list is numerically indexed
+        foreach( $this->templatestacks as $k => $obj )
+            if( $obj === $templateStack )
+                unset($this->templatestacks[$k]);
         
         //}
     }

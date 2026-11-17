@@ -2263,7 +2263,7 @@ class PH
         "scm-changes",
         "scm-apply",
         "scm-export-xml",
-        "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync", "scm-report",
+        "scm-export", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync", "scm-report", "panorama-move",
         "scm-import",
         "upload",
         "xml-issue",
@@ -2352,12 +2352,15 @@ class PH
         'scm-compare' => 'scm_pa_compare.php',
         'scm-sync' => 'scm_pa_sync.php',
         'scm-report' => 'scm_pa_report.php',
+        // path relative to utils/develop/ when it contains a '/'
+        'panorama-move' => 'panorama_move/panorama_to_panorama_move.php',
     );
 
     public static function runSCMScript( $type, $argv )
     {
         $root = realpath( dirname(__FILE__) . "/../.." );
-        $script = $root . "/utils/develop/sase/scm/" . self::SCM_SCRIPT_TYPES[$type];
+        $file = self::SCM_SCRIPT_TYPES[$type];
+        $script = $root . ( strpos($file, '/') !== FALSE ? "/utils/develop/" : "/utils/develop/sase/scm/" ) . $file;
         // the repository root on the include path: some scripts require "lib/pan_php_framework.php" relative to it
         $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " " . escapeshellarg($script);
         foreach( array_slice($argv, 1) as $a )
