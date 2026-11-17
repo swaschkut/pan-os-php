@@ -2,7 +2,8 @@
 
 Status: first version implemented (2026-11-17, branch `alpha`) – README_panorama_move.md; steps 1 – 5 of section 10 done;
 D4 / D5 implemented as option `conflict=rename:<suffix>` (2026-11-17), default stays `stop`; step 6 done
-(`tests/test_panorama_move.php`, fixtures `tests/input/panorama-move/`).
+(`tests/test_panorama_move.php`, fixtures `tests/input/panorama-move/`); D8 (`panorama-ip=`) and the follow-up checklist
+`MIGRATION_FOLLOWUP.md` (report-only places of section 7) done.
 Script (planned): `utils/develop/panorama_move/panorama_to_panorama_move.php`, `pan-os-php type=panorama-move`.
 
 ## 1. Goal
@@ -187,10 +188,10 @@ Order: rules / content are not touched in kept DGs.
 
 | place | file2 | file1 |
 |---|---|---|
-| access domains (`mgt-config/access-domain`) and admins | report only (D7) | remove moved DG / template names |
-| log collector groups (`log-collector-group/…/logfwd-setting/devices`) | report (log collection of B to configure) | remove moved serials |
-| plugins (SD-WAN, cloud services, ZTP …) referencing DGs / stacks / devices | report | report |
-| Panorama settings in templates (`deviceconfig/system/panorama` server IPs) | report: devices still point to Panorama A (D8: replace by new IPs) | – |
+| access domains (`mgt-config/access-domain`) and admins | report + MIGRATION_FOLLOWUP.md (D7) | remove moved DG / template / stack names and firewalls |
+| log collector groups (`log-collector-group/…/logfwd-setting/devices`) | report + MIGRATION_FOLLOWUP.md | remove moved serials |
+| plugins (SD-WAN, cloud services, ZTP …) referencing DGs / stacks / devices | report + MIGRATION_FOLLOWUP.md | report + MIGRATION_FOLLOWUP.md |
+| Panorama server in templates / stacks (`deviceconfig/system/panorama/local-panorama/panorama-server(-2)`, older `deviceconfig/system/panorama-server(-2)`) | done: report; `panorama-ip=` replaces it in the file2 copies (D8) | unchanged |
 | rule `target` with serials | kept (serials move with the DG) | – |
 | scheduled config push, WildFire appliances, device certificates, collector-group | report | report |
 | logs already stored for the moved devices | stay on Panorama A / collectors | – |
@@ -214,7 +215,7 @@ of shared objects masks encrypted values.
 | D5 | shared object with same name, other value / same name space | done: with `conflict=rename:<suffix>` renamed in file2 + references rewritten; all relevant objects of that name renamed together, reused objects referencing a renamed object renamed too; blocking when the new name exists or the name is a local object of another type in a moved DG chain (README) |
 | D6 | shared objects unused before the move | keep |
 | D7 | access domains in B | report only |
-| D8 | Panorama server IPs in moved templates | report; option `panorama-ip=` |
+| D8 | Panorama server IPs in moved templates | done: report; option `panorama-ip=<server>[,<server-2>]` (templates and stacks, both formats; server-2 removed without a second address; variables unchanged) |
 | D9 | parent of the top moved DG in file2 | `target-parent-dg=`, default shared |
 
 ## 9. pan-os-php building blocks in alpha (checked)

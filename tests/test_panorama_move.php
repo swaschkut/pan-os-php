@@ -153,6 +153,10 @@ $scenarios['shared-parent-stack-template'] = function() use ( $A, $Bclean ) {
     eq( cnt($a, '/config/devices/entry/template/entry[@name="Paris Datacenter"]'), 0, 'file1 moved template removed' );
     eq( cnt($a, '/config/devices/entry/template/entry[@name="Datacenter Master Template"]'), 1, 'file1 copied template kept' );
     eq( cnt($a, '/config/shared/log-settings/http/entry[@name="http-siem"]'), 0, 'file1 shared object used only by the moved DG removed' );
+    // D8 without panorama-ip: reported, not changed
+    eq( array_column($p['panorama_settings'], 'action'), array( 'keep', 'keep' ), 'Panorama server settings kept' );
+    eq( txt($b, '//template/entry[@name="Paris Datacenter"]//panorama-server'), '192.0.2.1', 'file2 Panorama server unchanged' );
+    check( strpos(@file_get_contents($dir . '/report/MIGRATION_FOLLOWUP.md'), 'still points to Panorama A') !== FALSE, 'follow-up: Panorama server still Panorama A' );
     noSecretsIn( $dir );
 };
 
@@ -173,6 +177,8 @@ $scenarios['name-conflicts-stop'] = function() use ( $A, $Bconflict ) {
     eq( count(findings($p, 'blocking', 'rule name')), 1, 'rule name blocking' );
     eq( count(findings($p, 'blocking', 'shared object')), 2, 'D5 shared objects blocking' );
     check( !is_file($dir . '/B.xml'), 'execute refused - no output written' );
+    $fu = @file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
+    check( $fu !== FALSE && strpos($fu, 'Resolve the findings in REPORT.md: 5 blocking') !== FALSE, 'follow-up written with the blocking findings first' );
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -214,6 +220,9 @@ $scenarios['rename-templates-stack-shared-rules'] = function() use ( $A, $Bconfl
     eq( cnt($b, '/config/readonly/devices/entry/template-stack/entry[@name="Paris_Datacenter_Stack_A"]'), 1, 'readonly entry of the renamed stack' );
     eq( cnt($b, DG . '[@name="testDG_A"]/pre-rulebase/security/rules/entry[@name="shared pre rule 1_A"]'), 1, 'shared rule copied with the new name' );
     eq( cnt($b, '/config/devices/entry/template-stack/entry[@name="Paris_Datacenter_Stack"]'), 1, 'file2 own stack untouched' );
+    $fu = @file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
+    check( $fu !== FALSE && strpos($fu, '| [ ] | 007100000290 | vsys1 | testDG_A | Paris_Datacenter_Stack_A |') !== FALSE, 'follow-up firewall row with the file2 names' );
+    check( $fu !== FALSE && strpos($fu, 'with testDG_A, Paris_Datacenter_Stack_A, firewall 007100000290') !== FALSE, 'follow-up access domain with the file2 names' );
     noSecretsIn( $dir );
 };
 
@@ -255,10 +264,73 @@ $scenarios['master-key-different'] = function() use ( $A, $Bclean, $SECRETS ) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// follow-up / panorama-ip (D8)
+
+$scenarios['followup-panorama-ip'] = function() use ( $A, $Bclean ) {
+    list( $rc, $p, $dir ) = run( 'followup', array( 'testDG' ), array( 'file1=' . $A, 'file2=' . $Bclean, 'mode=execute', 'panorama-ip=203.0.113.50,203.0.113.51' ) );
+    eq( $rc, 0, 'exit code' );
+    eq( $p['panorama_ip'], array( '203.0.113.50', '203.0.113.51' ), 'panorama-ip in plan' );
+    eq( array_column($p['panorama_settings'], 'action'), array( 'replace', 'replace' ), 'Panorama server settings replaced' );
+    $b = xp( $dir . '/B.xml' ); $a = xp( $dir . '/A.xml' );
+    $tpl = '/config/devices/entry/template/entry[@name="Paris Datacenter"]//deviceconfig/system/panorama/local-panorama/';
+    eq( txt($b, $tpl . 'panorama-server'), '203.0.113.50', 'file2 panorama-server' );
+    eq( txt($b, $tpl . 'panorama-server-2'), '203.0.113.51', 'file2 panorama-server-2' );
+    eq( txt($a, '//template/entry[@name="Internet Perimeter Master"]//panorama-server'), '192.0.2.1', 'file1 kept templates unchanged' );
+    // access domain cleanup in file1
+    eq( cnt($a, '/config/mgt-config/access-domain/entry[@name="ad-paris"]//member[.="testDG" or .="Paris_Datacenter_Stack"]'), 0, 'file1 access domain: moved names removed' );
+    eq( cnt($a, '/config/mgt-config/access-domain/entry[@name="ad-paris"]//entry[@name="007100000290"]'), 0, 'file1 access domain: moved firewall removed' );
+    eq( cnt($a, '/config/devices/entry/log-collector-group/entry[@name="lcg-paris"]//entry[@name="007100000290"]'), 0, 'file1 log collector group: moved firewall removed' );
+    eq( cnt($a, '/config/devices/entry/log-collector-group/entry[@name="lcg-paris"]'), 1, 'file1 log collector group kept' );
+    eq( $p['access_domains']['ad-paris']['admins'], array( 'paris-admin' ), 'admin of the access domain' );
+    eq( $p['log_collector_groups'], array( 'lcg-paris' => array( '007100000290' ) ), 'log collector group' );
+    eq( $p['master_devices_not_moved'], array( 'testDG' => '000000000101' ), 'master device not moved' );
+    $fu = @file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
+    check( $fu !== FALSE, 'MIGRATION_FOLLOWUP.md written' );
+    foreach( array(
+        '- [x] Panorama server in template Paris Datacenter: panorama-server 192.0.2.1 → 203.0.113.50',
+        '- [x] Panorama server in template Paris Datacenter: panorama-server-2 192.0.2.2 → 203.0.113.51',
+        'Access domain `ad-paris`: create / extend it in Panorama B with testDG, Paris_Datacenter_Stack, firewall 007100000290 and assign it to the administrator(s) paris-admin',
+        'Log collection: add 007100000290 to a collector group of Panorama B (Panorama A: `lcg-paris`)',
+        'Plugin `sd_wan` references firewall 007100000290',
+        'Plugin `sd_wan` of Panorama A still references firewall 007100000290',
+        'master device 000000000101 is not moved',
+        '`request authkey add name <key-name> lifetime <minutes> count 1 serial <serial> devtype fw`',
+        '`set deviceconfig system panorama local-panorama panorama-server 203.0.113.50` and `... panorama-server-2 203.0.113.51`',
+        '| [ ] | 007100000290 | vsys1 | testDG | Paris_Datacenter_Stack |',
+        'Master key: confirm Panorama B uses the same master key',
+        'Logs of 007100000290 stay in collector group `lcg-paris`',
+        ) as $s )
+        check( $fu !== FALSE && strpos($fu, $s) !== FALSE, 'follow-up contains: ' . substr($s, 0, 70) );
+    noSecretsIn( $dir );
+};
+
+$scenarios['panorama-ip-single-address'] = function() use ( $A, $Bclean ) {
+    // testDG: panorama-server-2 removed (one address); DE-Berlin Office: old format replaced, variable unchanged
+    list( $rc, $p, $dir ) = run( 'pipsingle', array( 'testDG' ), array( 'file1=' . $A, 'file2=' . $Bclean, 'mode=execute', 'panorama-ip=panorama-b.example.net' ) );
+    eq( $rc, 0, 'exit code' );
+    eq( array_column($p['panorama_settings'], 'action'), array( 'replace', 'remove' ), 'server replaced, server-2 removed' );
+    $b = xp( $dir . '/B.xml' );
+    eq( txt($b, '//template/entry[@name="Paris Datacenter"]//panorama-server'), 'panorama-b.example.net', 'file2 FQDN set' );
+    eq( cnt($b, '//template/entry[@name="Paris Datacenter"]//panorama-server-2'), 0, 'file2 panorama-server-2 removed' );
+    check( strpos(@file_get_contents($dir . '/report/MIGRATION_FOLLOWUP.md'), 'removed (panorama-ip has one address)') !== FALSE, 'follow-up: secondary removed' );
+
+    list( $rc, $p, $dir ) = run( 'pipvar', array( 'DE-Berlin Office' ), array( 'file1=' . $A, 'file2=' . $Bclean, 'mode=execute', 'panorama-ip=panorama-b.example.net' ) );
+    eq( $rc, 0, 'exit code (DE-Berlin Office)' );
+    $ps = array(); foreach( $p['panorama_settings'] as $s ) $ps[$s['location']] = $s['action'];
+    eq( $ps, array( 'template Internet Perimeter Master' => 'replace', 'template stack DE_Berlin_Office_Stack' => 'variable' ), 'old format replaced, variable kept' );
+    $b = xp( $dir . '/B.xml' ); $a = xp( $dir . '/A.xml' );
+    eq( txt($b, '//template/entry[@name="Internet Perimeter Master"]//deviceconfig/system/panorama-server'), 'panorama-b.example.net', 'file2 old format replaced' );
+    eq( txt($b, '//template-stack/entry[@name="DE_Berlin_Office_Stack"]//panorama-server'), '$panorama_primary', 'file2 variable unchanged' );
+    eq( txt($a, '//template/entry[@name="Internet Perimeter Master"]//deviceconfig/system/panorama-server'), '192.0.2.1', 'file1 copied template unchanged' );
+    check( strpos(@file_get_contents($dir . '/report/MIGRATION_FOLLOWUP.md'), 'uses the variable `$panorama_primary`') !== FALSE, 'follow-up: variable item' );
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // arguments
 
 $scenarios['arguments'] = function() use ( $A, $Bclean ) {
-    foreach( array( 'conflict=rename:', 'conflict=rename:_A!', 'conflict=foo', 'master-key=other', 'mode=run', 'shared-rules=all' ) as $bad )
+    foreach( array( 'conflict=rename:', 'conflict=rename:_A!', 'conflict=foo', 'master-key=other', 'mode=run', 'shared-rules=all',
+                 'panorama-ip=', 'panorama-ip=not_valid!', 'panorama-ip=192.0.2.1,192.0.2.2,192.0.2.3', 'panorama-ip=300.1.1.1' ) as $bad )
     {
         list( $rc ) = run( 'args', array( 'testDG' ), array( 'file1=' . $A, 'file2=' . $Bclean, $bad ) );
         eq( $rc, 1, $bad . ' rejected' );

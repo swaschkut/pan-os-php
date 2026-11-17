@@ -15,6 +15,12 @@
  *   DE_Berlin_Office_Stack         fws 000000000101 + 007200006721
  *   MV-Left / MV-Right             one multi-vsys firewall 000000000555: vsys1 / vsys2 (blocking D2)
  *   Amb-DG                         local SERVICE "shared-host1" + reference to shared ADDRESS shared-host1 (ambiguous rename)
+ *   Panorama server (D8)           Paris Datacenter: panorama/local-panorama/panorama-server(-2) 192.0.2.1 / .2;
+ *                                  Internet Perimeter Master: old format system/panorama-server; DE_Berlin_Office_Stack:
+ *                                  variable $panorama_primary
+ *   follow-up                      access domain ad-paris (testDG, Paris_Datacenter_Stack, fw 007100000290) + admin
+ *                                  paris-admin, log collector group lcg-paris, plugin sd_wan, testDG master-device
+ *                                  000000000101 (not moved with testDG)
  * panorama-move-B-clean.xml    target without device groups / templates / stacks / firewalls; shared like the source
  *                              except shared address "new test 1" (missing -> copy)
  * panorama-move-B-conflict.xml target with the same container names, shared-host1 / shared-host2 with other values,
@@ -142,6 +148,28 @@ $lf = path( $d, $testDG, 'log-settings/profiles/entry[lf-siem]/match-list/entry[
 text( $d, $lf, 'log-type', 'traffic' );
 text( $d, $lf, 'filter', 'All Logs' );
 members( $d, $lf, 'send-http', array( 'http-siem' ) );
+// Panorama server settings (D8): PAN-OS 9.1+ format with secondary in a moved template, old format in a copied template,
+// a template variable in a copied stack
+$sys = path( $d, $tpl, 'config/devices/entry[localhost.localdomain]/deviceconfig/system/panorama/local-panorama' );
+text( $d, $sys, 'panorama-server', '192.0.2.1' );
+text( $d, $sys, 'panorama-server-2', '192.0.2.2' );
+$ipm = one( $x, '/config/devices/entry/template/entry[@name="Internet Perimeter Master"]' );
+text( $d, $ipm, 'config/devices/entry[localhost.localdomain]/deviceconfig/system/panorama-server', '192.0.2.1' );
+text( $d, $de, 'config/devices/entry[localhost.localdomain]/deviceconfig/system/panorama/local-panorama/panorama-server', '$panorama_primary' );
+text( $d, $de, 'variable/entry[$panorama_primary]/type/fqdn', 'panorama-a.example.net' );
+// access domain + administrator (matched by name; the role-based layout is illustrative), log collector group, plugin,
+// master device of testDG that is not moved with it
+$ad = path( $d, one($x, '/config/mgt-config/access-domain'), 'entry[ad-paris]' );
+members( $d, $ad, 'device-groups', array( 'testDG' ) );
+members( $d, $ad, 'templates', array( 'Paris_Datacenter_Stack' ) );
+path( $d, $ad, 'devices/entry[007100000290]' );
+$adm = path( $d, one($x, '/config/mgt-config/users'), 'entry[paris-admin]' );
+text( $d, $adm, 'permissions/role-based/custom/profile', 'dg-template-admin' );
+members( $d, $adm, 'permissions/role-based/custom/access-domain', array( 'ad-paris' ) );
+$lcg = path( $d, one($x, '/config/devices/entry[@name="localhost.localdomain"]'), 'log-collector-group/entry[lcg-paris]' );
+path( $d, $lcg, 'logfwd-setting/devices/entry[007100000290]/collector/entry[000000000901]' );
+path( $d, one($x, '/config/devices/entry[@name="localhost.localdomain"]'), 'plugins/sd_wan/devices/entry[007100000290]' );
+text( $d, $testDG, 'master-device/device', '000000000101' );
 // multi-vsys firewall split over two device groups
 $mvl = addDG( $d, $x, 'MV-Left' );
 $mvr = addDG( $d, $x, 'MV-Right' );

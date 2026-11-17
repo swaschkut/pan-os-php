@@ -45,7 +45,10 @@ $usage = "USAGE: php " . basename(__FILE__) . " file1=<Panorama A.xml> file2=<Pa
     . "  conflict=stop|rename:<suffix>   name conflicts with file2 (device group / template / stack, shared object, rule):\n"
     . "                      stop (default, blocking) or rename the copy in file2 to <name><suffix> and rewrite its references\n"
     . "                      (file1 keeps its names), e.g. conflict=rename:_A\n"
-    . "  accept-blocking     execute although there are blocking findings (conflicting objects are NOT copied)\n";
+    . "  panorama-ip=<server>[,<server-2>]   Panorama B address (IP or FQDN): replaces the Panorama server setting of the\n"
+    . "                      transferred templates / stacks in file2 (D8; panorama-server-2 is removed without a second address)\n"
+    . "  accept-blocking     execute although there are blocking findings (conflicting objects are NOT copied)\n"
+    . "  report folder: REPORT.md, plan.json, MIGRATION_FOLLOWUP.md (checklist for the steps after the move), SECRETS_CHECKLIST.md\n";
 
 $args = array();
 foreach( array_slice($argv, 1) as $a )
@@ -104,6 +107,20 @@ if( $conflict !== 'stop' )
         exit( 1 );
     }
 }
+$panoramaIp = null;
+if( isset($args['panorama-ip']) )
+{
+    $panoramaIp = array_map( 'trim', explode(',', (string)$args['panorama-ip']) );
+    $ok = count($panoramaIp) >= 1 && count($panoramaIp) <= 2;
+    foreach( $panoramaIp as $p )
+        if( filter_var($p, FILTER_VALIDATE_IP) === FALSE && !preg_match('/^(?=.{1,253}$)([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/', $p) )
+            $ok = FALSE;
+    if( !$ok )
+    {
+        fwrite( STDERR, "ERROR: panorama-ip=<IP or FQDN>[,<IP or FQDN>]\n" );
+        exit( 1 );
+    }
+}
 $dgs = array();
 foreach( file($args['dg-list'], FILE_IGNORE_NEW_LINES) as $l )
 {
@@ -122,7 +139,7 @@ $out2 = isset($args['out2']) ? $args['out2'] : preg_replace('/\.xml$/i', '', $ar
 
 PH::print_stdout();
 PH::print_stdout( "*********** " . basename(__FILE__) . " (" . $mode . ") **************" );
-$m = new PanoramaMove( $args['file1'], $args['file2'], $dgs, isset($args['target-parent-dg']) ? $args['target-parent-dg'] : null, $sharedRules, $sharedSettings, $masterKey, $renameSuffix );
+$m = new PanoramaMove( $args['file1'], $args['file2'], $dgs, isset($args['target-parent-dg']) ? $args['target-parent-dg'] : null, $sharedRules, $sharedSettings, $masterKey, $renameSuffix, $panoramaIp );
 $m->check();
 
 $blocking = $m->blocking();
@@ -148,6 +165,7 @@ file_put_contents( $reportDir . "/plan.json", json_encode( $m->plan(), JSON_PRET
 file_put_contents( $reportDir . "/REPORT.md", $m->reportMarkdown($mode) );
 if( count($m->secrets) )
     file_put_contents( $reportDir . "/SECRETS_CHECKLIST.md", $m->secretsChecklist() );
+file_put_contents( $reportDir . "/MIGRATION_FOLLOWUP.md", $m->followupMarkdown($mode, $out1, $out2) );
 $sev = array( 'blocking' => 0, 'warning' => 0, 'info' => 0 );
 foreach( $m->findings as $f ) $sev[$f['severity']]++;
 PH::print_stdout( " * device groups: " . count($m->dgAction) . ", firewalls: " . count($m->devices) . ", template stacks: " . count($m->stackAction) . ", templates: " . count($m->templateAction) . ", shared objects: " . count($m->sharedObjects) );
@@ -155,6 +173,8 @@ if( $renameSuffix !== null )
     PH::print_stdout( " * conflict=rename:" . $renameSuffix . " - renamed: " . $m->renameCount() . ", references rewritten: " . count($m->rewrites) );
 PH::print_stdout( " * encrypted values (master key): " . count($m->secrets) . " - master-key=" . $masterKey . ( count($m->secrets) ? ", checklist: " . $reportDir . "/SECRETS_CHECKLIST.md" : "" ) );
 PH::print_stdout( " * findings: blocking " . $sev['blocking'] . ", warning " . $sev['warning'] . ", info " . $sev['info'] );
-PH::print_stdout( " * report: " . $reportDir . "/REPORT.md, " . $reportDir . "/plan.json" );
+if( $panoramaIp !== null )
+    PH::print_stdout( " * panorama-ip=" . implode(',', $panoramaIp) . " - Panorama server settings in transferred templates / stacks: " . count($m->panoramaSettings) );
+PH::print_stdout( " * report: " . $reportDir . "/REPORT.md, " . $reportDir . "/plan.json, follow-up: " . $reportDir . "/MIGRATION_FOLLOWUP.md" );
 PH::print_stdout();
 exit( $rc ? $rc : ( $sev['blocking'] ? 2 : 0 ) );

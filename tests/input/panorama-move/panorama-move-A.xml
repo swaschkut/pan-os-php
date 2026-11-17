@@ -30,8 +30,32 @@
           </role-based>
         </permissions>
       </entry>
+      <entry name="paris-admin">
+        <permissions>
+          <role-based>
+            <custom>
+              <profile>dg-template-admin</profile>
+              <access-domain>
+                <member>ad-paris</member>
+              </access-domain>
+            </custom>
+          </role-based>
+        </permissions>
+      </entry>
     </users>
-    <access-domain/>
+    <access-domain>
+      <entry name="ad-paris">
+        <device-groups>
+          <member>testDG</member>
+        </device-groups>
+        <templates>
+          <member>Paris_Datacenter_Stack</member>
+        </templates>
+        <devices>
+          <entry name="007100000290"/>
+        </devices>
+      </entry>
+    </access-domain>
   </mgt-config>
   <shared>
     <address>
@@ -972,6 +996,9 @@
               </entry>
             </profiles>
           </log-settings>
+          <master-device>
+            <device>000000000101</device>
+          </master-device>
         </entry>
         <entry name="Hamburg Office">
           <devices>
@@ -1165,6 +1192,11 @@
                     </entry>
                   </virtual-router>
                 </network>
+                <deviceconfig>
+                  <system>
+                    <panorama-server>192.0.2.1</panorama-server>
+                  </system>
+                </deviceconfig>
               </entry>
             </devices>
           </config>
@@ -1195,6 +1227,12 @@
                       <product-usage>yes</product-usage>
                       <threat-prevention>yes</threat-prevention>
                     </device-telemetry>
+                    <panorama>
+                      <local-panorama>
+                        <panorama-server>192.0.2.1</panorama-server>
+                        <panorama-server-2>192.0.2.2</panorama-server-2>
+                      </local-panorama>
+                    </panorama>
                   </system>
                 </deviceconfig>
                 <network>
@@ -1258,8 +1296,50 @@
             <entry name="000000000101"/>
             <entry name="007200006721"/>
           </devices>
+          <config>
+            <devices>
+              <entry name="localhost.localdomain">
+                <deviceconfig>
+                  <system>
+                    <panorama>
+                      <local-panorama>
+                        <panorama-server>$panorama_primary</panorama-server>
+                      </local-panorama>
+                    </panorama>
+                  </system>
+                </deviceconfig>
+              </entry>
+            </devices>
+          </config>
+          <variable>
+            <entry name="$panorama_primary">
+              <type>
+                <fqdn>panorama-a.example.net</fqdn>
+              </type>
+            </entry>
+          </variable>
         </entry>
       </template-stack>
+      <log-collector-group>
+        <entry name="lcg-paris">
+          <logfwd-setting>
+            <devices>
+              <entry name="007100000290">
+                <collector>
+                  <entry name="000000000901"/>
+                </collector>
+              </entry>
+            </devices>
+          </logfwd-setting>
+        </entry>
+      </log-collector-group>
+      <plugins>
+        <sd_wan>
+          <devices>
+            <entry name="007100000290"/>
+          </devices>
+        </sd_wan>
+      </plugins>
     </entry>
   </devices>
   <readonly>

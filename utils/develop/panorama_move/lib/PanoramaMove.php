@@ -81,6 +81,21 @@ class PanoramaMove
     public $renameExclude = array();
     /** references rewritten to renamed shared objects: array( location, path, old, new ) */
     public $rewrites = array();
+    /** panorama-ip=<server>[,<server-2>] (D8): Panorama B address for the transferred templates / stacks; null = report only */
+    public $panoramaIp = null;
+    /** Panorama server settings in the transferred templates / stacks: location, path, field, value, action (keep|replace|remove|variable), new */
+    public $panoramaSettings = array();
+    /** access domains of file1 referencing moved names / firewalls: name => array( refs => [], admins => [] ) */
+    public $accessDomains = array();
+    /** log collector groups of file1 with moved firewalls: name => [serials] */
+    public $logCollectorGroups = array();
+    /** plugins of file1 referencing moved names / firewalls: plugin => [refs] */
+    public $plugins = array();
+    /** master-device of a transferred device group that is not moved: device group => serial */
+    public $masterDevices = array();
+    /** firewalls of the relevant template stacks in file1 (kept for the follow-up after file1 is cleaned): stack => [serials] */
+    public $stackSerials = array();
+
     /** text values below these elements are never rewritten (zones, users - not shared objects) */
     const NO_REWRITE = array( 'from', 'to', 'source-user', 'reference-templates', 'master-device', 'authorization-code' );
 
@@ -93,8 +108,9 @@ class PanoramaMove
     );
     const SEC_MATCH = array( 'from', 'to', 'source', 'destination', 'source-user', 'application', 'service', 'category', 'negate-source', 'negate-destination', 'source-hip', 'destination-hip' );
 
-    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report', $masterKey = 'same', $renameSuffix = null )
+    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report', $masterKey = 'same', $renameSuffix = null, $panoramaIp = null )
     {
+        $this->panoramaIp = ( is_array($panoramaIp) && count($panoramaIp) ) ? array_values($panoramaIp) : null;
         $this->renameSuffix = ( $renameSuffix === null || $renameSuffix === '' ) ? null : $renameSuffix;
         $this->masterKey = $masterKey;
         $this->sharedSettings = $sharedSettings;
@@ -547,6 +563,7 @@ class PanoramaMove
                     $keptRefs[trim($m->textContent)][] = 'reference-templates of DG ' . $n;
         foreach( $relStacks as $n => $why )
         {
+            $this->stackSerials[$n] = self::deviceSerials( $stacksA[$n] );
             $other = array_diff( self::deviceSerials($stacksA[$n]), array_keys($this->devices) );
             $users = isset($keptRefs[$n]) ? $keptRefs[$n] : array();
             if( count($other) ) $users[] = count($other) . ' device(s) not moved';
@@ -578,17 +595,14 @@ class PanoramaMove
                 $dev = self::child( $md, 'device' );
                 $s = $dev !== null ? trim($dev->textContent) : trim($md->textContent);
                 if( $s !== '' && !isset($this->devices[$s]) )
+                {
+                    $this->masterDevices[$n] = $s;
                     $this->finding( 'warning', 'device group', $n, 'master-device ' . $s . ' is not moved', '', 'choose a moved firewall as master device in file2' );
-            }
-        foreach( $relTpl as $n => $why )
-            if( isset($tplA[$n]) )
-            {
-                $x = new DOMXPath( $tplA[$n]->ownerDocument );
-                foreach( $x->query('.//deviceconfig/system/panorama', $tplA[$n]) as $pn )
-                    $this->finding( 'warning', 'template', $n, 'Panorama server setting: ' . trim(preg_replace('/\s+/', ' ', $pn->textContent)), '', 'firewalls would still connect to Panorama A - set the Panorama B address (D8)' );
+                }
             }
 
         $this->checkNames();
+        $this->collectPanoramaSettings();
         $this->checkRules();
         $this->checkSettings();
         $this->collectShared();
@@ -1126,28 +1140,122 @@ class PanoramaMove
         $this->finding( 'warning', 'rule name', $type . ' ' . $name, $locA, $locB, 'renamed to "' . $new . '" in file2 (conflict=rename)' . ( strlen($new) > 63 ? ' - longer than 63 characters' : '' ) );
     }
 
+    /** Panorama server elements below deviceconfig/system (PAN-OS 9.1+: panorama/local-panorama/..., before: directly) */
+    public static function panoramaServerNodes( $root )
+    {
+        $x = new DOMXPath( $root->ownerDocument );
+        return iterator_to_array( $x->query('.//deviceconfig/system//*[self::panorama-server or self::panorama-server-2]', $root) );
+    }
+
+    /**
+     * D8: Panorama server settings in the transferred templates / stacks. Without panorama-ip they still point to Panorama A
+     * (warning); with panorama-ip the copies in file2 get the Panorama B address - panorama-server-2 is removed when only one
+     * address is given, template variables ($name) are not changed (warning, set the variable value in file2)
+     */
+    private function collectPanoramaSettings()
+    {
+        $tplA = self::templateEntries( $this->A ); $stA = self::stackEntries( $this->A );
+        $roots = array();
+        foreach( array_keys($this->templateAction) as $n ) if( isset($tplA[$n]) ) $roots[] = array( 'template', $n, $tplA[$n] );
+        foreach( array_keys($this->stackAction) as $n ) $roots[] = array( 'template stack', $n, $stA[$n] );
+        foreach( $roots as $r )
+            foreach( self::panoramaServerNodes( $r[2] ) as $e )
+            {
+                $v = trim( $e->textContent );
+                $f = $e->nodeName;
+                if( substr($v, 0, 1) == '$' ) $action = 'variable';
+                elseif( $this->panoramaIp === null ) $action = 'keep';
+                elseif( $f == 'panorama-server' || isset($this->panoramaIp[1]) ) $action = 'replace';
+                else $action = 'remove';
+                $new = $action == 'replace' ? $this->panoramaIp[$f == 'panorama-server' ? 0 : 1] : null;
+                $this->panoramaSettings[] = array( 'location' => $r[0] . ' ' . $r[1], 'name_in_file2' => $this->bName($r[0], $r[1]),
+                    'path' => self::relPath( $e, $r[2] ), 'field' => $f, 'value' => $v, 'action' => $action, 'new' => $new );
+                if( $action == 'keep' )
+                    $this->finding( 'warning', $r[0], $r[1], $f . ' ' . $v, '', 'firewalls would connect to Panorama A after a push - set the Panorama B address with panorama-ip= (D8)' );
+                elseif( $action == 'replace' )
+                    $this->finding( 'info', $r[0], $r[1], $f . ' ' . $v, 'set to ' . $new . ' (panorama-ip)', '' );
+                elseif( $action == 'remove' )
+                    $this->finding( 'warning', $r[0], $r[1], $f . ' ' . $v, 'removed - panorama-ip has no second address', 'give panorama-ip=<server>,<server-2> to keep a secondary Panorama' );
+                else
+                    $this->finding( 'warning', $r[0], $r[1], $f . ' ' . $v, 'template variable - not changed', 'set the value of ' . $v . ' to the Panorama B address in file2' );
+            }
+        if( $this->panoramaIp !== null && !count($this->panoramaSettings) )
+            $this->finding( 'info', 'panorama-ip', implode(', ', $this->panoramaIp), 'no Panorama server setting in the transferred templates / stacks', '', 'the firewalls keep their local setting - change it on each firewall (MIGRATION_FOLLOWUP.md)' );
+    }
+
+    /** panorama-ip on a template / stack copy in file2 */
+    private function applyPanoramaIp( $node )
+    {
+        if( $this->panoramaIp === null )
+            return;
+        foreach( self::panoramaServerNodes( $node ) as $e )
+        {
+            if( substr(trim($e->textContent), 0, 1) == '$' )
+                continue;
+            if( $e->nodeName == 'panorama-server' )
+                $e->nodeValue = $this->panoramaIp[0];
+            elseif( isset($this->panoramaIp[1]) )
+                $e->nodeValue = $this->panoramaIp[1];
+            else
+                $e->parentNode->removeChild( $e );
+        }
+    }
+
     /** access domains, log collector groups, plugins (7) */
     private function checkOtherReferences()
     {
         $x = new DOMXPath( $this->A->xmldoc );
         $names = array_merge( array_keys($this->dgAction), array_keys($this->templateAction), array_keys($this->stackAction) );
         foreach( $x->query('/config/mgt-config/access-domain/entry') as $ad )
+        {
+            $adn = $ad->getAttribute('name');
             foreach( $ad->getElementsByTagName('member') as $m )
                 if( in_array(trim($m->textContent), $names, TRUE) )
-                    $this->finding( 'info', 'access domain', $ad->getAttribute('name'), 'references ' . trim($m->textContent), 'not transferred', 'create the access domain / admin in file2' );
+                {
+                    $this->accessDomains[$adn]['refs'][] = trim($m->textContent);
+                    $this->finding( 'info', 'access domain', $adn, 'references ' . trim($m->textContent), 'not transferred', 'create the access domain / admin in file2 (MIGRATION_FOLLOWUP.md)' );
+                }
+            foreach( $ad->getElementsByTagName('entry') as $e )
+                if( isset($this->devices[$e->getAttribute('name')]) )
+                {
+                    $this->accessDomains[$adn]['refs'][] = 'firewall ' . $e->getAttribute('name');
+                    $this->finding( 'info', 'access domain', $adn, 'references firewall ' . $e->getAttribute('name'), 'not transferred', 'create the access domain / admin in file2 (MIGRATION_FOLLOWUP.md)' );
+                }
+        }
+        // administrators using these access domains (by name - admins mapped by RADIUS / TACACS+ / SAML attributes are not in the configuration)
+        foreach( array_keys($this->accessDomains) as $adn )
+        {
+            $this->accessDomains[$adn]['refs'] = array_values( array_unique($this->accessDomains[$adn]['refs']) );
+            $this->accessDomains[$adn]['admins'] = array();
+            foreach( $x->query('/config/mgt-config/users/entry') as $u )
+                if( isset( self::tokens($u)[$adn] ) )
+                    $this->accessDomains[$adn]['admins'][] = $u->getAttribute('name');
+        }
         foreach( $x->query('/config/devices/entry/log-collector-group/entry') as $lcg )
             foreach( $lcg->getElementsByTagName('entry') as $e )
                 if( isset($this->devices[$e->getAttribute('name')]) )
+                {
+                    $this->logCollectorGroups[$lcg->getAttribute('name')][$e->getAttribute('name')] = TRUE;
                     $this->finding( 'info', 'log collector group', $lcg->getAttribute('name'), 'device ' . $e->getAttribute('name'), 'not transferred', 'configure log collection in file2; existing logs stay with Panorama A' );
+                }
+        foreach( $this->logCollectorGroups as $g => $s )
+            $this->logCollectorGroups[$g] = array_keys( $s );
         foreach( $x->query('/config/devices/entry/plugins/*') as $pl )
         {
             $t = self::tokens( $pl );
+            foreach( $x->query('.//entry/@name', $pl) as $a ) $t[$a->value] = TRUE;
             foreach( $names as $n )
                 if( isset($t[$n]) )
+                {
+                    $this->plugins[$pl->nodeName][] = $n;
                     $this->finding( 'warning', 'plugin', $pl->nodeName, 'references ' . $n, 'not transferred', 'check the plugin configuration' );
+                }
             foreach( array_keys($this->devices) as $s )
                 if( isset($t[$s]) )
+                {
+                    $this->plugins[$pl->nodeName][] = 'firewall ' . $s;
                     $this->finding( 'warning', 'plugin', $pl->nodeName, 'references device ' . $s, 'not transferred', 'check the plugin configuration' );
+                }
         }
     }
 
@@ -1302,6 +1410,7 @@ class PanoramaMove
             $new = $B->xmldoc->importNode( $tplA[$n], TRUE );
             $new->setAttribute( 'name', $bn );
             $this->filterDevices( $new );
+            $this->applyPanoramaIp( $new );
             if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
         }
@@ -1315,6 +1424,7 @@ class PanoramaMove
             $new->setAttribute( 'name', $bn );
             self::renameMembers( $new, 'templates', $this->renames['template'] );
             $this->filterDevices( $new );
+            $this->applyPanoramaIp( $new );
             if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
         }
@@ -1379,6 +1489,10 @@ class PanoramaMove
         foreach( iterator_to_array( $x->query('/config/mgt-config/access-domain/entry//member') ) as $m )
             if( in_array(trim($m->textContent), $removedNames, TRUE) )
                 $m->parentNode->removeChild( $m );
+        // moved firewalls in access domains (context switch)
+        foreach( iterator_to_array( $x->query('/config/mgt-config/access-domain/entry//entry[@name]') ) as $e )
+            if( isset($this->devices[$e->getAttribute('name')]) )
+                $e->parentNode->removeChild( $e );
         // 4 shared objects of the relevant set that are no longer referenced (fixed point)
         $cand = array();
         foreach( $this->sharedObjects as $k => $o )
@@ -1465,6 +1579,9 @@ class PanoramaMove
                 'template_stacks' => $this->renames['template stack'], 'rules' => $this->renames['rule'], 'shared_rules' => $this->renames['shared rule'],
                 'shared_objects' => $this->objectRenames, 'not_rewritten_in_device_group' => array_map( 'array_keys', $this->renameExclude ) ),
             'rewritten_references' => $this->rewrites,
+            'panorama_ip' => $this->panoramaIp, 'panorama_settings' => $this->panoramaSettings,
+            'access_domains' => $this->accessDomains, 'log_collector_groups' => $this->logCollectorGroups, 'plugins' => $this->plugins,
+            'master_devices_not_moved' => $this->masterDevices,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
     }
 
@@ -1483,6 +1600,129 @@ class PanoramaMove
             foreach( $list as $x ) $o .= "- [ ] `" . $x['path'] . "`\n";
             $o .= "\n";
         }
+        return $o;
+    }
+
+    /**
+     * MIGRATION_FOLLOWUP.md: everything panorama-move does not transfer or cannot do offline, as a checklist in the order
+     * of the migration (before the import, Panorama B, per firewall, Panorama A afterwards)
+     */
+    public function followupMarkdown( $mode, $out1 = 'out1', $out2 = 'out2' )
+    {
+        $sev = array( 'blocking' => 0, 'warning' => 0, 'info' => 0 );
+        foreach( $this->findings as $f ) $sev[$f['severity']]++;
+        $dgB = function( $n ) { return $this->bName( 'device group', $n ); };
+        $li = function( $text, $done = FALSE ) { return "- [" . ( $done ? 'x' : ' ' ) . "] " . $text . "\n"; };
+        $code = function( $s ) { return '`' . str_replace('`', "'", $s) . '`'; };
+        $o = "# Migration follow-up – Panorama A → Panorama B\n\n";
+        $o .= "Generated " . date('Y-m-d H:i') . " by pan-os-php type=panorama-move (" . ( $mode == 'execute' ? 'execute' : 'check run' ) . ") – file1 " . $code($this->file1) . ", file2 " . $code($this->file2) . ".\n";
+        $o .= "Moved firewalls: " . count($this->devices) . ", device groups move / copy: " . count(array_filter($this->dgAction, function($a){ return $a == 'move'; })) . " / " . count(array_filter($this->dgAction, function($a){ return $a == 'copy'; })) . ". ";
+        $o .= "Items marked [x] were done by panorama-move; tick off the others.\n\n";
+
+        // 1
+        $o .= "## 1. Before loading the configuration into Panorama B\n\n";
+        $o .= $li( "Save a named configuration snapshot on Panorama A and on Panorama B" );
+        if( $mode != 'execute' || $sev['blocking'] )
+            $o .= $li( "Resolve the findings in REPORT.md: " . $sev['blocking'] . " blocking, " . $sev['warning'] . " warning(s)" . ( $mode != 'execute' ? " – then run with mode=execute" : '' ) );
+        if( count($this->secrets) )
+            $o .= $this->masterKey == 'same'
+                ? $li( "Master key: confirm Panorama B uses the same master key as Panorama A – " . count($this->secrets) . " encrypted value(s) are copied unchanged (SECRETS_CHECKLIST.md lists them)" )
+                : $li( "Master key differs: set the " . count($this->secrets) . " encrypted value(s) listed in SECRETS_CHECKLIST.md in Panorama B before the first push" );
+        if( $this->renameCount() )
+        {
+            $o .= $li( "Names in Panorama B differ from Panorama A (conflict=rename:" . $this->renameSuffix . ", " . $this->renameCount() . " renamed) – update documentation, scripts / API calls, SIEM and monitoring that use the old names (list: REPORT.md, section Renames)" );
+            if( count($this->rewrites) )
+                $o .= $li( "Review the " . count($this->rewrites) . " rewritten reference(s) in REPORT.md (references are found by text value)" );
+        }
+        $lost = array();
+        foreach( $this->ruleImpact as $g ) if( count($g['lost']) ) $lost[$g['device_group']] = count($g['lost']);
+        if( count($lost) && $this->sharedRules == 'skip' )
+            foreach( $lost as $dg => $c )
+                $o .= $li( "Shared rules of Panorama A without equivalent in Panorama B no longer apply to the firewalls of " . $code($dgB($dg)) . ": " . $c . " rule(s) – accept, recreate in Panorama B or run with shared-rules=to-top-dg (REPORT.md, shared rule impact)" );
+        foreach( $this->settings as $p => $st )
+            if( $st['status'] == 'differs' || ( $st['status'] == 'missing' && $this->sharedSettings != 'copy-missing' ) )
+                $o .= $li( "Shared setting " . $code($p) . " " . ( $st['status'] == 'differs' ? 'differs in Panorama B (applies to all its device groups) – align if the moved firewalls need the Panorama A value' : 'is missing in Panorama B – configure it or run with shared-settings=copy-missing' ) );
+        $o .= "\n";
+
+        // 2
+        $o .= "## 2. Panorama B – configuration\n\n";
+        $o .= $li( "Load the configuration: import " . $code($out2) . " as named snapshot and load it, or apply the set commands of " . $code('pan-os-php type=diff file1=' . $this->file2 . ' file2=' . $out2 . ' outputformatset=set_B.txt') . "; commit to Panorama", FALSE );
+        $done = $mode == 'execute';
+        $o .= $li( "Device groups, templates, template stacks, managed devices (serials) and shared objects transferred" . ( $done ? '' : ' (on execute)' ) . " *(done by panorama-move)*", $done );
+        foreach( $this->panoramaSettings as $p )
+        {
+            $where = $p['location'] . ( $p['name_in_file2'] !== null && strpos($p['location'], $p['name_in_file2']) === FALSE ? ' (file2: ' . $p['name_in_file2'] . ')' : '' );
+            if( $p['action'] == 'replace' )
+                $o .= $li( "Panorama server in " . $where . ": " . $p['field'] . " " . $p['value'] . " → " . $p['new'] . " *(done by panorama-move, panorama-ip)*", $done );
+            elseif( $p['action'] == 'remove' )
+                $o .= $li( "Panorama server in " . $where . ": " . $p['field'] . " " . $p['value'] . " removed (panorama-ip has one address) – add a secondary Panorama B address if Panorama B is an HA pair" );
+            elseif( $p['action'] == 'variable' )
+                $o .= $li( "Panorama server in " . $where . " uses the variable " . $code($p['value']) . " – set its value to the Panorama B address (template / stack / per-device variable)" );
+            else
+                $o .= $li( "Panorama server in " . $where . ": " . $p['field'] . " " . $p['value'] . " still points to Panorama A – set the Panorama B address before the first push, or run with panorama-ip=" );
+        }
+        foreach( $this->accessDomains as $adn => $ad )
+        {
+            $refs = array();
+            foreach( $ad['refs'] as $r )
+                $refs[] = strpos($r, 'firewall ') === 0 ? $r : ( isset($this->dgAction[$r]) ? $dgB($r) : ( isset($this->templateAction[$r]) ? $this->bName('template', $r) : $this->bName('template stack', $r) ) );
+            $o .= $li( "Access domain " . $code($adn) . ": create / extend it in Panorama B with " . implode(', ', $refs)
+                . ( count($ad['admins']) ? " and assign it to the administrator(s) " . implode(', ', $ad['admins']) : '' )
+                . " – administrators mapped by RADIUS / TACACS+ / SAML attributes: update the mapping" );
+        }
+        foreach( $this->logCollectorGroups as $g => $serials )
+            $o .= $li( "Log collection: add " . implode(', ', $serials) . " to a collector group of Panorama B (Panorama A: " . $code($g) . ")" );
+        if( count($this->devices) && !count($this->logCollectorGroups) )
+            $o .= $li( "Log collection: check log forwarding of the moved firewalls to Panorama B / its collector group" );
+        foreach( $this->plugins as $pl => $refs )
+            $o .= $li( "Plugin " . $code($pl) . " references " . implode(', ', array_unique($refs)) . " – configure it in Panorama B" );
+        foreach( $this->masterDevices as $dg => $s )
+            $o .= $li( "Device group " . $code($dgB($dg)) . ": master device " . $s . " is not moved – choose a moved firewall (User-ID)" );
+        $o .= "\n";
+
+        // 3
+        $o .= "## 3. Per firewall – connect to Panorama B\n\n";
+        if( !count($this->devices) )
+            $o .= "No firewall is moved.\n\n";
+        else
+        {
+            $pip = $this->panoramaIp !== null ? $this->panoramaIp[0] : '<Panorama B>';
+            $o .= "Steps for each firewall (device registration auth key: Panorama B PAN-OS 10.1 or later):\n\n";
+            $o .= "1. Panorama B: create a device registration auth key for the serial – " . $code('request authkey add name <key-name> lifetime <minutes> count 1 serial <serial> devtype fw') . " (or Panorama > Device Registration Auth Key)\n";
+            $o .= "2. Firewall, only when it was onboarded to Panorama A with an auth key (PAN-OS 10.1 or later): " . $code('request sc3 reset') . " and " . $code('debug software restart process management-server') . " – irreversible, ends the trust to Panorama A\n";
+            $o .= "3. Firewall: " . $code('request authkey set <auth-key>') . "\n";
+            $o .= "4. Firewall: Panorama server → Panorama B: " . $code('set deviceconfig system panorama local-panorama panorama-server ' . $pip) . ( isset($this->panoramaIp[1]) ? ' and ' . $code('... panorama-server-2 ' . $this->panoramaIp[1]) : '' ) . ", commit (PAN-OS before 9.1: " . $code('set deviceconfig system panorama-server ' . $pip) . ")\n";
+            $o .= "5. Panorama B: Panorama > Managed Devices > Summary – connected; push device group and template stack, check *In Sync*\n";
+            $o .= "6. HA pairs: both peers must be moved (HA is not visible in the Panorama configuration)\n\n";
+            $o .= "| done | serial | vsys | device group in Panorama B | template stack(s) in Panorama B |\n|---|---|---|---|---|\n";
+            foreach( $this->devices as $s => $d )
+            {
+                $stacks = array();
+                foreach( array_keys($this->stackAction) as $sn )
+                    if( in_array($s, $this->stackSerials[$sn], TRUE) )
+                        $stacks[] = $this->bName( 'template stack', $sn );
+                $o .= "| [ ] | " . $s . " | " . ( count($d['vsys']) ? implode(', ', $d['vsys']) : '-' ) . " | " . self::md($dgB($d['dg'])) . " | " . self::md(count($stacks) ? implode(', ', $stacks) : '-') . " |\n";
+            }
+            $o .= "\n";
+        }
+
+        // 4
+        $o .= "## 4. Panorama A – after the firewalls are connected to Panorama B\n\n";
+        $o .= $li( "Load the cleaned configuration " . $code($out1) . " (or the set commands of " . $code('pan-os-php type=diff file1=' . $this->file1 . ' file2=' . $out1 . ' outputformatset=set_A.txt') . ") and commit – moved device groups, templates / stacks, firewalls and unused shared objects are removed" . ( $done ? ' *(file written by panorama-move)*' : '' ) );
+        $removedAd = array();
+        foreach( $this->accessDomains as $adn => $ad )
+            foreach( $ad['refs'] as $r )
+                if( strpos($r, 'firewall ') === 0 || ( isset($this->dgAction[$r]) ? $this->dgAction[$r] == 'move' : ( isset($this->templateAction[$r]) ? $this->templateAction[$r] == 'move' : ( isset($this->stackAction[$r]) && $this->stackAction[$r] == 'move' ) ) ) )
+                    $removedAd[] = $adn . ': ' . $r;
+        if( count($removedAd) )
+            $o .= $li( "Access domain members of moved device groups / templates / firewalls removed in " . $code($out1) . ": " . implode('; ', $removedAd) . " *(done by panorama-move)*", $done );
+        foreach( $this->plugins as $pl => $refs )
+            $o .= $li( "Plugin " . $code($pl) . " of Panorama A still references " . implode(', ', array_unique($refs)) . " – remove the moved entries (not changed by panorama-move)" );
+        foreach( $this->logCollectorGroups as $g => $serials )
+            $o .= $li( "Logs of " . implode(', ', $serials) . " stay in collector group " . $code($g) . " of Panorama A – keep Panorama A / the collectors for the retention period" );
+        if( count($this->devices) )
+            $o .= $li( "Device registration auth keys / device certificates of the moved firewalls on Panorama A are no longer needed – remove them" );
+        $o .= $li( "WildFire appliances and Log Collectors managed by Panorama A are not moved – re-home them if the moved firewalls should use other ones" );
         return $o;
     }
 
@@ -1590,6 +1830,12 @@ class PanoramaMove
                 $o .= "\nReferences are found by text value: a zone, user or other non-object value with the name of a renamed object would be rewritten too (zones in from / to and users are excluded) – check the list.\n\n";
             }
         }
+        $o .= "## Panorama server in the transferred templates / stacks (D8)\n\n";
+        $o .= count($this->panoramaSettings) ? self::table( array( 'template / stack', 'field', 'file1 value', 'file2', 'path' ), array_map( function($p){
+                $f2 = $p['action'] == 'replace' ? $p['new'] : ( $p['action'] == 'remove' ? 'removed' : ( $p['action'] == 'variable' ? 'unchanged (variable)' : 'unchanged – still Panorama A' ) );
+                return array( $p['location'], $p['field'], $p['value'], $f2, $p['path'] ); }, $this->panoramaSettings ) )
+            : "none" . ( $this->panoramaIp !== null ? " – panorama-ip " . implode(', ', $this->panoramaIp) . " not used, set it on the firewalls" : '' ) . "\n\n";
+        $o .= "Follow-up steps (Panorama B, per firewall, Panorama A): MIGRATION_FOLLOWUP.md\n\n";
         $o .= "## Shared settings (blocks without named objects, apply to all device groups)\n\n";
         $rows = array();
         foreach( $this->settings as $path => $st )
