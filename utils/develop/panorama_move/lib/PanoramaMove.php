@@ -68,6 +68,22 @@ class PanoramaMove
     public $findings = array();
     public $stats = array();
 
+    /** name conflicts (D4 / D5): null = conflict=stop, otherwise the suffix of conflict=rename:<suffix> */
+    public $renameSuffix = null;
+    /**
+     * renames in file2 (file1 keeps its names): 'device group' / 'template' / 'template stack' => [file1 name => file2 name],
+     * 'rule' => ["<device group>|<rulebase>|<type>|<name>" => new name], 'shared rule' => ["<rulebase>|<type>|<name>" => new name]
+     */
+    public $renames = array( 'device group' => array(), 'template' => array(), 'template stack' => array(), 'rule' => array(), 'shared rule' => array() );
+    /** shared object renames by name (references are text values without a type): old name => new name */
+    public $objectRenames = array();
+    /** device group (file1 name) => [object name => TRUE]: references not rewritten, a local object of the same name space resolves them */
+    public $renameExclude = array();
+    /** references rewritten to renamed shared objects: array( location, path, old, new ) */
+    public $rewrites = array();
+    /** text values below these elements are never rewritten (zones, users - not shared objects) */
+    const NO_REWRITE = array( 'from', 'to', 'source-user', 'reference-templates', 'master-device', 'authorization-code' );
+
     const SKIP_CONTAINERS = array( 'pre-rulebase', 'post-rulebase', 'default-security-rules', 'devices', 'reference-templates', 'master-device', 'authorization-code', 'user-group-source' );
     const NO_TOKEN = array( 'description', 'comment', 'disabled', 'negate', 'action', 'log-start', 'log-end' );
     const NAMESPACES = array(
@@ -77,8 +93,9 @@ class PanoramaMove
     );
     const SEC_MATCH = array( 'from', 'to', 'source', 'destination', 'source-user', 'application', 'service', 'category', 'negate-source', 'negate-destination', 'source-hip', 'destination-hip' );
 
-    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report', $masterKey = 'same' )
+    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report', $masterKey = 'same', $renameSuffix = null )
     {
+        $this->renameSuffix = ( $renameSuffix === null || $renameSuffix === '' ) ? null : $renameSuffix;
         $this->masterKey = $masterKey;
         $this->sharedSettings = $sharedSettings;
         $this->file1 = $file1;
@@ -103,6 +120,64 @@ class PanoramaMove
     public function blocking()
     {
         return array_values( array_filter( $this->findings, function( $f ) { return $f['severity'] == 'blocking'; } ) );
+    }
+
+    /** name of a device group / template / template stack in file2 */
+    public function bName( $cat, $n )
+    {
+        return ( $n !== null && isset($this->renames[$cat][$n]) ) ? $this->renames[$cat][$n] : $n;
+    }
+
+    /** TRUE when a text node lies below an element whose values are no object references */
+    private static function noRewrite( $t, $root )
+    {
+        for( $n = $t->parentNode; $n !== null && !$n->isSameNode($root); $n = $n->parentNode )
+            if( in_array($n->nodeName, self::NO_TOKEN, TRUE) || in_array($n->nodeName, self::NO_REWRITE, TRUE) )
+                return TRUE;
+        return FALSE;
+    }
+
+    /**
+     * rewrite references to renamed shared objects below $root (text values equal to an old name);
+     * $exclude: names resolved by a local object of the device group; $dry: only record (check run)
+     */
+    private function rewriteRefs( $root, $label, $exclude = array(), $dry = FALSE )
+    {
+        if( !count($this->objectRenames) || $root === null )
+            return 0;
+        $x = new DOMXPath( $root->ownerDocument );
+        $n = 0;
+        foreach( iterator_to_array( $x->query('.//text()', $root) ) as $t )
+        {
+            $v = trim( $t->nodeValue );
+            if( $v === '' || !isset($this->objectRenames[$v]) || isset($exclude[$v]) || self::noRewrite($t, $root) )
+                continue;
+            if( !$dry )
+                $t->nodeValue = $this->objectRenames[$v];
+            $this->rewrites[] = array( 'location' => $label, 'path' => self::relPath($t, $root), 'old' => $v, 'new' => $this->objectRenames[$v] );
+            $n++;
+        }
+        return $n;
+    }
+
+    /** rename <member> values below the direct child $container (reference-templates, templates) */
+    private static function renameMembers( $node, $container, $map )
+    {
+        $c = self::child( $node, $container );
+        if( $c === null || !count($map) )
+            return;
+        foreach( $c->getElementsByTagName('member') as $m )
+            if( isset($map[trim($m->textContent)]) )
+                $m->nodeValue = $map[trim($m->textContent)];
+    }
+
+    /** rename the rules of a rulebase node: [rulebase|type|name => new] */
+    private static function renameRules( $parent, $map )
+    {
+        foreach( array( 'pre-rulebase', 'post-rulebase' ) as $w )
+            foreach( self::rules( $parent, $w ) as $r )
+                if( isset($map[$w . '|' . $r['type'] . '|' . $r['name']]) )
+                    $r['node']->setAttribute( 'name', $map[$w . '|' . $r['type'] . '|' . $r['name']] );
     }
 
     /** child entries of a container node: name => DOMElement */
@@ -517,6 +592,7 @@ class PanoramaMove
         $this->checkRules();
         $this->checkSettings();
         $this->collectShared();
+        $this->previewRewrites();
         $this->collectSecrets();
         $this->checkOtherReferences();
         $this->checkUnresolved();
@@ -534,13 +610,30 @@ class PanoramaMove
         );
         // DG / template / stack names share the Panorama name space for containers
         $allB = $dgB + $tplB + $stB;
+        // names a renamed container must not take: file2 containers + the containers transferred from file1
+        $taken = array();
+        foreach( array_keys($allB) as $n ) $taken[strtolower($n)] = TRUE;
+        foreach( $sets as $s ) foreach( $s[0] as $n ) $taken[strtolower($n)] = TRUE;
         foreach( $sets as $cat => $s )
         {
             $l = $lc( $allB );
             foreach( $s[0] as $n )
             {
                 if( isset($allB[$n]) )
-                    $this->finding( 'blocking', $cat, $n, '', 'name exists in file2 (' . ( isset($dgB[$n]) ? 'device group' : ( isset($tplB[$n]) ? 'template' : 'template stack' ) ) . ')', 'rename in file1 or file2 before the move (D4)' );
+                {
+                    $where = 'name exists in file2 (' . ( isset($dgB[$n]) ? 'device group' : ( isset($tplB[$n]) ? 'template' : 'template stack' ) ) . ')';
+                    if( $this->renameSuffix === null )
+                        $this->finding( 'blocking', $cat, $n, '', $where, 'rename in file1 or file2 before the move (D4) or use conflict=rename:<suffix>' );
+                    elseif( isset($taken[strtolower($n . $this->renameSuffix)]) )
+                        $this->finding( 'blocking', $cat, $n, '', $where, 'rename target "' . $n . $this->renameSuffix . '" exists already - choose another suffix (D4)' );
+                    else
+                    {
+                        $new = $n . $this->renameSuffix;
+                        $taken[strtolower($new)] = TRUE;
+                        $this->renames[$cat][$n] = $new;
+                        $this->finding( 'warning', $cat, $n, '', $where, 'renamed to "' . $new . '" in file2 (conflict=rename, D4)' . ( strlen($new) > 31 ? ' - longer than 31 characters, check the limit of file2' : '' ) );
+                    }
+                }
                 elseif( isset($l[strtolower(trim($n))]) )
                     $this->finding( 'warning', $cat, $n, '', 'differs only in case / blanks from ' . $l[strtolower(trim($n))], 'avoid look-alike names' );
                 if( $n !== trim($n) )
@@ -690,6 +783,7 @@ class PanoramaMove
             $nsB[$ns][$o['name']] = $o['path'];
             $nsB[$ns . '#lc'][strtolower($o['name'])] = $o['name'];
         }
+        $conflicts = array();
         foreach( array_keys($rel) as $k )
         {
             $o = $sharedA[$k];
@@ -707,13 +801,13 @@ class PanoramaMove
                 else
                 {
                     $action = 'conflict';
-                    $this->finding( 'blocking', 'shared object', $o['path'] . ' ' . $o['name'], 'used by the moved configuration', 'same name, other value', 'rename in file1 before the move or align the value (D5)' );
+                    $conflicts[$k] = array( 'used by the moved configuration', 'same name, other value' );
                 }
             }
             elseif( isset($nsB[$ns][$o['name']]) )
             {
                 $action = 'conflict';
-                $this->finding( 'blocking', 'shared object', $o['path'] . ' ' . $o['name'], '', 'name used by ' . $nsB[$ns][$o['name']] . ' (same name space)', 'rename (D5)' );
+                $conflicts[$k] = array( '', 'name used by ' . $nsB[$ns][$o['name']] . ' (same name space)' );
             }
             elseif( isset($nsB[$ns . '#lc'][strtolower($o['name'])]) )
                 $this->finding( 'warning', 'shared object', $o['path'] . ' ' . $o['name'], '', 'differs only in case from ' . $nsB[$ns . '#lc'][strtolower($o['name'])], 'avoid look-alike names' );
@@ -721,6 +815,7 @@ class PanoramaMove
                 $this->finding( 'warning', 'shared object', $o['path'] . ' "' . $o['name'] . '"', 'leading / trailing blank', '', 'rename' );
             $this->sharedObjects[$k] = array( 'path' => $o['path'], 'name' => $o['name'], 'node' => $o['node'], 'action' => $action );
         }
+        $this->resolveObjectConflicts( $conflicts, $sharedA, $sharedB, $dgA );
         // predefined names
         foreach( $this->sharedObjects as $k => $o )
         {
@@ -738,9 +833,141 @@ class PanoramaMove
                 if( isset($sharedB[$k]) && !isset($sharedA[$k]) )
                     $this->finding( 'warning', 'override', $o['path'] . ' ' . $o['name'], 'device group ' . $n, 'also in shared of file2 (ancestor-objects-take-precedence ' . $pb . ')', $pb == 'yes' ? 'shared object of file2 wins - check the value' : 'device group object wins' );
         $this->stats['shared_objects'] = array( 'relevant' => count($this->sharedObjects),
+            'renamed' => count(array_filter($this->sharedObjects, function($o){ return isset($o['rename']); })),
             'copy' => count(array_filter($this->sharedObjects, function($o){ return $o['action'] == 'copy'; })),
             'reuse' => count(array_filter($this->sharedObjects, function($o){ return $o['action'] == 'reuse'; })),
             'conflict' => count(array_filter($this->sharedObjects, function($o){ return $o['action'] == 'conflict'; })) );
+    }
+
+    /**
+     * D5: shared objects with the same name and another value (or the same name space) in file2.
+     * conflict=stop: blocking. conflict=rename:<suffix>: the object is copied as <name><suffix> and every reference in the
+     * transferred configuration is rewritten. References are text values without a type, so all relevant shared objects
+     * with that name are renamed together; reused objects that reference a renamed name are renamed as well (their value
+     * in file2 would differ). Not renamed (blocking): new name taken, or the name is also a local object of another type
+     * in a moved device group chain (references ambiguous).
+     */
+    private function resolveObjectConflicts( $conflicts, $sharedA, $sharedB, $dgA )
+    {
+        if( $this->renameSuffix === null )
+        {
+            foreach( $conflicts as $k => $c )
+                $this->finding( 'blocking', 'shared object', $this->sharedObjects[$k]['path'] . ' ' . $this->sharedObjects[$k]['name'], $c[0], $c[1], 'rename in file1 before the move, align the value or use conflict=rename:<suffix> (D5)' );
+            return;
+        }
+        $nsOf = function( $path ) { return isset(self::NAMESPACES[$path]) ? self::NAMESPACES[$path] : $path; };
+        $S = array();
+        foreach( $conflicts as $k => $c )
+            $S[$this->sharedObjects[$k]['name']] = TRUE;
+        $changed = count($S) > 0;
+        while( $changed )
+        {
+            $changed = FALSE;
+            foreach( $this->sharedObjects as $k => $o )
+                if( !isset($S[$o['name']]) && $o['action'] == 'reuse' && count( array_intersect_key( self::tokens($o['node']), $S ) ) )
+                {
+                    $S[$o['name']] = TRUE;
+                    $changed = TRUE;
+                }
+        }
+        if( !count($S) )
+            return;
+        // names a renamed object must not take - any type, references carry no type
+        $taken = array();
+        foreach( $sharedA as $o ) $taken[$o['name']] = TRUE;
+        foreach( $sharedB as $o ) $taken[$o['name']] = TRUE;
+        $local = array();
+        foreach( array_keys($this->dgAction) as $n )
+            foreach( self::objectIndex( $dgA[$n] ) as $o )
+            {
+                $local[$n][$o['name']][$nsOf($o['path'])] = TRUE;
+                $taken[$o['name']] = TRUE;
+            }
+        if( $this->targetParent !== null && ( $tp = $this->B->findDeviceGroup($this->targetParent) ) !== null )
+        {
+            $dgB = self::dgEntries( $this->B );
+            foreach( array_merge( array( $this->targetParent ), array_keys( $tp->parentDeviceGroups() ) ) as $pn )
+                if( isset($dgB[$pn]) )
+                    foreach( self::objectIndex( $dgB[$pn] ) as $o )
+                        $taken[$o['name']] = TRUE;
+        }
+        $byName = array();
+        foreach( $this->sharedObjects as $k => $o )
+            if( isset($S[$o['name']]) )
+                $byName[$o['name']][] = $k;
+        foreach( $byName as $name => $keys )
+        {
+            $new = $name . $this->renameSuffix;
+            $nsShared = array();
+            foreach( $keys as $k ) $nsShared[$nsOf($this->sharedObjects[$k]['path'])] = TRUE;
+            $problem = null;
+            $exclude = array();
+            if( isset($taken[$new]) )
+                $problem = 'rename target "' . $new . '" exists already - choose another suffix';
+            else
+                foreach( array_keys($this->dgAction) as $n )
+                {
+                    $ln = array();
+                    foreach( array_merge( array( $n ), array_keys( $this->A->findDeviceGroup($n)->parentDeviceGroups() ) ) as $c )
+                        if( isset($local[$c][$name]) )
+                            $ln += $local[$c][$name];
+                    if( !count($ln) )
+                        continue;
+                    if( count( array_diff_key($nsShared, $ln) ) == 0 )
+                        $exclude[] = $n;
+                    else
+                    {
+                        $problem = 'also a local object of another type in device group ' . $n . ' (or its parents) - references cannot be rewritten unambiguously, rename manually';
+                        break;
+                    }
+                }
+            if( $problem !== null )
+            {
+                foreach( $keys as $k )
+                    if( $this->sharedObjects[$k]['action'] == 'conflict' )
+                        $this->finding( 'blocking', 'shared object', $this->sharedObjects[$k]['path'] . ' ' . $name, $conflicts[$k][0], $conflicts[$k][1], $problem . ' (D5)' );
+                    elseif( $this->sharedObjects[$k]['action'] == 'reuse' )
+                        $this->finding( 'warning', 'shared object', $this->sharedObjects[$k]['path'] . ' ' . $name, 'references an object that is renamed or in conflict', 'reused - keeps the file2 value', $problem );
+                continue;
+            }
+            $taken[$new] = TRUE;
+            $this->objectRenames[$name] = $new;
+            foreach( $exclude as $n )
+                $this->renameExclude[$n][$name] = TRUE;
+            foreach( $keys as $k )
+            {
+                $o = $this->sharedObjects[$k];
+                $why = isset($conflicts[$k]) ? $conflicts[$k][1] : ( $o['action'] == 'reuse' ? 'reused object references a renamed object - its file2 value would differ' : 'same name as a renamed object (references carry no type)' );
+                $this->finding( 'warning', 'shared object', $o['path'] . ' ' . $name, isset($conflicts[$k]) ? $conflicts[$k][0] : '', $why,
+                    'renamed to "' . $new . '" in file2 (conflict=rename, D5)' . ( strlen($new) > 63 ? ' - longer than 63 characters' : '' ) );
+                $this->sharedObjects[$k]['action'] = 'copy';
+                $this->sharedObjects[$k]['rename'] = $new;
+            }
+            if( count($exclude) )
+                $this->finding( 'info', 'shared object', $name, 'local object of the same type in device group(s) ' . implode(', ', $exclude), 'renamed to "' . $new . '"', 'references there resolve to the local object - not rewritten' );
+        }
+    }
+
+    /** check run: list the references that execute will rewrite (nothing changed) */
+    private function previewRewrites()
+    {
+        $this->rewrites = array();
+        if( !count($this->objectRenames) )
+            return;
+        $dgA = self::dgEntries( $this->A );
+        foreach( $this->sharedObjects as $o )
+            if( $o['action'] == 'copy' )
+                $this->rewriteRefs( $o['node'], 'shared ' . $o['path'] . ' ' . $o['name'], array(), TRUE );
+        if( $this->sharedSettings == 'copy-missing' )
+            foreach( $this->settings as $p => $st )
+                if( $st['status'] == 'missing' )
+                    $this->rewriteRefs( $st['node'], 'shared ' . $p, array(), TRUE );
+        foreach( array_keys($this->dgAction) as $n )
+            $this->rewriteRefs( $dgA[$n], 'device group ' . $n, isset($this->renameExclude[$n]) ? $this->renameExclude[$n] : array(), TRUE );
+        foreach( array( 'pre-rulebase', 'post-rulebase' ) as $w )
+            foreach( self::rules( $this->A->sharedroot, $w ) as $r )
+                if( isset($this->sharedRulesToCopy[$w . '|' . $r['type'] . '|' . $r['name']]) )
+                    $this->rewriteRefs( $r['node'], 'shared ' . $w . ' ' . $r['type'] . ' ' . $r['name'], array(), TRUE );
     }
 
     /** shared rule impact per moved firewall and rule name conflicts (4a) */
@@ -775,11 +1002,18 @@ class PanoramaMove
         foreach( array_keys($this->dgAction) as $n )
             foreach( array( 'pre-rulebase', 'post-rulebase' ) as $w )
                 foreach( self::rules( $dgA[$n], $w ) as $r )
-                {
                     $movedNames[$r['type'] . '|' . $r['name']] = $n;
+        // names a renamed rule must not take: "type|name" => TRUE (exists) or "renamed:<old name>"
+        $taken = array();
+        foreach( array_merge( array_keys($namesB), array_keys($movedNames) ) as $k ) $taken[$k] = TRUE;
+        foreach( array( 'pre-rulebase', 'post-rulebase' ) as $w )
+            foreach( self::rules( $A->sharedroot, $w ) as $r )
+                $taken[$r['type'] . '|' . $r['name']] = TRUE;
+        foreach( array_keys($this->dgAction) as $n )
+            foreach( array( 'pre-rulebase', 'post-rulebase' ) as $w )
+                foreach( self::rules( $dgA[$n], $w ) as $r )
                     if( isset($namesB[$r['type'] . '|' . $r['name']]) )
-                        $this->finding( 'blocking', 'rule name', $r['type'] . ' ' . $r['name'], 'device group ' . $n, $namesB[$r['type'] . '|' . $r['name']], 'rule names must be unique in the device group hierarchy - rename' );
-                }
+                        $this->ruleConflict( 'rule', $n . '|' . $w . '|' . $r['type'] . '|' . $r['name'], $r['type'], $r['name'], 'device group ' . $n, $namesB[$r['type'] . '|' . $r['name']], $taken, TRUE );
 
         // impact per firewall
         $groups = array();
@@ -842,10 +1076,9 @@ class PanoramaMove
             foreach( array_keys($this->sharedRulesToCopy) as $k )
             {
                 list( $w, $type, $name ) = explode( '|', $k, 3 );
-                if( isset($namesB[$type . '|' . $name]) )
-                    $this->finding( 'blocking', 'rule name', $type . ' ' . $name, 'shared ' . $w . ' (shared-rules=to-top-dg)', $namesB[$type . '|' . $name], 'rename' );
-                if( isset($movedNames[$type . '|' . $name]) )
-                    $this->finding( 'blocking', 'rule name', $type . ' ' . $name, 'shared ' . $w . ' (shared-rules=to-top-dg)', 'device group ' . $movedNames[$type . '|' . $name], 'rename' );
+                $other = isset($namesB[$type . '|' . $name]) ? $namesB[$type . '|' . $name] : ( isset($movedNames[$type . '|' . $name]) ? 'device group ' . $movedNames[$type . '|' . $name] : null );
+                if( $other !== null )
+                    $this->ruleConflict( 'shared rule', $k, $type, $name, 'shared ' . $w . ' (shared-rules=to-top-dg)', $other, $taken, FALSE );
             }
         else
             $this->sharedRulesToCopy = array();
@@ -868,6 +1101,29 @@ class PanoramaMove
         if( ( $da === null ) !== ( $db === null ) || ( $da !== null && self::canon($da) !== self::canon($db) ) )
             $this->finding( 'warning', 'default rules', 'shared default-security-rules', 'see report', 'differs', 'intrazone / interzone default rules behave differently after the move' );
         $this->stats['shared_rules'] = array( 'file1_pre' => count($rulesA['pre']), 'file1_post' => count($rulesA['post']), 'file2_pre' => count($rulesB['pre']), 'file2_post' => count($rulesB['post']) );
+    }
+
+    /**
+     * rule name conflict: blocking (conflict=stop) or rename with the suffix (D4); $sameOldOk: two rules with the same old
+     * name in different device group branches may get the same new name
+     */
+    private function ruleConflict( $cat, $key, $type, $name, $locA, $locB, &$taken, $sameOldOk )
+    {
+        if( $this->renameSuffix === null )
+        {
+            $this->finding( 'blocking', 'rule name', $type . ' ' . $name, $locA, $locB, 'rule names must be unique in the device group hierarchy - rename or use conflict=rename:<suffix>' );
+            return;
+        }
+        $new = $name . $this->renameSuffix;
+        $t = isset($taken[$type . '|' . $new]) ? $taken[$type . '|' . $new] : null;
+        if( $t !== null && !( $sameOldOk && $t === 'renamed:' . $name ) )
+        {
+            $this->finding( 'blocking', 'rule name', $type . ' ' . $name, $locA, $locB, 'rename target "' . $new . '" exists already - choose another suffix' );
+            return;
+        }
+        $taken[$type . '|' . $new] = 'renamed:' . $name;
+        $this->renames[$cat][$key] = $new;
+        $this->finding( 'warning', 'rule name', $type . ' ' . $name, $locA, $locB, 'renamed to "' . $new . '" in file2 (conflict=rename)' . ( strlen($new) > 63 ? ' - longer than 63 characters' : '' ) );
     }
 
     /** access domains, log collector groups, plugins (7) */
@@ -951,10 +1207,13 @@ class PanoramaMove
         $sharedB = $B->sharedroot;
         $strip = $this->masterKey == 'different';
         $removed = 0;
+        $this->rewrites = array();
         foreach( $this->sharedObjects as $o )
             if( $o['action'] == 'copy' )
             {
                 $n = $this->importInto( self::ensurePath($sharedB, $o['path']), $o['node'] );
+                if( isset($o['rename']) ) $n->setAttribute( 'name', $o['rename'] );
+                $this->rewriteRefs( $n, 'shared ' . $o['path'] . ' ' . $o['name'] );
                 if( $strip ) $removed += self::stripSecrets( $n );
             }
         // 1b shared setting blocks missing in file2
@@ -965,6 +1224,7 @@ class PanoramaMove
                     $parts = explode( '/', $p );
                     array_pop( $parts );
                     $n = $this->importInto( count($parts) ? self::ensurePath($sharedB, implode('/', $parts)) : $sharedB, $st['node'] );
+                    $this->rewriteRefs( $n, 'shared ' . $p );
                     if( $strip ) $removed += self::stripSecrets( $n );
                 }
         // 2 managed devices
@@ -1006,16 +1266,28 @@ class PanoramaMove
         };
         foreach( array_keys($this->dgAction) as $n )
             $add( $n );
+        // container renames used in reference-templates / template stack members
+        $tplMap = $this->renames['template'] + $this->renames['template stack'];
         foreach( array_keys($order) as $n )
         {
-            $B->createDeviceGroup( $n, $this->dgParentB[$n] );
-            $created = self::dgEntries( $B )[$n];
+            $bn = $this->bName( 'device group', $n );
+            $p = $this->dgParentB[$n];
+            $B->createDeviceGroup( $bn, ( $p !== null && isset($this->dgAction[$p]) ) ? $this->bName('device group', $p) : $p );
+            $created = self::dgEntries( $B )[$bn];
             $new = $B->xmldoc->importNode( $dgA[$n], TRUE );
+            $new->setAttribute( 'name', $bn );
             if( $this->dgAction[$n] == 'copy' )
             {
                 $dc = self::child( $new, 'devices' );
                 if( $dc !== null ) $new->removeChild( $dc );
             }
+            self::renameMembers( $new, 'reference-templates', $tplMap );
+            $ruleMap = array();
+            foreach( $this->renames['rule'] as $k => $nn )
+                if( strpos($k, $n . '|') === 0 )
+                    $ruleMap[substr($k, strlen($n) + 1)] = $nn;
+            self::renameRules( $new, $ruleMap );
+            $this->rewriteRefs( $new, 'device group ' . $n, isset($this->renameExclude[$n]) ? $this->renameExclude[$n] : array() );
             if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
         }
@@ -1024,9 +1296,11 @@ class PanoramaMove
         foreach( array_keys($this->templateAction) as $n )
         {
             if( !isset($tplA[$n]) ) continue;
-            $B->createTemplate( $n );
-            $created = self::templateEntries( $B )[$n];
+            $bn = $this->bName( 'template', $n );
+            $B->createTemplate( $bn );
+            $created = self::templateEntries( $B )[$bn];
             $new = $B->xmldoc->importNode( $tplA[$n], TRUE );
+            $new->setAttribute( 'name', $bn );
             $this->filterDevices( $new );
             if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
@@ -1034,9 +1308,12 @@ class PanoramaMove
         $stA = self::stackEntries( $A );
         foreach( array_keys($this->stackAction) as $n )
         {
-            $B->createTemplateStack( $n );
-            $created = self::stackEntries( $B )[$n];
+            $bn = $this->bName( 'template stack', $n );
+            $B->createTemplateStack( $bn );
+            $created = self::stackEntries( $B )[$bn];
             $new = $B->xmldoc->importNode( $stA[$n], TRUE );
+            $new->setAttribute( 'name', $bn );
+            self::renameMembers( $new, 'templates', $this->renames['template'] );
             $this->filterDevices( $new );
             if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
@@ -1054,11 +1331,15 @@ class PanoramaMove
                     {
                         if( !isset($this->sharedRulesToCopy[$w . '|' . $r['type'] . '|' . $r['name']]) )
                             continue;
-                        $rulesNode = self::ensurePath( $dgB[$n], $w . '/' . $r['type'] . '/rules' );
+                        $rulesNode = self::ensurePath( $dgB[$this->bName('device group', $n)], $w . '/' . $r['type'] . '/rules' );
                         if( $w == 'pre-rulebase' )
                             $nr = $this->importInto( $rulesNode, $r['node'], $rulesNode->firstChild );
                         else
                             $nr = $rulesNode->insertBefore( $B->xmldoc->importNode($r['node'], TRUE), null );
+                        $rk = $w . '|' . $r['type'] . '|' . $r['name'];
+                        if( isset($this->renames['shared rule'][$rk]) )
+                            $nr->setAttribute( 'name', $this->renames['shared rule'][$rk] );
+                        $this->rewriteRefs( $nr, 'shared ' . $w . ' ' . $r['type'] . ' ' . $r['name'] );
                         if( $strip ) $removed += self::stripSecrets( $nr );
                     }
             }
@@ -1162,13 +1443,15 @@ class PanoramaMove
     {
         $shared = array();
         foreach( $this->sharedObjects as $o )
-            $shared[] = array( 'path' => $o['path'], 'name' => $o['name'], 'action' => $o['action'] );
+            $shared[] = array( 'path' => $o['path'], 'name' => $o['name'], 'action' => $o['action'] ) + ( isset($o['rename']) ? array( 'name_in_file2' => $o['rename'] ) : array() );
         $dgs = array();
         foreach( $this->dgAction as $n => $a )
-            $dgs[] = array( 'name' => $n, 'action' => $a, 'parent_in_file2' => $this->dgParentB[$n], 'reason' => $this->dgReason[$n] );
+            $dgs[] = array( 'name' => $n, 'name_in_file2' => $this->bName('device group', $n), 'action' => $a,
+                'parent_in_file2' => ( $this->dgParentB[$n] !== null && isset($this->dgAction[$this->dgParentB[$n]]) ) ? $this->bName('device group', $this->dgParentB[$n]) : $this->dgParentB[$n],
+                'reason' => $this->dgReason[$n] );
         $tpl = array(); $st = array();
-        foreach( $this->templateAction as $n => $a ) $tpl[] = array( 'name' => $n, 'action' => $a, 'reason' => $this->templateReason[$n] );
-        foreach( $this->stackAction as $n => $a ) $st[] = array( 'name' => $n, 'action' => $a, 'reason' => $this->stackReason[$n] );
+        foreach( $this->templateAction as $n => $a ) $tpl[] = array( 'name' => $n, 'action' => $a, 'reason' => $this->templateReason[$n], 'name_in_file2' => $this->bName('template', $n) );
+        foreach( $this->stackAction as $n => $a ) $st[] = array( 'name' => $n, 'action' => $a, 'reason' => $this->stackReason[$n], 'name_in_file2' => $this->bName('template stack', $n) );
         $dev = array();
         foreach( $this->devices as $s => $d ) $dev[] = array( 'serial' => $s, 'device_group' => $d['dg'], 'vsys' => $d['vsys'] );
         return array( 'schema' => 'pan-os-php-panorama-move-plan', 'version' => 1, 'created_at' => date('c'),
@@ -1177,6 +1460,11 @@ class PanoramaMove
             'device_groups' => $dgs, 'devices' => $dev, 'template_stacks' => $st, 'templates' => $tpl, 'shared_objects' => $shared,
             'shared_settings' => array_map( function( $p, $st ) { return array( 'path' => $p, 'status' => $st['status'] ); }, array_keys($this->settings), array_values($this->settings) ),
             'master_key' => $this->masterKey, 'encrypted_values' => $this->secrets,
+            'conflict' => $this->renameSuffix === null ? 'stop' : 'rename:' . $this->renameSuffix,
+            'renames' => array( 'device_groups' => $this->renames['device group'], 'templates' => $this->renames['template'],
+                'template_stacks' => $this->renames['template stack'], 'rules' => $this->renames['rule'], 'shared_rules' => $this->renames['shared rule'],
+                'shared_objects' => $this->objectRenames, 'not_rewritten_in_device_group' => array_map( 'array_keys', $this->renameExclude ) ),
+            'rewritten_references' => $this->rewrites,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
     }
 
@@ -1196,6 +1484,12 @@ class PanoramaMove
             $o .= "\n";
         }
         return $o;
+    }
+
+    public function renameCount()
+    {
+        return count($this->renames['device group']) + count($this->renames['template']) + count($this->renames['template stack'])
+            + count($this->renames['rule']) + count($this->renames['shared rule']) + count($this->objectRenames);
     }
 
     private static function md( $s )
@@ -1224,6 +1518,7 @@ class PanoramaMove
             array( 'shared rules of file1', $this->sharedRules ),
             array( 'shared settings', $this->sharedSettings ),
             array( 'master key / encrypted values', $this->masterKey . ' / ' . count($this->secrets) . ( isset($this->stats['encrypted_values_removed']) ? ' (removed ' . $this->stats['encrypted_values_removed'] . ')' : '' ) ),
+            array( 'name conflicts', $this->renameSuffix === null ? 'stop (blocking)' : 'rename with suffix "' . $this->renameSuffix . '" – ' . $this->renameCount() . ' renamed, ' . count($this->rewrites) . ' reference(s) rewritten' ),
             array( 'findings blocking / warning / info', $sev['blocking'] . ' / ' . $sev['warning'] . ' / ' . $sev['info'] ),
             array( 'device groups move / copy', count(array_filter($this->dgAction, function($a){ return $a == 'move'; })) . ' / ' . count(array_filter($this->dgAction, function($a){ return $a == 'copy'; })) ),
             array( 'firewalls', count($this->devices) ),
@@ -1237,10 +1532,11 @@ class PanoramaMove
         $f = $this->findings;
         usort( $f, function( $a, $b ) { $s = array( 'blocking' => 0, 'warning' => 1, 'info' => 2 ); return $s[$a['severity']] - $s[$b['severity']]; } );
         $o .= count($f) ? self::table( array( 'severity', 'category', 'name', 'file1', 'file2', 'proposal' ), array_map('array_values', $f) ) : "none\n\n";
-        $o .= "## Device groups\n\n" . self::table( array( 'device group', 'action', 'parent in file2', 'reason' ), array_map(function($d){ return array( $d['name'], $d['action'], $d['parent_in_file2'] === null ? 'shared' : $d['parent_in_file2'], $d['reason'] ); }, $p['device_groups']) );
+        $o .= "## Device groups\n\n" . self::table( array( 'device group', 'name in file2', 'action', 'parent in file2', 'reason' ), array_map(function($d){ return array( $d['name'], $d['name_in_file2'] === $d['name'] ? '=' : $d['name_in_file2'], $d['action'], $d['parent_in_file2'] === null ? 'shared' : $d['parent_in_file2'], $d['reason'] ); }, $p['device_groups']) );
         $o .= "## Firewalls\n\n" . self::table( array( 'serial', 'device group', 'vsys' ), array_map(function($d){ return array( $d['serial'], $d['device_group'], implode(', ', $d['vsys']) ); }, $p['devices']) );
-        $o .= "## Template stacks\n\n" . self::table( array( 'template stack', 'action', 'reason' ), array_map('array_values', $p['template_stacks']) );
-        $o .= "## Templates\n\n" . self::table( array( 'template', 'action', 'reason' ), array_map('array_values', $p['templates']) );
+        $cont = function($d){ return array( $d['name'], $d['name_in_file2'] === $d['name'] ? '=' : $d['name_in_file2'], $d['action'], $d['reason'] ); };
+        $o .= "## Template stacks\n\n" . self::table( array( 'template stack', 'name in file2', 'action', 'reason' ), array_map($cont, $p['template_stacks']) );
+        $o .= "## Templates\n\n" . self::table( array( 'template', 'name in file2', 'action', 'reason' ), array_map($cont, $p['templates']) );
         $o .= "## Shared rules – impact per moved firewall\n\n";
         $o .= "Shared rules: file1 pre " . $this->stats['shared_rules']['file1_pre'] . ", post " . $this->stats['shared_rules']['file1_post'] . " – file2 pre " . $this->stats['shared_rules']['file2_pre'] . ", post " . $this->stats['shared_rules']['file2_post'] . ". Rules compared by match (zones, addresses, users, applications, services, URL categories) and action / profiles by name.\n\n";
         $rows = array();
@@ -1266,6 +1562,34 @@ class PanoramaMove
             : "Removed on transfer – set them in Panorama B after the import (list: SECRETS_CHECKLIST.md). Values are never decrypted or written to the report.\n\n" )
             . self::table( array( 'location', 'field', 'path' ), array_map( function($x){ return array( $x['location'], $x['field'], $x['path'] ); }, $this->secrets ) )
             : "none\n\n";
+        if( $this->renameSuffix !== null )
+        {
+            $o .= "## Renames in file2 (conflict=rename:" . self::md($this->renameSuffix) . ")\n\n";
+            $o .= "Only the copies in file2 are renamed – file1 keeps its names. References in the transferred configuration are rewritten" . ( $mode == 'execute' ? '' : ' on execute (preview below)' ) . ".\n\n";
+            $rows = array();
+            foreach( array( 'device group', 'template', 'template stack' ) as $cat )
+                foreach( $this->renames[$cat] as $old => $new ) $rows[] = array( $cat, $old, $new, '' );
+            foreach( $this->renames['rule'] as $k => $new ) { $kp = explode('|', $k, 4); $rows[] = array( 'rule (' . $kp[1] . ' ' . $kp[2] . ')', $kp[3], $new, 'device group ' . $kp[0] ); }
+            foreach( $this->renames['shared rule'] as $k => $new ) { $kp = explode('|', $k, 3); $rows[] = array( 'shared rule (' . $kp[0] . ' ' . $kp[1] . ')', $kp[2], $new, 'copied to the top device group' ); }
+            $refCount = array();
+            foreach( $this->rewrites as $r ) $refCount[$r['old']] = ( isset($refCount[$r['old']]) ? $refCount[$r['old']] : 0 ) + 1;
+            foreach( $this->objectRenames as $old => $new )
+            {
+                $types = array();
+                foreach( $this->sharedObjects as $so ) if( $so['name'] === $old && isset($so['rename']) ) $types[] = $so['path'];
+                $rows[] = array( 'shared object (' . implode(', ', $types) . ')', $old, $new, ( isset($refCount[$old]) ? $refCount[$old] : 0 ) . ' reference(s) rewritten' );
+            }
+            $o .= count($rows) ? self::table( array( 'type', 'file1 name', 'file2 name', 'note' ), $rows ) : "none\n\n";
+            if( count($this->rewrites) )
+            {
+                $byLoc = array();
+                foreach( $this->rewrites as $r ) $byLoc[$r['location']][] = $r['old'] . ' → ' . $r['new'] . ' (' . $r['path'] . ')';
+                $o .= "Rewritten references per location (full list in plan.json):\n\n";
+                foreach( $byLoc as $loc => $list )
+                    $o .= "* " . self::md($loc) . ": " . self::md( implode('; ', array_slice($list, 0, 10)) . ( count($list) > 10 ? ' … (+' . ( count($list) - 10 ) . ')' : '' ) ) . "\n";
+                $o .= "\nReferences are found by text value: a zone, user or other non-object value with the name of a renamed object would be rewritten too (zones in from / to and users are excluded) – check the list.\n\n";
+            }
+        }
         $o .= "## Shared settings (blocks without named objects, apply to all device groups)\n\n";
         $rows = array();
         foreach( $this->settings as $path => $st )
@@ -1275,8 +1599,10 @@ class PanoramaMove
         $cnt = array();
         foreach( $p['shared_objects'] as $s ) $cnt[$s['path']][$s['action']] = ( isset($cnt[$s['path']][$s['action']]) ? $cnt[$s['path']][$s['action']] : 0 ) + 1;
         $rows = array();
-        foreach( $cnt as $path => $c ) $rows[] = array( $path, isset($c['copy']) ? $c['copy'] : 0, isset($c['reuse']) ? $c['reuse'] : 0, isset($c['conflict']) ? $c['conflict'] : 0 );
-        $o .= self::table( array( 'type', 'copy', 'reuse (same value in file2)', 'conflict' ), $rows );
+        $ren = array();
+        foreach( $p['shared_objects'] as $s ) if( isset($s['name_in_file2']) ) $ren[$s['path']] = ( isset($ren[$s['path']]) ? $ren[$s['path']] : 0 ) + 1;
+        foreach( $cnt as $path => $c ) $rows[] = array( $path, isset($c['copy']) ? $c['copy'] : 0, isset($ren[$path]) ? $ren[$path] : 0, isset($c['reuse']) ? $c['reuse'] : 0, isset($c['conflict']) ? $c['conflict'] : 0 );
+        $o .= self::table( array( 'type', 'copy', 'of which renamed', 'reuse (same value in file2)', 'conflict' ), $rows );
         $o .= "Relevant objects are found by name references (text values) in the moved / copied device groups, templates and template stacks, resolved recursively; the full list is in plan.json.\n\n";
         if( isset($this->stats['validation']) )
         {

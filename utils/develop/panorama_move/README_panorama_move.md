@@ -19,6 +19,7 @@ pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt mode=execu
 | `shared-rules=skip\|to-top-dg` | shared pre / post rules of file1 that apply to moved firewalls and have no equivalent in file2: `skip` (default, lost – listed) or copied into the top moved device group(s) (pre rules at the top, post rules at the end) |
 | `shared-settings=report\|copy-missing` | shared setting blocks without named objects (`ssl-decrypt`, `response-page`, `botnet`, …): `report` (default) or copy the blocks missing in file2 – incl. the objects they reference (e.g. certificates); blocks that differ are never overwritten (they apply to all device groups of file2) |
 | `master-key=same\|different` | master key of file2 compared to file1 (stated by you – the master key is not in the configuration and cannot be checked offline). `same` (default): encrypted values (`-AQ==…`: pre-shared keys, bind / server profile passwords, private keys, SNMP, …) are copied unchanged. `different`: the fields are removed on transfer and listed in `SECRETS_CHECKLIST.md` to be set again in file2 |
+| `conflict=stop\|rename:<suffix>` | name conflicts with file2 (device group / template / template stack, shared object, rule): `stop` (default, blocking) or rename the copy in file2 to `<name><suffix>` and rewrite its references – file1 keeps its names, see below. Suffix: letters, digits, blank, `.`, `_`, `-` |
 | `accept-blocking` | execute despite blocking findings – conflicting shared objects are not copied |
 
 Exit code: 0 ok, 2 blocking findings.
@@ -71,6 +72,34 @@ references are counted in the report.
 Compare: `pan-os-php type=diff file1=B.xml file2=B_new.xml outputformatset=set_B.txt` (set commands for Panorama B),
 the same for A.
 
+## Name conflicts (`conflict=rename:<suffix>`, D4 / D5)
+
+```
+pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt conflict=rename:_A                 # check run: preview
+pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt conflict=rename:_A mode=execute
+```
+
+Only the copies in file2 are renamed, file1 is not changed (moved entries are removed from file1 as before).
+
+| conflict | renamed in file2 | references updated |
+|---|---|---|
+| device group name exists in file2 (D4) | `<dg><suffix>` | parent of moved child device groups, `readonly` parent-dg |
+| template / template stack name exists (D4) | `<name><suffix>` | template stack `templates`, device group `reference-templates` |
+| rule name of a moved device group exists in file2 shared / target parent chain | `<rule><suffix>` | – |
+| shared rule copied with `shared-rules=to-top-dg` | `<rule><suffix>` | – |
+| shared object: same name and other value, or same name space (D5) | `<object><suffix>` | every reference in the transferred configuration |
+
+Shared objects: references are text values without a type, so all relevant shared objects with the conflicting name
+are renamed together; a shared object that would be reused from file2 but references a renamed object is renamed too
+(its file2 value would differ). References in a device group whose own (or parent's) local object of the same type
+shadows the shared object are not rewritten (info). Still blocking: the new name exists already (choose another
+suffix), the name is also a local object of another type in a moved device group chain (references ambiguous – rename
+manually), firewall serials already in file2.
+
+The report lists every rename (section *Renames in file2*) and every rewritten reference with its path; the check run
+shows the same list as preview. Values of zones (`from` / `to`) and users are never rewritten; any other text value
+that equals a renamed object name would be – check the list.
+
 ## Encrypted values (master key)
 
 Values encrypted with the master key are valid only on a Panorama with the same master key. The check run lists every
@@ -85,4 +114,4 @@ values (masked); a reused object with encrypted values is listed as info.
   an address) also selects the object – it is copied, nothing breaks; listed in plan.json
 * rule equivalence by object names, not by resolved values
 * HA pairs are not visible in the Panorama configuration – check both peers are moved
-* name conflicts are reported, not renamed (D4 / D5 of the concept)
+* name conflicts are renamed only with `conflict=rename:<suffix>`; references are found by text value (see above)

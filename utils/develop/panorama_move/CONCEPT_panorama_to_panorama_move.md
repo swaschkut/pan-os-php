@@ -1,7 +1,7 @@
 # Concept: move device groups from one Panorama to another (panorama-move)
 
-Status: first version implemented (2026-11-17, branch `alpha`) – README_panorama_move.md; steps 1 – 5 of section 10 done,
-decisions D4 / D5 (rename) open.
+Status: first version implemented (2026-11-17, branch `alpha`) – README_panorama_move.md; steps 1 – 5 of section 10 done;
+D4 / D5 implemented as option `conflict=rename:<suffix>` (2026-11-17), default stays `stop`. Open: step 6 (tests).
 Script (planned): `utils/develop/panorama_move/panorama_to_panorama_move.php`, `pan-os-php type=panorama-move`.
 
 ## 1. Goal
@@ -101,10 +101,10 @@ top / post rules at the end of the top moved DG).
 
 | check | default |
 |---|---|
-| DG / template / template stack name exists in file2 | stop (D4: `conflict=rename:<suffix>` later) |
+| DG / template / template stack name exists in file2 | stop (D4: or `conflict=rename:<suffix>`) |
 | managed device serial exists in file2 | stop |
 | shared object name exists in file2 with **the same value** | reuse, nothing copied |
-| shared object name exists in file2 with **another value** | stop (D5: rename with suffix + replace references, or copy into the top moved DG) |
+| shared object name exists in file2 with **another value** | stop (D5: or `conflict=rename:<suffix>` – rename + replace references) |
 | object name of a moved DG equals a shared object of file2 (override) | warning – the effect depends on `ancestor-objects-take-precedence` of file2 (compare the setting of A and B) |
 | address vs. address group / service vs. service group same name (common namespace) | stop |
 | rule names: moved rules vs. shared rules of file2 | stop (rule names must be unique in the hierarchy) |
@@ -209,8 +209,8 @@ of shared objects masks encrypted values.
 | D1 | child DGs of a selected DG: move automatically or stop? | move automatically, report |
 | D2 | multi-vsys device split over DGs | stop |
 | D3 | shared rules of A | decided after the check run (4a): `skip` (rules lost, listed) or `to-top-dg`; the check run shows per moved firewall which A shared rules are lost and which B shared rules start to apply |
-| D4 | name conflicts DG / template / stack | stop; later `rename:<suffix>` |
-| D5 | shared object with same name, other value | stop; later rename / copy into top DG |
+| D4 | name conflicts DG / template / stack (and rule names) | done: `conflict=stop` (default) \| `conflict=rename:<suffix>` – copy in file2 renamed, references (parent DG, stack templates, reference-templates) updated |
+| D5 | shared object with same name, other value / same name space | done: with `conflict=rename:<suffix>` renamed in file2 + references rewritten; all relevant objects of that name renamed together, reused objects referencing a renamed object renamed too; blocking when the new name exists or the name is a local object of another type in a moved DG chain (README) |
 | D6 | shared objects unused before the move | keep |
 | D7 | access domains in B | report only |
 | D8 | Panorama server IPs in moved templates | report; option `panorama-ip=` |
