@@ -17,6 +17,7 @@ pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt mode=execu
 | `mode=execute` | writes `out1` / `out2` (default `<file1>_moved-out.xml`, `<file2>_moved-in.xml`); refused while there are blocking findings |
 | `target-parent-dg=` | device group of file2 that becomes the parent of the top moved device group (default shared) |
 | `shared-rules=skip\|to-top-dg` | shared pre / post rules of file1 that apply to moved firewalls and have no equivalent in file2: `skip` (default, lost – listed) or copied into the top moved device group(s) (pre rules at the top, post rules at the end) |
+| `shared-settings=report\|copy-missing` | shared setting blocks without named objects (`ssl-decrypt`, `response-page`, `botnet`, …): `report` (default) or copy the blocks missing in file2 – incl. the objects they reference (e.g. certificates); blocks that differ are never overwritten (they apply to all device groups of file2) |
 | `accept-blocking` | execute despite blocking findings – conflicting shared objects are not copied |
 
 Exit code: 0 ok, 2 blocking findings.
@@ -42,14 +43,24 @@ Exit code: 0 ok, 2 blocking findings.
   (`ancestor-objects-take-precedence`), rule names (moved rules vs. shared rules / target parent chain of file2,
   copied shared rules), master-device, Panorama server settings in moved templates, access domains, log collector
   groups, plugins, objects referenced but not defined
+* **shared settings**: every block of shared without named entries is compared (same / missing in file2 / differs /
+  only in file2)
 * **shared rule impact per moved firewall**: shared rules of file1 that apply (target / negate evaluated per serial,
   device tags counted as applying), shared rules of file2 that will apply, comparison by match (zones, addresses,
   users, applications, services, URL categories – by name) and action / profiles: covered, differs, lost, added; rules
   before / after; default security rules of both files
 
+## What is copied
+
+Device groups, templates, template stacks and managed devices are copied as complete XML entries – also the parts
+pan-os-php does not model (new rule types, template network / device settings, variables, new features). pan-os-php
+only creates the empty container (readonly id, parent-dg); the device lists keep the moved firewalls. Shared objects
+are found generically (every `entry[@name]` below shared), whatever the type. Not transferred (reported): access
+domains / admins, log collector groups, plugins, WildFire appliances, Panorama's own device configuration.
+
 ## Execute
 
-file2: shared objects → managed devices → device groups top-down (`createDeviceGroup`, readonly id / parent-dg) →
+file2: shared objects → shared setting blocks (copy-missing) → managed devices → device groups top-down (`createDeviceGroup`, readonly id / parent-dg) →
 templates → template stacks (each created through pan-os-php, then filled with the original XML) → copied shared
 rules. file1: moved device groups bottom-up, firewalls (managed devices, device / stack / template device lists, log
 collector groups), moved stacks / templates, access domain members, shared objects of the relevant set that are no

@@ -16,7 +16,7 @@ UTIL:
 * xyz.alert-only-set / BP JSON settings file | optimisation for rules of AS, VP, WF, FB and AV-Decoder
 * xyz.alert-only-set / BP JSON settings file | optimisation for spwyare dns part
 * different SP classes - move to single SecurityProfile2 defined PAN-OS version check
-* pan-os-php type=panorama-move | introduction - move device groups incl. parents, firewalls, template stacks, templates and shared objects from one Panorama XML to another, check run with shared rule impact and name problems
+* pan-os-php type=panorama-move | introduction - move device groups incl. parents, firewalls, template stacks, templates and shared objects from one Panorama XML to another, check run with shared rule impact and name problems | shared setting blocks (ssl-decrypt, response pages ...) compare / copy-missing
 
 BUGFIX:
 * SCM export after first production run / IAM patch

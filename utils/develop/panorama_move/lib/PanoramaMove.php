@@ -35,6 +35,10 @@ class PanoramaMove
     public $selected = array();
     public $targetParent = null;
     public $sharedRules = 'skip';
+    /** 'report' | 'copy-missing': shared setting blocks without named entries (ssl-decrypt, response pages, ...) */
+    public $sharedSettings = 'report';
+    /** path => array( 'node' => A node, 'status' => same|missing|differs|only-in-file2 ) */
+    public $settings = array();
 
     /** name => 'move' | 'copy' */
     public $dgAction = array();
@@ -66,8 +70,9 @@ class PanoramaMove
     );
     const SEC_MATCH = array( 'from', 'to', 'source', 'destination', 'source-user', 'application', 'service', 'category', 'negate-source', 'negate-destination', 'source-hip', 'destination-hip' );
 
-    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip' )
+    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report' )
     {
+        $this->sharedSettings = $sharedSettings;
         $this->file1 = $file1;
         $this->file2 = $file2;
         $this->A = new PanoramaConf();
@@ -154,6 +159,30 @@ class PanoramaMove
             if( $path === '' && in_array($c->nodeName, self::SKIP_CONTAINERS, TRUE) )
                 continue;
             self::objectIndex( $c, $path === '' ? $c->nodeName : $path . "/" . $c->nodeName, $out );
+        }
+        return $out;
+    }
+
+    /**
+     * setting blocks of shared: elements without named entries (e.g. ssl-decrypt, response-page, content-preview,
+     * log-settings/<singleton>) - path => DOMElement; rule bases and default-security-rules are handled elsewhere
+     */
+    public static function settingBlocks( $node, $path = '', &$out = array() )
+    {
+        if( $node === null )
+            return $out;
+        foreach( $node->childNodes as $c )
+        {
+            if( $c->nodeType != XML_ELEMENT_NODE || $c->nodeName == 'entry' )
+                continue;
+            if( $path === '' && in_array($c->nodeName, array( 'pre-rulebase', 'post-rulebase', 'default-security-rules' ), TRUE) )
+                continue;
+            $p = $path === '' ? $c->nodeName : $path . "/" . $c->nodeName;
+            $x = new DOMXPath( $c->ownerDocument );
+            if( $x->query('.//entry[@name]', $c)->length == 0 )
+                $out[$p] = $c;
+            else
+                self::settingBlocks( $c, $p, $out );
         }
         return $out;
     }
@@ -437,6 +466,7 @@ class PanoramaMove
 
         $this->checkNames();
         $this->checkRules();
+        $this->checkSettings();
         $this->collectShared();
         $this->checkOtherReferences();
         $this->checkUnresolved();
@@ -495,6 +525,36 @@ class PanoramaMove
             $this->finding( 'warning', 'setting', 'ancestor-objects-take-precedence', $pa ? 'yes' : 'no', $pb ? 'yes' : 'no', 'objects with the same name in shared and the device group resolve differently after the move' );
     }
 
+    /**
+     * shared setting blocks: they apply to every device group - compare A with B; with shared-settings=copy-missing the
+     * blocks missing in B are copied (blocks that differ are never overwritten: they apply to all device groups of B)
+     */
+    private function checkSettings()
+    {
+        $sa = self::settingBlocks( $this->A->sharedroot );
+        $sb = self::settingBlocks( $this->B->sharedroot );
+        foreach( $sa as $p => $n )
+        {
+            if( trim($n->textContent) === '' && $n->getElementsByTagName('*')->length == 0 )
+                continue;
+            $status = !isset($sb[$p]) ? 'missing' : ( self::canon($n) === self::canon($sb[$p]) ? 'same' : 'differs' );
+            $this->settings[$p] = array( 'node' => $n, 'status' => $status );
+            $value = implode( ', ', array_keys( self::tokens($n) ) );
+            if( $status == 'missing' )
+                $this->finding( 'warning', 'shared setting', $p, $value === '' ? '(set)' : substr($value, 0, 120), 'not in file2',
+                    $this->sharedSettings == 'copy-missing' ? 'copied to file2 (shared-settings=copy-missing)' : 'applies to the moved firewalls in file1 - copy with shared-settings=copy-missing or configure in file2' );
+            elseif( $status == 'differs' )
+                $this->finding( 'warning', 'shared setting', $p, substr($value, 0, 120), substr(implode(', ', array_keys(self::tokens($sb[$p]))), 0, 120),
+                    'applies to all device groups of file2 - not overwritten, align manually if the moved firewalls need the file1 value' );
+        }
+        foreach( $sb as $p => $n )
+            if( !isset($sa[$p]) && ( trim($n->textContent) !== '' || $n->getElementsByTagName('*')->length ) )
+            {
+                $this->settings[$p] = array( 'node' => null, 'status' => 'only-in-file2' );
+                $this->finding( 'info', 'shared setting', $p, 'not set', 'set in file2', 'applies to the moved firewalls after the move' );
+            }
+    }
+
     /** 3.4 shared objects: closure over the referenced names + comparison with file2 */
     private function collectShared()
     {
@@ -512,6 +572,10 @@ class PanoramaMove
             foreach( self::rules( $this->A->sharedroot, $w ) as $r )
                 if( isset($this->sharedRulesToCopy[$w . '|' . $r['type'] . '|' . $r['name']]) )
                     $roots[] = $r['node'];
+        if( $this->sharedSettings == 'copy-missing' )
+            foreach( $this->settings as $p => $st )
+                if( $st['status'] == 'missing' )
+                    $roots[] = $st['node'];
         $tokens = array();
         foreach( $roots as $r )
             self::tokens( $r, $tokens );
@@ -801,6 +865,15 @@ class PanoramaMove
         foreach( $this->sharedObjects as $o )
             if( $o['action'] == 'copy' )
                 $this->importInto( self::ensurePath($sharedB, $o['path']), $o['node'] );
+        // 1b shared setting blocks missing in file2
+        if( $this->sharedSettings == 'copy-missing' )
+            foreach( $this->settings as $p => $st )
+                if( $st['status'] == 'missing' )
+                {
+                    $parts = explode( '/', $p );
+                    array_pop( $parts );
+                    $this->importInto( count($parts) ? self::ensurePath($sharedB, implode('/', $parts)) : $sharedB, $st['node'] );
+                }
         // 2 managed devices
         $mgtA = self::mgtDevices( $A );
         $mgtB = DH::findXPathSingleEntryOrCreate( '/config/mgt-config/devices', $B->xmlroot );
@@ -1001,6 +1074,7 @@ class PanoramaMove
             'file1' => $this->file1, 'file2' => $this->file2, 'selected' => $this->selected, 'target_parent_dg' => $this->targetParent,
             'shared_rules' => $this->sharedRules, 'blocking' => count($this->blocking()),
             'device_groups' => $dgs, 'devices' => $dev, 'template_stacks' => $st, 'templates' => $tpl, 'shared_objects' => $shared,
+            'shared_settings' => array_map( function( $p, $st ) { return array( 'path' => $p, 'status' => $st['status'] ); }, array_keys($this->settings), array_values($this->settings) ),
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
     }
 
@@ -1028,6 +1102,7 @@ class PanoramaMove
             array( 'selected device groups', implode(', ', $this->selected) ),
             array( 'target parent in file2', $this->targetParent === null ? 'shared' : $this->targetParent ),
             array( 'shared rules of file1', $this->sharedRules ),
+            array( 'shared settings', $this->sharedSettings ),
             array( 'findings blocking / warning / info', $sev['blocking'] . ' / ' . $sev['warning'] . ' / ' . $sev['info'] ),
             array( 'device groups move / copy', count(array_filter($this->dgAction, function($a){ return $a == 'move'; })) . ' / ' . count(array_filter($this->dgAction, function($a){ return $a == 'copy'; })) ),
             array( 'firewalls', count($this->devices) ),
@@ -1064,6 +1139,11 @@ class PanoramaMove
             $o .= "\n";
         }
         $o .= "Default security rules: file1 `" . $this->stats['default_security_rules']['file1'] . "` – file2 `" . $this->stats['default_security_rules']['file2'] . "`\n\n";
+        $o .= "## Shared settings (blocks without named objects, apply to all device groups)\n\n";
+        $rows = array();
+        foreach( $this->settings as $path => $st )
+            $rows[] = array( $path, $st['status'] == 'missing' && $this->sharedSettings == 'copy-missing' ? 'missing in file2 – copied' : $st['status'] );
+        $o .= count($rows) ? self::table( array( 'setting', 'file1 vs. file2' ), $rows ) : "none\n\n";
         $o .= "## Shared objects\n\n";
         $cnt = array();
         foreach( $p['shared_objects'] as $s ) $cnt[$s['path']][$s['action']] = ( isset($cnt[$s['path']][$s['action']]) ? $cnt[$s['path']][$s['action']] : 0 ) + 1;

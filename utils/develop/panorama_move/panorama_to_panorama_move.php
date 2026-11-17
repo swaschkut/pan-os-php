@@ -38,6 +38,8 @@ $usage = "USAGE: php " . basename(__FILE__) . " file1=<Panorama A.xml> file2=<Pa
     . "  report=             report folder (default panorama-move-report)\n"
     . "  target-parent-dg=   parent device group in file2 for the top moved device group (default shared)\n"
     . "  shared-rules=skip|to-top-dg   shared pre / post rules of file1 (default skip = not transferred, listed)\n"
+    . "  shared-settings=report|copy-missing   shared setting blocks (ssl-decrypt, response pages, ...): report (default) or copy\n"
+    . "                      the blocks missing in file2 (blocks that differ are never overwritten)\n"
     . "  accept-blocking     execute although there are blocking findings (conflicting objects are NOT copied)\n";
 
 $args = array();
@@ -69,6 +71,12 @@ if( !in_array($sharedRules, array( 'skip', 'to-top-dg' ), TRUE) )
     fwrite( STDERR, "ERROR: shared-rules=skip|to-top-dg\n" );
     exit( 1 );
 }
+$sharedSettings = isset($args['shared-settings']) ? $args['shared-settings'] : 'report';
+if( !in_array($sharedSettings, array( 'report', 'copy-missing' ), TRUE) )
+{
+    fwrite( STDERR, "ERROR: shared-settings=report|copy-missing\n" );
+    exit( 1 );
+}
 $dgs = array();
 foreach( file($args['dg-list'], FILE_IGNORE_NEW_LINES) as $l )
 {
@@ -87,7 +95,7 @@ $out2 = isset($args['out2']) ? $args['out2'] : preg_replace('/\.xml$/i', '', $ar
 
 PH::print_stdout();
 PH::print_stdout( "*********** " . basename(__FILE__) . " (" . $mode . ") **************" );
-$m = new PanoramaMove( $args['file1'], $args['file2'], $dgs, isset($args['target-parent-dg']) ? $args['target-parent-dg'] : null, $sharedRules );
+$m = new PanoramaMove( $args['file1'], $args['file2'], $dgs, isset($args['target-parent-dg']) ? $args['target-parent-dg'] : null, $sharedRules, $sharedSettings );
 $m->check();
 
 $blocking = $m->blocking();
