@@ -39,6 +39,13 @@ class PanoramaMove
     public $sharedSettings = 'report';
     /** path => array( 'node' => A node, 'status' => same|missing|differs|only-in-file2 ) */
     public $settings = array();
+    /** 'same' | 'different': master key of file2 compared to file1 (stated by the user, not checkable offline) */
+    public $masterKey = 'same';
+    /** encrypted values (master key) in the transferred configuration: location, path, field - never the value */
+    public $secrets = array();
+
+    /** prefix of values encrypted with the master key */
+    const SECRET_PREFIX = '-AQ==';
 
     /** name => 'move' | 'copy' */
     public $dgAction = array();
@@ -70,8 +77,9 @@ class PanoramaMove
     );
     const SEC_MATCH = array( 'from', 'to', 'source', 'destination', 'source-user', 'application', 'service', 'category', 'negate-source', 'negate-destination', 'source-hip', 'destination-hip' );
 
-    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report' )
+    public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report', $masterKey = 'same' )
     {
+        $this->masterKey = $masterKey;
         $this->sharedSettings = $sharedSettings;
         $this->file1 = $file1;
         $this->file2 = $file2;
@@ -217,6 +225,9 @@ class PanoramaMove
             $t->parentNode->removeChild( $t );
         foreach( iterator_to_array($x->query('//@uuid | //@admin | //@dirtyId | //@time | //@loc | //@src')) as $a )
             $a->ownerElement->removeAttributeNode( $a );
+        // encrypted values depend on the master key - not comparable, masked
+        foreach( iterator_to_array($x->query('//text()[starts-with(normalize-space(.),"' . self::SECRET_PREFIX . '")]')) as $t )
+            $t->nodeValue = 'ENCRYPTED';
         if( !$withDescription )
             foreach( iterator_to_array($x->query('//description')) as $t )
                 $t->parentNode->removeChild( $t );
@@ -230,6 +241,44 @@ class PanoramaMove
             foreach( $m as $v ) { $e = $d->createElement('member'); $e->appendChild($d->createTextNode($v)); $p->appendChild($e); }
         }
         return $n->C14N();
+    }
+
+    /** text nodes with values encrypted with the master key below $node */
+    public static function secretNodes( $node )
+    {
+        if( $node === null )
+            return array();
+        $x = new DOMXPath( $node->ownerDocument );
+        return iterator_to_array( $x->query('.//text()[starts-with(normalize-space(.),"' . self::SECRET_PREFIX . '")]', $node) );
+    }
+
+    /** readable path of a node below $root: element names, entries as entry[name] */
+    public static function relPath( $node, $root )
+    {
+        $parts = array();
+        $n = $node->nodeType == XML_ELEMENT_NODE ? $node : $node->parentNode;
+        while( $n !== null && !$n->isSameNode($root) )
+        {
+            $parts[] = $n->nodeName == 'entry' && $n->hasAttribute('name') ? 'entry[' . $n->getAttribute('name') . ']' : $n->nodeName;
+            $n = $n->parentNode;
+        }
+        return implode( '/', array_reverse($parts) );
+    }
+
+    /** remove the elements holding encrypted values (master-key=different): they are set again in file2 */
+    public static function stripSecrets( $node )
+    {
+        $n = 0;
+        foreach( self::secretNodes( $node ) as $t )
+        {
+            $el = $t->parentNode;
+            if( $el !== null && $el->parentNode !== null )
+            {
+                $el->parentNode->removeChild( $el );
+                $n++;
+            }
+        }
+        return $n;
     }
 
     /** rules of a rulebase: array of array( type, name, node ) */
@@ -468,6 +517,7 @@ class PanoramaMove
         $this->checkRules();
         $this->checkSettings();
         $this->collectShared();
+        $this->collectSecrets();
         $this->checkOtherReferences();
         $this->checkUnresolved();
         return $this;
@@ -523,6 +573,43 @@ class PanoramaMove
         $this->stats['ancestor_objects_take_precedence'] = array( 'file1' => $pa, 'file2' => $pb );
         if( $pa !== $pb )
             $this->finding( 'warning', 'setting', 'ancestor-objects-take-precedence', $pa ? 'yes' : 'no', $pb ? 'yes' : 'no', 'objects with the same name in shared and the device group resolve differently after the move' );
+    }
+
+    /**
+     * encrypted values (pre-shared keys, bind / server profile passwords, private keys, SNMP, ...) in everything that is
+     * transferred. They are valid only on a Panorama with the same master key. master-key=same: copied unchanged;
+     * master-key=different: removed on transfer and listed to be set again in file2. Values are never decrypted or printed.
+     */
+    private function collectSecrets()
+    {
+        $roots = array();
+        $dgA = self::dgEntries( $this->A ); $tplA = self::templateEntries( $this->A ); $stA = self::stackEntries( $this->A ); $mgtA = self::mgtDevices( $this->A );
+        foreach( array_keys($this->dgAction) as $n ) $roots[] = array( 'device group ' . $n, $dgA[$n] );
+        foreach( array_keys($this->templateAction) as $n ) if( isset($tplA[$n]) ) $roots[] = array( 'template ' . $n, $tplA[$n] );
+        foreach( array_keys($this->stackAction) as $n ) $roots[] = array( 'template stack ' . $n, $stA[$n] );
+        foreach( array_keys($this->devices) as $s ) if( isset($mgtA[$s]) ) $roots[] = array( 'managed device ' . $s, $mgtA[$s] );
+        foreach( $this->sharedObjects as $o )
+            if( $o['action'] == 'copy' )
+                $roots[] = array( 'shared ' . $o['path'] . ' ' . $o['name'], $o['node'] );
+            elseif( $o['action'] == 'reuse' && count(self::secretNodes($o['node'])) )
+                $this->finding( 'info', 'encrypted value', $o['path'] . ' ' . $o['name'], 'reused from file2', 'encrypted values not compared', 'the file2 object keeps its own secret - check it is the same' );
+        if( $this->sharedSettings == 'copy-missing' )
+            foreach( $this->settings as $p => $st )
+                if( $st['status'] == 'missing' )
+                    $roots[] = array( 'shared ' . $p, $st['node'] );
+        foreach( $roots as $r )
+            foreach( self::secretNodes( $r[1] ) as $t )
+                $this->secrets[] = array( 'location' => $r[0], 'path' => self::relPath( $t, $r[1] ), 'field' => $t->parentNode->nodeName );
+        $n = count( $this->secrets );
+        $this->stats['encrypted_values'] = $n;
+        if( $n == 0 )
+            return;
+        if( $this->masterKey == 'same' )
+            $this->finding( 'warning', 'encrypted value', $n . ' encrypted value(s)', 'copied unchanged (master-key=same)', 'valid only with the same master key as file1',
+                'the master key cannot be checked offline - confirm it on both Panoramas; otherwise use master-key=different (SECRETS_CHECKLIST.md)' );
+        else
+            $this->finding( 'warning', 'encrypted value', $n . ' encrypted value(s)', 'removed on transfer (master-key=different)', 'to be set in file2 after the import',
+                'SECRETS_CHECKLIST.md lists every field; a commit in file2 reports the missing values' );
     }
 
     /**
@@ -862,9 +949,14 @@ class PanoramaMove
         $log = array();
         // 1 shared objects
         $sharedB = $B->sharedroot;
+        $strip = $this->masterKey == 'different';
+        $removed = 0;
         foreach( $this->sharedObjects as $o )
             if( $o['action'] == 'copy' )
-                $this->importInto( self::ensurePath($sharedB, $o['path']), $o['node'] );
+            {
+                $n = $this->importInto( self::ensurePath($sharedB, $o['path']), $o['node'] );
+                if( $strip ) $removed += self::stripSecrets( $n );
+            }
         // 1b shared setting blocks missing in file2
         if( $this->sharedSettings == 'copy-missing' )
             foreach( $this->settings as $p => $st )
@@ -872,14 +964,18 @@ class PanoramaMove
                 {
                     $parts = explode( '/', $p );
                     array_pop( $parts );
-                    $this->importInto( count($parts) ? self::ensurePath($sharedB, implode('/', $parts)) : $sharedB, $st['node'] );
+                    $n = $this->importInto( count($parts) ? self::ensurePath($sharedB, implode('/', $parts)) : $sharedB, $st['node'] );
+                    if( $strip ) $removed += self::stripSecrets( $n );
                 }
         // 2 managed devices
         $mgtA = self::mgtDevices( $A );
         $mgtB = DH::findXPathSingleEntryOrCreate( '/config/mgt-config/devices', $B->xmlroot );
         foreach( $this->devices as $s => $d )
             if( isset($mgtA[$s]) )
-                $this->importInto( $mgtB, $mgtA[$s] );
+            {
+                $n = $this->importInto( $mgtB, $mgtA[$s] );
+                if( $strip ) $removed += self::stripSecrets( $n );
+            }
         // readonly containers needed by createDeviceGroup / createTemplate / createTemplateStack
         if( $B->version >= 80 )
         {
@@ -920,6 +1016,7 @@ class PanoramaMove
                 $dc = self::child( $new, 'devices' );
                 if( $dc !== null ) $new->removeChild( $dc );
             }
+            if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
         }
         // 4 templates, 5 template stacks
@@ -931,6 +1028,7 @@ class PanoramaMove
             $created = self::templateEntries( $B )[$n];
             $new = $B->xmldoc->importNode( $tplA[$n], TRUE );
             $this->filterDevices( $new );
+            if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
         }
         $stA = self::stackEntries( $A );
@@ -940,6 +1038,7 @@ class PanoramaMove
             $created = self::stackEntries( $B )[$n];
             $new = $B->xmldoc->importNode( $stA[$n], TRUE );
             $this->filterDevices( $new );
+            if( $strip ) $removed += self::stripSecrets( $new );
             $created->parentNode->replaceChild( $new, $created );
         }
         // 10 shared rules of file1 into the top device groups
@@ -957,12 +1056,14 @@ class PanoramaMove
                             continue;
                         $rulesNode = self::ensurePath( $dgB[$n], $w . '/' . $r['type'] . '/rules' );
                         if( $w == 'pre-rulebase' )
-                            $this->importInto( $rulesNode, $r['node'], $rulesNode->firstChild );
+                            $nr = $this->importInto( $rulesNode, $r['node'], $rulesNode->firstChild );
                         else
-                            $rulesNode->insertBefore( $B->xmldoc->importNode($r['node'], TRUE), null );
+                            $nr = $rulesNode->insertBefore( $B->xmldoc->importNode($r['node'], TRUE), null );
+                        if( $strip ) $removed += self::stripSecrets( $nr );
                     }
             }
         }
+        $this->stats['encrypted_values_removed'] = $removed;
     }
 
     private function cleanupA()
@@ -1075,7 +1176,26 @@ class PanoramaMove
             'shared_rules' => $this->sharedRules, 'blocking' => count($this->blocking()),
             'device_groups' => $dgs, 'devices' => $dev, 'template_stacks' => $st, 'templates' => $tpl, 'shared_objects' => $shared,
             'shared_settings' => array_map( function( $p, $st ) { return array( 'path' => $p, 'status' => $st['status'] ); }, array_keys($this->settings), array_values($this->settings) ),
+            'master_key' => $this->masterKey, 'encrypted_values' => $this->secrets,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
+    }
+
+    /** checklist of the encrypted values to set in file2 (no values) */
+    public function secretsChecklist()
+    {
+        $o = "# Encrypted values to set in Panorama B\n\n";
+        $o .= "Generated " . date('Y-m-d H:i') . " – master-key=" . $this->masterKey . ". " . ( $this->masterKey == 'different'
+            ? "These fields were removed on transfer because Panorama B uses another master key. Set each value in Panorama B (CLI / web interface) before the first commit."
+            : "These fields were copied unchanged. They are valid only if Panorama B uses the same master key as Panorama A; if not, re-run with master-key=different or set them again." ) . "\n\n";
+        $by = array();
+        foreach( $this->secrets as $x ) $by[$x['location']][] = $x;
+        foreach( $by as $loc => $list )
+        {
+            $o .= "## " . $loc . "\n\n";
+            foreach( $list as $x ) $o .= "- [ ] `" . $x['path'] . "`\n";
+            $o .= "\n";
+        }
+        return $o;
     }
 
     private static function md( $s )
@@ -1103,6 +1223,7 @@ class PanoramaMove
             array( 'target parent in file2', $this->targetParent === null ? 'shared' : $this->targetParent ),
             array( 'shared rules of file1', $this->sharedRules ),
             array( 'shared settings', $this->sharedSettings ),
+            array( 'master key / encrypted values', $this->masterKey . ' / ' . count($this->secrets) . ( isset($this->stats['encrypted_values_removed']) ? ' (removed ' . $this->stats['encrypted_values_removed'] . ')' : '' ) ),
             array( 'findings blocking / warning / info', $sev['blocking'] . ' / ' . $sev['warning'] . ' / ' . $sev['info'] ),
             array( 'device groups move / copy', count(array_filter($this->dgAction, function($a){ return $a == 'move'; })) . ' / ' . count(array_filter($this->dgAction, function($a){ return $a == 'copy'; })) ),
             array( 'firewalls', count($this->devices) ),
@@ -1139,6 +1260,12 @@ class PanoramaMove
             $o .= "\n";
         }
         $o .= "Default security rules: file1 `" . $this->stats['default_security_rules']['file1'] . "` – file2 `" . $this->stats['default_security_rules']['file2'] . "`\n\n";
+        $o .= "## Encrypted values (master key)\n\n";
+        $o .= count($this->secrets) ? ( $this->masterKey == 'same'
+            ? "Copied unchanged – valid only when Panorama B uses the same master key as Panorama A. The master key cannot be read from the configuration: confirm it on both Panoramas.\n\n"
+            : "Removed on transfer – set them in Panorama B after the import (list: SECRETS_CHECKLIST.md). Values are never decrypted or written to the report.\n\n" )
+            . self::table( array( 'location', 'field', 'path' ), array_map( function($x){ return array( $x['location'], $x['field'], $x['path'] ); }, $this->secrets ) )
+            : "none\n\n";
         $o .= "## Shared settings (blocks without named objects, apply to all device groups)\n\n";
         $rows = array();
         foreach( $this->settings as $path => $st )

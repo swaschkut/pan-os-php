@@ -194,6 +194,14 @@ Order: rules / content are not touched in kept DGs.
 | scheduled config push, WildFire appliances, device certificates, collector-group | report | report |
 | logs already stored for the moved devices | stay on Panorama A / collectors | – |
 
+## 7a. Encrypted values (master key)
+
+The master key is not part of the configuration and cannot be compared offline. Encrypted values (`-AQ==`) of the
+transferred configuration are listed (location / path, never the value). `master-key=same` (default, to be confirmed on
+both Panoramas): copied unchanged. `master-key=different`: the fields are removed on transfer and listed in
+`SECRETS_CHECKLIST.md` to be set again in Panorama B. The tool never decrypts or re-encrypts values. Value comparison
+of shared objects masks encrypted values.
+
 ## 8. Decisions to take (D)
 
 | | question | proposal |

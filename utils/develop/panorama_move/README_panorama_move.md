@@ -18,6 +18,7 @@ pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt mode=execu
 | `target-parent-dg=` | device group of file2 that becomes the parent of the top moved device group (default shared) |
 | `shared-rules=skip\|to-top-dg` | shared pre / post rules of file1 that apply to moved firewalls and have no equivalent in file2: `skip` (default, lost – listed) or copied into the top moved device group(s) (pre rules at the top, post rules at the end) |
 | `shared-settings=report\|copy-missing` | shared setting blocks without named objects (`ssl-decrypt`, `response-page`, `botnet`, …): `report` (default) or copy the blocks missing in file2 – incl. the objects they reference (e.g. certificates); blocks that differ are never overwritten (they apply to all device groups of file2) |
+| `master-key=same\|different` | master key of file2 compared to file1 (stated by you – the master key is not in the configuration and cannot be checked offline). `same` (default): encrypted values (`-AQ==…`: pre-shared keys, bind / server profile passwords, private keys, SNMP, …) are copied unchanged. `different`: the fields are removed on transfer and listed in `SECRETS_CHECKLIST.md` to be set again in file2 |
 | `accept-blocking` | execute despite blocking findings – conflicting shared objects are not copied |
 
 Exit code: 0 ok, 2 blocking findings.
@@ -69,6 +70,14 @@ references are counted in the report.
 
 Compare: `pan-os-php type=diff file1=B.xml file2=B_new.xml outputformatset=set_B.txt` (set commands for Panorama B),
 the same for A.
+
+## Encrypted values (master key)
+
+Values encrypted with the master key are valid only on a Panorama with the same master key. The check run lists every
+encrypted field of the transferred configuration (location and path, never the value) in the report and in
+`SECRETS_CHECKLIST.md`. The tool does not decrypt or re-encrypt: with another master key the values are set again in
+Panorama B after the import (a commit reports the missing ones). Shared objects are compared without their encrypted
+values (masked); a reused object with encrypted values is listed as info.
 
 ## Limits (first version)
 

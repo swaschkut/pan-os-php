@@ -40,6 +40,8 @@ $usage = "USAGE: php " . basename(__FILE__) . " file1=<Panorama A.xml> file2=<Pa
     . "  shared-rules=skip|to-top-dg   shared pre / post rules of file1 (default skip = not transferred, listed)\n"
     . "  shared-settings=report|copy-missing   shared setting blocks (ssl-decrypt, response pages, ...): report (default) or copy\n"
     . "                      the blocks missing in file2 (blocks that differ are never overwritten)\n"
+    . "  master-key=same|different   master key of file2 compared to file1 (default same: encrypted values are copied\n"
+    . "                      unchanged; different: they are removed and listed in SECRETS_CHECKLIST.md to be set again)\n"
     . "  accept-blocking     execute although there are blocking findings (conflicting objects are NOT copied)\n";
 
 $args = array();
@@ -77,6 +79,12 @@ if( !in_array($sharedSettings, array( 'report', 'copy-missing' ), TRUE) )
     fwrite( STDERR, "ERROR: shared-settings=report|copy-missing\n" );
     exit( 1 );
 }
+$masterKey = isset($args['master-key']) ? $args['master-key'] : 'same';
+if( !in_array($masterKey, array( 'same', 'different' ), TRUE) )
+{
+    fwrite( STDERR, "ERROR: master-key=same|different\n" );
+    exit( 1 );
+}
 $dgs = array();
 foreach( file($args['dg-list'], FILE_IGNORE_NEW_LINES) as $l )
 {
@@ -95,7 +103,7 @@ $out2 = isset($args['out2']) ? $args['out2'] : preg_replace('/\.xml$/i', '', $ar
 
 PH::print_stdout();
 PH::print_stdout( "*********** " . basename(__FILE__) . " (" . $mode . ") **************" );
-$m = new PanoramaMove( $args['file1'], $args['file2'], $dgs, isset($args['target-parent-dg']) ? $args['target-parent-dg'] : null, $sharedRules, $sharedSettings );
+$m = new PanoramaMove( $args['file1'], $args['file2'], $dgs, isset($args['target-parent-dg']) ? $args['target-parent-dg'] : null, $sharedRules, $sharedSettings, $masterKey );
 $m->check();
 
 $blocking = $m->blocking();
@@ -119,9 +127,12 @@ if( !is_dir($reportDir) )
     mkdir( $reportDir, 0700, TRUE );
 file_put_contents( $reportDir . "/plan.json", json_encode( $m->plan(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
 file_put_contents( $reportDir . "/REPORT.md", $m->reportMarkdown($mode) );
+if( count($m->secrets) )
+    file_put_contents( $reportDir . "/SECRETS_CHECKLIST.md", $m->secretsChecklist() );
 $sev = array( 'blocking' => 0, 'warning' => 0, 'info' => 0 );
 foreach( $m->findings as $f ) $sev[$f['severity']]++;
 PH::print_stdout( " * device groups: " . count($m->dgAction) . ", firewalls: " . count($m->devices) . ", template stacks: " . count($m->stackAction) . ", templates: " . count($m->templateAction) . ", shared objects: " . count($m->sharedObjects) );
+ PH::print_stdout( " * encrypted values (master key): " . count($m->secrets) . " - master-key=" . $masterKey . ( count($m->secrets) ? ", checklist: " . $reportDir . "/SECRETS_CHECKLIST.md" : "" ) );
 PH::print_stdout( " * findings: blocking " . $sev['blocking'] . ", warning " . $sev['warning'] . ", info " . $sev['info'] );
 PH::print_stdout( " * report: " . $reportDir . "/REPORT.md, " . $reportDir . "/plan.json" );
 PH::print_stdout();
