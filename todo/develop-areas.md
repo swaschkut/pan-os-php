@@ -67,6 +67,46 @@ Open:
   with AD – groups used in rules (`source-user`) but empty or unknown in AD, disabled accounts in rules
 - own type (e.g. `type=ldap`) or part of `type=userid-mgr`
 
+### 1.4 Firewall hardware compare / platform limits
+
+Two develop folders cover the same topic and use the same data source (product comparison page on
+paloaltonetworks.com, feature keys like `58-0-59-1_dfi`):
+
+| | |
+|---|---|
+| Connected | no – nothing in `lib/` or `utils/lib/` reads `pan_max_values.json` |
+
+State:
+- plain download does not contain the values, the page loads them by JavaScript (that is why `html_manual/` exists)
+- data is from 2021: `pan_max_values.json` has no PA-1400, PA-5440 / 5445, PA-7500, PA-400R / 450R-5G – they are already
+  in the model list of `hw_request.php` but were never extracted
+- `getCounters_20111119.php` / `pan_max_values_20211119.json` are old copies
+
+Use cases for pan-os-php:
+1. **platform check of a config**: count objects / rules of a config (`type=stats`, `type=config-size`) and compare with
+   the limits of the model (from `show system info` with `in=api://`, or `model=`), e.g. "address objects 3812 of
+   5000 (76 %)"; warning above a threshold
+2. **hardware refresh / migration target**: same comparison against a target model (`target-model=`), e.g. PA-3220 →
+   PA-3410, or consolidation of several firewalls / vsys into one
+3. **compare models** side by side (`model=pa-3220,pa-3410`) – what the product page does, but offline and as
+   `exportToExcel`
+4. with EoL data (URLs below): mark models and PAN-OS versions that are end of life; together with 1.1 / 1.2 and the
+   software inventory (`inventory_sw_export.php`) a "device health" view: model, version, EoL, known issues, CVEs
+
+Open:
+- data refresh: page needs JavaScript – manual save, a headless browser, or the PDF / JSON export (`createpdf?...&wt=json`)
+- where the data lives: move `pan_max_values.json` to `lib/resources/` (like the release notes)
+- own type (e.g. `type=platform-check`) or option of `type=stats`
+- value names differ between models / page versions – needs a mapping to pan-os-php counters
+
+Sources (former `utils/develop/panos-hw-compare/todo.txt`):
+- comparison pages: https://www.paloaltonetworks.com/products/product-comparison?chosen=pa-3410 ,
+  `?chosen=pa-1410,pa-1420`, `?chosen=pa-3410,pa-3420,pa-3430,pa-3440`,
+  `?chosen=pa-5410,pa-5420,pa-5430,pa-5440,pa-5445,pa-5450`
+- PDF: https://www.paloaltonetworks.com/apps/productcompare/createpdf?language=en_US&corename=productcompare&q=product_id:%22pa-5410%22&rows=3&json.nl=map&sort=position+asc&wt=json&chosen=pa-5410
+- HW EoL: https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates
+- SW EoL: https://www.paloaltonetworks.com/services/support/end-of-life-announcements/end-of-life-summary#pan-os-panorama
+
 ## 2. Further folders
 
 | Folder | Purpose | Overlap / state | Proposal |
@@ -75,17 +115,15 @@ Open:
 | `create/` | create custom URL, DHCP reservation, interface, interface IPs, service in policy, tag, template mgmt permitted IPs, vwire | partly covered: `dhcp-server-reservation-create` (`type=dhcp`), `create` (`type=tag`), `custom-url-category-*`; no create actions for interface, vwire, permitted IP | add missing actions to existing types, remove covered scripts |
 | `cleanup_customer/` | NGFW vsys → Panorama DG, all security rules into one DG, Panorama cleanup | customer specific | generalise or archive |
 | `cisco_aci/get_epg.php` | Cisco ACI EPG info, installs the cisco plugin | – | keep in develop until needed |
-| `info_json/getCounters.php` | platform max values (copied from the product compare website), own Todo: CN firewall last entry / invalid JSON | `pan_max_values.json` dated 2021 | fix Todo; update data; possible use: `type=config-size` against platform limits |
 | `mapper/get_map_info.php` | FIB + interfaces via op commands | similar data in `type=routing` / `interface` | check if still needed |
 | `playbook/process_commands.php` | process command lists to playbook JSON | `type=playbook` exists | merge or remove |
-| `panos-hw-compare/hw_request.php` | hardware compare | URLs in "Small items" | – |
 | `ironskillet/url_categories_check.php` | read-only check of URL categories | iron-skillet now in profile classes (Done table) | check if still needed |
 | `appid/valdiation.php` | App-ID validation (*name only*, file name typo) | `type=appid-toolbox` | merge or remove |
 | `bp_config_validation/` | validate config against `validate_xpath.json` (day1 configs) | BP filters in `type=securityprofile` | decide: generic xpath check as `type=xpath` action? |
 | `certificate/importCert.php` | import certificate via API (template / vsys) | `type=certificate` has no import action | add import action |
 | `ui/` | web UI (root `index.php` redirects here) | in use | not a type; documentation only |
 | `sase/`, `scm/` | SCM | see SCM topics | – |
-| `ldap/`, `panos-release-notes/` | see 1.3 / 1.1 | | |
+| `ldap/`, `panos-release-notes/`, `panos-hw-compare/`, `info_json/` | see 1.3 / 1.1 / 1.4 | | |
 | `power/` | energy dashboard / prices | **not related to pan-os-php** | move out of the repo |
 
 ## 3. Loose scripts in `utils/develop/`
@@ -98,9 +136,10 @@ items.
 ## Open decisions
 
 1. Order: release notes (1.1) and CVE search (1.2) together first? Both answer "what does this version mean for this
-   device".
+   device". Hardware compare (1.4) answers the same for the model – possible common "device health" output.
 2. CVE search: own type or `type=device` action; data source `/json` vs. `/api`.
 3. LDAP: own type or part of `type=userid-mgr`.
 4. Superseded scripts (see [TODO-develop-scripts.md](../TODO-develop-scripts.md), `playbook/`) – remove now or after a check.
 5. `power/` – move out of the repo.
 6. `migration/` vendor scripts – which ones are worth moving to `migration/parser/`.
+7. Hardware compare: own type or option of `type=stats`; how to refresh the data.

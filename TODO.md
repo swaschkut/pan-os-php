@@ -20,6 +20,7 @@ under development.
 | SCM | API coverage: single scripts (pan.dev endpoints) vs. integrated `scm-*` types – superseded scripts, endpoints not integrated (config versions / jobs list, snippet audit logs, shared snippets, trusted tenants, deployment sites, fetch-scm-config, AIOps BPA) | inventory, decisions open | [todo/scm-api-coverage.md](todo/scm-api-coverage.md) |
 | develop / release notes | PAN-OS release notes (known / addressed issues) as `type=`; script + library + cache exist (`utils/develop/panos-release-notes`, `lib/resources/panos_release_notes`) | standalone script, not connected; known issues cache outdated (newest 11.2.5) | [todo/develop-areas.md](todo/develop-areas.md) (1.1) |
 | develop / CVE | security advisory / CVE search for a PAN-OS version (security.paloaltonetworks.com) | **new**, does not exist | [todo/develop-areas.md](todo/develop-areas.md) (1.2) |
+| develop / hardware | firewall hardware compare / platform limits: check a config against the limits of its model or a target model (HW refresh); data in `utils/develop/panos-hw-compare` + `info_json/pan_max_values.json` (2021, newer models missing) | not connected, data outdated | [todo/develop-areas.md](todo/develop-areas.md) (1.4) |
 | develop / LDAP | read AD users / groups (nested, account status); compare with firewall group mapping | 5 interactive scripts, not connected | [todo/develop-areas.md](todo/develop-areas.md) (1.3) |
 | develop | other `utils/develop` folders not connected to `type=` (migration vendors, create, certificate import, `power/`) | inventory, decisions open | [todo/develop-areas.md](todo/develop-areas.md) (2) |
 | develop | 26 loose scripts directly in `utils/develop/`: remove (covered by a type) / action / new type / keep | inventory, decisions open | [TODO-develop-scripts.md](TODO-develop-scripts.md) |
@@ -68,18 +69,6 @@ under development.
 - p2 rule filter
 - p5 rule activation – what about rule renaming and clear of rule hit count? In the past a rule rename cleared
   hit.count, nowadays not
-
-### panos-hw-compare (former `utils/develop/panos-hw-compare/todo.txt`)
-
-The plain download does not show the product information, it is loaded by JavaScript
-(`class="table table-condensed table-hover table-striped table-bordered`).
-
-- comparison pages: https://www.paloaltonetworks.com/products/product-comparison?chosen=pa-3410 ,
-  `?chosen=pa-1410,pa-1420`, `?chosen=pa-3410,pa-3420,pa-3430,pa-3440`,
-  `?chosen=pa-5410,pa-5420,pa-5430,pa-5440,pa-5445,pa-5450`
-- PDF: https://www.paloaltonetworks.com/apps/productcompare/createpdf?language=en_US&corename=productcompare&q=product_id:%22pa-5410%22&rows=3&json.nl=map&sort=position+asc&wt=json&chosen=pa-5410
-- HW EoL: https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates
-- SW EoL: https://www.paloaltonetworks.com/services/support/end-of-life-announcements/end-of-life-summary#pan-os-panorama
 
 ### SCM API (former `utils/develop/sase/scm/todo`, `utils/develop/sase/prisma_access/todo`)
 
