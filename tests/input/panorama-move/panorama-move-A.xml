@@ -226,6 +226,33 @@
               <member>any</member>
             </source-hip>
           </entry>
+          <entry name="a-to-dc">
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>shared-host1</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>ssl</member>
+            </application>
+            <service>
+              <member>application-default</member>
+            </service>
+            <action>allow</action>
+          </entry>
         </rules>
       </security>
     </pre-rulebase>

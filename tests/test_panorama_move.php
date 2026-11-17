@@ -113,6 +113,27 @@ $scenarios['leaf-dg-parent-moves'] = function() use ( $A, $Bclean ) {
     eq( cnt($a, MGT . '[@name="000007777"]'), 0, 'file1 managed device removed' );
     eq( $p['stats']['validation']['file1']['unresolved'], 0, 'file1 unresolved' );
     eq( $p['stats']['validation']['file2']['unresolved'], 0, 'file2 unresolved' );
+    // rule equivalence by resolved values: a-to-dc (shared-host1) = b-to-dc (dc-host), both 1.2.2.3
+    check( in_array('a-to-dc = b-to-dc', $p['shared_rule_impact'][0]['covered'], TRUE), 'shared rule covered by a rule to another object with the same value' );
+    eq( $p['shared_rule_impact'][0]['lost'], array(), 'no shared rule lost' );
+    eq( count($p['effective_rulebase']), 1, 'effective rule base: one group' );
+    $g = $p['effective_rulebase'][0];
+    eq( array( $g['transferred_same'], count($g['transferred_changed']), count($g['lost']), count($g['added']), $g['order_kept'] ), array( 1, 0, 0, 0, TRUE ), 'effective rule base unchanged' );
+    eq( $g['covered']['shared/pre/security/a-to-dc'], 'shared/pre/security/b-to-dc', 'effective rule base: a-to-dc covered by b-to-dc' );
+};
+
+$scenarios['override-in-target-parent'] = function() use ( $A, $Bclean ) {
+    // target parent Region-EU has a local shared-host1 (198.51.100.77): the transferred rule to shared-host1 changes
+    list( $rc, $p, $dir ) = run( 'override', array( 'FR Datacenter' ), array( 'file1=' . $A, 'file2=' . $Bclean, 'target-parent-dg=Region-EU' ) );
+    eq( $rc, 0, 'exit code (warning only)' );
+    $g = $p['effective_rulebase'][0];
+    $k = 'Datacenter-Firewalls/pre/authentication/DC Firewall level CP rules 1';
+    check( isset($g['transferred_changed'][$k]), 'transferred rule reported as changed' );
+    if( isset($g['transferred_changed'][$k]) )
+        eq( $g['transferred_changed'][$k][1], array( 'destination' => array( 'only_in_a' => array( '1.2.2.3' ), 'only_in_b' => array( '198.51.100.77' ) ) ), 'diff: destination value' );
+    eq( count(findings($p, 'warning', 'effective rule base')), 1, 'warning finding' );
+    check( strpos(@file_get_contents($dir . '/report/MIGRATION_FOLLOWUP.md'), '1 transferred rule(s) resolve differently') !== FALSE, 'follow-up item' );
+    check( strpos(@file_get_contents($dir . '/report/REPORT.md'), "destination: file1 only `1.2.2.3` – file2 only `198.51.100.77`") !== FALSE, 'report shows the values' );
 };
 
 $scenarios['parent-used-by-others-copied'] = function() use ( $A, $Bclean ) {
@@ -179,6 +200,7 @@ $scenarios['name-conflicts-stop'] = function() use ( $A, $Bconflict ) {
     check( !is_file($dir . '/B.xml'), 'execute refused - no output written' );
     $fu = @file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
     check( $fu !== FALSE && strpos($fu, 'Resolve the findings in REPORT.md: 5 blocking') !== FALSE, 'follow-up written with the blocking findings first' );
+    check( isset($p['effective_rulebase']['skipped']), 'effective rule base skipped while blocking' );
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,6 +227,20 @@ $scenarios['rename-dg-rule-objects'] = function() use ( $A, $Bconflict ) {
     eq( cnt($b, $dg . '//member[.="shared-host1" or .="shared-host2" or .="test-group2"]'), 0, 'no reference to an old name left' );
     eq( cnt($a, '//entry[contains(@name,"_A")]'), 0, 'file1 not renamed' );
     eq( $p['stats']['validation']['file2']['unresolved'], 0, 'file2 unresolved' );
+    // renamed objects keep their values: the transferred rule resolves the same; shared rule 1 of file2 has another
+    // destination (lost + added), a-to-dc is missing in file2
+    $g = $p['effective_rulebase'][0];
+    eq( array( $g['transferred_same'], count($g['transferred_changed']), $g['order_kept'] ), array( 1, 0, TRUE ), 'effective rule base: transferred rule unchanged after rename' );
+    eq( $g['lost'], array( 'shared/pre/security/shared pre rule 1', 'shared/pre/security/a-to-dc' ), 'effective rule base: lost' );
+    eq( $g['added'], array( 'shared/pre/security/shared pre rule 1', 'shared/pre/authentication/DC Firewall level CP rules 1' ), 'effective rule base: added' );
+};
+
+$scenarios['to-top-dg-copies-resolve-the-same'] = function() use ( $A, $Bconflict ) {
+    list( $rc, $p ) = run( 'totop', array( 'FR Datacenter' ), array( 'file1=' . $A, 'file2=' . $Bconflict, 'conflict=rename:_A', 'shared-rules=to-top-dg' ) );
+    eq( $rc, 0, 'exit code' );
+    $g = $p['effective_rulebase'][0];
+    eq( array( $g['transferred_same'], count($g['transferred_changed']), count($g['lost']), $g['order_kept'] ), array( 3, 0, 0, TRUE ), 'copied shared rules resolve the same, order kept' );
+    eq( array( $g['rules_before'], $g['rules_after'] ), array( 6, 8 ), 'rules before / after' );
 };
 
 $scenarios['rename-templates-stack-shared-rules'] = function() use ( $A, $Bconflict ) {

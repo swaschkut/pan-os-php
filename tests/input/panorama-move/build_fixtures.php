@@ -21,8 +21,11 @@
  *   follow-up                      access domain ad-paris (testDG, Paris_Datacenter_Stack, fw 007100000290) + admin
  *                                  paris-admin, log collector group lcg-paris, plugin sd_wan, testDG master-device
  *                                  000000000101 (not moved with testDG)
- * panorama-move-B-clean.xml    target without device groups / templates / stacks / firewalls; shared like the source
- *                              except shared address "new test 1" (missing -> copy)
+ *   a-to-dc                        shared pre rule to shared-host1 (1.2.2.3)
+ * panorama-move-B-clean.xml    target without templates / stacks / firewalls; shared like the source except shared
+ *                              address "new test 1" (missing -> copy); shared rule b-to-dc to dc-host (1.2.2.3 - same
+ *                              value as a-to-dc, other object name); device group Region-EU with a local address
+ *                              shared-host1 = 198.51.100.77 (overrides the shared object for its children)
  * panorama-move-B-conflict.xml target with the same container names, shared-host1 / shared-host2 with other values,
  *                              shared pre authentication rule "DC Firewall level CP rules 1", "shared pre rule 1" with
  *                              another destination, device group "FR Datacenter_taken"
@@ -109,6 +112,17 @@ function addDG( DOMDocument $d, DOMXPath $x, $name, $parent = null )
     return $dg;
 }
 
+/** shared pre security rule: any -> $destination, application ssl, application-default, allow */
+function securityRule( DOMDocument $d, DOMElement $shared, $name, $destination )
+{
+    $r = path( $d, $shared, 'pre-rulebase/security/rules/entry[' . $name . ']' );
+    foreach( array( 'from' => 'any', 'to' => 'any', 'source' => 'any', 'destination' => $destination, 'source-user' => 'any',
+                 'category' => 'any', 'application' => 'ssl', 'service' => 'application-default' ) as $f => $v )
+        members( $d, $r, $f, array( $v ) );
+    text( $d, $r, 'action', 'allow' );
+    return $r;
+}
+
 function addFirewall( DOMDocument $d, DOMXPath $x, DOMElement $container, $serial, $vsys = array() )
 {
     $e = path( $d, $container, 'devices/entry[' . $serial . ']' );
@@ -170,6 +184,9 @@ $lcg = path( $d, one($x, '/config/devices/entry[@name="localhost.localdomain"]')
 path( $d, $lcg, 'logfwd-setting/devices/entry[007100000290]/collector/entry[000000000901]' );
 path( $d, one($x, '/config/devices/entry[@name="localhost.localdomain"]'), 'plugins/sd_wan/devices/entry[007100000290]' );
 text( $d, $testDG, 'master-device/device', '000000000101' );
+// shared pre rule to the address shared-host1 (1.2.2.3) - file2 (clean) has an equivalent rule to an object with
+// another name and the same value (rule equivalence by resolved values)
+securityRule( $d, one($x, '/config/shared'), 'a-to-dc', 'shared-host1' );
 // multi-vsys firewall split over two device groups
 $mvl = addDG( $d, $x, 'MV-Left' );
 $mvr = addDG( $d, $x, 'MV-Right' );
@@ -190,6 +207,12 @@ removeAll( $x, '/config/readonly/devices/entry/device-group/entry | /config/read
 removeAll( $x, '/config/mgt-config/devices/entry' );
 removeAll( $x, '/config/mgt-config/access-domain/entry' );
 removeAll( $x, '/config/shared/address/entry[@name="new test 1"]' );
+// rule equivalent to a-to-dc of the source: object dc-host has another name, the same value
+text( $d, path( $d, one($x, '/config/shared/address'), 'entry[dc-host]' ), 'ip-netmask', '1.2.2.3/32' );
+securityRule( $d, one($x, '/config/shared'), 'b-to-dc', 'dc-host' );
+// possible target parent whose local object overrides the shared object shared-host1 for its children
+$eu = addDG( $d, $x, 'Region-EU' );
+text( $d, path( $d, $eu, 'address/entry[shared-host1]' ), 'ip-netmask', '198.51.100.77/32' );
 $d->save( $dir . '/panorama-move-B-clean.xml' );
 
 ////////////////////////////////////////////////////////////////////////////////

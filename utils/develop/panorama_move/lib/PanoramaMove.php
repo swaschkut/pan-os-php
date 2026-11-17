@@ -95,6 +95,12 @@ class PanoramaMove
     public $masterDevices = array();
     /** firewalls of the relevant template stacks in file1 (kept for the follow-up after file1 is cleaned): stack => [serials] */
     public $stackSerials = array();
+    /**
+     * effective rule base per moved firewall, file1 before vs. simulated file2 after the move (RuleResolver):
+     * list of groups (device group, firewalls, counts, changed / lost / added / covered / differs, order); null = skipped
+     */
+    public $rulebaseCheck = array();
+    public $rulebaseCheckSkipped = null;
 
     /** text values below these elements are never rewritten (zones, users - not shared objects) */
     const NO_REWRITE = array( 'from', 'to', 'source-user', 'reference-templates', 'master-device', 'authorization-code' );
@@ -106,7 +112,6 @@ class PanoramaMove
         'service' => 'service', 'service-group' => 'service',
         'application' => 'application', 'application-group' => 'application', 'application-filter' => 'application',
     );
-    const SEC_MATCH = array( 'from', 'to', 'source', 'destination', 'source-user', 'application', 'service', 'category', 'negate-source', 'negate-destination', 'source-hip', 'destination-hip' );
 
     public function __construct( $file1, $file2, $dgList, $targetParent = null, $sharedRules = 'skip', $sharedSettings = 'report', $masterKey = 'same', $renameSuffix = null, $panoramaIp = null )
     {
@@ -407,27 +412,6 @@ class PanoramaMove
         return $negate ? !$in : $in;
     }
 
-    /** match part / action part of a rule for the equivalence check */
-    public static function ruleSignature( $rule, $type )
-    {
-        $d = new DOMDocument();
-        $n = $d->importNode( $rule, TRUE );
-        $d->appendChild( $n );
-        $drop = array( 'description', 'tag', 'group-tag', 'target', 'disabled', 'log-setting', 'log-start', 'log-end' );
-        foreach( iterator_to_array($n->childNodes) as $c )
-            if( $c->nodeType != XML_ELEMENT_NODE || in_array($c->nodeName, $drop, TRUE) )
-                $n->removeChild( $c );
-        $match = $d->createElement('m'); $act = $d->createElement('a');
-        foreach( iterator_to_array($n->childNodes) as $c )
-        {
-            if( $type == 'security' && !in_array($c->nodeName, self::SEC_MATCH, TRUE) )
-                $act->appendChild( $c );
-            else
-                $match->appendChild( $c );
-        }
-        return array( md5(self::canon($match, FALSE)), md5(self::canon($act, FALSE)) );
-    }
-
     public static function ensurePath( DOMElement $root, $path )
     {
         $n = $root;
@@ -610,6 +594,7 @@ class PanoramaMove
         $this->collectSecrets();
         $this->checkOtherReferences();
         $this->checkUnresolved();
+        $this->verifyEffectiveRulebase();
         return $this;
     }
 
@@ -991,13 +976,24 @@ class PanoramaMove
         $dgA = self::dgEntries( $A );
         $rulesA = array( 'pre' => self::rules($A->sharedroot, 'pre-rulebase'), 'post' => self::rules($A->sharedroot, 'post-rulebase') );
         $rulesB = array( 'pre' => self::rules($B->sharedroot, 'pre-rulebase'), 'post' => self::rules($B->sharedroot, 'post-rulebase') );
-        $sigB = array();
+        // rules are compared by their resolved values (RuleResolver): file1 shared rules as the firewalls of the moved
+        // device group see them in file1, file2 shared rules as seen below the target parent in file2
+        $locB = ( $this->targetParent !== null && $B->findDeviceGroup($this->targetParent) !== null ) ? $B->findDeviceGroup($this->targetParent) : $B;
+        $sigB = array(); $sigBRule = array();
         foreach( $rulesB as $w => $list )
             foreach( $list as $r )
             {
-                list( $m, $a ) = self::ruleSignature( $r['node'], $r['type'] );
+                list( $m, $a ) = RuleResolver::signature( RuleResolver::resolve( $r['node'], $r['type'], $locB ) );
+                $sigBRule[$w . '|' . $r['type'] . '|' . $r['name']] = $m;
                 $sigB[$r['type'] . '|' . $m][] = array( 'name' => $r['name'], 'act' => $a, 'w' => $w );
             }
+        $sigACache = array();
+        $sigA = function( $dg, $w, $r ) use ( &$sigACache, $A ) {
+            $k = $dg . '|' . $w . '|' . $r['type'] . '|' . $r['name'];
+            if( !isset($sigACache[$k]) )
+                $sigACache[$k] = RuleResolver::signature( RuleResolver::resolve( $r['node'], $r['type'], $A->findDeviceGroup($dg) ) );
+            return $sigACache[$k];
+        };
         // rule names: moved / copied DG rules vs. shared rules of file2 and the target parent chain
         $namesB = array();
         foreach( $rulesB as $w => $list )
@@ -1050,7 +1046,7 @@ class PanoramaMove
                         continue;
                     if( $ap === 'tags' ) $tags[] = $r['name'];
                     $applyA[] = $w . ':' . $r['type'] . ':' . $r['name'];
-                    list( $m, $a ) = self::ruleSignature( $r['node'], $r['type'] );
+                    list( $m, $a ) = $sigA( $d['dg'], $w, $r );
                     $eq = isset($sigB[$r['type'] . '|' . $m]) ? $sigB[$r['type'] . '|' . $m] : array();
                     $same = array_filter( $eq, function($x) use ($a) { return $x['act'] === $a; } );
                     if( count($same) ) $covered[] = $r['name'] . ' = ' . array_values($same)[0]['name'];
@@ -1068,10 +1064,10 @@ class PanoramaMove
                         continue;
                     $applyB[] = $w . ':' . $r['type'] . ':' . $r['name'];
                     $found = FALSE;
-                    list( $m, $a ) = self::ruleSignature( $r['node'], $r['type'] );
+                    $m = $sigBRule[$w . '|' . $r['type'] . '|' . $r['name']];
                     foreach( $rulesA as $wa => $la )
                         foreach( $la as $ra )
-                            if( $ra['type'] == $r['type'] && self::applies($ra['node'], $serial) !== FALSE && self::ruleSignature($ra['node'], $ra['type'])[0] === $m )
+                            if( $ra['type'] == $r['type'] && self::applies($ra['node'], $serial) !== FALSE && $sigA( $d['dg'], $wa, $ra )[0] === $m )
                                 $found = TRUE;
                     if( !$found ) $added[] = $w . ' ' . $r['type'] . ' ' . $r['name'];
                 }
@@ -1256,6 +1252,135 @@ class PanoramaMove
                     $this->plugins[$pl->nodeName][] = 'firewall ' . $s;
                     $this->finding( 'warning', 'plugin', $pl->nodeName, 'references device ' . $s, 'not transferred', 'check the plugin configuration' );
                 }
+        }
+    }
+
+    /**
+     * the transfer into a fresh copy of file2, nothing written: returns the simulated file2 (reloaded) - used by the
+     * effective rule base check of the check run, identical to what execute writes
+     */
+    private function simulateB()
+    {
+        $saveB = $this->B; $saveRewrites = $this->rewrites; $saveStats = $this->stats;
+        $this->B = new PanoramaConf();
+        $this->B->load_from_file( $this->file2 );
+        $this->transfer();
+        $xml = $this->B->xmldoc->saveXML();
+        $this->B = $saveB; $this->rewrites = $saveRewrites; $this->stats = $saveStats;
+        $sim = new PanoramaConf();
+        $sim->load_from_xmlstring( $xml );
+        return $sim;
+    }
+
+    /** key of a file1 rule (RuleResolver::firewallRulebase) in file2, null when the rule is not transferred */
+    private function keyInB( $r, $dg )
+    {
+        $full = $r['rulebase'] == 'pre' ? 'pre-rulebase' : 'post-rulebase';
+        if( $r['level'] != 'shared' && isset($this->dgAction[$r['level']]) )
+        {
+            $k = $r['level'] . '|' . $full . '|' . $r['type'] . '|' . $r['name'];
+            $name = isset($this->renames['rule'][$k]) ? $this->renames['rule'][$k] : $r['name'];
+            return $this->bName( 'device group', $r['level'] ) . '/' . $r['rulebase'] . '/' . $r['type'] . '/' . $name;
+        }
+        $k = $full . '|' . $r['type'] . '|' . $r['name'];
+        if( $r['level'] == 'shared' && isset($this->sharedRulesToCopy[$k]) )
+        {
+            // copied into the top moved device group of this firewall's chain
+            $top = $dg;
+            while( $this->dgParentB[$top] !== $this->targetParent && isset($this->dgAction[$this->dgParentB[$top]]) )
+                $top = $this->dgParentB[$top];
+            $name = isset($this->renames['shared rule'][$k]) ? $this->renames['shared rule'][$k] : $r['name'];
+            return $this->bName( 'device group', $top ) . '/' . $r['rulebase'] . '/' . $r['type'] . '/' . $name;
+        }
+        return null;
+    }
+
+    /**
+     * effective rule base of every moved firewall: file1 (before) vs. the simulated file2 (after), rules resolved to their
+     * values as the firewall sees them (RuleResolver). Transferred rules (device group chain, copied shared rules) must
+     * stay the same - a difference means an object resolves to another value in file2 (e.g. an object of the target
+     * parent overrides it). Shared rules not transferred: covered / differs / lost; file2 rules not matched: added.
+     */
+    private function verifyEffectiveRulebase()
+    {
+        $this->rulebaseCheck = array();
+        if( !count($this->devices) )
+            return;
+        if( count($this->blocking()) )
+        {
+            $this->rulebaseCheckSkipped = 'blocking findings - the move cannot be simulated';
+            return;
+        }
+        $sim = $this->simulateB();
+        $views = array();
+        $groups = array();
+        foreach( $this->devices as $serial => $d )
+        {
+            $dg = $d['dg'];
+            if( !isset($views[$dg]) )
+            {
+                $locA = $this->A->findDeviceGroup( $dg );
+                $locB = $sim->findDeviceGroup( $this->bName('device group', $dg) );
+                if( $locB === null )
+                {
+                    $this->rulebaseCheckSkipped = 'device group ' . $this->bName('device group', $dg) . ' not found in the simulated file2';
+                    $this->rulebaseCheck = array();
+                    return;
+                }
+                $views[$dg] = array( RuleResolver::resolveView( RuleResolver::firewallRulebase($this->A, $locA), $locA ),
+                    RuleResolver::resolveView( RuleResolver::firewallRulebase($sim, $locB), $locB ) );
+            }
+            $va = array_values( array_filter( $views[$dg][0], function($r) use ($serial) { return self::applies($r['node'], $serial) !== FALSE; } ) );
+            $vb = array_values( array_filter( $views[$dg][1], function($r) use ($serial) { return self::applies($r['node'], $serial) !== FALSE; } ) );
+            $cmp = RuleResolver::compare( $va, $vb, function($r) use ($dg) { return $this->keyInB($r, $dg); } );
+            // file1 rules without a counterpart (shared rules not transferred) against the unmatched file2 rules
+            $byKey = array(); foreach( $vb as $r ) $byKey[$r['key']] = $r;
+            $byKeyA = array(); foreach( $va as $r ) $byKeyA[$r['key']] = $r;
+            $covered = array(); $differs = array(); $lost = array(); $usedB = array();
+            foreach( $cmp['only_a'] as $ka )
+            {
+                $sa = $byKeyA[$ka]['signature'];
+                $hit = null; $near = null;
+                foreach( $cmp['only_b'] as $kb )
+                {
+                    if( $byKey[$kb]['signature'] === $sa ) { $hit = $kb; break; }
+                    if( $near === null && $byKey[$kb]['signature'][0] === $sa[0] ) $near = $kb;
+                }
+                if( $hit !== null ) { $covered[$ka] = $hit; $usedB[$hit] = TRUE; }
+                elseif( $near !== null ) { $differs[$ka] = array( $near, RuleResolver::diff($byKeyA[$ka]['resolved'], $byKey[$near]['resolved']) ); $usedB[$near] = TRUE; }
+                else $lost[] = $ka;
+            }
+            $added = array_values( array_filter( $cmp['only_b'], function($k) use ($usedB) { return !isset($usedB[$k]); } ) );
+            // order of the transferred rules per rule type (every type is evaluated on its own): positions in file2 must
+            // keep the file1 order
+            $posB = array_flip( array_keys($byKey) );
+            $seq = array();
+            foreach( $va as $r )
+            {
+                $kb = isset($cmp['same'][$r['key']]) ? $cmp['same'][$r['key']] : ( isset($cmp['changed'][$r['key']]) ? $cmp['changed'][$r['key']][0] : null );
+                if( $kb !== null ) $seq[$r['type']][] = $posB[$kb];
+            }
+            $orderOk = TRUE;
+            foreach( $seq as $s )
+                for( $i = 1; $i < count($s); $i++ ) if( $s[$i] < $s[$i-1] ) $orderOk = FALSE;
+            $res = array( 'device_group' => $dg, 'device_group_in_file2' => $this->bName('device group', $dg),
+                'rules_before' => count($va), 'rules_after' => count($vb),
+                'transferred_same' => count($cmp['same']), 'transferred_changed' => $cmp['changed'],
+                'covered' => $covered, 'differs' => $differs, 'lost' => $lost, 'added' => $added, 'order_kept' => $orderOk );
+            $key = md5( json_encode($res) );
+            if( !isset($groups[$key]) )
+                $groups[$key] = $res + array( 'firewalls' => array() );
+            $groups[$key]['firewalls'][] = $serial;
+        }
+        $this->rulebaseCheck = array_values( $groups );
+        foreach( $this->rulebaseCheck as $g )
+        {
+            $fw = count($g['firewalls']) . ' firewall(s) of ' . $g['device_group'];
+            foreach( $g['transferred_changed'] as $ka => $c )
+                $this->finding( 'warning', 'effective rule base', $ka, $fw, 'resolves differently in file2: ' . implode(', ', array_keys($c[1])),
+                    'an object resolves to another value after the move (e.g. overridden in the target parent device group) - see REPORT.md' );
+            if( !$g['order_kept'] )
+                $this->finding( 'warning', 'effective rule base', 'rule order', $fw, 'order of the transferred rules changed', 'check the rule order in file2' );
         }
     }
 
@@ -1582,6 +1707,7 @@ class PanoramaMove
             'panorama_ip' => $this->panoramaIp, 'panorama_settings' => $this->panoramaSettings,
             'access_domains' => $this->accessDomains, 'log_collector_groups' => $this->logCollectorGroups, 'plugins' => $this->plugins,
             'master_devices_not_moved' => $this->masterDevices,
+            'effective_rulebase' => $this->rulebaseCheckSkipped !== null ? array( 'skipped' => $this->rulebaseCheckSkipped ) : $this->rulebaseCheck,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
     }
 
@@ -1633,6 +1759,13 @@ class PanoramaMove
             $o .= $li( "Names in Panorama B differ from Panorama A (conflict=rename:" . $this->renameSuffix . ", " . $this->renameCount() . " renamed) – update documentation, scripts / API calls, SIEM and monitoring that use the old names (list: REPORT.md, section Renames)" );
             if( count($this->rewrites) )
                 $o .= $li( "Review the " . count($this->rewrites) . " rewritten reference(s) in REPORT.md (references are found by text value)" );
+        }
+        foreach( $this->rulebaseCheck as $g )
+        {
+            if( count($g['transferred_changed']) )
+                $o .= $li( "**" . count($g['transferred_changed']) . " transferred rule(s) resolve differently** for the firewalls of " . $code($g['device_group_in_file2']) . " after the move – an object has another value in Panorama B (REPORT.md, effective rule base)" );
+            if( !$g['order_kept'] )
+                $o .= $li( "Rule order of the transferred rules changed for " . $code($g['device_group_in_file2']) . " – check (REPORT.md, effective rule base)" );
         }
         $lost = array();
         foreach( $this->ruleImpact as $g ) if( count($g['lost']) ) $lost[$g['device_group']] = count($g['lost']);
@@ -1778,7 +1911,7 @@ class PanoramaMove
         $o .= "## Template stacks\n\n" . self::table( array( 'template stack', 'name in file2', 'action', 'reason' ), array_map($cont, $p['template_stacks']) );
         $o .= "## Templates\n\n" . self::table( array( 'template', 'name in file2', 'action', 'reason' ), array_map($cont, $p['templates']) );
         $o .= "## Shared rules – impact per moved firewall\n\n";
-        $o .= "Shared rules: file1 pre " . $this->stats['shared_rules']['file1_pre'] . ", post " . $this->stats['shared_rules']['file1_post'] . " – file2 pre " . $this->stats['shared_rules']['file2_pre'] . ", post " . $this->stats['shared_rules']['file2_post'] . ". Rules compared by match (zones, addresses, users, applications, services, URL categories) and action / profiles by name.\n\n";
+        $o .= "Shared rules: file1 pre " . $this->stats['shared_rules']['file1_pre'] . ", post " . $this->stats['shared_rules']['file1_post'] . " – file2 pre " . $this->stats['shared_rules']['file2_pre'] . ", post " . $this->stats['shared_rules']['file2_post'] . ". Rules compared by their resolved values (RuleResolver: addresses as IP ranges, services as ports, groups expanded) – match and action / profiles.\n\n";
         $rows = array();
         foreach( $this->ruleImpact as $g )
             $rows[] = array( $g['device_group'], count($g['firewalls']) . ': ' . implode(', ', array_slice($g['firewalls'], 0, 5)) . ( count($g['firewalls']) > 5 ? ' …' : '' ),
@@ -1828,6 +1961,37 @@ class PanoramaMove
                 foreach( $byLoc as $loc => $list )
                     $o .= "* " . self::md($loc) . ": " . self::md( implode('; ', array_slice($list, 0, 10)) . ( count($list) > 10 ? ' … (+' . ( count($list) - 10 ) . ')' : '' ) ) . "\n";
                 $o .= "\nReferences are found by text value: a zone, user or other non-object value with the name of a renamed object would be rewritten too (zones in from / to and users are excluded) – check the list.\n\n";
+            }
+        }
+        $o .= "## Effective rule base per moved firewall (file1 before / file2 after)\n\n";
+        if( $this->rulebaseCheckSkipped !== null )
+            $o .= "skipped: " . self::md($this->rulebaseCheckSkipped) . "\n\n";
+        elseif( !count($this->rulebaseCheck) )
+            $o .= "no firewall is moved\n\n";
+        else
+        {
+            $o .= "Every rule reaching the firewall (shared pre, device group chain, shared post), resolved to its values as the firewall sees them – addresses to IP ranges, services to ports, groups expanded (RuleResolver). The move is simulated on a copy of file2 (check run) – the same transfer as execute.\n\n";
+            $rows = array();
+            foreach( $this->rulebaseCheck as $g )
+                $rows[] = array( $g['device_group_in_file2'], count($g['firewalls']) . ': ' . implode(', ', array_slice($g['firewalls'], 0, 5)) . ( count($g['firewalls']) > 5 ? ' …' : '' ),
+                    $g['rules_before'], $g['rules_after'], $g['transferred_same'], count($g['transferred_changed']), count($g['covered']), count($g['differs']), count($g['lost']), count($g['added']), $g['order_kept'] ? 'kept' : 'CHANGED' );
+            $o .= self::table( array( 'device group in file2', 'firewalls', 'rules before', 'rules after', 'transferred: same', 'transferred: changed', 'shared covered', 'shared differs', 'shared lost', 'added', 'order' ), $rows );
+            foreach( $this->rulebaseCheck as $g )
+            {
+                if( !count($g['transferred_changed']) && !count($g['differs']) && !count($g['lost']) && !count($g['added']) )
+                    continue;
+                $o .= "### " . $g['device_group_in_file2'] . " (" . count($g['firewalls']) . " firewall(s))\n\n";
+                foreach( $g['transferred_changed'] as $ka => $c )
+                {
+                    $o .= "* **changed**: `" . $ka . "` → `" . $c[0] . "`\n";
+                    foreach( $c[1] as $f => $dd )
+                        $o .= "  * " . $f . ": file1 only `" . implode(', ', $dd['only_in_a']) . "` – file2 only `" . implode(', ', $dd['only_in_b']) . "`\n";
+                }
+                foreach( $g['differs'] as $ka => $c )
+                    $o .= "* same match, other action / profiles: `" . $ka . "` ~ `" . $c[0] . "` (" . implode(', ', array_keys($c[1])) . ")\n";
+                if( count($g['lost']) ) $o .= "* lost (file1 shared, no equivalent in file2): `" . implode('`, `', $g['lost']) . "`\n";
+                if( count($g['added']) ) $o .= "* added (file2, newly applying): `" . implode('`, `', $g['added']) . "`\n";
+                $o .= "\n";
             }
         }
         $o .= "## Panorama server in the transferred templates / stacks (D8)\n\n";

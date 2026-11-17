@@ -26,6 +26,7 @@
 
 set_include_path(dirname(__FILE__) . '/../../../' . PATH_SEPARATOR . get_include_path());
 require_once("lib/pan_php_framework.php");
+require_once(dirname(__FILE__) . "/../../common/RuleResolver.php");
 require_once(dirname(__FILE__) . "/lib/PanoramaMove.php");
 
 $usage = "USAGE: php " . basename(__FILE__) . " file1=<Panorama A.xml> file2=<Panorama B.xml> dg-list=<file> [options]\n"

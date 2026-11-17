@@ -48,6 +48,9 @@
       <entry name="another object">
         <ip-netmask>1.1.1.1</ip-netmask>
       </entry>
+      <entry name="dc-host">
+        <ip-netmask>1.2.2.3/32</ip-netmask>
+      </entry>
     </address>
     <address-group>
       <entry name="shared-group1">
@@ -188,6 +191,33 @@
               <member>any</member>
             </source-hip>
           </entry>
+          <entry name="b-to-dc">
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>dc-host</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>ssl</member>
+            </application>
+            <service>
+              <member>application-default</member>
+            </service>
+            <action>allow</action>
+          </entry>
         </rules>
       </security>
     </pre-rulebase>
@@ -319,16 +349,28 @@
           </management>
         </setting>
       </deviceconfig>
-      <device-group/>
+      <device-group>
+        <entry name="Region-EU">
+          <address>
+            <entry name="shared-host1">
+              <ip-netmask>198.51.100.77/32</ip-netmask>
+            </entry>
+          </address>
+        </entry>
+      </device-group>
       <template/>
       <template-stack/>
     </entry>
   </devices>
   <readonly>
-    <max-internal-id>98</max-internal-id>
+    <max-internal-id>99</max-internal-id>
     <devices>
       <entry name="localhost.localdomain">
-        <device-group/>
+        <device-group>
+          <entry name="Region-EU">
+            <id>99</id>
+          </entry>
+        </device-group>
         <template/>
         <template-stack/>
       </entry>

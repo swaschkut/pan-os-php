@@ -3,7 +3,8 @@
 Status: first version implemented (2026-11-17, branch `alpha`) – README_panorama_move.md; steps 1 – 5 of section 10 done;
 D4 / D5 implemented as option `conflict=rename:<suffix>` (2026-11-17), default stays `stop`; step 6 done
 (`tests/test_panorama_move.php`, fixtures `tests/input/panorama-move/`); D8 (`panorama-ip=`) and the follow-up checklist
-`MIGRATION_FOLLOWUP.md` (report-only places of section 7) done.
+`MIGRATION_FOLLOWUP.md` (report-only places of section 7) done; rule comparison by resolved values + effective rule
+base check (section 4a) done with `utils/common/RuleResolver.php` – shared class, to be used by `type=rule-compare`.
 Script (planned): `utils/develop/panorama_move/panorama_to_panorama_move.php`, `pan-os-php type=panorama-move`.
 
 ## 1. Goal
@@ -127,8 +128,8 @@ The check run is the basis for the decisions D1 – D9.
 | A shared rules that apply to moved firewalls | per rule: pre / post, position, name, action, target (rules with `target` only for the serials they include, negate honoured), disabled; count per moved DG |
 | A shared rules that no longer apply after the move | the same list – these rules are **lost** for the moved firewalls with `shared-rules=skip` |
 | B shared rules that will newly apply | all B shared pre / post rules with target `any` or a target that includes moved serials (normally none) – count, names, action |
-| equivalent rules | A shared rule ↔ B shared rule with the same match and action (source / destination / application / service / user / zones / profiles after object resolution) → "covered"; similar rules (same match, other action / profile) → "differs" |
-| effective rulebase per moved firewall | before: rulebase of the firewall in A (shared pre + DG hierarchy pre + DG hierarchy post + shared post); after: in B (with the D3 option) – resolved per firewall like `type=rule-compare resolvemode=firewall` (alpha, `RULE_COMPARE.php buildFirewallView()`), the difference listed per firewall |
+| equivalent rules | done (resolved values, `utils/common/RuleResolver.php`): A shared rule ↔ B shared rule with the same match and action (source / destination as IPv4 / IPv6 ranges, services as ports, applications with groups expanded, users, zones, profiles resolved) → "covered"; same match, other action / profile → "differs" |
+| effective rulebase per moved firewall | done: before = rule base of the firewall in A (shared pre + DG hierarchy pre + DG hierarchy post + shared post), after = in the simulated B (the transfer of execute on a copy of file2, with the D3 option and renames) – resolved per firewall with RuleResolver (same name resolution as `type=rule-compare resolvemode=firewall`); transferred rules that resolve differently → warning, order per rule type checked |
 | default rules | `default-security-rules` (intrazone / interzone) of A shared vs. B shared vs. the moved DGs |
 
 Result per moved firewall: number of rules before / after, rules lost, rules added, rules with a different result.
