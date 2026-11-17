@@ -968,7 +968,14 @@ function &sortArrayByStartValue(&$arrayToSort)
         $tmp[$incl['start']][] = $incl;
     }
     unset($incl);
-    ksort($tmp, SORT_NUMERIC);
+    // IPv6 start values are 128 bit integers as decimal strings: SORT_NUMERIC would compare them as float
+    $exact = FALSE;
+    foreach( array_keys($tmp) as $k )
+        if( !is_int($k) ) { $exact = TRUE; break; }
+    if( $exact )
+        uksort($tmp, array('cidr', 'ipCmp'));
+    else
+        ksort($tmp, SORT_NUMERIC);
     foreach( $tmp as $start => &$ends )
     {
         foreach( $ends as &$end )

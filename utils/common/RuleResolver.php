@@ -209,9 +209,7 @@ class RuleResolver
     {
         if( !count($names) || in_array('any', $names, TRUE) )
             return array( 'any' );
-        // IPv6 ranges are merged here: IPMap::sortAndRecalculate() compares the 128 bit values as floats (pan-os-php
-        // sortArrayByStartValue() / '+ 1'), which mixes up neighbouring IPv6 addresses
-        $m4 = new IP4Map(); $m6 = array(); $other = array();
+        $m4 = new IP4Map(); $m6 = new IP6Map(); $other = array();
         foreach( $names as $n )
         {
             $o = PH::resolveNameForFirewalls( 'addressStore', $n, $location );
@@ -227,19 +225,21 @@ class RuleResolver
             foreach( $leaves as $leaf )
                 self::addLeaf( $leaf, $m4, $m6, $other );
         }
+        // IPv6: exact since cidr::ipCmp() (128 bit values were compared as float before)
         $out = array();
-        $m4->sortAndRecalculate();
-        $s = $m4->dumpToString();
-        if( $s !== '' )
-            foreach( explode(',', $s) as $e ) $out[] = $e;
-        foreach( self::mergeBig( $m6 ) as $r )
-            $out[] = self::bigCmp($r[0], $r[1]) == 0 ? cidr::inet_itop($r[0]) : cidr::inet_itop($r[0]) . '-' . cidr::inet_itop($r[1]);
+        foreach( array( $m4, $m6 ) as $m )
+        {
+            $m->sortAndRecalculate();
+            $s = $m->dumpToString();
+            if( $s !== '' )
+                foreach( explode(',', $s) as $e ) $out[] = $e;
+        }
         $other = array_keys( $other );
         sort( $other );
         return array_merge( $out, $other );
     }
 
-    private static function addLiteral( $text, IP4Map $m4, array &$m6 )
+    private static function addLiteral( $text, IP4Map $m4, IP6Map $m6 )
     {
         $t = trim( $text );
         $isRange = strpos($t, '-') !== FALSE;
@@ -252,14 +252,13 @@ class RuleResolver
         }
         if( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== FALSE )
         {
-            foreach( IP6Map::mapFromText($t)->getMapArray() as $e )
-                $m6[] = array( (string)$e['start'], (string)$e['end'] );
+            $m6->addMap( IP6Map::mapFromText($t), TRUE );
             return TRUE;
         }
         return FALSE;
     }
 
-    private static function addLeaf( $leaf, IP4Map $m4, array &$m6, array &$other )
+    private static function addLeaf( $leaf, IP4Map $m4, IP6Map $m6, array &$other )
     {
         if( method_exists($leaf, 'isEDL') && $leaf->isEDL() )
         {
@@ -407,46 +406,6 @@ class RuleResolver
 
     ////////////////////////////////////////////////////////////////////////////////
     // helpers
-
-    /** compare two non-negative integers given as decimal strings (128 bit IPv6 values) */
-    public static function bigCmp( $a, $b )
-    {
-        $a = ltrim( (string)$a, '0' ); $b = ltrim( (string)$b, '0' );
-        if( strlen($a) != strlen($b) )
-            return strlen($a) < strlen($b) ? -1 : 1;
-        return strcmp( $a, $b ) <=> 0;
-    }
-
-    /** decimal string + 1 */
-    public static function bigInc( $a )
-    {
-        $a = (string)$a;
-        for( $i = strlen($a) - 1; $i >= 0; $i-- )
-        {
-            if( $a[$i] != '9' )
-                return substr($a, 0, $i) . chr( ord($a[$i]) + 1 ) . str_repeat('0', strlen($a) - $i - 1);
-        }
-        return '1' . str_repeat( '0', strlen($a) );
-    }
-
-    /** merge ranges array( start, end ) of decimal strings - overlapping and adjacent ranges are joined */
-    public static function mergeBig( array $ranges )
-    {
-        usort( $ranges, function( $x, $y ) { return self::bigCmp($x[0], $y[0]); } );
-        $out = array();
-        foreach( $ranges as $r )
-        {
-            $n = count( $out );
-            if( $n && self::bigCmp( $r[0], self::bigInc($out[$n-1][1]) ) <= 0 )
-            {
-                if( self::bigCmp( $r[1], $out[$n-1][1] ) > 0 )
-                    $out[$n-1][1] = $r[1];
-            }
-            else
-                $out[] = $r;
-        }
-        return $out;
-    }
 
     /** member values, or the text of an element without members */
     public static function values( $node )

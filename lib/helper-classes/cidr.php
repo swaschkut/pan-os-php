@@ -21,6 +21,78 @@
 
 class cidr
 {
+    /**
+     * Exact comparison of two IP values: IPv4 values are int (ip2long), IPv6 values are 128 bit integers as decimal
+     * strings (inet_ptoi). PHP compares numeric strings beyond PHP_INT_MAX - and '+ 1' / '- 1' on them - as float, which
+     * makes neighbouring IPv6 addresses equal; these helpers never convert to float.
+     * @param int|string $a
+     * @param int|string $b
+     * @return int -1, 0, 1
+     */
+    static public function ipCmp($a, $b)
+    {
+        if( is_int($a) && is_int($b) )
+            return $a <=> $b;
+        $a = ltrim( self::ipToString($a), '0' );
+        $b = ltrim( self::ipToString($b), '0' );
+        if( strlen($a) != strlen($b) )
+            return strlen($a) < strlen($b) ? -1 : 1;
+        return strcmp($a, $b) <=> 0;
+    }
+
+    /**
+     * IP value + 1 (int stays int, decimal string stays string)
+     * @param int|string $a
+     * @return int|string
+     */
+    static public function ipInc($a)
+    {
+        if( is_int($a) && $a < PHP_INT_MAX )
+            return $a + 1;
+        $a = self::ipToString($a);
+        if( function_exists('bcadd') )
+            return bcadd($a, '1', 0);
+        for( $i = strlen($a) - 1; $i >= 0; $i-- )
+            if( $a[$i] != '9' )
+                return substr($a, 0, $i) . chr(ord($a[$i]) + 1) . str_repeat('0', strlen($a) - $i - 1);
+        return '1' . str_repeat('0', strlen($a));
+    }
+
+    /**
+     * IP value - 1 (int stays int, decimal string stays string); 0 - 1 is not defined for IP values and returns 0
+     * @param int|string $a
+     * @return int|string
+     */
+    static public function ipDec($a)
+    {
+        if( is_int($a) )
+            return $a > 0 ? $a - 1 : 0;
+        $a = self::ipToString($a);
+        if( ltrim($a, '0') === '' )
+            return '0';
+        if( function_exists('bcsub') )
+            return bcsub($a, '1', 0);
+        for( $i = strlen($a) - 1; $i >= 0; $i-- )
+            if( $a[$i] != '0' )
+            {
+                $r = substr($a, 0, $i) . chr(ord($a[$i]) - 1) . str_repeat('9', strlen($a) - $i - 1);
+                $r = ltrim($r, '0');
+                return $r === '' ? '0' : $r;
+            }
+        return '0';
+    }
+
+    /** IP value as decimal string; a float (from older arithmetic) is converted without exponent - already imprecise */
+    static private function ipToString($a)
+    {
+        if( is_int($a) )
+            return (string)$a;
+        if( is_float($a) )
+            return number_format($a, 0, '', '');
+        $a = trim((string)$a);
+        return $a === '' ? '0' : $a;
+    }
+
     // convert cidr to netmask
     // e.g. 21 = 255.255.248.0
     static public function cidr2netmask($cidr)
@@ -284,14 +356,17 @@ class cidr
             $refBroadcast = $res['end'];
         }
 
-        if( $subNetwork >= $refNetwork && $subBroadcast <= $refBroadcast )
+        // exact for IPv6 (decimal strings) - see ipCmp()
+        $ge = function( $a, $b ) { return cidr::ipCmp($a, $b) >= 0; };
+        $le = function( $a, $b ) { return cidr::ipCmp($a, $b) <= 0; };
+        if( $ge($subNetwork, $refNetwork) && $le($subBroadcast, $refBroadcast) )
         {
             //print "sub $sub is included in $ref\n";
             return 1;
         }
-        if( $subNetwork >= $refNetwork && $subNetwork <= $refBroadcast ||
-            $subBroadcast >= $refNetwork && $subBroadcast <= $refBroadcast ||
-            $subNetwork <= $refNetwork && $subBroadcast >= $refBroadcast )
+        if( $ge($subNetwork, $refNetwork) && $le($subNetwork, $refBroadcast) ||
+            $ge($subBroadcast, $refNetwork) && $le($subBroadcast, $refBroadcast) ||
+            $le($subNetwork, $refNetwork) && $ge($subBroadcast, $refBroadcast) )
         {
             //print "sub $sub is included in $ref\n";
             return 2;

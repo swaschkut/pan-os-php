@@ -175,8 +175,8 @@ output XML files and that no encrypted value appears in a report.
 * rule values (RuleResolver): addresses → IPv4 / IPv6 ranges (FQDN, EDL, region by name), services → ports,
   application groups expanded (application filters by name), profile groups → profiles, other fields as configured
   (zones, users, URL categories by name); rules that do not apply because of device tags are counted as applying
-* IPv6 ranges are merged in RuleResolver: pan-os-php `IPMap::sortAndRecalculate()` / `sortArrayByStartValue()` compare
-  128 bit values as floats and can merge neighbouring IPv6 ranges wrongly (library, not changed here)
+* IPv6 ranges: exact since the library fix (`cidr::ipCmp()` – 128 bit values were compared as float before), see
+  `tests/test_ipmap.php`
 * HA pairs are not visible in the Panorama configuration – check both peers are moved
 * name conflicts are renamed only with `conflict=rename:<suffix>`; references are found by text value (see above)
 * plugins (SD-WAN, …) and WildFire appliances are reported, not transferred or changed

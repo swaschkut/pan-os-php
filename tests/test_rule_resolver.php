@@ -129,12 +129,6 @@ eq( array( array_keys($cmp['changed']), $cmp['only_a'], $cmp['only_b'] ), array(
 $cmp = RuleResolver::compare( $va, $vb, array( $va[1]['key'] => 'renamed' ) );
 eq( count($cmp['only_a']) + count($cmp['only_b']), 0, 'key map' );
 
-print "  big numbers\n";
-eq( RuleResolver::bigCmp( '42540766411282592856903984951653826560', '42540766411282592856903984951653826561' ), -1, 'bigCmp' );
-eq( RuleResolver::bigInc( '1999' ), '2000', 'bigInc carry' );
-eq( RuleResolver::bigInc( '999' ), '1000', 'bigInc new digit' );
-eq( RuleResolver::mergeBig( array( array('5','9'), array('1','3'), array('4','4'), array('11','12') ) ), array( array('1','9'), array('11','12') ), 'mergeBig' );
-
 function check_ne( $a, $b, $msg ) { eq( $a !== $b, TRUE, $msg ); }
 
 print "\n" . $checks . " checks, " . count($failed) . " failed\n";
