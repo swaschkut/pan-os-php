@@ -17,6 +17,7 @@ under development.
 | SCM | gap remediation: visibility / best practice fixes as reviewable API change files | draft for discussion | [todo/scm-gap-remediation.md](todo/scm-gap-remediation.md) |
 | SCM / Prisma Access | lifecycle from requirements to maturity report | draft; steps A + B as first version (`type=scm-report`) | [todo/scm-prisma-access-lifecycle.md](todo/scm-prisma-access-lifecycle.md) |
 | SCM / Prisma Access | `scm_pa_export.php`: next steps, verification against a live tenant | open: live verification | [todo/scm-pa-export-next-steps.md](todo/scm-pa-export-next-steps.md) |
+| SCM | API coverage: single scripts (pan.dev endpoints) vs. integrated `scm-*` types – superseded scripts, endpoints not integrated (config versions / jobs list, snippet audit logs, shared snippets, trusted tenants, deployment sites, fetch-scm-config, AIOps BPA) | inventory, decisions open | [todo/scm-api-coverage.md](todo/scm-api-coverage.md) |
 | object merger | remaining object types: section B items 9 (data objects) and 10 (GTP, SCEP, packet broker, SD-WAN profiles) – only when needed; section D: duplicate report for template objects (certificates, certificate profiles, SSL/TLS service profiles) | open | [todo/done/merger-missing-object-types.md](todo/done/merger-missing-object-types.md) (sections B, D) |
 
 ## Done
@@ -27,6 +28,7 @@ under development.
 | best practice | Iron-Skillet / BP day one config (also via API) | iron-skillet XML in the profile classes (`ironSkilletXml()`: antivirus, anti-spyware, vulnerability, URL, file blocking, WildFire, virus-and-wildfire-analysis, DNS security, log forwarding, zone protection); `type=device` actions `sp_spg-create-BP`, `sp_spg-create-alert-only-BP`, `LogForwardingProfile-create-BP`, `ZPP-create-BP`, `CleanUpRule-create-BP`, `DefaultSecurityRule-create-BP`; with `in=api://` the objects are sent by `API_sync()` | – |
 | best practice | security profile best practice filter | `type=securityprofile securityprofiletype=<type> 'filter=(<field> is.best-practice)'`, field per profile type: `av`, `as`, `vp`, `wf`, `url`, `fb`, `avwf`, `dnssec`, `dns-security`, `dns-list`, `cloud-inline-analysis` and sub fields (`av.action`, `as.rules`, `vp.mica-engine`, …); also `is.visibility` / `is.adoption`; data filtering (`df`): `is.visibility` / `is.adoption` only | – |
 | best practice | security profile export with best practice | `type=securityprofile actions=exportToExcel:file.html,BestPractice\|Visibility\|Adoption` – columns `BP SP`, `BP rules`, `BP mica-engine`, … | – |
+| SCM / Prisma Access | Prisma Access public IPs (`getPrismaAccessIP/v2`) | `scm-export` area `infra`, `92_egress-ip.json` (`egressip-env=`, API key) | [todo/scm-api-coverage.md](todo/scm-api-coverage.md) |
 
 ## Small items
 
@@ -76,25 +78,9 @@ The plain download does not show the product information, it is loaded by JavaSc
 
 ### SCM API (former `utils/develop/sase/scm/todo`, `utils/develop/sase/prisma_access/todo`)
 
-- list jobs: https://api.strata.paloaltonetworks.com/config/operations/v1/jobs
-- list config versions: https://api.strata.paloaltonetworks.com/config/operations/v1/config-versions
-- `/config/setup/v1/snippet-audit-logs`
-- Prisma Access public IPs – API examples:
-  https://docs.paloaltonetworks.com/prisma-access/administration/prisma-access-setup/api-examples-for-retrieving-prisma-access-ip-addresses
-  and https://docs.paloaltonetworks.com/prisma-access/administration/prisma-access-setup/retrieve-ip-addresses-for-prisma-access
-  – Prisma Access (managed by Strata Cloud Manager): Configuration › NGFW and Prisma Access › Configuration Scope
-  Prisma Access › Prisma Access Infrastructure › Infrastructure Settings:
-
-  ```
-  curl -X POST -d @option.txt -H "header-api-key: {API-KEY}" "https://api.lab.datapath.prismaaccess.com/getPrismaAccessIP/v2"
-
-  option.txt
-  {
-    "serviceType": "all",
-    "addrType": "all",
-    "location": "all"
-  }
-  ```
+Moved to [todo/scm-api-coverage.md](todo/scm-api-coverage.md): list jobs (`/config/operations/v1/jobs`), list config
+versions (`/config/operations/v1/config-versions`), `/config/setup/v1/snippet-audit-logs`; Prisma Access public IPs
+are done (see Done).
 
 ### UI diagram (former `utils/develop/ui/html/diagram/todo`)
 
