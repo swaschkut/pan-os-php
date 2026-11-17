@@ -46,6 +46,16 @@ Exit code: 0 ok, 2 blocking findings.
   (`ancestor-objects-take-precedence`), rule names (moved rules vs. shared rules / target parent chain of file2,
   copied shared rules), master-device, Panorama server settings in moved templates, access domains, log collector
   groups, plugins, objects referenced but not defined
+* **objects referenced but not defined** (warning `unresolved`): addresses / services (pan-os-php tmp objects) and, on
+  the XML of file1 as stored, the other named references of the rules of the moved / copied device groups – tags,
+  schedules, log forwarding profiles, security profiles, profile groups (and the profiles inside), URL categories
+  (custom, EDL, predefined) – resolved along the device group chain up to shared, then against the predefined names
+  of pan-os-php (`lib/object-classes/predefined.xml`)
+* **content** (App-ID / threats): applications (also inside application groups) and the threat IDs of the threat
+  exceptions of vulnerability / anti-spyware profiles. Unknown to pan-os-php (neither custom nor predefined) → warning
+  `content` (typo or newer content); the predefined applications / threat IDs used are listed in `plan.json`
+  (`content`) and the follow-up asks for the same or a newer content version on Panorama B – the content version is
+  not part of the configuration and cannot be compared offline
 * **shared settings**: every block of shared without named entries is compared (same / missing in file2 / differs /
   only in file2)
 * **shared rule impact per moved firewall**: shared rules of file1 that apply (target / negate evaluated per serial,
@@ -75,7 +85,8 @@ templates → template stacks (each created through pan-os-php, then filled with
 rules. file1: moved device groups bottom-up, firewalls (managed devices, device / stack / template device lists, log
 collector groups), moved stacks / templates, access domain members, shared objects of the relevant set that are no
 longer referenced (objects that were unused before stay). Both outputs are reloaded with pan-os-php; unresolved
-references are counted in the report.
+references (address / service tmp objects and the named references of the check run, all device groups) are counted
+in the report.
 
 Compare: `pan-os-php type=diff file1=B.xml file2=B_new.xml outputformatset=set_B.txt` (set commands for Panorama B),
 the same for A.
@@ -177,6 +188,7 @@ output XML files and that no encrypted value appears in a report.
   (zones, users, URL categories by name); rules that do not apply because of device tags are counted as applying
 * IPv6 ranges: exact since the library fix (`cidr::ipCmp()` – 128 bit values were compared as float before), see
   `tests/test_ipmap.php`
-* HA pairs are not visible in the Panorama configuration – check both peers are moved
+* HA pairs: both peers are in the moved device group(s) and move with it – HA itself is not part of the Panorama
+  configuration and not checked
 * name conflicts are renamed only with `conflict=rename:<suffix>`; references are found by text value (see above)
 * plugins (SD-WAN, …) and WildFire appliances are reported, not transferred or changed

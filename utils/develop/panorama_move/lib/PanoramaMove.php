@@ -101,6 +101,14 @@ class PanoramaMove
      */
     public $rulebaseCheck = array();
     public $rulebaseCheckSkipped = null;
+    /**
+     * content (App-ID / threats) used by the transferred configuration: predefined application names and threat IDs,
+     * names unknown to pan-os-php - Panorama B needs a content version that contains them (not in the configuration)
+     */
+    public $content = array( 'applications' => array(), 'threat_ids' => array(), 'unknown_applications' => array(), 'unknown_threat_ids' => array() );
+
+    /** predefined names of pan-os-php (lib/object-classes/predefined.xml), read on first use */
+    private static $predefined = null;
 
     /** text values below these elements are never rewritten (zones, users - not shared objects) */
     const NO_REWRITE = array( 'from', 'to', 'source-user', 'reference-templates', 'master-device', 'authorization-code' );
@@ -514,7 +522,6 @@ class PanoramaMove
                 foreach( self::deviceSerials($e) as $s )
                     if( isset($this->devices[$s]) )
                         $this->finding( 'blocking', 'device', $s, 'vsys in moved device group ' . $this->devices[$s]['dg'] . ' and in kept device group ' . $n, '', 'a firewall can only be managed by one Panorama (D2)' );
-        $this->finding( 'info', 'device', count($this->devices) . ' firewall(s)', 'HA pairs are not visible in the Panorama configuration', '', 'make sure both HA peers are in the moved device groups' );
 
         // 3.3 template stacks / templates
         $stacksA = self::stackEntries( $A );
@@ -1384,9 +1391,13 @@ class PanoramaMove
         }
     }
 
-    /** objects referenced by the relevant device groups that pan-os-php cannot resolve in file1 (tmp objects) */
+    /**
+     * objects referenced by the relevant device groups that resolve neither in their device group hierarchy nor in
+     * shared of file1 nor as predefined name (concept 4a / 11.2), and the content they need (concept 4 / 11.1)
+     */
     private function checkUnresolved()
     {
+        // address / service: pan-os-php object model (tmp objects)
         foreach( array_keys($this->dgAction) as $n )
         {
             $dg = $this->A->findDeviceGroup( $n );
@@ -1397,6 +1408,240 @@ class PanoramaMove
                 if( $o->isTmpSrv() )
                     $this->finding( 'warning', 'unresolved', 'service ' . $o->name(), 'device group ' . $n, '', 'object is referenced but not defined' );
         }
+
+        // other named references: XML of file1 as stored - loading with pan-os-php creates missing tags in the DOM
+        $raw = self::rawDocument( $this->file1 );
+        $used = array();
+        $list = self::unresolvedRefs( $raw, $this->A, array_keys($this->dgAction), $used );
+        $appVersion = self::predefined('version');
+        foreach( $list as $u )
+        {
+            if( $u['kind'] == 'application' )
+            {
+                $this->content['unknown_applications'][$u['name']] = TRUE;
+                $this->finding( 'warning', 'content', 'application ' . $u['name'], 'device group ' . $u['dg'] . ', ' . $u['where'], '',
+                    'neither a custom application / group / filter nor a predefined application of pan-os-php (content ' . $appVersion . '): typo, or newer content - Panorama B needs a content version that knows it' );
+            }
+            elseif( $u['kind'] == 'threat' )
+            {
+                $this->content['unknown_threat_ids'][$u['name']] = TRUE;
+                $this->finding( 'warning', 'content', 'threat ID ' . $u['name'], 'device group ' . $u['dg'] . ', ' . $u['where'], '',
+                    'neither a custom threat signature nor a predefined threat of pan-os-php: newer content - Panorama B needs a content version that knows it' );
+            }
+            else
+                $this->finding( 'warning', 'unresolved', $u['kind'] . ' ' . $u['name'], 'device group ' . $u['dg'] . ', ' . $u['where'], '', 'object is referenced but not defined' );
+        }
+        // array keys: numeric names (threat IDs) become integers - keep strings
+        $this->content['applications'] = isset($used['application']) ? array_map( 'strval', array_keys($used['application']) ) : array();
+        $this->content['threat_ids'] = isset($used['threat']) ? array_map( 'strval', array_keys($used['threat']) ) : array();
+        sort( $this->content['applications'] ); sort( $this->content['threat_ids'], SORT_NATURAL );
+        $this->content['unknown_applications'] = array_map( 'strval', array_keys( $this->content['unknown_applications'] ) );
+        $this->content['unknown_threat_ids'] = array_map( 'strval', array_keys( $this->content['unknown_threat_ids'] ) );
+        $this->stats['content'] = array( 'pan_os_php_application_version' => $appVersion,
+            'predefined_applications' => count($this->content['applications']), 'threat_ids' => count($this->content['threat_ids']),
+            'unknown_applications' => count($this->content['unknown_applications']), 'unknown_threat_ids' => count($this->content['unknown_threat_ids']) );
+        if( count($this->content['applications']) || count($this->content['threat_ids']) )
+            $this->finding( 'info', 'content', count($this->content['applications']) . ' predefined application(s), ' . count($this->content['threat_ids']) . ' threat ID(s)',
+                'used by the transferred configuration', 'content version of file2 is not part of the configuration',
+                'Panorama B needs the same or a newer App-ID / threat content version than Panorama A (list in plan.json)' );
+    }
+
+    /** XML file as stored, without pan-os-php (no implicit objects) */
+    public static function rawDocument( $file )
+    {
+        $d = new DOMDocument();
+        if( !@$d->load( $file, XML_PARSE_BIG_LINES ) )
+            derr( "cannot load '" . $file . "'", null, FALSE );
+        return $d;
+    }
+
+    /**
+     * predefined names of pan-os-php: 'application' (incl. application containers), 'threat' (IDs), 'category' (URL),
+     * 'profiles/<type>' (security profiles), 'version' (App-ID content version of predefined.xml)
+     */
+    public static function predefined( $kind )
+    {
+        if( self::$predefined === null )
+        {
+            $p = array( 'application' => array(), 'threat' => array(), 'category' => array(), 'version' => '' );
+            $add = function( $k ) use ( &$p ) { return function( $name ) use ( &$p, $k ) { $p[$k][$name] = TRUE; }; };
+            PH::eachPredefinedEntry( array( 'application' ), $add('application'), FALSE );
+            PH::eachPredefinedEntry( array( 'application-container' ), $add('application'), FALSE );
+            foreach( array( 'phone-home', 'vulnerability', 'scan', 'test-spyware', 'test-vuln' ) as $t )
+                PH::eachPredefinedEntry( array( 'threats', $t ), $add('threat'), FALSE );
+            $x = new DOMXPath( PH::getPredefinedXmlDoc( null, array( 'profiles' ) ) );
+            foreach( $x->query('/predefined/pan-url-categories/entry/@name') as $a )
+                $p['category'][$a->value] = TRUE;
+            foreach( $x->query('/predefined/profiles/*/entry/@name') as $a )
+                $p['profiles/' . $a->ownerElement->parentNode->nodeName][$a->value] = TRUE;
+            $v = new DOMXPath( PH::getPredefinedXmlDoc( null, array( 'application-version' ) ) );
+            $vn = $v->query('/predefined/application-version');
+            $p['version'] = $vn->length ? trim($vn->item(0)->textContent) : '';
+            self::$predefined = $p;
+        }
+        if( $kind == 'version' )
+            return self::$predefined['version'];
+        return isset(self::$predefined[$kind]) ? self::$predefined[$kind] : array();
+    }
+
+    /** where named entries of a reference kind are defined below a device group entry / shared */
+    const DEFINED_IN = array(
+        'tag' => array( 'tag' ),
+        'schedule' => array( 'schedule' ),
+        'profile-group' => array( 'profile-group' ),
+        'log forwarding profile' => array( 'log-settings/profiles' ),
+        'application' => array( 'application', 'application-group', 'application-filter' ),
+        'category' => array( 'profiles/custom-url-category', 'external-list' ),
+        'threat' => array( 'threats/vulnerability', 'threats/spyware' ),
+    );
+
+    /** security profile types of profile-setting / profile-group */
+    const PROFILE_TYPES = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking', 'wildfire-analysis', 'data-filtering' );
+
+    /** entry named $name of a reference kind in $container, or null */
+    private static function definedEntry( $container, $kind, $name )
+    {
+        $paths = strpos($kind, 'profiles/') === 0 ? array( $kind ) : self::DEFINED_IN[$kind];
+        foreach( $paths as $path )
+        {
+            $n = $container;
+            foreach( explode('/', $path) as $c )
+                $n = self::child( $n, $c );
+            if( $n === null )
+                continue;
+            $e = self::entries( $n );
+            if( isset($e[$name]) )
+                return $e[$name];
+        }
+        return null;
+    }
+
+    /** text values of the member children of $node / of a single element */
+    private static function members( $node )
+    {
+        $out = array();
+        if( $node === null )
+            return $out;
+        $has = FALSE;
+        foreach( $node->childNodes as $c )
+            if( $c->nodeType == XML_ELEMENT_NODE && $c->nodeName == 'member' )
+            {
+                $has = TRUE;
+                if( trim($c->textContent) !== '' ) $out[] = trim($c->textContent);
+            }
+        if( !$has && trim($node->textContent) !== '' && DH::firstChildElement($node) === FALSE )
+            $out[] = trim($node->textContent);
+        return $out;
+    }
+
+    /** named references of one rule: list of array( kind, name ) */
+    private static function ruleRefs( DOMElement $rule )
+    {
+        $out = array();
+        $map = array( 'tag' => 'tag', 'group-tag' => 'tag', 'schedule' => 'schedule', 'log-setting' => 'log forwarding profile',
+            'application' => 'application', 'category' => 'category' );
+        foreach( $map as $el => $kind )
+            foreach( self::members( self::child($rule, $el) ) as $v )
+                $out[] = array( $kind, $v );
+        $ps = self::child( $rule, 'profile-setting' );
+        foreach( self::members( self::child($ps, 'group') ) as $v )
+            $out[] = array( 'profile-group', $v );
+        $profiles = self::child( $ps, 'profiles' );
+        foreach( self::PROFILE_TYPES as $t )
+            foreach( self::members( self::child($profiles, $t) ) as $v )
+                $out[] = array( 'profiles/' . $t, $v );
+        return $out;
+    }
+
+    /**
+     * named references of the rules of the device groups $dgNames in $doc (XML as stored) that resolve neither in the
+     * device group hierarchy (from $model) nor in shared nor as predefined name; follows application groups, profile
+     * groups and the threat exceptions of vulnerability / anti-spyware profiles.
+     * $used collects the predefined applications and threat IDs: kind => [name => TRUE].
+     * @return array list of array( kind, name, dg, where )
+     */
+    public static function unresolvedRefs( DOMDocument $doc, PanoramaConf $model, array $dgNames, &$used = array() )
+    {
+        $x = new DOMXPath( $doc );
+        $sh = $x->query('/config/shared');
+        $shared = $sh->length ? $sh->item(0) : null;
+        $dgXml = array();
+        foreach( $x->query("/config/devices/entry[@name='localhost.localdomain']/device-group/entry") as $e )
+            $dgXml[$e->getAttribute('name')] = $e;
+
+        $out = array(); $seen = array();
+        foreach( $dgNames as $n )
+        {
+            if( !isset($dgXml[$n]) )
+                continue;
+            // hierarchy: device group, parents, shared
+            $chain = array( $dgXml[$n] );
+            $dg = $model->findDeviceGroup( $n );
+            for( $par = $dg !== null ? $dg->parentDeviceGroup : null; $par !== null; $par = $par->parentDeviceGroup )
+                if( isset($dgXml[$par->name()]) ) $chain[] = $dgXml[$par->name()];
+            if( $shared !== null ) $chain[] = $shared;
+
+            $todo = array();
+            foreach( array( 'pre-rulebase', 'post-rulebase' ) as $rb )
+                foreach( self::childElements( self::child($dgXml[$n], $rb) ) as $type )
+                    foreach( self::entries( self::child($type, 'rules') ) as $rn => $r )
+                        foreach( self::ruleRefs($r) as $ref )
+                            $todo[] = array( $ref[0], $ref[1], $rb . ' ' . $type->nodeName . ' rule "' . $rn . '"' );
+
+            $done = array();
+            while( count($todo) )
+            {
+                list( $kind, $name, $where ) = array_shift( $todo );
+                if( $name === 'any' || $name === 'none' || isset($done[$kind . '|' . $name]) )
+                    continue;
+                $done[$kind . '|' . $name] = TRUE;
+                $entry = null;
+                foreach( $chain as $c )
+                    if( ( $entry = self::definedEntry($c, $kind, $name) ) !== null )
+                        break;
+                if( $entry !== null )
+                {
+                    // follow groups and threat exceptions
+                    if( $entry->parentNode->nodeName == 'application-group' )
+                        foreach( self::members( self::child($entry, 'members') ) as $m )
+                            $todo[] = array( 'application', $m, 'application group "' . $name . '"' );
+                    elseif( $kind == 'profile-group' )
+                        foreach( self::PROFILE_TYPES as $t )
+                            foreach( self::members( self::child($entry, $t) ) as $m )
+                                $todo[] = array( 'profiles/' . $t, $m, 'profile group "' . $name . '"' );
+                    elseif( $kind == 'profiles/vulnerability' || $kind == 'profiles/spyware' )
+                        foreach( self::entries( self::child($entry, 'threat-exception') ) as $id => $te )
+                            $todo[] = array( 'threat', $id, 'threat exception of ' . substr($kind, 9) . ' profile "' . $name . '"' );
+                    continue;
+                }
+                $pre = self::predefined( $kind );
+                if( isset($pre[$name]) )
+                {
+                    if( $kind == 'application' || $kind == 'threat' )
+                        $used[$kind][$name] = TRUE;
+                    continue;
+                }
+                if( count($pre) == 0 && ( $kind == 'category' || $kind == 'application' || $kind == 'threat' ) )
+                    continue; // predefined list not available - no statement possible
+                $key = $n . '|' . $kind . '|' . $name;
+                if( isset($seen[$key]) )
+                    continue;
+                $seen[$key] = TRUE;
+                $out[] = array( 'kind' => strpos($kind, 'profiles/') === 0 ? substr($kind, 9) . ' profile' : $kind, 'name' => $name, 'dg' => $n, 'where' => $where );
+            }
+        }
+        return $out;
+    }
+
+    private static function childElements( $node )
+    {
+        $out = array();
+        if( $node === null )
+            return $out;
+        foreach( $node->childNodes as $c )
+            if( $c->nodeType == XML_ELEMENT_NODE )
+                $out[] = $c;
+        return $out;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1668,6 +1913,14 @@ class PanoramaMove
                 foreach( $dg->serviceStore->all() as $o )
                     if( $o->isTmpSrv() ) { $tmp++; $list[] = $dg->name() . ': service ' . $o->name(); }
             }
+            // other named references (tags, schedules, profiles, profile groups, log forwarding, applications, URL categories, threat IDs)
+            $dgNames = array();
+            foreach( $p->getDeviceGroups() as $dg ) $dgNames[] = $dg->name();
+            foreach( self::unresolvedRefs( self::rawDocument($f), $p, $dgNames ) as $u )
+            {
+                $tmp++;
+                $list[] = $u['dg'] . ': ' . $u['kind'] . ' ' . $u['name'];
+            }
             $res[$k] = array( 'file' => $f, 'device_groups' => count($p->getDeviceGroups()), 'templates' => count($p->getTemplates()),
                 'template_stacks' => count($p->getTemplatesStacks()), 'unresolved' => $tmp, 'unresolved_list' => array_slice($list, 0, 50) );
         }
@@ -1707,6 +1960,7 @@ class PanoramaMove
             'panorama_ip' => $this->panoramaIp, 'panorama_settings' => $this->panoramaSettings,
             'access_domains' => $this->accessDomains, 'log_collector_groups' => $this->logCollectorGroups, 'plugins' => $this->plugins,
             'master_devices_not_moved' => $this->masterDevices,
+            'content' => $this->content,
             'effective_rulebase' => $this->rulebaseCheckSkipped !== null ? array( 'skipped' => $this->rulebaseCheckSkipped ) : $this->rulebaseCheck,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
     }
@@ -1760,6 +2014,12 @@ class PanoramaMove
             if( count($this->rewrites) )
                 $o .= $li( "Review the " . count($this->rewrites) . " rewritten reference(s) in REPORT.md (references are found by text value)" );
         }
+        if( count($this->content['applications']) || count($this->content['threat_ids']) || count($this->content['unknown_applications']) || count($this->content['unknown_threat_ids']) )
+            $o .= $li( "Content: Panorama B needs the same or a newer App-ID / threat content version than Panorama A – the transferred configuration uses "
+                . count($this->content['applications']) . " predefined application(s) and " . count($this->content['threat_ids']) . " threat ID(s) (plan.json, content)"
+                . ( count($this->content['unknown_applications']) + count($this->content['unknown_threat_ids'])
+                    ? "; unknown to pan-os-php: " . implode(', ', array_merge( $this->content['unknown_applications'], $this->content['unknown_threat_ids'] ))
+                    : '' ) );
         foreach( $this->rulebaseCheck as $g )
         {
             if( count($g['transferred_changed']) )
@@ -1825,8 +2085,7 @@ class PanoramaMove
             $o .= "2. Firewall, only when it was onboarded to Panorama A with an auth key (PAN-OS 10.1 or later): " . $code('request sc3 reset') . " and " . $code('debug software restart process management-server') . " – irreversible, ends the trust to Panorama A\n";
             $o .= "3. Firewall: " . $code('request authkey set <auth-key>') . "\n";
             $o .= "4. Firewall: Panorama server → Panorama B: " . $code('set deviceconfig system panorama local-panorama panorama-server ' . $pip) . ( isset($this->panoramaIp[1]) ? ' and ' . $code('... panorama-server-2 ' . $this->panoramaIp[1]) : '' ) . ", commit (PAN-OS before 9.1: " . $code('set deviceconfig system panorama-server ' . $pip) . ")\n";
-            $o .= "5. Panorama B: Panorama > Managed Devices > Summary – connected; push device group and template stack, check *In Sync*\n";
-            $o .= "6. HA pairs: both peers must be moved (HA is not visible in the Panorama configuration)\n\n";
+            $o .= "5. Panorama B: Panorama > Managed Devices > Summary – connected; push device group and template stack, check *In Sync*\n\n";
             $o .= "| done | serial | vsys | device group in Panorama B | template stack(s) in Panorama B |\n|---|---|---|---|---|\n";
             foreach( $this->devices as $s => $d )
             {

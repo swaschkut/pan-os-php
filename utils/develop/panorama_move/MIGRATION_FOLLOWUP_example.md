@@ -28,7 +28,6 @@ Steps for each firewall (device registration auth key: Panorama B PAN-OS 10.1 or
 3. Firewall: `request authkey set <auth-key>`
 4. Firewall: Panorama server → Panorama B: `set deviceconfig system panorama local-panorama panorama-server 203.0.113.50` and `... panorama-server-2 203.0.113.51`, commit (PAN-OS before 9.1: `set deviceconfig system panorama-server 203.0.113.50`)
 5. Panorama B: Panorama > Managed Devices > Summary – connected; push device group and template stack, check *In Sync*
-6. HA pairs: both peers must be moved (HA is not visible in the Panorama configuration)
 
 | done | serial | vsys | device group in Panorama B | template stack(s) in Panorama B |
 |---|---|---|---|---|

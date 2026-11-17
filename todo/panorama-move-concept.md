@@ -65,8 +65,8 @@ Output
   devices.
 * **Multi-vsys firewall**: vsys of one serial in a moved and in a kept DG → conflict (a device can only be managed by
   one Panorama) – stop or list (D2).
-* **HA pairs**: both peers must move. HA is not visible in the Panorama configuration → info finding + item in
-  `MIGRATION_FOLLOWUP.md` (implemented this way, no automatic check possible).
+* **HA pairs**: both peers are managed in the same device group and move with it – no own check (HA is not part
+  of the Panorama configuration).
 * Device entries: `mgt-config/devices/entry[@name=serial]` (incl. vsys), DG `devices`, template stack `devices`
   (incl. per-device variable overrides).
 
@@ -115,7 +115,7 @@ top / post rules at the end of the top moved DG).
 | address vs. address group / service vs. service group same name (common namespace) | stop |
 | rule names: moved rules vs. shared rules of file2 | stop (rule names must be unique in the hierarchy) |
 | Panorama version of file2 older than file1 | stop; newer: warning |
-| applications / threats unknown in file2 (content version) | warning (would become tmp objects) – **open**, see 11 |
+| applications / threats unknown in file2 (content version) | done (11.1): the content version of file2 is not in the configuration – applications (also in application groups) and threat IDs (threat exceptions) used are listed (`plan.json` `content`, info + follow-up: same or newer content on Panorama B); names unknown to pan-os-php's predefined content → warning `content` |
 | template variables with the same name and another value | info – variables are defined per template / stack, no conflict (changed during implementation) |
 
 ## 4a. Check run (`mode=check`, default)
@@ -147,7 +147,7 @@ Result per moved firewall: number of rules before / after, rules lost, rules add
 | common namespaces | address ↔ address group ↔ region / EDL (address); service ↔ service group; application ↔ application group ↔ application filter ↔ custom application; tag; security profile ↔ profile group per type |
 | DG objects overriding B shared objects | names of the moved DG objects that exist in B shared → effect with `ancestor-objects-take-precedence` of B (yes: B shared wins, no: DG object wins) compared to A |
 | rule names | moved DG rules vs. B shared rules and vs. each other in the new hierarchy (pre / post / all rule types); A shared rules copied by `shared-rules=to-top-dg` vs. the rules of the top DG |
-| objects referenced but defined nowhere | names in the relevant XML that resolve neither in A nor in B (tmp objects) – implemented for address and service only, see 11 |
+| objects referenced but defined nowhere | done (11.2): address / service (tmp objects) + tags, schedules, log forwarding profiles, security profiles, profile groups (and their profiles), URL categories of the rules of the relevant DGs, resolved on the XML as stored along the DG chain to shared and against the predefined names; also counted in the validation of out1 / out2 |
 | predefined names | moved objects with the name of a predefined object of B (application, service-http / service-https, URL category, predefined profile) |
 | case / blanks | names that differ only in upper / lower case or leading / trailing blanks (PAN-OS treats them as different, users often not) |
 | invalid characters / length | names B does not accept (version of B: length limits, characters) |
@@ -233,7 +233,7 @@ State of the gap column re-checked on 2026-11-17 (`alpha` `3a10f30`).
 | create DG / template / stack incl. `readonly` | `createDeviceGroup($name,$parent)`, `createTemplate()`, `createTemplateStack()`, `setParentDG()` | – |
 | remove DG | `removeDeviceGroup()` (stops on child DGs) | done: removal from the numeric array by object, parent's `_childDeviceGroups` updated, `readonly` entry removed |
 | remove template / stack | `removeTemplate()`, `removeTemplateStack()` | done: array problem fixed, `readonly` entry removed (`removeReadonlyEntry()`). **Open (library):** `PanoramaConf::removeTemplate()` does not check that a stack still uses the template – only the action `template-delete` checks `countReferences()`; stale commented-out DG block and `//Todo: cleanup memory` in both functions. Not relevant for panorama-move (only templates with action move are removed) |
-| devices | `ManagedDeviceStore` (`findOrCreate`, `removeManagedDevice`), `DeviceGroup::addDevice/removeDevice`, `TemplateStack::addDevice/removeDevice`, `managedDevices()` | done: multi-vsys split → blocking; HA not visible in the configuration → info + follow-up checklist |
+| devices | `ManagedDeviceStore` (`findOrCreate`, `removeManagedDevice`), `DeviceGroup::addDevice/removeDevice`, `TemplateStack::addDevice/removeDevice`, `managedDevices()` | done: multi-vsys split → blocking; HA peers move with their device group (no check needed) |
 | references / unused | `getReferences()`, `countReferences()`, filters `is.unused`, `is.unused.recursive` | bypassed: panorama-move uses the XML name scan (3.4) for all types; the coverage of the object model (server profiles, certificates, auth profiles) is still not complete, but not needed here |
 | same value of objects | merger engine / `sameValue()` per type (`MERGERENGINE.php`) | – (panorama-move compares canonical XML, `PanoramaMove::canon()`) |
 | XML copy | `DH`, `importNode`; `type=upload fromXpath/toXpath` as reference | – |
@@ -257,11 +257,14 @@ State of the gap column re-checked on 2026-11-17 (`alpha` `3a10f30`).
 
 | # | item | where | state |
 |---|---|---|---|
-| 1 | applications / threats used by the moved configuration but unknown in file2 (older content version of Panorama B, section 4) | `PanoramaMove::check()` | open – today only custom applications with the name of a predefined application in file2 are reported |
-| 2 | unresolved references: `checkUnresolved()` and `validate()` report address and service only – tags, applications, application groups / filters, security profiles / groups, schedules, EDL missing | `PanoramaMove::checkUnresolved()`, `validate()` | open |
+| 1 | applications / threats used by the moved configuration but unknown in file2 (older content version of Panorama B, section 4) | `PanoramaMove::checkUnresolved()`, `predefined()` | done (2026-11-17): content version of file2 is not in the configuration → predefined applications / threat IDs used are listed (`plan.json` `content`, info finding, follow-up item); unknown to pan-os-php → warning `content`; test `unresolved-and-content` |
+| 2 | unresolved references beyond address / service | `PanoramaMove::unresolvedRefs()`, `checkUnresolved()`, `validate()` | done (2026-11-17): tags, schedules, log forwarding profiles, security profiles, profile groups (+ profiles inside), URL categories, applications / application groups, threat exceptions; XML as stored (pan-os-php creates missing tags on load); test `unresolved-and-content` |
 | 3 | scheduled config push (Panorama A / B) that contains moved device groups / stacks | report + `MIGRATION_FOLLOWUP.md` | open |
 | 4 | `PanoramaConf::removeTemplate()`: guard when the template is still used by a stack (like `removeDeviceGroup()` with child DGs); remove the stale commented-out block / memory Todo | `lib/device-and-system-classes/PanoramaConf.php` | open (library, not needed by panorama-move) |
 | 5 | D3 shared rules: `skip` / `to-top-dg` | per migration after the check run | decision per project (both options implemented) |
 
-Proposal: 1 and 2 as next code patch (both are warnings in the check run), 3 as text in the report / follow-up,
-4 with the next library change in `PanoramaConf`.
+Next: 3 as text in the report / follow-up, 4 with the next library change in `PanoramaConf`.
+
+Not covered by 2: references outside the rule bases (e.g. tags of address objects, log forwarding inside zone
+protection or template settings) – the shared-object relevance (3.4) copies them when they exist; when they exist
+nowhere, PAN-OS reports them on commit.

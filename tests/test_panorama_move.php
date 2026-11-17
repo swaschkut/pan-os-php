@@ -362,6 +362,66 @@ $scenarios['panorama-ip-single-address'] = function() use ( $A, $Bclean ) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// unresolved references and content (concept 11.1 / 11.2): fixture A + one rule with references that exist nowhere
+
+$scenarios['unresolved-and-content'] = function() use ( $A, $Bclean, $work ) {
+    $d = new DOMDocument();
+    $d->load( $A );
+    $x = new DOMXPath( $d );
+    $dg = $x->query("/config/devices/entry/device-group/entry[@name='testDG']")->item(0);
+    $f = new DOMDocument();
+    $f->loadXML( '<root>'
+        . '<profiles><vulnerability><entry name="vp-test"><threat-exception><entry name="30000"><action><default/></action></entry>'
+        . '<entry name="99999999"><action><default/></action></entry></threat-exception></entry></vulnerability></profiles>'
+        . '<profile-group><entry name="pg-test"><virus><member>default</member></virus><spyware><member>ghost-spyware</member></spyware></entry></profile-group>'
+        . '<application-group><entry name="ag-test"><members><member>ssl</member><member>ghost-app-in-group</member></members></entry></application-group>'
+        . '<pre-rulebase><security><rules>'
+        . '<entry name="ref-rule-1"><from><member>any</member></from><to><member>any</member></to><source><member>any</member></source>'
+        . '<destination><member>any</member></destination><source-user><member>any</member></source-user>'
+        . '<category><member>social-networking</member><member>ghost-category</member></category>'
+        . '<application><member>web-browsing</member><member>ag-test</member><member>ghost-app</member></application>'
+        . '<service><member>application-default</member></service><action>allow</action>'
+        . '<tag><member>ghost-tag</member></tag><schedule>ghost-schedule</schedule><log-setting>ghost-log</log-setting>'
+        . '<profile-setting><profiles><vulnerability><member>vp-test</member></vulnerability><url-filtering><member>ghost-url</member></url-filtering></profiles></profile-setting></entry>'
+        . '<entry name="ref-rule-2"><from><member>any</member></from><to><member>any</member></to><source><member>any</member></source>'
+        . '<destination><member>any</member></destination><source-user><member>any</member></source-user><category><member>any</member></category>'
+        . '<application><member>any</member></application><service><member>any</member></service><action>allow</action>'
+        . '<profile-setting><group><member>pg-test</member></group></profile-setting></entry>'
+        . '</rules></security></pre-rulebase></root>' );
+    $old = null;
+    foreach( $dg->childNodes as $c ) if( $c->nodeName == 'pre-rulebase' ) $old = $c;
+    if( $old !== null ) $dg->removeChild( $old );
+    foreach( $f->documentElement->childNodes as $c )
+        $dg->appendChild( $d->importNode($c, TRUE) );
+    $file1 = $work . '/panorama-move-A-refs.xml';
+    $d->save( $file1 );
+
+    list( $rc, $p, $dir ) = run( 'refs', array( 'testDG' ), array( 'file1=' . $file1, 'file2=' . $Bclean ) );
+    eq( $rc, 0, 'check run - exit code (warnings only)' );
+    $names = array();
+    foreach( findings($p, 'warning', 'unresolved') as $w ) $names[] = $w['name'];
+    foreach( array( 'tag ghost-tag', 'schedule ghost-schedule', 'log forwarding profile ghost-log', 'category ghost-category',
+                 'url-filtering profile ghost-url', 'spyware profile ghost-spyware' ) as $exp )
+        check( in_array($exp, $names, TRUE), 'unresolved: ' . $exp );
+    foreach( array( 'category social-networking', 'virus profile default', 'application web-browsing' ) as $no )
+        check( !in_array($no, $names, TRUE), 'resolved (predefined): ' . $no );
+    $content = array();
+    foreach( findings($p, 'warning', 'content') as $w ) $content[] = $w['name'];
+    foreach( array( 'application ghost-app', 'application ghost-app-in-group', 'threat ID 99999999' ) as $exp )
+        check( in_array($exp, $content, TRUE), 'content: ' . $exp );
+    eq( $p['content']['unknown_threat_ids'], array( '99999999' ), 'plan.json unknown threat IDs' );
+    check( in_array('30000', $p['content']['threat_ids'], TRUE), 'plan.json predefined threat ID 30000' );
+    check( in_array('ssl', $p['content']['applications'], TRUE) && in_array('web-browsing', $p['content']['applications'], TRUE), 'plan.json predefined applications' );
+    eq( count(findings($p, 'info', 'content')), 1, 'content summary (info)' );
+    check( strpos(@file_get_contents($dir . '/report/MIGRATION_FOLLOWUP.md'), 'App-ID / threat content version') !== FALSE, 'follow-up: content item' );
+
+    list( $rc, $p ) = run( 'refs-exec', array( 'testDG' ), array( 'file1=' . $file1, 'file2=' . $Bclean, 'mode=execute' ) );
+    eq( $rc, 0, 'execute - exit code' );
+    check( $p['stats']['validation']['file2']['unresolved'] > 0, 'validation file2 reports the unresolved references' );
+    check( count( array_filter( $p['stats']['validation']['file2']['unresolved_list'], function( $l ) { return strpos($l, 'schedule ghost-schedule') !== FALSE; } ) ) == 1, 'validation lists the schedule' );
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // arguments
 
 $scenarios['arguments'] = function() use ( $A, $Bclean ) {

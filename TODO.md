@@ -15,7 +15,7 @@ under development.
 | Area | Topic | Status | File |
 |---|---|---|---|
 | rule-compare | switch `type=rule-compare` to `RuleResolver` (more fields, IPv6, EDL, other rule types) | planned, open decisions | [todo/rule-compare-ruleresolver.md](todo/rule-compare-ruleresolver.md) |
-| panorama-move | move device groups from one Panorama to another (`type=panorama-move`) | implemented on `alpha`; open items: unknown apps / threats in file2, unresolved check beyond address / service, scheduled config push, `removeTemplate()` guard (concept section 11) | [todo/panorama-move-concept.md](todo/panorama-move-concept.md) |
+| panorama-move | move device groups from one Panorama to another (`type=panorama-move`) | implemented on `alpha`; open items: scheduled config push, `removeTemplate()` guard (concept section 11) | [todo/panorama-move-concept.md](todo/panorama-move-concept.md) |
 | SCM | Panorama → SCM migration firewall by firewall | concept; step 2 (onboarding) is new | [todo/scm-panorama-migration.md](todo/scm-panorama-migration.md) |
 | SCM | gap remediation: visibility / best practice fixes as reviewable API change files | draft for discussion | [todo/scm-gap-remediation.md](todo/scm-gap-remediation.md) |
 | SCM / Prisma Access | lifecycle from requirements to maturity report | draft; steps A + B as first version (`type=scm-report`) | [todo/scm-prisma-access-lifecycle.md](todo/scm-prisma-access-lifecycle.md) |
