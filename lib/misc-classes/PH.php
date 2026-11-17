@@ -2305,7 +2305,8 @@ class PH
         "securityprofilegroup-merger",
         "object-merger",
         "merger-possible-report",
-        "device-config-bundle"
+        "device-config-bundle",
+        "config-section"
         );
 
 
@@ -2336,7 +2337,8 @@ class PH
         "tsf",
         "xpath",
         "gcp",
-        "device-config-bundle"
+        "device-config-bundle",
+        "config-section"
     );
 
     /**
@@ -2537,6 +2539,9 @@ class PH
 
         elseif( $type == "xpath" )
             $util = new XPATH($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "config-section" )
+            $util = new CONFIG_SECTION__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "ssh-connector" )
             $util = new SSH_CONNECTOR__( $type, $argv, $argc, $PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);

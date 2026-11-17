@@ -197,7 +197,7 @@ Order: rules / content are not touched in kept DGs.
 | plugins (SD-WAN, cloud services, ZTP …) referencing DGs / stacks / devices | report + MIGRATION_FOLLOWUP.md | report + MIGRATION_FOLLOWUP.md |
 | Panorama server in templates / stacks (`deviceconfig/system/panorama/local-panorama/panorama-server(-2)`, older `deviceconfig/system/panorama-server(-2)`) | done: report; `panorama-ip=` replaces it in the file2 copies (D8) | unchanged |
 | rule `target` with serials | kept (serials move with the DG) | – |
-| scheduled config push, WildFire appliances, device certificates, collector-group | report | report (WildFire, log collectors, device certificates in `MIGRATION_FOLLOWUP.md`; scheduled config push **open**, see 11) |
+| scheduled config push, WildFire appliances, device certificates, collector-group | report | report (WildFire, log collectors, device certificates in `MIGRATION_FOLLOWUP.md`); Panorama settings with references (`deployment-update-schedule`, `config-bundle-export-schedule`, registry of `type=config-section`): info finding + follow-up with the set commands for B, references to moved items removed in out1 on execute (11.3, done) |
 | logs already stored for the moved devices | stay on Panorama A / collectors | – |
 
 ## 7a. Encrypted values (master key)
@@ -259,11 +259,11 @@ State of the gap column re-checked on 2026-11-17 (`alpha` `3a10f30`).
 |---|---|---|---|
 | 1 | applications / threats used by the moved configuration but unknown in file2 (older content version of Panorama B, section 4) | `PanoramaMove::checkUnresolved()`, `predefined()` | done (2026-11-17): content version of file2 is not in the configuration → predefined applications / threat IDs used are listed (`plan.json` `content`, info finding, follow-up item); unknown to pan-os-php → warning `content`; test `unresolved-and-content` |
 | 2 | unresolved references beyond address / service | `PanoramaMove::unresolvedRefs()`, `checkUnresolved()`, `validate()` | done (2026-11-17): tags, schedules, log forwarding profiles, security profiles, profile groups (+ profiles inside), URL categories, applications / application groups, threat exceptions; XML as stored (pan-os-php creates missing tags on load); test `unresolved-and-content` |
-| 3 | scheduled config push (Panorama A / B) that contains moved device groups / stacks | report + `MIGRATION_FOLLOWUP.md` | open |
+| 3 | scheduled config push (Panorama A / B) that contains moved device groups / stacks | `PanoramaMove::checkConfigSections()`, `cleanupA()`; `utils/common/ConfigSection.php` | done (2026-11-17): new `type=config-section` with registry ([panorama-config-sections.md](panorama-config-sections.md)); entries of `deployment-update-schedule` / `config-bundle-export-schedule` referencing moved DGs / templates / stacks / firewalls → info finding, `plan.json` `panorama_settings_referencing_moved`, follow-up (`type=config-section … actions=get:set` for B); execute removes these references in out1; not transferred to file2; test `panorama-settings` |
 | 4 | `PanoramaConf::removeTemplate()`: guard when the template is still used by a stack (like `removeDeviceGroup()` with child DGs); remove the stale commented-out block / memory Todo | `lib/device-and-system-classes/PanoramaConf.php` | open (library, not needed by panorama-move) |
 | 5 | D3 shared rules: `skip` / `to-top-dg` | per migration after the check run | decision per project (both options implemented) |
 
-Next: 3 as text in the report / follow-up, 4 with the next library change in `PanoramaConf`.
+Next: 4 with the next library change in `PanoramaConf`.
 
 Not covered by 2: references outside the rule bases (e.g. tags of address objects, log forwarding inside zone
 protection or template settings) – the shared-object relevance (3.4) copies them when they exist; when they exist

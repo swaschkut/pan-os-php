@@ -51,6 +51,10 @@ Exit code: 0 ok, 2 blocking findings.
   schedules, log forwarding profiles, security profiles, profile groups (and the profiles inside), URL categories
   (custom, EDL, predefined) – resolved along the device group chain up to shared, then against the predefined names
   of pan-os-php (`lib/object-classes/predefined.xml`)
+* **Panorama settings** (`type=config-section` registry, e.g. `deployment-update-schedule`): entries of file1 that
+  reference moved device groups / templates / template stacks / firewalls → info finding, `plan.json`
+  `panorama_settings_referencing_moved`, follow-up with `pan-os-php type=config-section … actions=get:set` to recreate
+  them in Panorama B; execute removes the references to moved items from these entries in file1 (not transferred)
 * **content** (App-ID / threats): applications (also inside application groups) and the threat IDs of the threat
   exceptions of vulnerability / anti-spyware profiles. Unknown to pan-os-php (neither custom nor predefined) → warning
   `content` (typo or newer content); the predefined applications / threat IDs used are listed in `plan.json`

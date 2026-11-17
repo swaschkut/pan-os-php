@@ -1,0 +1,25 @@
+{
+  "schema": "pan-os-php-config-sections",
+  "version": 1,
+  "description": "device / Panorama settings handled generically by pan-os-php type=config-section (utils/common/ConfigSection.php). Paths are relative to the device entry (/config/devices/entry[@name='localhost.localdomain'], or the template config). 'references': yes = text values are matched against device group / template / template stack names and managed firewall serials (Panorama).",
+  "sections": {
+    "deployment-update-schedule": {
+      "description": "Panorama: schedules for managed firewalls (deployment-update-schedule)",
+      "path": "deviceconfig/system/deployment-update-schedule",
+      "scope": [ "panorama" ],
+      "references": true
+    },
+    "config-bundle-export-schedule": {
+      "description": "Panorama: scheduled config bundle export (SCP / FTP server)",
+      "path": "deviceconfig/system/config-bundle-export-schedule",
+      "scope": [ "panorama" ],
+      "references": true
+    },
+    "permitted-ip": {
+      "description": "permitted IP addresses of the management interface",
+      "path": "deviceconfig/system/permitted-ip",
+      "scope": [ "panorama", "firewall", "template" ],
+      "references": false
+    }
+  }
+}

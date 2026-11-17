@@ -91,6 +91,12 @@ class PanoramaMove
     public $logCollectorGroups = array();
     /** plugins of file1 referencing moved names / firewalls: plugin => [refs] */
     public $plugins = array();
+    /**
+     * Panorama settings of file1 (config sections of utils/common/config_sections.json with references, e.g.
+     * deployment-update-schedule) whose entries reference moved device groups / templates / stacks / firewalls:
+     * list of array( section, entry, references => ["kind name"] ) - not transferred, report + follow-up
+     */
+    public $configSections = array();
     /** master-device of a transferred device group that is not moved: device group => serial */
     public $masterDevices = array();
     /** firewalls of the relevant template stacks in file1 (kept for the follow-up after file1 is cleaned): stack => [serials] */
@@ -1260,6 +1266,34 @@ class PanoramaMove
                     $this->finding( 'warning', 'plugin', $pl->nodeName, 'references device ' . $s, 'not transferred', 'check the plugin configuration' );
                 }
         }
+        $this->checkConfigSections();
+    }
+
+    /** Panorama settings with entries that reference moved names / firewalls (concept 7 / 11.3), e.g. deployment-update-schedule */
+    private function checkConfigSections()
+    {
+        $moved = array( 'device group' => array(), 'template' => array(), 'template stack' => array(), 'firewall' => array() );
+        foreach( $this->dgAction as $n => $a ) $moved['device group'][$n] = TRUE;
+        foreach( $this->templateAction as $n => $a ) $moved['template'][$n] = TRUE;
+        foreach( $this->stackAction as $n => $a ) $moved['template stack'][$n] = TRUE;
+        foreach( array_keys($this->devices) as $s ) $moved['firewall'][(string)$s] = TRUE;
+        foreach( ConfigSection::registry() as $name => $def )
+        {
+            if( empty($def['references']) || !in_array('panorama', $def['scope'], TRUE) )
+                continue;
+            $section = ConfigSection::section( $name );
+            foreach( ConfigSection::entries( ConfigSection::container( $this->A->xmldoc, $section ) ) as $en => $e )
+            {
+                $refs = array();
+                foreach( ConfigSection::references( $e, $moved ) as $r )
+                    $refs[] = $r['kind'] . ' ' . $r['name'];
+                if( !count($refs) )
+                    continue;
+                $this->configSections[] = array( 'section' => $name, 'entry' => (string)$en, 'references' => $refs );
+                $this->finding( 'info', 'Panorama setting', $name . ' ' . $en, 'references ' . implode(', ', $refs), 'not transferred',
+                    'create it in file2 if needed (pan-os-php type=config-section section=' . $name . ' entry=' . $en . ' actions=get:set) and remove the moved names / firewalls in file1 (MIGRATION_FOLLOWUP.md)' );
+            }
+        }
     }
 
     /**
@@ -1863,6 +1897,27 @@ class PanoramaMove
         foreach( iterator_to_array( $x->query('/config/mgt-config/access-domain/entry//entry[@name]') ) as $e )
             if( isset($this->devices[$e->getAttribute('name')]) )
                 $e->parentNode->removeChild( $e );
+        // Panorama settings (config sections, e.g. deployment-update-schedule): references to removed names / moved firewalls
+        $this->stats['file1_config_sections_removed'] = array();
+        foreach( $this->configSections as $cs )
+        {
+            $e = ConfigSection::entry( ConfigSection::container( $A->xmldoc, ConfigSection::section($cs['section']) ), $cs['entry'] );
+            if( $e === null )
+                continue;
+            $ex = new DOMXPath( $A->xmldoc );
+            foreach( iterator_to_array( $ex->query('.//member', $e) ) as $m )
+                if( in_array(trim($m->textContent), $removedNames, TRUE) || isset($this->devices[trim($m->textContent)]) )
+                {
+                    $this->stats['file1_config_sections_removed'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . trim($m->textContent);
+                    $m->parentNode->removeChild( $m );
+                }
+            foreach( iterator_to_array( $ex->query('.//entry[@name]', $e) ) as $n )
+                if( in_array($n->getAttribute('name'), $removedNames, TRUE) || isset($this->devices[$n->getAttribute('name')]) )
+                {
+                    $this->stats['file1_config_sections_removed'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . $n->getAttribute('name');
+                    $n->parentNode->removeChild( $n );
+                }
+        }
         // 4 shared objects of the relevant set that are no longer referenced (fixed point)
         $cand = array();
         foreach( $this->sharedObjects as $k => $o )
@@ -1960,6 +2015,7 @@ class PanoramaMove
             'panorama_ip' => $this->panoramaIp, 'panorama_settings' => $this->panoramaSettings,
             'access_domains' => $this->accessDomains, 'log_collector_groups' => $this->logCollectorGroups, 'plugins' => $this->plugins,
             'master_devices_not_moved' => $this->masterDevices,
+            'panorama_settings_referencing_moved' => $this->configSections,
             'content' => $this->content,
             'effective_rulebase' => $this->rulebaseCheckSkipped !== null ? array( 'skipped' => $this->rulebaseCheckSkipped ) : $this->rulebaseCheck,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
@@ -2042,6 +2098,9 @@ class PanoramaMove
         $o .= $li( "Load the configuration: import " . $code($out2) . " as named snapshot and load it, or apply the set commands of " . $code('pan-os-php type=diff file1=' . $this->file2 . ' file2=' . $out2 . ' outputformatset=set_B.txt') . "; commit to Panorama", FALSE );
         $done = $mode == 'execute';
         $o .= $li( "Device groups, templates, template stacks, managed devices (serials) and shared objects transferred" . ( $done ? '' : ' (on execute)' ) . " *(done by panorama-move)*", $done );
+        foreach( $this->configSections as $cs )
+            $o .= $li( "Panorama setting " . $code($cs['section']) . " " . $code($cs['entry']) . " of Panorama A references " . implode(', ', $cs['references'])
+                . " – create it in Panorama B if needed: " . $code('pan-os-php type=config-section in=' . $this->file1 . ' section=' . $cs['section'] . ' entry=' . $cs['entry'] . ' actions=get:set') . " gives the set commands (encrypted values as <encrypted>)" );
         foreach( $this->panoramaSettings as $p )
         {
             $where = $p['location'] . ( $p['name_in_file2'] !== null && strpos($p['location'], $p['name_in_file2']) === FALSE ? ' (file2: ' . $p['name_in_file2'] . ')' : '' );
@@ -2108,6 +2167,13 @@ class PanoramaMove
                     $removedAd[] = $adn . ': ' . $r;
         if( count($removedAd) )
             $o .= $li( "Access domain members of moved device groups / templates / firewalls removed in " . $code($out1) . ": " . implode('; ', $removedAd) . " *(done by panorama-move)*", $done );
+        if( $mode == 'execute' && !empty($this->stats['file1_config_sections_removed']) )
+            $o .= $li( "Panorama settings: references to moved device groups / templates / stacks / firewalls removed in " . $code($out1) . ": "
+                . implode('; ', $this->stats['file1_config_sections_removed']) . " – check that the entries still make sense (an entry without targets can be deleted) *(done by panorama-move)*", TRUE );
+        elseif( $mode != 'execute' )
+            foreach( $this->configSections as $cs )
+                $o .= $li( "Panorama setting " . $code($cs['section']) . " " . $code($cs['entry']) . ": references to " . implode(', ', $cs['references'])
+                    . " of moved items are removed in out1 on execute (copied device groups / templates stay)" );
         foreach( $this->plugins as $pl => $refs )
             $o .= $li( "Plugin " . $code($pl) . " of Panorama A still references " . implode(', ', array_unique($refs)) . " – remove the moved entries (not changed by panorama-move)" );
         foreach( $this->logCollectorGroups as $g => $serials )
