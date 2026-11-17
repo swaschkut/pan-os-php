@@ -18,13 +18,13 @@ Purpose of each entry is taken from the script header, its API calls or (marked 
 |---|---|
 | Script | `utils/develop/panos-release-notes/panos_release_notes.php` (`version=`, `description=`) |
 | Library | `lib/resources/panos_release_notes/classes/` (`panos_release_notes`, `panos_known_issue`, `panos_addressed_issue`, `panos_version`, `panos_release_misc::request_html()`) |
-| Data | cached HTML + JSON in `lib/resources/panos_release_notes/{known_issues,addressed_issues}/` – PAN-OS 10.1, 10.2, 11.1, 11.2; newest entry 11.2.5-h2 |
+| Data | cached HTML + JSON in `lib/resources/panos_release_notes/{known_issues,addressed_issues}/` – PAN-OS 10.1, 10.2, 11.1, 11.2 only; **outdated**: newest known issues 10.1.14, 10.2.13, 11.1.8, 11.2.5, newest addressed issues 11.2.5-h2; no 11.0, no 12.x |
 | Connected | no |
 
 Open:
 - new `type=` (e.g. `type=release-notes`): `version=` from argument **or** from the device (`in=api://`, `show system info`),
   output known issues of the running version and the issues addressed in a target version (`target-version=`)
-- cache update as an action (`actions=update-cache`), today the JSON is committed by hand; 11.0, 12.x and newer
+- **first step: update the cache** (known issues are very old) – then cache update as an action (`actions=update-cache`), today the JSON is committed by hand; 11.0, 12.x and newer
   maintenance releases are missing
 - `exportToExcel` / JSON output like the other types
 - link with `type=software-preparation` / `software-download`: "known issues in target version" before an upgrade
@@ -90,20 +90,7 @@ Open:
 
 ## 3. Loose scripts in `utils/develop/`
 
-| Script | Purpose | Overlap |
-|---|---|---|
-| `object-merger.php` | object merger | **superseded** by `type=object-merger` → remove |
-| `rule_compare.php` | rule compare | **superseded** by `type=rule-compare` → remove |
-| `tsf_request.php`, `tsf_handler.php` | request / read tech support file | `type=tsf` → compare, remove |
-| `wildfire_api.php` | WildFire public API report | – |
-| `inventory_sw_export.php` | `show devices all` software export | `type=device` / `software-*` |
-| `grp-static-to-dynamic.php` | static group → dynamic group (XML API config calls) | candidate for `type=addressgroup` action |
-| `pppoe_session_clean.php` | show / clear sessions by zone filter | `type=session-browser` |
-| `shared_gateway.php` | shared gateway handling | – |
-| `panos_filetype.php` | file types | – |
-| `app-id-change_report.php`, `checkpoint-exclude.php`, `rule_create_dag_fullmesh.php` | DAG based (*name only*) | – |
-| `panorama-PA_cleanup.php`, `panorama-PA_multi2singleTenant.php` (`tenant=`), `panorama_combine_multiple_shared.php` | Panorama / Prisma Access restructuring | related to `panorama-move` |
-| `address_object_move.php`, `config_validation.php`, `csv-import.php`, `cyclePanorama_ssh.php`, `ike.php`, `interface_getIP.php`, `pan_get_user_info.php`, `reset-config.php`, `wildcard_calculator.php`, `migration_playbook.php` | *name only* / short header | check one by one |
+The 26 scripts directly in `utils/develop/` are listed in the main folder: [TODO-develop-scripts.md](../TODO-develop-scripts.md).
 
 `buckbeak_baseconfig.xml` / `fawkes_baseconfig.xml` are used by `utils/lib` and the install scripts stay – not TODO
 items.
@@ -114,6 +101,6 @@ items.
    device".
 2. CVE search: own type or `type=device` action; data source `/json` vs. `/api`.
 3. LDAP: own type or part of `type=userid-mgr`.
-4. Superseded scripts (`object-merger.php`, `rule_compare.php`, `tsf_*`, `playbook/`) – remove now or after a check.
+4. Superseded scripts (see [TODO-develop-scripts.md](../TODO-develop-scripts.md), `playbook/`) – remove now or after a check.
 5. `power/` – move out of the repo.
 6. `migration/` vendor scripts – which ones are worth moving to `migration/parser/`.
