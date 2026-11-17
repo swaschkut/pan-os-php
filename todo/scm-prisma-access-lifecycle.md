@@ -10,7 +10,7 @@ check – based on **one data model** that is (almost) identical to the SCM / Pr
 
 ```
  TRD ──► guided design (HLD) ──► design JSON ──► review with the customer ──► apply to tenant ──► operation
-  │            │                      │            (report, network plans)          │              (customer changes)
+  │            │                      │            (report, network plans)          │          (adapt: manual / script)
   │            │                      │                                             │                    │
   └────────────┴──────────────────────┴──── same report generator ◄── export (as-built) ◄──────────────┘
                                                      │
@@ -34,7 +34,7 @@ design, and `scm_pa_sync.php` ✅ can apply the design to a tenant.
 | 1 | **Guided design (HLD)** – the consultant is guided through the decisions per component, with options, defaults, validation | `trd.json` | design decisions + `design/` (design JSON in export format) | design wizard (new) |
 | 2 | **Design review** with the customer | design JSON | HLD document, network plans, checklist of manual items, open points | report + diagram generator (new) |
 | 3 | **Apply** the design to the tenant | design JSON, secret lists | configured tenant (candidate → push) | `scm_pa_sync.php` ✅ (write path still to be tested on a live tenant) |
-| 4 | **Operation** – the customer changes the configuration | – | – | – |
+| 4 | **Operation / adapt** – the configuration is changed or extended, manually (SCM UI) or by script | configured tenant, change requests | changed tenant (candidate → push) | manually: SCM UI; by script: change file → `scm-change` ✅, actions of the planned Prisma Access type (building blocks 3 + 4 in [prisma-access-config.md](prisma-access-config.md), new) |
 | 5 | **Maturity report** – regularly or on request | export of the tenant | as-built report (same as phase 2) + diff design ↔ as-built + best practice / visibility results | `scm_pa_export.php` ✅, `scm_pa_compare.php` ✅, pan-os-php BP checks ✅, report generator (new) |
 
 ## 3. Data model
@@ -148,7 +148,8 @@ first, draw.io / Lucidchart import later (7.4).
 | 1 | **Customer requirements** | 0 TRD | document builder (4.3): TRD template, scope, question tables → TRD document ✅ first version; `trd.json` (new) |
 | 2 | **Design / HLD** | 1–2 | design wizard → design JSON + `decisions.json`; report generator (4.1) → HLD + network plans (new) |
 | 3 | **Generate / apply the configuration** | 3 | design JSON → `scm-sync` (infrastructure areas) / change file → `scm-change` (config) ✅ |
-| 4 | **Check: maturity report** | 5 | `scm-export` ✅ → report generator (4.1) as-built + `scm-compare` design ↔ as-built ✅ + BP / visibility ✅ + score (new) |
+| 4 | **Adapt / extend the configuration** – manually or by script | 4 | SCM UI; change file → `scm-change` ✅; Prisma Access type actions ([prisma-access-config.md](prisma-access-config.md), new) |
+| 5 | **Check: maturity report** | 5 | `scm-export` ✅ → report generator (4.1) as-built + `scm-compare` design ↔ as-built ✅ + BP / visibility ✅ + score (new) |
 
 ### 4.3 Document templates and text blocks (TRD, HLD, as-built)
 

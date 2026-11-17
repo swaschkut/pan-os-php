@@ -18,6 +18,11 @@ Prisma Access is configured in two places:
 Both describe the same things (infrastructure subnet, locations, tunnels, BGP / routing, IP pools, onboarding …).
 The goal: **one way of working for both sources**, built from four common building blocks.
 
+Place in the project flow: building blocks 3 (adapt) and 4 (write) implement phase 4 "Operation / adapt" (manual
+or script based change / extension of the SCM configuration) of the Prisma Access lifecycle
+([scm-prisma-access-lifecycle.md](scm-prisma-access-lifecycle.md): TRD → design → HLD → apply → **adapt** → as-built
+→ maturity report); building blocks 1 and 2 also feed the as-built documentation and the maturity report.
+
 ## Common building blocks
 
 | # | Building block | Panorama plugin (`cloud_services`) | SCM API |
