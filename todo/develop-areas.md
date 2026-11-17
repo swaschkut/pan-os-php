@@ -119,7 +119,7 @@ Sources (former `utils/develop/panos-hw-compare/todo.txt`):
 | `playbook/process_commands.php` | process command lists to playbook JSON | `type=playbook` exists | merge or remove |
 | `ironskillet/url_categories_check.php` | read-only check of URL categories | iron-skillet now in profile classes (Done table) | check if still needed |
 | `appid/valdiation.php` | App-ID validation (*name only*, file name typo) | `type=appid-toolbox` | merge or remove |
-| `bp_config_validation/` | validate config against `validate_xpath.json` (day1 configs) | BP filters in `type=securityprofile` | decide: generic xpath check as `type=xpath` action? |
+| `bp_config_validation/` | validate device settings against `validate_xpath.json` (84 rules, day-1 configs) – firewall only | BP security profiles in `type=device` (`sp_spg-create-bp`) | own topic: [bp-config-validation.md](bp-config-validation.md) (create + validate for firewall, Panorama, template / template stack with general template) |
 | `certificate/importCert.php` | import certificate via API (template / vsys) | `type=certificate` has no import action | add import action |
 | `ui/` | web UI (root `index.php` redirects here) | in use | not a type; documentation only |
 | `sase/`, `scm/` | SCM | see SCM topics | – |
