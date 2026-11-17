@@ -2,7 +2,7 @@
 
 Offline on two Panorama XML files: the selected device groups with their parent device groups, firewalls, template
 stacks, templates and the shared objects they use go from Panorama A (file1) to Panorama B (file2); file1 is cleaned
-up. Concept: CONCEPT_panorama_to_panorama_move.md.
+up. Concept: [todo/panorama-move-concept.md](../../../todo/panorama-move-concept.md).
 
 ```
 pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt                                  # check run

@@ -1,7 +1,7 @@
 # scm_pa_report.php – Prisma Access as-built documentation
 
 Creates an as-built documentation of a Prisma Access / SCM tenant from an export folder of `scm_pa_export.php`
-(offline, read only). It follows the report outline of CONCEPT_prisma_access_lifecycle.md 4.1.
+(offline, read only). It follows the report outline of [todo/scm-prisma-access-lifecycle.md](../../../../todo/scm-prisma-access-lifecycle.md) 4.1.
 
 ```
 pan-os-php type=scm-report in=scm-export://scmtest/<TSG>/<timestamp> [out=<directory>]

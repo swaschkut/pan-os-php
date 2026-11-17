@@ -12,12 +12,12 @@ and how to write the differences into a tenant.
 | `scm_pa_sync.php apply` | sends the operations to the target tenant (dry-run unless `execute`) | yes (**write**) |
 
 Reference documentation: [README_pa_export.md](README_pa_export.md) (export), [README_pa_compare.md](README_pa_compare.md)
-(compare), [README_pa_sync.md](README_pa_sync.md) (sync), [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md)
+(compare), [README_pa_sync.md](README_pa_sync.md) (sync), [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md)
 (verification list, roadmap).
 
 > **Status:** in development (`beta_scm-extension`). Export and compare only **read**. `scm_pa_sync.php apply execute`
 > **changes** the target tenant – it has been tested against a simulated tenant only: use it on lab tenants until
-> the live verification ([NEXT_STEPS](NEXT_STEPS_pa_export.md) §4.10) is done.
+> the live verification ([NEXT_STEPS](../../../../todo/scm-pa-export-next-steps.md) §4.10) is done.
 
 ---
 
@@ -291,7 +291,7 @@ remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch 
 |---|---|
 | `problem with SCM API connection - not possible to get 'access_token'` | wrong `client_id` / `client_secret` or TSG → fix the line in `~/.panconfkeystore`; QA tenant: add `shadow-saseapiqa` |
 | many endpoints `unavailable` | product not licensed or service account without role → expected / add role |
-| endpoint `error` with HTTP 400 / 404 | API path or parameter not valid for this tenant → note it in the verification list ([NEXT_STEPS](NEXT_STEPS_pa_export.md) §4) |
+| endpoint `error` with HTTP 400 / 404 | API path or parameter not valid for this tenant → note it in the verification list ([NEXT_STEPS](../../../../todo/scm-pa-export-next-steps.md) §4) |
 | egress IP error | try `egressip-env=prod6`; check the egress API key |
 | `psk-list.csv` shows `DECRYPT_FAILED` | normal for SCM tenants (own master key) → fill `psk_new`, check with `scm_pa_secret_check.php` (4.2); a known master key: `master-key=<key>` |
 | export of `config` takes long | default `config-mode=leaf` already queries only the deepest folders and runs 8 requests in parallel; further: `config-scope=` / `container=` / `config-types=`; try `config-parallel=16` if no HTTP 429 occurs |
@@ -305,6 +305,6 @@ remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch 
 
 ## 6. What comes next
 
-- verification of export, compare and sync against live tenants ([NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) §4)
+- verification of export, compare and sync against live tenants ([todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md) §4)
 - Prisma Browser sync (rule / section API, draft publish)
 - `scm_pa_verify.php` – checks pan-os-php's own SCM loading against the raw export

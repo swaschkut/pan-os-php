@@ -20,7 +20,7 @@ The export is the input for the later steps:
 
 Every export also writes `MIGRATION_CHECKLIST.md` (see below).
 
-Next steps and the verification list for the first live run: [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md).
+Next steps and the verification list for the first live run: [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md).
 Comparing two exports: [README_pa_compare.md](README_pa_compare.md); syncing differences: [README_pa_sync.md](README_pa_sync.md).
 Step-by-step guide for consultants:
 [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
@@ -376,7 +376,7 @@ Exceptions found on a live tenant: rule bases (`policies` group) – the folder 
 of attached snippets, so snippets are queried directly; `variables` (`CONFIG_ALL_MODE_TYPES`) – an override in a
 child folder hides the parent value, so every folder is queried.
 `all`: every container is queried (the previous behaviour – slower; both modes must give the same files, see
-[NEXT_STEPS](NEXT_STEPS_pa_export.md) §4.8). An explicit `container=` filter always queries exactly those containers.
+[NEXT_STEPS](../../../../todo/scm-pa-export-next-steps.md) §4.8). An explicit `container=` filter always queries exactly those containers.
 Every file lists the queries it was built from (`source_queries`); `manifest.json` → `config.mode`, `api_queries`,
 `skipped_unavailable`, `http_requests`, `parallel`, `page_size`, `seconds`, `warnings`.
 
@@ -484,7 +484,7 @@ in `explicit-proxy/2x_forwarding-*.json` (profile type e.g. `global_protect_prox
 ### explicit-proxy
 
 There is no documented public API for Mobile Users Explicit Proxy. The area uses the **internal UI API** of Strata
-Cloud Manager (calls captured from the UI, see [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) §6.1); it accepts
+Cloud Manager (calls captured from the UI, see [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md) §6.1); it accepts
 the service account token (`Authorization: Bearer`). The host is region specific: `ui-api-host=` (default
 `paas-3.prod.eu.panorama.paloaltonetworks.com`; check with `scm_internal_api_probe.php` or the browser developer
 tools – requests to `/api/config/v9.2/...`). Endpoints are marked `internal` in `manifest.json` and may change without

@@ -19,7 +19,7 @@
 
 /**
  * Move device groups (with parents, devices, template stacks, templates and shared objects) from Panorama A (file1)
- * to Panorama B (file2) - offline on the XML files. CONCEPT_panorama_to_panorama_move.md
+ * to Panorama B (file2) - offline on the XML files. todo/panorama-move-concept.md
  *
  *   check()    calculation + conflict checks + shared rule impact + name problems -> findings, plan (nothing written)
  *   execute()  transfer into B, cleanup of A (only when check() has no blocking finding or it is accepted)

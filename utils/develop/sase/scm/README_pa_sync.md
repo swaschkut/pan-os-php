@@ -170,7 +170,7 @@ differences may remain.
 
 - request formats (POST bodies with `folder`, PUT by id, `:move` body, `candidate:push` body / job fields) follow the
   SCM API documentation but were only tested against a simulated tenant – see
-  [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md) §4.10
+  [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md) §4.10
 - Prisma Browser is planned but blocked (rule / section API + draft publish to be implemented)
 - IAM, egress IPs, locations, agent versions: read-only
 - secrets of endpoints without secret list (e.g. passwords in config server profiles) are sent as exported

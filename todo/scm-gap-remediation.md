@@ -4,11 +4,11 @@ Concept. Status: **draft for discussion – the new parts are not implemented ye
 
 * ✅ visibility / best practice checks of pan-os-php for rules, zones, zone protection profiles and security profiles
   (Panorama / firewall; for SCM via `in=scm-api://…`, security profiles complete via the internal UI API – see
-  [../sase/scm/SECURITY_PROFILES_public_vs_internal_api.md](../sase/scm/SECURITY_PROFILES_public_vs_internal_api.md))
+  [SECURITY_PROFILES_public_vs_internal_api.md](../utils/develop/sase/scm/SECURITY_PROFILES_public_vs_internal_api.md))
 * ✅ fix actions / playbooks (`virus.best-practice-set`, `…alert-only-set`, `type=playbook json=visibility.json` …) that
   change the XML; for Panorama / firewall the result is written as **set commands** (`outputformatset=`)
 * ✅ for SCM the result is written as **one SCM API request per changed object** (`outputformatscmjson=` /
-  `type=scm-changes`, format `pan-os-php-scm-changes` version 1) and sent with `type=scm-apply` – see [README.md](README.md)
+  `type=scm-changes`, format `pan-os-php-scm-changes` version 1) and sent with `type=scm-apply` – see [README.md](../utils/develop/scm/README.md)
 
 ## 1. Goal
 

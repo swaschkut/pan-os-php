@@ -19,7 +19,7 @@
 
 /**
  * panorama_to_panorama_move.php - move device groups (+ parents, firewalls, template stacks, templates, shared objects)
- * from Panorama A (file1) to Panorama B (file2), offline. CONCEPT_panorama_to_panorama_move.md
+ * from Panorama A (file1) to Panorama B (file2), offline. todo/panorama-move-concept.md
  *
  * pan-os-php type=panorama-move file1=A.xml file2=B.xml dg-list=dgs.txt [mode=check|execute] ...
  */

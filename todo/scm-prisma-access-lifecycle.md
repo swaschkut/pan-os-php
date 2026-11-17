@@ -1,7 +1,7 @@
 # Prisma Access lifecycle – from requirements to maturity report
 
 Concept / target picture. Status: **draft for discussion – nothing of the new parts is implemented yet** (updated 2026-11-14: report outline 4.1, project flow 4.2, templates / text blocks 4.3; steps A + B as first version: `scm_pa_report.php` / `type=scm-report`, README_pa_report.md). Existing
-building blocks are marked ✅ (see [NEXT_STEPS_pa_export.md](NEXT_STEPS_pa_export.md)).
+building blocks are marked ✅ (see [scm-pa-export-next-steps.md](scm-pa-export-next-steps.md)).
 
 ## 1. Goal
 

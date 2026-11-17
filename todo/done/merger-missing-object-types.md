@@ -1,7 +1,10 @@
 # Missing object mergers – overview
 
-**Status:** planning, no patch started
-**Code reference:** `beta` `43fd067`
+**Status:** done for section A (items 1–7) and item 8 – `type=object-merger` (`utils/lib/MERGER.php`, `objecttype=`)
+and `securityprofile-merger profiletype=virus-and-wildfire-analysis|dns-security|saas-security`.
+Still open (listed in [TODO.md](../../TODO.md)): items 9 and 10 of section B (only when needed) and section D
+(duplicate report for template objects).
+**Code reference:** planned on `beta` `43fd067`, state checked on `alpha` `0bed004`
 
 ## Existing mergers
 

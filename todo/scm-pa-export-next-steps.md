@@ -4,9 +4,9 @@ Status: the export covers all planned areas (`infra`, `config`, `remote-networks
 `mobile-users`, `prisma-browser`, `iam`) and writes `MIGRATION_CHECKLIST.md`. It has only been tested offline against simulated API
 answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
 
-Details of the export itself: [README_pa_export.md](README_pa_export.md). Compare: [README_pa_compare.md](README_pa_compare.md).
-Sync: [README_pa_sync.md](README_pa_sync.md).
-Step-by-step guide for consultants: [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
+Details of the export itself: [README_pa_export.md](../utils/develop/sase/scm/README_pa_export.md). Compare: [README_pa_compare.md](../utils/develop/sase/scm/README_pa_compare.md).
+Sync: [README_pa_sync.md](../utils/develop/sase/scm/README_pa_sync.md).
+Step-by-step guide for consultants: [CONSULTANT_GUIDE_pa_export_compare.md](../utils/develop/sase/scm/CONSULTANT_GUIDE_pa_export_compare.md).
 
 ---
 
@@ -380,7 +380,7 @@ compare → plan `additive` → dry-run (hash check) → execute: `POST /config/
 firewalls: HTTP 400 `push-to unexpected node` → push limited to folders with a push target (patch 40).
 
 One-step changes: `scm_pa_change.php changes=<file.json> [execute]` chains export → soll → compare → plan → dry-run →
-execute → verification for folders, snippets and objects ([README_pa_change.md](README_pa_change.md)). Live (2026-11-13):
+execute → verification for folders, snippets and objects ([README_pa_change.md](../utils/develop/sase/scm/README_pa_change.md)). Live (2026-11-13):
 `examples/change-sub-folder.json` – folder `PUT` (description), tag + address `POST` in the sub folder, all verified;
 second run "nothing to do". Folder list without `description` / `labels` → read with the single GET (patch 43).
 Next: `change-append-tag.json`, `change-delete-address.json`, `change-delete-tag.json` (in this order).
@@ -405,11 +405,11 @@ tokens never in shared files (HAR: "Export HAR (sanitized)", no `debugapi` logs,
 
 | step | what |
 |---|---|
-| ✅ | endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` ([README_pa_compare.md](README_pa_compare.md)) |
-| ✅ | `scm_pa_sync.php plan` / `apply` ([README_pa_sync.md](README_pa_sync.md)) – offline / mock only |
+| ✅ | endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` ([README_pa_compare.md](../utils/develop/sase/scm/README_pa_compare.md)) |
+| ✅ | `scm_pa_sync.php plan` / `apply` ([README_pa_sync.md](../utils/develop/sase/scm/README_pa_sync.md)) – offline / mock only |
 | ✅ | config export: leaf mode, parallel queries, chunks, heavy types, owner aliases, snippet rule bases, PA deployment folders |
 | ✅ | area `explicit-proxy`, GlobalProtect portal / Clientless VPN / trusted zones, Prisma Access Agent (internal UI API) |
-| ✅ | pan-os-php loader: vulnerability / WildFire-AV profiles from the internal API ([SECURITY_PROFILES_public_vs_internal_api.md](SECURITY_PROFILES_public_vs_internal_api.md)) |
+| ✅ | pan-os-php loader: vulnerability / WildFire-AV profiles from the internal API ([SECURITY_PROFILES_public_vs_internal_api.md](../utils/develop/sase/scm/SECURITY_PROFILES_public_vs_internal_api.md)) |
 
 ### Production export findings (2026-11-14)
 

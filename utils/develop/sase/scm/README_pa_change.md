@@ -173,6 +173,6 @@ selected group that refers to a profile that was not selected and does not exist
 * bigger changes, reordering rule bases, Prisma Access areas, tenant → tenant: export / edit / `scm_pa_compare.php` /
   `scm_pa_sync.php` ([README_pa_sync.md](README_pa_sync.md))
 * gap remediation (best practice / visibility fixes for the CDSS portal): change file `pan-os-php-scm-changes`
-  ([../../scm/CONCEPT_gap_remediation.md](../../scm/CONCEPT_gap_remediation.md)) – there the requests are generated
+  ([todo/scm-gap-remediation.md](../../../../todo/scm-gap-remediation.md)) – there the requests are generated
   from findings; here the consultant writes the wanted state of a few objects by hand. Both end in the same
   apply logic.

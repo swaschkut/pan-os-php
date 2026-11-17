@@ -19,7 +19,7 @@
 
 /**
  * As-built documentation of a Prisma Access / SCM tenant from a scm_pa_export.php folder
- * (CONCEPT_prisma_access_lifecycle.md 4.1, step A):
+ * (todo/scm-prisma-access-lifecycle.md 4.1, step A):
  *
  *   report.md        Markdown (convert to Word / PDF with pandoc or similar)
  *   report.html      self-contained HTML (print to PDF)
