@@ -18,6 +18,10 @@ under development.
 | SCM / Prisma Access | lifecycle from requirements to maturity report | draft; steps A + B as first version (`type=scm-report`) | [todo/scm-prisma-access-lifecycle.md](todo/scm-prisma-access-lifecycle.md) |
 | SCM / Prisma Access | `scm_pa_export.php`: next steps, verification against a live tenant | open: live verification | [todo/scm-pa-export-next-steps.md](todo/scm-pa-export-next-steps.md) |
 | SCM | API coverage: single scripts (pan.dev endpoints) vs. integrated `scm-*` types – superseded scripts, endpoints not integrated (config versions / jobs list, snippet audit logs, shared snippets, trusted tenants, deployment sites, fetch-scm-config, AIOps BPA) | inventory, decisions open | [todo/scm-api-coverage.md](todo/scm-api-coverage.md) |
+| develop / release notes | PAN-OS release notes (known / addressed issues) as `type=`; script + library + cache exist (`utils/develop/panos-release-notes`, `lib/resources/panos_release_notes`) | standalone script, not connected | [todo/develop-areas.md](todo/develop-areas.md) (1.1) |
+| develop / CVE | security advisory / CVE search for a PAN-OS version (security.paloaltonetworks.com) | **new**, does not exist | [todo/develop-areas.md](todo/develop-areas.md) (1.2) |
+| develop / LDAP | read AD users / groups (nested, account status); compare with firewall group mapping | 5 interactive scripts, not connected | [todo/develop-areas.md](todo/develop-areas.md) (1.3) |
+| develop | other `utils/develop` folders and loose scripts not connected to `type=` (migration vendors, create, certificate import, superseded scripts, `power/`) | inventory, decisions open | [todo/develop-areas.md](todo/develop-areas.md) (2, 3) |
 | object merger | remaining object types: section B items 9 (data objects) and 10 (GTP, SCEP, packet broker, SD-WAN profiles) – only when needed; section D: duplicate report for template objects (certificates, certificate profiles, SSL/TLS service profiles) | open | [todo/done/merger-missing-object-types.md](todo/done/merger-missing-object-types.md) (sections B, D) |
 
 ## Done
