@@ -344,6 +344,7 @@ require_once $basedir . '/device-and-system-classes/Snippet.php';
 require_once $basedir . '/device-and-system-classes/Sub.php';
 
 require_once $basedir . '/network-classes/trait/InterfaceType.php';
+require_once $basedir . '/network-classes/trait/RouteZoneMapping.php';
 require_once $basedir . '/network-classes/Zone.php';
 require_once $basedir . '/network-classes/ZoneStore.php';
 require_once $basedir . '/network-classes/InterfaceContainer.php';

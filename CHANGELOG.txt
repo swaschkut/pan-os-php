@@ -28,6 +28,7 @@ BUGFIX:
 * class PanoramaConf | removeDeviceGroup / removeTemplate / removeTemplateStack - remove the object from the internal list, the parent's child list and the readonly entry
 * bugfix IPv6 IPMap general fix
 * another IP4/6Map patch | intersection
+* bugfix related to IPv6 with Route to Zone relationship
 
 
 2.1.62

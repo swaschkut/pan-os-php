@@ -57,7 +57,7 @@ function noFloat( IPMap $m )
 
 $big = cidr::inet_ptoi( '2001:db8::' );          // 42540766411282592856903984951653826560
 
-print "  cidr::ipCmp / ipInc / ipDec\n";
+print "  cidr::ipCmp / ipInc / ipDec / ipSub\n";
 if( !method_exists('cidr', 'ipCmp') )
     print "    (not available - older library)\n";
 else
@@ -78,6 +78,11 @@ eq( cidr::ipDec( '2000' ), '1999', 'ipDec borrow' );
 eq( cidr::ipDec( '1000' ), '999', 'ipDec shorter' );
 eq( cidr::ipDec( cidr::inet_ptoi('2001:db8::1') ), $big, 'ipDec IPv6' );
 eq( cidr::ipDec( '0' ), '0', 'ipDec 0' );
+eq( cidr::ipSub( 10, 3 ), 7, 'ipSub int stays int' );
+eq( cidr::ipSub( '1000', '1' ), '999', 'ipSub borrow' );
+eq( cidr::ipSub( cidr::inet_ptoi('2001:db8::ffff'), $big ), '65535', 'ipSub IPv6 (size of a range)' );
+eq( cidr::ipSub( cidr::inet_ptoi('::ffff:ffff:ffff:ffff'), '0' ), '18446744073709551615', 'ipSub beyond 64 bit' );
+eq( cidr::ipSub( $big, $big ), '0', 'ipSub equal' );
 }
 
 print "  IPv6 merge (sortAndRecalculate / sortArrayByStartValue)\n";

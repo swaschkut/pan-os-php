@@ -82,6 +82,35 @@ class cidr
         return '0';
     }
 
+    /**
+     * $a - $b for IP values with $a >= $b (size of a range: end - start); int stays int, otherwise decimal string
+     * @param int|string $a
+     * @param int|string $b
+     * @return int|string
+     */
+    static public function ipSub($a, $b)
+    {
+        if( is_int($a) && is_int($b) )
+            return $a - $b;
+        if( self::ipCmp($a, $b) <= 0 )
+            return '0';
+        $a = self::ipToString($a);
+        $b = self::ipToString($b);
+        if( function_exists('bcsub') )
+            return bcsub($a, $b, 0);
+        $b = str_pad(ltrim($b, '0'), strlen($a), '0', STR_PAD_LEFT);
+        $r = '';
+        $borrow = 0;
+        for( $i = strlen($a) - 1; $i >= 0; $i-- )
+        {
+            $d = (int)$a[$i] - (int)$b[$i] - $borrow;
+            $borrow = $d < 0 ? 1 : 0;
+            $r = (string)( $d + 10 * $borrow ) . $r;
+        }
+        $r = ltrim($r, '0');
+        return $r === '' ? '0' : $r;
+    }
+
     /** IP value as decimal string; a float (from older arithmetic) is converted without exponent - already imprecise */
     static private function ipToString($a)
     {

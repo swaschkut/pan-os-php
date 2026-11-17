@@ -913,7 +913,6 @@ class AddressRuleContainer extends ObjRuleContainer
      */
     public function &calculateZonesFromIP6Mapping(array &$zoneIP6Mapping, bool $objectIsNegated = FALSE): array
     {
-        mwarning( "class AddressRuleContainer IPv6 not implemented", null, false );
         $zones = array();
 
         $objectsMapping = $this->getIP6Mapping();

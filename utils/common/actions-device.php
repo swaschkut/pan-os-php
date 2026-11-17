@@ -4850,13 +4850,13 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
         }
 
 
-        $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
-        //Todo: IPv6 not implemented yet
+        $resolvedZonesv4 = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
         $resolvedZonesv6 = &$addressContainer->calculateZonesFromIP6Mapping($ipMapping['ipv6']);
+        $resolvedZones = $resolvedZonesv4 + $resolvedZonesv6;
 
         if( count($resolvedZones) == 0 )
         {
-            $string = "no zone resolved (FQDN? IPv6?)";
+            $string = "no zone resolved (FQDN?)";
             PH::ACTIONstatus($context, "WARNING", $string);
             return;
         }
