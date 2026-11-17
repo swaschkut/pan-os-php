@@ -24,14 +24,14 @@ under development.
 | Area | Topic | Result | File |
 |---|---|---|---|
 | object merger | missing object mergers, section A + item 8 | `type=object-merger` (`objecttype=`), `securityprofile-merger` SCM profile types | [todo/done/merger-missing-object-types.md](todo/done/merger-missing-object-types.md) |
+| best practice | Iron-Skillet / BP day one config (also via API) | iron-skillet XML in the profile classes (`ironSkilletXml()`: antivirus, anti-spyware, vulnerability, URL, file blocking, WildFire, virus-and-wildfire-analysis, DNS security, log forwarding, zone protection); `type=device` actions `sp_spg-create-BP`, `sp_spg-create-alert-only-BP`, `LogForwardingProfile-create-BP`, `ZPP-create-BP`, `CleanUpRule-create-BP`, `DefaultSecurityRule-create-BP`; with `in=api://` the objects are sent by `API_sync()` | – |
+| best practice | security profile best practice filter | `type=securityprofile securityprofiletype=<type> 'filter=(<field> is.best-practice)'`, field per profile type: `av`, `as`, `vp`, `wf`, `url`, `fb`, `avwf`, `dnssec`, `dns-security`, `dns-list`, `cloud-inline-analysis` and sub fields (`av.action`, `as.rules`, `vp.mica-engine`, …); also `is.visibility` / `is.adoption`; data filtering (`df`): `is.visibility` / `is.adoption` only | – |
+| best practice | security profile export with best practice | `type=securityprofile actions=exportToExcel:file.html,BestPractice\|Visibility\|Adoption` – columns `BP SP`, `BP rules`, `BP mica-engine`, … | – |
 
 ## Small items
 
 ### General (former `lib/todo.txt`)
 
-- Ironskillet / BP – extend to configure day one config via API
-- `type=securityprofile 'filter=(object is.bestpractice)'`
-- `type=securityprofile actions=exporttoexcel:file.html,checkBestPractice`
 - optimisation:
   - template HA / device / local FW config import
   - rule-merger – Panorama based on serial – upper / lower DG
@@ -43,8 +43,16 @@ under development.
 
 - zone calculation of rules (`Rule.php`, from / to) uses only the `ipv4` part of `getIPtoZoneRouteMapping()`; the
   `ipv6` part exists since `b8381c9` – using it changes rule results
-- action arguments cannot take an IPv6 address: `actions=find-zone-from-ip:2001:db8::1` → "illegal syntax" (the
-  colons are the argument separator)
+- IPv6 address as action argument: see "Action arguments"
+
+### Action arguments (`UTIL::extracting_actions()`)
+
+- `/` separates actions, a `/` inside an argument has to be written as `//` – works, but is not documented
+  (README, `READMEutil.md`, help text): `actions=exportToExcel://tmp//out.html` writes `/tmp/out.html`;
+  `exportToExcel:/tmp/out.html` fails with "argument#0 'filename' requires a value", `exportToExcel:sub/out.html` with
+  "unsupported Action"
+- `:` separates the action name from its arguments, more than one `:` is "illegal syntax" and there is no escape:
+  an IPv6 address cannot be passed, e.g. `actions=find-zone-from-ip:2001:db8::1`
 
 ### appid-toolbox
 
