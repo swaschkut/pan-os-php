@@ -1,0 +1,428 @@
+<?xml version="1.0"?>
+<config urldb="paloaltonetworks" version="11.0.0">
+  <mgt-config>
+    <devices/>
+    <users>
+      <entry name="admin">
+        <phash>fnRL/G5lXVMug</phash>
+        <permissions>
+          <role-based>
+            <superuser>yes</superuser>
+          </role-based>
+        </permissions>
+      </entry>
+      <entry name="admin2">
+        <phash>$1$bgnqjgob$HmenJzuuUAYmETzsMcdfJ/</phash>
+        <permissions>
+          <role-based>
+            <superuser>yes</superuser>
+          </role-based>
+        </permissions>
+      </entry>
+    </users>
+    <access-domain/>
+  </mgt-config>
+  <shared>
+    <address>
+      <entry name="shared-host1">
+        <ip-netmask>1.2.2.3/32</ip-netmask>
+        <tag>
+          <member>grp.shared-group1</member>
+        </tag>
+      </entry>
+      <entry name="shared-host2">
+        <ip-netmask>14.5.6.7/32</ip-netmask>
+        <tag>
+          <member>grp.shared-group1</member>
+        </tag>
+      </entry>
+      <entry name="Datacenter Subnet">
+        <ip-netmask>10.0.0.0/16</ip-netmask>
+      </entry>
+      <entry name="new test 2">
+        <ip-netmask>1.1.1.1</ip-netmask>
+        <tag>
+          <member>test-shared</member>
+        </tag>
+      </entry>
+      <entry name="another object">
+        <ip-netmask>1.1.1.1</ip-netmask>
+      </entry>
+    </address>
+    <address-group>
+      <entry name="shared-group1">
+        <static>
+          <member>shared-host1</member>
+          <member>shared-host2</member>
+          <member>test-group2</member>
+        </static>
+      </entry>
+      <entry name="test-dynamic">
+        <dynamic>
+          <filter>'grp.shared-group1'</filter>
+        </dynamic>
+      </entry>
+      <entry name="test-group2">
+        <static>
+          <member>shared-host2</member>
+        </static>
+      </entry>
+      <entry name="shrd-grp-dynamic">
+        <dynamic>
+          <filter>'test.tag'</filter>
+        </dynamic>
+      </entry>
+      <entry name="shrd-grp1-2obj-1ref">
+        <static>
+          <member>shared-host1</member>
+          <member>test-dynamic</member>
+        </static>
+      </entry>
+      <entry name="shrd-grp2-3obj-0ref">
+        <static>
+          <member>Datacenter Subnet</member>
+          <member>shared-group1</member>
+          <member>test-dynamic</member>
+        </static>
+      </entry>
+      <entry name="group-with-duplicate-child">
+        <static>
+          <member>new test 1</member>
+          <member>new test 2</member>
+        </static>
+      </entry>
+    </address-group>
+    <tag>
+      <entry name="grp.local-group1"/>
+      <entry name="grp.shared-group1"/>
+      <entry name="test-shared"/>
+    </tag>
+    <pre-rulebase>
+      <decryption>
+        <rules>
+          <entry name="shared pre decrypt 1" uuid="efc9e97d-870a-4182-ac29-5bc4734670b8">
+            <category>
+              <member>any</member>
+            </category>
+            <type>
+              <ssl-forward-proxy/>
+            </type>
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>any</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <action>no-decrypt</action>
+          </entry>
+        </rules>
+      </decryption>
+      <security>
+        <rules>
+          <entry name="shared pre rule 1" uuid="62333abc-79c8-462b-94be-e3834a9e0559">
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>any</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>any</member>
+            </application>
+            <service>
+              <member>application-default</member>
+            </service>
+            <action>allow</action>
+            <source-hip>
+              <member>any</member>
+            </source-hip>
+          </entry>
+          <entry name="shared-pre-rule2" uuid="d31e4e24-3a36-42c7-a36b-4cb3f24ce000">
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>any</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>ssl</member>
+            </application>
+            <service>
+              <member>application-default</member>
+            </service>
+            <action>allow</action>
+            <source-hip>
+              <member>any</member>
+            </source-hip>
+          </entry>
+        </rules>
+      </security>
+    </pre-rulebase>
+    <post-rulebase>
+      <security>
+        <rules>
+          <entry name="shared post rule 1" uuid="4a239fe6-6ab6-40af-b66b-8f6894621151">
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>Datacenter Subnet</member>
+              <member>new test 2</member>
+            </source>
+            <destination>
+              <member>any</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>any</member>
+            </application>
+            <service>
+              <member>application-default</member>
+            </service>
+            <action>allow</action>
+            <source-hip>
+              <member>any</member>
+            </source-hip>
+          </entry>
+        </rules>
+      </security>
+    </post-rulebase>
+    <profile-group>
+      <entry name="Shared Production Profile"/>
+    </profile-group>
+    <service>
+      <entry name="shrd-sv1">
+        <protocol>
+          <tcp>
+            <port>50</port>
+          </tcp>
+        </protocol>
+      </entry>
+      <entry name="shrd-sv5">
+        <protocol>
+          <tcp>
+            <port>9000</port>
+          </tcp>
+        </protocol>
+      </entry>
+      <entry name="svc-with-children">
+        <protocol>
+          <tcp>
+            <port>57</port>
+          </tcp>
+        </protocol>
+      </entry>
+    </service>
+    <content-preview>
+      <application/>
+      <application-type>
+        <category/>
+        <technology/>
+      </application-type>
+    </content-preview>
+  </shared>
+  <devices>
+    <entry name="localhost.localdomain">
+      <deviceconfig>
+        <system>
+          <ip-address>192.168.55.41</ip-address>
+          <netmask>255.255.255.0</netmask>
+          <update-server>updates.paloaltonetworks.com</update-server>
+          <update-schedule>
+            <threats>
+              <recurring>
+                <daily>
+                  <at>15:00</at>
+                  <action>download-and-install</action>
+                  <disable-new-content>no</disable-new-content>
+                </daily>
+              </recurring>
+            </threats>
+            <anti-virus>
+              <recurring>
+                <daily>
+                  <at>18:30</at>
+                  <action>download-and-install</action>
+                </daily>
+              </recurring>
+            </anti-virus>
+          </update-schedule>
+          <timezone>Europe/Paris</timezone>
+          <service>
+            <disable-telnet>yes</disable-telnet>
+            <disable-http>yes</disable-http>
+          </service>
+          <hostname>Panorama</hostname>
+          <default-gateway>192.168.55.2</default-gateway>
+          <dns-setting>
+            <servers>
+              <primary>8.8.8.8</primary>
+            </servers>
+          </dns-setting>
+          <ntp-servers>
+            <primary-ntp-server>
+              <ntp-server-address>1.pool.ntp.org</ntp-server-address>
+              <authentication-type>
+                <none/>
+              </authentication-type>
+            </primary-ntp-server>
+          </ntp-servers>
+          <server-verification>yes</server-verification>
+        </system>
+        <setting>
+          <management>
+            <share-unused-objects-with-devices>no</share-unused-objects-with-devices>
+            <storage-partition>
+              <internal/>
+            </storage-partition>
+          </management>
+        </setting>
+      </deviceconfig>
+      <device-group/>
+      <template/>
+      <template-stack/>
+    </entry>
+  </devices>
+  <readonly>
+    <max-internal-id>98</max-internal-id>
+    <devices>
+      <entry name="localhost.localdomain">
+        <device-group/>
+        <template/>
+        <template-stack/>
+      </entry>
+    </devices>
+    <shared>
+      <address-group>
+        <entry name="shared-group1">
+          <id>69</id>
+        </entry>
+        <entry name="test-dynamic">
+          <id>70</id>
+        </entry>
+        <entry name="test-group2">
+          <id>71</id>
+        </entry>
+        <entry name="shrd-grp-dynamic">
+          <id>72</id>
+        </entry>
+        <entry name="shrd-grp1-2obj-1ref">
+          <id>73</id>
+        </entry>
+        <entry name="shrd-grp2-3obj-0ref">
+          <id>74</id>
+        </entry>
+        <entry name="group-with-duplicate-child">
+          <id>75</id>
+        </entry>
+      </address-group>
+    </shared>
+  </readonly>
+  <panorama>
+    <certificate>
+      <entry name="newCA1">
+        <subject-hash>4c36a579</subject-hash>
+        <issuer-hash>4c36a579</issuer-hash>
+        <not-valid-before>Jan 19 21:14:39 2016 GMT</not-valid-before>
+        <issuer>/CN=newCA1</issuer>
+        <not-valid-after>Aug 19 21:14:39 2025 GMT</not-valid-after>
+        <common-name>newCA1</common-name>
+        <expiry-epoch>1755638079</expiry-epoch>
+        <ca>yes</ca>
+        <subject>/CN=newCA1</subject>
+        <public-key>-----BEGIN CERTIFICATE-----
+                    MIICwjCCAaqgAwIBAgIJANQ4xVwwkEA5MA0GCSqGSIb3DQEBCwUAMBExDzANBgNV
+                    BAMTBm5ld0NBMTAeFw0xNjAxMTkyMTE0MzlaFw0yNTA4MTkyMTE0MzlaMBExDzAN
+                    BgNVBAMTBm5ld0NBMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALlq
+                    XZoZFiBkXkW9Yx4/4CKV4auCnsrqPndYgq0+XznfQylsjsePqQvcinhxU67jCTJt
+                    GE/iWwB3PI2J380790euZTs27POVgokMq/67QVOtmd75H80xz0o1gOCF4z12fKMY
+                    /10cR/6y9PuP+fjEjLB3guaILua0Gf3cnCHrargPhNZ3mYhcFtNRJJh76NZ+OpXO
+                    RFTTWbKF0NXuiBwNOgUgpaQb9/xBc33MfyMriD17qPP36e6B8fQ4wubRYFTpKb67
+                    KHN1CcJrIoSwEyAxltJmgxoin9OxI05QEVcHhHCU8K1pogQdX2j2R8KirVgG67IZ
+                    5mBZhTp6QACrOrMk8/0CAwEAAaMdMBswDAYDVR0TBAUwAwEB/zALBgNVHQ8EBAMC
+                    AgQwDQYJKoZIhvcNAQELBQADggEBAGVsy5J+yDSd+g2COBwx5fu/DzC+4v95A1v7
+                    1HJwn3NNQ5udv67nS/DUaKlmmTeraV8PjdYYE5aCknbo303wJ0Zw547nvkXBFbKA
+                    VxeQBfXq4YtjoiiI22xOrOjLvVOhWI7crEddWb9tYaMotWRSgpQLlicjLb/pLJ7C
+                    oD+z9sQIQtH1cd70Es+Onyo9mnaWqLnFeBDH4roLeR+Re1mf4I+bkI8iIXxsOksm
+                    uJ0EcAC7CDaHCe3480MdQgZ7CIrSDrkuthTtC4ZRyaNKHhsH67+oMM21oFXzHvJz
+                    FKZL5glfr01Msbwp8z+zwt6fwgFIY1JEtZJxhe/8DLujTiFrNd4=
+                    -----END CERTIFICATE-----
+                </public-key>
+        <algorithm>RSA</algorithm>
+      </entry>
+      <entry name="webgui2">
+        <subject-hash>2e1fd71f</subject-hash>
+        <issuer-hash>4c36a579</issuer-hash>
+        <not-valid-before>Jan 19 21:14:57 2016 GMT</not-valid-before>
+        <issuer>/CN=newCA1</issuer>
+        <not-valid-after>Jan 18 21:14:57 2017 GMT</not-valid-after>
+        <common-name>webgui2</common-name>
+        <expiry-epoch>1484774097</expiry-epoch>
+        <ca>no</ca>
+        <subject>/CN=webgui2</subject>
+        <public-key>-----BEGIN CERTIFICATE-----
+                    MIIDCzCCAfOgAwIBAgIBAjANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDEwZuZXdD
+                    QTEwHhcNMTYwMTE5MjExNDU3WhcNMTcwMTE4MjExNDU3WjASMRAwDgYDVQQDEwd3
+                    ZWJndWkyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxedVDwE+U9rF
+                    6vLMBvlxFSlwq3NqCGIcF7Hurgsr8FRHTh8CDgSNb6ulpeNaTM3AyjFObXiLgFhu
+                    +fKoGisw90kevxjIwy/SCYv4ccHU+6xWTI6/fdZcpzHYMVrjUsa9tFqF93C2wGmM
+                    XKOu3w8uZfKSNCnm6LMjNVDmN33bav2a/7WhO8Y78AENfbaTjEmTBZFgudB38FYR
+                    PCpxApEwVrRHVBr67wIUPbzgZmf0iwB3meH6JkUIcSYVe/++/2pgXvyDN8CXa32V
+                    uORrnbEKegwspfCR8m731DwGbgCcd85opWMAnPzvYqQVxiaee+OENKBoernfMAei
+                    gapjatxGnwIDAQABo20wazAJBgNVHRMEAjAAMAsGA1UdDwQEAwIDuDAnBgNVHSUE
+                    IDAeBggrBgEFBQcDAQYIKwYBBQUHAwIGCCsGAQUFBwMFMAkGA1UdIwQCMAAwHQYD
+                    VR0OBBYEFDv5fgicxhTDXPBkXP7C8lkEjt/BMA0GCSqGSIb3DQEBCwUAA4IBAQCg
+                    /MUX/U4yJ7j4F6rQJd4TWDo3OBCzkXh+Yv3GFTwLPPHURm3P9G/J0YyW7IUI5cD0
+                    /v8vRooIBCuBiMOW1L30Adeg1E+71GKrI7K3q5QH/ToWrOAM4TEFqTBSCtbkVtTO
+                    uZHT+w8hKqWC0xPEwLDt0ucCwb3X4atiL6BK0cyplXtiqioVAJyEti6xgsHFi87i
+                    CZU6S7EMJlpnjl9ORX6H3qoNKqCbIHY6ApcmI6LHhBNpMX50qZfMvxMZl2TDxymj
+                    K4n7Pn+1W5QZWjIqPYyXhXBqaMT7fcBqNJ5VtQjtL22mF13FvzJy7Upt0jrLn8hP
+                    KBj/FOCwP/saUN+NTdij
+                    -----END CERTIFICATE-----
+                </public-key>
+        <algorithm>RSA</algorithm>
+      </entry>
+    </certificate>
+  </panorama>
+</config>

@@ -1,7 +1,8 @@
 # Concept: move device groups from one Panorama to another (panorama-move)
 
 Status: first version implemented (2026-11-17, branch `alpha`) – README_panorama_move.md; steps 1 – 5 of section 10 done;
-D4 / D5 implemented as option `conflict=rename:<suffix>` (2026-11-17), default stays `stop`. Open: step 6 (tests).
+D4 / D5 implemented as option `conflict=rename:<suffix>` (2026-11-17), default stays `stop`; step 6 done
+(`tests/test_panorama_move.php`, fixtures `tests/input/panorama-move/`).
 Script (planned): `utils/develop/panorama_move/panorama_to_panorama_move.php`, `pan-os-php type=panorama-move`.
 
 ## 1. Goal
@@ -242,6 +243,7 @@ The DG / template removal gaps are fixed first (own patch) – the cleanup of fi
 3. transfer into file2 (5) + validation by reload
 4. cleanup of file1 (6) + validation
 5. report / `plan.json`, `type=panorama-move` registration, README
-6. tests: `tests/input/panorama-10.0-merger.xml` / `panorama-11.0-merger.xml` as file1, a reduced Panorama as file2;
-   cases: leaf DG, DG with shared parent, parent used by others, shared stack / template, name conflict, same-value
-   shared object, multi-vsys device
+6. tests (done): `tests/test_panorama_move.php`; fixtures derived from `panorama-11.0-merger.xml` by
+   `tests/input/panorama-move/build_fixtures.php`; cases: leaf DG, DG with shared parent, parent used by others,
+   shared stack / template, name conflict (stop / rename), same-value shared object, multi-vsys device, encrypted
+   values (master-key same / different), rename target taken, ambiguous local object, arguments
