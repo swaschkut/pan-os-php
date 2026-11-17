@@ -53,10 +53,11 @@ DeviceCallContext::$supportedActions['display'] = array(
 
             PH::print_stdout( $padding."----------");
 
-            $used_templates = $object->templates;
-            foreach( $used_templates as $template )
+            //priority in the stack: 1 = first template of the configuration = highest priority
+            $used_templates = array_values($object->templates);
+            foreach( $used_templates as $prio => $template )
             {
-                PH::print_stdout( $context->padding." - " . get_class($template) . " '{$template->name()}'" );
+                PH::print_stdout( $context->padding." - " . ($prio + 1) . ": " . get_class($template) . " '{$template->name()}'" );
                 PH::$JSON_TMP['sub']['object'][$object->name()]['template'][] = $template->name();
             }
             //Todo: PH::print_stdout( where this TemplateStack is used SERIAL
@@ -167,12 +168,12 @@ DeviceCallContext::$supportedActions['display'] = array(
                     PH::$JSON_TMP['sub']['object'][$object->name()]['templatestack'][$managedDevice->getTemplateStack()]['name'] = $managedDevice->getTemplateStack();
 
                     $templatestack = $device->findTemplateStack( $managedDevice->getTemplateStack() );
-                    foreach( $templatestack->templates as $template )
+                    foreach( array_values($templatestack->templates) as $prio => $template )
                     {
-                        $template_obj = $device->findTemplate( $template );
+                        $template_obj = is_object($template) ? $template : $device->findTemplate( $template );
                         if( $template_obj !== null )
                         {
-                            PH::print_stdout( " - ".$template_obj->name() );
+                            PH::print_stdout( " - ".($prio + 1).": ".$template_obj->name() );
                             PH::$JSON_TMP['sub']['object'][$object->name()]['templatestack'][$managedDevice->getTemplateStack()]['templates'][] = $template_obj->name();
                         }
 
@@ -1723,7 +1724,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
                     if( $tstack_obj !== null )
                     {
-                        foreach( array_reverse($tstack_obj->templates) as $template_obj )
+                        foreach( array_values($tstack_obj->templates) as $prio => $template_obj )
                         {
                             /* @var Template $template_obj */
                             $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
@@ -1734,7 +1735,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                             {
                                 $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
                             }
-                            $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                            //priority in the stack: 1 = first template of the configuration = highest priority
+                            $tmp_template[$template_obj->name()] = ($prio + 1).": ".$template_obj->name()." [".implode(",", $vsys_name)."]";
                         }
                     }
                     $lines .= $context->encloseFunction( $tmp_stack );
@@ -1786,7 +1788,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
                         if( $tstack_obj !== null )
                         {
-                            foreach( array_reverse($tstack_obj->templates) as $template_obj )
+                            foreach( array_values($tstack_obj->templates) as $prio => $template_obj )
                             {
                                 /* @var Template $template_obj */
                                 $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
@@ -1797,7 +1799,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                                 {
                                     $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
                                 }
-                                $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                                //priority in the stack: 1 = first template of the configuration = highest priority
+                                $tmp_template[$template_obj->name()] = ($prio + 1).": ".$template_obj->name()." [".implode(",", $vsys_name)."]";
                             }
                         }
                     }
@@ -1843,7 +1846,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction( "-SELF-" );
 
                     $tmp_template = array();
-                    foreach( array_reverse($object->templates) as $template_obj )
+                    foreach( array_values($object->templates) as $prio => $template_obj )
                     {
                         /* @var Template $template_obj */
                         $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
@@ -1854,7 +1857,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         {
                             $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
                         }
-                        $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                        //priority in the stack: 1 = first template of the configuration = highest priority
+                        $tmp_template[$template_obj->name()] = ($prio + 1).": ".$template_obj->name()." [".implode(",", $vsys_name)."]";
                     }
 
                     //template
