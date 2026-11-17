@@ -1899,6 +1899,7 @@ class PanoramaMove
                 $e->parentNode->removeChild( $e );
         // Panorama settings (config sections, e.g. deployment-update-schedule): references to removed names / moved firewalls
         $this->stats['file1_config_sections_removed'] = array();
+        $this->stats['file1_config_sections_empty'] = array();
         foreach( $this->configSections as $cs )
         {
             $e = ConfigSection::entry( ConfigSection::container( $A->xmldoc, ConfigSection::section($cs['section']) ), $cs['entry'] );
@@ -1909,7 +1910,11 @@ class PanoramaMove
                 if( in_array(trim($m->textContent), $removedNames, TRUE) || isset($this->devices[trim($m->textContent)]) )
                 {
                     $this->stats['file1_config_sections_removed'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . trim($m->textContent);
-                    $m->parentNode->removeChild( $m );
+                    $list = $m->parentNode;
+                    $list->removeChild( $m );
+                    // a member list without members (e.g. devices of a dynamic update schedule) is not valid
+                    if( DH::firstChildElement($list) === FALSE )
+                        $this->stats['file1_config_sections_empty'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . self::relPath( $list, $e );
                 }
             foreach( iterator_to_array( $ex->query('.//entry[@name]', $e) ) as $n )
                 if( in_array($n->getAttribute('name'), $removedNames, TRUE) || isset($this->devices[$n->getAttribute('name')]) )
@@ -2170,6 +2175,9 @@ class PanoramaMove
         if( $mode == 'execute' && !empty($this->stats['file1_config_sections_removed']) )
             $o .= $li( "Panorama settings: references to moved device groups / templates / stacks / firewalls removed in " . $code($out1) . ": "
                 . implode('; ', $this->stats['file1_config_sections_removed']) . " – check that the entries still make sense (an entry without targets can be deleted) *(done by panorama-move)*", TRUE );
+        if( $mode == 'execute' && !empty($this->stats['file1_config_sections_empty']) )
+            $o .= $li( "**Empty member list** in " . $code($out1) . " after removing the moved firewalls: " . implode('; ', $this->stats['file1_config_sections_empty'])
+                . " – the commit on Panorama A fails: delete the entry (" . $code('pan-os-php type=config-section … entry=<name> actions=delete') . ") or add other firewalls" );
         elseif( $mode != 'execute' )
             foreach( $this->configSections as $cs )
                 $o .= $li( "Panorama setting " . $code($cs['section']) . " " . $code($cs['entry']) . ": references to " . implode(', ', $cs['references'])

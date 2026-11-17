@@ -422,7 +422,7 @@ $scenarios['unresolved-and-content'] = function() use ( $A, $Bclean, $work ) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// Panorama settings (config sections, concept 11.3): deployment-update-schedule referencing moved items
+// Panorama settings (config sections, concept 11.3): deployment-update-schedule referencing moved firewalls
 
 $scenarios['panorama-settings'] = function() use ( $A, $Bclean, $work ) {
     $d = new DOMDocument();
@@ -430,10 +430,20 @@ $scenarios['panorama-settings'] = function() use ( $A, $Bclean, $work ) {
     $x = new DOMXPath( $d );
     $system = $x->query("/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system")->item(0);
     $f = new DOMDocument();
+    // structure of a real Panorama configuration (Device Deployment > Dynamic Updates > Schedules), fixture serials
     $f->loadXML( '<deployment-update-schedule>'
-        . '<entry name="nightly"><devices><member>007100000290</member><member>000000000101</member></devices>'
-        . '<scope><device-group><member>testDG</member></device-group><template-stack><member>Paris_Datacenter_Stack</member></template-stack></scope></entry>'
-        . '<entry name="unrelated"><devices><member>000000000555</member></devices></entry>'
+        . '<entry name="AppAndThreats"><app-and-threat><recurring><threshold>24</threshold><daily><action><download-and-install>'
+        . '<devices><member>007100000290</member><member>000000000101</member></devices>'
+        . '</download-and-install></action><at>03:00</at></daily></recurring></app-and-threat>'
+        . '<download-source><update-server/></download-source><disabled>no</disabled></entry>'
+        . '<entry name="WF"><wildfire><recurring><every-min><action><download-and-install>'
+        . '<devices><member>000000000555</member></devices>'
+        . '</download-and-install></action></every-min></recurring></wildfire>'
+        . '<download-source><update-server/></download-source><disabled>no</disabled></entry>'
+        . '<entry name="AV"><anti-virus><recurring><threshold>48</threshold><daily><action><download-and-install>'
+        . '<devices><member>007100000290</member></devices>'
+        . '</download-and-install></action><at>03:00</at></daily></recurring></anti-virus>'
+        . '<download-source><update-server/></download-source><disabled>no</disabled></entry>'
         . '</deployment-update-schedule>' );
     $system->appendChild( $d->importNode($f->documentElement, TRUE) );
     $file1 = $work . '/panorama-move-A-settings.xml';
@@ -442,22 +452,23 @@ $scenarios['panorama-settings'] = function() use ( $A, $Bclean, $work ) {
     list( $rc, $p, $dir ) = run( 'settings', array( 'testDG' ), array( 'file1=' . $file1, 'file2=' . $Bclean ) );
     eq( $rc, 0, 'check run - exit code' );
     $s = findings( $p, 'info', 'Panorama setting' );
-    eq( count($s), 1, 'one Panorama setting finding (unrelated entry not reported)' );
-    eq( isset($s[0]) ? $s[0]['name'] : null, 'deployment-update-schedule nightly', 'finding names section and entry' );
+    eq( count($s), 2, 'two Panorama setting findings (unrelated entry not reported)' );
+    eq( isset($s[0]) ? $s[0]['name'] : null, 'deployment-update-schedule AppAndThreats', 'finding names section and entry' );
     $refs = isset($p['panorama_settings_referencing_moved'][0]) ? $p['panorama_settings_referencing_moved'][0]['references'] : array();
-    sort( $refs );
-    eq( $refs, array( 'device group testDG', 'firewall 007100000290', 'template stack Paris_Datacenter_Stack' ), 'plan.json references' );
+    eq( $refs, array( 'firewall 007100000290' ), 'plan.json references (only the moved firewall)' );
     check( strpos(@file_get_contents($dir . '/report/MIGRATION_FOLLOWUP.md'), 'type=config-section') !== FALSE, 'follow-up: set commands hint' );
 
     list( $rc, $p, $dir ) = run( 'settings-exec', array( 'testDG' ), array( 'file1=' . $file1, 'file2=' . $Bclean, 'mode=execute' ) );
     eq( $rc, 0, 'execute - exit code' );
     $a = xp( $dir . '/A.xml' );
-    $base = "/config/devices/entry/deviceconfig/system/deployment-update-schedule/entry[@name='nightly']";
-    eq( cnt($a, $base . "/devices/member[.='007100000290']"), 0, 'file1: moved firewall removed from the schedule' );
-    eq( cnt($a, $base . "/devices/member[.='000000000101']"), 1, 'file1: kept firewall stays' );
-    eq( cnt($a, $base . "/scope/device-group/member[.='testDG']"), 0, 'file1: moved device group removed' );
-    eq( cnt($a, $base . "/scope/template-stack/member[.='Paris_Datacenter_Stack']"), 0, 'file1: moved stack removed' );
-    eq( cnt($a, "//deployment-update-schedule/entry[@name='unrelated']/devices/member"), 1, 'file1: unrelated entry unchanged' );
+    $devs = "/config/devices/entry/deviceconfig/system/deployment-update-schedule/entry[@name='AppAndThreats']/app-and-threat/recurring/daily/action/download-and-install/devices";
+    eq( cnt($a, $devs . "/member[.='007100000290']"), 0, 'file1: moved firewall removed from the schedule' );
+    eq( cnt($a, $devs . "/member[.='000000000101']"), 1, 'file1: kept firewall stays' );
+    eq( cnt($a, "//deployment-update-schedule/entry[@name='WF']//devices/member"), 1, 'file1: unrelated entry unchanged' );
+    eq( cnt($a, "//deployment-update-schedule/entry[@name='AV']//devices/member"), 0, 'file1: only firewall of AV removed' );
+    $fu = (string)@file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
+    check( strpos($fu, 'Empty member list') !== FALSE && strpos($fu, 'deployment-update-schedule AV') !== FALSE, 'follow-up: empty member list of AV' );
+    check( strpos($fu, 'deployment-update-schedule AppAndThreats:') === FALSE || strpos(substr($fu, strpos($fu, 'Empty member list')), 'AppAndThreats') === FALSE, 'follow-up: AppAndThreats not empty' );
     $b = xp( $dir . '/B.xml' );
     eq( cnt($b, "//deployment-update-schedule"), 0, 'file2: Panorama settings not transferred' );
 };

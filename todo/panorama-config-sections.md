@@ -28,16 +28,16 @@ fields or references.
 
 | section | path | state |
 |---|---|---|
-| `deployment-update-schedule` | `deviceconfig/system/deployment-update-schedule` | done (registry, panorama-move) |
+| `deployment-update-schedule` | `deviceconfig/system/deployment-update-schedule` – Device Deployment > Dynamic Updates > Schedules (content updates; firewalls as serials in `<type>/recurring/…/action/download-and-install/devices`) | done (registry, panorama-move; structure verified with a real configuration 2026-11-17) |
 | `config-bundle-export-schedule` | `deviceconfig/system/config-bundle-export-schedule` | done (registry) |
 | `permitted-ip` | `deviceconfig/system/permitted-ip` (Panorama, firewall, template) | done (registry) |
 
 ## Open
 
-1. **verify with a real configuration**: element names inside `deployment-update-schedule` /
-   `config-bundle-export-schedule` (tests use example structures); confirm which GUI function
-   `deployment-update-schedule` is (Panorama > Scheduled Config Push or Device Deployment > Dynamic Updates >
-   Schedules) – the type works either way, the README / report wording may change
+1. **Panorama > Scheduled Config Push**: its xpath is still unknown – `deployment-update-schedule` turned out to be the
+   dynamic update schedules (real configuration excerpt, 2026-11-17). Needed: an excerpt of a Panorama (10.1+) with a
+   scheduled config push → registry entry, then panorama-move reports it like the dynamic update schedules.
+   `config-bundle-export-schedule`: verify the element names with a real configuration (tests use an example)
 2. more sections: access domains (`mgt-config/access-domain`), log collector groups, admin roles, other
    `deviceconfig/system` settings with entries; then panorama-move could read access domains / log collector groups from
    the registry instead of its own code
