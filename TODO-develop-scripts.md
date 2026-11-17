@@ -41,7 +41,7 @@ Recommendation:
 | `rule_create_dag_fullmesh.php` | create DAGs and full mesh security rules between them; own Todo: ACI tags → DAG | values in script | – | keep (with `cisco_aci/`) |
 | `shared_gateway.php` | move a vsys config into a shared gateway; template script (`argument1`); own Todo: vsys ID limits per platform | `in=api://` | – | check |
 | `panos_filetype.php` | file type list from threat / predefined XML ("226 filetype" 2025-02-11), device name filter hard coded | values in script | – | keep / check |
-| `pppoe_session_clean.php` | show and clear sessions DMZ → untrust (zones **hard coded**) | `in=api://` | `type=session-browser` | action on `session-browser` (`clear` with filter) |
+| `pppoe_session_clean.php` | show and clear sessions DMZ → untrust (zones **hard coded**) | `in=api://` | `type=session-browser filter-query=… actions=delete` (clears the matched sessions) | remove after check |
 | `reset-config.php` | reset config part by xpath (shared / vsys / template / template-stack); `#TODO: 20170918` | `template=`, `template-stack=`, `xpath=` | `type=xpath` | check: action of `type=xpath`? |
 | `wildcard_calculator.php` | Cisco wildcard mask → IP list / networks | `ip=`, `wildcardmask=`, `vendor=`, `actions=display\|displayip` | `type=address actions=move-wildcard2network`; migration CISCO parser | keep as helper |
 | `wildfire_api.php` | WildFire public API: report by hash, file upload (local file) | `hash=`, `file=` | – | type: `type=wildfire` (verdict / report), API key handling like other cloud APIs |
