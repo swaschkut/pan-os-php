@@ -1,7 +1,8 @@
 # Web UI – keep the config in the browser, change and check it there
 
-**Status:** idea / evaluation (2026-11-17)
-**Code reference:** `alpha` `aa19e96`
+**Status:** prototype implemented (2026-11-18): `utils/develop/config-viewer/` – way A (configuration loaded once, kept in
+memory on the server) + browser cache; see "Prototype" below. Open: decisions 1 and 3, follow-ups of the prototype
+**Code reference:** `alpha` `cba66bb`
 **Related:** [api-rest.md](api-rest.md) (pan-os-php API), `utils/develop/ui/` (existing web UI)
 
 Goal: move away from the CLI. The configuration (Panorama, firewall, SCM) is loaded once, kept in memory, changes are
@@ -42,6 +43,40 @@ permissive, copying code needs the Apache notice), PHP backend vs. Python backen
 Proposal to discuss: **C for viewing / collecting changes + B for applying** – the browser keeps the config and the
 change list, the change list is sent to the pan-os-php API (actions), the result (new project file + diff) comes back
 and is checked in the UI before it is written to the target.
+
+## Prototype (2026-11-18): `utils/develop/config-viewer/`
+
+[README](../utils/develop/config-viewer/README.md), test `tests/test_config_viewer.php` (96 checks).
+
+What it does: login, projects per user, members with `read` / `write`, upload, object table for 8 types (filter by
+pan-os-php, sort / paging / quick filter in the browser), actions on the loaded configuration, save as new version,
+discard, auto save, recovery of unsaved changes.
+
+Decision taken for the prototype – **way A + browser cache**:
+
+* the configuration is loaded **once** per opened version by a worker process and kept in memory
+  (`UTIL::$sharedConfig`, 5 guarded places in `utils/lib/UTIL.php`; default `null` = unchanged behaviour). Measured
+  with `panorama-10.0-merger.xml`: first request about 2 s, every further read / change about 20 ms
+* reads run in a forked copy of the worker, a change is tried in a forked copy first: `exit()` / `derr()` inside
+  pan-os-php can not stop or half-change the loaded configuration
+  ([util-class-refactoring.md](util-class-refactoring.md) item 4 stays open, but does not block the viewer)
+* nothing is written until **save**; save = new version file (way B history without git)
+* the browser keeps every loaded list (cache per query)
+
+Follow-ups:
+
+- [ ] test with a large Panorama configuration: load time, memory per worker, size of the lists in the browser
+  (today all rows of a query go to the browser, cap 50 000)
+- [ ] more types (today `address`, `service`, `tag`, `rule`, `zone`, `schedule`, `securityprofile`,
+  `securityprofilegroup`); reviewed allow list per action instead of the deny patterns
+- [ ] change a single object / a selection of rows (today: all objects of type + location + filter)
+- [ ] diff between two versions (`type=diff`), undo of the last change before save
+- [ ] object detail: references, XPath, XML
+- [ ] stable JSON object model (decision 3) – today the `display` JSON is flattened
+- [ ] Docker image (PHP CLI with `pcntl`), service start, HTTPS
+- [ ] `in=api://` / SCM as source of a version (credentials per project, not in the request)
+- [ ] audit log, password reset, OIDC login (see [api-rest.md](api-rest.md) decision 1)
+- [ ] `tool.php` stays without authentication – replace it by this API or protect it (see [api-rest.md](api-rest.md))
 
 ## Open decisions
 

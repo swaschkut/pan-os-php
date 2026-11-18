@@ -107,6 +107,14 @@ require_once dirname(__FILE__)."/DEVICE_CONFIG_BUNDLE.php";
 
 class UTIL
 {
+    /**
+     * A configuration that is already loaded and is used instead of reading "in=" again (long running process that
+     * keeps one configuration in memory, e.g. utils/develop/config-viewer). null (default) = normal behaviour.
+     * array( 'xmlDoc' => DOMDocument, 'pan' => PANConf|PanoramaConf|... or null until the first run loaded it )
+     * @var null|array
+     */
+    public static $sharedConfig = null;
+
     public $argv = null;
     public $argc = null;
 
@@ -1103,10 +1111,18 @@ class UTIL
             if( !file_exists($this->configInput['filename']) )
                 derr("file '{$this->configInput['filename']}' not found");
 
-            $this->xmlDoc = new DOMDocument();
-            PH::print_stdout( " - Reading XML file from disk... ".$this->configInput['filename'] );
-            if( !$this->xmlDoc->load($this->configInput['filename'], XML_PARSE_BIG_LINES) )
-                derr("error while reading xml config file");
+            if( self::$sharedConfig !== null )
+            {
+                $this->xmlDoc = self::$sharedConfig['xmlDoc'];
+                PH::print_stdout( " - Using the configuration already loaded in memory" );
+            }
+            else
+            {
+                $this->xmlDoc = new DOMDocument();
+                PH::print_stdout( " - Reading XML file from disk... ".$this->configInput['filename'] );
+                if( !$this->xmlDoc->load($this->configInput['filename'], XML_PARSE_BIG_LINES) )
+                    derr("error while reading xml config file");
+            }
 
             if( $this->outputformatset )
                 $this->origXmlDoc->load($this->configInput['filename'], XML_PARSE_BIG_LINES);
@@ -1325,6 +1341,9 @@ class UTIL
             else
                 derr( "configType: ".$this->configType." not supported." );
         }
+
+        if( self::$sharedConfig !== null && self::$sharedConfig['pan'] !== null )
+            $this->pan = self::$sharedConfig['pan'];
 
         PH::print_stdout( " - Detected platform type is '{$this->configType}'" );
         PH::print_stdout( array( get_class( $this->pan ) ), false, "platform" );
@@ -1580,8 +1599,16 @@ class UTIL
 
         $this->loadStart();
 
-        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" && $this->configInput['type'] !== "scm-export" )
+        if( self::$sharedConfig !== null && self::$sharedConfig['pan'] !== null )
+        {
+            // already loaded by an earlier run of this process
+        }
+        elseif( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" && $this->configInput['type'] !== "scm-export" )
+        {
             $this->pan->load_from_domxml($this->xmlDoc, $this->debugLoadTime);
+            if( self::$sharedConfig !== null )
+                self::$sharedConfig['pan'] = $this->pan;
+        }
 
         if( $this->debugLoadTime )
             PH::print_DEBUG_loadtime_end();
@@ -2773,6 +2800,14 @@ class UTIL
 
     function __destruct()
     {
+        if( self::$sharedConfig !== null )
+        {
+            // the configuration belongs to the long running process, not to this run
+            $this->xmlDoc = null;
+            $this->pan = null;
+            return;
+        }
+
         // Memory cleanup: Set references to null before unset to help PHP's garbage collector
         // Note: Simply using unset() may not be enough for circular references
 

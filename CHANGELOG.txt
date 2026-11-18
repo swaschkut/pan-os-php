@@ -24,6 +24,7 @@ UTIL:
 * type=config-section section=deployment-update-schedule | introduction
 * type=master-key | introduction | extend with actions=decrypt, actions=scrub
 * type=master-key | extend with flag 'cleartext'
+* prototype config-viewer | introduction
 
 BUGFIX:
 * SCM export after first production run / IAM patch
