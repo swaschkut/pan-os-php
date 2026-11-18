@@ -85,9 +85,20 @@ Not touched: hashed values (`phash` of local admins, `$1$` / `$5$` …) – thes
    `failed`, `unsupported`); with failed / unsupported values nothing is written and the exit code is ≠ 0 unless
    `allow-partial`; note when the target is the default key; tests: custom → default, custom → new key, default →
    custom, round trip, second run, nothing but the secrets changes, output loads, no value / key in any output
-3. AES-256-GCM in `PanosCrypto` – **needs an example**: a value of a device with encryption level 2 together with its
-   clear text and master key (lab device); format and key derivation are not known. Step 1 lists such values as
-   `unknown` (version byte ≠ 1)
+3. AES-256-GCM (encryption level 2, PAN-OS 10.0+): **detection done** (2026-11-18) – values use the prefix `-#…`
+   (confirmed with a real level-2 configuration) and are listed as `aes-256-gcm` / not supported; `rekey` refuses a
+   configuration that still holds such values (or leaves them unchanged with `allow-partial`). **Decrypt / re-encrypt
+   is open**: the GCM key derivation is not implemented and must come from an authoritative reference (PAN-OS
+   documentation or a documented implementation), not from analysing ciphertext. Workaround for a migration: set the
+   source device to encryption level 1 first (`request encryption-level re-encrypt yes level 1`)
+3a. **done** (2026-11-18) – `actions=scrub`: lab copy for commit validation. The real need behind the topic: load a
+   customer configuration (custom master key, level 1 or 2) on a lab Panorama with the default master key and commit.
+   Every encrypted value is replaced by a placeholder (default master key, AES-256-CBC), certificates with private key
+   by new certificates with the same name / subject (chain kept where the issuer is in the configuration). No master
+   key needed, nothing decrypted, independent of the source format (so AES-256-GCM is no blocker for this use case).
+   **Open: verify on a lab Panorama** – load + commit of a scrubbed configuration; `subject-hash` / `issuer-hash` kept
+   from the old certificate; behaviour of a level-2 target with AES-256-CBC values; option for the administrators
+   (`phash`) of the input
 4. panorama-move `master-key=rekey`
 5. cleanup in `PanosCrypto`: doc comment of `decrypt()` (`""` instead of `false`), commented CLI runner / example at the
    end of the file

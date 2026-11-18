@@ -18,6 +18,7 @@
  */
 
 require_once dirname(__FILE__) . '/../common/ConfigSecrets.php';
+require_once dirname(__FILE__) . '/../common/ConfigSecretsScrub.php';
 
 /**
  * type=master-key: master-key encrypted values of a configuration (utils/README_master-key.md).
@@ -27,7 +28,7 @@ require_once dirname(__FILE__) . '/../common/ConfigSecrets.php';
  */
 class MASTER_KEY__ extends UTIL
 {
-    const ACTIONS = array( 'display', 'exporttohtml', 'rekey' );
+    const ACTIONS = array( 'display', 'exporttohtml', 'rekey', 'scrub' );
     const KEY_FILTER = array( 'all', ConfigSecrets::KEY_DEFAULT, ConfigSecrets::KEY_GIVEN, ConfigSecrets::KEY_UNKNOWN );
 
     public function utilStart()
@@ -38,6 +39,7 @@ class MASTER_KEY__ extends UTIL
         $this->supportedArguments['actions'] = array('niceName' => 'actions', 'shortHelp' => 'display (default) | exportToHtml:FILE | rekey (re-encrypt all values with the target master key, needs out=)', 'argDesc' => 'action[:args]');
         $this->supportedArguments['new-master-key'] = array('niceName' => 'new-master-key', 'shortHelp' => 'rekey: target master key (default: the PAN-OS default master key); prefer new-master-key-file', 'argDesc' => '[16 characters]');
         $this->supportedArguments['new-master-key-file'] = array('niceName' => 'new-master-key-file', 'shortHelp' => 'rekey: file with the target master key (first line)', 'argDesc' => '[filename]');
+        $this->supportedArguments['placeholder'] = array('niceName' => 'placeholder', 'shortHelp' => 'scrub: clear text that replaces every secret (default: ' . ConfigSecretsScrub::DEFAULT_PLACEHOLDER . ')', 'argDesc' => '[text]');
         $this->supportedArguments['allow-partial'] = array('niceName' => 'allow-partial', 'shortHelp' => 'rekey: write out= although some values could not be re-encrypted (they stay unchanged)');
         $this->supportedArguments['master-key'] = array('niceName' => 'master-key', 'shortHelp' => 'custom master key to test the values that the default master key does not decrypt (prefer master-key-file: the command line is visible in the shell history / process list)', 'argDesc' => '[16 characters]');
         $this->supportedArguments['master-key-file'] = array('niceName' => 'master-key-file', 'shortHelp' => 'file with the custom master key (first line)', 'argDesc' => '[filename]');
@@ -50,6 +52,7 @@ class MASTER_KEY__ extends UTIL
 
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " type=master-key in=config.xml [master-key-file=key.txt] [key=unknown] [actions=display|exportToHtml:FILE]\n"
             . "       pan-os-php type=master-key in=config.xml out=new.xml master-key-file=key.txt [new-master-key-file=new.txt] actions=rekey\n"
+            . "       pan-os-php type=master-key in=customer.xml out=lab.xml actions=scrub      (lab copy: secrets replaced by placeholders)\n"
             . "php " . basename(__FILE__) . " help          : more help messages\n";
 
         $this->prepareSupportedArgumentsArray();
@@ -114,18 +117,26 @@ class MASTER_KEY__ extends UTIL
             derr( "key=given needs master-key-file= / master-key=", null, FALSE );
 
         $names = array_map( function( $a ) { return $a[0]; }, $actions );
-        if( in_array( 'rekey', $names, TRUE ) )
-        {
-            if( count($actions) != 1 )
-                derr( "actions=rekey can not be combined with other actions (run display on the output afterwards)", null, FALSE );
-            $this->rekey( $masterKey );
-            return;
-        }
-        if( isset(PH::$args['hashes']) && in_array( 'rekey', $names, TRUE ) )
-            derr( "hashes is an argument of display / exportToHtml", null, FALSE );
-        foreach( array( 'new-master-key', 'new-master-key-file', 'allow-partial' ) as $arg )
+        foreach( array( 'rekey', 'scrub' ) as $write )
+            if( in_array( $write, $names, TRUE ) )
+            {
+                if( count($actions) != 1 )
+                    derr( "actions=" . $write . " can not be combined with other actions (run display on the output afterwards)", null, FALSE );
+                if( isset(PH::$args['hashes']) )
+                    derr( "hashes is an argument of display / exportToHtml", null, FALSE );
+                if( $write == 'rekey' && isset(PH::$args['placeholder']) )
+                    derr( "placeholder is an argument of actions=scrub", null, FALSE );
+                if( $write == 'scrub' && $masterKey !== null )
+                    derr( "actions=scrub does not need the master key of the input (nothing is decrypted) - remove master-key / master-key-file", null, FALSE );
+                if( $write == 'rekey' )
+                    $this->rekey( $masterKey );
+                else
+                    $this->scrub();
+                return;
+            }
+        foreach( array( 'new-master-key', 'new-master-key-file', 'allow-partial', 'placeholder' ) as $arg )
             if( isset(PH::$args[$arg]) )
-                derr( $arg . " is an argument of actions=rekey", null, FALSE );
+                derr( $arg . " is an argument of actions=rekey / actions=scrub", null, FALSE );
 
         $all = ConfigSecrets::scan( $this->xmlDoc, $masterKey );
         $summary = ConfigSecrets::summary( $all );
@@ -222,10 +233,67 @@ class MASTER_KEY__ extends UTIL
         PH::print_stdout();
     }
 
+    /** actions=scrub: lab copy - every encrypted value replaced by a placeholder / a new certificate, written to out= */
+    private function scrub()
+    {
+        $newKey = self::masterKeyArgument( 'new-' );
+        $out = isset(PH::$args['out']) ? PH::$args['out'] : '';
+        if( $out === '' || $out === '/dev/null' )
+            derr( "actions=scrub needs out= (the result is written to a file, nothing is sent to a device)", null, FALSE );
+        $placeholder = isset(PH::$args['placeholder']) ? (string)PH::$args['placeholder'] : ConfigSecretsScrub::DEFAULT_PLACEHOLDER;
+        if( $placeholder === '' )
+            derr( "placeholder is empty", null, FALSE );
+        $allowPartial = isset(PH::$args['allow-partial']);
+
+        $items = ConfigSecretsScrub::scrub( $this->xmlDoc, $placeholder, $newKey );
+        $count = array( ConfigSecretsScrub::PLACEHOLDER => 0, ConfigSecretsScrub::CERTIFICATE => 0, ConfigSecretsScrub::CERTIFICATE_CHILD => 0, ConfigSecretsScrub::FAILED => 0 );
+        foreach( $items as $i )
+            $count[$i['status']]++;
+        $written = $count[ConfigSecretsScrub::FAILED] == 0 || $allowPartial;
+        $text = array( ConfigSecretsScrub::PLACEHOLDER => 'secret replaced by the placeholder', ConfigSecretsScrub::CERTIFICATE => 'certificate replaced: same name and subject, new key pair',
+            ConfigSecretsScrub::CERTIFICATE_CHILD => 'certificate without private key re-issued (its issuer was replaced)', ConfigSecretsScrub::FAILED => 'NOT replaced - unchanged' );
+
+        PH::print_stdout();
+        PH::print_stdout( "scrub: lab copy for the " . ( $newKey === null ? 'default master key' : 'given target master key' ) . " - the secrets of the input are replaced, nothing is decrypted" );
+        foreach( $items as $i )
+        {
+            PH::print_stdout( "   - " . $i['xpath'] );
+            PH::print_stdout( "       " . $text[$i['status']] . ( $i['detail'] !== '' ? " (" . $i['detail'] . ")" : '' ) );
+            PH::print_stdout( $i, false, 'scrub' );
+        }
+        PH::print_stdout();
+        PH::print_stdout( "summary: " . count($items) . " value(s) / certificate(s)" );
+        foreach( $count as $status => $n )
+            if( $n )
+                PH::print_stdout( "   " . str_pad( $n, 6, ' ', STR_PAD_LEFT ) . " " . $text[$status] );
+        $summary = array( 'total' => count($items), 'placeholder' => $count[ConfigSecretsScrub::PLACEHOLDER], 'certificate_replaced' => $count[ConfigSecretsScrub::CERTIFICATE],
+            'certificate_reissued' => $count[ConfigSecretsScrub::CERTIFICATE_CHILD], 'failed' => $count[ConfigSecretsScrub::FAILED],
+            'target' => $newKey === null ? 'default' : 'given', 'written' => $written, 'out' => $written ? $out : null,
+            'hashed_values_unchanged' => ConfigSecrets::countHashes( $this->xmlDoc ) );
+        PH::print_stdout( $summary, false, 'summary' );
+
+        if( !$written )
+            derr( $count[ConfigSecretsScrub::FAILED] . " value(s) could not be replaced - out= was NOT written. Use allow-partial to write the file with these values unchanged (the target device will not be able to read them).", null, FALSE );
+
+        $xml = &DH::dom_to_xml( $this->xmlDoc->documentElement, 0, TRUE, -1, 2 );
+        $dir = pathinfo( $out, PATHINFO_DIRNAME );
+        if( !is_dir($dir) )
+            mkdir( $dir, 0777, TRUE );
+        file_put_contents( $out, $xml );
+        PH::print_stdout();
+        PH::print_stdout( " * written to '" . $out . "'" );
+        PH::print_stdout( " * NOTE: lab copy only - the real secrets and private keys are gone (placeholders / new key pairs); VPNs, authentication against servers and certificate trust will not work with it" );
+        if( $summary['hashed_values_unchanged'] )
+            PH::print_stdout( " * NOTE: " . $summary['hashed_values_unchanged'] . " password hash(es) (phash) are unchanged - after loading, the administrators of the input apply (keep / add an administrator you can log in with)" );
+        PH::print_stdout();
+    }
+
     private static function formatText( $i )
     {
         if( $i['format'] == ConfigSecrets::FORMAT_CBC )
             return 'AES-256-CBC (version 1)';
+        if( $i['format'] == ConfigSecrets::FORMAT_GCM )
+            return 'AES-256-GCM (encryption level 2) - not supported';
         if( $i['format'] == ConfigSecrets::FORMAT_MALFORMED )
             return 'version 1, malformed';
         return 'version ' . $i['version'] . ' - not supported';
@@ -265,7 +333,8 @@ class MASTER_KEY__ extends UTIL
             array( isset($summary['by_key'][ConfigSecrets::KEY_DEFAULT]) ? $summary['by_key'][ConfigSecrets::KEY_DEFAULT] : 0, 'decrypt with the default master key' ),
             array( isset($summary['by_key'][ConfigSecrets::KEY_GIVEN]) ? $summary['by_key'][ConfigSecrets::KEY_GIVEN] : 0, 'decrypt with the given master key' ),
             array( $summary['other_master_key'], 'do NOT decrypt with the default' . ( $summary['custom_master_key_given'] ? ' or the given master key' : ' master key -> custom master key (test it with master-key-file=)' ) ),
-            array( isset($summary['by_format'][ConfigSecrets::FORMAT_UNKNOWN]) ? $summary['by_format'][ConfigSecrets::FORMAT_UNKNOWN] : 0, 'in a format version that is not supported (e.g. AES-256-GCM / encryption level 2) - not checked' ),
+            array( isset($summary['by_format'][ConfigSecrets::FORMAT_GCM]) ? $summary['by_format'][ConfigSecrets::FORMAT_GCM] : 0, 'AES-256-GCM (encryption level 2) - detected, not decrypted / not re-keyed' ),
+            array( isset($summary['by_format'][ConfigSecrets::FORMAT_UNKNOWN]) ? $summary['by_format'][ConfigSecrets::FORMAT_UNKNOWN] : 0, 'in another format version that is not supported - not checked' ),
             array( isset($summary['by_format'][ConfigSecrets::FORMAT_MALFORMED]) ? $summary['by_format'][ConfigSecrets::FORMAT_MALFORMED] : 0, 'malformed (prefix of version 1, but no valid value) - not checked' ),
         );
         foreach( $lines as $l )

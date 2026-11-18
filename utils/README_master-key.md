@@ -4,7 +4,9 @@ Master-key encrypted values of a firewall / Panorama configuration.
 
 * **display** – the XPath of every encrypted value and which master key decrypts it
 * **rekey** – re-encrypt all values: master key of the input → target master key (default: the PAN-OS default master
-  key), offline into `out=`
+  key), offline into `out=`; keeps the real secrets, needs the master key of the input
+* **scrub** – lab copy: every encrypted value is **replaced** (placeholder / new certificate with the same name), so the
+  configuration loads and commits on a lab device with the default master key; needs no master key, decrypts nothing
 
 Open: AES-256-GCM – see [todo/master-key-rekey.md](../todo/master-key-rekey.md).
 
@@ -23,6 +25,10 @@ pan-os-php type=master-key in=config.xml actions=exportToHtml:secrets.html
 pan-os-php type=master-key in=config.xml shadow-json
 pan-os-php type=master-key in=api://192.168.1.1                            # candidate configuration of a device
 
+# scrub: customer configuration (any master key, encryption level 1 or 2) -> lab copy for the default master key
+pan-os-php type=master-key in=customer.xml out=lab.xml actions=scrub
+pan-os-php type=master-key in=customer.xml out=lab.xml actions=scrub placeholder=dummy
+
 # rekey: custom master key -> default master key
 pan-os-php type=master-key in=config.xml out=config-default-key.xml master-key-file=key.txt actions=rekey
 # rekey: custom -> another custom key / default -> custom key
@@ -37,10 +43,11 @@ pan-os-php type=master-key in=config.xml out=new.xml new-master-key-file=newkey.
 | `master-key-file=` | file with a custom master key (first line) – tested on the values the default master key does not decrypt |
 | `master-key=` | the same on the command line (visible in the shell history / process list – prefer the file) |
 | `new-master-key-file=` / `new-master-key=` | `rekey`: target master key; default: the PAN-OS default master key |
-| `allow-partial` | `rekey`: write `out=` although some values could not be re-encrypted |
+| `placeholder=` | `scrub`: clear text that replaces every secret (default `Dummy-1234567890`) |
+| `allow-partial` | `rekey` / `scrub`: write `out=` although some values could not be re-encrypted / replaced |
 | `hashes` | display / exportToHtml: also list the password hashes (`phash`) – XPath and algorithm, never the hash |
 | `key=` | `all` (default) \| `default` \| `given` \| `unknown` – show only values of that key state |
-| `actions=` | `display` (default) \| `exportToHtml:FILE` (a `/` in the file name as `//`) \| `rekey` (alone) |
+| `actions=` | `display` (default) \| `exportToHtml:FILE` (a `/` in the file name as `//`) \| `rekey` (alone) \| `scrub` (alone) |
 | `shadow-json` | JSON: `encrypted_values` (xpath, location, field, version, format, length, key), `summary`; rekey: `rekey` (xpath, location, field, status, from), `summary` |
 
 ## What is found
@@ -50,8 +57,9 @@ loaded): values in the format `-` + base64(version byte) + payload.
 
 | format | meaning |
 |---|---|
-| `aes-256-cbc` | version 1 (`-AQ==` + SHA-1 of the clear text + ciphertext) – the SHA-1 shows whether a key is the right one |
-| `unknown` | another version byte (e.g. AES-256-GCM, encryption level 2) – listed, not checked |
+| `aes-256-cbc` | version 1 (`-AQ==` + SHA-1 of the clear text + ciphertext) – the SHA-1 shows whether a key is the right one; `display` and `rekey` support it |
+| `aes-256-gcm` | encryption level 2 (PAN-OS 10.0+), prefix `-#…` – **detected and listed, not decrypted or re-keyed** |
+| `unknown` | another version byte in the `-XX==` framing – listed, not checked |
 | `malformed` | prefix of version 1 but no valid value (hash / block length) – listed, not checked |
 
 | key | meaning |
@@ -112,9 +120,38 @@ value proves that the right key was used; after re-encryption the value is check
   like a file with clear text passwords
 * loading the output: the device / Panorama must use the target master key
 
+## scrub – lab copy of a configuration
+
+Use case: a configuration from another device (custom master key, encryption level 1 or 2) has to be loaded and
+committed on a **lab** Panorama / firewall with the default master key, to validate other changes. The commit fails
+while the lab device can not read the encrypted values. `scrub` replaces all of them – the real secrets are not needed
+and are gone afterwards.
+
+| what | replaced by |
+|---|---|
+| every encrypted value (pre-shared keys, passwords, secrets, …) – AES-256-CBC of any master key, AES-256-GCM, unknown version, malformed | the placeholder (`placeholder=`, default `Dummy-1234567890` – 16 characters, to satisfy minimum lengths such as 8 for SNMPv3), encrypted with the target master key as AES-256-CBC |
+| certificate entry with a private key | new certificate: **same entry name, same subject**, key type / size, CA flag and subject alternative names of the old one, new key pair (RSA key as `BEGIN RSA PRIVATE KEY` like PAN-OS stores it); `public-key`, `private-key`, `not-valid-before`, `not-valid-after`, `expiry-epoch` are updated; valid as long as the old one, at least one year |
+| issuer of such a certificate | replaced issuer in the same configuration (same subject DN) → the new certificate is signed by it, the chain stays intact; issuer not in the configuration / without private key → self-signed, `issuer` / `issuer-hash` follow the subject |
+| certificate without private key that was issued by a replaced certificate | re-issued by the new issuer (the key is thrown away) |
+| other certificates without private key, `phash`, everything else | unchanged |
+
+* nothing is decrypted, `master-key=` is refused; the target key is the default master key or `new-master-key-file=`
+* copies of the same certificate (e.g. one CA in several templates) get the same new certificate
+* `out=` only; values that can not be replaced (certificate whose `public-key` is unreadable) → nothing is written and
+  exit code ≠ 0, unless `allow-partial`
+* **lab only**: VPNs, authentication against servers and certificate trust do not work with the result
+* the password hashes stay: after loading, the administrators of the input apply – make sure you keep an administrator
+  you can log in with
+* target device: encryption level 1 (the placeholders are AES-256-CBC). Whether a device on level 2 accepts AES-256-CBC
+  values when loading is not verified
+* not verified on a device yet: `subject-hash` / `issuer-hash` are kept from the old certificate (same subject) – if
+  PAN-OS rejects a certificate for it, re-import that certificate in the lab
+
 ## Limits
 
-* AES-256-GCM (encryption level 2, PAN-OS 10.0+): format and key derivation are not implemented – such values appear as
-  `unknown` (an example value with known clear text and master key is needed)
+* AES-256-GCM (encryption level 2, PAN-OS 10.0+, prefix `-#…`): detected and reported, but **not decrypted or
+  re-keyed** – the key derivation of the GCM format is not implemented. A configuration that still holds GCM values is
+  refused by `rekey` (unless `allow-partial`, which leaves them unchanged). Set the device to encryption level 1
+  (`request encryption-level re-encrypt yes level 1`) before a rekey, or re-enter the affected secrets afterwards
 * a master key protected by an HSM cannot be tested offline
 * `in=api://` loads the candidate configuration; nothing is written

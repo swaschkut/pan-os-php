@@ -12,6 +12,7 @@
 $here = dirname(__FILE__);
 require_once $here . '/../lib/pan_php_framework.php';
 require_once $here . '/../utils/common/ConfigSecrets.php';
+require_once $here . '/../utils/common/ConfigSecretsScrub.php';
 
 $cli = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($here . '/../utils/pan-os-php.php') . ' type=master-key';
 $work = sys_get_temp_dir() . '/pan-os-php-test-master-key-' . getmypid();
@@ -63,12 +64,17 @@ $enc = array(
     'v2' => '-Ag==' . base64_encode( random_bytes(48) ),
     // version 1 with a ciphertext that is no multiple of 16 bytes
     'malformed' => '-AQ==' . base64_encode( sha1('x', TRUE) ) . base64_encode( 'short' ),
+    // AES-256-GCM (encryption level 2): prefix '-#' - detected, never decrypted
+    'gcm' => '-#' . base64_encode( random_bytes(60) ),
 );
 
 // ---- unit: ConfigSecrets::parse / keyOf
 eq( ConfigSecrets::parse( $enc['default'] ), array( 'version' => 1, 'format' => 'aes-256-cbc' ), 'parse: version 1' );
 eq( ConfigSecrets::parse( $enc['v2'] ), array( 'version' => 2, 'format' => 'unknown' ), 'parse: version 2 unknown' );
 eq( ConfigSecrets::parse( $enc['malformed'] ), array( 'version' => 1, 'format' => 'malformed' ), 'parse: malformed' );
+eq( ConfigSecrets::parse( '-#' . base64_encode( random_bytes(48) ) ), array( 'version' => 2, 'format' => 'aes-256-gcm' ), 'parse: AES-256-GCM (-# prefix)' );
+eq( ConfigSecrets::parse( '-#short' ), null, 'parse: -# but not base64 -> not a value' );
+eq( ConfigSecrets::keyOf( '-#' . base64_encode( random_bytes(48) ), $CUSTOM ), 'unknown', 'keyOf: GCM is never decrypted' );
 foreach( array( '-AQ== not a secret', '-', '-10', '--default--', 'AQ==abcdefghijklmnopqrstuvwxyz', '-any-text-with-dashes-and-more-characters', '' ) as $no )
     eq( ConfigSecrets::parse( $no ), null, 'parse: not encrypted "' . $no . '"' );
 eq( ConfigSecrets::parse( '-AQ==A4vEGnxsZCP7poqzjhJD4Gc+tbE=DS4xndFfZiigUHPCm4ASFQ==' ), array( 'version' => 1, 'format' => 'aes-256-cbc' ), 'parse: known vector' );
@@ -332,6 +338,162 @@ check( $rc != 0 && strpos($t, 'can not be combined') !== FALSE, 'rekey combined 
 list( $rc, $t ) = mk( array( 'in=' . $in, 'new-master-key=' . $NEW ) );
 check( $rc != 0 && strpos($t, 'actions=rekey') !== FALSE, 'new-master-key without rekey refused' );
 check( !file_exists($work . '/x.xml'), 'refused runs write nothing' );
+
+// ---- AES-256-GCM (encryption level 2): detected, labelled, never decrypted or re-keyed
+$g = new DOMDocument();
+$g->load( $here . '/input/panorama-move/panorama-move-A.xml' );
+$gx = new DOMXPath( $g );
+$gx->query('/config/shared')->item(0)->appendChild( $g->importNode( (new DOMDocument())->createElement('dummy'), TRUE ) );
+$node = $gx->query('/config/shared')->item(0);
+$f = new DOMDocument();
+$f->loadXML( '<server-profile><scp><entry name="s"><password>' . $enc['default'] . '</password></entry></scp>'
+    . '<radius><entry name="r"><secret>' . $enc['gcm'] . '</secret></entry></radius></server-profile>' );
+$node->appendChild( $g->importNode( $f->documentElement, TRUE ) );
+$gcmIn = $work . '/gcm.xml';
+$g->save( $gcmIn );
+
+list( $rc, $t, $j ) = mk( array( 'in=' . $gcmIn ), TRUE );
+eq( $rc, 0, 'GCM: display exit code' );
+$byx = array();
+foreach( $j['encrypted_values'] as $i ) $byx[$i['xpath']] = $i;
+$gcmXp = "/config/shared/server-profile/radius/entry[@name='r']/secret";
+check( isset($byx[$gcmXp]), 'GCM value is detected (not silently skipped)' );
+eq( isset($byx[$gcmXp]) ? array( $byx[$gcmXp]['format'], $byx[$gcmXp]['version'], $byx[$gcmXp]['key'] ) : null,
+    array( 'aes-256-gcm', 2, 'unknown' ), 'GCM: format, version 2, key unknown' );
+eq( $j['summary'][0]['by_format']['aes-256-gcm'], 1, 'GCM: counted in by_format' );
+check( strpos($t, 'AES-256-GCM (encryption level 2) - detected') !== FALSE, 'GCM: summary line' );
+$noLeak( $t, 'GCM display' );
+
+// rekey a configuration that contains a GCM value: refused (unsupported), nothing written
+$gcmOut = $work . '/gcm-rekey.xml';
+list( $rc, $t, $j ) = mk( array( 'in=' . $gcmIn, 'out=' . $gcmOut, 'new-master-key=' . $NEW, 'actions=rekey' ), TRUE );
+check( $rc != 0 && !file_exists($gcmOut), 'GCM: rekey refused, out= not written' );
+list( $rc, $t, $j ) = mk( array( 'in=' . $gcmIn, 'out=' . $gcmOut, 'new-master-key=' . $NEW, 'actions=rekey', 'allow-partial' ), TRUE );
+eq( $rc, 0, 'GCM: rekey allow-partial exit code' );
+check( $j['summary'][0]['unsupported'] >= 1, 'GCM: counted as unsupported in rekey' );
+$gv = $valuesOf( $gcmOut );
+eq( $gv[$gcmXp], $enc['gcm'], 'GCM: value unchanged by rekey' );
+eq( $crypto->decrypt( $gv["/config/shared/server-profile/scp/entry[@name='s']/password"], $NEW ), $clear['default'], 'GCM: the CBC value next to it was re-keyed' );
+$noLeak( $t, 'GCM rekey' );
+
+// ---- scrub: lab copy - every encrypted value replaced (placeholder / new certificate), nothing decrypted
+$mkInfo = function( $cn, $ca, $issuerCn = null ) {
+    return array( 'subject' => array( 'O' => 'pan-os-php test', 'CN' => $cn ), 'subjectDn' => '/O=pan-os-php test/CN=' . $cn,
+        'issuerDn' => '/O=pan-os-php test/CN=' . ( $issuerCn === null ? $cn : $issuerCn ), 'validTo' => time() + 400 * 86400, 'ca' => $ca,
+        'san' => $ca ? null : 'DNS:' . $cn . ', IP Address:192.0.2.10', 'digest' => 'sha256', 'selfsigned' => $issuerCn === null,
+        'keyArgs' => array( 'private_key_type' => OPENSSL_KEYTYPE_RSA, 'private_key_bits' => 2048 ), 'keyText' => 'RSA 2048' );
+};
+$certEntry = function( $name, $new, $encKey, $subject, $issuer ) {
+    return '<entry name="' . $name . '"><subject-hash>11111111</subject-hash><issuer-hash>22222222</issuer-hash><not-valid-before>Jan  1 00:00:00 2026 GMT</not-valid-before>'
+        . '<issuer>' . $issuer . '</issuer><not-valid-after>Jan  1 00:00:00 2027 GMT</not-valid-after><common-name>' . $name . '</common-name><expiry-epoch>1</expiry-epoch>'
+        . '<ca>yes</ca><subject>' . $subject . '</subject><public-key>' . $new['certPem'] . '</public-key><algorithm>RSA</algorithm>'
+        . ( $encKey !== null ? '<private-key>' . $encKey . '</private-key>' : '' ) . '</entry>';
+};
+$ca = ConfigSecretsScrub::newCertificate( $mkInfo( 'Lab-CA', TRUE ) );
+$child = ConfigSecretsScrub::newCertificate( $mkInfo( 'child.example', FALSE, 'Lab-CA' ), $ca );
+$childNoKey = ConfigSecretsScrub::newCertificate( $mkInfo( 'nokey.example', FALSE, 'Lab-CA' ), $ca );
+$extCa = ConfigSecretsScrub::newCertificate( $mkInfo( 'External-CA', TRUE ) );
+$extChild = ConfigSecretsScrub::newCertificate( $mkInfo( 'ext-child.example', FALSE, 'External-CA' ), $extCa );
+$other = ConfigSecretsScrub::newCertificate( $mkInfo( 'Untouched-Root', TRUE ) );
+check( $ca !== null && $child !== null && strpos($ca['keyPem'], '-----BEGIN RSA PRIVATE KEY-----') === 0, 'fixture certificates generated, RSA key in PKCS#1 format' );
+$sd = new DOMDocument();
+$sd->load( $in );
+$sx = new DOMXPath( $sd );
+$f = new DOMDocument();
+$f->loadXML( '<certificate>'
+    . $certEntry( 'ca-cert', $ca, $crypto->encrypt( $ca['keyPem'], $CUSTOM ), '/O=pan-os-php test/CN=Lab-CA', '/O=pan-os-php test/CN=Lab-CA' )
+    . $certEntry( 'child-cert', $child, $crypto->encrypt( $child['keyPem'], $CUSTOM ), '/O=pan-os-php test/CN=child.example', '/O=pan-os-php test/CN=Lab-CA' )
+    . $certEntry( 'child-nokey', $childNoKey, null, '/O=pan-os-php test/CN=nokey.example', '/O=pan-os-php test/CN=Lab-CA' )
+    . $certEntry( 'ext-child', $extChild, '-#' . base64_encode( random_bytes(1200) ), '/O=pan-os-php test/CN=ext-child.example', '/O=pan-os-php test/CN=External-CA' )
+    . $certEntry( 'untouched', $other, null, '/O=pan-os-php test/CN=Untouched-Root', '/O=pan-os-php test/CN=Untouched-Root' )
+    . '</certificate>' );
+$sx->query('/config/shared')->item(0)->appendChild( $sd->importNode( $f->documentElement, TRUE ) );
+$sx->query('/config/shared')->item(0)->appendChild( $sd->createElement( 'gcm-secret', $enc['gcm'] ) );
+$scrubIn = $work . '/scrub-in.xml';
+$sd->save( $scrubIn );
+$certOf = function( $file, $name ) use ( $crypto ) {
+    $o = new DOMDocument();
+    $o->load( $file );
+    $e = (new DOMXPath( $o ))->query("/config/shared/certificate/entry[@name='" . $name . "']")->item(0);
+    $r = array();
+    foreach( $e->childNodes as $n )
+        if( $n->nodeType == XML_ELEMENT_NODE ) $r[$n->nodeName] = trim( $n->textContent );
+    return $r;
+};
+
+$scrubOut = $work . '/scrub-out.xml';
+$md5scrubIn = md5_file( $scrubIn );
+list( $rc, $t, $j ) = mk( array( 'in=' . $scrubIn, 'out=' . $scrubOut, 'actions=scrub' ), TRUE );
+eq( $rc, 0, 'scrub exit code (custom key, other key, GCM, malformed values: no key needed)' );
+eq( isset($j['summary'][0]) ? array( $j['summary'][0]['certificate_replaced'], $j['summary'][0]['certificate_reissued'], $j['summary'][0]['failed'] ) : null, array( 3, 1, 0 ), 'scrub summary: 3 certificates replaced, 1 re-issued, none failed' );
+eq( $j['summary'][0]['placeholder'], $base + 7, 'scrub summary: every other encrypted value got the placeholder' );
+$noLeak( $t, 'scrub output' );
+check( strpos($t, 'PRIVATE KEY') === FALSE, 'scrub: no key material in the output' );
+check( md5_file($scrubIn) === $md5scrubIn && file_exists($scrubOut), 'scrub: out= written, input unchanged' );
+
+list( $rc, $t2, $j2 ) = mk( array( 'in=' . $scrubOut ), TRUE );
+eq( $j2['summary'][0]['by_key'], array( 'default' => $j2['summary'][0]['total'] ), 'after scrub: every encrypted value decrypts with the default master key' );
+eq( $j2['summary'][0]['by_format'], array( 'aes-256-cbc' => $j2['summary'][0]['total'] ), 'after scrub: only AES-256-CBC values (GCM, unknown, malformed replaced)' );
+$sv = $valuesOf( $scrubOut );
+eq( $crypto->decrypt( $sv[$xp['gw1']] ), ConfigSecretsScrub::DEFAULT_PLACEHOLDER, 'scrub: pre-shared key is the placeholder' );
+eq( $crypto->decrypt( $sv[$xp['gw2']] ), ConfigSecretsScrub::DEFAULT_PLACEHOLDER, 'scrub: unknown-version value is the placeholder' );
+eq( $crypto->decrypt( $sv['/config/shared/gcm-secret'] ), ConfigSecretsScrub::DEFAULT_PLACEHOLDER, 'scrub: GCM value is the placeholder' );
+
+$nCa = $certOf( $scrubOut, 'ca-cert' ); $oCa = $certOf( $scrubIn, 'ca-cert' );
+check( $nCa['public-key'] !== $oCa['public-key'], 'scrub CA: new certificate' );
+$nCaKey = $crypto->decrypt( $nCa['private-key'] );
+check( strpos($nCaKey, '-----BEGIN RSA PRIVATE KEY-----') === 0 && openssl_x509_check_private_key( $nCa['public-key'], $nCaKey ), 'scrub CA: new key (default master key, PKCS#1) matches the new certificate' );
+check( !openssl_x509_check_private_key( $nCa['public-key'], $ca['keyPem'] ), 'scrub CA: the old key does not match any more' );
+$pc = openssl_x509_parse( $nCa['public-key'] );
+eq( array( $pc['subject']['CN'], $pc['extensions']['basicConstraints'] ), array( 'Lab-CA', 'CA:TRUE' ), 'scrub CA: same subject, CA flag' );
+eq( array( $nCa['subject'], $nCa['issuer'], $nCa['subject-hash'], $nCa['common-name'], $nCa['algorithm'] ), array( $oCa['subject'], $oCa['issuer'], $oCa['subject-hash'], $oCa['common-name'], $oCa['algorithm'] ), 'scrub CA: name fields unchanged' );
+eq( (int)$nCa['expiry-epoch'], (int)$pc['validTo_time_t'], 'scrub CA: expiry-epoch of the new certificate' );
+check( preg_match( '/^[A-Z][a-z]{2} [ 0-9]\d \d\d:\d\d:\d\d \d{4} GMT$/', $nCa['not-valid-after'] ) === 1 && $nCa['not-valid-after'] !== $oCa['not-valid-after'], 'scrub CA: not-valid-after updated in PAN-OS format' );
+
+$nChild = $certOf( $scrubOut, 'child-cert' );
+eq( openssl_x509_verify( $nChild['public-key'], $nCa['public-key'] ), 1, 'scrub child: signed by the replaced CA' );
+check( openssl_x509_check_private_key( $nChild['public-key'], $crypto->decrypt( $nChild['private-key'] ) ), 'scrub child: key matches' );
+eq( $nChild['issuer'], '/O=pan-os-php test/CN=Lab-CA', 'scrub child: issuer unchanged' );
+$pch = openssl_x509_parse( $nChild['public-key'] );
+check( strpos( $pch['extensions']['subjectAltName'], 'DNS:child.example' ) !== FALSE && strpos( $pch['extensions']['subjectAltName'], '192.0.2.10' ) !== FALSE, 'scrub child: subject alternative names kept' );
+eq( $pch['extensions']['basicConstraints'], 'CA:FALSE', 'scrub child: no CA' );
+
+$nNoKey = $certOf( $scrubOut, 'child-nokey' );
+eq( openssl_x509_verify( $nNoKey['public-key'], $nCa['public-key'] ), 1, 'scrub: certificate without key re-issued by the replaced CA' );
+check( !isset($nNoKey['private-key']), 'scrub: no private key added to it' );
+
+$nExt = $certOf( $scrubOut, 'ext-child' );
+eq( openssl_x509_verify( $nExt['public-key'], $nExt['public-key'] ), 1, 'scrub: issuer not in the configuration -> self-signed' );
+eq( array( $nExt['issuer'], $nExt['issuer-hash'] ), array( $nExt['subject'], $nExt['subject-hash'] ), 'scrub: issuer fields follow the subject' );
+check( openssl_x509_check_private_key( $nExt['public-key'], $crypto->decrypt( $nExt['private-key'] ) ), 'scrub: GCM private key replaced by a usable key' );
+
+eq( $certOf( $scrubOut, 'untouched' ), $certOf( $scrubIn, 'untouched' ), 'scrub: certificate without key and without replaced issuer unchanged' );
+$hashOf = function( $file ) { $o = new DOMDocument(); $o->load( $file ); $r = array(); foreach( (new DOMXPath($o))->query('//phash') as $n ) $r[] = $n->textContent; return $r; };
+eq( $hashOf( $scrubOut ), $hashOf( $scrubIn ), 'scrub: password hashes unchanged' );
+$cnt = function( $file ) { $o = new DOMDocument(); $o->load( $file ); return (new DOMXPath($o))->query('//*')->length; };
+eq( $cnt( $scrubOut ), $cnt( $scrubIn ), 'scrub: same number of elements' );
+$p = new PanoramaConf();
+$p->load_from_file( $scrubOut );
+check( $p->findDeviceGroup('testDG') !== null, 'scrub: output loads with pan-os-php' );
+
+// placeholder= and a target master key
+$scrubOut2 = $work . '/scrub-out2.xml';
+list( $rc, $t, $j ) = mk( array( 'in=' . $scrubIn, 'out=' . $scrubOut2, 'actions=scrub', 'placeholder=dummy', 'new-master-key-file=' . $newKeyFile ), TRUE );
+eq( $rc, 0, 'scrub with placeholder= and target key: exit code' );
+$sv = $valuesOf( $scrubOut2 );
+eq( $crypto->decrypt( $sv[$xp['ldap']], $NEW ), 'dummy', 'scrub: placeholder=dummy, encrypted with the target key' );
+check( openssl_x509_check_private_key( $certOf( $scrubOut2, 'ca-cert' )['public-key'], $crypto->decrypt( $certOf( $scrubOut2, 'ca-cert' )['private-key'], $NEW ) ), 'scrub: private key encrypted with the target key' );
+
+// errors
+list( $rc, $t ) = mk( array( 'in=' . $scrubIn, 'actions=scrub' ) );
+check( $rc != 0 && strpos($t, 'out=') !== FALSE, 'scrub without out= refused' );
+list( $rc, $t ) = mk( array( 'in=' . $scrubIn, 'out=' . $work . '/y.xml', 'master-key=' . $CUSTOM, 'actions=scrub' ) );
+check( $rc != 0 && strpos($t, 'does not need the master key') !== FALSE, 'scrub with master-key refused' );
+list( $rc, $t ) = mk( array( 'in=' . $scrubIn, 'out=' . $work . '/y.xml', 'actions=scrub/display' ) );
+check( $rc != 0, 'scrub combined with display refused' );
+list( $rc, $t ) = mk( array( 'in=' . $scrubIn, 'placeholder=x' ) );
+check( $rc != 0, 'placeholder without scrub refused' );
+check( !file_exists($work . '/y.xml'), 'refused scrub runs write nothing' );
 
 // ---- the input file is not changed
 check( md5_file($in) === $md5in, 'input file unchanged' );

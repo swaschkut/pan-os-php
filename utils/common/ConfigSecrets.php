@@ -33,8 +33,12 @@ class ConfigSecrets
     const PATTERN = '/^-([A-Za-z0-9+\/]{2}==)([A-Za-z0-9+\/=]{16,})$/';
 
     const FORMAT_CBC = 'aes-256-cbc';
+    const FORMAT_GCM = 'aes-256-gcm';
     const FORMAT_UNKNOWN = 'unknown';
     const FORMAT_MALFORMED = 'malformed';
+
+    /** prefix of an AES-256-GCM value (encryption level 2) - observed from a real level-2 configuration: '-#A...' */
+    const GCM_PREFIX = '-#';
 
     const KEY_DEFAULT = 'default';
     const KEY_GIVEN = 'given';
@@ -45,7 +49,17 @@ class ConfigSecrets
      */
     public static function parse( $value )
     {
-        if( !is_string($value) || $value === '' || $value[0] !== '-' || !preg_match( self::PATTERN, $value, $m ) )
+        if( !is_string($value) || $value === '' || $value[0] !== '-' )
+            return null;
+        // AES-256-GCM (encryption level 2, PAN-OS 10.0+): a different framing, prefix '-#' + base64.
+        // Only detected / labelled - the format is not parsed or decrypted (see utils/README_master-key.md).
+        if( substr($value, 0, 2) === self::GCM_PREFIX )
+        {
+            if( preg_match( '#^[A-Za-z0-9+/]{16,}={0,2}$#', substr($value, 2) ) )
+                return array( 'version' => 2, 'format' => self::FORMAT_GCM );
+            return null;
+        }
+        if( !preg_match( self::PATTERN, $value, $m ) )
             return null;
         $v = base64_decode( $m[1], TRUE );
         if( $v === FALSE || strlen($v) != 1 )
