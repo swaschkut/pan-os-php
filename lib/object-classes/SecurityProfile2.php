@@ -1534,7 +1534,8 @@ class SecurityProfile2
      * the reverse of the rules check (spyware_rules_check() / vulnerability_rules_check()): PAN-OS reads the rules
      * top-down, the first rule matching a threat's severity, host and category decides. For every severity the BP
      * JSON <jsonType> -> rule -> $section lists, every host and every category, the first matching rule must pass:
-     *  - no rule matches: a new rule is appended (severity, host any, category any)
+     *  - no rule matches: a new rule is appended (severity, category any; host any, or the host $newRuleHost returns -
+     *    VP: 'critical_client' / 'critical_server' when other rules of that severity exist, as before the rework)
      *  - the rule fails and applies only to listed severities: its action / packet-capture is set
      *  - the rule fails and applies to other severities as well (e.g. 'any'): a new rule for the listed severities
      *    is inserted directly before it, so the other severities keep their action
@@ -1543,9 +1544,11 @@ class SecurityProfile2
      * Nothing listed in the BP JSON: no change.
      * @param callable $firstMatch function( $severity, $host, $category ): ?ThreatPolicy
      * @param callable $check      function(): ?bool, the profile's rules check of $section
+     * @param callable|null $newRuleHost function( $severity, $host ): string, host of a rule appended because no rule
+     *                             matches ('any' or $host); null: 'any'
      * @return bool TRUE: changed
      */
-    public function threatRules_setFromJSON( string $section, string $jsonType, string $ruleClass, array $hosts, callable $firstMatch, callable $check ): bool
+    public function threatRules_setFromJSON( string $section, string $jsonType, string $ruleClass, array $hosts, callable $firstMatch, callable $check, ?callable $newRuleHost = null ): bool
     {
         $check_array = PH::getBPjsonFile()[$jsonType]['rule'][$section] ?? array();
         $severities = ThreatPolicy::checkedSeverities( $check_array );
@@ -1626,7 +1629,8 @@ class SecurityProfile2
                             $action = $targetAction( null, $severity, TRUE );
                             if( $action === null )
                                 return $changed;
-                            $this->threatRule_new( $ruleClass, array( $severity ), $action, $targetCapture( null, TRUE ) );
+                            $newHost = ( $newRuleHost !== null && $host !== null ) ? $newRuleHost( $severity, $host ) : 'any';
+                            $this->threatRule_new( $ruleClass, array( $severity ), $action, $targetCapture( null, TRUE ), 'any', $newHost );
                         }
                         else
                         {
