@@ -2243,6 +2243,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "config-section": {
+        "name": "config-section",
+        "action": [],
+        "filter": []
+    },
     "config-size": {
         "name": "config-size",
         "action": [],
@@ -5513,6 +5518,11 @@ var subjectObject =
             }
         }
     },
+    "master-key": {
+        "name": "master-key",
+        "action": [],
+        "filter": []
+    },
     "maxmind-update": {
         "name": "maxmind-update",
         "action": [],
@@ -5530,6 +5540,11 @@ var subjectObject =
     },
     "override-finder": {
         "name": "override-finder",
+        "action": [],
+        "filter": []
+    },
+    "panorama-move": {
+        "name": "panorama-move",
         "action": [],
         "filter": []
     },
@@ -9836,6 +9851,61 @@ var subjectObject =
             }
         }
     },
+    "scm-apply": {
+        "name": "scm-apply",
+        "action": [],
+        "filter": []
+    },
+    "scm-change": {
+        "name": "scm-change",
+        "action": [],
+        "filter": []
+    },
+    "scm-changes": {
+        "name": "scm-changes",
+        "action": [],
+        "filter": []
+    },
+    "scm-compare": {
+        "name": "scm-compare",
+        "action": [],
+        "filter": []
+    },
+    "scm-export": {
+        "name": "scm-export",
+        "action": [],
+        "filter": []
+    },
+    "scm-export-xml": {
+        "name": "scm-export-xml",
+        "action": [],
+        "filter": []
+    },
+    "scm-import": {
+        "name": "scm-import",
+        "action": [],
+        "filter": []
+    },
+    "scm-panorama-to-change": {
+        "name": "scm-panorama-to-change",
+        "action": [],
+        "filter": []
+    },
+    "scm-report": {
+        "name": "scm-report",
+        "action": [],
+        "filter": []
+    },
+    "scm-sync": {
+        "name": "scm-sync",
+        "action": [],
+        "filter": []
+    },
+    "scm-xml-to-change": {
+        "name": "scm-xml-to-change",
+        "action": [],
+        "filter": []
+    },
     "securityprofile": {
         "name": "securityprofile",
         "action": {
@@ -10271,10 +10341,6 @@ var subjectObject =
                 "name": "vulnerability.rules.alert-only-set",
                 "MainFunction": {}
             },
-            "vulnerability.rules.alert-only-set_old": {
-                "name": "vulnerability.rules.alert-only-set_OLD",
-                "MainFunction": {}
-            },
             "vulnerability.rules.best-practice-set": {
                 "name": "vulnerability.rules.best-practice-set",
                 "MainFunction": {}
@@ -10317,6 +10383,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware"
                     }
                 }
             },
@@ -10331,6 +10407,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as.mica-engine is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware"
                     }
                 }
             },
@@ -10345,6 +10431,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware"
                     }
                 }
             },
@@ -10364,6 +10460,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10378,6 +10484,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10392,6 +10508,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10406,6 +10532,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10420,6 +10556,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10434,6 +10580,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10453,6 +10609,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10476,6 +10642,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware,vulnerability,virus,wildfire"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware,vulnerability,virus,wildfire"
                     }
                 }
             },
@@ -10511,6 +10687,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=data-filtering' e.g. 'filter=(df is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=data-filtering"
                     }
                 }
             },
@@ -10530,6 +10711,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware,dns-security"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware,dns-security"
                     }
                 }
             },
@@ -10584,6 +10775,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware,dns-security"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware,dns-security"
                     }
                 }
             },
@@ -10629,6 +10830,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=dns-security"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=dns-security"
                     }
                 }
             },
@@ -10682,6 +10893,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=file-blocking"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=file-blocking"
                     }
                 }
             },
@@ -10696,6 +10917,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=file-blocking"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=file-blocking"
                     }
                 }
             },
@@ -11045,6 +11276,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11064,6 +11305,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11088,6 +11339,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11128,6 +11389,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(user-credential-detection allow.is.set)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11147,6 +11418,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=vulnerability"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=vulnerability"
                     }
                 }
             },
@@ -11161,6 +11442,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.mica-engine is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=vulnerability"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=vulnerability"
                     }
                 }
             },
@@ -11175,6 +11466,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=vulnerability"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=vulnerability"
                     }
                 }
             },
@@ -11194,6 +11495,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -11208,6 +11519,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -11222,6 +11543,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
                     }
                 }
             }
@@ -11369,7 +11700,9 @@ var subjectObject =
                             "data-filtering",
                             "file-blocking",
                             "spyware",
-                            "wildfire"
+                            "wildfire",
+                            "virus-and-wildfire",
+                            "dns-security"
                         ]
                     }
                 }
