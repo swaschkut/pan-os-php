@@ -15,6 +15,69 @@ Code: `utils/lib/MASTER_KEY__.php` (type), `utils/common/ConfigSecrets.php` (sca
 
 **Values are never displayed** – neither encrypted nor decrypted, not in text, JSON or HTML.
 
+## What PAN-OS provides: master key and encryption level
+
+PAN-OS (firewall and Panorama) stores secrets of the configuration – private keys, pre-shared keys, passwords of server
+profiles, … – encrypted with the **master key**. Two settings decide how a value looks in the XML:
+
+| setting | values |
+|---|---|
+| master key | the **default master key** of PAN-OS (the same on every device, publicly known) until a **custom master key** (16 characters) is configured: *Device > Master Key and Diagnostics* (Panorama: *Panorama > Master Key and Diagnostics*) |
+| encryption level | the algorithm the master key is used with, see below |
+
+| level | algorithm | value in the XML | pan-os-php |
+|---|---|---|---|
+| 0 | default algorithm = AES-256-CBC | `-AQ==…` | display, cleartext, rekey, scrub |
+| 1 | AES-256-CBC | `-AQ==…` | display, cleartext, rekey, scrub |
+| 2 | AES-256-GCM (PAN-OS 10.0 and later) | `-#…` | detected and listed; replaced by scrub; not decrypted / not re-keyed |
+
+AES-256-CBC and AES-256-GCM use the same cipher (AES with a 256 bit key) in two modes:
+
+* **CBC** only keeps a value secret. PAN-OS adds a SHA-1 of the clear text to the value to notice a wrong key or a
+  changed value. The same clear text always gives the same encrypted value.
+* **GCM** is authenticated encryption: secrecy and a built-in integrity check (authentication tag) in one step; the
+  same clear text gives a different value each time.
+
+CBC is the default because Panorama and its managed firewalls (and both peers of an HA pair) have to use the same
+level, and older PAN-OS releases do not support GCM.
+
+### CLI: check and change the level
+
+Operational mode of the device CLI (not available in the web interface):
+
+```
+> show system masterkey-properties
+Master key expires at: unspecified
+Reminders will begin at: unspecified
+Master key on hsm: no
+Automatically renew master key lifetime: 0
+Encryption Level: 1
+```
+
+```
+> request encryption-level level 2                        # level 1 -> 2, existing values are re-encrypted
+> request encryption-level re-encrypt yes level 2         # the same, explicit
+> request encryption-level re-encrypt no level 2          # only new values use level 2, existing values stay
+> request encryption-level re-encrypt yes level 1         # back to AES-256-CBC
+```
+
+* `re-encrypt no` leaves a configuration with both formats (`-AQ==…` and `-#…`); `type=master-key` shows which value
+  uses which
+* use level 2 only when Panorama and all managed devices, or both HA peers, support it and are all set to it –
+  devices on different levels can get out of sync
+* a downgrade to a PAN-OS release without GCM converts the values back to AES-256-CBC automatically
+* PAN-OS 12.2.2 and later enforce a custom master key: after a grace period (default 60 days) with the default master
+  key, commits are blocked – relevant for a lab device that is kept on the default master key (`scrub` / `rekey` can
+  target a custom key with `new-master-key-file=`)
+* check the result offline: `pan-os-php type=master-key in=<exported configuration>`
+
+Palo Alto Networks documentation:
+
+* [Master Key Encryption](https://docs.paloaltonetworks.com/ngfw/administration/certificate-management/master-key-encryption) – concept, AES-256-CBC and AES-256-GCM
+* [Configure Master Key Encryption Level](https://docs.paloaltonetworks.com/ngfw/administration/certificate-management/master-key-encryption/configure-master-key-encryption-level) – the CLI commands above
+* [Configure a Master Key](https://docs.paloaltonetworks.com/ngfw/administration/certificate-management/master-key-encryption/configure-master-key) – set a custom master key
+  ([Panorama and PAN-OS](https://docs.paloaltonetworks.com/ngfw/administration/certificate-management/master-key-encryption/configure-master-key/configure-the-master-key-panorama-and-pan-os))
+
 ## Usage
 
 ```bash
