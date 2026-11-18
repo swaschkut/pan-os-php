@@ -1108,8 +1108,9 @@ class URLProfile extends SecurityProfile2
             {
                 if( isset($details[$secprof_type][$array_type]['bp']))
                     $checkArray = $details[$secprof_type][$array_type]['bp'];
-                else
-                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
+                //URL mica-engine has no BP setting so not warning if customised
+                #else
+                    #mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
