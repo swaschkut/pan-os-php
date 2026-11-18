@@ -952,7 +952,6 @@ class URLProfile extends SecurityProfile2
 
         if( isset($details[$secprof_type][$array_type]) )
         {
-            /*
             if( $checkType == "bp" )
             {
                 if( isset($details[$secprof_type][$array_type]['bp']))
@@ -960,9 +959,7 @@ class URLProfile extends SecurityProfile2
                 else
                     mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
-            else
-            */
-            if( $checkType == "visibility")
+            elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility']))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
@@ -988,7 +985,6 @@ class URLProfile extends SecurityProfile2
 
         if( isset($details[$secprof_type][$array_type]) )
         {
-            /*
             if( $checkType == "bp" )
             {
                 if( isset($details[$secprof_type][$array_type]['bp']))
@@ -996,9 +992,7 @@ class URLProfile extends SecurityProfile2
                 else
                     mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
-            else
-            */
-            if( $checkType == "visibility")
+            elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility']))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
@@ -1024,7 +1018,6 @@ class URLProfile extends SecurityProfile2
 
         if( isset($details[$secprof_type][$array_type]) )
         {
-            /*
             if( $checkType == "bp" )
             {
                 if( isset($details[$secprof_type][$array_type]['bp']))
@@ -1032,8 +1025,7 @@ class URLProfile extends SecurityProfile2
                 else
                     mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
-            */
-            if( $checkType == "visibility")
+            elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility']))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
