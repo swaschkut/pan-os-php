@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.63
 UTIL:
+* type=playbook-validation | argument alpha (docker image swaschkut/pan-os-php:alpha), compare-dev-alpha / compare-beta-alpha, compare-stats-dev-alpha / compare-stats-beta-alpha; all requested XML compares are run (before only the last), generate-sp runs every command once, latest SP export read from the latest folder
 * scm export extend with SC / MU / RN / infra / prisma Browser / objects / security / NGFW
 * SCM diff and import
 * scm pa sync - introduction
