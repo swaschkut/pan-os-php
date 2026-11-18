@@ -713,46 +713,46 @@ trait StatCollectorTrait
 
 
     public $stats_ruleTypes = [
-            'security rules'            => ['prop' => 'securityRules',           'stat' => 'gpreSecRules'],
-            'nat rules'                 => ['prop' => 'natRules',                'stat' => 'gpreNatRules'],
-            'qos rules'                 => ['prop' => 'qosRules',                'stat' => 'gpreQoSRules'],
-            'pbf rules'                 => ['prop' => 'pbfRules',                'stat' => 'gprePbfRules'],
-            'decryption rules'          => ['prop' => 'decryptionRules',         'stat' => 'gpreDecryptRules'],
-            'app-override rules'        => ['prop' => 'appOverrideRules',        'stat' => 'gpreAppOverrideRules'],
-            'capt-portal rules'         => ['prop' => 'captivePortalRules',      'stat' => 'gpreCPRules'],
-            'authentication rules'      => ['prop' => 'authenticationRules',     'stat' => 'gpreAuthRules'],
-            'dos rules'                 => ['prop' => 'dosRules',                'stat' => 'gpreDoSRules'],
-            'tunnel-inspection rules'   => ['prop' => 'tunnelInspectionRules',   'stat' => 'gpreTunnelInspectionRules'],
-            'default-security rules'    => ['prop' => 'defaultSecurityRules',    'stat' => 'gpreDefaultSecurityRules'],
-            'network-packet-broker rules' => ['prop' => 'networkPacketBrokerRules', 'stat' => 'gpreNetworkPacketBrokerRules'],
-            'sdwan rules'               => ['prop' => 'sdWanRules',               'stat' => 'gpreSDWanRules']
-        ];
+        'security rules'            => ['prop' => 'securityRules',           'stat' => 'gpreSecRules'],
+        'nat rules'                 => ['prop' => 'natRules',                'stat' => 'gpreNatRules'],
+        'qos rules'                 => ['prop' => 'qosRules',                'stat' => 'gpreQoSRules'],
+        'pbf rules'                 => ['prop' => 'pbfRules',                'stat' => 'gprePbfRules'],
+        'decryption rules'          => ['prop' => 'decryptionRules',         'stat' => 'gpreDecryptRules'],
+        'app-override rules'        => ['prop' => 'appOverrideRules',        'stat' => 'gpreAppOverrideRules'],
+        'capt-portal rules'         => ['prop' => 'captivePortalRules',      'stat' => 'gpreCPRules'],
+        'authentication rules'      => ['prop' => 'authenticationRules',     'stat' => 'gpreAuthRules'],
+        'dos rules'                 => ['prop' => 'dosRules',                'stat' => 'gpreDoSRules'],
+        'tunnel-inspection rules'   => ['prop' => 'tunnelInspectionRules',   'stat' => 'gpreTunnelInspectionRules'],
+        'default-security rules'    => ['prop' => 'defaultSecurityRules',    'stat' => 'gpreDefaultSecurityRules'],
+        'network-packet-broker rules' => ['prop' => 'networkPacketBrokerRules', 'stat' => 'gpreNetworkPacketBrokerRules'],
+        'sdwan rules'               => ['prop' => 'sdWanRules',               'stat' => 'gpreSDWanRules']
+    ];
     public $stats_profileMaps = [
-            'tag objects' => ['store' => 'tagStore', 'sum_total' => 'gTagCount', 'sum_unused' => 'gTagUnusedCount'],
-            'securityProfileGroup objects' => ['store' => 'securityProfileGroupStore'],
-            'Anti-Spyware objects' => ['store' => 'AntiSpywareProfileStore'],
-            'Vulnerability objects' => ['store' => 'VulnerabilityProfileStore'],
-            'URL objects' => ['store' => 'URLProfileStore'],
-            'custom URL objects' => ['store' => 'customURLProfileStore'],
-            'File-Blocking objects' => ['store' => 'FileBlockingProfileStore'],
-            'Data-Filtering objects' => ['store' => 'DataFilteringProfileStore'],
-            'Decryption objects' => ['store' => 'DecryptionProfileStore'],
-            'HipObject objects' => ['store' => 'HipObjectsProfileStore'],
-            'HipProfile objects' => ['store' => 'HipProfilesProfileStore'],
-            'GTP objects' => ['store' => 'GTPProfileStore'],
-            'SCEP objects' => ['store' => 'SCEPProfileStore'],
-            'PacketBroker objects' => ['store' => 'PacketBrokerProfileStore'],
-            'SDWanErrorCorrection objects' => ['store' => 'SDWanErrorCorrectionProfileStore'],
-            'SDWanPathQuality objects' => ['store' => 'SDWanPathQualityProfileStore'],
-            'SDWanSaasQuality objects' => ['store' => 'SDWanSaasQualityProfileStore'],
-            'SDWanTrafficDistribution objects' => ['store' => 'SDWanTrafficDistributionProfileStore'],
-            'DataObjects objects' => ['store' => 'DataObjectsProfileStore'],
-            'LogProfile objects' => ['store' => 'LogProfileStore', 'sum_total' => 'gLogProfileCount'],
-            'certificate objects' => ['store' => 'certificateStore', 'sum_total' => 'gCertificatCount'],
-            'SSL_TLSServiceProfile objects' => ['store' => 'SSL_TLSServiceProfileStore', 'sum_total' => 'gSSL_TLSServiceProfileCount']
-        ];
+        'tag objects' => ['store' => 'tagStore', 'sum_total' => 'gTagCount', 'sum_unused' => 'gTagUnusedCount'],
+        'securityProfileGroup objects' => ['store' => 'securityProfileGroupStore'],
+        'Anti-Spyware objects' => ['store' => 'AntiSpywareProfileStore'],
+        'Vulnerability objects' => ['store' => 'VulnerabilityProfileStore'],
+        'URL objects' => ['store' => 'URLProfileStore'],
+        'custom URL objects' => ['store' => 'customURLProfileStore'],
+        'File-Blocking objects' => ['store' => 'FileBlockingProfileStore'],
+        'Data-Filtering objects' => ['store' => 'DataFilteringProfileStore'],
+        'Decryption objects' => ['store' => 'DecryptionProfileStore'],
+        'HipObject objects' => ['store' => 'HipObjectsProfileStore'],
+        'HipProfile objects' => ['store' => 'HipProfilesProfileStore'],
+        'GTP objects' => ['store' => 'GTPProfileStore'],
+        'SCEP objects' => ['store' => 'SCEPProfileStore'],
+        'PacketBroker objects' => ['store' => 'PacketBrokerProfileStore'],
+        'SDWanErrorCorrection objects' => ['store' => 'SDWanErrorCorrectionProfileStore'],
+        'SDWanPathQuality objects' => ['store' => 'SDWanPathQualityProfileStore'],
+        'SDWanSaasQuality objects' => ['store' => 'SDWanSaasQualityProfileStore'],
+        'SDWanTrafficDistribution objects' => ['store' => 'SDWanTrafficDistributionProfileStore'],
+        'DataObjects objects' => ['store' => 'DataObjectsProfileStore'],
+        'LogProfile objects' => ['store' => 'LogProfileStore', 'sum_total' => 'gLogProfileCount'],
+        'certificate objects' => ['store' => 'certificateStore', 'sum_total' => 'gCertificatCount'],
+        'SSL_TLSServiceProfile objects' => ['store' => 'SSL_TLSServiceProfileStore', 'sum_total' => 'gSSL_TLSServiceProfileCount']
+    ];
 
-   public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false, $is_SCM = false): void
+    public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false, $is_SCM = false): void
     {
         $stdoutarray = array();
 
@@ -1410,7 +1410,9 @@ trait StatCollectorTrait
             'vp' => array( 'any' => array( 'vp rules', 'vp mica-engine' ) ),
 
             'fb' => array( 'json' => array( array( 'file-blocking', 'rule', '{X}' ) ) ),
-            'data' => array( 'json' => array( array( 'data-filtering', '{X}' ) ) ),
+            // Data Filtering has no check in any BP JSON file: visibility falls back to the adoption figure
+            // (see 'fallback-set' in bp_check_applies()); "data-filtering": { "visibility": false } switches it off
+            'data' => array( 'json' => array( array( 'data-filtering', '{X}' ) ), 'fallback-set' => array( 'visibility' ) ),
 
             'url-site-access' => array( 'json' => array( array( 'url', 'site_access', '{X}' ) ) ),
             'url-credential' => array( 'json' => array(
@@ -1520,6 +1522,17 @@ trait StatCollectorTrait
                 }
                 if( !empty( $node ) )
                     return TRUE;
+            }
+
+            // nothing to check listed in the BP JSON: for the sections in 'fallback-set' the figure is still shown
+            // (adoption figure, as without a BP JSON file); only an explicit FALSE in the BP JSON turns it into N/A
+            if( isset( $def['fallback-set'] ) && in_array( $section, $def['fallback-set'] ) )
+            {
+                $explicit = null;
+                $first = $def['json'][0];
+                if( isset( $first[0] ) && isset( $json[$first[0]] ) && is_array( $json[$first[0]] ) )
+                    $explicit = $json[$first[0]][$section] ?? null;
+                return $explicit !== FALSE;
             }
             return FALSE;
         }

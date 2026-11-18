@@ -1479,7 +1479,18 @@ RQuery::$defaultFilters['securityprofile']['df']['operators']['is.visibility'] =
         if( is_string($object) || $object->secprof_type != 'data-filtering' )
             return null;
 
-        return $object->is_visibility();
+        $result = $object->is_visibility();
+        if( $result !== null )
+            return $result;
+
+        // no Data Filtering check in the BP JSON: Data Filtering has no stricter test than adoption, so the
+        // visibility figure is the adoption figure (as develop). Only "data-filtering": { "visibility": false }
+        // in the BP JSON keeps it N/A (null). 'df is.visibility.na' wraps this function, so it follows.
+        $json = PH::getBPjsonFile();
+        if( is_array( $json ) && isset( $json['data-filtering']['visibility'] ) && $json['data-filtering']['visibility'] === FALSE )
+            return null;
+
+        return $object->is_adoption();
     },
     'arg' => false,
     'help' => "'securityprofiletype=data-filtering' e.g. 'filter=(df is.visibility)'"

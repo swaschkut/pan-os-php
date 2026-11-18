@@ -35,6 +35,8 @@ BUGFIX:
 
 2.1.62
 UTIL:
+* type=device actions=display / exportToExcel | template-stack templates in configuration order with priority (1 = highest), e.g. '1: GLOBAL-TPL [vsys1]' - before: exportToExcel printed the list reversed without priority
+* type=zone actions=exportToExcel | new columns zpp-template-stack / zpp-template - where the zone-protection-profile the firewall receives is defined
 * type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
 * introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
 * class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
@@ -68,6 +70,7 @@ UTIL:
 * type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
 
 BUGFIX:
+* type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
 * bugfix for filter missing GPGatewayTunnel / profile
 * type=profile | general bugfix to support profiletype argument | cleanup
 * type=rule-compare | bugfix related to ancestor-objects-take-precedence yes

@@ -438,10 +438,6 @@
             "visibility": {
                 "local-inline-cat": "yes",
                 "cloud-inline-cat": "yes"
-            },
-            "bp": {
-                "local-inline-cat": "yes",
-                "cloud-inline-cat": "yes"
             }
         }
     },
@@ -551,6 +547,9 @@
                 ]
             }
         }
+    },
+    "data-filtering": {
+        "visibility": true
     },
     "included-in-bpa":
     {
