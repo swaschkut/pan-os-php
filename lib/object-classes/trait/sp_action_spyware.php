@@ -1219,7 +1219,8 @@ trait sp_action_spyware
 
     /**
      * best-practice-set of the DNS lists (botnet-domains -> lists): action and packet-capture of every list as the
-     * BP JSON spyware -> lists -> bp lists them. Without a DNS license: allow, disable.
+     * BP JSON spyware -> lists -> bp lists them; lists the JSON does not name (custom EDLs) are not changed.
+     * Without a DNS license: the lists the JSON names get allow, disable - custom EDLs stay.
      */
     public function botnet_BestPracticeSet( $hasDNSlicense = true ): void
     {
@@ -1233,6 +1234,16 @@ trait sp_action_spyware
 
         $entries = PH::getBPjsonFile()['spyware']['lists'][$section]['action'] ?? array();
         $fallbacks = array( 'action' => 'alert', 'packet-capture' => 'disable' );
+        // the lists the BP JSON names (the Palo Alto Networks list 'default-paloalto-dns'); all others are custom EDLs
+        $listed = function( $rule ) use ( $entries )
+        {
+            if( empty( $entries ) )
+                return $rule->name() == 'default-paloalto-dns';
+            foreach( (array)$entries as $candidate )
+                if( in_array( $rule->name(), (array)( $candidate['type'] ?? array() ), TRUE ) )
+                    return TRUE;
+            return FALSE;
+        };
         foreach( $this->additional['botnet-domain']['lists'] as $name => $rule )
         {
             /** @var DNSPolicy $rule */
@@ -1241,11 +1252,26 @@ trait sp_action_spyware
 
             if( !$hasDNSlicense )
             {
-                $this->dnsPolicy_setValue( $rule, 'action', 'allow', TRUE );
-                $this->dnsPolicy_setValue( $rule, 'packet-capture', 'disable' );
+                // no DNS security license: only the Palo Alto Networks list does not apply. A custom EDL needs no
+                // license - its action (block, sinkhole, alert) is never changed here.
+                if( $section == 'bp' )
+                {
+                    if( $listed( $rule ) )
+                    {
+                        $this->dnsPolicy_setValue( $rule, 'action', 'allow', TRUE );
+                        $this->dnsPolicy_setValue( $rule, 'packet-capture', 'disable' );
+                    }
+                }
+                elseif( $rule->action() == 'allow' )
+                    $this->dnsPolicy_setValue( $rule, 'packet-capture', 'disable' );
                 continue;
             }
             $this->dnsPolicy_setFromJSONEntries( $rule, $entries, $fallbacks, TRUE );
+
+            // alert-only-set: a list the BP JSON does not name (custom EDL) must not stay on 'allow' either -
+            // 'allow' becomes 'alert' (logs, does not block; packet-capture is kept), as before the rework
+            if( $section == 'visibility' && !empty( $entries ) && $rule->action() == 'allow' && !$listed( $rule ) )
+                $this->dnsPolicy_setValue( $rule, 'action', 'alert', TRUE );
         }
 
         if( $hasDNSlicense )
@@ -1289,7 +1315,9 @@ trait sp_action_spyware
 
     /**
      * alert-only-set of the DNS lists (botnet-domains -> lists): action and packet-capture of every list as the
-     * BP JSON spyware -> lists -> visibility lists them ('!allow' -> 'alert'). Without a DNS license: allow, disable.
+     * BP JSON spyware -> lists -> visibility lists them ('!allow' -> 'alert'). Lists the JSON does not name
+     * (custom EDLs): 'allow' -> 'alert', everything else kept. Without a DNS license: a list on 'allow' gets
+     * packet-capture disable, nothing else changes.
      */
     public function botnet_AlertOnlySet( $hasDNSlicense = true): void
     {
