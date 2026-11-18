@@ -1,0 +1,197 @@
+<?php
+/**
+ * ISC License
+ *
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/**
+ * Master-key encrypted values of a PAN-OS / Panorama configuration (type=master-key).
+ *
+ * Works on the XML as stored (DOMDocument) - every text node, not only what pan-os-php models.
+ * Never returns or prints a decrypted value.
+ *
+ * Format of an encrypted value: '-' + base64(version byte) + ...
+ *   version 1 ("-AQ=="): base64(SHA-1 of the clear text, 28 chars) + base64(AES-256-CBC ciphertext) - PanosCrypto
+ *   other versions (e.g. AES-256-GCM, encryption level 2): reported as 'unknown', not decrypted
+ */
+class ConfigSecrets
+{
+    /** '-' + base64 of one version byte ('AQ==' = 1) + base64 payload */
+    const PATTERN = '/^-([A-Za-z0-9+\/]{2}==)([A-Za-z0-9+\/=]{16,})$/';
+
+    const FORMAT_CBC = 'aes-256-cbc';
+    const FORMAT_UNKNOWN = 'unknown';
+    const FORMAT_MALFORMED = 'malformed';
+
+    const KEY_DEFAULT = 'default';
+    const KEY_GIVEN = 'given';
+    const KEY_UNKNOWN = 'unknown';
+
+    /**
+     * @return array|null array( 'version' => int, 'format' => FORMAT_* ) when $value looks like an encrypted value
+     */
+    public static function parse( $value )
+    {
+        if( !is_string($value) || $value === '' || $value[0] !== '-' || !preg_match( self::PATTERN, $value, $m ) )
+            return null;
+        $v = base64_decode( $m[1], TRUE );
+        if( $v === FALSE || strlen($v) != 1 )
+            return null;
+        $version = ord( $v );
+        if( $version != 1 )
+            return array( 'version' => $version, 'format' => self::FORMAT_UNKNOWN );
+
+        // version 1: 28 characters SHA-1, then ciphertext in 16 byte blocks
+        $hash = base64_decode( substr($value, 5, 28), TRUE );
+        $ct = base64_decode( substr($value, 33), TRUE );
+        if( $hash === FALSE || strlen($hash) != 20 || $ct === FALSE || $ct === '' || strlen($ct) % 16 != 0 )
+            return array( 'version' => 1, 'format' => self::FORMAT_MALFORMED );
+        return array( 'version' => 1, 'format' => self::FORMAT_CBC );
+    }
+
+    /**
+     * which master key decrypts $value: KEY_DEFAULT, KEY_GIVEN ($masterKey) or KEY_UNKNOWN; the clear text is dropped
+     */
+    public static function keyOf( $value, $masterKey = null )
+    {
+        static $crypto = null;
+        if( $crypto === null )
+            $crypto = new PanosCrypto();
+        $info = self::parse( $value );
+        if( $info === null || $info['format'] !== self::FORMAT_CBC )
+            return self::KEY_UNKNOWN;
+        $r = $crypto->decrypt( $value );
+        if( $r !== FALSE && $r !== '' )
+            return self::KEY_DEFAULT;
+        if( $masterKey !== null && $masterKey !== '' )
+        {
+            $r = $crypto->decrypt( $value, $masterKey );
+            if( $r !== FALSE && $r !== '' )
+                return self::KEY_GIVEN;
+        }
+        return self::KEY_UNKNOWN;
+    }
+
+    /**
+     * all encrypted values of $doc
+     * @return array list of array( xpath, location, field, version, format, length, key ) - never the value
+     */
+    public static function scan( DOMDocument $doc, $masterKey = null )
+    {
+        $out = array();
+        $x = new DOMXPath( $doc );
+        foreach( $x->query('//text()[starts-with(normalize-space(.),"-")]') as $t )
+        {
+            $value = trim( $t->nodeValue );
+            $info = self::parse( $value );
+            if( $info === null )
+                continue;
+            $el = $t->parentNode;
+            // only leaf elements hold a value
+            if( $el === null || $el->nodeType != XML_ELEMENT_NODE || DH::firstChildElement($el) !== FALSE )
+                continue;
+            list( $location, $field ) = self::locate( $el );
+            $out[] = array(
+                'xpath' => DH::elementToPanXPath( $el ),
+                'location' => $location,
+                'field' => $field,
+                'version' => $info['version'],
+                'format' => $info['format'],
+                'length' => strlen( $value ),
+                'key' => self::keyOf( $value, $masterKey ),
+            );
+        }
+        return $out;
+    }
+
+    /** number of hashed values (phash) - hashes are not master-key encrypted, listed for information only */
+    public static function countHashes( DOMDocument $doc )
+    {
+        $x = new DOMXPath( $doc );
+        return $x->query('//phash')->length;
+    }
+
+    /**
+     * @return array( location, field ) - location: shared, device-group NAME, template NAME[ / vsys NAME],
+     *   template-stack NAME, vsys NAME, mgt-config, device, readonly, ...; field: element path below the location
+     *   without entry names (same kind of secret = same field)
+     */
+    public static function locate( DOMElement $el )
+    {
+        $chain = array();
+        for( $n = $el; $n !== null && $n->nodeType == XML_ELEMENT_NODE; $n = $n->parentNode )
+            array_unshift( $chain, $n );
+
+        $location = array();
+        $start = 0;
+        foreach( $chain as $i => $n )
+        {
+            $parent = $i > 0 ? $chain[$i - 1]->nodeName : '';
+            if( $n->nodeName == 'entry' && in_array( $parent, array( 'device-group', 'template', 'template-stack', 'vsys' ), TRUE ) )
+            {
+                $location[] = $parent . ' ' . $n->getAttribute('name');
+                $start = $i + 1;
+            }
+            elseif( $i == 1 && in_array( $n->nodeName, array( 'shared', 'mgt-config', 'readonly', 'panorama' ), TRUE ) )
+            {
+                $location[] = $n->nodeName;
+                $start = $i + 1;
+            }
+            elseif( $n->nodeName == 'entry' && $parent == 'devices' && $i == 2 )
+            {
+                // /config/devices/entry[localhost.localdomain]: the device itself unless a device group / template follows
+                $start = $i + 1;
+            }
+            elseif( $n->nodeName == 'config' && $i > 0 && $parent == 'entry' )
+            {
+                // template / template stack: .../entry/config/... - continue with the inner configuration
+                $start = $i + 1;
+            }
+            elseif( $n->nodeName == 'entry' && $parent == 'devices' && $i >= 2 && $chain[$i - 2]->nodeName == 'config' )
+            {
+                // .../config/devices/entry[localhost.localdomain] inside a template
+                $start = $i + 1;
+            }
+        }
+        if( count($location) == 0 )
+            $location[] = 'device';
+
+        $field = array();
+        for( $i = $start; $i < count($chain); $i++ )
+            $field[] = $chain[$i]->nodeName;
+
+        return array( implode( ' / ', $location ), implode( '/', $field ) );
+    }
+
+    /**
+     * summary of a scan(): totals by key, format, field; 'other_master_key' = well-formed values that neither the
+     * default nor the given master key decrypts
+     */
+    public static function summary( array $items )
+    {
+        $s = array( 'total' => count($items), 'other_master_key' => 0, 'by_key' => array(), 'by_format' => array(), 'by_field' => array(), 'by_location' => array() );
+        foreach( $items as $i )
+        {
+            if( $i['format'] === self::FORMAT_CBC && $i['key'] === self::KEY_UNKNOWN )
+                $s['other_master_key']++;
+            foreach( array( 'key' => 'by_key', 'format' => 'by_format', 'field' => 'by_field', 'location' => 'by_location' ) as $k => $b )
+                $s[$b][$i[$k]] = isset($s[$b][$i[$k]]) ? $s[$b][$i[$k]] + 1 : 1;
+        }
+        foreach( array( 'by_field', 'by_location' ) as $b )
+            arsort( $s[$b] );
+        return $s;
+    }
+}

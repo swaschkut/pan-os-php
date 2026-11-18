@@ -1,6 +1,7 @@
 # Re-encrypt all secrets of a configuration from a custom master key to the default master key
 
-**Status:** planned (2026-11-18)
+**Status:** step 1 (display) implemented (2026-11-18): `type=master-key` – [utils/README_master-key.md](../utils/README_master-key.md),
+`utils/lib/MASTER_KEY__.php`, `utils/common/ConfigSecrets.php`, `tests/test_master_key.php`; rekey and AES-256-GCM open
 **Code reference:** `alpha` `3df2eeb`
 **Related:** `lib/helper-classes/PanosCrypto.php`, [panorama-move-concept.md](panorama-move-concept.md) section 7a
 (`master-key=same|different`), SCM importers (`lib/misc-classes/SCMImporter.php`,
@@ -33,7 +34,7 @@ same way).
 
 ## Proposal
 
-New type (name open, e.g. `type=master-key`):
+New type `type=master-key`:
 
 | argument | |
 |---|---|
@@ -72,17 +73,26 @@ Not touched: hashed values (`phash` of local admins, `$1$` / `$5$` …) – thes
 
 ## Steps
 
-1. scan + `display` / `verify` (read only)
-2. `rekey` offline + report + validation by reload
-3. tests: fixture with values encrypted with a custom key (generated with `PanosCrypto::encrypt`), the known default
-   vector (`DEMO`), a value with a wrong key, a non-encrypted value that only looks similar
+1. **done** – scan + `display` (read only): XPath, location, field, format version, key state (default / given /
+   unknown) of every encrypted value; `key=` filter, `master-key-file=` / `master-key=`, `exportToHtml`, JSON; the
+   "verify" of the proposal is the key state + `key=unknown`; works on the XML as stored (no object model); tests with
+   generated values (default key, custom key, other key, unknown version, malformed, look-alikes, no value in any
+   output)
+2. `rekey` offline for AES-256-CBC (`PanosCrypto` can do it today): `master-key-file=` (old) → `new-master-key-file=`
+   (default: default master key), `out=`, report, values that do not decrypt stay unchanged and are listed, exit code
+3. AES-256-GCM in `PanosCrypto` – **needs an example**: a value of a device with encryption level 2 together with its
+   clear text and master key (lab device); format and key derivation are not known. Step 1 lists such values as
+   `unknown` (version byte ≠ 1)
 4. panorama-move `master-key=rekey`
 5. cleanup in `PanosCrypto`: doc comment of `decrypt()` (`""` instead of `false`), commented CLI runner / example at the
    end of the file
 
+Order: rekey (2) before GCM (3) – CBC is usable at once, GCM waits for the example value.
+
 ## Open decisions
 
-1. Name of the type and of the arguments (`master-key-old` / `master-key-new`, or `master-key` / `target-master-key`).
+1. Argument names for rekey: step 1 uses `master-key-file=` / `master-key=` for the key of the input; target key
+   `new-master-key-file=` / `new-master-key=`?
 2. AES-256-GCM (encryption level 2, PAN-OS 10.0+): support it (format / key derivation to be verified with a real
    configuration) or report such values as "not supported".
 3. `in=api://`: read only, or also write the re-encrypted values back (would change secrets on a live device).

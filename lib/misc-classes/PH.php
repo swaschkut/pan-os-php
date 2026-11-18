@@ -2306,7 +2306,8 @@ class PH
         "object-merger",
         "merger-possible-report",
         "device-config-bundle",
-        "config-section"
+        "config-section",
+        "master-key"
         );
 
 
@@ -2338,7 +2339,8 @@ class PH
         "xpath",
         "gcp",
         "device-config-bundle",
-        "config-section"
+        "config-section",
+        "master-key"
     );
 
     /**
@@ -2542,6 +2544,9 @@ class PH
 
         elseif( $type == "config-section" )
             $util = new CONFIG_SECTION__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "master-key" )
+            $util = new MASTER_KEY__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "ssh-connector" )
             $util = new SSH_CONNECTOR__( $type, $argv, $argc, $PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
