@@ -23,6 +23,7 @@ UTIL:
 * update todo list to a central place TODO.md
 * type=config-section section=deployment-update-schedule | introduction
 * type=master-key | introduction | extend with actions=decrypt, actions=scrub
+* type=master-key | extend with flag 'cleartext'
 
 BUGFIX:
 * SCM export after first production run / IAM patch

@@ -43,6 +43,7 @@ class MASTER_KEY__ extends UTIL
         $this->supportedArguments['allow-partial'] = array('niceName' => 'allow-partial', 'shortHelp' => 'rekey: write out= although some values could not be re-encrypted (they stay unchanged)');
         $this->supportedArguments['master-key'] = array('niceName' => 'master-key', 'shortHelp' => 'custom master key to test the values that the default master key does not decrypt (prefer master-key-file: the command line is visible in the shell history / process list)', 'argDesc' => '[16 characters]');
         $this->supportedArguments['master-key-file'] = array('niceName' => 'master-key-file', 'shortHelp' => 'file with the custom master key (first line)', 'argDesc' => '[filename]');
+        $this->supportedArguments['cleartext'] = array('niceName' => 'cleartext', 'shortHelp' => 'display / exportToHtml: show the decrypted value of every secret that the default (public) master key - or the given master key - can read. For a lab; a value encrypted with the public default master key is not a secret');
         $this->supportedArguments['hashes'] = array('niceName' => 'hashes', 'shortHelp' => 'display / exportToHtml: also list the password hashes (phash) with XPath and algorithm - one-way hashes, independent of the master key');
         $this->supportedArguments['key'] = array('niceName' => 'key', 'shortHelp' => 'show only the values of one key state: all (default) | default | given | unknown', 'argDesc' => 'all|default|given|unknown');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
@@ -124,6 +125,8 @@ class MASTER_KEY__ extends UTIL
                     derr( "actions=" . $write . " can not be combined with other actions (run display on the output afterwards)", null, FALSE );
                 if( isset(PH::$args['hashes']) )
                     derr( "hashes is an argument of display / exportToHtml", null, FALSE );
+                if( isset(PH::$args['cleartext']) )
+                    derr( "cleartext is an argument of display / exportToHtml", null, FALSE );
                 if( $write == 'rekey' && isset(PH::$args['placeholder']) )
                     derr( "placeholder is an argument of actions=scrub", null, FALSE );
                 if( $write == 'scrub' && $masterKey !== null )
@@ -138,7 +141,8 @@ class MASTER_KEY__ extends UTIL
             if( isset(PH::$args[$arg]) )
                 derr( $arg . " is an argument of actions=rekey / actions=scrub", null, FALSE );
 
-        $all = ConfigSecrets::scan( $this->xmlDoc, $masterKey );
+        $cleartext = isset(PH::$args['cleartext']);
+        $all = ConfigSecrets::scan( $this->xmlDoc, $masterKey, $cleartext );
         $summary = ConfigSecrets::summary( $all );
         $summary['hashed_values_not_master_key_encrypted'] = ConfigSecrets::countHashes( $this->xmlDoc );
         $summary['custom_master_key_given'] = $masterKey !== null;
@@ -156,12 +160,12 @@ class MASTER_KEY__ extends UTIL
         {
             if( $a[0] == 'display' )
             {
-                $this->display( $items, $summary, $filter );
+                $this->display( $items, $summary, $filter, $cleartext );
                 if( $hashes !== null )
                     $this->displayHashes( $hashes );
             }
             else
-                $this->exportToHtml( $a[1], $items, $hashes );
+                $this->exportToHtml( $a[1], $items, $hashes, $cleartext );
         }
         if( $hashes !== null )
             foreach( $hashes as $h )
@@ -308,7 +312,19 @@ class MASTER_KEY__ extends UTIL
         return $i['format'] == ConfigSecrets::FORMAT_CBC ? 'UNKNOWN (other master key)' : 'not checked';
     }
 
-    private function display( array $items, array $summary, $filter )
+    /** cleartext for display: inline ['value'] for one line, an indented block for multi-line (e.g. a private key) */
+    private static function cleartextText( $i )
+    {
+        if( !array_key_exists( 'cleartext', $i ) )
+            return '';
+        if( $i['cleartext'] === null )
+            return $i['key'] === ConfigSecrets::KEY_UNKNOWN ? "       cleartext: - (no available master key decrypts this value)\n" : '';
+        if( strpos( $i['cleartext'], "\n" ) === FALSE )
+            return "       cleartext: ['" . $i['cleartext'] . "']\n";
+        return "       cleartext:\n         " . str_replace( "\n", "\n         ", $i['cleartext'] ) . "\n";
+    }
+
+    private function display( array $items, array $summary, $filter, $cleartext = FALSE )
     {
         PH::print_stdout();
         PH::print_stdout( "master-key encrypted values" . ( $filter != 'all' ? " (key=" . $filter . ")" : '' ) . " - values are never displayed" );
@@ -324,7 +340,14 @@ class MASTER_KEY__ extends UTIL
             {
                 PH::print_stdout( "   - " . $i['xpath'] );
                 PH::print_stdout( "       " . self::formatText($i) . " | key: " . self::keyText($i) . " | " . $i['length'] . " characters" );
+                if( $cleartext )
+                    PH::print_stdout( rtrim( self::cleartextText( $i ), "\n" ) );
             }
+        }
+        if( $cleartext )
+        {
+            PH::print_stdout();
+            PH::print_stdout( "NOTE: cleartext is shown for values that the default (public) master key or the given master key can read - for a lab only" );
         }
 
         PH::print_stdout();
@@ -371,18 +394,24 @@ class MASTER_KEY__ extends UTIL
         PH::print_stdout();
     }
 
-    private function exportToHtml( $filename, array $items, $hashes = null )
+    private function exportToHtml( $filename, array $items, $hashes = null, $cleartext = FALSE )
     {
         $esc = function( $t ) { return htmlspecialchars( (string)$t, ENT_QUOTES ); };
-        $headers = '<th>location</th><th>field</th><th>format</th><th>key</th><th>length</th><th>xpath</th>';
+        $ct = $cleartext ? '<th>cleartext</th>' : '';
+        $headers = '<th>location</th><th>field</th><th>format</th><th>key</th><th>length</th>' . $ct . '<th>xpath</th>';
         $lines = '';
+        $ctCell = function( $i ) use ( $esc ) {
+            if( !array_key_exists( 'cleartext', $i ) )
+                return '<td></td>';
+            return '<td>' . ( $i['cleartext'] === null ? '' : '<pre>' . $esc($i['cleartext']) . '</pre>' ) . '</td>';
+        };
         foreach( $items as $i )
             $lines .= '<tr><td>' . $esc($i['location']) . '</td><td>' . $esc($i['field']) . '</td><td>' . $esc(self::formatText($i)) . '</td><td>'
-                . $esc(self::keyText($i)) . '</td><td>' . $esc($i['length']) . '</td><td>' . $esc($i['xpath']) . "</td></tr>\n";
+                . $esc(self::keyText($i)) . '</td><td>' . $esc($i['length']) . '</td>' . ( $cleartext ? $ctCell($i) : '' ) . '<td>' . $esc($i['xpath']) . "</td></tr>\n";
         if( $hashes !== null )
             foreach( $hashes as $h )
                 $lines .= '<tr><td>' . $esc($h['location']) . '</td><td>' . $esc($h['field']) . '</td><td>' . $esc('password hash: ' . $h['algorithm'] . ( $h['weak'] ? ' (weak)' : '' ))
-                    . '</td><td>independent of the master key</td><td></td><td>' . $esc($h['xpath']) . "</td></tr>\n";
+                    . '</td><td>independent of the master key</td><td></td>' . ( $cleartext ? '<td></td>' : '' ) . '<td>' . $esc($h['xpath']) . "</td></tr>\n";
         require_once dirname(__FILE__) . '/ExportToHtmlHelper.php';
         ExportToHtmlHelper::writeHtmlExport( $filename, $headers, $lines );
         PH::print_stdout( " * " . ( count($items) + ( $hashes !== null ? count($hashes) : 0 ) ) . " value(s) exported to '" . $filename . "'" );

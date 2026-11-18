@@ -75,7 +75,8 @@ Not touched: hashed values (`phash` of local admins, `$1$` / `$5$` …) – thes
 ## Steps
 
 1. **done** – scan + `display` (read only): XPath, location, field, format version, key state (default / given /
-   unknown) of every encrypted value; `key=` filter, `master-key-file=` / `master-key=`, `exportToHtml`, JSON; the
+   unknown) of every encrypted value; flag `cleartext` shows the decrypted value for the values the default (public)
+   or the given master key can read (lab, like `type=ike-gateway psk-cleartext`); `key=` filter, `master-key-file=` / `master-key=`, `exportToHtml`, JSON; the
    "verify" of the proposal is the key state + `key=unknown`; works on the XML as stored (no object model); tests with
    generated values (default key, custom key, other key, unknown version, malformed, look-alikes, no value in any
    output)

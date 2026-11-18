@@ -222,6 +222,40 @@ check( strpos($h2, 'password hash: MD5-crypt') !== FALSE && strpos($h2, '0123456
 list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $work . '/h.xml', 'master-key=' . $CUSTOM, 'hashes', 'actions=rekey' ) );
 check( $rc != 0, 'hashes with rekey refused' );
 
+// ---- cleartext flag (lab): show decrypted values that the default / given master key can read
+list( $rc, $t, $j ) = mk( array( 'in=' . $in ), TRUE );
+check( !isset($j['encrypted_values'][0]['cleartext']), 'without cleartext flag: no cleartext field' );
+$noLeak( $t, 'default display (no flag)' );
+
+list( $rc, $t, $j ) = mk( array( 'in=' . $in, 'cleartext' ), TRUE );
+$byc = array();
+foreach( $j['encrypted_values'] as $i ) $byc[$i['xpath']] = $i;
+check( array_key_exists( 'cleartext', $byc[$xp['syslog']] ), 'cleartext field present with the flag' );
+eq( $byc[$xp['syslog']]['cleartext'], $clear['default'], 'cleartext: default-key value decrypted' );
+eq( $byc[$xp['ldap']]['cleartext'], null, 'cleartext: custom value stays hidden without its key' );
+eq( $byc[$xp['dg']]['cleartext'], null, 'cleartext: other-key value hidden' );
+eq( $byc[$xp['gw2']]['cleartext'], null, 'cleartext: unsupported version has no cleartext' );
+check( strpos($t, $clear['default']) !== FALSE, 'cleartext: default value shown in text output' );
+check( strpos($t, $clear['custom']) === FALSE, 'cleartext: custom value NOT shown without its key' );
+check( strpos($t, 'for a lab only') !== FALSE, 'cleartext: lab note' );
+
+list( $rc, $t, $j ) = mk( array( 'in=' . $in, 'cleartext', 'master-key-file=' . $keyFile ), TRUE );
+$byc = array();
+foreach( $j['encrypted_values'] as $i ) $byc[$i['xpath']] = $i;
+eq( $byc[$xp['ldap']]['cleartext'], $clear['custom'], 'cleartext: custom value shown with its key' );
+eq( $byc[$xp['syslog']]['cleartext'], $clear['default'], 'cleartext: default value still shown' );
+eq( $byc[$xp['dg']]['cleartext'], null, 'cleartext: a third key stays hidden' );
+
+// cleartext of a private key (multi-line) in HTML
+$htmlc = $work . '/cleartext.html';
+mk( array( 'in=' . $in, 'cleartext', 'actions=exportToHtml:' . str_replace('/', '//', $htmlc) ) );
+$hc = (string)@file_get_contents( $htmlc );
+check( strpos($hc, '<th>cleartext</th>') !== FALSE && strpos($hc, $clear['default']) !== FALSE, 'cleartext: HTML column with the value' );
+
+// cleartext is a display flag, not for rekey / scrub
+list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $work . '/c.xml', 'master-key=' . $CUSTOM, 'cleartext', 'actions=rekey' ) );
+check( $rc != 0 && strpos($t, 'cleartext is an argument') !== FALSE, 'cleartext with rekey refused' );
+
 // ---- rekey
 /** secrets of a file by xpath */
 $valuesOf = function( $file ) {

@@ -22,6 +22,8 @@ pan-os-php type=master-key in=config.xml                                   # all
 pan-os-php type=master-key in=config.xml master-key-file=key.txt           # also test a custom master key
 pan-os-php type=master-key in=config.xml master-key-file=key.txt key=unknown   # only what no key decrypts
 pan-os-php type=master-key in=config.xml actions=exportToHtml:secrets.html
+pan-os-php type=master-key in=config.xml cleartext                         # lab: show the values the default key can read
+pan-os-php type=master-key in=config.xml cleartext master-key-file=key.txt  # also the values of a custom master key
 pan-os-php type=master-key in=config.xml shadow-json
 pan-os-php type=master-key in=api://192.168.1.1                            # candidate configuration of a device
 
@@ -46,6 +48,7 @@ pan-os-php type=master-key in=config.xml out=new.xml new-master-key-file=newkey.
 | `placeholder=` | `scrub`: clear text that replaces every secret (default `Dummy-1234567890`) |
 | `allow-partial` | `rekey` / `scrub`: write `out=` although some values could not be re-encrypted / replaced |
 | `hashes` | display / exportToHtml: also list the password hashes (`phash`) – XPath and algorithm, never the hash |
+| `cleartext` | display / exportToHtml: show the decrypted value of every secret the default (public) master key – or the given master key – can read (for a lab) |
 | `key=` | `all` (default) \| `default` \| `given` \| `unknown` – show only values of that key state |
 | `actions=` | `display` (default) \| `exportToHtml:FILE` (a `/` in the file name as `//`) \| `rekey` (alone) \| `scrub` (alone) |
 | `shadow-json` | JSON: `encrypted_values` (xpath, location, field, version, format, length, key), `summary`; rekey: `rekey` (xpath, location, field, status, from), `summary` |
@@ -72,6 +75,15 @@ Per value: XPath, location (`shared`, `device-group NAME`, `template NAME`, `tem
 `mgt-config`, `panorama`, `device`), field (element path without names – same kind of secret = same field), length.
 The summary counts by key, format, field and location; `other_master_key` = well-formed values that no tested key
 decrypts.
+
+## cleartext (lab)
+
+`cleartext` adds the decrypted value to `display` and `exportToHtml`, like `type=ike-gateway … psk-cleartext` does for
+pre-shared keys. It is shown only for values that **decrypt with the default master key** (which is public, so these
+values are not a secret) or with a master key given by `master-key-file=` / `master-key=`. Values of another, unknown
+master key, and AES-256-GCM / unknown / malformed values, show no cleartext. Multi-line values (private keys) are
+printed as a block; in JSON the field is `cleartext`. For a lab / analysis of the own configuration – not shown without
+the flag.
 
 ## Values that do not depend on the master key
 

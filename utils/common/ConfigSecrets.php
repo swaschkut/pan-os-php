@@ -103,8 +103,9 @@ class ConfigSecrets
      * all encrypted values of $doc
      * @return array list of array( xpath, location, field, version, format, length, key ) - never the value
      */
-    public static function scan( DOMDocument $doc, $masterKey = null )
+    public static function scan( DOMDocument $doc, $masterKey = null, $withCleartext = FALSE )
     {
+        $crypto = $withCleartext ? new PanosCrypto() : null;
         $out = array();
         $x = new DOMXPath( $doc );
         foreach( $x->query('//text()[starts-with(normalize-space(.),"-")]') as $t )
@@ -118,7 +119,7 @@ class ConfigSecrets
             if( $el === null || $el->nodeType != XML_ELEMENT_NODE || DH::firstChildElement($el) !== FALSE )
                 continue;
             list( $location, $field ) = self::locate( $el );
-            $out[] = array(
+            $item = array(
                 'xpath' => DH::elementToPanXPath( $el ),
                 'location' => $location,
                 'field' => $field,
@@ -127,6 +128,17 @@ class ConfigSecrets
                 'length' => strlen( $value ),
                 'key' => self::keyOf( $value, $masterKey ),
             );
+            // cleartext only for values that decrypt (default master key is public, or the given key); opt-in
+            if( $withCleartext )
+            {
+                $clear = null;
+                if( $item['key'] === self::KEY_DEFAULT )
+                    $clear = $crypto->decrypt( $value );
+                elseif( $item['key'] === self::KEY_GIVEN )
+                    $clear = $crypto->decrypt( $value, $masterKey );
+                $item['cleartext'] = ( $clear === FALSE || $clear === '' ) ? null : $clear;
+            }
+            $out[] = $item;
         }
         return $out;
     }
