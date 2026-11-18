@@ -189,6 +189,33 @@ check( $rc != 0 && strpos($t, 'not supported') !== FALSE, 'unknown action refuse
 list( $rc, $t ) = mk( array( 'in=' . $in, 'master-key=short' ) );
 check( $rc == 0 && strpos($t, '16 characters') !== FALSE, 'key length warning' );
 
+// ---- hashes flag: password hashes with xpath and algorithm, never the hash
+eq( ConfigSecrets::hashAlgorithm( '$1$abcdefgh$0123456789abcdefghijkl' ), 'MD5-crypt', 'hash algorithm $1$' );
+eq( ConfigSecrets::hashAlgorithm( '$5$salt$xyz' ), 'SHA-256-crypt', 'hash algorithm $5$' );
+eq( ConfigSecrets::hashAlgorithm( '$6$salt$xyz' ), 'SHA-512-crypt', 'hash algorithm $6$' );
+eq( ConfigSecrets::hashAlgorithm( 'fnRL/G5lXVMug' ), 'DES-crypt', 'hash algorithm DES' );
+eq( ConfigSecrets::hashAlgorithm( '*' ), 'no password (locked)', 'hash algorithm locked' );
+list( $rc, $t, $j ) = mk( array( 'in=' . $in ), TRUE );
+check( !isset($j['hashed_values']), 'without hashes flag: no hash list' );
+list( $rc, $t, $j ) = mk( array( 'in=' . $in, 'hashes' ), TRUE );
+$hx = "/config/mgt-config/users/entry[@name='apiuser']/phash";
+$hit = array_values( array_filter( isset($j['hashed_values']) ? $j['hashed_values'] : array(), function( $h ) use ( $hx ) { return $h['xpath'] === $hx; } ) );
+eq( count($hit), 1, 'hashes flag: phash xpath listed' );
+eq( isset($hit[0]) ? array( $hit[0]['algorithm'], $hit[0]['weak'], $hit[0]['location'] ) : null, array( 'MD5-crypt', TRUE, 'mgt-config' ), 'hashes flag: algorithm, weak, location' );
+eq( count($j['hashed_values']), $j['summary'][0]['hashed_values_not_master_key_encrypted'], 'hashes flag: list matches the count' );
+check( isset($j['summary'][0]['hash_algorithms']['MD5-crypt']), 'hashes flag: algorithms in the summary' );
+eq( count($j['encrypted_values']), $base + 6, 'hashes flag: encrypted values unchanged' );
+check( strpos($t, '0123456789abcdefghijkl') === FALSE && strpos($t, '$1$abcdefgh') === FALSE, 'hashes flag: hash not in the JSON output' );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'hashes' ) );
+check( strpos($t, $hx) !== FALSE && strpos($t, 'WEAK algorithm') !== FALSE, 'hashes flag: text display' );
+check( strpos($t, '0123456789abcdefghijkl') === FALSE, 'hashes flag: hash not in the text output' );
+$html2 = $work . '/hashes.html';
+mk( array( 'in=' . $in, 'hashes', 'actions=exportToHtml:' . str_replace('/', '//', $html2) ) );
+$h2 = (string)@file_get_contents( $html2 );
+check( strpos($h2, 'password hash: MD5-crypt') !== FALSE && strpos($h2, '0123456789abcdefghijkl') === FALSE, 'hashes flag: HTML export without the hash' );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $work . '/h.xml', 'master-key=' . $CUSTOM, 'hashes', 'actions=rekey' ) );
+check( $rc != 0, 'hashes with rekey refused' );
+
 // ---- rekey
 /** secrets of a file by xpath */
 $valuesOf = function( $file ) {

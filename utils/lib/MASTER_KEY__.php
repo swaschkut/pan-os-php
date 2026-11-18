@@ -41,6 +41,7 @@ class MASTER_KEY__ extends UTIL
         $this->supportedArguments['allow-partial'] = array('niceName' => 'allow-partial', 'shortHelp' => 'rekey: write out= although some values could not be re-encrypted (they stay unchanged)');
         $this->supportedArguments['master-key'] = array('niceName' => 'master-key', 'shortHelp' => 'custom master key to test the values that the default master key does not decrypt (prefer master-key-file: the command line is visible in the shell history / process list)', 'argDesc' => '[16 characters]');
         $this->supportedArguments['master-key-file'] = array('niceName' => 'master-key-file', 'shortHelp' => 'file with the custom master key (first line)', 'argDesc' => '[filename]');
+        $this->supportedArguments['hashes'] = array('niceName' => 'hashes', 'shortHelp' => 'display / exportToHtml: also list the password hashes (phash) with XPath and algorithm - one-way hashes, independent of the master key');
         $this->supportedArguments['key'] = array('niceName' => 'key', 'shortHelp' => 'show only the values of one key state: all (default) | default | given | unknown', 'argDesc' => 'all|default|given|unknown');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
@@ -120,6 +121,8 @@ class MASTER_KEY__ extends UTIL
             $this->rekey( $masterKey );
             return;
         }
+        if( isset(PH::$args['hashes']) && in_array( 'rekey', $names, TRUE ) )
+            derr( "hashes is an argument of display / exportToHtml", null, FALSE );
         foreach( array( 'new-master-key', 'new-master-key-file', 'allow-partial' ) as $arg )
             if( isset(PH::$args[$arg]) )
                 derr( $arg . " is an argument of actions=rekey", null, FALSE );
@@ -130,13 +133,28 @@ class MASTER_KEY__ extends UTIL
         $summary['custom_master_key_given'] = $masterKey !== null;
         $items = $filter == 'all' ? $all : array_values( array_filter( $all, function( $i ) use ( $filter ) { return $i['key'] === $filter; } ) );
 
+        $hashes = isset(PH::$args['hashes']) ? ConfigSecrets::scanHashes( $this->xmlDoc ) : null;
+        if( $hashes !== null )
+        {
+            $summary['hash_algorithms'] = array();
+            foreach( $hashes as $h )
+                $summary['hash_algorithms'][$h['algorithm']] = isset($summary['hash_algorithms'][$h['algorithm']]) ? $summary['hash_algorithms'][$h['algorithm']] + 1 : 1;
+        }
+
         foreach( $actions as $a )
         {
             if( $a[0] == 'display' )
+            {
                 $this->display( $items, $summary, $filter );
+                if( $hashes !== null )
+                    $this->displayHashes( $hashes );
+            }
             else
-                $this->exportToHtml( $a[1], $items );
+                $this->exportToHtml( $a[1], $items, $hashes );
         }
+        if( $hashes !== null )
+            foreach( $hashes as $h )
+                PH::print_stdout( $h, false, 'hashed_values' );
 
         // JSON (shadow-json): one object per value under 'encrypted_values', the summary under 'summary'
         foreach( $items as $i )
@@ -265,7 +283,26 @@ class MASTER_KEY__ extends UTIL
         PH::print_stdout();
     }
 
-    private function exportToHtml( $filename, array $items )
+    private function displayHashes( array $hashes )
+    {
+        PH::print_stdout( "password hashes (phash) - one-way hashes, independent of the master key; hashes are never displayed" );
+        $byLocation = array();
+        foreach( $hashes as $h )
+            $byLocation[$h['location']][] = $h;
+        foreach( $byLocation as $location => $list )
+        {
+            PH::print_stdout();
+            PH::print_stdout( " * " . $location . " (" . count($list) . ")" );
+            foreach( $list as $h )
+            {
+                PH::print_stdout( "   - " . $h['xpath'] );
+                PH::print_stdout( "       " . $h['algorithm'] . ( $h['weak'] ? " - WEAK algorithm, set the password again on a current PAN-OS" : '' ) );
+            }
+        }
+        PH::print_stdout();
+    }
+
+    private function exportToHtml( $filename, array $items, $hashes = null )
     {
         $esc = function( $t ) { return htmlspecialchars( (string)$t, ENT_QUOTES ); };
         $headers = '<th>location</th><th>field</th><th>format</th><th>key</th><th>length</th><th>xpath</th>';
@@ -273,8 +310,12 @@ class MASTER_KEY__ extends UTIL
         foreach( $items as $i )
             $lines .= '<tr><td>' . $esc($i['location']) . '</td><td>' . $esc($i['field']) . '</td><td>' . $esc(self::formatText($i)) . '</td><td>'
                 . $esc(self::keyText($i)) . '</td><td>' . $esc($i['length']) . '</td><td>' . $esc($i['xpath']) . "</td></tr>\n";
+        if( $hashes !== null )
+            foreach( $hashes as $h )
+                $lines .= '<tr><td>' . $esc($h['location']) . '</td><td>' . $esc($h['field']) . '</td><td>' . $esc('password hash: ' . $h['algorithm'] . ( $h['weak'] ? ' (weak)' : '' ))
+                    . '</td><td>independent of the master key</td><td></td><td>' . $esc($h['xpath']) . "</td></tr>\n";
         require_once dirname(__FILE__) . '/ExportToHtmlHelper.php';
         ExportToHtmlHelper::writeHtmlExport( $filename, $headers, $lines );
-        PH::print_stdout( " * " . count($items) . " value(s) exported to '" . $filename . "'" );
+        PH::print_stdout( " * " . ( count($items) + ( $hashes !== null ? count($hashes) : 0 ) ) . " value(s) exported to '" . $filename . "'" );
     }
 }

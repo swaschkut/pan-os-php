@@ -38,6 +38,7 @@ pan-os-php type=master-key in=config.xml out=new.xml new-master-key-file=newkey.
 | `master-key=` | the same on the command line (visible in the shell history / process list – prefer the file) |
 | `new-master-key-file=` / `new-master-key=` | `rekey`: target master key; default: the PAN-OS default master key |
 | `allow-partial` | `rekey`: write `out=` although some values could not be re-encrypted |
+| `hashes` | display / exportToHtml: also list the password hashes (`phash`) – XPath and algorithm, never the hash |
 | `key=` | `all` (default) \| `default` \| `given` \| `unknown` – show only values of that key state |
 | `actions=` | `display` (default) \| `exportToHtml:FILE` (a `/` in the file name as `//`) \| `rekey` (alone) |
 | `shadow-json` | JSON: `encrypted_values` (xpath, location, field, version, format, length, key), `summary`; rekey: `rekey` (xpath, location, field, status, from), `summary` |
@@ -64,8 +65,17 @@ Per value: XPath, location (`shared`, `device-group NAME`, `template NAME`, `tem
 The summary counts by key, format, field and location; `other_master_key` = well-formed values that no tested key
 decrypts.
 
-Not listed as encrypted: hashes (`phash` of local administrators) – they do not depend on the master key; the summary
-shows their number.
+## Values that do not depend on the master key
+
+| value | what it is | handling |
+|---|---|---|
+| `phash` (administrators in `mgt-config/users`, users of a local user database) | one-way password hash in crypt format: `$1$` MD5-crypt, `$5$` SHA-256-crypt, `$6$` SHA-512-crypt, 13 characters DES-crypt, `*` no password | counted in the summary; flag `hashes` lists XPath + algorithm (MD5 / DES marked as weak). Never changed by `rekey`; works on any device whatever its master key |
+| `public-key` of certificates | PEM text (`-----BEGIN …`), public | not listed |
+| `subject-hash`, `issuer-hash` of certificates | identifiers, no secrets | not listed |
+
+Everything else that is sensitive is stored master-key encrypted (`-AQ==…`: private keys, pre-shared keys, passwords
+and secrets of server profiles, SNMPv3, routing authentication, …) and is found by the scan – by its format, whatever
+the element is called. A secret stored as clear text would not be recognised.
 
 ## Example
 

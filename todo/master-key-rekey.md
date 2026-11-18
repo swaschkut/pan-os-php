@@ -53,7 +53,8 @@ New type `type=master-key`:
    keys of certificates, SNMP, BGP / OSPF auth, …), list of XPaths changed / failed – never clear text
 4. reload the output with pan-os-php as validation
 
-Not touched: hashed values (`phash` of local admins, `$1$` / `$5$` …) – these are hashes, not master-key encrypted.
+Not touched: hashed values (`phash` of local admins, `$1$` / `$5$` …) – these are hashes, not master-key encrypted
+(done: flag `hashes` lists their XPath and algorithm, weak MD5 / DES marked).
 
 ## Security
 

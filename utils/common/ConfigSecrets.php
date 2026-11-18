@@ -185,6 +185,40 @@ class ConfigSecrets
         return $out;
     }
 
+    /** algorithm of a password hash (crypt format), by its prefix */
+    public static function hashAlgorithm( $value )
+    {
+        $value = (string)$value;
+        if( preg_match( '/^\$([0-9a-z]+)\$/', $value, $m ) )
+        {
+            $map = array( '1' => 'MD5-crypt', '2a' => 'bcrypt', '2b' => 'bcrypt', '2y' => 'bcrypt', '5' => 'SHA-256-crypt', '6' => 'SHA-512-crypt' );
+            return isset($map[$m[1]]) ? $map[$m[1]] : 'crypt $' . $m[1] . '$';
+        }
+        if( $value === '*' || $value === '!' || $value === '' )
+            return 'no password (locked)';
+        if( strlen($value) == 13 && preg_match( '/^[.\/0-9A-Za-z]{13}$/', $value ) )
+            return 'DES-crypt';
+        return 'unknown';
+    }
+
+    /**
+     * password hashes (phash) of $doc - one-way hashes, independent of the master key
+     * @return array list of array( xpath, location, field, algorithm, weak ) - never the hash
+     */
+    public static function scanHashes( DOMDocument $doc )
+    {
+        $out = array();
+        $x = new DOMXPath( $doc );
+        foreach( $x->query('//phash') as $el )
+        {
+            list( $location, $field ) = self::locate( $el );
+            $algo = self::hashAlgorithm( trim($el->textContent) );
+            $out[] = array( 'xpath' => DH::elementToPanXPath( $el ), 'location' => $location, 'field' => $field,
+                'algorithm' => $algo, 'weak' => in_array( $algo, array( 'MD5-crypt', 'DES-crypt' ), TRUE ) );
+        }
+        return $out;
+    }
+
     /** number of hashed values (phash) - hashes are not master-key encrypted, listed for information only */
     public static function countHashes( DOMDocument $doc )
     {
