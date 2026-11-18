@@ -1,8 +1,10 @@
 # Re-encrypt all secrets of a configuration from a custom master key to the default master key
 
-**Status:** steps 1 (display) and 2 (rekey, AES-256-CBC) implemented (2026-11-18): `type=master-key` – [utils/README_master-key.md](../utils/README_master-key.md),
-`utils/lib/MASTER_KEY__.php`, `utils/common/ConfigSecrets.php`, `tests/test_master_key.php`; AES-256-GCM and panorama-move `master-key=rekey` open
-**Code reference:** `alpha` `3df2eeb`
+**Status:** implemented (2026-11-18): `type=master-key` with display (flags `hashes`, `cleartext`), `actions=rekey`
+(encryption level 1) and `actions=scrub` (lab copy) – [utils/README_master-key.md](../utils/README_master-key.md),
+`utils/lib/MASTER_KEY__.php`, `utils/common/ConfigSecrets.php`, `utils/common/ConfigSecretsScrub.php`,
+`tests/test_master_key.php`. Open: lab verification and follow-ups, see "Open items" below
+**Code reference:** `alpha` `aea719d`
 **Related:** `lib/helper-classes/PanosCrypto.php`, [panorama-move-concept.md](panorama-move-concept.md) section 7a
 (`master-key=same|different`), SCM importers (`lib/misc-classes/SCMImporter.php`,
 `utils/develop/sase/scm/lib/SCMPrismaAccessExport.php`), action `display-psk` style use in
@@ -104,7 +106,18 @@ Not touched: hashed values (`phash` of local admins, `$1$` / `$5$` …) – thes
 5. cleanup in `PanosCrypto`: doc comment of `decrypt()` (`""` instead of `false`), commented CLI runner / example at the
    end of the file
 
-Order: rekey (2) before GCM (3) – CBC is usable at once, GCM waits for the example value.
+## Open items (state 2026-11-18)
+
+| # | item | kind |
+|---|---|---|
+| 1 | `scrub`: load and commit a lab copy on a lab Panorama – does PAN-OS accept the replaced certificates (`subject-hash` / `issuer-hash` are kept from the old certificate), the placeholders, and a target device on encryption level 2 | lab test |
+| 2 | `rekey`: check with a configuration exported from a device that uses a custom master key (`display` with `master-key-file=` must show "given master key"); so far only the default master key is confirmed against a real device | lab test |
+| 3 | encryption level 2: stays "detected, not supported" for `rekey` / `cleartext`; workaround: set the source device to level 1 before the export, or use `scrub` | decided, no work planned |
+| 4 | panorama-move: option `master-key=rekey` (instead of removing the encrypted fields with `master-key=different`) – after 1 and 2 | code, small |
+| 5 | `PanosCrypto.php`: doc comment of `decrypt()` (returns `""`, not `false`), remove the commented CLI runner / example at the end of the file | code, small |
+| 6 | `scrub`: administrators of the input stay (`phash` unchanged) – option to add / keep a lab administrator | idea, not decided |
+| 7 | `in=api://`: read only today; writing changed values back to a device is not planned | decision |
+| 8 | README section "What PAN-OS provides" (levels, CLI commands, documentation links) | patch sent, to be committed |
 
 ## Open decisions
 
