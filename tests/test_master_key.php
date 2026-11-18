@@ -184,10 +184,127 @@ list( $rc, $t ) = mk( array( 'in=' . $in, 'key=given' ) );
 check( $rc != 0 && strpos($t, 'master-key') !== FALSE, 'key=given without key refused' );
 list( $rc, $t ) = mk( array( 'in=' . $in, 'master-key-file=' . $work . '/missing.txt' ) );
 check( $rc != 0, 'missing key file refused' );
-list( $rc, $t ) = mk( array( 'in=' . $in, 'actions=rekey' ) );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'actions=decrypt' ) );
 check( $rc != 0 && strpos($t, 'not supported') !== FALSE, 'unknown action refused' );
 list( $rc, $t ) = mk( array( 'in=' . $in, 'master-key=short' ) );
 check( $rc == 0 && strpos($t, '16 characters') !== FALSE, 'key length warning' );
+
+// ---- rekey
+/** secrets of a file by xpath */
+$valuesOf = function( $file ) {
+    $o = new DOMDocument();
+    $o->load( $file );
+    $x = new DOMXPath( $o );
+    $r = array();
+    foreach( $x->query('//text()[starts-with(normalize-space(.),"-")]') as $t )
+        if( ConfigSecrets::parse( trim($t->nodeValue) ) !== null )
+            $r[ DH::elementToPanXPath( $t->parentNode ) ] = trim( $t->nodeValue );
+    return $r;
+};
+/** canonical XML with every encrypted value replaced - everything except the secrets */
+$skeleton = function( $file ) {
+    $o = new DOMDocument();
+    $o->preserveWhiteSpace = FALSE;
+    $o->load( $file );
+    $x = new DOMXPath( $o );
+    foreach( iterator_to_array( $x->query('//text()') ) as $t )
+        if( ConfigSecrets::parse( trim($t->nodeValue) ) !== null )
+            $t->nodeValue = 'SECRET';
+        elseif( trim($t->nodeValue) === '' )
+            $t->parentNode->removeChild( $t );
+        else
+            $t->nodeValue = trim( $t->nodeValue );
+    return md5( $o->C14N() );
+};
+$newKeyFile = $work . '/newkey.txt';
+$NEW = 'N3wTargetKey1234';
+file_put_contents( $newKeyFile, $NEW );
+
+// values of another key / other formats: refused without allow-partial, nothing written
+$out = $work . '/rekey-partial.xml';
+list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $out, 'master-key-file=' . $keyFile, 'actions=rekey' ) );
+check( $rc != 0 && !file_exists($out), 'rekey with values that can not be re-encrypted: refused, out= not written' );
+check( strpos($t, 'allow-partial') !== FALSE, 'rekey refused: hint allow-partial' );
+$noLeak( $t, 'rekey refused' );
+
+list( $rc, $t, $j ) = mk( array( 'in=' . $in, 'out=' . $out, 'master-key-file=' . $keyFile, 'actions=rekey', 'allow-partial' ), TRUE );
+eq( $rc, 0, 'rekey allow-partial exit code' );
+eq( isset($j['summary'][0]) ? array( $j['summary'][0]['rekeyed'], $j['summary'][0]['already_target_key'], $j['summary'][0]['failed'], $j['summary'][0]['unsupported'] ) : null,
+    array( 2, 1, 1, 2 + $baseUnknown ), 'rekey summary: 2 re-encrypted, 1 already default, 1 other key, unsupported / malformed' );
+$noLeak( $t, 'rekey output' );
+$v = $valuesOf( $out );
+$orig = $valuesOf( $in );
+eq( $crypto->decrypt( $v[$xp['ldap']] ), $clear['custom'], 'rekey: custom value decrypts with the default key, same clear text' );
+eq( $crypto->decrypt( $v[$xp['gw1']] ), $clear['custom'], 'rekey: second custom value' );
+eq( $v[$xp['syslog']], $orig[$xp['syslog']], 'rekey: default value unchanged' );
+eq( $v[$xp['dg']], $orig[$xp['dg']], 'rekey: value of another key unchanged' );
+eq( $v[$xp['gw2']], $orig[$xp['gw2']], 'rekey: unsupported version unchanged' );
+eq( $v[$xp['snmp']], $orig[$xp['snmp']], 'rekey: malformed unchanged' );
+eq( count($v), count($orig), 'rekey: same number of encrypted values' );
+eq( $skeleton( $out ), $skeleton( $in ), 'rekey: nothing but the secrets changed' );
+check( md5_file($in) === $md5in, 'rekey: input file unchanged' );
+$p = new PanoramaConf();
+$p->load_from_file( $out );
+check( $p->findDeviceGroup('testDG') !== null, 'rekey: output loads with pan-os-php' );
+
+// clean configuration (default + custom only): custom -> default without allow-partial
+$c = new DOMDocument();
+$c->load( $in );
+$cx = new DOMXPath( $c );
+foreach( iterator_to_array( $cx->query('//text()[starts-with(normalize-space(.),"-")]') ) as $tn )
+{
+    $val = trim( $tn->nodeValue );
+    if( ConfigSecrets::parse($val) !== null && $val !== $enc['default'] && $val !== $enc['custom'] )
+        $tn->nodeValue = $enc['custom'];
+}
+$clean = $work . '/clean.xml';
+$c->save( $clean );
+$out2 = $work . '/rekey-default.xml';
+list( $rc, $t, $j ) = mk( array( 'in=' . $clean, 'out=' . $out2, 'master-key-file=' . $keyFile, 'actions=rekey' ), TRUE );
+eq( $rc, 0, 'rekey custom -> default exit code' );
+eq( $j['summary'][0]['failed'] + $j['summary'][0]['unsupported'], 0, 'rekey custom -> default: nothing left' );
+list( $rc, $t, $j ) = mk( array( 'in=' . $out2 ), TRUE );
+eq( $j['summary'][0]['by_key'], array( 'default' => $base + 6 ), 'after rekey: every value uses the default master key' );
+list( $rc, $t ) = mk( array( 'in=' . $clean, 'out=' . $out2, 'master-key-file=' . $keyFile, 'actions=rekey' ) );
+check( strpos($t, 'as good as clear text') !== FALSE, 'rekey to the default key: note about the public default key' );
+
+// custom -> new custom key
+$out3 = $work . '/rekey-new.xml';
+list( $rc, $t, $j ) = mk( array( 'in=' . $clean, 'out=' . $out3, 'master-key-file=' . $keyFile, 'new-master-key-file=' . $newKeyFile, 'actions=rekey' ), TRUE );
+eq( $rc, 0, 'rekey custom -> new key exit code' );
+eq( $j['summary'][0]['rekeyed'], $base + 6, 'rekey custom -> new key: default and custom values re-encrypted' );
+$v = $valuesOf( $out3 );
+eq( $crypto->decrypt( $v[$xp['ldap']], $NEW ), $clear['custom'], 'new key decrypts the former custom value' );
+eq( $crypto->decrypt( $v[$xp['syslog']], $NEW ), $clear['default'], 'new key decrypts the former default value' );
+eq( $crypto->decrypt( $v[$xp['syslog']] ), '', 'default key no longer decrypts' );
+check( strpos($t, $NEW) === FALSE, 'target key not in the output' );
+eq( $skeleton( $out3 ), $skeleton( $clean ), 'rekey to a new key: nothing but the secrets changed' );
+
+// round trip: back to the custom key gives the original values (encryption is deterministic)
+$out4 = $work . '/rekey-back.xml';
+mk( array( 'in=' . $out3, 'out=' . $out4, 'master-key-file=' . $newKeyFile, 'new-master-key-file=' . $keyFile, 'actions=rekey' ) );
+$back = $valuesOf( $out4 );
+eq( $back[$xp['ldap']], $enc['custom'], 'round trip: original value' );
+
+// default -> custom (only the target key given), second run: already target key
+$out5 = $work . '/rekey-fromdefault.xml';
+list( $rc, $t, $j ) = mk( array( 'in=' . $out2, 'out=' . $out5, 'new-master-key=' . $NEW, 'actions=rekey' ), TRUE );
+eq( array( $rc, $j['summary'][0]['rekeyed'] ), array( 0, $base + 6 ), 'rekey default -> custom' );
+list( $rc, $t, $j ) = mk( array( 'in=' . $out5, 'out=' . $work . '/again.xml', 'new-master-key=' . $NEW, 'actions=rekey' ), TRUE );
+eq( array( $j['summary'][0]['rekeyed'], $j['summary'][0]['already_target_key'] ), array( 0, $base + 6 ), 'second run: already target key' );
+
+// errors
+list( $rc, $t ) = mk( array( 'in=' . $in, 'master-key-file=' . $keyFile, 'actions=rekey' ) );
+check( $rc != 0 && strpos($t, 'out=') !== FALSE, 'rekey without out= refused' );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $work . '/x.xml', 'actions=rekey' ) );
+check( $rc != 0 && strpos($t, 'nothing to do') !== FALSE, 'rekey without any key refused' );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $work . '/x.xml', 'master-key=' . $CUSTOM, 'new-master-key=' . $CUSTOM, 'actions=rekey' ) );
+check( $rc != 0 && strpos($t, 'are the same') !== FALSE, 'rekey with identical keys refused' );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'out=' . $work . '/x.xml', 'master-key=' . $CUSTOM, 'actions=rekey/display' ) );
+check( $rc != 0 && strpos($t, 'can not be combined') !== FALSE, 'rekey combined with display refused' );
+list( $rc, $t ) = mk( array( 'in=' . $in, 'new-master-key=' . $NEW ) );
+check( $rc != 0 && strpos($t, 'actions=rekey') !== FALSE, 'new-master-key without rekey refused' );
+check( !file_exists($work . '/x.xml'), 'refused runs write nothing' );
 
 // ---- the input file is not changed
 check( md5_file($in) === $md5in, 'input file unchanged' );

@@ -21,18 +21,24 @@ require_once dirname(__FILE__) . '/../common/ConfigSecrets.php';
 
 /**
  * type=master-key: master-key encrypted values of a configuration (utils/README_master-key.md).
- * Step 1: display - XPath of every encrypted value and which master key decrypts it. Values are never printed.
+ * display - XPath of every encrypted value and which master key decrypts it.
+ * rekey - re-encrypt all values: master key of the input (master-key-file=) -> target key (new-master-key-file=,
+ * default: the default master key), offline to out=. Values are never printed.
  */
 class MASTER_KEY__ extends UTIL
 {
-    const ACTIONS = array( 'display', 'exporttohtml' );
+    const ACTIONS = array( 'display', 'exporttohtml', 'rekey' );
     const KEY_FILTER = array( 'all', ConfigSecrets::KEY_DEFAULT, ConfigSecrets::KEY_GIVEN, ConfigSecrets::KEY_UNKNOWN );
 
     public function utilStart()
     {
         $this->supportedArguments = array();
         $this->supportedArguments['in'] = array('niceName' => 'in', 'shortHelp' => 'input file or api. ie: in=config.xml or in=api://192.168.1.1', 'argDesc' => '[filename]|[api://IP]');
-        $this->supportedArguments['actions'] = array('niceName' => 'actions', 'shortHelp' => 'display (default) | exportToHtml:FILE', 'argDesc' => 'action[:args]');
+        $this->supportedArguments['out'] = array('niceName' => 'out', 'shortHelp' => 'output file of actions=rekey', 'argDesc' => '[filename]');
+        $this->supportedArguments['actions'] = array('niceName' => 'actions', 'shortHelp' => 'display (default) | exportToHtml:FILE | rekey (re-encrypt all values with the target master key, needs out=)', 'argDesc' => 'action[:args]');
+        $this->supportedArguments['new-master-key'] = array('niceName' => 'new-master-key', 'shortHelp' => 'rekey: target master key (default: the PAN-OS default master key); prefer new-master-key-file', 'argDesc' => '[16 characters]');
+        $this->supportedArguments['new-master-key-file'] = array('niceName' => 'new-master-key-file', 'shortHelp' => 'rekey: file with the target master key (first line)', 'argDesc' => '[filename]');
+        $this->supportedArguments['allow-partial'] = array('niceName' => 'allow-partial', 'shortHelp' => 'rekey: write out= although some values could not be re-encrypted (they stay unchanged)');
         $this->supportedArguments['master-key'] = array('niceName' => 'master-key', 'shortHelp' => 'custom master key to test the values that the default master key does not decrypt (prefer master-key-file: the command line is visible in the shell history / process list)', 'argDesc' => '[16 characters]');
         $this->supportedArguments['master-key-file'] = array('niceName' => 'master-key-file', 'shortHelp' => 'file with the custom master key (first line)', 'argDesc' => '[filename]');
         $this->supportedArguments['key'] = array('niceName' => 'key', 'shortHelp' => 'show only the values of one key state: all (default) | default | given | unknown', 'argDesc' => 'all|default|given|unknown');
@@ -42,6 +48,7 @@ class MASTER_KEY__ extends UTIL
         $this->supportedArguments['shadow-nojson'] = array('niceName' => 'shadow-nojson', 'shortHelp' => 'output as text');
 
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " type=master-key in=config.xml [master-key-file=key.txt] [key=unknown] [actions=display|exportToHtml:FILE]\n"
+            . "       pan-os-php type=master-key in=config.xml out=new.xml master-key-file=key.txt [new-master-key-file=new.txt] actions=rekey\n"
             . "php " . basename(__FILE__) . " help          : more help messages\n";
 
         $this->prepareSupportedArgumentsArray();
@@ -53,26 +60,27 @@ class MASTER_KEY__ extends UTIL
         $this->main();
     }
 
-    /** the custom master key of master-key-file= / master-key=, or null */
-    public static function masterKeyArgument()
+    /** the master key of <prefix>master-key-file= / <prefix>master-key= (prefix '' = key of the input, 'new-' = target key), or null */
+    public static function masterKeyArgument( $prefix = '' )
     {
         $key = null;
-        if( isset(PH::$args['master-key-file']) )
+        $name = $prefix . 'master-key';
+        if( isset(PH::$args[$name . '-file']) )
         {
-            $f = PH::$args['master-key-file'];
+            $f = PH::$args[$name . '-file'];
             if( !is_file($f) || !is_readable($f) )
-                derr( "master-key-file '" . $f . "' not found / not readable", null, FALSE );
+                derr( $name . "-file '" . $f . "' not found / not readable", null, FALSE );
             $lines = preg_split( '/\r?\n/', (string)file_get_contents($f) );
             $key = $lines[0];
         }
-        elseif( isset(PH::$args['master-key']) )
-            $key = (string)PH::$args['master-key'];
+        elseif( isset(PH::$args[$name]) )
+            $key = (string)PH::$args[$name];
         if( $key === null )
             return null;
         if( $key === '' )
-            derr( "the master key is empty", null, FALSE );
+            derr( "the master key (" . $name . ") is empty", null, FALSE );
         if( strlen($key) != 16 )
-            mwarning( "a PAN-OS master key has 16 characters - the given key has " . strlen($key), null, FALSE );
+            mwarning( "a PAN-OS master key has 16 characters - the given key (" . $name . ") has " . strlen($key), null, FALSE );
         return $key;
     }
 
@@ -104,6 +112,18 @@ class MASTER_KEY__ extends UTIL
         if( $filter == ConfigSecrets::KEY_GIVEN && $masterKey === null )
             derr( "key=given needs master-key-file= / master-key=", null, FALSE );
 
+        $names = array_map( function( $a ) { return $a[0]; }, $actions );
+        if( in_array( 'rekey', $names, TRUE ) )
+        {
+            if( count($actions) != 1 )
+                derr( "actions=rekey can not be combined with other actions (run display on the output afterwards)", null, FALSE );
+            $this->rekey( $masterKey );
+            return;
+        }
+        foreach( array( 'new-master-key', 'new-master-key-file', 'allow-partial' ) as $arg )
+            if( isset(PH::$args[$arg]) )
+                derr( $arg . " is an argument of actions=rekey", null, FALSE );
+
         $all = ConfigSecrets::scan( $this->xmlDoc, $masterKey );
         $summary = ConfigSecrets::summary( $all );
         $summary['hashed_values_not_master_key_encrypted'] = ConfigSecrets::countHashes( $this->xmlDoc );
@@ -122,6 +142,66 @@ class MASTER_KEY__ extends UTIL
         foreach( $items as $i )
             PH::print_stdout( $i, false, 'encrypted_values' );
         PH::print_stdout( $summary, false, 'summary' );
+    }
+
+    /** actions=rekey: all values -> target master key, written to out= */
+    private function rekey( $oldKey )
+    {
+        $newKey = self::masterKeyArgument( 'new-' );
+        // the dispatcher sets out=/dev/null when out= is not given
+        $out = isset(PH::$args['out']) ? PH::$args['out'] : '';
+        if( $out === '' || $out === '/dev/null' )
+            derr( "actions=rekey needs out= (the result is written to a file, nothing is sent to a device)", null, FALSE );
+        if( $oldKey === null && $newKey === null )
+            derr( "actions=rekey: nothing to do - give the master key of the input (master-key-file=) and / or the target key (new-master-key-file=)", null, FALSE );
+        if( $oldKey !== null && $oldKey === $newKey )
+            derr( "actions=rekey: master key of the input and target master key are the same", null, FALSE );
+        $allowPartial = isset(PH::$args['allow-partial']);
+
+        $items = ConfigSecrets::rekey( $this->xmlDoc, $oldKey, $newKey );
+        $count = array( ConfigSecrets::REKEYED => 0, ConfigSecrets::ALREADY => 0, ConfigSecrets::FAILED => 0, ConfigSecrets::UNSUPPORTED => 0 );
+        foreach( $items as $i )
+            $count[$i['status']]++;
+        $open = $count[ConfigSecrets::FAILED] + $count[ConfigSecrets::UNSUPPORTED];
+        $written = $open == 0 || $allowPartial;
+        $target = $newKey === null ? 'default master key' : 'given target master key';
+
+        PH::print_stdout();
+        PH::print_stdout( "rekey to the " . $target . " - values are never displayed" );
+        $text = array( ConfigSecrets::REKEYED => 're-encrypted', ConfigSecrets::ALREADY => 'already encrypted with the target key - unchanged',
+            ConfigSecrets::FAILED => 'NOT re-encrypted: no key decrypts it (other master key) - unchanged', ConfigSecrets::UNSUPPORTED => 'NOT re-encrypted: format not supported / malformed - unchanged' );
+        foreach( $items as $i )
+        {
+            PH::print_stdout( "   - " . $i['xpath'] );
+            PH::print_stdout( "       " . $text[$i['status']] . ( $i['from'] !== null ? " (was: " . $i['from'] . " master key)" : '' ) );
+            PH::print_stdout( $i, false, 'rekey' );
+        }
+        PH::print_stdout();
+        PH::print_stdout( "summary: " . count($items) . " encrypted value(s)" );
+        foreach( $count as $status => $n )
+            if( $n )
+                PH::print_stdout( "   " . str_pad( $n, 6, ' ', STR_PAD_LEFT ) . " " . $text[$status] );
+
+        $summary = array( 'total' => count($items), 'rekeyed' => $count[ConfigSecrets::REKEYED], 'already_target_key' => $count[ConfigSecrets::ALREADY],
+            'failed' => $count[ConfigSecrets::FAILED], 'unsupported' => $count[ConfigSecrets::UNSUPPORTED],
+            'target' => $newKey === null ? 'default' : 'given', 'written' => $written, 'out' => $written ? $out : null );
+        PH::print_stdout( $summary, false, 'summary' );
+
+        if( !$written )
+            derr( $open . " value(s) could not be re-encrypted - out= was NOT written. Use allow-partial to write the file with these values unchanged (they will not work with the target master key).", null, FALSE );
+
+        $xml = &DH::dom_to_xml( $this->xmlDoc->documentElement, 0, TRUE, -1, 2 );
+        $dir = pathinfo( $out, PATHINFO_DIRNAME );
+        if( !is_dir($dir) )
+            mkdir( $dir, 0777, TRUE );
+        file_put_contents( $out, $xml );
+        PH::print_stdout();
+        PH::print_stdout( " * written to '" . $out . "'" );
+        if( $open )
+            mwarning( $open . " value(s) are unchanged in '" . $out . "' (allow-partial) - they do not decrypt with the target master key", null, FALSE );
+        if( $newKey === null )
+            PH::print_stdout( " * NOTE: values encrypted with the default master key are as good as clear text (the default key is public) - protect '" . $out . "' like a file with clear text passwords" );
+        PH::print_stdout();
     }
 
     private static function formatText( $i )

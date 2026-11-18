@@ -21,6 +21,7 @@ UTIL:
 * introduce class RuleResolver
 * update todo list to a central place TODO.md
 * type=config-section section=deployment-update-schedule | introduction
+* type=master-key | introduction | extend with actions=decrypt
 
 BUGFIX:
 * SCM export after first production run / IAM patch

@@ -117,6 +117,74 @@ class ConfigSecrets
         return $out;
     }
 
+    const REKEYED = 'rekeyed';
+    const ALREADY = 'already-target-key';
+    const FAILED = 'failed';
+    const UNSUPPORTED = 'unsupported';
+
+    /**
+     * Re-encrypts every encrypted value of $doc (in place) with the target master key.
+     * A value is decrypted with $oldKey (custom master key, may be null) or with the default master key - whichever
+     * fits (SHA-1 check) - and encrypted with $newKey (null = default master key). Values that already decrypt with the
+     * target key stay as they are; values that no key decrypts and values of another format stay unchanged.
+     * The clear text only exists inside this function.
+     * @return array list of array( xpath, location, field, status (REKEYED|ALREADY|FAILED|UNSUPPORTED), from (default|given|null) )
+     */
+    public static function rekey( DOMDocument $doc, $oldKey = null, $newKey = null )
+    {
+        $crypto = new PanosCrypto();
+        $oldKey = $oldKey === '' ? null : $oldKey;
+        $newKey = $newKey === '' ? null : $newKey;
+        $out = array();
+        $x = new DOMXPath( $doc );
+        foreach( iterator_to_array( $x->query('//text()[starts-with(normalize-space(.),"-")]') ) as $t )
+        {
+            $value = trim( $t->nodeValue );
+            $info = self::parse( $value );
+            if( $info === null )
+                continue;
+            $el = $t->parentNode;
+            if( $el === null || $el->nodeType != XML_ELEMENT_NODE || DH::firstChildElement($el) !== FALSE )
+                continue;
+            list( $location, $field ) = self::locate( $el );
+            $item = array( 'xpath' => DH::elementToPanXPath( $el ), 'location' => $location, 'field' => $field, 'status' => self::UNSUPPORTED, 'from' => null );
+            if( $info['format'] === self::FORMAT_CBC )
+            {
+                $item['status'] = self::FAILED;
+                $ok = function( $r ) { return $r !== FALSE && $r !== ''; };
+                if( $ok( $crypto->decrypt( $value, $newKey ) ) )
+                    $item['status'] = self::ALREADY;
+                else
+                {
+                    // the old (custom) key first, then the default key - a configuration can hold both
+                    $clear = $oldKey !== null ? $crypto->decrypt( $value, $oldKey ) : FALSE;
+                    $from = self::KEY_GIVEN;
+                    if( !$ok($clear) )
+                    {
+                        $clear = $crypto->decrypt( $value );
+                        $from = self::KEY_DEFAULT;
+                    }
+                    if( $ok($clear) )
+                    {
+                        $new = $crypto->encrypt( $clear, $newKey );
+                        $check = $crypto->decrypt( $new, $newKey );
+                        // same clear text: decrypts with the target key and carries the same SHA-1
+                        if( $check === $clear && substr($new, 0, 33) === substr($value, 0, 33) )
+                        {
+                            DH::setDomNodeText( $el, $new );
+                            $item['status'] = self::REKEYED;
+                            $item['from'] = $from;
+                        }
+                        unset( $check );
+                    }
+                    unset( $clear );
+                }
+            }
+            $out[] = $item;
+        }
+        return $out;
+    }
+
     /** number of hashed values (phash) - hashes are not master-key encrypted, listed for information only */
     public static function countHashes( DOMDocument $doc )
     {
