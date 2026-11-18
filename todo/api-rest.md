@@ -1,8 +1,9 @@
 # pan-os-php API (`utils/api/v1/`)
 
-**Status:** review / hardening needed (2026-11-17)
-**Code reference:** `alpha` `aa19e96`
-**Related:** [ui-config-in-browser.md](ui-config-in-browser.md)
+**Status:** review / hardening needed (2026-11-17); smoke test and Postman collection review added 2026-11-18
+**Code reference:** `alpha` `45bc6d8`
+**Related:** [ui-config-in-browser.md](ui-config-in-browser.md), [util-class-refactoring.md](util-class-refactoring.md)
+(`exit()` in `UTIL`), [shell-autocompletion.md](shell-autocompletion.md) (same data source `util_action_filter.json`)
 
 ## Current state
 
@@ -40,6 +41,51 @@ without authentication.
    change)
 6. `docker-compose.yml`: MySQL port and phpMyAdmin published – only for development; `chmod 777`
 7. `tool.php` includes `utils/develop/ui/test/db_conn.php` (API depends on a test folder of the UI)
+
+## Smoke test (2026-11-18, PHP built-in server, `tests/input/panorama-10.0-merger.xml`)
+
+Works: `GET …/tool.php/address?in=<file>&location=shared&actions=display&filter=…` (JSON, 200), `?listactions`,
+`type=master-key`, upload with `POST` + `configInput`, unknown type → 404 JSON with the list of types, missing `in=`
+→ 404 JSON. All 99 types of `PH::$supportedUTILTypes` are accepted as endpoint. Not tested: Docker image, session /
+DB login, `in=api://`.
+
+Findings:
+
+1. **errors of pan-os-php come back as HTTP 200**: unsupported action, unknown location → valid JSON, but status 200
+   and the error only as text inside the output (usage text). Cause: `exit()` / `display_error_usage_exit()` in `UTIL`
+   instead of exceptions ([util-class-refactoring.md](util-class-refactoring.md) item 4). Wanted: 4xx + `{"error": …}`
+2. error messages contain the absolute server path (`file "/…/utils/api/v1/project/x.xml" does not exist`)
+3. file-not-found is 404, other input errors 200 – no consistent status codes
+4. `tool.php` itself: dead code (`$_POST['configapi']` branches empty, upload block with unused `$random` /
+   `$upload_name`, `DELETE` with a `Location: http://localhost:8080/items` header, `PUT` / `POST` fall through to
+   the same call as `GET`), the key check exists twice, `$argc` is never set, `in=` is treated as API mode when the
+   value merely contains the text `api` (a file named `myapi.xml` is not prefixed with the project folder)
+5. `help` copies every query key into `argv` without the key check
+6. every request loads and parses the whole configuration again (about 1.5–2.5 s for the small test file) – no cache
+   between requests (see [ui-config-in-browser.md](ui-config-in-browser.md))
+
+## Postman collection (`utils/api/PAN-OS-PHP.postman_collection.json`)
+
+Schema v2.1, 71 requests (70 `GET`, 1 `POST`), folders `utils` (43), `help` (10), `merging` (6),
+`listactions/filters` (6); variables `SERVER`, `VERSION`, `INPUT`, `OUTPUT`, `MGMT-IP`, `USERNAME`, `PASSWORD`.
+
+* covers 46 of 99 types; 53 are missing, e.g. `master-key`, `config-section`, `panorama-move`, `object-merger`,
+  `rule-compare`, the `scm-*` types, `threat`, `edl`, `certificate`, `xpath`
+* no request has a description, none has a test script (status / JSON check)
+* 26 requests use `shadow-nojson` (text output) – the API default is JSON
+* only 4 requests use `filter=`, 19 `actions=`; no example for `out=` + download of the result
+* one request passes `user` / `pw` as query parameters – credentials in the URL (logs, history)
+* no auth configured (matches security finding 1)
+* written by hand – gets out of date with every new type
+
+To do:
+
+- [ ] generate the collection (and the OpenAPI description, see below) from `util_action_filter.json` + the per-type
+  arguments ([shell-autocompletion.md](shell-autocompletion.md) proposal 1): one folder per type with `help`,
+  `listactions`, `listfilters`, `display`
+- [ ] test scripts per request (status code, valid JSON) → the collection can run as API test (newman) in CI
+- [ ] descriptions; examples for upload, `out=`, download, error case
+- [ ] remove credentials from query parameters; auth on collection level once the API has authentication
 
 ## Functional to do
 
