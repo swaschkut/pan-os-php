@@ -411,7 +411,8 @@
             "visibility": {
                 "category": "!allow",
                 "tab": {
-                    "mode": "!disabled"
+                    "mode": "!disabled",
+                    "log-severity": ["!informational", "!low"]
                 }
             },
             "bp": {
@@ -430,7 +431,8 @@
                     }
                 ],
                 "tab": {
-                    "mode": "ip-user"
+                    "mode": "ip-user",
+                    "log-severity": ["!informational", "!low"]
                 }
             }
         },

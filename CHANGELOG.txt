@@ -25,6 +25,7 @@ UTIL:
 * type=master-key | introduction | extend with actions=decrypt, actions=scrub
 * type=master-key | extend with flag 'cleartext'
 * prototype config-viewer | introduction
+* class URLProfile | ip-user log-severity - extend validation
 
 BUGFIX:
 * SCM export after first production run / IAM patch

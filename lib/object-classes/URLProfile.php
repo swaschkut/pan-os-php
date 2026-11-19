@@ -909,8 +909,10 @@ class URLProfile extends SecurityProfile2
 
     /**
      * credential enforcement mode from the BP JSON url -> user_credential_submission -> $section -> tab:
-     * a mode ('ip-user') is set; '!disabled' keeps another mode, else 'ip-user'. log-severity: as the BP JSON gives
-     * it, else 'medium' where none is set (the best-practice check asks for one).
+     * a mode ('ip-user') is set; '!disabled' keeps another mode, else 'ip-user'.
+     * log-severity: BP JSON tab -> log-severity, a string or a list ('medium', or '!informational', '!low'):
+     * a compliant value is kept (e.g. 'high'), else the positive value the JSON gives, else 'medium'.
+     * Nothing in the JSON: 'medium' where none is set and the mode is changed (the best-practice check asks for one).
      */
     public function url_credential_tab_setFromJSON( string $section ): void
     {
@@ -939,11 +941,34 @@ class URLProfile extends SecurityProfile2
         }
 
         $log = $check_array['tab']['log-severity'] ?? null;
-        if( ( is_string( $log ) && $log !== '' && strpos( $log, '!' ) !== 0 && $this->credential_log !== $log ) || ( $this->credential_log === null && $target !== null ) )
+        if( $log === '' || $log === array() )
+            $log = null;
+        $needed = ( $log !== null ) ? !$this->credential_log_complies( $log ) : ( $this->credential_log === null && $target !== null );
+        if( $needed )
         {
-            $value = ( is_string( $log ) && $log !== '' && strpos( $log, '!' ) !== 0 ) ? $log : "medium";
-            DH::findFirstElementOrCreate( "log-severity", $credential_xmlnode )->textContent = $value;
-            $this->credential_log = $value;
+            $value = "medium";
+            foreach( (array)$log as $condition )
+                if( is_string( $condition ) && $condition !== '' && strpos( $condition, '!' ) !== 0 )
+                {
+                    $value = $condition;
+                    break;
+                }
+            if( $log !== null )
+            {
+                $previous = $this->credential_log;
+                $this->credential_log = $value;
+                if( !$this->credential_log_complies( $log ) )
+                {
+                    $this->credential_log = $previous;
+                    mwarning( "BP JSON url -> user_credential_submission -> ".$section." -> tab -> log-severity: the value '".$value."' the action would set does not comply - '".$this->name()."' not changed", null, FALSE );
+                    $value = null;
+                }
+            }
+            if( $value !== null )
+            {
+                DH::findFirstElementOrCreate( "log-severity", $credential_xmlnode )->textContent = $value;
+                $this->credential_log = $value;
+            }
         }
 
         $this->bpSetVerify( $section, 'URL credential mode', $section == 'bp' ? $this->url_usercredentialsubmission_best_practice_tab() : $this->url_usercredentialsubmission_visibility_tab() );
@@ -1299,18 +1324,36 @@ class URLProfile extends SecurityProfile2
             return False;
         }
 
-        #if( isset($check_array['tab']['log-severity']) && $check_array['tab']['log-severity'] !== $this->credential_log )
-        #{
-        #    PH::print_stdout("wrong log-severity");
-        #    return False;
-        #}
+        if( isset( $check_array['tab']['log-severity'] ) && !$this->credential_log_complies( $check_array['tab']['log-severity'] ) )
+            return False;
 
+        return TRUE;
+    }
+
+    /**
+     * credential log-severity against the BP JSON tab -> log-severity: a string or a list of conditions,
+     * all must hold - 'x': equal x, '!x': not x. No log-severity set: FALSE.
+     */
+    private function credential_log_complies( $condition ): bool
+    {
+        if( $this->credential_log === null || $this->credential_log === '' )
+            return FALSE;
+        foreach( (array)$condition as $c )
+        {
+            if( !is_string( $c ) || $c === '' )
+                continue;
+            if( strpos( $c, '!' ) === 0 ? $this->credential_log === substr( $c, 1 ) : $this->credential_log !== $c )
+                return FALSE;
+        }
         return TRUE;
     }
 
     public function check_usercredentialsubmission_visibility_tab_json( $check_array )
     {
         if( $this->credential_mode == null)
+            return False;
+
+        if( isset( $check_array['tab']['log-severity'] ) && !$this->credential_log_complies( $check_array['tab']['log-severity'] ) )
             return False;
 
         $finding = $check_array['tab']['mode'];
