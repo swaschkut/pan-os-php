@@ -2857,7 +2857,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is.set'] = a
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
             
@@ -2885,7 +2886,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['as-profile.is.set'] = a
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -2912,7 +2914,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['url-profile.is.set'] = 
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -2939,7 +2942,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is.set'] = a
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -2966,7 +2970,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['avwf-profile.is.set'] =
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -2993,7 +2998,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is.set'] =
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -3020,7 +3026,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['file-profile.is.set'] =
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -3047,7 +3054,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is.set'] =
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -3074,7 +3082,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['dnssec-profile.is.set']
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -3116,7 +3125,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = arra
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }
@@ -3164,7 +3174,8 @@ RQuery::$defaultFilters['rule']['secprofgroup']['operators']['has.from.query'] =
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
-            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $tmp_group =  $rule->securityProfileGroup_obj();
             if( $tmp_group !== null )
                 $secprof_objects = $tmp_group->securityProfiles();
         }

@@ -658,7 +658,8 @@ class SecurityRule extends RuleWithUserID
 
         if( $this->secproftype != 'profile' )
         {
-            $secprofgroup_obj = $this->owner->owner->securityProfileGroupStore->find( $this->secprofgroup );
+            // the group the rule uses (with ancestor-objects-take-precedence yes: the highest same-name copy)
+            $secprofgroup_obj = $this->securityProfileGroup_obj();
 
             if( $secprofgroup_obj != null )
                 return $secprofgroup_obj->secprofProfiles_obj;
