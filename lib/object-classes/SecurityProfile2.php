@@ -52,7 +52,76 @@ class SecurityProfile2
         'vulnerability-mica' => 110,        // VP inline cloud analysis (mica-engine-vulnerability-enabled)
         'wildfire-mica' => 112,             // WF inline cloud analysis (mica-engine-wildfire-rules)
         'spyware-advanced-dns' => 112,      // AS advanced DNS security categories
+        'spyware-local-deep-learning' => 112,       // AS inline cloud analysis: local-deep-learning per detector
+        'vulnerability-local-deep-learning' => 122, // VP inline cloud analysis: local-deep-learning per model
     );
+
+    /**
+     * local deep learning (LDL): the inline ML models that have a local-deep-learning setting, per profile type,
+     * with the first PAN-OS version that has it. Only these models get / are set to / are shown with
+     * local-deep-learning; a model not listed, or a PAN-OS version below the one listed: never written.
+     * - AS: HTTP / HTTP2 C2 detectors, PAN-OS 11.2 (PANW: Advanced Threat Prevention > Configure Inline Cloud Analysis)
+     * - VP: SQL Injection / Command Injection, PAN-OS 12.2 (verified with a 12.2.2 firewall configuration)
+     */
+    public static $localDeepLearningMinVersion = array(
+        'spyware' => array(
+            'HTTP Command and Control detector' => 112,
+            'HTTP2 Command and Control detector' => 112,
+        ),
+        'vulnerability' => array(
+            'SQL Injection' => 122,
+            'Command Injection' => 122,
+        ),
+    );
+
+    /** TRUE when $model of profile type $secprof_type has local-deep-learning in PAN-OS version $version (0: unknown, newest) */
+    public static function localDeepLearningSupportedInVersion( string $secprof_type, string $model, int $version ): bool
+    {
+        $min = self::$localDeepLearningMinVersion[$secprof_type][$model] ?? null;
+        if( $min === null )
+            return FALSE;
+        return $version <= 0 || $version >= $min;
+    }
+
+    /** TRUE when $model of profile type $secprof_type has local-deep-learning in the PAN-OS version of this profile's location */
+    public function localDeepLearningSupported( string $secprof_type, string $model ): bool
+    {
+        $version = 0;
+        if( isset( $this->owner ) && is_object( $this->owner ) && isset( $this->owner->owner ) && is_object( $this->owner->owner )
+            && isset( $this->owner->owner->version ) && is_numeric( $this->owner->owner->version ) )
+            $version = intval( $this->owner->owner->version );
+        return self::localDeepLearningSupportedInVersion( $secprof_type, $model, $version );
+    }
+
+    /**
+     * alert-only-set / best-practice-set: local-deep-learning 'enable' for every model of $container
+     * (mica-engine-spyware-enabled / mica-engine-vulnerability-enabled) that has it in this PAN-OS version
+     * ($localDeepLearningMinVersion) - cloud and local inline analysis can not be separated, so both are switched on.
+     * @return bool TRUE when something was changed
+     */
+    public function inlineML_localDeepLearningEnable( string $secprof_type, string $container ): bool
+    {
+        $node = DH::findFirstElement( $container, $this->xmlroot );
+        if( $node === FALSE )
+            return FALSE;
+        $changed = FALSE;
+        foreach( $node->childNodes as $entry )
+        {
+            if( $entry->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $model = DH::findAttribute( "name", $entry );
+            if( !$this->localDeepLearningSupported( $secprof_type, $model ) )
+                continue;
+            $ldl = DH::findFirstElementOrCreate( 'local-deep-learning', $entry );
+            if( $ldl->textContent !== 'enable' )
+            {
+                $ldl->textContent = 'enable';
+                $changed = TRUE;
+            }
+            $this->additional[$container][$model]['local-deep-learning'] = 'enable';
+        }
+        return $changed;
+    }
 
     /** TRUE when PAN-OS version $version has the setting $feature (key of $bpFeatureMinVersion); version 0: unknown, TRUE */
     public static function bpFeatureSupportedInVersion( string $feature, int $version ): bool
@@ -576,6 +645,12 @@ class SecurityProfile2
                         }
                     }
 
+                }
+
+                if( isset($this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning']) )
+                {
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $tmp_string .= " - local-deep-learning :".$this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning'];
                 }
 
                 if( $add_to_array )
