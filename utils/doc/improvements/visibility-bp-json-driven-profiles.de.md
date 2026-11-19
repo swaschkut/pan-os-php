@@ -35,6 +35,12 @@ müssen erhalten bleiben, und zwar an einer Stelle.
   `predefined.xml` überein.
 - **Versionsvergleich:** `URLProfile::ironSkilletCategories()` vergleicht eine iron-skillet-Version wie `"11.1"` als
   `"11.1.0"` mit `minver` / `maxver`, denn `version_compare()` stuft `"11.1"` niedriger ein als `"11.1.0"`.
+- **PAN-OS ohne eigenes Snippet** (2026-11-19): Jedes `ironSkilletXml()` (Security-Profile, Log Forwarding, Zone
+  Protection) ruft `PH::ironSkilletVersion( $version, <Versionen mit Snippet>, <was> )` auf. Ein neueres PAN-OS (z. B.
+  12.2) oder eines zwischen zwei Snippets (z. B. 9.0) bekommt das Snippet der neuesten Version darunter, mit einer
+  Meldung (`no snippet for PAN-OS 12.2 - using the snippet of PAN-OS 12.1`); nur ein PAN-OS älter als das älteste
+  Snippet ist ein Fehler. Vorher brach 12.2 das Visibility-Playbook ab (`logforwardingprofile-create-bp`). Test:
+  `tests/test_ironskillet_version.php`.
 - **Prüfwerkzeug:** `utils/develop/ironskillet/url_categories_check.php` (nur lesend) meldet je iron-skillet-Version
   die vordefinierten URL-Kategorien, die in den URL-Profilen fehlen.
 

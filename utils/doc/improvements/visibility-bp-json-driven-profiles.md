@@ -33,6 +33,12 @@ pan-os-php already encodes many such cases on purpose (section 4). They must be 
   `predefined.xml`.
 - **Version comparison:** `URLProfile::ironSkilletCategories()` compares an iron-skillet version such as `"11.1"` as
   `"11.1.0"` against `minver` / `maxver`, as `version_compare()` ranks `"11.1"` below `"11.1.0"`.
+- **PAN-OS without an own snippet** (2026-11-19): every `ironSkilletXml()` (security profiles, log forwarding, zone
+  protection) calls `PH::ironSkilletVersion( $version, <versions with a snippet>, <what> )`. A newer PAN-OS (e.g.
+  12.2) or one between two snippets (e.g. 9.0) gets the snippet of the newest version below it, with one message
+  (`no snippet for PAN-OS 12.2 - using the snippet of PAN-OS 12.1`); only a PAN-OS older than the oldest snippet is
+  an error. Before, 12.2 stopped the visibility playbook (`logforwardingprofile-create-bp`). Test:
+  `tests/test_ironskillet_version.php`.
 - **Check tool:** `utils/develop/ironskillet/url_categories_check.php` (read-only) reports, per iron-skillet version, the
   predefined URL categories the URL profiles do not list.
 
