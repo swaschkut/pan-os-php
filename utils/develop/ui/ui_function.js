@@ -1457,7 +1457,6 @@ function addPreFillRow( )
     //var ActionIdx = $( "#actionID-" + Idx ).val();
     //var FilterIdx = $( "#filterID-" + Idx ).val();
 
-    //ScriptSet( Idx, "ironskillet-update");
 
 
 
@@ -1476,16 +1475,6 @@ function addPreFillRow( )
     FILTERNewSet( Idx,"secprof", "vuln-profile.is.set", "", "");
     FILTERNewSet( Idx,"action", "is.allow", "", "");
     FILTERNewSet( Idx,"rule", "is.disabled", "", "");
-
-
-    ////////////////////////////////////////////////////////////////////////
-    //THIRD ROW
-    $("#addBtn").trigger('click');
-    var Idx = rowIdx;
-    var ActionIdx = $( "#actionID-" + Idx ).val();
-    var FilterIdx = $( "#filterID-" + Idx ).val();
-
-    ScriptSet( Idx, "ironskillet-update");
 
 
     ////////////////////////////////////////////////////////////////////////

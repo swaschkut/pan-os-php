@@ -19,6 +19,63 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+SecurityProfileGroupCallContext::$supportedActions['delete'] = array(
+    'name' => 'delete',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object is used by other objects and cannot be deleted (use delete-Force to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "this object has no direct reference, but through a same-name object in another device-group level (Shared / ancestor / descendant) Panorama pushes this object and firewalls use it (use delete-Force to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        // release the references this group holds on its member profiles
+        foreach( $object->securityProfiles() as $profile )
+            if( is_object($profile) )
+                $profile->removeReference($object);
+
+        if( $context->isAPI )
+            $object->owner->API_removeSecurityProfileGroup($object);
+        else
+            $object->owner->removeSecurityProfileGroup($object);
+    },
+);
+
+SecurityProfileGroupCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object seems to be used so deletion may fail.";
+            PH::ACTIONstatus( $context, "WARNING", $string );
+        }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "firewalls use this object through a same-name object in another device-group level: deleting it changes what Panorama pushes";
+            PH::ACTIONstatus( $context, "WARNING", $string );
+        }
+
+        foreach( $object->securityProfiles() as $profile )
+            if( is_object($profile) )
+                $profile->removeReference($object);
+
+        if( $context->isAPI )
+            $object->owner->API_removeSecurityProfileGroup($object);
+        else
+            $object->owner->removeSecurityProfileGroup($object);
+    },
+);
+
 SecurityProfileGroupCallContext::$supportedActions['displayreferences'] = array(
     'name' => 'displayReferences',
     'MainFunction' => function (SecurityProfileGroupCallContext $context) {
@@ -288,14 +345,20 @@ SecurityProfileGroupCallContext::$commonActionFunctions['html-add-name'] = array
                 {
                     if ($bestPractice)
                     {
-                        if ($profile->is_best_practice())
+                        $tmp_check = $profile->is_best_practice();
+                        if( $tmp_check === null )
+                            $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                        elseif( $tmp_check )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                     if ($visibility)
                     {
-                        if ($profile->is_visibility())
+                        $tmp_check = $profile->is_visibility();
+                        if( $tmp_check === null )
+                            $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                        elseif( $tmp_check )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
@@ -514,13 +577,19 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($object->name());
 
                 if ($bestPractice) {
-                    if ($object->is_best_practice())
+                    $tmp_check = $object->is_best_practice();
+                    if( $tmp_check === null )
+                        $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                    elseif( $tmp_check )
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);
                 }
                 if ($visibility) {
-                    if ($object->is_visibility())
+                    $tmp_check = $object->is_visibility();
+                    if( $tmp_check === null )
+                        $lines .= $context->encloseFunction(' [N/A]');     // not checked by the BP JSON
+                    elseif( $tmp_check )
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);

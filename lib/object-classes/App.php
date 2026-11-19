@@ -29,6 +29,10 @@ class App
 
     /** @var AppStore|null */
     public $owner;
+
+    /** set by the mergers (type=object-merger) */
+    public $ancestor;
+    public $childancestor;
     public $xmlroot;
 
     public $type = 'tmp';

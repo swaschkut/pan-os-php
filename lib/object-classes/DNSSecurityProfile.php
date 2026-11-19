@@ -128,28 +128,14 @@ class DNSSecurityProfile extends SecurityProfile2
 
     }
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
-        if( $this->spyware_dnslist_best_practice()
-            #this is DNS security
-            && $this->spyware_dns_security_best_practice()
-            && $this->spyware_advanced_dns_security_best_practice()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->spyware_dnslist_best_practice(), $this->spyware_dns_security_best_practice(), $this->spyware_advanced_dns_security_best_practice() ) );
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
-        if( $this->spyware_dnslist_visibility()
-            #this is DNS Security
-            && $this->spyware_dns_security_visibility()
-            && $this->spyware_advanced_dns_security_visibility()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->spyware_dnslist_visibility(), $this->spyware_dns_security_visibility(), $this->spyware_advanced_dns_security_visibility() ) );
     }
 
     public function is_adaption(): bool
@@ -159,5 +145,26 @@ class DNSSecurityProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet profile 'Alert-Only-DNSSEC'
+     * (iron-skillet panos_v11.1 templates/panorama/snippets/profiles_dns_security.xml):
+     * the 'botnet-domains' part of 'Alert-Only-AS'.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, only "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( $version !== '11.1' )
+        {
+            derr( "iron-skillet DNS security profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        return '<root><entry name="Alert-Only-DNSSEC">'
+            . AntiSpywareProfile::ironSkilletBotnetDomainsXml( $version, 'alert' )
+            . '</entry></root>';
+    }
 }
 

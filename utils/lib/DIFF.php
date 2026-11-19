@@ -707,420 +707,153 @@ class DIFF extends UTIL
      */
     function compareElements($el1, $el2, $xpath = null, $multiVSYS = false)
     {
-        //PH::print_stdout( "argument XPATH: ".$xpath );
-        if( $xpath == null )
-            $xpath = DH::elementToPanXPath($el1);
-
-        $continue = false;
-        $this->filter_exclude( $continue, $xpath );
-        if( $continue )
-            return null;
-
-        //PH::print_stdout( "*** COMPARING {$xpath}" );
-
-        /** @var DOMElement[][] $el1Elements */
-        $el1Elements = array();
-        /** @var DOMElement[][] $el2Elements */
-        $el2Elements = array();
-
-        /** @var DOMElement[][] $plus */
-        $plus = array();
-        /** @var DOMElement[][] $minus */
-        $minus = array();
-
-        foreach( $el1->childNodes as $node )
-        {
-            /** @var DOMElement $node */
-            if( $node->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-            $el1Elements[$node->tagName][] = $node;
-        }
-
-        foreach( $el2->childNodes as $node )
-        {
-            /** @var DOMElement $node */
-            if( $node->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-            $el2Elements[$node->tagName][] = $node;
-        }
-
-        //calculating rule order
-        if( $this->ruleorderCHECK && $this->endsWith( $xpath, "/rules" ) && strpos( $xpath, "rulebase/") !== false )
-        {
-            if( isset( $el1Elements['entry'] ) && isset( $el2Elements['entry'] ) )
-                $this->calculateRuleorder( $el1Elements, $el2Elements);
-        }
-
-
-        if( count($el1Elements) == 0 && count($el2Elements) == 0 )
-        {
-            $el1Trim = trim($el1->textContent);
-            $el2Trim = trim($el2->textContent);
-
-            if( $this->avoidDisplayWhitspaceDiffCertificate )
-            {
-                if( $el1Trim != $el2Trim && strpos($xpath, "/certificate/") !== FALSE )
+        // the comparison itself is XmlCompare (also used by the mergers); filters, rule order and output stay here
+        $cmp = new XmlCompare( array(
+            'enter' => function( $xpath ) {
+                $continue = false;
+                $this->filter_exclude( $continue, $xpath );
+                return !$continue;
+            },
+            'elements' => function( $xpath, $el1Elements, $el2Elements ) {
+                //calculating rule order
+                if( $this->ruleorderCHECK && $this->endsWith( $xpath, "/rules" ) && strpos( $xpath, "rulebase/") !== false )
                 {
-                    $el1Trim = preg_replace('/\s+/', ' ', $el1Trim);
-                    $el2Trim = preg_replace('/\s+/', ' ', $el2Trim);
+                    if( isset( $el1Elements['entry'] ) && isset( $el2Elements['entry'] ) )
+                        $this->calculateRuleorder( $el1Elements, $el2Elements);
                 }
-            }
+            },
+            'textDiff' => function( $xpath, $el1, $el2 ) use ( $multiVSYS ) {
+                $el1Trim = trim($el1->textContent);
+                $el2Trim = trim($el2->textContent);
+
+                if( $this->avoidDisplayWhitspaceDiffCertificate )
+                {
+                    if( $el1Trim != $el2Trim && strpos($xpath, "/certificate/") !== FALSE )
+                    {
+                        $el1Trim = preg_replace('/\s+/', ' ', $el1Trim);
+                        $el2Trim = preg_replace('/\s+/', ' ', $el2Trim);
+                    }
+                }
+
+                if( $el1Trim != $el2Trim )
+                {
+                    $text = '';
+                    PH::$JSON_TMP = array();
+                    PH::$JSON_TMP['plus'] = array();
+                    PH::$JSON_TMP['minus'] = array();
+                    PH::$JSON_TMP['xpath'] = $xpath;
+
+                    $continue = $this->ignoreAddDeleteXpath( $xpath, $el1, $this->deleted );
+                    if( $continue )
+                        return;
+
+                    $tmp = DH::dom_to_xml($el1);
+                    $text .= '-' . $tmp;
+                    PH::$JSON_TMP['minus'][] = $tmp;
 
 
-            if( $el1Trim != $el2Trim )
-            {
+                    $continue = $this->ignoreAddDeleteXpath( $xpath, $el1, $this->added );
+                    if( $continue )
+                        return;
+
+                    $tmp = DH::dom_to_xml($el2);
+                    $text .= '+' . $tmp;
+                    PH::$JSON_TMP['plus'][] = $tmp;
+
+
+                    PH::print_stdout( PH::$JSON_TMP, false, "diff" );
+                    PH::$JSON_TMP = array();
+
+                    //same xpath different content
+                    $this->displayDIFF( $xpath, $text, array( $el2 ), array( $el1 ), array( $el1 ), $multiVSYS );
+                    $this->failStatus_diff = TRUE;
+                }
+            },
+            'skipMissing' => function( $side, $xpath ) {
+                $continue = false;
+                $this->filter_exclude( $continue, $xpath );
+                if( $side == 'minus' )
+                    $this->filter_deleted( $continue, $xpath );
+                else
+                    $this->filter_added( $continue, $xpath );
+                return $continue;
+            },
+            'namedMissing' => function( $side, $node ) {
+                $nodeName = $node->getAttribute('name');
+                if( $side == 'minus' )
+                {
+                    if( isset( $this->el1rulebase[$nodeName] ) )
+                        unset( $this->el1rulebase[$nodeName] );
+                }
+                else
+                {
+                    if( isset( $this->el2rulebase[$nodeName] ) )
+                        unset( $this->el2rulebase[$nodeName] );
+                }
+            },
+            'beforeResult' => function( $xpath ) {
+                //check if ruleorder is same
+                if( $this->endsWith( $xpath, "']" ) && strpos( $xpath, "rulebase/") !== false && strpos( $xpath, "/rules") !== false )
+                    $this->checkRuleOrder( $xpath );
+            },
+            'result' => function( $xpath, $plus, $minus ) use ( $multiVSYS ) {
                 $text = '';
+
                 PH::$JSON_TMP = array();
+
                 PH::$JSON_TMP['plus'] = array();
+                foreach( $plus as $key => $node )
+                {
+                    //check if xpath should be ignored as added to JSON file
+                    $continue = $this->ignoreAddDeleteXpath( $xpath, $node, $this->added );
+                    if( $continue )
+                        continue;
+
+                    $tmp = DH::dom_to_xml($node);
+                    $tmp = $this->str_lreplace( "\n", "", $tmp );
+                    PH::$JSON_TMP['plus'][] = $tmp;
+
+                    $text .= "\n+" . str_replace("\n", "\n+", $tmp);
+                    $this->failStatus_diff = TRUE;
+                }
+
+                if( count($plus) > 0 && count( $minus ) > 0 )
+                    $text .= "\n";
+
                 PH::$JSON_TMP['minus'] = array();
-                PH::$JSON_TMP['xpath'] = $xpath;
+                foreach( $minus as $key => $node )
+                {
+                    //check if xpath should be ignored as added to JSON file
+                    $continue = $this->ignoreAddDeleteXpath( $xpath, $node, $this->deleted );
+                    if( $continue )
+                        continue;
 
-                $continue = $this->ignoreAddDeleteXpath( $xpath, $el1, $this->deleted );
-                if( $continue )
-                    return;
+                    $tmp = DH::dom_to_xml($node);
+                    $tmp = $this->str_lreplace( "\n", "", $tmp );
+                    PH::$JSON_TMP['minus'][] = $tmp;
 
-                $tmp = DH::dom_to_xml($el1);
-                $text .= '-' . $tmp;
-                PH::$JSON_TMP['minus'][] = $tmp;
+                    $text .= "\n-" . str_replace("\n", "\n-", $tmp);
+                    $this->failStatus_diff = TRUE;
+                }
 
+                if( count($plus) > 0 || count( $minus ) > 0 )
+                {
+                    if( count(PH::$JSON_TMP['plus']) > 0 || count( PH::$JSON_TMP['minus'] ) > 0 )
+                    {
+                        PH::$JSON_TMP['xpath'] = $xpath;
+                        PH::$JSON_TMP = array_merge(array('xpath' => $xpath), PH::$JSON_TMP);
 
-                $continue = $this->ignoreAddDeleteXpath( $xpath, $el1, $this->added );
-                if( $continue )
-                    return;
+                        PH::print_stdout( PH::$JSON_TMP, false, "diff" );
+                    }
+                }
 
-                $tmp = DH::dom_to_xml($el2);
-                $text .= '+' . $tmp;
-                PH::$JSON_TMP['plus'][] = $tmp;
-
-
-                PH::print_stdout( PH::$JSON_TMP, false, "diff" );
                 PH::$JSON_TMP = array();
 
-                //same xpath different content
-                $this->displayDIFF( $xpath, $text, array( $el2 ), array( $el1 ), array( $el1 ), $multiVSYS );
-                $this->failStatus_diff = TRUE;
-            }
-            return;
-        }
+                $this->displayDIFF( $xpath, $text, $plus, $minus, array(), $multiVSYS );
+            },
+        ) );
 
-        //
-        //  nodes missing entirely in one or the other
-        //
-        foreach( $el1Elements as $tagName => &$nodeArray1 )
-        {
-            if( !isset($el2Elements[$tagName]) )
-            {
-                $fullXpathName = $xpath."/".$tagName;
-                #PH::print_stdout( $fullXpathName );
-
-                $continue = false;
-                $this->filter_exclude( $continue, $fullXpathName );
-                $this->filter_deleted( $continue, $fullXpathName );
-                if( !$continue )
-                    foreach( $nodeArray1 as $node )
-                    {
-                        $continue = false;
-                        $attribute = DH::findAttribute('name', $node);
-                        if( $attribute !== FALSE )
-                        {
-                            $this->filter_exclude( $continue, $fullXpathName."[@name='".$attribute."']" );
-                            $this->filter_deleted( $continue, $fullXpathName."[@name='".$attribute."']" );
-                        }
-
-                        if( !$continue )
-                            $minus[] = $node;
-                    }
-                unset($el1Elements[$tagName]);
-            }
-        }
-        foreach( $el2Elements as $tagName => &$nodeArray2 )
-        {
-            if( !isset($el1Elements[$tagName]) )
-            {
-                $fullXpathName = $xpath."/".$tagName;
-                #PH::print_stdout( $fullXpathName );
-
-                $continue = false;
-                $this->filter_exclude( $continue, $fullXpathName );
-                $this->filter_added( $continue, $fullXpathName );
-                if( !$continue )
-                    foreach( $nodeArray2 as $node )
-                    {
-                        $continue = false;
-                        $attribute = DH::findAttribute('name', $node);
-                        if( $attribute !== FALSE )
-                        {
-                            $this->filter_exclude( $continue, $fullXpathName."[@name='".$attribute."']" );
-                            $this->filter_added( $continue, $fullXpathName."[@name='".$attribute."']" );
-                        }
-
-                        if( !$continue )
-                            $plus[] = $node;
-                    }
-                unset($el2Elements[$tagName]);
-            }
-        }
-
-        // conflicting objects
-        foreach( $el1Elements as $tagName => &$nodeArray1 )
-        {
-            $nodeArray2 = &$el2Elements[$tagName];
-
-            $el1BasicNode = null;
-            foreach( $nodeArray1 as $nodeIndex => $node )
-            {
-                if( !$node->hasAttribute('name') )
-                {
-                    if( $el1BasicNode === null )
-                    {
-                        $el1BasicNode = $node;
-                    }
-                    else
-                    {
-                        if( is_array($el1BasicNode) )
-                        {
-                            $el1BasicNode[] = $node;
-                        }
-                        else
-                        {
-                            $el1BasicNode = array($el1BasicNode);
-                            $el1BasicNode[] = $node;
-                        }
-                    }
-
-                    unset($nodeArray1[$nodeIndex]);
-                }
-            }
-            if( $el1BasicNode !== null && count($nodeArray1) > 0 )
-                derr('unsupported situation where <node> and <node name=""> were both seen', $el1, false);
-
-            $el2BasicNode = null;
-            foreach( $nodeArray2 as $nodeIndex => $node )
-            {
-                if( !$node->hasAttribute('name') )
-                {
-                    if( $el2BasicNode === null )
-                    {
-                        $el2BasicNode = $node;
-                    }
-                    else
-                    {
-                        if( is_array($el2BasicNode) )
-                        {
-                            $el2BasicNode[] = $node;
-                        }
-                        else
-                        {
-                            $el2BasicNode = array($el2BasicNode);
-                            $el2BasicNode[] = $node;
-                        }
-                    }
-
-                    unset($nodeArray2[$nodeIndex]);
-                }
-            }
-            if( $el2BasicNode !== null && count($nodeArray2) > 0 )
-                derr('unsupported situation where <node> and <node name=""> where both seen in same document', $el2, false);
-
-            if( $el1BasicNode === null && $el2BasicNode !== null )
-                mwarning('found an issue where file1 has <node> but file2 has <node name="">', null, false);
-            if( $el1BasicNode !== null && $el2BasicNode === null )
-                mwarning('found an issue where file2 has <node> but file1 has <node name="">', null, false);
-
-
-            if( $el1BasicNode !== null && $el2BasicNode !== null )
-            {
-                if( is_object($el1BasicNode) && is_object($el2BasicNode) )
-                {
-                    $this->compareElements($el1BasicNode, $el2BasicNode, null, $multiVSYS);
-                }
-                else
-                {
-                    if( is_object($el1BasicNode) )
-                        $el1BasicNode = array($el1BasicNode);
-                    if( is_object($el2BasicNode) )
-                        $el2BasicNode = array($el2BasicNode);
-
-                    $el1ContentSorted = array();
-                    $el2ContentSorted = array();
-
-                    foreach( $el1BasicNode as $node )
-                    {
-                        $nodeContent = $node->textContent;
-                        if( isset($el1ContentSorted[$nodeContent]) )
-                            mwarning('cannot have <node>'.$nodeContent.'</node> nodes with same content. file1', $el1, false, FALSE);
-                        else
-                            $el1ContentSorted[$nodeContent] = $node;
-                    }
-                    foreach( $el2BasicNode as $node )
-                    {
-                        $nodeContent = $node->textContent;
-                        if( isset($el2ContentSorted[$nodeContent]) )
-                            mwarning('cannot have <node>'.$nodeContent.'</node> nodes with same content. file2', $el2, false, FALSE);
-                        else
-                            $el2ContentSorted[$nodeContent] = $node;
-                    }
-
-                    foreach( $el1ContentSorted as $content => $node )
-                    {
-                        if( isset($el2ContentSorted[$content]) )
-                            continue;
-                        $minus[] = $node;
-                    }
-                    foreach( $el2ContentSorted as $content => $node )
-                    {
-                        if( isset($el1ContentSorted[$content]) )
-                            continue;
-                        $plus[] = $node;
-                    }
-
-                }
-            }
-            elseif( $el1BasicNode !== null && $el2BasicNode === null )
-            {
-                if( is_object($el1BasicNode) )
-                    $minus[] = $el1BasicNode;
-                else
-                    foreach( $el1BasicNode as $node )
-                        $minus[] = $node;
-            }
-            elseif( $el1BasicNode === null && $el2BasicNode !== null )
-            {
-                if( is_object($el2BasicNode) )
-                    $minus[] = $el2BasicNode;
-                else
-                    foreach( $el2BasicNode as $node )
-                        $minus[] = $node;
-            }
-            else
-            {
-                $el1NameSorted = array();
-                $el2NameSorted = array();
-
-                foreach( $nodeArray1 as $nodeIndex => $node )
-                {
-                    $nodeName = $node->getAttribute('name');
-                    if( isset($el1NameSorted[$nodeName]) )
-                    {
-                        #mwarning('<node name="' . $nodeName . '"> was found twice in file1', $el1, false, FALSE);
-                        mwarning('<node name="' . $nodeName . '"> was found twice in file1', $node, false, FALSE);
-                    }
-
-                    else
-                        $el1NameSorted[$nodeName] = $node;
-                }
-                foreach( $nodeArray2 as $nodeIndex => $node )
-                {
-                    $nodeName = $node->getAttribute('name');
-                    if( isset($el2NameSorted[$nodeName]) )
-                    {
-                        #mwarning('<node name="' . $nodeName . '"> was found twice in file2', $el2, false, FALSE);
-                        mwarning('<node name="' . $nodeName . '"> was found twice in file2', $node, false, FALSE);
-                    }
-                    else
-                        $el2NameSorted[$nodeName] = $node;
-                }
-
-                foreach( $el1NameSorted as $nodeName => $node )
-                {
-                    if( !isset($el2NameSorted[$nodeName]) )
-                    {
-                        $minus[] = $node;
-                        unset($el1NameSorted[$nodeName]);
-
-                        $nodeName = $node->getAttribute('name');
-                        if( isset( $this->el1rulebase[$nodeName] ) )
-                            unset( $this->el1rulebase[$nodeName] );
-                    }
-                }
-                foreach( $el2NameSorted as $nodeName => $node )
-                {
-                    if( !isset($el1NameSorted[$nodeName]) )
-                    {
-                        $plus[] = $node;
-                        unset($el2NameSorted[$nodeName]);
-
-                        $nodeName = $node->getAttribute('name');
-                        if( isset( $this->el2rulebase[$nodeName] ) )
-                            unset( $this->el2rulebase[$nodeName] );
-                    }
-                }
-
-                foreach( $el1NameSorted as $nodeName => $node1 )
-                {
-                    $node2 = $el2NameSorted[$nodeName];
-
-                    $this->compareElements($node1, $node2, null, $multiVSYS);
-                }
-            }
-
-            unset($el1Elements[$tagName]);
-            unset($el2Elements[$tagName]);
-        }
-
-
-        //check if ruleorder is same
-        if( $this->endsWith( $xpath, "']" ) && strpos( $xpath, "rulebase/") !== false && strpos( $xpath, "/rules") !== false )
-            $this->checkRuleOrder( $xpath );
-
-
-        $text = '';
-
-        PH::$JSON_TMP = array();
-        #if( count($plus) > 0 || count( $minus ) > 0 )
-        #    PH::$JSON_TMP['xpath'] = $xpath;
-
-        PH::$JSON_TMP['plus'] = array();
-        foreach( $plus as $key => $node )
-        {
-            //check if xpath should be ignored as added to JSON file
-            $continue = $this->ignoreAddDeleteXpath( $xpath, $node, $this->added );
-            if( $continue )
-                continue;
-
-            $tmp = DH::dom_to_xml($node);
-            $tmp = $this->str_lreplace( "\n", "", $tmp );
-            PH::$JSON_TMP['plus'][] = $tmp;
-
-            $text .= "\n+" . str_replace("\n", "\n+", $tmp);
-            $this->failStatus_diff = TRUE;
-        }
-
-        if( count($plus) > 0 && count( $minus ) > 0 )
-            $text .= "\n";
-
-        PH::$JSON_TMP['minus'] = array();
-        foreach( $minus as $key => $node )
-        {
-            //check if xpath should be ignored as added to JSON file
-            $continue = $this->ignoreAddDeleteXpath( $xpath, $node, $this->deleted );
-            if( $continue )
-                continue;
-
-            $tmp = DH::dom_to_xml($node);
-            $tmp = $this->str_lreplace( "\n", "", $tmp );
-            PH::$JSON_TMP['minus'][] = $tmp;
-
-            $text .= "\n-" . str_replace("\n", "\n-", $tmp);
-            $this->failStatus_diff = TRUE;
-        }
-
-        if( count($plus) > 0 || count( $minus ) > 0 )
-        {
-            if( count(PH::$JSON_TMP['plus']) > 0 || count( PH::$JSON_TMP['minus'] ) > 0 )
-            {
-                PH::$JSON_TMP['xpath'] = $xpath;
-                PH::$JSON_TMP = array_merge(array('xpath' => $xpath), PH::$JSON_TMP);
-
-                PH::print_stdout( PH::$JSON_TMP, false, "diff" );
-            }
-        }
-
-        PH::$JSON_TMP = array();
-
-        $this->displayDIFF( $xpath, $text, $plus, $minus, array(), $multiVSYS );
+        return $cmp->compare( $el1, $el2, $xpath );
     }
 
     public function displayDIFF( $xpath, $text, $plus, $minus, $edit = array(), $multiVSYS = false )

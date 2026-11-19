@@ -53,10 +53,11 @@ DeviceCallContext::$supportedActions['display'] = array(
 
             PH::print_stdout( $padding."----------");
 
-            $used_templates = $object->templates;
-            foreach( $used_templates as $template )
+            //priority in the stack: 1 = first template of the configuration = highest priority
+            $used_templates = array_values($object->templates);
+            foreach( $used_templates as $prio => $template )
             {
-                PH::print_stdout( $context->padding." - " . get_class($template) . " '{$template->name()}'" );
+                PH::print_stdout( $context->padding." - " . ($prio + 1) . ": " . get_class($template) . " '{$template->name()}'" );
                 PH::$JSON_TMP['sub']['object'][$object->name()]['template'][] = $template->name();
             }
             //Todo: PH::print_stdout( where this TemplateStack is used SERIAL
@@ -167,12 +168,12 @@ DeviceCallContext::$supportedActions['display'] = array(
                     PH::$JSON_TMP['sub']['object'][$object->name()]['templatestack'][$managedDevice->getTemplateStack()]['name'] = $managedDevice->getTemplateStack();
 
                     $templatestack = $device->findTemplateStack( $managedDevice->getTemplateStack() );
-                    foreach( $templatestack->templates as $template )
+                    foreach( array_values($templatestack->templates) as $prio => $template )
                     {
-                        $template_obj = $device->findTemplate( $template );
+                        $template_obj = is_object($template) ? $template : $device->findTemplate( $template );
                         if( $template_obj !== null )
                         {
-                            PH::print_stdout( " - ".$template_obj->name() );
+                            PH::print_stdout( " - ".($prio + 1).": ".$template_obj->name() );
                             PH::$JSON_TMP['sub']['object'][$object->name()]['templatestack'][$managedDevice->getTemplateStack()]['templates'][] = $template_obj->name();
                         }
 
@@ -330,6 +331,100 @@ DeviceCallContext::$supportedActions['display'] = array(
     'args' => array(
         'listserial' => array('type' => 'string', 'default' => 'false')
     )
+);
+
+DeviceCallContext::$supportedActions['display-ancestor-precedence-impact'] = array(
+    'name' => 'display-ancestor-precedence-impact',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->objectList['precedenceRows'] = array();
+        $context->objectList['precedenceDGs'] = 0;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+
+        if( get_class($object) !== 'DeviceGroup' )
+            return;
+
+        /** @var DeviceGroup $object */
+        $pan = $object->owner;
+        if( !($pan instanceof PanoramaConf) )
+            return;
+
+        $current = $pan->ancestorObjectsTakePrecedence() ? 'yes' : 'no';
+        $after = $pan->ancestorObjectsTakePrecedence() ? 'no' : 'yes';
+
+        $rows = $pan->ancestorPrecedenceImpact( $object );
+        $context->objectList['precedenceDGs']++;
+
+        PH::print_stdout( $context->padding . "* DG '" . $object->name() . "' - ancestor-objects-take-precedence now: " . $current . " -> after switch: " . $after );
+        if( count($rows) == 0 )
+        {
+            PH::print_stdout( $context->padding . "   no object name defined at more than one level - no impact" );
+            return;
+        }
+
+        foreach( $rows as $row )
+        {
+            $copyNow = ($current == 'yes') ? $row['copy_yes'] : $row['copy_no'];
+            $copyAfter = ($current == 'yes') ? $row['copy_no'] : $row['copy_yes'];
+
+            if( count($row['referencers']) == 0 )
+                $severity = 'INFO - no rule or group in the chain names it';
+            elseif( $row['identical'] )
+                $severity = 'INFO - identical content at both levels';
+            else
+                $severity = 'CHANGE';
+
+            PH::print_stdout( $context->padding . "   - [" . $severity . "] " . $row['store'] . " '" . $row['name'] . "' : firewalls use copy of '" . $copyNow . "' -> after switch '" . $copyAfter . "'   (defined in: " . implode(', ', $row['levels']) . ")" );
+            foreach( $row['referencers'] as $ref )
+                PH::print_stdout( $context->padding . "        used by: " . $ref );
+
+            $row['dg'] = $object->name();
+            $row['now'] = $current;
+            $row['after'] = $after;
+            $row['copy_now'] = $copyNow;
+            $row['copy_after'] = $copyAfter;
+            $row['severity'] = $severity;
+            $context->objectList['precedenceRows'][] = $row;
+        }
+        PH::print_stdout();
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        $change = 0;
+        $info = 0;
+        foreach( $context->objectList['precedenceRows'] as $row )
+        {
+            if( $row['severity'] == 'CHANGE' )
+                $change++;
+            else
+                $info++;
+        }
+
+        PH::print_stdout();
+        PH::print_stdout( "* ancestor-objects-take-precedence impact summary: " . $context->objectList['precedenceDGs'] . " device group(s), "
+            . $change . " CHANGE, " . $info . " INFO" );
+        PH::print_stdout( "  CHANGE = after the switch the firewalls of that device group get a different object content for a name that rules / groups use" );
+
+        $filename = $context->arguments['filename'];
+        if( $filename !== '*none*' )
+        {
+            $fh = fopen($filename, 'w');
+            if( $fh === FALSE )
+                derr("cannot open file '{$filename}'");
+            fputcsv($fh, array('device-group', 'precedence-now', 'precedence-after', 'store', 'name', 'copy-now', 'copy-after', 'defined-in', 'identical-content', 'severity', 'used-by'));
+            foreach( $context->objectList['precedenceRows'] as $row )
+                fputcsv($fh, array($row['dg'], $row['now'], $row['after'], $row['store'], $row['name'], $row['copy_now'], $row['copy_after'],
+                    implode(' | ', $row['levels']), $row['identical'] ? 'yes' : 'no', $row['severity'], implode(' | ', $row['referencers'])));
+            fclose($fh);
+            PH::print_stdout( "  report written to '" . $filename . "'" );
+        }
+    },
+    'args' => array(
+        'filename' => array('type' => 'string', 'default' => '*none*')
+    ),
+    'help' => "offline report: what changes on the firewalls of each device group when Panorama setting\n"
+        . "'ancestor-objects-take-precedence' is switched (no -> yes or yes -> no, depending on the current value)\n"
+        . "optional: filename=report.csv"
 );
 
 DeviceCallContext::$supportedActions['displayreferences'] = array(
@@ -1629,7 +1724,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
                     if( $tstack_obj !== null )
                     {
-                        foreach( array_reverse($tstack_obj->templates) as $template_obj )
+                        foreach( array_values($tstack_obj->templates) as $prio => $template_obj )
                         {
                             /* @var Template $template_obj */
                             $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
@@ -1640,7 +1735,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                             {
                                 $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
                             }
-                            $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                            //priority in the stack: 1 = first template of the configuration = highest priority
+                            $tmp_template[$template_obj->name()] = ($prio + 1).": ".$template_obj->name()." [".implode(",", $vsys_name)."]";
                         }
                     }
                     $lines .= $context->encloseFunction( $tmp_stack );
@@ -1692,7 +1788,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         $tstack_obj = $panoramaConf->findTemplateStack( $templateStack_string );
                         if( $tstack_obj !== null )
                         {
-                            foreach( array_reverse($tstack_obj->templates) as $template_obj )
+                            foreach( array_values($tstack_obj->templates) as $prio => $template_obj )
                             {
                                 /* @var Template $template_obj */
                                 $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
@@ -1703,7 +1799,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                                 {
                                     $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
                                 }
-                                $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                                //priority in the stack: 1 = first template of the configuration = highest priority
+                                $tmp_template[$template_obj->name()] = ($prio + 1).": ".$template_obj->name()." [".implode(",", $vsys_name)."]";
                             }
                         }
                     }
@@ -1749,7 +1846,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction( "-SELF-" );
 
                     $tmp_template = array();
-                    foreach( array_reverse($object->templates) as $template_obj )
+                    foreach( array_values($object->templates) as $prio => $template_obj )
                     {
                         /* @var Template $template_obj */
                         $all_vsys = $template_obj->deviceConfiguration->getVirtualSystems();
@@ -1760,7 +1857,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                         {
                             $vsys_name[ $vsys_obj->name() ] = $vsys_obj->name();
                         }
-                        $tmp_template[$template_obj->name()] = $template_obj->name()." [".implode(",", $vsys_name)."]";
+                        //priority in the stack: 1 = first template of the configuration = highest priority
+                        $tmp_template[$template_obj->name()] = ($prio + 1).": ".$template_obj->name()." [".implode(",", $vsys_name)."]";
                     }
 
                     //template
@@ -2714,58 +2812,56 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
         $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
         $panVersion = $f($context);
 
-        $pathString = dirname(__FILE__)."/../../iron-skillet";
-
-        $context->vp_xmlString = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/profiles_vulnerability.xml");
-        $context->fb_xmlString = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/profiles_file_blocking.xml");
-        $context->wf_xmlString = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+        $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "10.0" );
+        $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "10.0" );
+        $context->wf_xmlString = WildfireProfile::ironSkilletXml( "10.0" );
 
         if( $context->object->owner->version < 90 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v8.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v8.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v8.1/templates/panorama/snippets/profiles_url_filtering.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "8.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "8.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "8.1" );
         }
         elseif( $context->object->owner->version < 100 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_url_filtering.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "9.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "9.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "9.1" );
         }
         elseif( $context->object->owner->version >= 100 and $context->object->owner->version < 112 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_virus.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( $panVersion );
 
             if( $context->subSystem->isBuckbeak() )
-                $context->as_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_spyware_scm.xml");
+                $context->as_xmlString = AntiSpywareProfile::ironSkilletXmlScm( "11.1" );
             else
-                $context->as_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_spyware.xml");
+                $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( $panVersion );
 
-            $context->vp_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_vulnerability.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_url_filtering.xml");
-            $context->fb_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_file_blocking.xml");
-            $context->wf_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( $panVersion );
+            $context->url_xmlString = URLProfile::ironSkilletXml( $panVersion );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( $panVersion );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( $panVersion );
 
-            $context->avwf_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_virus_and_wildfire.xml");
-            $context->dnssec_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_dns_security.xml");
+            $context->avwf_xmlString = VirusAndWildfireProfile::ironSkilletXml( "11.1" );
+            $context->dnssec_xmlString = DNSSecurityProfile::ironSkilletXml( "11.1" );
         }
         elseif( $context->object->owner->version >= 112 and $context->object->owner->version < 121 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->vp_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_vulnerability.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_url_filtering.xml");
-            $context->fb_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_file_blocking.xml");
-            $context->wf_xmlString = file_get_contents( $pathString."/panos_v11.2/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "11.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "11.1" );
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "11.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "11.1" );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "11.1" );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( "11.2" );
         }
         elseif( $context->object->owner->version >= 121 )
         {
-            $context->av_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_virus.xml");
-            $context->as_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_spyware.xml");
-            $context->vp_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_vulnerability.xml");
-            $context->url_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_url_filtering.xml");
-            $context->fb_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_file_blocking.xml");
-            $context->wf_xmlString = file_get_contents( $pathString."/panos_v12.1/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "12.1" );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "12.1" );
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "12.1" );
+            $context->url_xmlString = URLProfile::ironSkilletXml( "12.1" );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "12.1" );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( "12.1" );
         }
     },
     'function_panVersion' => function (DeviceCallContext $context) {
@@ -2789,6 +2885,10 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
             {
                 $node = $ownerDocument->importNode($node, TRUE);
                 $profile->load_from_domxml($node);
+
+                //This is setting the PAN-OS XML snippet to full alert
+                $profile->AlertOnlySet();
+
                 $profile->owner = null;
                 $store->addSecurityProfile($profile);
                 PH::print_stdout(" * " . $typeclass . " create: '" . $name . "-" . $type_name . "'");
@@ -2817,6 +2917,11 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
             {
                 $node = $ownerDocument->importNode($node, TRUE);
                 $profile->load_from_domxml($node);
+
+                //This is setting the PAN-OS XML snippet to full alert
+                if( !str_contains( $profile->name(), "Alert" ) )
+                    $profile->BestPracticeSet();
+
                 $profile->owner = null;
                 if( isset($context->arguments['sp-name']) )
                     $profile->setName($name . "-" . $type_name);
@@ -2918,10 +3023,7 @@ DeviceCallContext::$supportedActions['sp_spg-create-alert-only-BP'] = array(
 
                 foreach( $nameArray as $name)
                 {
-                    if( $context->object->owner->version < 90 )
-                        $customURLarray = array("Black-List", "White-List", "Custom-No-Decrypt");
-                    else
-                        $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
+                    $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
                     foreach( $customURLarray as $entry )
                     {
                         $block = $sharedStore->customURLProfileStore->find($entry);
@@ -3094,10 +3196,7 @@ DeviceCallContext::$supportedActions['sp_spg-create-BP'] = array(
                     }
 
 
-                    if( $context->object->owner->version < 90 )
-                        $customURLarray = array("Black-List", "White-List", "Custom-No-Decrypt");
-                    else
-                        $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
+                    $customURLarray = array("Block", "Allow", "Custom-No-Decrypt");
                     foreach( $customURLarray as $entry )
                     {
                         $block = $sharedStore->customURLProfileStore->find($entry);
@@ -3209,14 +3308,13 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
 
         if( $context->first )
         {
-            $pathString = dirname(__FILE__)."/../../iron-skillet";
-            $lfp_bp_xmlstring = file_get_contents( $pathString."/panos_v10.0/templates/panorama/snippets/log_settings_profiles.xml");
+            $lfp_bp_xmlstring = LogProfile::ironSkilletXml( "10.0" );
             if( $context->util->pan->version >= 100 )
             {
                 $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
                 $panVersion = $f($context);
 
-                $lfp_bp_xmlstring = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/log_settings_profiles.xml");
+                $lfp_bp_xmlstring = LogProfile::ironSkilletXml( $panVersion );
             }
 
             if( $classtype == "VirtualSystem" || $classtype == "DeviceGroup" )
@@ -3290,15 +3388,13 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
 
         if( $context->first )
         {
-            $pathString = dirname(__FILE__) . "/../../iron-skillet";
-
             $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
             $panVersion = $f($context);
 
             if( $context->object->owner->version < 100 )
-                $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v10.0/templates/panorama/snippets/zone_protection_profile.xml");
+                $zpp_bp_xmlstring = ZoneProtectionProfile::ironSkilletXml( "10.0" );
             elseif( $context->util->pan->version >= 100 )
-                $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v" . $panVersion . "/templates/panorama/snippets/zone_protection_profile.xml");
+                $zpp_bp_xmlstring = ZoneProtectionProfile::ironSkilletXml( $panVersion );
 
             if( $classtype == "VirtualSystem" || $classtype == "Template" || $classtype == "TemplateStack" )
             {

@@ -731,7 +731,7 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
         if( isset($optionalFields['NestedMembers']) )
             $addNestedMembers = TRUE;
 
-        $headers = '<th>ID</th><th>template</th><th>template-stack</th><th>location</th><th>name</th><th>type</th><th>interfaces</th><th>log-setting</th><th>lfp-location</th>><th>zone-protection-profile</th>';
+        $headers = '<th>ID</th><th>template</th><th>template-stack</th><th>location</th><th>name</th><th>type</th><th>interfaces</th><th>log-setting</th><th>lfp-location</th><th>zone-protection-profile</th><th>zpp-template-stack</th><th>zpp-template</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -786,6 +786,9 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                         $lines .= $context->encloseFunction('');
                         //ZPP
                         $lines .= $context->encloseFunction('');
+                        //ZPP template-stack / template
+                        $lines .= $context->encloseFunction('');
+                        $lines .= $context->encloseFunction('');
                     }
                     else
                     {
@@ -830,6 +833,28 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                         else
                             $tmpZPP = $object->zoneProtectionProfile;
                         $lines .= $context->encloseFunction( $tmpZPP );
+
+                        //ZPP template-stack / template: where the profile the firewall receives is defined
+                        //(PAN-OS lookup: the stack itself, then its templates in the stack's order - first wins;
+                        // a template's zone only its own template). Only this one location, not other copies.
+                        $zppStack = "";
+                        $zppTemplate = "";
+                        if( $object->zoneProtectionProfile != null && PH::templateScopeOwner( $object->owner->owner ) !== null )
+                        {
+                            $zppObj = $object->findZoneProtectionProfileObject( $object->zoneProtectionProfile );
+                            $zppOwner = is_object($zppObj) && isset($zppObj->owner->owner) ? PH::templateScopeOwner( $zppObj->owner->owner ) : null;
+                            if( $zppOwner instanceof TemplateStack )
+                                $zppStack = $zppOwner->name();
+                            elseif( $zppOwner instanceof Template )
+                                $zppTemplate = $zppOwner->name();
+                            else
+                            {
+                                $zppStack = "--not found--";
+                                $zppTemplate = "--not found--";
+                            }
+                        }
+                        $lines .= $context->encloseFunction( $zppStack );
+                        $lines .= $context->encloseFunction( $zppTemplate );
                     }
 
                 if( $addWhereUsed )

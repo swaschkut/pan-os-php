@@ -79,7 +79,13 @@ trait PathableName
             if( get_class($owner) == 'DeviceGroup' )
                 break;
             if( get_class($owner) == 'VirtualSystem' )
+            {
+                // vsys of a Panorama template / template stack: also name the template (stack), otherwise
+                // 'vsys1/...' of different templates cannot be told apart
+                if( isset($owner->owner->owner) && ( $owner->owner->owner instanceof Template || $owner->owner->owner instanceof TemplateStack ) )
+                    $str = '/' . get_class($owner->owner->owner) . ':' . $owner->owner->owner->name() . $str;
                 break;
+            }
             $owner = $owner->owner;
         }
 

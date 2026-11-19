@@ -78,7 +78,11 @@ class InterfaceContainer extends ObjRuleContainer
             }
             else
             {
-                $interface = $this->parentCentralStore->findInterfaceOrCreateTmp($interfaceString);
+                // template stack: the interfaces come from its templates
+                if( $this->parentCentralStore instanceof NetworkPropertiesContainer )
+                    $interface = $this->parentCentralStore->findInterfaceInTemplateScopeOrCreateTmp($interfaceString);
+                else
+                    $interface = $this->parentCentralStore->findInterfaceOrCreateTmp($interfaceString);
                 $this->add($interface);
             }
         }

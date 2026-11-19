@@ -122,8 +122,23 @@ class DeviceOnPrem
     /** @var LogProfileStore */
     public $LogProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var CertificateStore */
     public $certificateStore = null;
+
+    /** @var CertificateProfileStore */
+    public $certificateProfileStore = null;
+
+    /** @var GPGatewayStore */
+    public $GPGatewayStore = null;
+
+    /** @var GPPortalStore */
+    public $GPPortalStore = null;
 
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
@@ -340,6 +355,21 @@ class DeviceOnPrem
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
 
+        $this->certificateProfileStore = new CertificateProfileStore($this);
+        $this->certificateProfileStore->setName('certificateProfileStore');
+
+        $this->GPGatewayStore = new GPGatewayStore($this);
+        $this->GPGatewayStore->setName('GPGatewayStore');
+
+        $this->GPPortalStore = new GPPortalStore($this);
+        $this->GPPortalStore->setName('GPPortalStore');
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
+
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
@@ -474,6 +504,8 @@ class DeviceOnPrem
                 if( $debugLoadTime )
                     PH::print_DEBUG_loadtime("network");
                 $this->network->load_from_domxml($tmp);
+                // part 2: IKE / IPsec crypto profiles and gateways, tunnels, GlobalProtect, ... (as PANConf does)
+                $this->network->load_from_domxml_2($tmp);
             }
             //
         }
@@ -787,12 +819,54 @@ class DeviceOnPrem
             // End of address groups extraction
 
             //
+            // Extract LogProfile objects
+            //
+            $tmp2 = DH::findFirstElement('log-settings', $xml);
+            if( $tmp2 !== FALSE )
+            {
+                $tmp = DH::findFirstElement('profiles', $tmp2);
+                if( $tmp !== FALSE )
+                    $this->LogProfileStore->load_from_domxml($tmp);
+            }
+            // End of LogProfile extraction
+
+            //
             // Extract EDL objects
             //
             $tmp = DH::findFirstElement('external-list', $xml);
             if( $tmp !== FALSE )
                 $this->EDLStore->load_from_domxml($tmp);
             // End of EDL extraction
+
+            //
+            // Extract certificate, certificate-profile and ssl-tls-service-profile objects
+            //
+            $tmp = DH::findFirstElement('certificate', $xml);
+            if( $tmp !== FALSE )
+                $this->certificateStore->load_from_domxml($tmp);
+            $tmp = DH::findFirstElement('certificate-profile', $xml);
+            if( $tmp !== FALSE )
+                $this->certificateProfileStore->load_from_domxml($tmp);
+            $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+            if( $tmp !== FALSE )
+                $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+            // End of certificate extraction
+
+            //
+            // Extract GlobalProtect gateway / portal objects
+            //
+            $tmp_globalprotect = DH::findFirstElement('global-protect', $xml);
+            if( $tmp_globalprotect !== FALSE )
+            {
+                $tmp = DH::findFirstElement('global-protect-gateway', $tmp_globalprotect);
+                if( $tmp !== FALSE )
+                    $this->GPGatewayStore->load_from_domxml($tmp);
+                $tmp = DH::findFirstElement('global-protect-portal', $tmp_globalprotect);
+                if( $tmp !== FALSE )
+                    $this->GPPortalStore->load_from_domxml($tmp);
+            }
+            // End of GlobalProtect extraction
+
         }
 
 

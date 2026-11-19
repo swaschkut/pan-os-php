@@ -25,6 +25,7 @@ class SecurityRule extends RuleWithUserID
     use NegatableRule;
     use RulewithLogging;
     use RulewithSchedule;
+    use RuleDirectReferences;
 
     protected $action = self::ActionAllow;
 
@@ -70,6 +71,13 @@ class SecurityRule extends RuleWithUserID
 
     public $hipprofroot = null;
     protected $hipprofProfiles = null;
+
+    /**
+     * HIP profiles of the rule: field (PAN-OS < 10.0 'hip-profiles', else 'source-hip' / 'destination-hip')
+     * => list of array( 'name' => member, 'object' => HipProfilesProfile|null ); null for 'any' / 'no-hip' / not found
+     * @var array
+     */
+    public $hipProfileFields = array();
 
     /** @var AppRuleContainer */
     public $apps;
@@ -302,6 +310,8 @@ class SecurityRule extends RuleWithUserID
         else
             $this->extract_hip_profile_from_domxml( );
 
+        // references to the HIP profiles in all HIP fields
+        $this->extract_hip_references_from_domxml();
 
         // End of <hip-profiles>
 
@@ -505,26 +515,9 @@ class SecurityRule extends RuleWithUserID
                     }
                     else
                     {
-                        if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
-                            $sub = $this->owner->owner->owner;
-                        elseif( get_class( $this->owner->owner ) == "PANConf" || get_class( $this->owner->owner ) == "PanoramaConf" )
-                            $sub = $this->owner->owner;
-
-                        /** @var PanoramaConf|PANConf $sub */
-                        if( $tmp_store_name == 'AntiVirusProfileStore')
-                            $profile = $sub->AntiVirusPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'AntiSpywareProfileStore')
-                            $profile = $sub->AntiSpywarePredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'VulnerabilityProfileStore')
-                            $profile = $sub->VulnerabilityPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'FileBlockingProfileStore' )
-                            $profile = $sub->FileBlockingPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'WildfireProfileStore' )
-                            $profile = $sub->WildfirePredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'URLProfileStore' )
-                            $profile = $sub->UrlFilteringPredefinedStore->find( $firstE->textContent );
-                        elseif( $tmp_store_name == 'DataFilteringProfileStore' )
-                            $profile = $sub->DataFilteringPredefinedStore->find( $firstE->textContent );
+                        $predefinedStore = SecurityProfileStore::getPredefinedStore( $this->owner->owner, $tmp_store_name );
+                        if( $predefinedStore !== null )
+                            $profile = $predefinedStore->find( $firstE->textContent );
 
                         if( $profile != null )
                         {
@@ -537,21 +530,8 @@ class SecurityRule extends RuleWithUserID
                             //todo: not an object - default object not yet created
                             mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' StoreName: '".$tmp_store_name."' not found.", null, false );
 
-                            if( $tmp_store_name == 'AntiVirusProfileStore')
-                                $profile = $sub->AntiVirusPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'AntiSpywareProfileStore')
-                                $profile = $sub->AntiSpywarePredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'VulnerabilityProfileStore')
-                                $profile = $sub->VulnerabilityPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'FileBlockingProfileStore' )
-                                $profile = $sub->FileBlockingPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'WildfireProfileStore' )
-                                $profile = $sub->WildfirePredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'URLProfileStore' )
-                                $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
-                            elseif( $tmp_store_name == 'DataFilteringProfileStore' )
-                                $profile = $sub->DataFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
-
+                            if( $predefinedStore !== null )
+                                $profile = $predefinedStore->createSPTmp( $firstE->textContent, $this );
 
                             if( $profile !== null )
                             {
@@ -596,6 +576,38 @@ class SecurityRule extends RuleWithUserID
     public function securityProfileType()
     {
         return $this->secproftype;
+    }
+
+    /**
+     * The profile group was not found while loading (only its name is kept): look it up again in the
+     * store of $location only (e.g. SCM 'All' for a rule in a snippet, once 'All' is loaded), or in the
+     * rule's own location when $location is null.
+     * @return bool TRUE when the rule now points to a profile group object
+     */
+    public function resolveNameOnlySecurityProfileGroup( $location = null ): bool
+    {
+        if( $this->secproftype != 'group' || $this->secprofgroup_obj !== null || $this->secprofgroup === null || $this->secprofgroup === '' )
+            return FALSE;
+        if( $location === null )
+            $location = ( $this->owner !== null ) ? $this->owner->owner : null;
+        if( $location === null || !isset($location->securityProfileGroupStore) || $location->securityProfileGroupStore === null )
+            return FALSE;
+
+        $group = $location->securityProfileGroupStore->find( $this->secprofgroup, null, FALSE );
+        if( !is_object( $group ) )
+            return FALSE;
+
+        $this->secprofgroup_obj = $group;
+        $group->addReference( $this );
+        return TRUE;
+    }
+
+    /** the profile group name when the rule has no profile group object for it (name only), else null */
+    public function nameOnlySecurityProfileGroup()
+    {
+        if( $this->secproftype != 'group' || $this->secprofgroup_obj !== null || $this->secprofgroup === null || $this->secprofgroup === '' )
+            return null;
+        return $this->secprofgroup;
     }
 
     public function securityProfileGroup()
@@ -926,6 +938,111 @@ class SecurityRule extends RuleWithUserID
             $this->hipprofProfiles[$prof->textContent] = $prof->textContent;
             #print PH::boldText("name: |".$prof->nodeName."| - |".$prof->textContent."|\n" );
         }
+    }
+
+    /** the HIP fields of this rule for its PAN-OS version */
+    public function hipProfileFieldNames(): array
+    {
+        if( $this->owner !== null && isset($this->owner->version) && $this->owner->version < 100 )
+            return array( 'hip-profiles' );
+        return array( 'source-hip', 'destination-hip' );
+    }
+
+    /** reads the members of the HIP fields and references the HIP profiles they name */
+    public function extract_hip_references_from_domxml(): void
+    {
+        $this->hipProfileFields = array();
+        if( $this->xmlroot === null )
+            return;
+
+        $location = ( $this->owner !== null && isset($this->owner->owner) ) ? $this->owner->owner : null;
+        $store = ( $location !== null && isset($location->HipProfilesProfileStore) ) ? $location->HipProfilesProfileStore : null;
+
+        foreach( $this->hipProfileFieldNames() as $field )
+        {
+            $node = DH::findFirstElement( $field, $this->xmlroot );
+            if( $node === FALSE )
+                continue;
+
+            $entries = array();
+            foreach( $node->childNodes as $member )
+            {
+                if( $member->nodeType != XML_ELEMENT_NODE )
+                    continue;
+                $name = $member->textContent;
+                $object = null;
+                if( $store !== null && $name !== 'any' && $name !== 'no-hip' )
+                {
+                    $found = $store->find( $name );
+                    if( is_object($found) && $found instanceof HipProfilesProfile )
+                    {
+                        $object = $found;
+                        $object->addReference( $this );
+                    }
+                }
+                $entries[] = array( 'name' => $name, 'object' => $object );
+            }
+            $this->hipProfileFields[$field] = $entries;
+        }
+    }
+
+    /** @return HipProfilesProfile[] the HIP profile objects used by this rule (all HIP fields) */
+    public function hipProfileObjects(): array
+    {
+        $ret = array();
+        foreach( $this->hipProfileFields as $entries )
+            foreach( $entries as $entry )
+                if( $entry['object'] !== null && !in_array( $entry['object'], $ret, TRUE ) )
+                    $ret[] = $entry['object'];
+        return $ret;
+    }
+
+    /**
+     * $old is replaced by $new in every HIP field (used by RuleDirectReferences)
+     * @return string[] the fields that changed
+     */
+    public function replaceHipProfileObject( $old, $new ): array
+    {
+        $changed = array();
+        foreach( $this->hipProfileFields as $field => $entries )
+        {
+            $hit = FALSE;
+            $newEntries = array();
+            $names = array();
+            foreach( $entries as $entry )
+            {
+                if( $entry['object'] === $old )
+                {
+                    $entry = array( 'name' => $new->name(), 'object' => $new );
+                    $hit = TRUE;
+                }
+                // the new profile may already be in the field: keep it once
+                if( isset($names[$entry['name']]) )
+                    continue;
+                $names[$entry['name']] = TRUE;
+                $newEntries[] = $entry;
+            }
+            if( !$hit )
+                continue;
+            $this->hipProfileFields[$field] = $newEntries;
+
+            $node = DH::findFirstElement( $field, $this->xmlroot );
+            if( $node !== FALSE )
+            {
+                DH::clearDomNodeChilds( $node );
+                foreach( $this->hipProfileFields[$field] as $entry )
+                    DH::createElement( $node, 'member', $entry['name'] );
+            }
+            // names used by display / filters of the first HIP field
+            if( $field === 'hip-profiles' || $field === 'source-hip' )
+            {
+                $this->hipprofProfiles = array();
+                foreach( $this->hipProfileFields[$field] as $entry )
+                    $this->hipprofProfiles[$entry['name']] = $entry['name'];
+            }
+            $changed[] = $field;
+        }
+        return $changed;
     }
 
     public function hipProfileIsBlank()
@@ -1900,6 +2017,11 @@ class SecurityRule extends RuleWithUserID
         $this->grouptag = null;
         $this->services = null;
         $this->apps = null;
+
+        // the deleted rule no longer uses its HIP profiles
+        foreach( $this->hipProfileObjects() as $hipProfile )
+            $hipProfile->removeReference( $this );
+        $this->hipProfileFields = array();
 
         $this->owner = null;
     }

@@ -159,6 +159,39 @@ class ThreatPolicy
      * @param ThreatPolicy[] $rules
      * @return string[]
      */
+    /**
+     * The rule applies to every threat: severity any (or none), host any, category any, no particular threat.
+     * Used when the BP / visibility JSON lists severity 'any': such a rule must be in the profile.
+     */
+    public function matchesEveryThreat(): bool
+    {
+        if( $this->namesParticularThreats() )
+            return FALSE;
+        if( !empty( $this->severity ) && !in_array( 'any', $this->severity, TRUE ) )
+            return FALSE;
+        if( ( $this->host ?? "any" ) !== "any" )
+            return FALSE;
+        if( ( $this->category ?? "any" ) !== "any" )
+            return FALSE;
+        return TRUE;
+    }
+
+    /**
+     * severity list of a BP / visibility JSON check; empty array: not listed (key missing or []) -> N/A
+     *  - 'any' alone: every severity is asked for (array('any'))
+     *  - 'any' beside single severities: only those severities are asked for, 'any' is dropped
+     *    (e.g. bp ["any","critical","high","medium"]: low / informational need visibility only, no BP)
+     */
+    public static function checkedSeverities( $checkArray ): array
+    {
+        if( !is_array($checkArray) || !isset($checkArray['severity']) || !is_array($checkArray['severity']) )
+            return array();
+        $severities = array_values( array_unique( $checkArray['severity'] ) );
+        if( in_array( 'any', $severities, TRUE ) && count( $severities ) > 1 )
+            $severities = array_values( array_diff( $severities, array( 'any' ) ) );
+        return $severities;
+    }
+
     public static function categoriesOf( $rules )
     {
         $categories = array( self::OTHER_CATEGORY );
@@ -395,7 +428,24 @@ class ThreatPolicy
         if( $this->analysis() !== null )
             $stringAnalysis = " - analysis:'".$this->analysis()."'";
 
-        $tmp_string = "'".$this->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
+        // vulnerability / anti-spyware rules (also predefined profiles): every match field, a field not set
+        // as PAN-OS reads it ('any', packet-capture 'disable'); vulnerability also host, cve and vendor-id
+        $stringCve = "";
+        $stringVendorID = "";
+        if( $this instanceof ThreatPolicyVulnerability || $this instanceof ThreatPolicySpyware )
+        {
+            $stringThreatName = " - threat-name:'".( $this->threatname() ?? "any" )."'";
+            $stringPacketCapture = " - packetCapture:'".( $this->packetCapture() ?? "disable" )."'";
+            $stringCategory = " - category:'".( $this->category() ?? "any" )."'";
+            if( $this instanceof ThreatPolicyVulnerability )
+            {
+                $stringHost = " - host:'".( $this->host() ?? "any" )."'";
+                $stringCve = " - cve:'".( empty( $this->cve() ) ? "any" : implode( ",", $this->cve() ) )."'";
+                $stringVendorID = " - vendor-id:'".( empty( $this->vendorID() ) ? "any" : implode( ",", $this->vendorID() ) )."'";
+            }
+        }
+
+        $tmp_string = "'".$this->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringCve.$stringVendorID.$stringDirection.$stringAnalysis;
 
         return $tmp_string;
     }

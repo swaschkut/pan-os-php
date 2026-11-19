@@ -200,9 +200,12 @@ class ThreatPolicyWildfire extends ThreatPolicy
         return TRUE;
     }
 
+    /** @return bool|null null: wildfire -> rule -> bp not listed in the JSON (N/A) */
     public function wildfire_rule_best_practice()
     {
         $check_array = $this->wildfire_rule_bp_visibility_JSON( "bp", "wildfire" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
         $bestpractise = $this->check_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -211,9 +214,12 @@ class ThreatPolicyWildfire extends ThreatPolicy
             return TRUE;
     }
 
+    /** @return bool|null null: wildfire -> rule -> visibility not listed in the JSON (N/A) */
     public function wildfire_rule_visibility()
     {
         $check_array = $this->wildfire_rule_bp_visibility_JSON( "visibility", "wildfire" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
         $bestpractise = $this->check_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)

@@ -382,6 +382,16 @@ ProfileCallContext::$supportedActions['display'] = array(
         PH::print_stdout( $tmp_txt );
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
+
+        if( get_class($object) == "HipProfilesProfile" && $object->xmlroot !== null )
+        {
+            $match = DH::findFirstElement('match', $object->xmlroot);
+            if( $match !== FALSE )
+            {
+                PH::print_stdout( "        match: " . $match->textContent );
+                PH::$JSON_TMP['sub']['object'][$object->name()]['match'] = $match->textContent;
+            }
+        }
     },
 );
 

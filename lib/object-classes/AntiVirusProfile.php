@@ -144,54 +144,16 @@ class AntiVirusProfile extends SecurityProfile2
 
 
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
-        {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-            )
-                return TRUE;
-            else
-                return FALSE;
-        }
-        else
-        {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-            )
-                return TRUE;
-            else
-                return FALSE;
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion)
+        return PH::bpCombine( array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
-        {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-            )
-                return TRUE;
-            else
-                return FALSE;
-        }
-        else
-        {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-            )
-                return TRUE;
-            else
-                return FALSE;
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion)
+        return PH::bpCombine( array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
     }
 
     public function is_adoption(): bool
@@ -271,5 +233,89 @@ class AntiVirusProfile extends SecurityProfile2
 </entry>
 ';
 
+
+    /**
+     * Base XML of the iron-skillet antivirus profiles
+     * (iron-skillet templates/panorama/snippets/profiles_virus.xml):
+     * 'Alert-Only-AV', 'Outbound-AV', 'Inbound-AV', 'Internal-AV',
+     * and 'Exception-AV' before iron-skillet 10.2.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        if( !in_array( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
+        {
+            derr( "iron-skillet antivirus profiles are not available for PAN-OS version '" . $version . "'", null, false );
+            return null;
+        }
+
+        $profiles = array(
+            'Alert-Only-AV' => 'alert',
+            'Outbound-AV' => 'reset-both',
+            'Inbound-AV' => 'reset-both',
+            'Internal-AV' => 'reset-both',
+        );
+
+        $xml = '<root>';
+        foreach( $profiles as $name => $action )
+            $xml .= '<entry name="' . $name . '">' . self::ironSkilletContentXml( $version, $action ) . '</entry>';
+
+        if( version_compare( $version, '10.2', '<' ) )
+            $xml .= '<entry name="Exception-AV">' . self::ironSkilletContentXml( $version, 'reset-both' )
+                . '</entry>';
+
+        return $xml . '</root>';
+    }
+
+    /**
+     * Decoder and ML-AV part of an iron-skillet antivirus profile, all with one action.
+     * Also used by VirusAndWildfireProfile.
+     * - 9.1 and later: decoder http2
+     * - 10.0 and later: mlav-action, and ML-AV models (11.1: + MachO, OOXML)
+     *   MSOffice and Shell come with the content updates (content 8434 / 8543) and work on PAN-OS 10.0 and later,
+     *   as the other models (predefined.xml: no minver); iron-skillet listed them in its 10.2 templates only.
+     *
+     * @param string $version iron-skillet PAN-OS version folder
+     * @param string $action 'alert' or 'reset-both'
+     * @return string
+     */
+    public static function ironSkilletContentXml( $version, $action )
+    {
+        $decoders = array( 'ftp', 'http', 'http2', 'imap', 'pop3', 'smb', 'smtp' );
+
+        if( version_compare( $version, '9.1', '<' ) )
+            $decoders = array_values( array_diff( $decoders, array( 'http2' ) ) );
+
+        $withMlav = version_compare( $version, '10.0', '>=' );
+
+        $xml = '<decoder>';
+        foreach( $decoders as $decoder )
+        {
+            $xml .= '<entry name="' . $decoder . '"><action>' . $action . '</action><wildfire-action>' . $action . '</wildfire-action>';
+            if( $withMlav )
+                $xml .= '<mlav-action>' . $action . '</mlav-action>';
+            $xml .= '</entry>';
+        }
+        $xml .= '</decoder>';
+
+        if( !$withMlav )
+            return $xml;
+
+        $models = array( 'Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2',
+            'Executable Linked Format', 'MSOffice', 'Shell' );
+        if( version_compare( $version, '11.1', '>=' ) )
+            $models = array_merge( $models, array( 'MachO', 'OOXML' ) );
+
+        $policyAction = ( $action == 'alert' ) ? 'enable(alert-only)' : 'enable';
+
+        $xml .= '<mlav-engine-filebased-enabled>';
+        foreach( $models as $model )
+            $xml .= '<entry name="' . $model . '"><mlav-policy-action>' . $policyAction . '</mlav-policy-action></entry>';
+        $xml .= '</mlav-engine-filebased-enabled>';
+
+        return $xml;
+    }
 }
 

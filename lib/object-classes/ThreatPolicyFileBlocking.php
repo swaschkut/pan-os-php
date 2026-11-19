@@ -257,9 +257,12 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
         return $bp;
     }
 
+    /** @return bool|null null: file-blocking -> rule -> bp not listed in the JSON (N/A) */
     public function fileblocking_rule_best_practice()
     {
         $check_array = $this->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
         $bestpractise = $this->check_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -268,9 +271,12 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
             return TRUE;
     }
 
+    /** @return bool|null null: file-blocking -> rule -> visibility not listed in the JSON (N/A) */
     public function fileblocking_rule_visibility()
     {
         $check_array = $this->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
         $bestpractise = $this->check_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)

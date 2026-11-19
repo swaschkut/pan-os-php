@@ -23,6 +23,7 @@
 class AppOverrideRule extends Rule
 {
     use NegatableRule;
+    use RuleDirectReferences;
 
     static public $templatexml = '<entry name="**temporarynamechangeme**"><from><member>any</member></from><to><member>any</member></to>
 <source><member>any</member></source><destination><member>any</member></destination><port></port><protocol>tcp</protocol><application></application></entry>';
