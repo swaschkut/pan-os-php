@@ -34,7 +34,8 @@ fields or references.
 
 ## Open
 
-1. **Panorama > Scheduled Config Push**: its xpath is still unknown – `deployment-update-schedule` turned out to be the
+1. **Panorama > Scheduled Config Push**: panorama-move finds it by element name (`PanoramaMove::SCHEDULED_PUSH_XPATH`,
+   2026-11-19: not transferred, report only); its xpath is still unknown – `deployment-update-schedule` turned out to be the
    dynamic update schedules (real configuration excerpt, 2026-11-17). Needed: an excerpt of a Panorama (10.1+) with a
    scheduled config push → registry entry, then panorama-move reports it like the dynamic update schedules.
    `config-bundle-export-schedule`: verify the element names with a real configuration (tests use an example)

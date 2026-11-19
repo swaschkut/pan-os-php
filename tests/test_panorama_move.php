@@ -474,6 +474,70 @@ $scenarios['panorama-settings'] = function() use ( $A, $Bclean, $work ) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// concept 11.3 / 11.6: scheduled config push and auto-push / to-sw-version are not transferred, only reported
+
+$scenarios['push-not-transferred'] = function() use ( $A, $Bclean, $work ) {
+    $d = new DOMDocument();
+    $d->load( $A );
+    $x = new DOMXPath( $d );
+    // moved firewall (testDG): auto push + upgrade; kept firewall: auto push off
+    $m = $x->query("/config/mgt-config/devices/entry[@name='007100000290']")->item(0);
+    $m->appendChild( $d->createElement('auto-push', 'yes') );
+    $m->appendChild( $d->createElement('to-sw-version', '11.1.6') );
+    $x->query("/config/mgt-config/devices/entry[@name='000000000101']")->item(0)->appendChild( $d->createElement('auto-push', 'no') );
+    // scheduled config push - the xpath is not documented, element name with "push" and "schedul" below the Panorama entry
+    $f = new DOMDocument();
+    $f->loadXML( '<scheduled-config-push>'
+        . '<entry name="weekly-push"><disabled>no</disabled><recurring><weekly><day-of-week>sunday</day-of-week><at>02:00</at></weekly></recurring>'
+        . '<device-group><member>testDG</member></device-group>'
+        . '<devices><member>007100000290</member><member>000000000101</member></devices></entry>'
+        . '<entry name="only-kept"><disabled>no</disabled><devices><member>000000000101</member></devices></entry>'
+        . '<entry name="only-moved"><disabled>yes</disabled><devices><member>007100000290</member></devices></entry>'
+        . '</scheduled-config-push>' );
+    $x->query("/config/devices/entry[@name='localhost.localdomain']")->item(0)->appendChild( $d->importNode($f->documentElement, TRUE) );
+    $file1 = $work . '/panorama-move-A-push.xml';
+    $d->save( $file1 );
+
+    list( $rc, $p, $dir ) = run( 'push', array( 'testDG' ), array( 'file1=' . $file1, 'file2=' . $Bclean ) );
+    eq( $rc, 0, 'check run - exit code' );
+    $sp = byName( isset($p['scheduled_config_push_not_transferred']) ? $p['scheduled_config_push_not_transferred'] : array(), 'entry' );
+    eq( array_keys($sp), array( 'weekly-push', 'only-kept', 'only-moved' ), 'plan.json: all scheduled pushes of file1 listed' );
+    eq( isset($sp['weekly-push']) ? $sp['weekly-push']['references'] : null, array( 'device group testDG', 'firewall 007100000290' ), 'plan.json: references of weekly-push' );
+    eq( isset($sp['only-kept']) ? $sp['only-kept']['references'] : null, array(), 'plan.json: only-kept without moved items' );
+    eq( isset($sp['weekly-push']) ? $sp['weekly-push']['path'] : null, 'devices/entry[localhost.localdomain]/scheduled-config-push', 'plan.json: path' );
+    eq( count(findings($p, 'warning', 'scheduled config push')), 2, 'two warnings (schedules with moved items)' );
+    eq( count(findings($p, 'info', 'scheduled config push')), 1, 'one info (schedule without moved items)' );
+    eq( isset($p['device_settings_not_transferred']['007100000290']) ? $p['device_settings_not_transferred']['007100000290'] : null,
+        array( 'auto-push' => 'yes', 'to-sw-version' => '11.1.6' ), 'plan.json: settings of the moved firewall' );
+    check( !isset($p['device_settings_not_transferred']['000000000101']), 'plan.json: kept firewall not listed' );
+    eq( count(findings($p, 'warning', 'firewall setting')), 2, 'warnings auto-push yes / to-sw-version' );
+    $rep = (string)@file_get_contents( $dir . '/report/REPORT.md' );
+    check( strpos($rep, '## Scheduled config push of file1 (not transferred)') !== FALSE && strpos($rep, 'only-kept') !== FALSE, 'REPORT.md: scheduled push section' );
+    check( strpos($rep, '## Firewall settings not transferred') !== FALSE && strpos($rep, '11.1.6') !== FALSE, 'REPORT.md: firewall settings section' );
+    $fu = (string)@file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
+    check( strpos($fu, 'Auto Push on 1st Connect') !== FALSE && strpos($fu, 'To SW Version') !== FALSE, 'follow-up: firewall settings' );
+    check( strpos($fu, 'Scheduled config push `weekly-push`') !== FALSE && strpos($fu, '`only-kept`') === FALSE, 'follow-up: only schedules with moved items' );
+
+    list( $rc, $p, $dir ) = run( 'push-exec', array( 'testDG' ), array( 'file1=' . $file1, 'file2=' . $Bclean, 'mode=execute' ) );
+    eq( $rc, 0, 'execute - exit code' );
+    $b = xp( $dir . '/B.xml' );
+    eq( cnt($b, "/config/mgt-config/devices/entry[@name='007100000290']"), 1, 'file2: firewall transferred' );
+    eq( cnt($b, "/config/mgt-config/devices/entry[@name='007100000290']/auto-push"), 0, 'file2: auto-push not transferred' );
+    eq( cnt($b, "/config/mgt-config/devices/entry[@name='007100000290']/to-sw-version"), 0, 'file2: to-sw-version not transferred' );
+    eq( cnt($b, "//scheduled-config-push"), 0, 'file2: scheduled config push not transferred' );
+    $a = xp( $dir . '/A.xml' );
+    $w = "//scheduled-config-push/entry[@name='weekly-push']";
+    eq( cnt($a, $w . "/devices/member"), 1, 'file1: moved firewall removed from weekly-push' );
+    eq( txt($a, $w . "/devices/member"), '000000000101', 'file1: kept firewall stays in weekly-push' );
+    eq( cnt($a, $w . "/device-group/member[.='testDG']"), 0, 'file1: moved device group removed from weekly-push' );
+    eq( cnt($a, "//scheduled-config-push/entry[@name='only-kept']/devices/member"), 1, 'file1: only-kept unchanged' );
+    eq( cnt($a, "/config/mgt-config/devices/entry[@name='000000000101']/auto-push"), 1, 'file1: kept firewall keeps auto-push' );
+    $fu = (string)@file_get_contents( $dir . '/report/MIGRATION_FOLLOWUP.md' );
+    check( strpos($fu, 'Empty member list') !== FALSE && strpos($fu, 'scheduled config push only-moved') !== FALSE
+        && strpos($fu, 'scheduled config push weekly-push: devices') === FALSE, 'follow-up: empty member lists (only-moved device list, weekly-push device group)' );
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // arguments
 
 $scenarios['arguments'] = function() use ( $A, $Bclean ) {

@@ -92,6 +92,29 @@ class PanoramaMove
     /** plugins of file1 referencing moved names / firewalls: plugin => [refs] */
     public $plugins = array();
     /**
+     * settings of the moved firewalls in mgt-config/devices that are NOT transferred to file2 (concept 11.6):
+     * serial => [field => file1 value] - report + follow-up only
+     */
+    public $deviceSettings = array();
+    /**
+     * Panorama > Scheduled Config Push of file1 (concept 11.3) - never transferred to file2, listed in the report:
+     * list of array( path, entry, references => ["kind name"] ); references to moved items are removed in out1
+     */
+    public $scheduledPush = array();
+    /** scheduled config push entries of file1 (DOMElement), same order as $scheduledPush */
+    private $scheduledPushNodes = array();
+
+    /**
+     * fields of mgt-config/devices/entry of a moved firewall that are not copied to file2: "Auto Push on 1st Connect"
+     * would push the transferred configuration before it is reviewed, "To SW Version" can start an upgrade on connect
+     */
+    const DEVICE_SETTINGS_NOT_TRANSFERRED = array( 'auto-push', 'to-sw-version' );
+    /**
+     * element names of the scheduled config push: the xpath is not documented - every Panorama element whose name
+     * contains both parts (e.g. push-schedule, scheduled-config-push) outside shared / device groups / templates
+     */
+    const SCHEDULED_PUSH_XPATH = "/config//*[contains(local-name(),'push') and contains(local-name(),'schedul')][not(ancestor::shared) and not(ancestor::device-group) and not(ancestor::template) and not(ancestor::template-stack) and not(ancestor::readonly)][not(ancestor::*[contains(local-name(),'push') and contains(local-name(),'schedul')])]";
+    /**
      * Panorama settings of file1 (config sections of utils/common/config_sections.json with references, e.g.
      * deployment-update-schedule) whose entries reference moved device groups / templates / stacks / firewalls:
      * list of array( section, entry, references => ["kind name"] ) - not transferred, report + follow-up
@@ -605,6 +628,7 @@ class PanoramaMove
         $this->collectShared();
         $this->previewRewrites();
         $this->collectSecrets();
+        $this->checkDeviceSettings();
         $this->checkOtherReferences();
         $this->checkUnresolved();
         $this->verifyEffectiveRulebase();
@@ -1267,16 +1291,113 @@ class PanoramaMove
                 }
         }
         $this->checkConfigSections();
+        $this->checkScheduledPush();
     }
 
-    /** Panorama settings with entries that reference moved names / firewalls (concept 7 / 11.3), e.g. deployment-update-schedule */
-    private function checkConfigSections()
+    /** names of the relevant device groups / templates / stacks and the moved firewalls: kind => [name => TRUE] */
+    private function movedNames()
     {
         $moved = array( 'device group' => array(), 'template' => array(), 'template stack' => array(), 'firewall' => array() );
         foreach( $this->dgAction as $n => $a ) $moved['device group'][$n] = TRUE;
         foreach( $this->templateAction as $n => $a ) $moved['template'][$n] = TRUE;
         foreach( $this->stackAction as $n => $a ) $moved['template stack'][$n] = TRUE;
         foreach( array_keys($this->devices) as $s ) $moved['firewall'][(string)$s] = TRUE;
+        return $moved;
+    }
+
+    /**
+     * concept 11.6: "Auto Push on 1st Connect" (auto-push) and "To SW Version" (to-sw-version) of the moved firewalls
+     * are not transferred (removed from the copy in file2) - listed in the report and the follow-up
+     */
+    private function checkDeviceSettings()
+    {
+        $this->deviceSettings = array();
+        $mgtA = self::mgtDevices( $this->A );
+        foreach( array_keys($this->devices) as $s )
+        {
+            if( !isset($mgtA[$s]) )
+                continue;
+            foreach( self::DEVICE_SETTINGS_NOT_TRANSFERRED as $field )
+                foreach( $mgtA[$s]->getElementsByTagName($field) as $e )
+                {
+                    $v = trim( $e->textContent );
+                    $this->deviceSettings[(string)$s][$field] = $v;
+                    if( $field == 'auto-push' )
+                        $this->finding( $v == 'yes' ? 'warning' : 'info', 'firewall setting', $s . ' auto-push', 'Auto Push on 1st Connect: ' . $v, 'not transferred',
+                            $v == 'yes' ? 'Panorama B does not push on the first connect - push manually after the review, enable it again in Panorama B if wanted (MIGRATION_FOLLOWUP.md)' : 'nothing to do' );
+                    else
+                        $this->finding( $v !== '' ? 'warning' : 'info', 'firewall setting', $s . ' to-sw-version', 'To SW Version: ' . ( $v !== '' ? $v : '(empty)' ), 'not transferred',
+                            'no upgrade on the connect to Panorama B - set it again in Panorama B if the upgrade is still planned (MIGRATION_FOLLOWUP.md)' );
+                    break;
+                }
+        }
+    }
+
+    /**
+     * concept 11.3: Panorama > Scheduled Config Push of file1 - never transferred to file2. Every entry is listed in the
+     * report (present in file1), entries referencing moved device groups / templates / stacks / firewalls are warnings,
+     * these references are removed in out1 on execute. The xpath is not documented: SCHEDULED_PUSH_XPATH.
+     */
+    private function checkScheduledPush()
+    {
+        $this->scheduledPush = array();
+        $this->scheduledPushNodes = array();
+        $moved = $this->movedNames();
+        $x = new DOMXPath( $this->A->xmldoc );
+        foreach( $x->query( self::SCHEDULED_PUSH_XPATH ) as $c )
+        {
+            $path = self::relPath( $c, $this->A->xmldoc->documentElement );
+            $entries = self::entries( $c );
+            if( !count($entries) )
+                $entries = array( '-' => $c );
+            foreach( $entries as $en => $e )
+            {
+                $refs = array();
+                foreach( ConfigSection::references( $e, $moved ) as $r )
+                    $refs[] = $r['kind'] . ' ' . $r['name'];
+                $this->scheduledPush[] = array( 'path' => $path, 'entry' => (string)$en, 'references' => $refs );
+                $this->scheduledPushNodes[] = $e;
+                if( count($refs) )
+                    $this->finding( 'warning', 'scheduled config push', (string)$en, 'references ' . implode(', ', $refs), 'not transferred',
+                        'create a schedule in Panorama B if needed (Panorama > Scheduled Config Push); the moved items are removed from it in file1 (MIGRATION_FOLLOWUP.md)' );
+                else
+                    $this->finding( 'info', 'scheduled config push', (string)$en, 'present (' . $path . '), no moved item', 'not transferred', 'stays on Panorama A' );
+            }
+        }
+    }
+
+    /**
+     * remove member values / entries naming removed device groups / templates / stacks or moved firewalls below $e
+     * (Panorama settings of file1); $label is used in the stats
+     */
+    private function removeMovedRefs( DOMElement $e, $label, array $removedNames )
+    {
+        $ex = new DOMXPath( $e->ownerDocument );
+        foreach( iterator_to_array( $ex->query('.//member', $e) ) as $m )
+            if( in_array(trim($m->textContent), $removedNames, TRUE) || isset($this->devices[trim($m->textContent)]) )
+            {
+                $this->stats['file1_config_sections_removed'][] = $label . ': ' . trim($m->textContent);
+                $list = $m->parentNode;
+                $list->removeChild( $m );
+                // a member list without members (e.g. devices of a dynamic update schedule) is not valid
+                if( DH::firstChildElement($list) === FALSE )
+                    $this->stats['file1_config_sections_empty'][] = $label . ': ' . self::relPath( $list, $e );
+            }
+        foreach( iterator_to_array( $ex->query('.//entry[@name]', $e) ) as $n )
+            if( in_array($n->getAttribute('name'), $removedNames, TRUE) || isset($this->devices[$n->getAttribute('name')]) )
+            {
+                $this->stats['file1_config_sections_removed'][] = $label . ': ' . $n->getAttribute('name');
+                $p = $n->parentNode;
+                $p->removeChild( $n );
+                if( DH::firstChildElement($p) === FALSE )
+                    $this->stats['file1_config_sections_empty'][] = $label . ': ' . self::relPath( $p, $e );
+            }
+    }
+
+    /** Panorama settings with entries that reference moved names / firewalls (concept 7 / 11.3), e.g. deployment-update-schedule */
+    private function checkConfigSections()
+    {
+        $moved = $this->movedNames();
         foreach( ConfigSection::registry() as $name => $def )
         {
             if( empty($def['references']) || !in_array('panorama', $def['scope'], TRUE) )
@@ -1747,6 +1868,10 @@ class PanoramaMove
             {
                 $n = $this->importInto( $mgtB, $mgtA[$s] );
                 if( $strip ) $removed += self::stripSecrets( $n );
+                // concept 11.6: auto-push / to-sw-version are not transferred (report + follow-up)
+                foreach( self::DEVICE_SETTINGS_NOT_TRANSFERRED as $field )
+                    foreach( iterator_to_array( $n->getElementsByTagName($field) ) as $e )
+                        $e->parentNode->removeChild( $e );
             }
         // readonly containers needed by createDeviceGroup / createTemplate / createTemplateStack
         if( $B->version >= 80 )
@@ -1905,24 +2030,12 @@ class PanoramaMove
             $e = ConfigSection::entry( ConfigSection::container( $A->xmldoc, ConfigSection::section($cs['section']) ), $cs['entry'] );
             if( $e === null )
                 continue;
-            $ex = new DOMXPath( $A->xmldoc );
-            foreach( iterator_to_array( $ex->query('.//member', $e) ) as $m )
-                if( in_array(trim($m->textContent), $removedNames, TRUE) || isset($this->devices[trim($m->textContent)]) )
-                {
-                    $this->stats['file1_config_sections_removed'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . trim($m->textContent);
-                    $list = $m->parentNode;
-                    $list->removeChild( $m );
-                    // a member list without members (e.g. devices of a dynamic update schedule) is not valid
-                    if( DH::firstChildElement($list) === FALSE )
-                        $this->stats['file1_config_sections_empty'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . self::relPath( $list, $e );
-                }
-            foreach( iterator_to_array( $ex->query('.//entry[@name]', $e) ) as $n )
-                if( in_array($n->getAttribute('name'), $removedNames, TRUE) || isset($this->devices[$n->getAttribute('name')]) )
-                {
-                    $this->stats['file1_config_sections_removed'][] = $cs['section'] . ' ' . $cs['entry'] . ': ' . $n->getAttribute('name');
-                    $n->parentNode->removeChild( $n );
-                }
+            $this->removeMovedRefs( $e, $cs['section'] . ' ' . $cs['entry'], $removedNames );
         }
+        // scheduled config push (concept 11.3): not transferred, references to moved items removed
+        foreach( $this->scheduledPush as $i => $sp )
+            if( count($sp['references']) && isset($this->scheduledPushNodes[$i]) && $this->scheduledPushNodes[$i]->parentNode !== null )
+                $this->removeMovedRefs( $this->scheduledPushNodes[$i], 'scheduled config push ' . $sp['entry'], $removedNames );
         // 4 shared objects of the relevant set that are no longer referenced (fixed point)
         $cand = array();
         foreach( $this->sharedObjects as $k => $o )
@@ -2021,6 +2134,8 @@ class PanoramaMove
             'access_domains' => $this->accessDomains, 'log_collector_groups' => $this->logCollectorGroups, 'plugins' => $this->plugins,
             'master_devices_not_moved' => $this->masterDevices,
             'panorama_settings_referencing_moved' => $this->configSections,
+            'scheduled_config_push_not_transferred' => $this->scheduledPush,
+            'device_settings_not_transferred' => (object)$this->deviceSettings,
             'content' => $this->content,
             'effective_rulebase' => $this->rulebaseCheckSkipped !== null ? array( 'skipped' => $this->rulebaseCheckSkipped ) : $this->rulebaseCheck,
             'shared_rule_impact' => $this->ruleImpact, 'findings' => $this->findings, 'stats' => $this->stats );
@@ -2135,6 +2250,17 @@ class PanoramaMove
             $o .= $li( "Plugin " . $code($pl) . " references " . implode(', ', array_unique($refs)) . " – configure it in Panorama B" );
         foreach( $this->masterDevices as $dg => $s )
             $o .= $li( "Device group " . $code($dgB($dg)) . ": master device " . $s . " is not moved – choose a moved firewall (User-ID)" );
+        foreach( $this->scheduledPush as $sp )
+            if( count($sp['references']) )
+                $o .= $li( "Scheduled config push " . $code($sp['entry']) . " of Panorama A (" . $code($sp['path']) . ") references " . implode(', ', $sp['references'])
+                    . " – not transferred: create a schedule in Panorama B if needed (Panorama > Scheduled Config Push)" );
+        foreach( $this->deviceSettings as $s => $fields )
+        {
+            if( isset($fields['auto-push']) && $fields['auto-push'] == 'yes' )
+                $o .= $li( "Firewall " . $s . ": *Auto Push on 1st Connect* was enabled on Panorama A – not transferred; push manually after the review in Panorama B, enable it again in Panorama B if wanted" );
+            if( isset($fields['to-sw-version']) && $fields['to-sw-version'] !== '' )
+                $o .= $li( "Firewall " . $s . ": *To SW Version* " . $code($fields['to-sw-version']) . " was set on Panorama A – not transferred; set it again in Panorama B if the upgrade is still planned" );
+        }
         $o .= "\n";
 
         // 3
@@ -2179,9 +2305,15 @@ class PanoramaMove
             $o .= $li( "**Empty member list** in " . $code($out1) . " after removing the moved firewalls: " . implode('; ', $this->stats['file1_config_sections_empty'])
                 . " – the commit on Panorama A fails: delete the entry (" . $code('pan-os-php type=config-section … entry=<name> actions=delete') . ") or add other firewalls" );
         elseif( $mode != 'execute' )
+        {
             foreach( $this->configSections as $cs )
                 $o .= $li( "Panorama setting " . $code($cs['section']) . " " . $code($cs['entry']) . ": references to " . implode(', ', $cs['references'])
                     . " of moved items are removed in out1 on execute (copied device groups / templates stay)" );
+            foreach( $this->scheduledPush as $sp )
+                if( count($sp['references']) )
+                    $o .= $li( "Scheduled config push " . $code($sp['entry']) . ": references to " . implode(', ', $sp['references'])
+                        . " of moved items are removed in out1 on execute (copied device groups / templates stay)" );
+        }
         foreach( $this->plugins as $pl => $refs )
             $o .= $li( "Plugin " . $code($pl) . " of Panorama A still references " . implode(', ', array_unique($refs)) . " – remove the moved entries (not changed by panorama-move)" );
         foreach( $this->logCollectorGroups as $g => $serials )
@@ -2332,6 +2464,15 @@ class PanoramaMove
                 $f2 = $p['action'] == 'replace' ? $p['new'] : ( $p['action'] == 'remove' ? 'removed' : ( $p['action'] == 'variable' ? 'unchanged (variable)' : 'unchanged – still Panorama A' ) );
                 return array( $p['location'], $p['field'], $p['value'], $f2, $p['path'] ); }, $this->panoramaSettings ) )
             : "none" . ( $this->panoramaIp !== null ? " – panorama-ip " . implode(', ', $this->panoramaIp) . " not used, set it on the firewalls" : '' ) . "\n\n";
+        $o .= "## Scheduled config push of file1 (not transferred)\n\n";
+        $o .= count($this->scheduledPush) ? self::table( array( 'schedule', 'path in file1', 'references to moved items', 'file2' ), array_map( function($sp){
+                return array( $sp['entry'], $sp['path'], count($sp['references']) ? implode(', ', $sp['references']) : '-', 'not transferred' ); }, $this->scheduledPush ) )
+            : "none found in file1\n\n";
+        $o .= "## Firewall settings not transferred (Auto Push on 1st Connect, To SW Version)\n\n";
+        $rows = array();
+        foreach( $this->deviceSettings as $s => $fields )
+            $rows[] = array( $s, isset($fields['auto-push']) ? $fields['auto-push'] : '-', isset($fields['to-sw-version']) ? ( $fields['to-sw-version'] !== '' ? $fields['to-sw-version'] : '(empty)' ) : '-', 'not transferred' );
+        $o .= count($rows) ? self::table( array( 'serial', 'auto-push (file1)', 'to-sw-version (file1)', 'file2' ), $rows ) : "none set on the moved firewalls\n\n";
         $o .= "Follow-up steps (Panorama B, per firewall, Panorama A): MIGRATION_FOLLOWUP.md\n\n";
         $o .= "## Shared settings (blocks without named objects, apply to all device groups)\n\n";
         $rows = array();

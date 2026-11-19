@@ -56,6 +56,18 @@ Exit code: 0 ok, 2 blocking findings.
   `panorama_settings_referencing_moved`, follow-up with `pan-os-php type=config-section … actions=get:set` to recreate
   them in Panorama B; execute removes the references to moved items from these entries in file1 (not transferred) and
   lists member lists that become empty (commit on Panorama A would fail)
+* **Scheduled config push** (Panorama > Scheduled Config Push, concept 11.3): **never transferred**. Every schedule of
+  file1 is listed in `REPORT.md` (section *Scheduled config push of file1*) and in `plan.json`
+  `scheduled_config_push_not_transferred`; schedules that reference moved device groups / templates / stacks /
+  firewalls → warning + follow-up (create a schedule in Panorama B if needed), the others → info. Execute removes the
+  references to moved items in file1 like for the Panorama settings above. The xpath is not documented: found by
+  element name (contains `push` and `schedul`, outside shared / device groups / templates) – verify with a real
+  configuration
+* **Firewall settings** `auto-push` (*Auto Push on 1st Connect*) and `to-sw-version` (*To SW Version*) of the moved
+  firewalls (`mgt-config/devices`, concept 11.6): **not transferred** – removed from the copy in file2, the file1 values
+  are listed in `REPORT.md` (section *Firewall settings not transferred*) and `plan.json`
+  `device_settings_not_transferred`; `auto-push yes` / a set `to-sw-version` → warning + follow-up (Panorama B would
+  otherwise push / upgrade on the first connect, before the configuration is reviewed)
 * **content** (App-ID / threats): applications (also inside application groups) and the threat IDs of the threat
   exceptions of vulnerability / anti-spyware profiles. Unknown to pan-os-php (neither custom nor predefined) → warning
   `content` (typo or newer content); the predefined applications / threat IDs used are listed in `plan.json`
@@ -81,7 +93,8 @@ Device groups, templates, template stacks and managed devices are copied as comp
 pan-os-php does not model (new rule types, template network / device settings, variables, new features). pan-os-php
 only creates the empty container (readonly id, parent-dg); the device lists keep the moved firewalls. Shared objects
 are found generically (every `entry[@name]` below shared), whatever the type. Not transferred (reported): access
-domains / admins, log collector groups, plugins, WildFire appliances, Panorama's own device configuration.
+domains / admins, log collector groups, plugins, WildFire appliances, scheduled config push, Panorama's own device
+configuration; of the managed devices `auto-push` and `to-sw-version`.
 
 ## Execute
 
@@ -181,7 +194,8 @@ stack / shared template, multi-vsys firewall, name conflicts with `conflict=stop
 rules / shared objects (incl. cascade) and for templates / stacks / copied shared rules, rename target taken,
 ambiguous local object, `master-key=different`, `panorama-ip` (both formats, secondary, variable), follow-up checklist,
 effective rule base (override in the target parent, renames, copied shared rules)
-(access domain / admin, log collector group, plugin, master device), invalid arguments. Every scenario checks plan.json, exit code, both
+(access domain / admin, log collector group, plugin, master device), scheduled config push and `auto-push` /
+`to-sw-version` not transferred (`push-not-transferred`), invalid arguments. Every scenario checks plan.json, exit code, both
 output XML files and that no encrypted value appears in a report.
 
 ## Limits (first version)
