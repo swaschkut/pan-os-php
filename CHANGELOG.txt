@@ -25,6 +25,7 @@ UTIL:
 * type=master-key | introduction | extend with actions=decrypt, actions=scrub
 * type=master-key | extend with flag 'cleartext'
 * prototype config-viewer | introduction
+* type=securityprofile | introduce actions=alert-only-set/best-practice-set
 
 BUGFIX:
 * SCM export after first production run / IAM patch

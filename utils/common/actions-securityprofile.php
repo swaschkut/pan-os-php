@@ -4990,7 +4990,7 @@ SecurityProfileCallContext::$supportedActions['virus-and-wildfire.alert-only-set
     },
 );
 SecurityProfileCallContext::$supportedActions['virus-and-wildfire.best-practice-set'] = array(
-    'name' => 'wildfire.best-practice-set',
+    'name' => 'virus-and-wildfire.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -5677,4 +5677,82 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         return false;
     }
+);
+
+/**
+ * Generic set-actions: alert-only-set / best-practice-set for every selected security profile.
+ * Which profiles are selected comes from securityprofiletype= (any, virus, spyware, vulnerability, url-filtering,
+ * file-blocking, wildfire-analysis, dns-security, virus-and-wildfire-analysis, ...); for each profile the action
+ * of its type is run (e.g. AntiSpywareProfile -> spyware.alert-only-set). Not supported: predefined profiles,
+ * profile types without such an action (data-filtering, custom-url-category, saas-security, ...) -> SKIPPED.
+ *   pan-os-php type=securityprofile securityprofiletype=any actions=alert-only-set
+ *   pan-os-php type=securityprofile securityprofiletype=spyware,vulnerability actions=best-practice-set
+ */
+SecurityProfileCallContext::$commonActionFunctions['sp-set-dispatch'] = array(
+    'function' => function ( SecurityProfileCallContext $context, string $mode )
+    {
+        $object = $context->object;
+
+        // class of the profile -> action prefix
+        $map = array(
+            'AntiVirusProfile' => 'virus',
+            'AntiSpywareProfile' => 'spyware',
+            'VulnerabilityProfile' => 'vulnerability',
+            'URLProfile' => 'url',
+            'FileBlockingProfile' => 'file-blocking',
+            'WildfireProfile' => 'wildfire',
+            'VirusAndWildfireProfile' => 'virus-and-wildfire',
+            'DNSSecurityProfile' => 'dns-security',
+        );
+
+        $class = get_class( $object );
+
+        // predefined URL categories (securityprofiletype=any includes them): not a profile, nothing to do
+        if( $class === "PredefinedSecurityProfileURL" )
+            return null;
+
+        if( is_object( $object->owner ) && method_exists( $object->owner, 'name' ) && str_contains( (string)$object->owner->name(), "redefined" ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "predefined profile of class " . $class . " can not be changed" );
+            return null;
+        }
+
+        if( !isset( $map[$class] ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "no " . $mode . " for profile class " . $class );
+            return null;
+        }
+
+        $actionName = $map[$class] . '.' . $mode;
+        if( !isset( SecurityProfileCallContext::$supportedActions[$actionName] ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "no action '" . $actionName . "' for profile class " . $class );
+            return null;
+        }
+
+        $f = SecurityProfileCallContext::$supportedActions[$actionName]['MainFunction'];
+        return $f( $context );
+    }
+);
+
+SecurityProfileCallContext::$supportedActions['alert-only-set'] = array(
+    'name' => 'alert-only-set',
+    'MainFunction' => function ( SecurityProfileCallContext $context ) {
+        $f = SecurityProfileCallContext::$commonActionFunctions['sp-set-dispatch']['function'];
+        return $f( $context, 'alert-only-set' );
+    },
+    'help' => "runs the alert-only-set action of the profile's type for every profile selected with securityprofiletype= "
+        . "(any: all types): virus, spyware, vulnerability, url, file-blocking, wildfire, virus-and-wildfire, dns-security. "
+        . "Predefined profiles and types without alert-only-set are skipped."
+);
+
+SecurityProfileCallContext::$supportedActions['best-practice-set'] = array(
+    'name' => 'best-practice-set',
+    'MainFunction' => function ( SecurityProfileCallContext $context ) {
+        $f = SecurityProfileCallContext::$commonActionFunctions['sp-set-dispatch']['function'];
+        return $f( $context, 'best-practice-set' );
+    },
+    'help' => "runs the best-practice-set action of the profile's type for every profile selected with securityprofiletype= "
+        . "(any: all types): virus, spyware, vulnerability, url, wildfire, virus-and-wildfire, dns-security. "
+        . "Predefined profiles and types without best-practice-set (e.g. file-blocking) are skipped."
 );
