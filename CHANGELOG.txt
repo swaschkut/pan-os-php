@@ -63,6 +63,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
 * bugfix VP / Spyware - to set local-inline to enable with alert-only-set
 * url.alert-only-set-no-empty-alert-allow-members
+* ancestor-objects-take-precedence-rule-filters
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes
