@@ -66,8 +66,14 @@ if( !$server )
     exit( 1 );
 }
 $servicePid = getmypid();
-register_shutdown_function( function() use ( $sockFile, $servicePid ) {
-    if( getmypid() === $servicePid && file_exists( $sockFile ) )
+$workers = array();
+register_shutdown_function( function() use ( $sockFile, $servicePid, &$workers ) {
+    if( getmypid() !== $servicePid )
+        return;
+    // the service stops: its workers stop too (each writes its unsaved changes to the recovery copy first)
+    foreach( array_keys( $workers ) as $pid )
+        posix_kill( $pid, SIGTERM );
+    if( file_exists( $sockFile ) )
         unlink( $sockFile );
 } );
 pcntl_async_signals( TRUE );
@@ -113,7 +119,8 @@ function serviceCheck( array $cmd, string $dataDir ): ?array
 
 while( TRUE )
 {
-    while( pcntl_waitpid( -1, $st, WNOHANG ) > 0 );
+    while( ( $done = pcntl_waitpid( -1, $st, WNOHANG ) ) > 0 )
+        unset( $workers[$done] );
 
     $read = array( $server );
     $write = null;
@@ -137,6 +144,7 @@ while( TRUE )
     if( $child === 0 )
     {
         // worker: nothing of the service stays open
+        $workers = array();
         fclose( $server );
         fclose( $conn );
         pcntl_signal( SIGTERM, SIG_DFL );
@@ -149,6 +157,8 @@ while( TRUE )
         require dirname(__FILE__) . '/worker.php';
         exit( 0 );
     }
+    if( $child > 0 )
+        $workers[$child] = TRUE;
     @fwrite( $conn, json_encode( array( 'ok' => $child > 0 ) ) );
     @fclose( $conn );
 }

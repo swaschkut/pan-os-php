@@ -64,6 +64,17 @@ use. Exception support exists (`useException()`, `enableExceptionSupport()`) but
   static call
 * [ ] 56 public properties: reduce to what the util classes really use from outside
 
+### 6. Added 2026-11-18: `UTIL::$sharedConfig`
+
+For the config-viewer prototype ([ui-config-in-browser.md](ui-config-in-browser.md)) `UTIL` can reuse a configuration
+that is already loaded in the same process (`inputValidation()`, `determineConfigType()`, `load_config()`,
+`__destruct()`; `null` = unchanged behaviour).
+
+* [ ] review the hook; with the type table (item 1) and exceptions instead of `exit()` (item 4) a clean
+  "run on a loaded configuration" entry point can replace it – the viewer then needs no forked trial run
+* [ ] `PH::$JSON_OUT` / `$JSON_TMP` / `$JSON_OUTlog` are static and must be reset by the caller between two runs in
+  one process (the worker does) – belongs into the entry point
+
 ## Order
 
 1 (type table) first – small, removes the double maintenance and is the base for per-type data in

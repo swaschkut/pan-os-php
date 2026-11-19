@@ -61,18 +61,77 @@ exists (adding a member); no audit log besides the version history; sessions are
 
 ## Run it (lab)
 
-Needs PHP ≥ 7.4 with `pdo_sqlite`; the PHP **CLI** also needs `pcntl` and `posix` (service / worker).
+Needs PHP ≥ 7.4 with `pdo_sqlite`; the PHP **CLI** also needs `pcntl` and `posix` (service / worker). Check:
 
 ```bash
-export PANOSPHP_VIEWER_DATA=/var/lib/pan-os-php-viewer     # outside the web root, readable only by the web server user
-cd utils/develop/config-viewer
-php bin/user.php add alice admin                            # first user (asks for the password)
-php bin/service.php &                                       # as the same OS user as the web server
-php -S 127.0.0.1:8080 -t .                                  # lab only; then http://127.0.0.1:8080/
+php -m | grep -E "pcntl|posix|pdo_sqlite"      # all three must be listed (Homebrew PHP on macOS has them)
 ```
 
+Two terminals; `PANOSPHP_VIEWER_DATA` must be **the same** in both.
+
+Terminal 1 – data directory, first user, service:
+
+```bash
+cd utils/develop/config-viewer
+export PANOSPHP_VIEWER_DATA=$HOME/pan-os-php-viewer-data    # outside the web root; path ≤ 60 characters
+php bin/user.php add alice admin                            # once; asks for the password (10+ characters)
+php bin/service.php                                         # stays in the foreground, prints "running"
+```
+
+Terminal 2 – web server (lab only):
+
+```bash
+cd utils/develop/config-viewer
+export PANOSPHP_VIEWER_DATA=$HOME/pan-os-php-viewer-data
+php -S 127.0.0.1:8080 -t .
+```
+
+Browser: `http://127.0.0.1:8080/` → log in → create a project → upload an XML configuration → click the file name.
+Stop: `Ctrl-C` in both terminals. Stopping the service stops its workers; a worker with unsaved changes writes its
+recovery copy first.
+
+Do not rely on the default data directory (`<parent of the repository>/pan-os-php-viewer-data`): the path must not
+be longer than 60 characters (limit of unix socket paths), and it must be outside the web root.
+
+More users: as admin in the UI (Account → Users), or `php bin/user.php add <name>`; also `password <name>`,
+`delete <name>` (deletes the projects the user owns), `list`.
+
 Behind Apache / nginx: publish only this folder (or the repository) over HTTPS, set `PANOSPHP_VIEWER_DATA` for the web
-server **and** the service, run the service as the web server user.
+server **and** the service, run the service as the web server user. With TLS at a reverse proxy set
+`PANOSPHP_VIEWER_TLS_PROXY=1`.
+
+### Using it
+
+1. **Projects** – "Create" makes a project that only you see. Open it by its name.
+2. **Members** (owner only) – user name + `read` or `write` → "Add / change"; "Remove" takes the access away at once.
+3. **Configuration versions** – upload an XML file (`write`); "Download" any version (`read`); "Delete" (`write`).
+   The column "How it was created" shows `upload`, the actions of a save, or `autosave (recovered …)`.
+4. **Viewer** (click a version) – choose type (and rule type / profile type), location, optionally a pan-os-php
+   filter, "Show". The first "Show" of a version loads it; after that lists come back in milliseconds, and a list
+   that was shown before comes from the browser cache ("Reload" asks the server again). Click a column to sort; the
+   quick filter searches the shown list in the browser.
+5. **Change** (`write`) – choose an action and its arguments, "Run on loaded configuration". The action runs on **all**
+   objects of the current type + location + pan-os-php filter (not the quick filter). The badge shows the number of
+   unsaved changes, the list below shows them, the log shows the pan-os-php output.
+6. **Save as new version** writes the loaded configuration to a new version and continues on it. **Discard changes**
+   drops them. "Auto save as version" (off / 5 / 10 min) saves by itself while there are unsaved changes.
+
+### Troubleshooting
+
+| Message | Cause |
+|---|---|
+| `the config-viewer service is not running` | `bin/service.php` is not started, or `PANOSPHP_VIEWER_DATA` differs between service and web server |
+| `config-viewer service: PHP CLI extensions pcntl and posix are needed` | PHP CLI without `pcntl` / `posix` |
+| `the path of the data directory is too long` | `PANOSPHP_VIEWER_DATA` longer than 60 characters |
+| `data directory is inside the web root` | choose a data directory outside the folder the web server publishes |
+| `HTTPS required` | plain HTTP from another machine; use HTTPS, or `PANOSPHP_VIEWER_ALLOW_HTTP=1` in a lab |
+| `the configuration could not be loaded` | pan-os-php could not load the file; the text after the colon is the end of the worker log (`<data>/projects/<id>/work/*.log`) |
+| `the loaded configuration is not reachable - open the version again` | the worker of the version stopped (idle timeout, restart); the next request starts a new one |
+| `too many failed logins` | 5 failed logins for this user name within 15 minutes |
+| `not found` on a project you expect to see | you are not a member (any more) – this is the answer for "no access" |
+| upload fails for a large file | `upload_max_filesize` / `post_max_size` of PHP, `PANOSPHP_VIEWER_MAX_UPLOAD_MB` |
+
+### Settings
 
 | Environment variable | Default | |
 |---|---|---|
@@ -85,11 +144,85 @@ server **and** the service, run the service as the web server user.
 | `PANOSPHP_VIEWER_ALLOW_HTTP` | – | `1` allows HTTP from other hosts (lab only) |
 | `PANOSPHP_VIEWER_TLS_PROXY` | – | `1` when TLS ends at a reverse proxy in front of PHP (cookie gets `Secure`); the proxy must be the only way in |
 
+## Reference
+
+### Data directory
+
+```
+<data>/viewer.sqlite                      users, projects, members, versions, sessions of loaded versions (mode 0600)
+<data>/service.sock                       socket of bin/service.php
+<data>/run/<id>.sock                      socket of one worker
+<data>/projects/<project id>/<id>.xml     one file per version (random name; label and history are in the DB)
+<data>/projects/<project id>/work/        per worker: <id>.pid, <id>.log, <id>.autosave.xml (recovery copy)
+```
+
+Backup = the whole data directory (stop the service first, or save / discard open changes). Deleting a project or a
+user in the UI / CLI removes the files.
+
+### API (`api.php/<route>`, JSON)
+
+Every route except `login` needs the session cookie; every route that is not `GET` needs the header `X-CSRF-Token`
+(value from `login` / `me`). Errors: `{"error": "…"}` with HTTP status 400 (input / pan-os-php error), 401 (login
+required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 429, 5xx.
+
+| Route | Method | Permission | Function |
+|---|---|---|---|
+| `login` | POST | – | body `user`, `password` → `user`, `admin`, `csrf` |
+| `logout` | POST | login | ends the session |
+| `me` | GET | login | `user`, `admin`, `csrf` |
+| `password` | POST | login | body `old`, `new` |
+| `meta` | GET | login | offered types with their actions (arguments, help) and filters, rule types, profile types |
+| `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
+| `users/<name>` | DELETE | admin | delete a user and the projects the user owns |
+| `projects` | GET / POST | login | own and shared projects / create (`name`) |
+| `projects/<pid>` | GET / DELETE | read / owner | project with own permission / delete |
+| `projects/<pid>/members` | GET / PUT | read / owner | list / add or change (`user`, `role` = `read` or `write`) |
+| `projects/<pid>/members/<name>` | DELETE | owner (or the member itself) | remove / leave |
+| `projects/<pid>/configs` | GET / POST | read / write | versions / upload (multipart field `config`) |
+| `projects/<pid>/configs/<cid>` | DELETE | write | delete a version |
+| `…/<cid>/download` | GET | read | the XML file |
+| `…/<cid>/objects` | GET | read | query `type`, `location`, `filter`, `ruletype`, `securityprofiletype` → `total`, `columns`, `rows`, `status`; starts the worker if needed |
+| `…/<cid>/status` | GET | read | `loaded`, `dirty`, `changes`, `saved`, `autosaved` (does not start a worker) |
+| `…/<cid>/change` | POST | write | body like `objects` plus `actions` → `processed`, `log`, `status` |
+| `…/<cid>/save` | POST | write | → `saved`, `cid` of the new version, `status` |
+| `…/<cid>/discard` | POST | write | drops unsaved changes (stops the worker) |
+
+### Processes
+
+```
+browser ──HTTPS──> api.php (ViewerApp) ──unix socket──> worker of the version   (configuration in memory)
+                         │                                   ▲
+                         └──unix socket──> bin/service.php ──┘ fork (only when a version is opened)
+```
+
+* `bin/service.php` accepts one request: start a worker for a version file. Every path of the request must be inside
+  one project folder of the data directory.
+* A worker answers `read`, `change`, `save`, `status`, `close` (one JSON line per connection). `read` runs in a forked
+  copy; `change` is tried in a forked copy and, when that worked, run on the real memory; `save` only writes a new
+  `<id>.xml` into the folder of its own project.
+* A worker stops after `PANOSPHP_VIEWER_IDLE_MIN` minutes without a request, on `discard`, when its version or
+  project is deleted, or when the service stops. Unsaved changes are then in `<id>.autosave.xml` and become a version
+  on the next request for that version.
+
+### Change in the pan-os-php library
+
+`UTIL::$sharedConfig` (`utils/lib/UTIL.php`): `null` by default = unchanged behaviour. A long running process sets it
+to `array( 'xmlDoc' => DOMDocument, 'pan' => null )`; the first `UTIL` run loads the configuration into `'pan'`, every
+later run in the same process reuses it instead of reading `in=` again, and `UTIL::__destruct()` leaves it alone.
+Used by `bin/worker.php` only.
+
+### Extending
+
+* another type: `ViewerApp::TYPES` (the type must be in `utils/lib/util_action_filter.json` and print its objects
+  with `actions=display` in `shadow-json`)
+* offered actions: every action of the type except `display`, the name patterns `ViewerApp::ACTION_DENY_NAME` and
+  actions with an argument matching `ViewerApp::ACTION_DENY_ARG`
+
 ## Test
 
 ```bash
 cd tests && php test_config_viewer.php
 ```
 
-96 checks: login, separation between users (every project route `404` without access), read / write / owner, CSRF,
-input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete.
+100 checks: login, separation between users (every project route `404` without access), read / write / owner, CSRF,
+input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

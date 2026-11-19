@@ -1,9 +1,11 @@
 # Web UI – keep the config in the browser, change and check it there
 
-**Status:** prototype implemented (2026-11-18): `utils/develop/config-viewer/` – way A (configuration loaded once, kept in
-memory on the server) + browser cache; see "Prototype" below. Open: decisions 1 and 3, follow-ups of the prototype
-**Code reference:** `alpha` `cba66bb`
-**Related:** [api-rest.md](api-rest.md) (pan-os-php API), `utils/develop/ui/` (existing web UI)
+**Status:** prototype implemented and committed (2026-11-18, `alpha` `fc157d4`): `utils/develop/config-viewer/` – way A
+(configuration loaded once, kept in memory on the server) + browser cache, see "Prototype" below. Decision 2 is taken;
+open: decisions 1 and 3 and the follow-ups of the prototype
+**Code reference:** `alpha` `fc157d4`
+**Related:** [api-rest.md](api-rest.md) (pan-os-php API), [util-class-refactoring.md](util-class-refactoring.md),
+`utils/develop/ui/` (existing web UI), [config-viewer README](../utils/develop/config-viewer/README.md)
 
 Goal: move away from the CLI. The configuration (Panorama, firewall, SCM) is loaded once, kept in memory, changes are
 made on it and checked directly in the UI (filter result, references, diff) before anything is written.
@@ -46,40 +48,81 @@ and is checked in the UI before it is written to the target.
 
 ## Prototype (2026-11-18): `utils/develop/config-viewer/`
 
-[README](../utils/develop/config-viewer/README.md), test `tests/test_config_viewer.php` (96 checks).
+Documentation: [README](../utils/develop/config-viewer/README.md) (how it works, security, run it, using it,
+troubleshooting, data directory, API routes, processes, extending). Test: `tests/test_config_viewer.php` (100 checks).
 
-What it does: login, projects per user, members with `read` / `write`, upload, object table for 8 types (filter by
-pan-os-php, sort / paging / quick filter in the browser), actions on the loaded configuration, save as new version,
-discard, auto save, recovery of unsaved changes.
+### Requirements (from the discussion) and state
 
-Decision taken for the prototype – **way A + browser cache**:
+| Requirement | State |
+|---|---|
+| user login | done: login required, `password_hash()`, lockout after 5 failed logins, session cookie `HttpOnly` / `SameSite=Strict`, CSRF token, HTTPS required (except loopback / lab switch) |
+| full separation | done: without access every project route answers 404; random ids; files under random names outside the web root |
+| every user can create projects | done |
+| further users can get access to a project | done: owner adds members by user name |
+| read is one permission, changing must be possible too | done: `read` (view, download), `write` (upload, change, save, discard, delete versions), `owner` (members, delete project) |
+| everything is loaded only once | done: one worker per opened version keeps the configuration in memory (`UTIL::$sharedConfig`); measured with `panorama-10.0-merger.xml`: first request about 2 s, further reads / changes 20–30 ms |
+| working in the browser uses a cache | done: every loaded list is cached in the browser (sort, paging, quick filter there); the server keeps the configuration in memory |
+| save writes the cache into a file | done: save = new version file, nothing is overwritten; discard drops the changes |
+| auto save every 5 / 10 min | done: in the UI off / 5 / 10 min (new version); plus recovery copy of unsaved changes by the worker (default 5 min, and when it stops) → version `autosave (recovered …)` |
 
-* the configuration is loaded **once** per opened version by a worker process and kept in memory
-  (`UTIL::$sharedConfig`, 5 guarded places in `utils/lib/UTIL.php`; default `null` = unchanged behaviour). Measured
-  with `panorama-10.0-merger.xml`: first request about 2 s, every further read / change about 20 ms
-* reads run in a forked copy of the worker, a change is tried in a forked copy first: `exit()` / `derr()` inside
-  pan-os-php can not stop or half-change the loaded configuration
+### How it is built
+
+* `api.php` + `lib/ViewerApp.php`: JSON API, SQLite (users, projects, members, versions), permission check in one
+  place (`ViewerApp::projectGet()`)
+* `bin/service.php`: the only process that starts workers; the web server process starts none
+* `bin/worker.php`: loads one version once; reads run in a forked copy, a change is tried in a forked copy first –
+  `exit()` / `derr()` inside pan-os-php can not stop or half-change the loaded configuration
   ([util-class-refactoring.md](util-class-refactoring.md) item 4 stays open, but does not block the viewer)
-* nothing is written until **save**; save = new version file (way B history without git)
-* the browser keeps every loaded list (cache per query)
+* `index.html` / `app.js` / `style.css`: no external scripts, Content-Security-Policy
+* `utils/lib/UTIL.php`: `UTIL::$sharedConfig` (5 guarded places; `null` = unchanged behaviour)
+* pan-os-php calls: whitelist of 8 types, `in=` is always the version file, no `out=` / `in=api://`; file filters and
+  file / network actions are rejected
 
-Follow-ups:
+Verified: the test (100 checks) on a fresh checkout, the UI with two users in a headless browser (owner + read
+member), existing tests `test_master_key`, `test_config_section`, `test_spyware_dns_lists`, `test_threat_rule_names`,
+`test_panorama_remove_template` unchanged.
+
+**Not verified:** a large Panorama configuration, Apache / nginx / Docker, HTTPS operation, macOS (developed and
+tested on Linux; the 60 character limit of the data directory path keeps the worker socket path below the unix
+socket limit of both, 104 on macOS / 108 on Linux).
+
+### Follow-ups
+
+Next:
 
 - [ ] test with a large Panorama configuration: load time, memory per worker, size of the lists in the browser
-  (today all rows of a query go to the browser, cap 50 000)
-- [ ] more types (today `address`, `service`, `tag`, `rule`, `zone`, `schedule`, `securityprofile`,
-  `securityprofilegroup`); reviewed allow list per action instead of the deny patterns
+  (today all rows of a query go to the browser, cap 50 000); decide whether large lists need server-side paging
+- [ ] run on macOS and behind Apache / nginx with HTTPS; Docker image (PHP CLI with `pcntl`), service start
+- [ ] review of the `UTIL::$sharedConfig` change in `utils/lib/UTIL.php` (core)
+
+Function:
+
 - [ ] change a single object / a selection of rows (today: all objects of type + location + filter)
-- [ ] diff between two versions (`type=diff`), undo of the last change before save
+- [ ] more types (today `address`, `service`, `tag`, `rule`, `zone`, `schedule`, `securityprofile`,
+  `securityprofilegroup`)
+- [ ] diff between two versions (`type=diff`); undo of the last change before save
 - [ ] object detail: references, XPath, XML
-- [ ] stable JSON object model (decision 3) – today the `display` JSON is flattened
-- [ ] Docker image (PHP CLI with `pcntl`), service start, HTTPS
+- [ ] filter builder in the UI from the filter / operator list (`meta`), like the action list today
 - [ ] `in=api://` / SCM as source of a version (credentials per project, not in the request)
-- [ ] audit log, password reset, OIDC login (see [api-rest.md](api-rest.md) decision 1)
-- [ ] `tool.php` stays without authentication – replace it by this API or protect it (see [api-rest.md](api-rest.md))
+- [ ] several users on one loaded version: show who changed what before save (today one shared list of changes)
+
+Security:
+
+- [ ] reviewed allow list per action instead of the deny patterns (`ViewerApp::ACTION_DENY_NAME` / `_ARG`)
+- [ ] OS level isolation between projects (today all workers run as the web server user)
+- [ ] audit log (login, member changes, downloads), password reset, OIDC login
+  (see [api-rest.md](api-rest.md) decision 1)
+- [ ] adding a member tells the owner whether a user name exists
+- [ ] `tool.php` stays without authentication – replace it by this API or protect it ([api-rest.md](api-rest.md))
+
+Model:
+
+- [ ] stable JSON object model (decision 3) – today the `display` JSON is flattened into rows
 
 ## Open decisions
 
-1. Build on pan-config-viewer (frontend, cooperation) or extend `utils/develop/ui/`.
-2. Way A / B / C (or the combination).
+1. Build on pan-config-viewer (frontend, cooperation) or extend `utils/develop/ui/` – the prototype is a third, own
+   area (`utils/develop/config-viewer/`); decide whether it replaces `utils/develop/ui/`.
+2. ~~Way A / B / C (or the combination).~~ Taken with the prototype: way A (loaded once on the server) + browser cache;
+   save writes version files (the history of way B, without git).
 3. Common JSON object model – define first, as base for UI, API output (`shadow-json`) and SCM.

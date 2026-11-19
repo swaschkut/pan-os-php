@@ -101,6 +101,18 @@ To do:
 - tests: API tests (upload, type call, error cases, path checks) – today none for `tool.php`
 - docs: one README for API + Docker (today `READMEdocker.md`, `docker-compose/howto`, Postman collection)
 
+## Related: config-viewer prototype (2026-11-18)
+
+`utils/develop/config-viewer/` ([README](../utils/develop/config-viewer/README.md),
+[ui-config-in-browser.md](ui-config-in-browser.md)) is a second, separate API (`api.php`) that already has what is
+open here for `tool.php`: login, CSRF, projects per user with `read` / `write` / `owner`, paths never taken from the
+request, errors as JSON with HTTP status and without server paths, configuration loaded once. It covers 8 types and
+no `in=api://`. `tool.php` is unchanged – the security findings above stay open.
+
+- [ ] decide: move `tool.php` behind the login / project model of the config-viewer API, or replace it by that API
+  step by step (decision 2 below)
+- [ ] the DB / user management of the prototype (SQLite in the data directory) is a candidate for decision 3
+
 ## Open decisions
 
 1. Authentication: session login of the web UI, API tokens, or OAuth2 / OIDC (Todo 2021).

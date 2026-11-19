@@ -1,7 +1,8 @@
 <?php
 /**
  * Tests of the config-viewer prototype (utils/develop/config-viewer): login, separation between users, project
- * permissions (read / write / owner), CSRF, input checks, load-once worker, change in memory, save, autosave recovery.
+ * permissions (read / write / owner), CSRF, input checks, load-once worker, change in memory, save, autosave recovery,
+ * service stop.
  *
  *   cd tests && php test_config_viewer.php
  *
@@ -268,6 +269,20 @@ eq( status( $alice->call( 'GET', 'projects' ) ), 401, 'the session is gone after
 for( $i = 0; $i < 5; $i++ )
     $anon->login( 'carol', 'wrong-' . $i );
 eq( status( $anon->login( 'carol', 'carol-secret-3' ) ), 429, 'too many failed logins block the login for a while' );
+
+// ---- 13. stopping the service stops its workers
+$bob->login( 'bob', 'bob-secret-12' );
+$r = $bob->call( 'POST', 'projects', array( 'name' => 'Bob project' ) );
+$P = 'projects/' . $r[1]['pid'];
+$r = $bob->call( 'POST', $P . '/configs', null, array( 'b.xml', $xml ) );
+eq( status( $bob->call( 'GET', $P . '/configs/' . $r[1]['cid'] . '/objects?type=tag' ) ), 200, 'bob reads in his own project' );
+$pids = array_map( function( $f ) { return (int)file_get_contents( $f ); }, glob( $data . '/projects/*/work/*.pid' ) );
+eq( count( $pids ) === 1 && posix_kill( $pids[0], 0 ), TRUE, 'one worker is running' );
+proc_terminate( $service );
+for( $i = 0; $i < 50 && posix_kill( $pids[0], 0 ); $i++ )
+    usleep( 100000 );
+eq( posix_kill( $pids[0], 0 ), FALSE, 'the worker stops with the service' );
+eq( status( $bob->call( 'GET', $P . '/configs/' . $r[1]['cid'] . '/objects?type=tag' ) ), 503, 'without the service a version can not be loaded (503)' );
 
 print "\n" . $checks . " checks, " . count($failed) . " failed\n";
 if( count($failed) )
