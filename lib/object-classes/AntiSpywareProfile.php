@@ -238,11 +238,10 @@ class AntiSpywareProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( !in_array( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
-        {
-            derr( "iron-skillet anti-spyware profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
+        $version = PH::ironSkilletVersion( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), 'anti-spyware profiles' );
+        if( $version === null )
             return null;
-        }
 
         return self::ironSkilletBuildXml( $version, TRUE );
     }
@@ -257,11 +256,10 @@ class AntiSpywareProfile extends SecurityProfile2
      */
     public static function ironSkilletXmlScm( $version )
     {
-        if( $version !== '11.1' )
-        {
-            derr( "iron-skillet SCM anti-spyware profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
+        $version = PH::ironSkilletVersion( $version, array( '11.1' ), 'SCM anti-spyware profiles' );
+        if( $version === null )
             return null;
-        }
 
         return self::ironSkilletBuildXml( $version, FALSE );
     }

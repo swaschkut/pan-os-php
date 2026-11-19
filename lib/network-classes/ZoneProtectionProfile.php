@@ -786,12 +786,10 @@ class ZoneProtectionProfile
      */
     public static function ironSkilletXml( $version )
     {
-        $versions = array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' );
-        if( !in_array( $version, $versions, TRUE ) )
-        {
-            derr( "iron-skillet zone protection profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
+        $version = PH::ironSkilletVersion( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), 'zone protection profiles' );
+        if( $version === null )
             return null;
-        }
 
         // scan entry => array( interval, threshold ), action alert
         $scan = array(

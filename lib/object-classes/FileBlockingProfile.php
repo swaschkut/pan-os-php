@@ -334,11 +334,10 @@ class FileBlockingProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( !in_array( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
-        {
-            derr( "iron-skillet file blocking profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
+        $version = PH::ironSkilletVersion( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), 'file blocking profiles' );
+        if( $version === null )
             return null;
-        }
 
         $blocked = array( '7z', 'bat', 'chm', 'class', 'cpl', 'dll', 'hlp', 'hta', 'jar', 'ocx', 'pif', 'scr', 'torrent', 'vbe', 'wsf' );
         $blockedInternal = array_values( array_diff( $blocked, array( 'dll' ) ) );

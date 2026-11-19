@@ -156,11 +156,10 @@ class DNSSecurityProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( $version !== '11.1' )
-        {
-            derr( "iron-skillet DNS security profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
+        $version = PH::ironSkilletVersion( $version, array( '11.1' ), 'DNS security profiles' );
+        if( $version === null )
             return null;
-        }
 
         return '<root><entry name="Alert-Only-DNSSEC">'
             . AntiSpywareProfile::ironSkilletBotnetDomainsXml( $version, 'alert' )
