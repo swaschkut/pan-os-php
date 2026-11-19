@@ -238,11 +238,9 @@ class AntiSpywareProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( !in_array( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
-        {
-            derr( "iron-skillet anti-spyware profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'anti-spyware profiles' ) ) === null )
             return null;
-        }
 
         return self::ironSkilletBuildXml( $version, TRUE );
     }
@@ -257,11 +255,9 @@ class AntiSpywareProfile extends SecurityProfile2
      */
     public static function ironSkilletXmlScm( $version )
     {
-        if( $version !== '11.1' )
-        {
-            derr( "iron-skillet SCM anti-spyware profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'SCM anti-spyware profiles' ) ) === null )
             return null;
-        }
 
         return self::ironSkilletBuildXml( $version, FALSE );
     }
@@ -387,7 +383,10 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     $xml .= '<entry name="' . $detector . ' Command and Control detector">'
                         . '<inline-policy-action>' . ( $mode == 'alert' ? 'alert' : 'reset-both' ) . '</inline-policy-action>';
-                    if( version_compare( $version, '11.2', '>=' ) )
+                    // local deep learning only for the detectors that have it in this PAN-OS version
+                    $vParts = explode( '.', (string)$version );
+                    $versionInt = intval( $vParts[0] ) * 10 + intval( $vParts[1] ?? 0 );   // '11.2' / '11.2.7' -> 112
+                    if( $versionInt > 0 && self::localDeepLearningSupportedInVersion( 'spyware', $detector . ' Command and Control detector', $versionInt ) )
                         $xml .= '<local-deep-learning>enable</local-deep-learning>';
                     $xml .= '</entry>';
                 }

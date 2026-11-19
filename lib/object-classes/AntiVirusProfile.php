@@ -245,11 +245,9 @@ class AntiVirusProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( !in_array( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
-        {
-            derr( "iron-skillet antivirus profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'antivirus profiles' ) ) === null )
             return null;
-        }
 
         $profiles = array(
             'Alert-Only-AV' => 'alert',

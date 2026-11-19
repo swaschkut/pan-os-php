@@ -36,6 +36,7 @@ UTIL:
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
 * type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
 * class URLProfile - BP Json has no longer URL mica BP checks, so do not mention it is a customised check
+* SP classes - change to single place for versioning
 
 BUGFIX:
 * type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
@@ -60,6 +61,9 @@ BUGFIX:
 * bugfix to get N/A output correct running
 * type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
 * type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
+* bugfix VP / Spyware - to set local-inline to enable with alert-only-set
+* url.alert-only-set-no-empty-alert-allow-members
+* ancestor-objects-take-precedence-rule-filters
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes

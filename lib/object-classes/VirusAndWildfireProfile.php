@@ -206,11 +206,9 @@ class VirusAndWildfireProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( $version !== '11.1' )
-        {
-            derr( "iron-skillet antivirus and WildFire profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'antivirus and WildFire profiles' ) ) === null )
             return null;
-        }
 
         return '<root><entry name="Alert-Only-AVWF">'
             . AntiVirusProfile::ironSkilletContentXml( $version, 'alert' )

@@ -311,6 +311,82 @@ class PH
         return array($ciphertext_2, $calcmac);
     }
 
+    /**
+     * iron-skillet PAN-OS versions (https://github.com/PaloAltoNetworks/iron-skillet) - the ONLY place to change when
+     * iron-skillet adds a version (e.g. 12.2): add it here and the version differences in the ironSkilletXml() concerned
+     */
+    const IRONSKILLET_VERSIONS = array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' );
+
+    /**
+     * iron-skillet snippets: name => array( oldest version, newest version (null = newest of IRONSKILLET_VERSIONS) );
+     * the name is used in the messages and by the ironSkilletXml() of the class
+     */
+    const IRONSKILLET_SNIPPETS = array(
+        'antivirus profiles' => array( '8.1', null ),
+        'anti-spyware profiles' => array( '8.1', null ),
+        'URL filtering profiles' => array( '8.1', null ),
+        'vulnerability protection profiles' => array( '10.0', null ),
+        'file blocking profiles' => array( '10.0', null ),
+        'WildFire analysis profiles' => array( '10.0', null ),
+        'log forwarding profiles' => array( '10.0', null ),
+        'zone protection profiles' => array( '10.0', null ),
+        // SCM (one version only)
+        'SCM anti-spyware profiles' => array( '11.1', '11.1' ),
+        'DNS security profiles' => array( '11.1', '11.1' ),
+        'antivirus and WildFire profiles' => array( '11.1', '11.1' ),
+    );
+
+    /** iron-skillet fallbacks already reported: "what|version" => TRUE (one message per snippet and version) */
+    private static $ironSkilletFallbackReported = array();
+
+    /**
+     * PAN-OS version whose iron-skillet snippet $what (key of IRONSKILLET_SNIPPETS) is used for $version.
+     * - $version has its own snippet: $version
+     * - newer than the newest snippet (e.g. 12.2 before iron-skillet has 12.2) or between two snippets (e.g. 9.0):
+     *   the newest snippet version below $version - a newer PAN-OS supports the configuration of an older one,
+     *   so the result is valid, only the features added after that snippet version are missing
+     * - older than the oldest snippet: derr() - the snippet may contain elements the older PAN-OS does not know
+     *
+     * @param string $version PAN-OS version "major.minor", e.g. "12.2"
+     * @param string $what snippet name, key of IRONSKILLET_SNIPPETS, e.g. "log forwarding profiles"
+     * @return string|null
+     */
+    static public function ironSkilletVersion( $version, $what )
+    {
+        if( !isset( self::IRONSKILLET_SNIPPETS[$what] ) )
+            derr( "unknown iron-skillet snippet '" . $what . "'", null, false );
+
+        // "11.1" is lower than "11.1.0" for version_compare(): compare major.minor only
+        $mm = function( $v ) { $p = explode( '.', (string)$v ); return ( isset($p[0]) ? (int)$p[0] : 0 ) . '.' . ( isset($p[1]) ? (int)$p[1] : 0 ); };
+        list( $oldest, $newest ) = self::IRONSKILLET_SNIPPETS[$what];
+        $available = array();
+        foreach( self::IRONSKILLET_VERSIONS as $v )
+            if( version_compare( $mm($v), $mm($oldest), '>=' ) && ( $newest === null || version_compare( $mm($v), $mm($newest), '<=' ) ) )
+                $available[] = $v;
+
+        if( in_array( $version, $available, TRUE ) )
+            return $version;
+
+        $want = $mm( $version );
+        $use = null;
+        foreach( $available as $v )
+            if( version_compare( $mm($v), $want, '<=' ) && ( $use === null || version_compare( $mm($v), $mm($use), '>' ) ) )
+                $use = $v;
+
+        if( $use === null )
+        {
+            derr( "iron-skillet " . $what . " are not available for PAN-OS version '" . $version . "' (oldest iron-skillet version: " . $oldest . ")", null, false );
+            return null;
+        }
+
+        if( $use !== $want && !isset( self::$ironSkilletFallbackReported[$what . '|' . $version] ) )
+        {
+            self::$ironSkilletFallbackReported[$what . '|' . $version] = TRUE;
+            PH::print_stdout( "   * iron-skillet " . $what . ": no snippet for PAN-OS " . $version . " - using the snippet of PAN-OS " . $use );
+        }
+        return $use;
+    }
+
     static public function frameworkVersion( $format = "all")
     {
         if( $format == "all" )

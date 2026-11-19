@@ -147,11 +147,9 @@ class WildfireProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        if( !in_array( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), TRUE ) )
-        {
-            derr( "iron-skillet WildFire analysis profiles are not available for PAN-OS version '" . $version . "'", null, false );
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'WildFire analysis profiles' ) ) === null )
             return null;
-        }
 
         // profile => array( inline rule name, action ) or null
         $inline = array( 'Outbound-WF' => null, 'Inbound-WF' => null, 'Internal-WF' => null, 'Alert-Only-WF' => null );
