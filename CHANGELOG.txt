@@ -36,6 +36,7 @@ UTIL:
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
 * type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
 * class URLProfile - BP Json has no longer URL mica BP checks, so do not mention it is a customised check
+* SP classes - change to single place for versioning
 
 BUGFIX:
 * type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed

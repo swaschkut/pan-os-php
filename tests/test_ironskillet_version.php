@@ -58,23 +58,32 @@ function derrOf( $fn )
 
 function quiet( $fn ) { ob_start(); $r = $fn(); ob_end_clean(); return $r; }
 
-$all = array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' );
+// one central list: PH::IRONSKILLET_VERSIONS, per snippet the oldest (and for SCM the only) version
+$newest = PH::IRONSKILLET_VERSIONS[ count(PH::IRONSKILLET_VERSIONS) - 1 ];
+eq( $newest, '12.1', 'newest iron-skillet version' );
+eq( array_keys( PH::IRONSKILLET_SNIPPETS ), array( 'antivirus profiles', 'anti-spyware profiles', 'URL filtering profiles',
+    'vulnerability protection profiles', 'file blocking profiles', 'WildFire analysis profiles', 'log forwarding profiles',
+    'zone protection profiles', 'SCM anti-spyware profiles', 'DNS security profiles', 'antivirus and WildFire profiles' ), 'snippet names' );
 
 // helper
-eq( PH::ironSkilletVersion( '12.1', $all, 'x' ), '12.1', 'own snippet' );
-eq( PH::ironSkilletVersion( '10.0', $all, 'x' ), '10.0', 'own snippet 10.0' );
-eq( quiet( function() use ( $all ) { return PH::ironSkilletVersion( '12.2', $all, 'x' ); } ), '12.1', '12.2 -> newest snippet 12.1' );
-eq( quiet( function() use ( $all ) { return PH::ironSkilletVersion( '13.0', $all, 'x' ); } ), '12.1', '13.0 -> newest snippet 12.1' );
-eq( quiet( function() use ( $all ) { return PH::ironSkilletVersion( '9.0', $all, 'x' ); } ), '8.1', '9.0 (between two snippets) -> 8.1' );
-eq( quiet( function() { return PH::ironSkilletVersion( '12.2', array( '11.1' ), 'x' ); } ), '11.1', 'single snippet 11.1 -> used for 12.2' );
-$m = derrOf( function() use ( $all ) { PH::ironSkilletVersion( '7.1', $all, 'test profiles' ); } );
-check( $m !== null && strpos($m, "iron-skillet test profiles are not available for PAN-OS version '7.1'") !== FALSE, 'older than the oldest snippet -> error: ' . $m );
-eq( derrOf( function() { PH::ironSkilletVersion( '10.0', array( '11.1' ), 'x' ); } ) !== null, TRUE, 'older than the only snippet -> error' );
+eq( PH::ironSkilletVersion( '12.1', 'antivirus profiles' ), '12.1', 'own snippet' );
+eq( PH::ironSkilletVersion( '10.0', 'log forwarding profiles' ), '10.0', 'own snippet 10.0' );
+eq( PH::ironSkilletVersion( '8.1', 'antivirus profiles' ), '8.1', 'own snippet 8.1 (AV)' );
+eq( quiet( function() { return PH::ironSkilletVersion( '12.2', 'log forwarding profiles' ); } ), '12.1', '12.2 -> newest snippet 12.1' );
+eq( quiet( function() { return PH::ironSkilletVersion( '13.0', 'zone protection profiles' ); } ), '12.1', '13.0 -> newest snippet 12.1' );
+eq( quiet( function() { return PH::ironSkilletVersion( '9.0', 'anti-spyware profiles' ); } ), '8.1', '9.0 (between two snippets) -> 8.1' );
+eq( quiet( function() { return PH::ironSkilletVersion( '12.2', 'DNS security profiles' ); } ), '11.1', 'SCM snippet 11.1 -> used for 12.2' );
+eq( quiet( function() { return PH::ironSkilletVersion( '11.2', 'DNS security profiles' ); } ), '11.1', 'SCM snippet: 11.2 -> 11.1 (only version)' );
+$m = derrOf( function() { PH::ironSkilletVersion( '7.1', 'antivirus profiles' ); } );
+check( $m !== null && strpos($m, "iron-skillet antivirus profiles are not available for PAN-OS version '7.1' (oldest iron-skillet version: 8.1)") !== FALSE, 'older than the oldest snippet -> error: ' . $m );
+check( derrOf( function() { PH::ironSkilletVersion( '9.1', 'log forwarding profiles' ); } ) !== null, 'log forwarding: 9.1 older than 10.0 -> error' );
+check( derrOf( function() { PH::ironSkilletVersion( '10.0', 'DNS security profiles' ); } ) !== null, 'SCM: older than 11.1 -> error' );
+check( derrOf( function() { PH::ironSkilletVersion( '12.1', 'no such snippet' ); } ) !== null, 'unknown snippet name -> error' );
 
 // the message is printed once per snippet type and version
 ob_start();
-PH::ironSkilletVersion( '12.3', $all, 'once' );
-PH::ironSkilletVersion( '12.3', $all, 'once' );
+PH::ironSkilletVersion( '12.3', 'file blocking profiles' );
+PH::ironSkilletVersion( '12.3', 'file blocking profiles' );
 $out = ob_get_clean();
 eq( substr_count( $out, 'no snippet for PAN-OS 12.3 - using the snippet of PAN-OS 12.1' ), 1, 'fallback message once' );
 

@@ -368,9 +368,8 @@ class LogProfile
      */
     public static function ironSkilletXml( $version )
     {
-        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
-        $version = PH::ironSkilletVersion( $version, array( '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), 'log forwarding profiles' );
-        if( $version === null )
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'log forwarding profiles' ) ) === null )
             return null;
 
         // match list entry => log type

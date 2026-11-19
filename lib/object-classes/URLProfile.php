@@ -1449,9 +1449,8 @@ class URLProfile extends SecurityProfile2
      */
     public static function ironSkilletXml( $version )
     {
-        // newer PAN-OS without an own snippet (e.g. 12.2): snippet of the newest version below (PH::ironSkilletVersion)
-        $version = PH::ironSkilletVersion( $version, array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' ), 'URL filtering profiles' );
-        if( $version === null )
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'URL filtering profiles' ) ) === null )
             return null;
 
         $categories = self::ironSkilletCategories( $version );
