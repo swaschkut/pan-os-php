@@ -2307,7 +2307,8 @@ class PH
         "merger-possible-report",
         "device-config-bundle",
         "config-section",
-        "master-key"
+        "master-key",
+        "config-anonymize"
         );
 
 
@@ -2340,7 +2341,8 @@ class PH
         "gcp",
         "device-config-bundle",
         "config-section",
-        "master-key"
+        "master-key",
+        "config-anonymize"
     );
 
     /**
@@ -2547,6 +2549,9 @@ class PH
 
         elseif( $type == "master-key" )
             $util = new MASTER_KEY__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "config-anonymize" )
+            $util = new CONFIG_ANONYMIZE__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "ssh-connector" )
             $util = new SSH_CONNECTOR__( $type, $argv, $argc, $PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
