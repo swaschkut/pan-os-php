@@ -779,10 +779,10 @@ class URLProfile extends SecurityProfile2
     public function url_siteaccess_set_alertonly()
     {
         $allow_xmlnode = DH::findFirstElement("allow", $this->xmlroot);
-        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
         if( $allow_xmlnode !== False )
         {
-            foreach( $allow_xmlnode->childNodes as $allow_node )
+            // copy of the node list: removing from the live childNodes while iterating skipped every second member
+            foreach( iterator_to_array( $allow_xmlnode->childNodes ) as $allow_node )
             {
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
@@ -801,6 +801,7 @@ class URLProfile extends SecurityProfile2
                     continue;
 
                 $clone_node = $allow_node->cloneNode(true);
+                $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
                 $alert_xmlnode->appendChild($clone_node);
                 $allow_xmlnode->removeChild($allow_node);
 
@@ -828,11 +829,18 @@ class URLProfile extends SecurityProfile2
 
             $this->alert[] = $allow;
 
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-            $alert_xmlnode->appendChild($xmlElement);
+            $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
+            if( DH::findFirstElementByValue( 'member', $allow, $alert_xmlnode ) === null )
+            {
+                $xmlString = '<member>'.$allow.'</member>';
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $alert_xmlnode->appendChild($xmlElement);
+            }
         }
         $this->allow = array();
+
+        // no empty <alert/> / <allow/>: outputformatset would write an incomplete "set ... alert"
+        $this->url_removeEmptyActionNodes();
     }
 
     public function url_credential_set_alertonly()
@@ -841,7 +849,8 @@ class URLProfile extends SecurityProfile2
         $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
         if( $allow_credential_xmlnode !== False )
         {
-            foreach( $allow_credential_xmlnode->childNodes as $allow_node )
+            // copy of the node list: removing from the live childNodes while iterating skipped every second member
+            foreach( iterator_to_array( $allow_credential_xmlnode->childNodes ) as $allow_node )
             {
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
@@ -889,9 +898,47 @@ class URLProfile extends SecurityProfile2
             $xmlString = '<member>'.$allow.'</member>';
             $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
             $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-            $alert_credential_xmlnode->appendChild($xmlElement);
+            if( DH::findFirstElementByValue( 'member', $allow, $alert_credential_xmlnode ) === null )
+                $alert_credential_xmlnode->appendChild($xmlElement);
         }
         $this->allow_credential = array();
+
+        $this->url_removeEmptyActionNodes();
+    }
+
+    /**
+     * remove action lists without a member (site access and credential enforcement: allow, alert, block, continue,
+     * override) - an empty element gives an incomplete "set ... profiles url-filtering <name> alert" with
+     * outputformatset and is no valid configuration
+     * @return bool TRUE when something was removed
+     */
+    public function url_removeEmptyActionNodes(): bool
+    {
+        $removed = FALSE;
+        $parents = array( $this->xmlroot );
+        $credential = DH::findFirstElement( 'credential-enforcement', $this->xmlroot );
+        if( $credential !== FALSE )
+            $parents[] = $credential;
+        foreach( $parents as $parent )
+            foreach( $this->tmp_url_prof_array as $action )
+            {
+                $node = DH::findFirstElement( $action, $parent );
+                if( $node === FALSE )
+                    continue;
+                $hasMember = FALSE;
+                foreach( $node->childNodes as $c )
+                    if( $c->nodeType == XML_ELEMENT_NODE )
+                    {
+                        $hasMember = TRUE;
+                        break;
+                    }
+                if( !$hasMember )
+                {
+                    $parent->removeChild( $node );
+                    $removed = TRUE;
+                }
+            }
+        return $removed;
     }
 
     public function url_inline_cat_set( $bool = true )
@@ -1659,6 +1706,8 @@ class URLProfile extends SecurityProfile2
         $this->AlertOnlySet();
 
         $this->site_access_BestPracticeSet();
+
+        $this->url_removeEmptyActionNodes();
     }
 }
 
