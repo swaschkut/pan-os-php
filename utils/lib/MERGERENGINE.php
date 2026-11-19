@@ -1353,6 +1353,7 @@ trait MergerEngine
                 return !$tagBlocks( $object, $tmp_address, $index );
             },
             'replace' => function( $object, $target ) {
+                $this->address_keepNetmaskForNetworkUse( $object, $target );
                 $success = $object->__replaceWhereIamUsed($this->apiMode, $target, TRUE, 5);
                 $object->merge_tag_description_to($target, $this->apiMode);
                 return $success;
@@ -1417,6 +1418,7 @@ trait MergerEngine
                 return "    - object '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
             },
             'replaceWithAncestor' => function( $object, $ancestor ) {
+                $this->address_keepNetmaskForNetworkUse( $object, $ancestor );
                 $object->replaceMeGlobally($ancestor);
             },
             'ancestorValueText' => function( $ancestor ) {
@@ -1447,6 +1449,7 @@ trait MergerEngine
                 $removed = 0;
                 if( $this->action === "merge" )
                 {
+                    $this->address_keepNetmaskForNetworkUse( $object, $pickedObject );
                     $success = $object->__replaceWhereIamUsed($this->apiMode, $pickedObject, TRUE, 5);
 
                     $object->merge_tag_description_to($pickedObject, $this->apiMode);
@@ -3370,6 +3373,52 @@ trait MergerEngine
         }
 
         return false;
+    }
+
+    /**
+     * classes that use an address object as an IP address WITH netmask (interface IP, tunnel / loopback / VLAN IP,
+     * GRE / IKE local address, GlobalProtect portal / gateway address, static route destination): PAN-OS needs the
+     * netmask in the object value there
+     */
+    const ADDRESS_NETMASK_USERS = array( 'EthernetInterface', 'AggregateEthernetInterface', 'VlanInterface',
+        'LoopbackInterface', 'TunnelInterface', 'GreTunnel', 'IKEGateway', 'GPGateway', 'GPPortal', 'StaticRoute' );
+
+    /** TRUE when $object is used by a network object that needs the netmask in the address value */
+    function address_isUsedAsInterfaceIP( $object ): bool
+    {
+        foreach( $object->getReferences() as $ref )
+            foreach( self::ADDRESS_NETMASK_USERS as $class )
+                if( is_a( $ref, $class ) )
+                    return TRUE;
+        return FALSE;
+    }
+
+    /**
+     * #47: a host object 'a.b.c.d/32' and an object 'a.b.c.d' (no netmask) have the same value and get merged.
+     * When the object that goes away has the netmask and is used on an interface (or another place that needs the
+     * netmask), the object that stays gets '/32' added - same address, so rules / groups are not changed, and the
+     * interface keeps a value with netmask.
+     */
+    function address_keepNetmaskForNetworkUse( $object, $target )
+    {
+        /** @var Address $object */
+        /** @var Address $target */
+        if( $object === $target || !$object->isAddress() || !$target->isAddress() )
+            return;
+        if( !$object->isType_ipNetmask() || !$target->isType_ipNetmask() )
+            return;
+        if( strpos( $object->value(), '/' ) === FALSE || strpos( $target->value(), '/' ) !== FALSE )
+            return;
+        if( !$this->address_isUsedAsInterfaceIP( $object ) )
+            return;
+
+        $old = $target->value();
+        $new = $old . '/' . $object->getNetworkMask();
+        PH::print_stdout( "    - object '{$object->_PANC_shortName()}' [value '{$object->value()}'] is used on an interface / network object (netmask needed): value of '{$target->_PANC_shortName()}' changed from '{$old}' to '{$new}'" );
+        if( $this->apiMode )
+            $target->API_setValue( $new );
+        else
+            $target->setValue( $new );
     }
 
     function address_get_value_string( $object )
