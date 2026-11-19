@@ -2233,6 +2233,11 @@ var subjectObject =
             }
         }
     },
+    "config-anonymize": {
+        "name": "config-anonymize",
+        "action": [],
+        "filter": []
+    },
     "config-commit": {
         "name": "config-commit",
         "action": [],
@@ -9909,6 +9914,16 @@ var subjectObject =
     "securityprofile": {
         "name": "securityprofile",
         "action": {
+            "alert-only-set": {
+                "name": "alert-only-set",
+                "MainFunction": {},
+                "help": "runs the alert-only-set action of the profile's type for every profile selected with securityprofiletype= (any: all types): virus, spyware, vulnerability, url, file-blocking, wildfire, virus-and-wildfire, dns-security. Predefined profiles and types without alert-only-set are skipped."
+            },
+            "best-practice-set": {
+                "name": "best-practice-set",
+                "MainFunction": {},
+                "help": "runs the best-practice-set action of the profile's type for every profile selected with securityprofiletype= (any: all types): virus, spyware, vulnerability, url, wildfire, virus-and-wildfire, dns-security. Predefined profiles and types without best-practice-set (e.g. file-blocking) are skipped."
+            },
             "clone-predefined-and-change-references": {
                 "name": "clone-predefined-and-change-references",
                 "MainFunction": {}
@@ -10295,6 +10310,10 @@ var subjectObject =
             },
             "virus-and-wildfire.alert-only-set": {
                 "name": "virus-and-wildfire.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus-and-wildfire.best-practice-set": {
+                "name": "virus-and-wildfire.best-practice-set",
                 "MainFunction": {}
             },
             "virus.alert-only-set": {
