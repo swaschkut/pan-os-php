@@ -25,7 +25,6 @@ UTIL:
 * type=master-key | introduction | extend with actions=decrypt, actions=scrub
 * type=master-key | extend with flag 'cleartext'
 * prototype config-viewer | introduction
-* class URLProfile | ip-user log-severity - extend validation
 
 BUGFIX:
 * SCM export after first production run / IAM patch
@@ -36,6 +35,8 @@ BUGFIX:
 * bugfix IPv6 IPMap general fix
 * another IP4/6Map patch | intersection
 * bugfix related to IPv6 with Route to Zone relationship
+* class URLProfile | ip-user log-severity - extend validation
+* spyware | local-deep-learning - alert-only-set enable any type
 
 
 2.1.62

@@ -83,7 +83,8 @@ trait sp_action_spyware
                     $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = $tmp_local_deep_learning->textContent;
                 else
                 {
-                    if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
+                    // PAN-OS default 'disable' - only for detectors that have local deep learning in this PAN-OS version
+                    if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) && $this->localDeepLearningSupported( 'spyware', $name ) )
                     {
                         $tmp_local_deep_learning = DH::findFirstElementOrCreate("local-deep-learning", $tmp_entry1);
                         $tmp_local_deep_learning->textContent = "disable";
@@ -96,18 +97,14 @@ trait sp_action_spyware
             $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
-            $Unkown_TCP_xmlstring_112 = '<entry name="Unknown-TCP Command and Control detector">
-  <inline-policy-action>alert</inline-policy-action>
-  <local-deep-learning>disable</local-deep-learning>
-</entry>';
+            // Unknown-TCP has no local deep learning ($localDeepLearningMinVersion): same XML in every version
+            $Unkown_TCP_xmlstring_112 = $Unkown_TCP_xmlstring;
 
             $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
-            $Unkown_UDP_xmlstring_112 = '<entry name="Unknown-UDP Command and Control detector">
-  <inline-policy-action>alert</inline-policy-action>
-  <local-deep-learning>disable</local-deep-learning>
-</entry>';
+            // Unknown-UDP has no local deep learning ($localDeepLearningMinVersion): same XML in every version
+            $Unkown_UDP_xmlstring_112 = $Unkown_UDP_xmlstring;
             if( !$tmp_mica_Unknown_TCP_found && $this->bpFeatureSupported( 'spyware-mica' ))
             {
                 if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
@@ -117,8 +114,6 @@ trait sp_action_spyware
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
-                if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
-                    $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "disable";
             }
             if( !$tmp_mica_Unknown_UDP_found && $this->bpFeatureSupported( 'spyware-mica' ) )
             {
@@ -129,8 +124,6 @@ trait sp_action_spyware
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
-                if( $this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
-                    $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "disable";
             }
         }
         else
@@ -164,15 +157,12 @@ trait sp_action_spyware
   </entry>
   <entry name="SSL Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
   </entry>
   <entry name="Unknown-TCP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
   </entry>
   <entry name="Unknown-UDP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
   </entry>
 </mica-engine-spyware-enabled>';
 

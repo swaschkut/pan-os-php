@@ -55,6 +55,37 @@ class SecurityProfile2
         'spyware-local-deep-learning' => 112,   // AS inline cloud analysis: local-deep-learning per detector
     );
 
+    /**
+     * local deep learning (LDL): the inline ML models that have a local-deep-learning setting, per profile type,
+     * with the first PAN-OS version that has it. Only these models get / are checked for local-deep-learning;
+     * a model not listed, or a PAN-OS version below the one listed: never set, not checked.
+     * PANW: Advanced Threat Prevention > Configure Inline Cloud Analysis - AS: HTTP and HTTP2 C2 detectors, PAN-OS 11.2.
+     * Not yet: VP 'Command Injection' (PAN-OS 12.2 / 12.2.2) - add once the XML is verified with a 12.2 configuration.
+     */
+    public static $localDeepLearningMinVersion = array(
+        'spyware' => array(
+            'HTTP Command and Control detector' => 112,
+            'HTTP2 Command and Control detector' => 112,
+        ),
+    );
+
+    /** TRUE when $model of profile type $secprof_type has local-deep-learning in PAN-OS version $version (0: unknown, newest) */
+    public static function localDeepLearningSupportedInVersion( string $secprof_type, string $model, int $version ): bool
+    {
+        $min = self::$localDeepLearningMinVersion[$secprof_type][$model] ?? null;
+        if( $min === null )
+            return FALSE;
+        return $version <= 0 || $version >= $min;
+    }
+
+    /** TRUE when $model of profile type $secprof_type has local-deep-learning in the PAN-OS version of this profile's location */
+    public function localDeepLearningSupported( string $secprof_type, string $model ): bool
+    {
+        $version = $this->inlineVersion();
+        $version = is_numeric( $version ) ? intval( $version ) : 0;
+        return self::localDeepLearningSupportedInVersion( $secprof_type, $model, $version );
+    }
+
     /** TRUE when PAN-OS version $version has the setting $feature (key of $bpFeatureMinVersion); version 0: unknown, TRUE */
     public static function bpFeatureSupportedInVersion( string $feature, int $version ): bool
     {
@@ -1389,7 +1420,7 @@ class SecurityProfile2
      */
     public function inlineML_localDeepLearningDetectorComplies( string $section, string $detector ): ?bool
     {
-        if( !$this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
+        if( !$this->bpFeatureSupported( 'spyware-local-deep-learning' ) || !$this->localDeepLearningSupported( 'spyware', $detector ) )
             return null;
         $ret = null;
         foreach( self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, 'spyware' ) ) as $entry )
@@ -1423,9 +1454,10 @@ class SecurityProfile2
     }
 
     /**
-     * Set-actions: local-deep-learning of every AS detector the BP JSON lists gets the value asked for
-     * (positive: that value; '!disable': 'enable', '!enable': 'disable'). Nothing listed / PAN-OS without local deep
-     * learning: no change. @return bool TRUE: changed
+     * Set-actions: local-deep-learning of every AS detector the BP JSON lists ('any': all) gets the value asked for
+     * (positive: that value; '!disable': 'enable', '!enable': 'disable'). Only detectors that have local deep learning
+     * in the PAN-OS version of the location ($localDeepLearningMinVersion); others are never set.
+     * Nothing listed / PAN-OS without local deep learning: no change. @return bool TRUE: changed
      */
     public function inlineML_localDeepLearningSetFromJSON( string $section ): bool
     {
@@ -1442,6 +1474,9 @@ class SecurityProfile2
             if( $detectorNode->nodeType != XML_ELEMENT_NODE )
                 continue;
             $detector = DH::findAttribute( "name", $detectorNode );
+            // only models with local deep learning in this PAN-OS version ($localDeepLearningMinVersion), also for type 'any'
+            if( !$this->localDeepLearningSupported( 'spyware', $detector ) )
+                continue;
             foreach( $entries as $entry )
             {
                 if( !in_array( 'any', $entry['types'], TRUE ) && !in_array( $detector, $entry['types'], TRUE ) )

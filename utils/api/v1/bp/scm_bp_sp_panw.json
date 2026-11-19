@@ -267,8 +267,7 @@
                     },
                     {
                         "type": [
-                            "HTTP Command and Control detector",
-                            "HTTP2 Command and Control detector"
+                            "any"
                         ],
                         "local-deep-learning": [
                             "enable"
@@ -288,8 +287,7 @@
                     },
                     {
                         "type": [
-                            "HTTP Command and Control detector",
-                            "HTTP2 Command and Control detector"
+                            "any"
                         ],
                         "local-deep-learning": [
                             "enable"

@@ -387,7 +387,10 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     $xml .= '<entry name="' . $detector . ' Command and Control detector">'
                         . '<inline-policy-action>' . ( $mode == 'alert' ? 'alert' : 'reset-both' ) . '</inline-policy-action>';
-                    if( version_compare( $version, '11.2', '>=' ) )
+                    // local deep learning only for the detectors that have it in this PAN-OS version
+                    $vParts = explode( '.', (string)$version );
+                    $versionInt = intval( $vParts[0] ) * 10 + intval( $vParts[1] ?? 0 );   // '11.2' / '11.2.7' -> 112
+                    if( $versionInt > 0 && self::localDeepLearningSupportedInVersion( 'spyware', $detector . ' Command and Control detector', $versionInt ) )
                         $xml .= '<local-deep-learning>enable</local-deep-learning>';
                     $xml .= '</entry>';
                 }
