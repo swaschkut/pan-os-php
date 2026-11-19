@@ -344,6 +344,14 @@
                         "action": [
                             "reset-both"
                         ]
+                    },
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
+                        ]
                     }
                 ]
             },
@@ -355,6 +363,14 @@
                         ],
                         "action": [
                             "!allow"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
                         ]
                     }
                 ]

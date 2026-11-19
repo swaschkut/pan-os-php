@@ -53,6 +53,13 @@ class SecurityProfile2
         'wildfire-mica' => 112,             // WF inline cloud analysis (mica-engine-wildfire-rules)
         'spyware-advanced-dns' => 112,      // AS advanced DNS security categories
         'spyware-local-deep-learning' => 112,   // AS inline cloud analysis: local-deep-learning per detector
+        'vulnerability-local-deep-learning' => 122,   // VP inline cloud analysis: local-deep-learning per model
+    );
+
+    /** local deep learning per profile type: XML container of the inline ML models and the $bpFeatureMinVersion key */
+    public static $localDeepLearningTypes = array(
+        'spyware' => array( 'container' => 'mica-engine-spyware-enabled', 'feature' => 'spyware-local-deep-learning' ),
+        'vulnerability' => array( 'container' => 'mica-engine-vulnerability-enabled', 'feature' => 'vulnerability-local-deep-learning' ),
     );
 
     /**
@@ -60,12 +67,16 @@ class SecurityProfile2
      * with the first PAN-OS version that has it. Only these models get / are checked for local-deep-learning;
      * a model not listed, or a PAN-OS version below the one listed: never set, not checked.
      * PANW: Advanced Threat Prevention > Configure Inline Cloud Analysis - AS: HTTP and HTTP2 C2 detectors, PAN-OS 11.2.
-     * Not yet: VP 'Command Injection' (PAN-OS 12.2 / 12.2.2) - add once the XML is verified with a 12.2 configuration.
+     * VP: SQL Injection and Command Injection, PAN-OS 12.2 (verified with a 12.2.2 firewall configuration).
      */
     public static $localDeepLearningMinVersion = array(
         'spyware' => array(
             'HTTP Command and Control detector' => 112,
             'HTTP2 Command and Control detector' => 112,
+        ),
+        'vulnerability' => array(
+            'SQL Injection' => 122,
+            'Command Injection' => 122,
         ),
     );
 
@@ -199,6 +210,9 @@ class SecurityProfile2
 
             // AS detectors: local-deep-learning as the BP JSON lists it (from PAN-OS 11.2)
             if( isset($this->additional['mica-engine-spyware-enabled']) && $this->inlineML_localDeepLearningComplies( 'bp' ) === FALSE )
+                return FALSE;
+            // VP models: local-deep-learning as the BP JSON lists it (from PAN-OS 12.2)
+            if( isset($this->additional['mica-engine-vulnerability-enabled']) && $this->inlineML_localDeepLearningComplies( 'bp', 'vulnerability' ) === FALSE )
                 return FALSE;
 
             // virus-and-wildfire-analysis: its WildFire part only where the PAN-OS version has it
@@ -354,6 +368,9 @@ class SecurityProfile2
             // AS detectors: local-deep-learning as the BP JSON lists it (from PAN-OS 11.2)
             if( isset($this->additional['mica-engine-spyware-enabled']) && $this->inlineML_localDeepLearningComplies( 'visibility' ) === FALSE )
                 return FALSE;
+            // VP models: local-deep-learning as the BP JSON lists it (from PAN-OS 12.2)
+            if( isset($this->additional['mica-engine-vulnerability-enabled']) && $this->inlineML_localDeepLearningComplies( 'visibility', 'vulnerability' ) === FALSE )
+                return FALSE;
 
             // virus-and-wildfire-analysis: its WildFire part only where the PAN-OS version has it
             if( isset($this->additional['mica-engine-wildfire-rules']) && $this->bpFeatureSupported( 'wildfire-mica' ) )
@@ -483,7 +500,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any") {
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action'])) {
                                     if ($detailed_check['action'][0] !== $this->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'])
                                         $bp_set = FALSE;
                                 }
@@ -509,7 +526,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any") {
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action'])) {
                                     $validate = $detailed_check['action'][0];
                                     $negate_string = "";
                                     if (strpos($validate, "!") !== FALSE)
@@ -601,7 +618,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if( $detailed_check['type'][0] == "any" )
+                                if( $detailed_check['type'][0] == "any" && !empty($detailed_check['action']) )
                                 {
                                     if( $detailed_check['action'][0] !== $this->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'] )
                                         $bp_set = FALSE;
@@ -629,7 +646,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any")
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action']))
                                 {
                                     $validate = $detailed_check['action'][0];
                                     $negate_string = "";
@@ -650,6 +667,28 @@ class SecurityProfile2
                         }
                     }
 
+                }
+
+                // local-deep-learning: shown with the settings; not BP / not visible as the BP JSON lists it (from PAN-OS 12.2)
+                if( isset($this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning']) )
+                {
+                    $ldl_string = " - local-deep-learning :".$this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning'];
+                    $ldl_bp = ( $bestPractice || $visibility ) ? $this->inlineML_localDeepLearningDetectorComplies( 'bp', $type, 'vulnerability' ) : null;
+                    $ldl_vis = ( $bestPractice || $visibility ) ? $this->inlineML_localDeepLearningDetectorComplies( 'visibility', $type, 'vulnerability' ) : null;
+                    $ldl_signs = "";
+                    if( $bestPractice && $ldl_bp === FALSE )
+                        $ldl_signs .= $bp_NOT_sign;
+                    if( $visibility && $ldl_vis === FALSE )
+                        $ldl_signs .= $visible_NOT_sign;
+
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $tmp_string .= $ldl_string.$ldl_signs;
+                    elseif( $ldl_signs !== "" || $ldl_bp === FALSE || $ldl_vis === FALSE )
+                    {
+                        // list mode without signs: the model is listed because its local-deep-learning does not comply
+                        $tmp_string .= $ldl_string;
+                        $add_to_array = true;
+                    }
                 }
 
                 if( $add_to_array )
@@ -1418,16 +1457,17 @@ class SecurityProfile2
      * null: the BP JSON lists nothing for this detector, or the PAN-OS version has no local deep learning
      * @return bool|null
      */
-    public function inlineML_localDeepLearningDetectorComplies( string $section, string $detector ): ?bool
+    public function inlineML_localDeepLearningDetectorComplies( string $section, string $detector, string $secprof_type = 'spyware' ): ?bool
     {
-        if( !$this->bpFeatureSupported( 'spyware-local-deep-learning' ) || !$this->localDeepLearningSupported( 'spyware', $detector ) )
+        $t = self::$localDeepLearningTypes[$secprof_type];
+        if( !$this->bpFeatureSupported( $t['feature'] ) || !$this->localDeepLearningSupported( $secprof_type, $detector ) )
             return null;
         $ret = null;
-        foreach( self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, 'spyware' ) ) as $entry )
+        foreach( self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, $secprof_type ) ) as $entry )
         {
             if( !in_array( 'any', $entry['types'], TRUE ) && !in_array( $detector, $entry['types'], TRUE ) )
                 continue;
-            $value = $this->additional['mica-engine-spyware-enabled'][$detector]['local-deep-learning'] ?? '';
+            $value = $this->additional[$t['container']][$detector]['local-deep-learning'] ?? '';
             if( !self::bpValueComplies( $value, $entry['validate'] ) )
                 return FALSE;
             $ret = TRUE;
@@ -1439,12 +1479,12 @@ class SecurityProfile2
      * local-deep-learning of all AS detectors (inlineML_localDeepLearningDetectorComplies()):
      * FALSE: one listed detector does not comply; TRUE: all listed comply; null: nothing listed / not supported
      */
-    public function inlineML_localDeepLearningComplies( string $section ): ?bool
+    public function inlineML_localDeepLearningComplies( string $section, string $secprof_type = 'spyware' ): ?bool
     {
         $ret = null;
-        foreach( array_keys( $this->additional['mica-engine-spyware-enabled'] ?? array() ) as $detector )
+        foreach( array_keys( $this->additional[ self::$localDeepLearningTypes[$secprof_type]['container'] ] ?? array() ) as $detector )
         {
-            $tmp = $this->inlineML_localDeepLearningDetectorComplies( $section, $detector );
+            $tmp = $this->inlineML_localDeepLearningDetectorComplies( $section, $detector, $secprof_type );
             if( $tmp === FALSE )
                 return FALSE;
             if( $tmp === TRUE )
@@ -1459,15 +1499,16 @@ class SecurityProfile2
      * in the PAN-OS version of the location ($localDeepLearningMinVersion); others are never set.
      * Nothing listed / PAN-OS without local deep learning: no change. @return bool TRUE: changed
      */
-    public function inlineML_localDeepLearningSetFromJSON( string $section ): bool
+    public function inlineML_localDeepLearningSetFromJSON( string $section, string $secprof_type = 'spyware' ): bool
     {
-        if( !$this->bpFeatureSupported( 'spyware-local-deep-learning' ) )
+        $t = self::$localDeepLearningTypes[$secprof_type];
+        if( !$this->bpFeatureSupported( $t['feature'] ) )
             return FALSE;
-        $container = DH::findFirstElement( 'mica-engine-spyware-enabled', $this->xmlroot );
+        $container = DH::findFirstElement( $t['container'], $this->xmlroot );
         if( $container === FALSE )
             return FALSE;
 
-        $entries = self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, 'spyware' ) );
+        $entries = self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, $secprof_type ) );
         $changed = FALSE;
         foreach( $container->childNodes as $detectorNode )
         {
@@ -1475,7 +1516,7 @@ class SecurityProfile2
                 continue;
             $detector = DH::findAttribute( "name", $detectorNode );
             // only models with local deep learning in this PAN-OS version ($localDeepLearningMinVersion), also for type 'any'
-            if( !$this->localDeepLearningSupported( 'spyware', $detector ) )
+            if( !$this->localDeepLearningSupported( $secprof_type, $detector ) )
                 continue;
             foreach( $entries as $entry )
             {
@@ -1488,7 +1529,7 @@ class SecurityProfile2
                 if( strpos( $target, '!' ) === 0 )
                     $target = ( substr( $target, 1 ) == 'disable' ) ? 'enable' : 'disable';
                 $node->textContent = $target;
-                $this->additional['mica-engine-spyware-enabled'][$detector]['local-deep-learning'] = $target;
+                $this->additional[$t['container']][$detector]['local-deep-learning'] = $target;
                 $changed = TRUE;
             }
         }
