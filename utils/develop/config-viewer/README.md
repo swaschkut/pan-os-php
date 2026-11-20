@@ -420,8 +420,10 @@ A plug-in adds to the viewer without changing its code (`lib/ViewerPlugins.php`)
 
 | What | How it shows |
 |---|---|
-| run types | `POST …/configs/<cid>/<plugin>-<run>/runs`; in the page: the "Runs" card with the fields the plug-in declares (`text`, `location`, `file:<kind>`) |
-| file kinds | JSON files of a project for its runs: `…/files?kind=<plugin>-<kind>`, with a check by the plug-in at upload |
+| run types | `POST …/configs/<cid>/<plugin>-<run>/runs`; in the page: the "Runs" card with the fields the plug-in declares (`text`, `location`, `select`, `multi`, `file:<kind>`) |
+| run types without a version (`'input' => 'none'`) | `POST …/projects/<pid>/<plugin>-<run>/runs` - the input is a project file, the result becomes a version (e.g. a migration) |
+| file kinds | files of a project for its runs: `…/files?kind=<plugin>-<kind>`, with a check by the plug-in at upload. JSON, or `'format' => 'raw'` for any file (a 3rd party configuration) with its own size limit (`'max'`, up to 200 MB) |
+| result into another project | `POST …/runs/<jid>/save` with `{"project": "<pid>"}` (write permission there): the version's note names the run and the project it comes from |
 | playbook step types | pan-os-php types a playbook may use in addition |
 
 A plug-in is a folder `<name>/` with `plugin.php` that returns the description as an array - see `examples/plugins/example/plugin.php` (two run types, one file kind). Folders: `plugins/` in this folder, and the folder named by `PANOSPHP_VIEWER_PLUGINS` (set it for web, service and job runner). `GET meta` → `plugins` lists run types, fields and file kinds; admins also see under Account which plug-ins are loaded and why one was refused.
@@ -435,4 +437,4 @@ What a plug-in run can do is limited by the viewer, not by the plug-in:
 
 A plug-in is PHP code inside the web part and the job runner - install only what you would install as part of the viewer. `'feature' => '<name>'` marks a plug-in as a licensed feature; `ViewerApp::featureOn()` is the one place for that check and says yes to everything until licences are built ([todo/config-viewer-license.md](../../../todo/config-viewer-license.md)).
 
-**Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes and own pages, file kinds that are not JSON, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
+A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes and own pages, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).

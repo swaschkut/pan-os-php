@@ -20,8 +20,11 @@
 
 /**
  * Plug-ins of the config viewer (interface version 1). A plug-in adds to the viewer without changing its code:
- *   - run types   POST …/configs/<cid>/<plugin>-<run>/runs: the plug-in builds the pan-os-php arguments of the run
- *   - file kinds  JSON files of a project that its runs use (…/files?kind=<plugin>-<kind>)
+ *   - run types   POST …/configs/<cid>/<plugin>-<run>/runs: the plug-in builds the pan-os-php arguments of the run;
+ *                 with 'input' => 'none' the run needs no version (POST …/projects/<pid>/<plugin>-<run>/runs) - e.g.
+ *                 a migration, whose input is a project file and whose result becomes the first version
+ *   - file kinds  files of a project that its runs use (…/files?kind=<plugin>-<kind>): JSON, or 'format' => 'raw'
+ *                 for any other file (a 3rd party configuration), with its own size limit
  *   - step types  pan-os-php types that a playbook may use in addition
  * The browser page shows the run types with the fields the plug-in declares - a plug-in brings no script for the page.
  *
@@ -37,7 +40,9 @@
 class ViewerPlugins
 {
     const API = 1;
-    const FIELD_KINDS = '/^(text|location|file:[a-z][a-z0-9-]{0,40})$/';
+    const FIELD_KINDS = '/^(text|location|select|multi|file:[a-z][a-z0-9-]{0,40})$/';
+    /** largest size limit a file kind may ask for */
+    const KIND_MAX = 209715200;
 
     /** @var array name => description (checked) */
     public $plugins = array();
@@ -102,7 +107,11 @@ class ViewerPlugins
                 throw new Exception( 'file kind: lower case name and a description' );
             if( isset( $k['check'] ) && !is_callable( $k['check'] ) )
                 throw new Exception( 'file kind ' . $kind . ': "check" must be callable' );
-            $out['kinds'][$name . '-' . $kind] = array( 'title' => self::text( $k['title'] ?? $kind, 'title', 80 ), 'check' => $k['check'] ?? null );
+            $format = $k['format'] ?? 'json';
+            $max = $k['max'] ?? null;
+            if( !in_array( $format, array( 'json', 'raw' ), TRUE ) || ( $max !== null && ( !is_int( $max ) || $max < 1 || $max > self::KIND_MAX ) ) )
+                throw new Exception( 'file kind ' . $kind . ': "format" json or raw, "max" bytes up to ' . self::KIND_MAX );
+            $out['kinds'][$name . '-' . $kind] = array( 'title' => self::text( $k['title'] ?? $kind, 'title', 80 ), 'check' => $k['check'] ?? null, 'format' => $format, 'max' => $max );
         }
         foreach( (array)( $p['runs'] ?? array() ) as $run => $r )
         {
@@ -117,8 +126,20 @@ class ViewerPlugins
             {
                 if( !is_array( $f ) || !isset( $f['name'], $f['kind'] ) || !is_string( $f['name'] ) || !preg_match( '/^[a-z][a-z0-9_]{0,30}$/', $f['name'] )
                     || !is_string( $f['kind'] ) || !preg_match( self::FIELD_KINDS, $f['kind'] ) || in_array( $f['name'], array( 'bp' ), TRUE ) )
-                    throw new Exception( 'run ' . $run . ': a field needs "name" and "kind" (text, location, file:<kind>)' );
+                    throw new Exception( 'run ' . $run . ': a field needs "name" and "kind" (text, location, select, multi, file:<kind>)' );
                 $kind = $f['kind'];
+                $options = array();
+                if( $kind === 'select' || $kind === 'multi' )
+                {
+                    foreach( (array)( $f['options'] ?? array() ) as $value => $label )
+                    {
+                        if( !preg_match( '/^[a-z0-9][a-z0-9_.-]{0,40}$/', (string)$value ) )
+                            throw new Exception( 'run ' . $run . ': field ' . $f['name'] . ': option values with lower case letters, digits and . _ -' );
+                        $options[(string)$value] = self::text( $label, 'option', 80 );
+                    }
+                    if( count( $options ) < 1 || count( $options ) > 200 )
+                        throw new Exception( 'run ' . $run . ': field ' . $f['name'] . ' needs "options" (value => label)' );
+                }
                 // file:<kind> of this plug-in, or the kinds of the viewer
                 if( strpos( $kind, 'file:' ) === 0 && !in_array( substr( $kind, 5 ), array( 'playbook', 'bp' ), TRUE ) )
                 {
@@ -127,12 +148,17 @@ class ViewerPlugins
                     $kind = 'file:' . $name . '-' . substr( $kind, 5 );
                 }
                 $fields[] = array( 'name' => $f['name'], 'kind' => $kind, 'label' => self::text( $f['label'] ?? $f['name'], 'label', 80 ),
-                    'default' => self::text( $f['default'] ?? '', 'default', 200 ), 'required' => !empty( $f['required'] ) );
+                    'default' => self::text( $f['default'] ?? '', 'default', 200 ), 'required' => !empty( $f['required'] ), 'options' => $options );
             }
             $result = $r['result'] ?? null;
             if( $result !== null && ( !is_string( $result ) || !preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}\.xml$/', $result ) ) )
                 throw new Exception( 'run ' . $run . ': "result" must be a plain .xml file name' );
-            $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
+            $input = $r['input'] ?? 'version';
+            if( !in_array( $input, array( 'version', 'none' ), TRUE ) )
+                throw new Exception( 'run ' . $run . ': "input" is version or none' );
+            if( $input === 'none' && $result === null )
+                throw new Exception( 'run ' . $run . ': a run without a version needs "result"' );
+            $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'input' => $input, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
                 'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'] );
         }
         foreach( (array)( $p['playbookTypes'] ?? array() ) as $t )
@@ -186,11 +212,39 @@ class ViewerPluginRun
     /** @var array body of the request (not checked) */
     public $in;
     private $file;
+    private $fields = array();
 
-    public function __construct( array $in, callable $file )
+    public function __construct( array $in, callable $file, array $fields = array() )
     {
         $this->in = $in;
         $this->file = $file;
+        foreach( $fields as $f )
+            $this->fields[$f['name']] = $f;
+    }
+
+    /** the chosen value of a "select" field (one of its options); '' when not given */
+    public function choice( string $field ): string
+    {
+        $v = $this->in[$field] ?? '';
+        if( $v === '' )
+            return '';
+        if( !is_string( $v ) || !isset( $this->fields[$field]['options'][$v] ) )
+            throw new ViewerException( $field . ': not one of the options', 400 );
+        return $v;
+    }
+
+    /** the chosen values of a "multi" field (each one of its options); empty when not given */
+    public function choices( string $field ): array
+    {
+        $v = $this->in[$field] ?? array();
+        if( is_string( $v ) )
+            $v = $v === '' ? array() : explode( ',', $v );
+        if( !is_array( $v ) )
+            throw new ViewerException( $field . ': a list of options', 400 );
+        foreach( $v as $one )
+            if( !is_string( $one ) || !isset( $this->fields[$field]['options'][$one] ) )
+                throw new ViewerException( $field . ': not one of the options', 400 );
+        return array_values( array_unique( $v ) );
     }
 
     /** text field: letters, digits, space and . _ - , : / (no quotes, no control characters); '' when not given */

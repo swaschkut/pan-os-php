@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -41,6 +41,16 @@ file_put_contents( $plugins . '/othername/plugin.php', "<?php return array( 'api
 file_put_contents( $plugins . '/badargs/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badargs', 'runs' => array(
     'in' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'in=/etc/passwd' ); } ),
     'out' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'actions=display', 'out=/tmp/x.xml' ); } ) ) );" );
+// a run type without a version: its input is a raw project file (a small Cisco switch configuration, migrated)
+file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1, 'name' => 'mig',
+    'kinds' => array( 'source' => array( 'title' => 'source', 'format' => 'raw', 'max' => 2000,
+        'check' => function( \$path ) { if( strpos( file_get_contents( \$path ), 'access-list' ) === FALSE ) return 'no access-list in the file'; } ) ),
+    'runs' => array( 'import' => array( 'tool' => 'vendor-migration', 'input' => 'none', 'result' => 'out.xml',
+        'fields' => array( array( 'name' => 'vendor', 'kind' => 'select', 'required' => TRUE, 'options' => array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ),
+            array( 'name' => 'kinds', 'kind' => 'multi', 'options' => array( 'address' => 'addresses', 'rule' => 'rules' ) ),
+            array( 'name' => 'source', 'kind' => 'file:source', 'required' => TRUE ) ),
+        'args' => function( \$run ) { return array( 'vendor=' . \$run->choice( 'vendor' ), 'file=' . \$run->file( 'source', 'mig-source' ), 'out=' . \$run->out( 'out.xml' ),
+            'shadow-ignoreinvalidaddressobjects', '#kinds=' . implode( '+', \$run->choices( 'kinds' ) ) ); } ) ) );" );
 
 // ---- users, server
 $env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins );
@@ -715,9 +725,10 @@ eq( status( $alice->call( 'DELETE', $G ) ), 200, 'grants project deleted' );
 
 // ---- 12p. plug-ins: run types, file kinds
 $m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
-eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules' ), 'plug-ins: run types in meta' );
+eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'mig-import' ), 'plug-ins: run types in meta' );
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
-    array( array( 'example-taglist' => 'tag list (JSON)' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
+    array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
+eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
 eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason' );
 eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
@@ -753,6 +764,38 @@ eq( status( $alice->call( 'POST', $PLC . '/badargs-out/runs', array() ) ), 500, 
 eq( status( $alice->call( 'POST', $PLC . '/wrongapi-x/runs', array() ) ), 404, 'plug-ins: no run type of a refused plug-in' );
 eq( status( $alice->call( 'PUT', $PL . '/members', array( 'user' => 'bob', 'role' => 'write', 'scope' => array( 'shared' ) ) ) ), 200, 'plug-ins: bob limited' );
 eq( status( $bob->call( 'POST', $PLC . '/example-export/runs', array() ) ), 403, 'plug-ins: no run for a limited member' );
+// a raw file kind, a run without a version, the result into this and into another project
+$sw = "hostname SW1\nip access-list extended ACL-IN\n permit tcp any host 10.1.1.10 eq 443\n deny ip any any\n";
+eq( status( $up( $alice, $PL, 'mig-source', "hostname only\n" ) ), 400, 'plug-ins: raw file - the check of the plug-in refuses it' );
+eq( status( $up( $alice, $PL, 'mig-source', $sw . str_repeat( "! filler\n", 300 ) ) ), 413, 'plug-ins: raw file - the size limit of the kind' );
+$r = $up( $alice, $PL, 'mig-source', $sw );
+eq( status( $r ), 201, 'plug-ins: raw file (not JSON) uploaded' );
+$srcFid = $r[1]['fid'];
+$r = $alice->call( 'GET', $PL . '/files/' . $srcFid . '/download' );
+eq( array( status( $r ), $r[1] ), array( 200, $sw ), 'plug-ins: raw file comes back unchanged' );
+eq( status( $bob->call( 'GET', $PL . '/files/' . $srcFid . '/download' ) ), 403, 'plug-ins: no raw file for a limited member' );
+eq( status( $alice->call( 'POST', $PLC . '/mig-import/runs', array( 'vendor' => 'ciscoswitch', 'source' => $srcFid ) ) ), 404, 'plug-ins: a run without a version is not started on a version' );
+eq( status( $alice->call( 'POST', $PL . '/example-export/runs', array() ) ), 404, 'plug-ins: a run that needs a version is not started without one' );
+eq( status( $alice->call( 'POST', $PL . '/mig-import/runs', array( 'vendor' => 'paloalto', 'source' => $srcFid ) ) ), 400, 'plug-ins: select field - only its options' );
+eq( status( $alice->call( 'POST', $PL . '/mig-import/runs', array( 'vendor' => 'ciscoswitch', 'source' => $srcFid, 'kinds' => array( 'address', 'x' ) ) ) ), 400, 'plug-ins: multi field - only its options' );
+eq( status( $alice->call( 'POST', $PL . '/mig-import/runs', array( 'vendor' => 'ciscoswitch', 'source' => $tagFid ) ) ), 400, 'plug-ins: a JSON file is not a raw source' );
+$r = $alice->call( 'POST', $PL . '/mig-import/runs', array( 'vendor' => 'ciscoswitch', 'source' => $srcFid, 'kinds' => array( 'address', 'rule' ) ) );
+eq( array( status( $r ), array_key_exists( 'cid', (array)$r[1] ) ? $r[1]['cid'] : 'x', $r[1]['args'][0] ?? null, preg_match( '#^file=%FILES%/[0-9a-f]{32}\.dat$#', $r[1]['args'][1] ?? '' ), $r[1]['args'][4] ?? null ),
+    array( 202, null, 'vendor=ciscoswitch', 1, '#kinds=address+rule' ), 'plug-ins: run without a version queued' );
+$migRun = $PL . '/runs/' . ( $r[1]['jid'] ?? 'x' );
+$r = waitRun( $alice, $migRun );
+eq( array( $r[1]['state'] ?? null, in_array( 'out.xml', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( 'done', TRUE ), 'plug-ins: run without a version done, result configuration written' );
+$r = $alice->call( 'POST', $migRun . '/save' );
+eq( array( status( $r ), $r[1]['pid'] ?? null, $r[1]['note'] ?? null ), array( 201, substr( $PL, 9 ), 'mig-import run ' . substr( $migRun, -32, 8 ) ), 'plug-ins: result as the version of this project' );
+$r = $alice->call( 'GET', $PL . '/configs/' . ( $r[1]['cid'] ?? 'x' ) . '/objects?type=rule&location=any' );
+eq( array( status( $r ), ( $r[1]['total'] ?? 0 ) >= 2 ), array( 200, TRUE ), 'plug-ins: the migrated version opens in the viewer and holds the rules' );
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Optimise' ) );
+$OPT = $r[1]['pid'];
+$r = $alice->call( 'POST', $migRun . '/save', array( 'project' => $OPT ) );
+eq( array( status( $r ), $r[1]['pid'] ?? null, $r[1]['note'] ?? null ), array( 201, $OPT, 'mig-import run ' . substr( $migRun, -32, 8 ) . ' of project "Plug-ins"' ), 'plug-ins: result as a version of another project, with where it comes from' );
+eq( count( $alice->call( 'GET', 'projects/' . $OPT . '/configs' )[1]['configs'] ?? array() ), 1, 'plug-ins: the other project holds the version' );
+eq( status( $alice->call( 'POST', $migRun . '/save', array( 'project' => substr( $P, 9 ) === $OPT ? 'x' : str_repeat( '0', 32 ) ) ) ), 404, 'plug-ins: no result into an unknown project' );
+eq( status( $alice->call( 'DELETE', 'projects/' . $OPT ) ), 200, 'plug-ins: other project deleted' );
 eq( status( $alice->call( 'DELETE', $PL ) ), 200, 'plug-ins: project deleted' );
 
 // ---- 13. stopping the service stops its workers

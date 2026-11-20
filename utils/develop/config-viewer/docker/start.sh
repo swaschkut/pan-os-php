@@ -31,7 +31,9 @@ web)
         fi
     fi
     echo "config-viewer: web part on port 8080"
-    as_user "$groups_default" php -S 0.0.0.0:8080 -t .
+    # uploads: the limit of the viewer (PANOSPHP_VIEWER_MAX_UPLOAD_MB, default 200) instead of PHP's 2 MB
+    mb="${PANOSPHP_VIEWER_MAX_UPLOAD_MB:-200}"
+    as_user "$groups_default" php -d upload_max_filesize="${mb}M" -d post_max_size="$((mb + 8))M" -S 0.0.0.0:8080 -t .
     ;;
 service)
     as_user "$groups_default" php bin/service.php

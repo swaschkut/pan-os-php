@@ -226,13 +226,13 @@ async function showProject(pid) {
     const plug = state.meta.plugins || { runs: {}, kinds: {}, plugins: [] };
     const fKind = el('select', {}, el('option', { value: 'playbook', text: 'playbook JSON' }), el('option', { value: 'bp', text: 'BP JSON' }),
         Object.entries(plug.kinds).map(([k, title]) => el('option', { value: k, text: title })));
-    const fFile = el('input', { type: 'file', accept: '.json,application/json', required: true });
+    const fFile = el('input', { type: 'file', required: true });
     const filesCard = el('div', { class: 'card' }, el('h2', { text: 'Project files' }),
         el('p', { class: 'muted', text: 'Playbooks and BP JSON files for runs, for the checks of a read (?bp=) and for alert-only-set / best-practice-set. A playbook is checked when it is uploaded: only steps that work on the configuration and write plain file names.' }),
         canWrite && !limited ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
             const fd = new FormData(); fd.append('file', fFile.files[0]);
             await api('POST', base + '/files?kind=' + fKind.value, fd); await showProject(pid);
-        }); } }, field('Kind', fKind), field('JSON file', fFile), el('button', { class: 'primary', type: 'submit', text: 'Upload' })) : null,
+        }); } }, field('Kind', fKind), field('File', fFile), el('button', { class: 'primary', type: 'submit', text: 'Upload' })) : null,
         files.files.length === 0 ? el('p', { class: 'muted', text: 'No files.' }) :
         table(['File', 'Kind', 'Created', 'By', 'Size', ''], files.files.map(f => el('tr', {},
             el('td', { text: f.name }), el('td', {}, el('span', { class: 'badge', text: f.kind })), el('td', { text: fmtTime(f.created) }), el('td', { text: f.created_by || '' }),
@@ -252,7 +252,7 @@ async function showProject(pid) {
         const rPlaybook = el('select', {}, el('option', { value: '', text: '- choose a playbook -' }), files.files.filter(f => f.kind === 'playbook').map(f => el('option', { value: f.fid, text: f.name })));
         const rBp = el('select', {}, el('option', { value: '', text: 'BP JSON shipped with pan-os-php' }), files.files.filter(f => f.kind === 'bp').map(f => el('option', { value: f.fid, text: f.name })));
         const rLocation = el('input', { value: 'any', maxlength: 63 });
-        const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp);
+        const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp), versionField = field('Version', rVersion);
         // run types of plug-ins: the fields the plug-in declares (text, location, a project file of a kind)
         const plugFields = el('span', { class: 'row' });
         let plugInputs = [];
@@ -260,9 +260,15 @@ async function showProject(pid) {
             const pr = plug.runs[rType.value];
             pbField.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
             bpField.hidden = !!pr && !pr.bp;
+            // a run type without a version (its input is a project file)
+            versionField.hidden = !!pr && pr.input === 'none';
+            rVersion.required = !versionField.hidden;
             plugInputs = (pr ? pr.fields : []).map(f => {
                 const kind = f.kind.startsWith('file:') ? f.kind.slice(5) : null;
+                const opts = Object.entries(f.options || {});
                 const input = kind ? el('select', {}, el('option', { value: '', text: '- choose a file -' }), files.files.filter(x => x.kind === kind).map(x => el('option', { value: x.fid, text: x.name })))
+                    : f.kind === 'select' ? el('select', {}, el('option', { value: '', text: '- choose -' }), opts.map(([v, label]) => { const o = el('option', { value: v, text: label }); o.selected = v === f.default; return o; }))
+                    : f.kind === 'multi' ? Object.assign(el('select', { multiple: true, size: Math.min(6, opts.length) }, opts.map(([v, label]) => el('option', { value: v, text: label }))), { isMulti: true })
                     : el('input', { value: f.default || '', maxlength: 200 });
                 return { f, input };
             });
@@ -270,6 +276,8 @@ async function showProject(pid) {
         };
         rType.addEventListener('change', typeChanged); typeChanged();
         const runsBody = el('div', {});
+        // projects the result of a run can go to
+        const writable = (await api('GET', 'projects')).projects.filter(x => x.role !== 'read');
         const openFiles = new Set();
         let refreshRuns = async () => {};
         async function drawRuns() {
@@ -287,9 +295,11 @@ async function showProject(pid) {
                                 if (openFiles.has(r.jid)) openFiles.delete(r.jid); else openFiles.add(r.jid);
                                 await drawRuns();
                             }) }), ' ',
-                            canWrite && (r.type === 'playbook' || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('button', { type: 'button', text: 'Result as new version', onclick: () => run(async () => {
-                                await api('POST', base + '/runs/' + r.jid + '/save'); await showProject(pid); message('the result configuration of the run is a new version');
-                            }) }) : null, ' ',
+                            canWrite && (r.type === 'playbook' || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
+                                const to = ev.target.parentNode.querySelector('select').value;
+                                await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
+                                await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
+                            }) }), ' in ', el('select', { 'aria-label': 'project for the result' }, writable.map(x => { const o = el('option', { value: x.pid, text: x.pid === pid ? 'this project' : x.name }); o.selected = x.pid === pid; return o; }))) : null, ' ',
                             el('button', { class: 'danger', type: 'button', text: open ? 'Cancel' : 'Delete', onclick: () => run(async () => {
                                 if (!open && !confirm('Delete this run with its result files?')) return;
                                 await api('DELETE', base + '/runs/' + r.jid); openFiles.delete(r.jid); await refreshRuns();
@@ -304,7 +314,7 @@ async function showProject(pid) {
         }
         runsCard = el('div', { class: 'card' }, el('h2', { text: 'Runs' }),
             el('p', { class: 'muted', text: 'A run works on one version in its own folder; exports, set commands and the result configuration are its result files. Nothing changes a version - the result of a playbook run can be taken as a new version.' }),
-            configs.configs.length === 0 ? el('p', { class: 'muted', text: 'Upload a configuration first.' }) :
+            configs.configs.length === 0 && !Object.values(plug.runs).some(r => r.input === 'none') ? el('p', { class: 'muted', text: 'Upload a configuration first.' }) :
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const body = {};
                 if (rBp.value) body.bp = rBp.value;
@@ -312,16 +322,17 @@ async function showProject(pid) {
                 else if (plug.runs[rType.value]) {
                     if (!plug.runs[rType.value].bp) delete body.bp;
                     for (const x of plugInputs) {
-                        const v = x.input.value.trim();
-                        if (v === '' && x.f.required) throw new Error(x.f.label + ' is needed');
-                        if (v !== '') body[x.f.name] = v;
+                        const v = x.input.isMulti ? Array.from(x.input.selectedOptions).map(o => o.value) : x.input.value.trim();
+                        if (v.length === 0 && x.f.required) throw new Error(x.f.label + ' is needed');
+                        if (v.length !== 0) body[x.f.name] = v;
                     }
                 }
                 else body.location = rLocation.value.trim() || 'any';
-                await api('POST', base + '/configs/' + rVersion.value + '/' + rType.value + '/runs', body);
+                const noVersion = plug.runs[rType.value] && plug.runs[rType.value].input === 'none';
+                await api('POST', base + (noVersion ? '' : '/configs/' + rVersion.value) + '/' + rType.value + '/runs', body);
                 message('run queued');
                 await refreshRuns();
-            }); } }, field('Run', rType), field('Version', rVersion), pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' })),
+            }); } }, field('Run', rType), versionField, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' })),
             runsBody);
         // while a run is open: refresh the list
         let openRuns = await drawRuns();

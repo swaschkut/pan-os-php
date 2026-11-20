@@ -92,7 +92,7 @@ class ViewerContainer
         foreach( array( 'pid', 'jid' ) as $k )
             if( !preg_match( '/^[0-9a-f]{32}$/', (string)$job[$k] ) )
                 throw new Exception( 'container: invalid ' . $k );
-        if( !preg_match( '/^[0-9a-f]{32}\.xml$/', (string)$job['file'] ) || !preg_match( '/^[a-z-]+$/', (string)( $job['tool'] ?? $job['type'] ) ) )
+        if( ( $job['file'] !== null && !preg_match( '/^[0-9a-f]{32}\.xml$/', (string)$job['file'] ) ) || !preg_match( '/^[a-z-]+$/', (string)( $job['tool'] ?? $job['type'] ) ) )
             throw new Exception( 'container: invalid job' );
         $args = array();
         foreach( $job['rawArgs'] as $a )
@@ -107,7 +107,10 @@ class ViewerContainer
             '--workdir', '/job', '--env', 'HOME=/job', '--env', 'TMPDIR=/job' );
         if( $this->user !== '' )
             array_push( $cmd, '--user', $this->user );
-        array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ), 'in=/project/' . $job['file'] );
+        array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ) );
+        // a run type of a plug-in without a version has no in=
+        if( $job['file'] !== null )
+            $cmd[] = 'in=/project/' . $job['file'];
         return array_merge( $cmd, $args );
     }
 

@@ -68,6 +68,14 @@ after a look at how clean the parsers separate.
   the source, decided per project by the owner;
 * air-gapped customers: the address must be reachable from the Docker host.
 
+## Progress
+
+| Date | Step | State |
+|---|---|---|
+| 2026-11-20 | interface: raw file kinds, runs without a version, select / multi fields, result into another project | done in pan-os-php (see config-viewer-api.md) |
+| 2026-11-20 | local migration report (`report/migration-report.php` in the private repository) | done; first real report: the file is in ASA / PIX / FWSM form (`access-list <name> extended …`, `static (if,if) …`), not IOS switch form |
+| | migration plug-in (private repository): upload → import → version for Cisco switch / router | next |
+
 ## Order (proposal)
 
 1. Interface v2 for migration: non-JSON file kinds, runs without a version, choice fields, result into another

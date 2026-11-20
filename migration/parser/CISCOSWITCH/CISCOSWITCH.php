@@ -1,6 +1,6 @@
 <?php
 
-require_once("parser/CISCOSWITCH/CISCOSWITCHmisc.php");
+require_once dirname(__FILE__) . "/CISCOSWITCHmisc.php";
 
 class CISCOSWITCH extends PARSER
 {

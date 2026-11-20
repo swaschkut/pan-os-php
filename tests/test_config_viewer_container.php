@@ -75,6 +75,8 @@ eq( count( array_filter( $opts, function( $o ) { return in_array( $o, array( '--
 $cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DATA' => 'viewer-data', 'PANOSPHP_VIEWER_CONTAINER_MEMORY' => '512m' ), function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
 eq( array( in_array( 'type=volume,src=viewer-data,dst=/project,volume-subpath=projects/' . $pid . ',readonly', $cmd, TRUE ),
     in_array( 'type=volume,src=viewer-data,dst=/job,volume-subpath=projects/' . $pid . '/jobs/' . $jid, $cmd, TRUE ), in_array( '512m', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ), 'volume name: sub paths of the volume' );
+$cmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'file' => null, 'tool' => 'vendor-migration' ) + $job ); } );
+eq( array( in_array( 'type=vendor-migration', $cmd, TRUE ), count( preg_grep( '/^in=/', $cmd ) ) ), array( TRUE, 0 ), 'a run without a version: the type the plug-in names, no in=' );
 $cmd = withEnv( array( 'PANOSPHP_VIEWER_CONTAINER' => 'podman' ) + $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
 eq( $cmd[0], 'podman', 'podman: same call' );
 foreach( array( 'pid' => '../../etc', 'jid' => 'x', 'file' => '../viewer.sqlite', 'type' => 'stats --privileged' ) as $k => $v )

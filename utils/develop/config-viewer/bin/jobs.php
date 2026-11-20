@@ -147,7 +147,7 @@ while( !$stop )
             unset( $env['TMPDIR'] );
         }
         else
-            $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['tool'], 'in=' . $job['config'] ), $job['args'] );
+            $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['tool'] ), $job['config'] !== null ? array( 'in=' . $job['config'] ) : array(), $job['args'] );
         $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, 'w' ), 2 => array( 'file', $log, 'a' ) ), $pipes, $job['dir'], $env );
         if( !is_resource( $proc ) )
         {

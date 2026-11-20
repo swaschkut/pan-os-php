@@ -282,7 +282,7 @@ try
                 $f = $app->fileDownload( $user, $pid, $route[3] );
                 $viewerAudit['download'] = TRUE;
                 viewerAudit( 200 );
-                header( 'Content-Type: application/json' );
+                header( 'Content-Type: ' . ( $f['raw'] ? 'application/octet-stream' : 'application/json' ) );
                 header( 'Content-Disposition: attachment; filename="' . $f['name'] . '"' );
                 print $f['content'];
                 exit;
@@ -292,6 +292,9 @@ try
         // runs (jobs): …/projects/<pid>/runs                      GET  list
         //              …/projects/<pid>/runs/<jid>                GET  state + result files, DELETE cancel / delete
         //              …/projects/<pid>/runs/<jid>/files/<name…>  GET  one result file
+        // a run without a version (run type of a plug-in with 'input' => 'none'): …/projects/<pid>/<type>/runs  POST
+        if( $n == 4 && $method === 'POST' && $route[3] === 'runs' && in_array( $sub, $app->jobTypes(), TRUE ) )
+            viewerOut( $app->jobCreate( $user, $pid, null, $sub, viewerBody() ), 202 );
         if( $sub === 'runs' )
         {
             if( $n == 3 && $method === 'GET' )
@@ -305,7 +308,7 @@ try
             }
             // the result configuration of a playbook run as a new version of the project
             if( $n == 5 && $method === 'POST' && $route[4] === 'save' )
-                viewerOut( $app->jobSaveConfig( $user, $pid, $route[3] ), 201 );
+                viewerOut( $app->jobSaveConfig( $user, $pid, $route[3], viewerBody()['project'] ?? null ), 201 );
             if( $n >= 6 && $method === 'GET' && $route[4] === 'files' )
             {
                 $f = $app->jobFile( $user, $pid, $route[3], implode( '/', array_map( 'rawurldecode', array_slice( $route, 5 ) ) ) );
