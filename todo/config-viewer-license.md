@@ -67,8 +67,10 @@ whose code is never in the public repository; in the image / bundle they are enc
 
 Needed for it:
 
-* a **plug-in interface** in the viewer: a plug-in registers routes, run types, playbook step types, pages (needed
-  anyway once `migration` / `cdss` are built apart from the core);
+* a **plug-in interface** in the viewer - version 1 is built (run types, file kinds, playbook step types;
+  `lib/ViewerPlugins.php`, the loader has one place where an encrypted plug-in would come in: `ViewerPlugins::read()`;
+  the licence check has one place: `ViewerApp::featureOn()`). Missing for real features: plug-in code inside the run,
+  routes, pages;
 * a **private repository** for the plug-in code;
 * a **tool at Sven's side**: encrypt + sign plug-ins, issue licences with the fitting keys, register;
 * in the bundle (`airgap/make-bundle.sh`): the encrypted plug-ins.

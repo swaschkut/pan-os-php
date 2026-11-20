@@ -31,8 +31,19 @@ function eq( $actual, $expected, $msg )
         $failed[] = $msg . "\n      expected " . json_encode($expected) . "\n      got      " . json_encode($actual);
 }
 
+// ---- plug-ins: the example plug-in and three that must be refused
+$plugins = $data . '-plugins';
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs' ) as $d )
+    mkdir( $plugins . '/' . $d, 0700, TRUE );
+copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
+file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
+file_put_contents( $plugins . '/othername/plugin.php', "<?php return array( 'api' => 1, 'name' => 'stats' );" );
+file_put_contents( $plugins . '/badargs/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badargs', 'runs' => array(
+    'in' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'in=/etc/passwd' ); } ),
+    'out' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'actions=display', 'out=/tmp/x.xml' ); } ) ) );" );
+
 // ---- users, server
-$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1' );
+$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins );
 foreach( array( 'alice' => 'alice-secret-1 admin', 'bob' => 'bob-secret-12', 'carol' => 'carol-secret-3' ) as $name => $spec )
 {
     $parts = explode( ' ', $spec );
@@ -66,7 +77,7 @@ function cleanup()
             proc_terminate( $proc );
             proc_close( $proc );
         }
-    exec( 'rm -rf ' . escapeshellarg( $data ) );
+    exec( 'rm -rf ' . escapeshellarg( $data ) . ' ' . escapeshellarg( $data . '-plugins' ) );
 }
 register_shutdown_function( 'cleanup' );
 
@@ -701,6 +712,48 @@ eq( status( $alice->call( 'DELETE', $G . '/members/dave' ) ), 200, 'member remov
 eq( status( $ct->call( 'GET', $GC . '/objects?type=tag&location=shared' ) ), 401, 'token: gone with the membership' );
 eq( status( $alice->call( 'DELETE', $G . '/tokens/' . $aliceTid ) ), 200, 'token: deleted by its user' );
 eq( status( $alice->call( 'DELETE', $G ) ), 200, 'grants project deleted' );
+
+// ---- 12p. plug-ins: run types, file kinds
+$m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
+eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules' ), 'plug-ins: run types in meta' );
+eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
+    array( array( 'example-taglist' => 'tag list (JSON)' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
+eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason' );
+eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
+$PL = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $PL . '/configs', null, array( 'p.xml', $xml ) );
+$PLC = $PL . '/configs/' . $r[1]['cid'];
+$r = $up( $alice, $PL, 'example-taglist', '["bad tag!"]' );
+eq( array( status( $r ), $r[1]['error'] ?? null ), array( 400, 'tag list: tag names with letters, digits and . _ - only' ), 'plug-ins: file kind - the check of the plug-in refuses a file' );
+eq( status( $up( $alice, $PL, 'nosuch-kind', '[]' ) ), 400, 'plug-ins: unknown file kind' );
+$r = $up( $alice, $PL, 'example-taglist', '["plugin-tag-1","plugin-tag-2"]' );
+eq( status( $r ), 201, 'plug-ins: file of a plug-in kind uploaded' );
+$tagFid = $r[1]['fid'];
+$plBp = $up( $alice, $PL, 'bp', '{}' )[1]['fid'];
+$r = $alice->call( 'POST', $PLC . '/example-export/runs', array( 'location' => 'shared', 'actions' => 'actions=delete', 'in' => '/etc/passwd' ) );
+eq( array( status( $r ), $r[1]['args'] ?? null ), array( 202, array( 'location=shared', 'actions=exportToExcel:addresses.html' ) ), 'plug-ins: run queued with the arguments of the plug-in only' );
+$r = waitRun( $alice, $PL . '/runs/' . $r[1]['jid'] );
+eq( array( $r[1]['state'] ?? null, in_array( 'addresses.html', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( 'done', TRUE ), 'plug-ins: run done, result file' );
+eq( status( $alice->call( 'POST', $PL . '/runs/' . $r[1]['jid'] . '/save' ) ), 409, 'plug-ins: a run type without a result configuration can not become a version' );
+eq( status( $alice->call( 'POST', $PLC . '/example-export/runs', array( 'location' => 'a;b' ) ) ), 400, 'plug-ins: field checked' );
+eq( status( $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array() ) ), 400, 'plug-ins: needed field missing' );
+eq( status( $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array( 'tags' => $plBp ) ) ), 400, 'plug-ins: a file of another kind is refused' );
+eq( status( $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array( 'tags' => $bpFid ) ) ), 400, 'plug-ins: a file of another project is refused' );
+$r = $alice->call( 'POST', $PLC . '/example-tag-rules/runs', array( 'tags' => $tagFid, 'bp' => $plBp ) );
+eq( array( status( $r ), $r[1]['args'] ?? null ), array( 202, array( 'location=any', 'actions=tag-Add-Force:plugin-tag-1/tag-Add-Force:plugin-tag-2', 'out=%JOB%/out.xml' ) ), 'plug-ins: changing run queued; bp ignored for a run type that takes none' );
+$tagRun = $PL . '/runs/' . $r[1]['jid'];
+eq( waitRun( $alice, $tagRun )[1]['state'] ?? null, 'done', 'plug-ins: changing run done' );
+$r = $alice->call( 'POST', $tagRun . '/save' );
+eq( status( $r ), 201, 'plug-ins: result configuration taken as a new version' );
+$r = $alice->call( 'GET', $PL . '/configs/' . ( $r[1]['cid'] ?? 'x' ) . '/objects?type=tag&filter=' . rawurlencode( '(name eq plugin-tag-2)' ) );
+eq( array( status( $r ), $r[1]['total'] ?? null ), array( 200, 1 ), 'plug-ins: the new version holds the change of the run' );
+eq( status( $alice->call( 'POST', $PLC . '/badargs-in/runs', array() ) ), 500, 'plug-ins: a plug-in can not set in=' );
+eq( status( $alice->call( 'POST', $PLC . '/badargs-out/runs', array() ) ), 500, 'plug-ins: a plug-in can not write outside the folder of the run' );
+eq( status( $alice->call( 'POST', $PLC . '/wrongapi-x/runs', array() ) ), 404, 'plug-ins: no run type of a refused plug-in' );
+eq( status( $alice->call( 'PUT', $PL . '/members', array( 'user' => 'bob', 'role' => 'write', 'scope' => array( 'shared' ) ) ) ), 200, 'plug-ins: bob limited' );
+eq( status( $bob->call( 'POST', $PLC . '/example-export/runs', array() ) ), 403, 'plug-ins: no run for a limited member' );
+eq( status( $alice->call( 'DELETE', $PL ) ), 200, 'plug-ins: project deleted' );
 
 // ---- 13. stopping the service stops its workers
 $bob->login( 'bob', 'bob-secret-12' );

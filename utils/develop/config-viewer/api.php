@@ -183,7 +183,7 @@ try
         viewerOut( array( 'ok' => TRUE ) );
     }
     if( $key === 'GET meta' )
-        viewerOut( $app->meta() );
+        viewerOut( $app->meta() + array( 'plugins' => $app->pluginMeta( $admin ) ) );
 
     if( $r0 === 'audit' && $method === 'GET' && count( $route ) == 1 )
         viewerOut( array( 'audit' => $app->auditList( $user, null, $_GET ) ) );
@@ -359,7 +359,7 @@ try
             //                          …/configs/<cid>/<resource>/<name>     GET  one object (all locations, or ?location=)
             //                          …/configs/<cid>/<resource>/actions    POST change: body location, filter, actions
             // …/configs/<cid>/<job type>/runs   POST  queue a run (stats, …) -> 202 with the run
-            if( $n == 6 && $method === 'POST' && $route[5] === 'runs' && in_array( $op, ViewerApp::JOB_TYPES, TRUE ) )
+            if( $n == 6 && $method === 'POST' && $route[5] === 'runs' && in_array( $op, $app->jobTypes(), TRUE ) )
                 viewerOut( $app->jobCreate( $user, $pid, $cid, $op, viewerBody() ), 202 );
             $type = $n >= 5 ? $app->resourceType( $op ) : null;
             if( $type !== null )

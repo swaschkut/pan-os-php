@@ -413,3 +413,26 @@ VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.s
 ```
 
 Without the third argument the BP JSON shipped with pan-os-php is used (CLI: no `shadow-bpjsonfile=`). The set commands file is always written (CLI: `outputformatset=`); its name is fixed. Settings: `VIEWER_URL`, `VIEWER_USER`, `VIEWER_PROJECT`, `VIEWER_OUT`. It logs in with user and password because an API token belongs to one existing project; for repeated runs in one project use a token (`Authorization: Bearer`, no CSRF header).
+
+## Plug-ins (interface version 1)
+
+A plug-in adds to the viewer without changing its code (`lib/ViewerPlugins.php`):
+
+| What | How it shows |
+|---|---|
+| run types | `POST …/configs/<cid>/<plugin>-<run>/runs`; in the page: the "Runs" card with the fields the plug-in declares (`text`, `location`, `file:<kind>`) |
+| file kinds | JSON files of a project for its runs: `…/files?kind=<plugin>-<kind>`, with a check by the plug-in at upload |
+| playbook step types | pan-os-php types a playbook may use in addition |
+
+A plug-in is a folder `<name>/` with `plugin.php` that returns the description as an array - see `examples/plugins/example/plugin.php` (two run types, one file kind). Folders: `plugins/` in this folder, and the folder named by `PANOSPHP_VIEWER_PLUGINS` (set it for web, service and job runner). `GET meta` → `plugins` lists run types, fields and file kinds; admins also see under Account which plug-ins are loaded and why one was refused.
+
+What a plug-in run can do is limited by the viewer, not by the plug-in:
+
+* The plug-in only builds the pan-os-php arguments, from checked values (`ViewerPluginRun`: `text()`, `location()`, `file()`, `json()`, `out()`). It never gets a path of the server.
+* `in=` is always the version of the run; `in=`, `type=`, `projectfolder=` and an `out=` outside the folder of the run are refused. Files come from the same project only. The run itself is a normal run (own folder, own container when configured, no network).
+* A run type with `'result' => 'out.xml'` can be taken as a new version; a run never changes a version.
+* A description that does not fit (interface version, names, fields) is refused as a whole.
+
+A plug-in is PHP code inside the web part and the job runner - install only what you would install as part of the viewer. `'feature' => '<name>'` marks a plug-in as a licensed feature; `ViewerApp::featureOn()` is the one place for that check and says yes to everything until licences are built ([todo/config-viewer-license.md](../../../todo/config-viewer-license.md)).
+
+**Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes and own pages, file kinds that are not JSON, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).

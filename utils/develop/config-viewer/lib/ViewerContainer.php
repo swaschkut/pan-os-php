@@ -84,7 +84,7 @@ class ViewerContainer
     }
 
     /**
-     * @param array $job from ViewerApp::runnerTake(): pid, jid, file, type, rawArgs (with %FILES% / %JOB%)
+     * @param array $job from ViewerApp::runnerTake(): pid, jid, file, tool (pan-os-php type; default: type), rawArgs (with %FILES% / %JOB%)
      * @return string[] argument array for proc_open (no shell)
      */
     public function runCommand( array $job ): array
@@ -92,7 +92,7 @@ class ViewerContainer
         foreach( array( 'pid', 'jid' ) as $k )
             if( !preg_match( '/^[0-9a-f]{32}$/', (string)$job[$k] ) )
                 throw new Exception( 'container: invalid ' . $k );
-        if( !preg_match( '/^[0-9a-f]{32}\.xml$/', (string)$job['file'] ) || !preg_match( '/^[a-z-]+$/', (string)$job['type'] ) )
+        if( !preg_match( '/^[0-9a-f]{32}\.xml$/', (string)$job['file'] ) || !preg_match( '/^[a-z-]+$/', (string)( $job['tool'] ?? $job['type'] ) ) )
             throw new Exception( 'container: invalid job' );
         $args = array();
         foreach( $job['rawArgs'] as $a )
@@ -107,7 +107,7 @@ class ViewerContainer
             '--workdir', '/job', '--env', 'HOME=/job', '--env', 'TMPDIR=/job' );
         if( $this->user !== '' )
             array_push( $cmd, '--user', $this->user );
-        array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . $job['type'], 'in=/project/' . $job['file'] );
+        array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ), 'in=/project/' . $job['file'] );
         return array_merge( $cmd, $args );
     }
 

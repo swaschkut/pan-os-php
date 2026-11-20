@@ -32,6 +32,8 @@
  *    which accepts only paths inside the data directory; a worker only gets validated arguments (whitelist of types
  *    and actions, no file / API input)
  */
+require_once dirname(__FILE__) . '/ViewerPlugins.php';
+
 class ViewerException extends Exception
 {
 }
@@ -100,6 +102,8 @@ class ViewerApp
     public $dataDir;
     public $repoDir;
     private $meta = null;
+    /** @var ViewerPlugins */
+    public $plugins;
 
     public function __construct( ?string $dataDir = null )
     {
@@ -115,6 +119,7 @@ class ViewerApp
         if( PHP_SAPI !== 'cli' && $docRoot !== FALSE && strpos( $this->dataDir . '/', rtrim( $docRoot, '/' ) . '/' ) === 0 )
             throw new ViewerException( 'data directory is inside the web root - set PANOSPHP_VIEWER_DATA to a folder outside of it', 500 );
 
+        $this->plugins = ViewerPlugins::load( dirname( __FILE__, 2 ) );
         @mkdir( $this->dataDir . '/projects', 0700, TRUE );
         @mkdir( $this->dataDir . '/run', 0700, TRUE );
         if( strlen( $this->dataDir ) > 60 )
@@ -471,10 +476,56 @@ class ViewerApp
     }
 
     /** POST …/configs/<cid>/<type>/runs - queues a run; bin/jobs.php executes it */
+    /**
+     * is a licensed feature switched on ? The one place for the licence check (todo/config-viewer-license.md).
+     * Until licences are built every feature is on; null = basic.
+     */
+    public function featureOn( ?string $feature ): bool
+    {
+        return TRUE;
+    }
+
+    /** run types of the plug-ins that are switched on: name => description */
+    public function pluginRuns(): array
+    {
+        return $this->plugins->runs( function( $p ) { return $this->featureOn( $p['feature'] ); } );
+    }
+
+    private function pluginKinds(): array
+    {
+        return $this->plugins->kinds( function( $p ) { return $this->featureOn( $p['feature'] ); } );
+    }
+
+    /** all run types: the ones of the viewer and of the plug-ins */
+    public function jobTypes(): array
+    {
+        return array_merge( self::JOB_TYPES, array_keys( $this->pluginRuns() ) );
+    }
+
+    /** for the browser page / scripts: plug-ins with their run types, fields and file kinds (admins: also the refused ones) */
+    public function pluginMeta( bool $admin ): array
+    {
+        $out = array( 'runs' => array(), 'kinds' => array(), 'plugins' => array() );
+        foreach( $this->plugins->plugins as $p )
+        {
+            $on = $this->featureOn( $p['feature'] );
+            $out['plugins'][] = array( 'name' => $p['name'], 'title' => $p['title'], 'version' => $p['version'], 'feature' => $p['feature'], 'on' => $on );
+            if( !$on )
+                continue;
+            foreach( $p['runs'] as $name => $r )
+                $out['runs'][$name] = array( 'title' => $r['title'], 'fields' => $r['fields'], 'bp' => $r['bp'], 'result' => $r['result'] !== null );
+            foreach( $p['kinds'] as $name => $k )
+                $out['kinds'][$name] = $k['title'];
+        }
+        if( $admin )
+            $out['errors'] = $this->plugins->errors;
+        return $out;
+    }
+
     public function jobCreate( array $user, $pid, $cid, $type, array $in ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
-        if( !is_string( $type ) || !in_array( $type, self::JOB_TYPES, TRUE ) )
+        if( !is_string( $type ) || !in_array( $type, $this->jobTypes(), TRUE ) )
             throw new ViewerException( 'not found', 404 );
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
@@ -495,6 +546,26 @@ class ViewerApp
             $pb = $this->fileGet( $p, $in['playbook'] ?? null, 'playbook' );
             $this->playbookCheck( json_decode( (string)file_get_contents( $pb['path'] ), TRUE ) );
             $args = array( 'json=%FILES%/' . $pb['file'], 'out=%JOB%/out.xml', 'stagename=stage/step-', 'outputformatset=set-commands.txt' );
+        }
+        $plugin = $this->pluginRuns()[$type] ?? null;
+        if( $plugin !== null )
+        {
+            // a run type of a plug-in: it builds the arguments from checked values (ViewerPluginRun); in= is always
+            // the version, files only from this project, results only in the folder of the run
+            foreach( $plugin['fields'] as $f )
+                if( $f['required'] && ( !isset( $in[$f['name']] ) || $in[$f['name']] === '' ) )
+                    throw new ViewerException( $f['name'] . ' is needed', 400 );
+            $run = new ViewerPluginRun( $in, function( $fid, $kind ) use ( $p ) { return $this->fileGet( $p, $fid, $kind ); } );
+            $args = ( $plugin['args'] )( $run );
+            if( !is_array( $args ) )
+                throw new ViewerException( 'plug-in: no arguments', 500 );
+            foreach( $args as $a )
+                if( !is_string( $a ) || strlen( $a ) > 4000 || preg_match( '/[\x00-\x1f]/', $a ) || preg_match( '/^(in|type|projectfolder)=/i', $a )
+                    || ( preg_match( '/^out=/i', $a ) && strpos( $a, 'out=%JOB%/' ) !== 0 ) )
+                    throw new ViewerException( 'plug-in: an argument is not allowed', 500 );
+            $args = array_values( $args );
+            if( !$plugin['bp'] )
+                unset( $in['bp'] );
         }
         // the BP JSON of the project instead of the one shipped with pan-os-php
         if( isset( $in['bp'] ) )
@@ -600,15 +671,17 @@ class ViewerApp
         $p = $this->projectGet( $user, $pid, 'write' );
         self::needUnlimited( $p, 'a new version' );
         $j = $this->jobRow( $p, $jid );
-        $out = $this->jobDir( $p, $j['jid'] ) . '/out.xml';
-        if( $j['state'] !== 'done' || $j['type'] !== 'playbook' || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
+        // playbook runs write out.xml; a run type of a plug-in names its result configuration
+        $result = $j['type'] === 'playbook' ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
+        $out = $this->jobDir( $p, $j['jid'] ) . '/' . ( $result ?? 'out.xml' );
+        if( $j['state'] !== 'done' || $result === null || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
             throw new ViewerException( 'this run has no result configuration', 409 );
         $parent = $this->q( 'SELECT id, name FROM configs WHERE id = ? AND project_id = ?', array( $j['config_id'], $p['id'] ) )->fetch();
         $file = self::randomId() . '.xml';
         if( !copy( $out, $this->projectDir( $p['pid'] ) . '/' . $file ) )
             throw new ViewerException( 'file can not be stored', 500 );
         @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
-        return $this->configInsert( $p, $user, $parent ? $parent['name'] : 'playbook result', $file, $parent ? (int)$parent['id'] : null, 'playbook run ' . substr( $j['jid'], 0, 8 ) );
+        return $this->configInsert( $p, $user, $parent ? $parent['name'] : 'playbook result', $file, $parent ? (int)$parent['id'] : null, $j['type'] . ' run ' . substr( $j['jid'], 0, 8 ) );
     }
 
     // ------------------------------------------------------------------ project files (playbook JSON, BP JSON)
@@ -647,7 +720,8 @@ class ViewerApp
             $at = 'step ' . ( $n + 1 ) . ': ';
             if( !is_array( $step ) || !isset( $step['type'] ) || !is_string( $step['type'] ) )
                 $bad( $at . '"type" missing' );
-            if( !in_array( $step['type'], self::PLAYBOOK_TYPES, TRUE ) )
+            if( !in_array( $step['type'], self::PLAYBOOK_TYPES, TRUE )
+                && !in_array( $step['type'], $this->plugins->playbookTypes( function( $p ) { return $this->featureOn( $p['feature'] ); } ), TRUE ) )
                 $bad( $at . 'type "' . substr( $step['type'], 0, 40 ) . '" is not available in a playbook here' );
             $values = array();
             foreach( $step as $key => $value )
@@ -745,7 +819,7 @@ class ViewerApp
         $f = is_string( $fid ) && preg_match( '/^[0-9a-f]{32}$/', $fid )
             ? $this->q( 'SELECT * FROM files WHERE fid = ? AND project_id = ?', array( $fid, $project['id'] ) )->fetch() : FALSE;
         if( !$f || !preg_match( '/^[0-9a-f]{32}\.json$/', $f['file'] ) || ( $kind !== null && $f['kind'] !== $kind ) )
-            throw new ViewerException( $kind === null ? 'not found' : 'unknown ' . ( $kind === 'bp' ? 'BP JSON' : 'playbook' ) . ' file of this project', $kind === null ? 404 : 400 );
+            throw new ViewerException( $kind === null ? 'not found' : 'unknown ' . ( $kind === 'bp' ? 'BP JSON' : $kind ) . ' file of this project', $kind === null ? 404 : 400 );
         $f['path'] = $this->projectDir( $project['pid'] ) . '/files/' . $f['file'];
         if( !is_file( $f['path'] ) )
             throw new ViewerException( 'not found', 404 );
@@ -764,8 +838,9 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'write' );
         self::needUnlimited( $p, 'uploading a project file' );
-        if( !in_array( $kind, self::FILE_KINDS, TRUE ) )
-            throw new ViewerException( 'kind must be one of: ' . implode( ', ', self::FILE_KINDS ), 400 );
+        $pluginKinds = $this->pluginKinds();
+        if( !is_string( $kind ) || ( !in_array( $kind, self::FILE_KINDS, TRUE ) && !isset( $pluginKinds[$kind] ) ) )
+            throw new ViewerException( 'kind must be one of: ' . implode( ', ', array_merge( self::FILE_KINDS, array_keys( $pluginKinds ) ) ), 400 );
         if( $upload === null || !isset( $upload['tmp_name'], $upload['error'] ) || is_array( $upload['tmp_name'] ) || $upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
             throw new ViewerException( 'no file uploaded (field "file")', 400 );
         if( filesize( $upload['tmp_name'] ) > self::FILE_MAX )
@@ -775,6 +850,13 @@ class ViewerApp
             throw new ViewerException( 'not a JSON file', 400 );
         if( $kind === 'playbook' )
             $this->playbookCheck( $j );
+        if( isset( $pluginKinds[$kind]['check'] ) )
+        {
+            // the plug-in says what is wrong with the file (text), or nothing
+            $why = ( $pluginKinds[$kind]['check'] )( $j );
+            if( is_string( $why ) && $why !== '' )
+                throw new ViewerException( substr( $why, 0, 300 ), 400 );
+        }
         $label = self::checkLabel( basename( str_replace( '\\', '/', (string)( $upload['name'] ?? 'file.json' ) ) ), 'file name', 120 );
         $dir = $this->projectDir( $p['pid'] ) . '/files';
         if( !is_dir( $dir ) && !@mkdir( $dir, 0700, TRUE ) )
@@ -820,7 +902,7 @@ class ViewerApp
         $dir = $this->dataDir . '/projects/' . $j['pid'];
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
-        if( $config === null || !is_file( $config ) || !in_array( $j['type'], self::JOB_TYPES, TRUE ) || !is_array( $args ) || !preg_match( '/^[0-9a-f]{32}$/', $j['jid'] ) )
+        if( $config === null || !is_file( $config ) || !in_array( $j['type'], $this->jobTypes(), TRUE ) || !is_array( $args ) || !preg_match( '/^[0-9a-f]{32}$/', $j['jid'] ) )
         {
             $this->runnerFinish( (int)$j['id'], 'failed', 'the configuration version does not exist any more' );
             return $this->runnerTake();
@@ -844,7 +926,8 @@ class ViewerApp
             $args[$i] = str_replace( array( '%FILES%', '%JOB%' ), array( $dir . '/files', $jobDir ), $a );
         }
         // pid / jid / file / rawArgs: for a run in a container (ViewerContainer), where the folders have other paths
-        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $config,
+        // 'tool': the pan-os-php type that runs - for a run type of a plug-in the one it names
+        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $config,
             'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $j['file'], 'rawArgs' => $rawArgs );
     }
 
@@ -1387,7 +1470,9 @@ class ViewerApp
         {
             if( file_exists( $files['sock'] ) )
                 return $files;
-            if( file_exists( $files['pid'] ) && !self::workerAlive( array( 'pid' => $files['pid'], 'sock' => $files['pid'] ) ) )
+            // the worker ended while loading (a pid file without a process id yet is not an ended worker)
+            if( file_exists( $files['pid'] ) && trim( (string)@file_get_contents( $files['pid'] ) ) !== ''
+                && !self::workerAlive( array( 'pid' => $files['pid'], 'sock' => $files['pid'] ) ) )
                 break;
             usleep( 100000 );
         }

@@ -54,8 +54,10 @@ ini_set( 'log_errors', '1' );
 ini_set( 'display_errors', '0' );
 // whatever pan-os-php prints outside of a captured run is dropped
 ob_start( function( $buffer ) { return ''; }, 4096 );
-file_put_contents( $pidFile, (string)getmypid(), LOCK_EX );
-chmod( $pidFile, 0600 );
+// written apart and renamed: the web part must never see the file without the process id in it
+file_put_contents( $pidFile . '.tmp', (string)getmypid(), LOCK_EX );
+chmod( $pidFile . '.tmp', 0600 );
+rename( $pidFile . '.tmp', $pidFile );
 
 $GLOBALS['viewerIsChild'] = FALSE;
 $GLOBALS['viewerState'] = array( 'dirty' => FALSE, 'changes' => array(), 'saved' => null, 'autosaved' => null, 'loaded' => time() );
