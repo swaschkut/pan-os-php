@@ -113,7 +113,7 @@ Ports: 443 and 80 (redirect), change with `VIEWER_HTTPS_PORT` / `VIEWER_HTTP_POR
 
 **Air gap (no internet at the customer):** `airgap/make-bundle.sh [image] [platform]` on a computer with internet writes one file `panosphp-viewer-<tag>-<platform>-<date>.tar.gz` with the images (pan-os-php, proxy), both compose files, the proxy settings, `install.sh` and `README.txt`. At the customer: unpack, `./install.sh` (or `VIEWER_DOMAIN=… ./install.sh` for HTTPS). The same again with a newer bundle is the update. One bundle per platform: `linux/amd64` (Intel / AMD) and `linux/arm64` (Apple silicon); `install.sh` refuses the wrong one. Docker itself must already be installed there.
 
-**Not checked yet:** the proxy part and the bundle scripts were not run with a real Docker / Caddy. Checked: both compose files together are valid and the web part is no longer published; the client address behind a proxy; `make-bundle.sh` / `install.sh` with a stand-in `docker` (content of the bundle, order of the calls, wrong platform refused).
+**Checked (Sven, 2026-11-20, Docker Desktop on macOS, image `swaschkut/pan-os-php:alpha`):** start with the published image, opening a version, runs, and HTTPS through the proxy with its own CA (`VIEWER_DOMAIN=localhost`). **Not checked yet:** own certificate and Let's Encrypt; the air-gap bundle on a real installation (`make-bundle.sh` / `install.sh` ran only with a stand-in `docker`: content of the bundle, order of the calls, wrong platform refused); Linux hosts; Podman.
 
 ## Run it without Docker (lab)
 
@@ -402,7 +402,7 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 
 **Viewer itself in containers (Docker).** Three services with the same data volume: web (`api.php`), service (`bin/service.php`), job runner (`bin/jobs.php`). Only the job runner gets the Docker socket (`/var/run/docker.sock`) and the `docker` client; web and service get neither. Who controls the socket controls the host - that is why it stays in the one process that builds the call from fixed parts and takes no request from the network. The run containers are started by the Docker of the host, so `PANOSPHP_VIEWER_CONTAINER_DATA` must be the volume name (as `docker volume ls` shows it, with the compose project prefix) or the host path of the data directory, not the path inside the job runner.
 
-**Not checked yet:** the flow is tested with a stand-in `docker` program (`tests/test_config_viewer_container.php`), not against a real Docker or Podman. To check on a real installation: one stats run and one playbook run; a volume name needs `volume-subpath` of `--mount` (current Docker Engine; Podman not checked - use a host path there); on Docker Desktop (macOS) the owner of the result files with `--user`. The interactive workers (`bin/worker.php`) are not in containers yet.
+**Checked (Sven, 2026-11-20):** stats and playbook runs in containers with Docker Desktop on macOS, data in the volume (`volume-subpath`), result files readable by the viewer. **Not checked yet:** Docker Engine on Linux (group of the socket, file owner), a host path instead of a volume, Podman. The repository test (`tests/test_config_viewer_container.php`) uses a stand-in `docker` program. The interactive workers (`bin/worker.php`) are not in containers yet.
 
 ## Example: a playbook run from a script
 
