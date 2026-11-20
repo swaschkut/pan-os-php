@@ -1,0 +1,3 @@
+# own certificate for docker-compose.https.yml: cert.pem and key.pem (never commit them)
+*
+!.gitignore

@@ -95,6 +95,35 @@ Browser: `http://127.0.0.1:8080/` → log in → change the password under Accou
 
 **Not checked yet:** image build and start were not run with a real Docker (none available where it was written). Checked: the compose file is valid (`docker compose config`), the start script creates the first user and starts each part, the container call is tested with a stand-in. Expect small fixes at the first real start.
 
+## HTTPS (several users, server)
+
+A reverse proxy (Caddy) in front; the web part is then reachable through it only. `VIEWER_DOMAIN` is the name the users type into the browser:
+
+```bash
+VIEWER_DOMAIN=viewer.example.com docker compose -f utils/develop/config-viewer/docker-compose.yml \
+    -f utils/develop/config-viewer/docker-compose.https.yml up -d --build
+```
+
+| Certificate | Setting | Fits |
+|---|---|---|
+| Caddy's own CA (default) | nothing (`VIEWER_TLS=internal`) | air gap, first start. Browsers warn until the CA certificate is trusted: `docker compose -f … -f … exec proxy cat /data/caddy/pki/authorities/local/root.crt` |
+| your own certificate | `VIEWER_CERTS=/folder` with `cert.pem` + `key.pem`, `VIEWER_TLS="/certs/cert.pem /certs/key.pem"` | company CA, air gap |
+| Let's Encrypt | `VIEWER_TLS=name@example.com` | public DNS name, internet access |
+
+Ports: 443 and 80 (redirect), change with `VIEWER_HTTPS_PORT` / `VIEWER_HTTP_PORT`. Behind the proxy the audit log and the login lock use the client address the proxy reports (last entry of `X-Forwarded-For`).
+
+**Air gap:** build on a computer with internet, carry the images over, start without `--build`:
+
+```bash
+docker compose -f utils/develop/config-viewer/docker-compose.yml build && docker pull caddy:2
+docker save panosphp-viewer:local caddy:2 | gzip > panosphp-viewer-images.tar.gz
+# on the air-gapped host (with the repository folder or at least utils/develop/config-viewer):
+gunzip -c panosphp-viewer-images.tar.gz | docker load
+VIEWER_DOMAIN=… docker compose -f … -f … up -d
+```
+
+**Not checked yet:** the proxy part was not started with a real Docker / Caddy. Checked: both compose files together are valid and the web part is no longer published; the client address behind a proxy.
+
 ## Run it without Docker (lab)
 
 Needs PHP ≥ 7.4 with `pdo_sqlite`; the PHP **CLI** also needs `pcntl` and `posix` (service / worker). Check:
@@ -383,3 +412,13 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 **Viewer itself in containers (Docker).** Three services with the same data volume: web (`api.php`), service (`bin/service.php`), job runner (`bin/jobs.php`). Only the job runner gets the Docker socket (`/var/run/docker.sock`) and the `docker` client; web and service get neither. Who controls the socket controls the host - that is why it stays in the one process that builds the call from fixed parts and takes no request from the network. The run containers are started by the Docker of the host, so `PANOSPHP_VIEWER_CONTAINER_DATA` must be the volume name (as `docker volume ls` shows it, with the compose project prefix) or the host path of the data directory, not the path inside the job runner.
 
 **Not checked yet:** the flow is tested with a stand-in `docker` program (`tests/test_config_viewer_container.php`), not against a real Docker or Podman. To check on a real installation: one stats run and one playbook run; a volume name needs `volume-subpath` of `--mount` (current Docker Engine; Podman not checked - use a host path there); on Docker Desktop (macOS) the owner of the result files with `--user`. The interactive workers (`bin/worker.php`) are not in containers yet.
+
+## Example: a playbook run from a script
+
+`examples/viewer-playbook-run.sh` (needs `curl`, `jq`): log in → new project → upload a Panorama / firewall XML and a playbook → run → download `out.xml` (changed configuration), `set-commands.txt` and `run.log`.
+
+```bash
+VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.sh panorama.xml utils/api/v1/playbook/visibility.json [bp.json]
+```
+
+Without the third argument the BP JSON shipped with pan-os-php is used (CLI: no `shadow-bpjsonfile=`). The set commands file is always written (CLI: `outputformatset=`); its name is fixed. Settings: `VIEWER_URL`, `VIEWER_USER`, `VIEWER_PROJECT`, `VIEWER_OUT`. It logs in with user and password because an API token belongs to one existing project; for repeated runs in one project use a token (`Authorization: Bearer`, no CSRF header).

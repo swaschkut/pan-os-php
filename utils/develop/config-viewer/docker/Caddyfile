@@ -1,0 +1,14 @@
+# HTTPS in front of the config viewer (docker-compose.https.yml). VIEWER_TLS decides where the certificate comes from:
+#   internal                          certificate of Caddy's own CA (default; air-gapped / internal networks)
+#   /certs/cert.pem /certs/key.pem    your own certificate (folder VIEWER_CERTS on the host)
+#   name@example.com                  public DNS name with internet access: certificate from Let's Encrypt
+{
+	admin off
+}
+
+{$VIEWER_DOMAIN:localhost} {
+	tls {$VIEWER_TLS:internal}
+	encode gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy web:8080
+}

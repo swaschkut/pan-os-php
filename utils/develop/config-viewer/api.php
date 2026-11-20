@@ -48,13 +48,28 @@ header( "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'" );
 $viewerAudit = array( 'app' => null, 'user' => null, 'token' => null, 'pid' => null, 'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
     'route' => (string)( $_SERVER['PATH_INFO'] ?? '' ), 'body' => array(), 'download' => FALSE );
 
+/**
+ * address of the client for the audit log and the login lock. Behind the reverse proxy (PANOSPHP_VIEWER_TLS_PROXY=1)
+ * every request comes from the proxy: then the last entry of X-Forwarded-For, which is the one the proxy itself added
+ * (entries before it come from the client and are not trusted).
+ */
+function viewerClientAddr(): string
+{
+    $peer = (string)( $_SERVER['REMOTE_ADDR'] ?? '' );
+    if( getenv( 'PANOSPHP_VIEWER_TLS_PROXY' ) !== '1' || empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) )
+        return $peer;
+    $parts = explode( ',', (string)$_SERVER['HTTP_X_FORWARDED_FOR'] );
+    $last = trim( (string)end( $parts ) );
+    return filter_var( $last, FILTER_VALIDATE_IP ) !== FALSE ? $last : $peer;
+}
+
 function viewerAudit( int $code ): void
 {
     global $viewerAudit;
     $a = $viewerAudit;
     if( $a['app'] === null || ( $a['method'] === 'GET' && !$a['download'] ) )
         return;
-    $a['app']->auditWrite( $a['user'], $a['token'], (string)( $_SERVER['REMOTE_ADDR'] ?? '' ), $a['pid'], $a['method'], $a['route'], $code, $a['body'] + $_GET );
+    $a['app']->auditWrite( $a['user'], $a['token'], viewerClientAddr(), $a['pid'], $a['method'], $a['route'], $code, $a['body'] + $_GET );
 }
 
 function viewerOut( $data, int $code = 200 ): void
@@ -105,7 +120,7 @@ try
         $b = viewerBody();
         $viewerAudit['user'] = is_string( $b['user'] ?? null ) ? $b['user'] : null;
         $viewerAudit['body'] = array();
-        $u = $app->login( $b['user'] ?? null, $b['password'] ?? null, (string)( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+        $u = $app->login( $b['user'] ?? null, $b['password'] ?? null, viewerClientAddr() );
         session_regenerate_id( TRUE );
         $_SESSION = array( 'uid' => (int)$u['id'], 'csrf' => bin2hex( random_bytes( 32 ) ), 'since' => time(), 'seen' => time() );
         viewerOut( array( 'user' => $u['name'], 'admin' => (bool)$u['is_admin'], 'csrf' => $_SESSION['csrf'] ) );
