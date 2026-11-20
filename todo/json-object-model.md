@@ -1,6 +1,6 @@
 # JSON object model for the API: the SCM API schema
 
-**Status:** decided 2026-11-20 – the model is the Strata Cloud Manager (SCM) API schema; details below open
+**Status:** decided 2026-11-20 – the model is the Strata Cloud Manager (SCM) API schema; first five resources implemented
 **Code reference:** `alpha` – `lib/resources/scm/scm-ngfw-config-schema.json` (49 resources, request schema per
 resource, generated from the official SCM API description), `lib/misc-classes/SCMImporter.php` (Panorama / firewall
 XML → SCM configuration), `SCMChangeGenerator`; REST resources of the config-viewer (`ViewerApp::resourceList()`,
@@ -62,15 +62,29 @@ schema file), so it is visible what is own and can be removed when PANW defines 
 - Changes stay actions for now; writing an item in the SCM shape (`POST` / `PUT` like the SCM API) is the next step
   and can reuse `SCMChangeGenerator` in the other direction.
 
-## Open decisions
+## Decisions on the details (2026-11-20)
 
-1. **Location of PAN-OS objects:** own fields (`device_group`, `vsys`, `template`, `template_stack`) as proposed, or
-   always the SCM fields with the mapping of `scm-panorama-to-change` (shared → `folder: "All"`, DG → folder,
-   template → snippet)?
-2. **Antivirus / WildFire on PAN-OS:** two own resources as proposed, or forced into `wildfire-anti-virus-profiles`?
-3. **Computed values:** `_panosphp` object as proposed, or separate routes (`…/addresses/<name>/references`,
-   `…/security-rules/<name>/checks`)?
-4. **Order:** which resources first – what CDSS reads (`security-rules`, profiles, `profile-groups`, `zones`), or
-   `addresses`, `services`, `tags` first?
-5. **Where it is built:** in the library (`SCMImporter` per object, usable by `shadow-json` of the CLI too) – or only
-   in the viewer? Proposal: library.
+1. **Location:** Panorama / firewall objects carry their own location (`device_group` – `"shared"` for shared –,
+   `vsys`, `template`, `template_stack`, managed device …); SCM objects carry the SCM fields (`folder`, `snippet`,
+   `device`). No mapping of a PAN-OS location to a folder / snippet when reading.
+2. **Antivirus / WildFire:** Panorama / firewall separate (own resources `antivirus-profiles`,
+   `wildfire-analysis-profiles`), SCM combined (`wildfire-anti-virus-profiles`).
+3. **Computed values** (proposal, used unless decided otherwise): one own object `_panosphp` on the item, only when
+   asked with `?computed=1` – `{"ip_count": …, "references": …, "visibility": true|false|null, "best_practice": …,
+   "checks": {…}}`. One request gives object and checks together (what the SPR report of CDSS needs per profile /
+   rule), the SCM shape of the item stays untouched without the parameter, and no second set of routes is needed.
+4. **Order:** by dependency – tags, addresses, address-groups, services, service-groups; then schedules,
+   url-categories / external-dynamic-lists, log-forwarding-profiles, security profiles, profile-groups, zones (+ zone
+   protection profiles), then the rule resources.
+5. **Where:** in the library – `lib/misc-classes/ApiObjectModel.php`; `actions=display` with `shadow-json` adds it as
+   `model` (`resource`, `item`) to every object, so the CLI and the API give the same.
+
+## Progress
+
+| Date | Step | State |
+|---|---|---|
+| 2026-11-20 | `ApiObjectModel` (SCM shape via `SCMChangeGenerator::toBody()`, location fields, top-level elements without SCM schema generically in `snake_case`, the rest listed in `_panosphp.not_converted`); resources `tags`, `addresses`, `address-groups`, `services`, `service-groups`; config-viewer serves them as `model: scm-v1` (default for these resources, `?model=display-v0` for the display fields) | done; tests `tests/test_api_object_model.php` (13), `tests/test_config_viewer.php` |
+| | schedules, url-categories, external-dynamic-lists, log-forwarding-profiles | open |
+| | security profiles (PAN-OS: separate antivirus / WildFire), profile-groups, zones, zone-protection-profiles | open |
+| | rule resources (`security-rules`, `nat-rules`, …; own fields `uuid`, `rule_type`, `position`, `rulebase`) | open |
+| | `?computed=1` (`_panosphp`), file `lib/resources/scm/panosphp-extensions.json` with the own definitions, SCM input (folder / snippet) verified, old resource names of the other types (`rules`, `security-profiles`, …) replaced | open |

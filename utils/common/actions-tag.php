@@ -389,6 +389,10 @@ TagCallContext::$supportedActions['display'] = array(
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
         PH::$JSON_TMP['sub']['object'][$object->name()]['color'] = $object->getColor();
         PH::$JSON_TMP['sub']['object'][$object->name()]['comments'] = $object->getComments();
+
+        // API object model (SCM shape), todo/json-object-model.md
+        if( PH::$shadow_json && ( $apiModel = ApiObjectModel::item( $object ) ) !== null )
+            PH::$JSON_TMP['sub']['object'][$object->name()]['model'] = $apiModel;
     },
 );
 TagCallContext::$supportedActions['color-set'] = array(

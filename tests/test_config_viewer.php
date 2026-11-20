@@ -283,14 +283,40 @@ $meta = $alice->call( 'GET', 'meta' )[1]['types'];
 eq( array( $meta['address']['resource'], $meta['securityprofile']['resource'], $meta['address']['readonly'], $meta['application']['readonly'] ?? null ),
     array( 'addresses', 'security-profiles', FALSE, TRUE ), 'REST: meta lists resource names; other display types are read only' );
 eq( count( $meta ) > 25, TRUE, 'REST: all types with objects are offered (' . count( $meta ) . ')' );
-$r = $alice->call( 'GET', $RC . '/addresses' );
-eq( array( status( $r ), $r[1]['type'] ?? null, $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['model'] ?? null ), array( 200, 'address', 27, 27, 'display-v0' ), 'REST: GET addresses' );
-$r = $alice->call( 'GET', $RC . '/addresses?location=shared&limit=5&offset=10' );
+$r = $alice->call( 'GET', $RC . '/addresses?model=display-v0' );
+eq( array( status( $r ), $r[1]['type'] ?? null, $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['model'] ?? null ), array( 200, 'address', 27, 27, 'display-v0' ), 'REST: GET addresses, display-v0 (objects and groups)' );
+eq( isset( $r[1]['items'][0]['model'] ), FALSE, 'REST: display-v0 items carry no model field' );
+$r = $alice->call( 'GET', $RC . '/addresses?model=display-v0&location=shared&limit=5&offset=10' );
 eq( array( status( $r ), $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['offset'] ?? null ), array( 200, 13, 3, 10 ), 'REST: paging (13 in shared, offset 10, limit 5)' );
+// SCM object model (scm-v1): SCM resources and fields
+$a = $alice->call( 'GET', $RC . '/addresses' );
+$g = $alice->call( 'GET', $RC . '/address-groups' );
+eq( array( $a[1]['model'] ?? null, $g[1]['model'] ?? null, ( $a[1]['total'] ?? 0 ) + ( $g[1]['total'] ?? 0 ) ), array( 'scm-v1', 'scm-v1', 27 ), 'scm-v1: addresses + address-groups = the 27 objects of type address' );
+$one = $alice->call( 'GET', $RC . '/addresses/shared-host1' )[1]['items'][0] ?? null;
+eq( $one, array( 'name' => 'shared-host1', 'ip_netmask' => '1.2.2.3/32', 'tag' => array( 'grp.shared-group1' ), 'device_group' => 'shared' ), 'scm-v1: address as the SCM API (ip_netmask, tag list) + device_group' );
+$grp = null;
+foreach( $g[1]['items'] ?? array() as $x ) if( isset( $x['static'] ) ) { $grp = $x; break; }
+eq( array( is_array( $grp['static'] ?? null ), isset( $grp['device_group'] ) ), array( TRUE, TRUE ), 'scm-v1: static address group with member names' );
+$dyn = null;
+foreach( $g[1]['items'] ?? array() as $x ) if( isset( $x['dynamic'] ) ) { $dyn = $x; break; }
+eq( isset( $dyn['dynamic']['filter'] ), TRUE, 'scm-v1: dynamic address group with filter' );
+$sv = $alice->call( 'GET', $RC . '/services' );
+$sg = $alice->call( 'GET', $RC . '/service-groups' );
+eq( ( $sv[1]['total'] ?? 0 ) + ( $sg[1]['total'] ?? 0 ), 17, 'scm-v1: services + service-groups = the 17 objects of type service' );
+eq( isset( $sv[1]['items'][0]['protocol'] ), TRUE, 'scm-v1: service with protocol' );
+eq( is_array( $sg[1]['items'][0]['members'] ?? null ), TRUE, 'scm-v1: service group with members' );
+$tg = $alice->call( 'GET', $RC . '/tags' );
+eq( array( $tg[1]['model'] ?? null, $tg[1]['total'] ?? null ), array( 'scm-v1', 6 ), 'scm-v1: tags' );
+$locs = array();
+foreach( $a[1]['items'] ?? array() as $x ) $locs[ isset( $x['device_group'] ) ? 'device_group' : implode( ',', array_keys( $x ) ) ] = TRUE;
+eq( array_keys( $locs ), array( 'device_group' ), 'scm-v1: every Panorama object has device_group' );
+eq( status( $alice->call( 'GET', $RC . '/rules?model=scm-v1' ) ), 400, 'scm-v1: not yet for rules' );
+eq( status( $alice->call( 'GET', $RC . '/addresses?model=nosuch' ) ), 400, 'model checked' );
+eq( isset( $alice->call( 'GET', 'meta' )[1]['resources']['address-groups'] ), TRUE, 'meta lists the SCM resources' );
 eq( status( $alice->call( 'GET', $RC . '/addresses?limit=0' ) ), 400, 'REST: limit checked' );
 eq( status( $alice->call( 'GET', $RC . '/addresses?limit=999999' ) ), 400, 'REST: limit maximum' );
 $r = $alice->call( 'GET', $RC . '/addresses/shared-host1' );
-eq( array( status( $r ), $r[1]['items'][0]['name'] ?? null, $r[1]['items'][0]['location'] ?? null ), array( 200, 'shared-host1', 'shared' ), 'REST: GET one address' );
+eq( array( status( $r ), $r[1]['items'][0]['name'] ?? null, $r[1]['items'][0]['device_group'] ?? null ), array( 200, 'shared-host1', 'shared' ), 'REST: GET one address' );
 eq( status( $alice->call( 'GET', $RC . '/addresses/no-such-object' ) ), 404, 'REST: unknown object' );
 eq( status( $alice->call( 'GET', $RC . '/addresses/' . rawurlencode( 'x) or (name regex /./' ) ) ), 400, 'REST: a name can not change the filter' );
 eq( status( $alice->call( 'GET', $RC . '/nosuchresource' ) ), 404, 'REST: unknown resource' );

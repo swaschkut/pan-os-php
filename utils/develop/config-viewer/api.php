@@ -288,9 +288,9 @@ try
             if( $type !== null )
             {
                 if( $n == 5 && $method === 'GET' )
-                    viewerOut( $app->resourceList( $user, $pid, $cid, $type, $_GET ) );
+                    viewerOut( $app->resourceList( $user, $pid, $cid, $type, $_GET, null, $op ) );
                 if( $n == 6 && $method === 'GET' )
-                    viewerOut( $app->resourceList( $user, $pid, $cid, $type, $_GET, rawurldecode( $route[5] ) ) );
+                    viewerOut( $app->resourceList( $user, $pid, $cid, $type, $_GET, rawurldecode( $route[5] ), $op ) );
                 if( $n == 6 && $method === 'POST' && $route[5] === 'actions' )
                     viewerOut( $app->change( $user, $pid, $cid, array( 'type' => $type ) + viewerBody() ) );
             }

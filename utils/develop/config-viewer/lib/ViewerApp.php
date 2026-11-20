@@ -50,6 +50,11 @@ class ViewerApp
     /** REST resource name of a type, where "<type>s" does not fit */
     const RESOURCES = array( 'address' => 'addresses', 'securityprofile' => 'security-profiles', 'securityprofilegroup' => 'security-profile-groups',
         'routing' => 'routing', 'dhcp' => 'dhcp', 'virtualwire' => 'virtual-wires' );
+    /**
+     * resources with the SCM object model (ApiObjectModel, todo/json-object-model.md): SCM resource => pan-os-php type.
+     * Their items are in the SCM shape (model 'scm-v1'); '?model=display-v0' gives the display fields of the type.
+     */
+    const SCM_RESOURCES = array( 'tags' => 'tag', 'addresses' => 'address', 'address-groups' => 'address', 'services' => 'service', 'service-groups' => 'service' );
     const PAGE_DEFAULT = 1000;
     const PAGE_MAX = 5000;
 
@@ -826,7 +831,8 @@ class ViewerApp
             }
             $meta[$type] = array( 'actions' => array(), 'filters' => $filters, 'readonly' => TRUE, 'resource' => self::resourceName( $type ) );
         }
-        $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES );
+        $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES,
+            'resources' => array_map( function( $t ) { return array( 'type' => $t, 'model' => 'scm-v1' ); }, self::SCM_RESOURCES ) );
         return $this->meta;
     }
 
@@ -840,6 +846,8 @@ class ViewerApp
     {
         if( !is_string( $resource ) )
             return null;
+        if( isset( self::SCM_RESOURCES[$resource] ) )
+            return self::SCM_RESOURCES[$resource];
         foreach( $this->meta()['types'] as $type => $m )
             if( $m['resource'] === $resource )
                 return $type;
@@ -1094,7 +1102,7 @@ class ViewerApp
                     if( isset( $sub['store'] ) && is_string( $sub['store'] ) )
                         $row['store'] = $sub['store'];
                     foreach( $o as $k => $v )
-                        $row[(string)$k] = is_array( $v ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
+                        $row[(string)$k] = ( is_array( $v ) && $k !== 'model' ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
                     $rows[] = $row;
                 }
             }
@@ -1111,6 +1119,9 @@ class ViewerApp
         $type = substr( array_shift( $args ), 5 );
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type, 'args' => array_merge( $args, array( 'actions=display' ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() );
+        if( $max !== PHP_INT_MAX )
+            foreach( $rows as $i => $row )
+                unset( $rows[$i]['model'] );
 
         $columns = array();
         foreach( $rows as $row )
@@ -1124,8 +1135,11 @@ class ViewerApp
      * REST: GET …/configs/<cid>/<resource>[/<name>] - the objects of one type as items, with paging.
      * 'model' names the shape of an item: 'display-v0' = the fields of pan-os-php actions=display (not a stable model yet).
      */
-    public function resourceList( array $user, $pid, $cid, string $type, array $in, ?string $name = null ): array
+    public function resourceList( array $user, $pid, $cid, string $type, array $in, ?string $name = null, ?string $resource = null ): array
     {
+        $model = $in['model'] ?? ( isset( self::SCM_RESOURCES[(string)$resource] ) ? 'scm-v1' : 'display-v0' );
+        if( $model !== 'display-v0' && !( $model === 'scm-v1' && isset( self::SCM_RESOURCES[(string)$resource] ) ) )
+            throw new ViewerException( 'model: display-v0' . ( isset( self::SCM_RESOURCES[(string)$resource] ) ? ' or scm-v1' : ' (this resource has no scm-v1 model yet)' ), 400 );
         $in['type'] = $type;
         if( $name !== null )
         {
@@ -1140,13 +1154,25 @@ class ViewerApp
             throw new ViewerException( 'limit: 1-' . self::PAGE_MAX . ', offset: 0 or more', 400 );
         $r = $this->objects( $user, $pid, $cid, $in, PHP_INT_MAX );
         $items = $r['rows'];
+        if( $model === 'scm-v1' )
+        {
+            // the SCM shaped object of the library (ApiObjectModel); one pan-os-php type can hold several SCM resources
+            $scm = array();
+            foreach( $items as $o )
+                if( isset( $o['model']['resource'], $o['model']['item'] ) && $o['model']['resource'] === $resource && is_array( $o['model']['item'] ) )
+                    $scm[] = $o['model']['item'];
+            $items = $scm;
+        }
+        else
+            foreach( $items as $i => $o )
+                unset( $items[$i]['model'] );
         if( $name !== null )
         {
             $items = array_values( array_filter( $items, function( $o ) use ( $name ) { return isset( $o['name'] ) && (string)$o['name'] === $name; } ) );
             if( count( $items ) == 0 )
                 throw new ViewerException( 'not found', 404 );
         }
-        return array( 'type' => $type, 'resource' => self::resourceName( $type ), 'model' => 'display-v0', 'total' => count( $items ),
+        return array( 'type' => $type, 'resource' => $resource ?? self::resourceName( $type ), 'model' => $model, 'total' => count( $items ),
             'offset' => (int)$offset, 'limit' => (int)$limit, 'items' => array_slice( $items, (int)$offset, (int)$limit ), 'status' => $r['status'] );
     }
 
