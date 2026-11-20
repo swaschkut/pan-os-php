@@ -19,7 +19,8 @@
 
 /**
  * ApiObjectModel (todo/json-object-model.md): objects in the shape of the SCM API, with the location fields of
- * Panorama / firewall (device_group, vsys). Tags, addresses, address groups, services, service groups.
+ * Panorama / firewall (device_group, vsys). Tags, addresses, address groups, services, service groups, schedules,
+ * custom URL categories, external dynamic lists, log forwarding profiles.
  *
  *   php tests/test_api_object_model.php
  */
@@ -46,7 +47,22 @@ $objects = '<tag><entry name="t1"><color>color1</color><comments>c</comments></e
     . '<address-group><entry name="g1"><static><member>h1</member><member>r1</member></static></entry>'
     . '<entry name="g2"><dynamic><filter>\'t1\'</filter></dynamic></entry></address-group>'
     . '<service><entry name="s1"><protocol><tcp><port>443</port><source-port>1024-65535</source-port></tcp></protocol></entry></service>'
-    . '<service-group><entry name="sg1"><members><member>s1</member></members></entry></service-group>';
+    . '<service-group><entry name="sg1"><members><member>s1</member></members></entry></service-group>'
+    . '<schedule><entry name="sch1"><schedule-type><recurring><daily><member>08:00-18:00</member></daily></recurring></schedule-type></entry>'
+    . '<entry name="sch2"><schedule-type><non-recurring><member>2026/01/01@00:00-2026/01/02@00:00</member></non-recurring></schedule-type></entry></schedule>'
+    . '<external-list><entry name="edl1"><type><ip><recurring><hourly/></recurring><url>https://example.com/l.txt</url><certificate-profile>cp</certificate-profile></ip></type></entry></external-list>'
+    . '<log-settings><profiles><entry name="lfp1"><match-list><entry name="traffic"><log-type>traffic</log-type><filter>All Logs</filter>'
+    . '<send-to-panorama>yes</send-to-panorama><send-syslog><member>sys1</member></send-syslog></entry></match-list></entry></profiles></log-settings>'
+    . '<profiles><custom-url-category><entry name="cat1"><list><member>example.com/</member></list><type>URL List</type><description>x</description></entry>'
+    . '<entry name="cat2"><list><member>a.com</member></list></entry></custom-url-category>'
+    . '<spyware><entry name="as1"><rules><entry name="r1"><action><default/></action><severity><member>any</member></severity><threat-name>any</threat-name>'
+    . '<category>any</category><packet-capture>disable</packet-capture></entry><entry name="r2"><action><reset-both/></action><severity><member>high</member></severity>'
+    . '<threat-name>any</threat-name><category>any</category><packet-capture>single-packet</packet-capture></entry></rules></entry></spyware>'
+    . '<virus><entry name="av1"><decoder><entry name="http"><action>default</action><wildfire-action>reset-both</wildfire-action></entry></decoder></entry></virus>'
+    . '<wildfire-analysis><entry name="wf1"><rules><entry name="all"><application><member>any</member></application><file-type><member>any</member></file-type>'
+    . '<direction>both</direction><analysis>public-cloud</analysis></entry></rules></entry></wildfire-analysis></profiles>'
+    . '<profile-group><entry name="pg1"><spyware><member>as1</member></spyware><virus><member>av1</member></virus><wildfire-analysis><member>wf1</member></wildfire-analysis></entry></profile-group>'
+    . '<zone><entry name="trust"><network><layer3><member>ethernet1/1</member></layer3></network></entry></zone>';
 
 // ---- firewall: vsys
 $fw = new PANConf();
@@ -67,6 +83,36 @@ eq( ApiObjectModel::item( $v->serviceStore->find( 's1' ) ), array( 'resource' =>
     'item' => array( 'name' => 's1', 'protocol' => array( 'tcp' => array( 'port' => '443', 'source_port' => '1024-65535' ) ), 'vsys' => 'vsys1' ) ), 'service' );
 eq( ApiObjectModel::item( $v->serviceStore->find( 'sg1' ) ), array( 'resource' => 'service-groups', 'item' => array( 'name' => 'sg1', 'members' => array( 's1' ), 'vsys' => 'vsys1' ) ), 'service group' );
 
+// ---- schedules, url-categories, external-dynamic-lists, log-forwarding-profiles
+eq( ApiObjectModel::item( $v->scheduleStore->find( 'sch1' ) ), array( 'resource' => 'schedules',
+    'item' => array( 'name' => 'sch1', 'schedule_type' => array( 'recurring' => array( 'daily' => array( '08:00-18:00' ) ) ), 'vsys' => 'vsys1' ) ), 'schedule recurring' );
+eq( ApiObjectModel::item( $v->scheduleStore->find( 'sch2' ) )['item']['schedule_type'], array( 'non_recurring' => array( '2026/01/01@00:00-2026/01/02@00:00' ) ), 'schedule non-recurring' );
+eq( ApiObjectModel::item( $v->EDLStore->find( 'edl1' ) )['item']['type']['ip']['url'] ?? null, 'https://example.com/l.txt', 'external dynamic list' );
+eq( ApiObjectModel::item( $v->EDLStore->find( 'edl1' ) )['resource'], 'external-dynamic-lists', 'external dynamic list resource' );
+eq( ApiObjectModel::item( $v->customURLProfileStore->find( 'cat1' ) ), array( 'resource' => 'url-categories',
+    'item' => array( 'name' => 'cat1', 'list' => array( 'example.com/' ), 'type' => 'URL List', 'description' => 'x', 'vsys' => 'vsys1' ) ), 'custom URL category' );
+eq( ApiObjectModel::item( $v->customURLProfileStore->find( 'cat2' ) )['item']['type'] ?? null, 'URL List', 'custom URL category without type: URL List as in SCM' );
+$lfp = ApiObjectModel::item( $v->LogProfileStore->find( 'lfp1' ) );
+eq( array( $lfp['resource'], $lfp['item']['match_list'][0]['log_type'] ?? null, $lfp['item']['match_list'][0]['send_syslog'] ?? null ),
+    array( 'log-forwarding-profiles', 'traffic', array( 'sys1' ) ), 'log forwarding profile' );
+eq( array( $lfp['item']['match_list'][0]['send_to_panorama'] ?? null, isset( $lfp['item']['_panosphp'] ) ), array( 'yes', FALSE ),
+    'a PAN-OS field the SCM schema does not know (send-to-panorama) stays at its place, nothing in not_converted' );
+
+// ---- security profiles, profile groups, zones
+$as = ApiObjectModel::item( $v->AntiSpywareProfileStore->find( 'as1' ) );
+eq( array( $as['resource'], json_encode( $as['item']['rules'][0]['action'] ), json_encode( $as['item']['rules'][1]['action'] ), $as['item']['rules'][1]['packet_capture'] ),
+    array( 'anti-spyware-profiles', '{"default":{}}', '{"reset_both":{}}', 'single-packet' ), 'anti-spyware profile: rule actions, also the one the SCM schema does not know (default)' );
+$av = ApiObjectModel::item( $v->AntiVirusProfileStore->find( 'av1' ) );
+eq( array( $av['resource'], $av['item']['decoder'][0]['name'] ?? null, $av['item']['decoder'][0]['wildfire_action'] ?? null, $av['item']['vsys'] ?? null ),
+    array( 'antivirus-profiles', 'http', 'reset-both', 'vsys1' ), 'antivirus profile: own resource (Panorama / firewall)' );
+$wf = ApiObjectModel::item( $v->WildfireProfileStore->find( 'wf1' ) );
+eq( array( $wf['resource'], $wf['item']['rules'][0]['analysis'] ?? null ), array( 'wildfire-analysis-profiles', 'public-cloud' ), 'WildFire analysis profile: own resource' );
+eq( ApiObjectModel::item( $v->securityProfileGroupStore->find( 'pg1' ) ), array( 'resource' => 'profile-groups',
+    'item' => array( 'name' => 'pg1', 'spyware' => array( 'as1' ), 'virus' => array( 'av1' ), 'wildfire_analysis' => array( 'wf1' ), 'vsys' => 'vsys1' ) ),
+    'profile group: SCM fields + own fields virus / wildfire_analysis' );
+eq( ApiObjectModel::item( $v->zoneStore->find( 'trust' ) ), array( 'resource' => 'zones',
+    'item' => array( 'name' => 'trust', 'network' => array( 'layer3' => array( 'ethernet1/1' ) ), 'vsys' => 'vsys1' ) ), 'zone' );
+
 // ---- Panorama: shared and device group
 $pano = new PanoramaConf();
 ob_start();
@@ -81,8 +127,8 @@ eq( ApiObjectModel::item( $pano->findDeviceGroup( 'DG1' )->addressStore->find( '
 // ---- no model: other classes, objects without XML
 eq( ApiObjectModel::item( $v ), null, 'no model for a class that is not listed' );
 eq( ApiObjectModel::item( $v->addressStore->findOrCreate( '192.0.2.99' ) ), null, 'tmp object without XML: no item' );
-eq( ApiObjectModel::generic( DH::importXmlStringOrDie( new DOMDocument(), '<x><a-b>1</a-b><l><member>m1</member><member>m2</member></l><e><entry name="n"><v>2</v></entry></e></x>' ) ),
-    array( 'a_b' => '1', 'l' => array( 'm1', 'm2' ), 'e' => array( array( 'name' => 'n', 'v' => '2' ) ) ), 'generic conversion of an element without SCM schema' );
+eq( json_encode( ApiObjectModel::generic( DH::importXmlStringOrDie( new DOMDocument(), '<x><a-b>1</a-b><l><member>m1</member><member>m2</member></l><e><entry name="n"><v>2</v></entry></e><c><yes/></c></x>' ) ) ),
+    '{"a_b":"1","l":["m1","m2"],"e":[{"name":"n","v":"2"}],"c":{"yes":{}}}', 'generic conversion of an element without SCM schema' );
 
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

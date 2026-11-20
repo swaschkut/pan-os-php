@@ -97,6 +97,11 @@ class CallContext
         PH::$JSON_TMP['sub']['object'][$name]['name'] = $name;
         PH::$JSON_TMP['sub']['object'][$name]['actions'][$this->actionRef['name']]['name'] = $this->actionRef['name'];
 
+        // API object model (SCM shape, todo/json-object-model.md): with shadow-json, 'display' adds it for every
+        // class ApiObjectModel knows - the one place for all types
+        if( PH::$shadow_json && $this->actionRef['name'] === 'display' && ( $apiModel = ApiObjectModel::item( $object ) ) !== null )
+            PH::$JSON_TMP['sub']['object'][$name]['model'] = $apiModel;
+
         if( count($this->arguments) != 0 )
         {
             $tmp_txt .= " Args: ";

@@ -1779,10 +1779,6 @@ AddressCallContext::$supportedActions[] = array(
 
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
 
-        // API object model (SCM shape), todo/json-object-model.md
-        if( PH::$shadow_json && ( $apiModel = ApiObjectModel::item( $object ) ) !== null )
-            PH::$JSON_TMP['sub']['object'][$object->name()]['model'] = $apiModel;
-
 
         if( $object->isGroup() )
         {

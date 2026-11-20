@@ -208,9 +208,13 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `…/<cid>/save` | POST | write | → `saved`, `cid` of the new version, `status` |
 | `…/<cid>/discard` | POST | write | drops unsaved changes (stops the worker) |
 
-**Object model.** `tags`, `addresses`, `address-groups`, `services`, `service-groups` answer in the shape of the
+**Object model.** `tags`, `addresses`, `address-groups`, `services`, `service-groups`, `schedules`, `url-categories`,
+`external-dynamic-lists`, `log-forwarding-profiles`, the security profile resources (`anti-spyware-profiles`,
+`vulnerability-protection-profiles`, `url-access-profiles`, `file-blocking-profiles`, `dns-security-profiles`,
+`wildfire-anti-virus-profiles`; Panorama / firewall: own `antivirus-profiles`, `wildfire-analysis-profiles`),
+`profile-groups`, `zones` and `zone-protection-profiles` answer in the shape of the
 SCM API (`model: scm-v1`, `lib/misc-classes/ApiObjectModel.php`): SCM field names and structure, plus the location of
-the object (`device_group` – `"shared"` for shared –, `vsys`; SCM input: `folder`, `snippet`, `device`). Example:
+the object (`device_group` – `"shared"` for shared –, `vsys`, `template` / `template_stack`; SCM input: `folder`, `snippet`, `device`). Example:
 `{"name": "shared-host1", "ip_netmask": "1.2.2.3/32", "tag": ["grp.shared-group1"], "device_group": "shared"}`.
 `?model=display-v0` gives the display fields of the pan-os-php type instead. The other resources follow in the order of
 their dependencies ([todo/json-object-model.md](../../../todo/json-object-model.md)).
@@ -267,5 +271,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-226 checks: login, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+242 checks: login, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

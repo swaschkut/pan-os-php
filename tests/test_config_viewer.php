@@ -310,6 +310,25 @@ eq( array( $tg[1]['model'] ?? null, $tg[1]['total'] ?? null ), array( 'scm-v1', 
 $locs = array();
 foreach( $a[1]['items'] ?? array() as $x ) $locs[ isset( $x['device_group'] ) ? 'device_group' : implode( ',', array_keys( $x ) ) ] = TRUE;
 eq( array_keys( $locs ), array( 'device_group' ), 'scm-v1: every Panorama object has device_group' );
+foreach( array( 'schedules', 'url-categories', 'external-dynamic-lists', 'log-forwarding-profiles' ) as $res )
+{
+    $r = $alice->call( 'GET', $RC . '/' . $res );
+    eq( array( status( $r ), $r[1]['model'] ?? null, $r[1]['resource'] ?? null ), array( 200, 'scm-v1', $res ), 'scm-v1: ' . $res );
+}
+$r = $alice->call( 'GET', $RC . '/log-forwarding-profiles' );
+eq( array( $r[1]['total'] ?? null, isset( $r[1]['items'][0]['name'] ), isset( $r[1]['items'][0]['device_group'] ) ), array( 1, TRUE, TRUE ), 'scm-v1: the log forwarding profile of the test configuration' );
+foreach( array( 'anti-spyware-profiles' => 'rules', 'vulnerability-protection-profiles' => 'rules', 'url-access-profiles' => 'name', 'file-blocking-profiles' => 'rules',
+             'antivirus-profiles' => 'decoder', 'wildfire-analysis-profiles' => 'rules' ) as $res => $field )
+{
+    $r = $alice->call( 'GET', $RC . '/' . $res );
+    eq( array( status( $r ), $r[1]['model'] ?? null, ( $r[1]['total'] ?? 0 ) > 0, isset( $r[1]['items'][0][$field] ) ), array( 200, 'scm-v1', TRUE, TRUE ), 'scm-v1: ' . $res );
+}
+foreach( array( 'dns-security-profiles', 'wildfire-anti-virus-profiles', 'zone-protection-profiles' ) as $res )
+    eq( status( $alice->call( 'GET', $RC . '/' . $res ) ), 200, 'scm-v1: ' . $res . ' (none in a Panorama configuration of this test)' );
+$r = $alice->call( 'GET', $RC . '/profile-groups' );
+eq( array( $r[1]['total'] ?? null, $r[1]['items'][0]['device_group'] ?? null ), array( 1, 'shared' ), 'scm-v1: profile-groups' );
+$r = $alice->call( 'GET', $RC . '/zones' );
+eq( array( $r[1]['total'] ?? null, isset( $r[1]['items'][0]['template'] ), isset( $r[1]['items'][0]['network'] ) ), array( 3, TRUE, TRUE ), 'scm-v1: zones with their template' );
 eq( status( $alice->call( 'GET', $RC . '/rules?model=scm-v1' ) ), 400, 'scm-v1: not yet for rules' );
 eq( status( $alice->call( 'GET', $RC . '/addresses?model=nosuch' ) ), 400, 'model checked' );
 eq( isset( $alice->call( 'GET', 'meta' )[1]['resources']['address-groups'] ), TRUE, 'meta lists the SCM resources' );

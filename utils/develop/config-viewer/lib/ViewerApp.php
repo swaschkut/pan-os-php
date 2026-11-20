@@ -46,7 +46,7 @@ class ViewerApp
         'custom-url-category', 'dns-security', 'saas-security' );
 
     /** types a grant limited to locations (scope) can use: their objects live in a location (device group, vsys, shared, SCM folder) */
-    const SCOPE_TYPES = array( 'address', 'service', 'tag', 'rule', 'schedule', 'securityprofile', 'securityprofilegroup' );
+    const SCOPE_TYPES = array( 'address', 'service', 'tag', 'rule', 'schedule', 'securityprofile', 'securityprofilegroup', 'edl', 'log-profile' );
     /** REST resource name of a type, where "<type>s" does not fit */
     const RESOURCES = array( 'address' => 'addresses', 'securityprofile' => 'security-profiles', 'securityprofilegroup' => 'security-profile-groups',
         'routing' => 'routing', 'dhcp' => 'dhcp', 'virtualwire' => 'virtual-wires' );
@@ -54,7 +54,26 @@ class ViewerApp
      * resources with the SCM object model (ApiObjectModel, todo/json-object-model.md): SCM resource => pan-os-php type.
      * Their items are in the SCM shape (model 'scm-v1'); '?model=display-v0' gives the display fields of the type.
      */
-    const SCM_RESOURCES = array( 'tags' => 'tag', 'addresses' => 'address', 'address-groups' => 'address', 'services' => 'service', 'service-groups' => 'service' );
+    const SCM_RESOURCES = array( 'tags' => 'tag', 'addresses' => 'address', 'address-groups' => 'address', 'services' => 'service', 'service-groups' => 'service',
+        'schedules' => 'schedule', 'url-categories' => 'securityprofile', 'external-dynamic-lists' => 'edl', 'log-forwarding-profiles' => 'log-profile',
+        'anti-spyware-profiles' => 'securityprofile', 'vulnerability-protection-profiles' => 'securityprofile', 'url-access-profiles' => 'securityprofile',
+        'file-blocking-profiles' => 'securityprofile', 'dns-security-profiles' => 'securityprofile', 'wildfire-anti-virus-profiles' => 'securityprofile',
+        // own resources (Panorama / firewall keep antivirus and WildFire analysis apart)
+        'antivirus-profiles' => 'securityprofile', 'wildfire-analysis-profiles' => 'securityprofile',
+        'profile-groups' => 'securityprofilegroup', 'zones' => 'zone', 'zone-protection-profiles' => 'zone-protection-profile' );
+    /** arguments a SCM resource fixes for its pan-os-php type */
+    const SCM_RESOURCE_ARGS = array(
+        // all profile kinds are read (also the predefined profiles), the resource picks its class
+        'url-categories' => array( 'securityprofiletype' => 'any' ),
+        'anti-spyware-profiles' => array( 'securityprofiletype' => 'any' ),
+        'vulnerability-protection-profiles' => array( 'securityprofiletype' => 'any' ),
+        'url-access-profiles' => array( 'securityprofiletype' => 'any' ),
+        'file-blocking-profiles' => array( 'securityprofiletype' => 'any' ),
+        'dns-security-profiles' => array( 'securityprofiletype' => 'any' ),
+        'wildfire-anti-virus-profiles' => array( 'securityprofiletype' => 'any' ),
+        'antivirus-profiles' => array( 'securityprofiletype' => 'any' ),
+        'wildfire-analysis-profiles' => array( 'securityprofiletype' => 'any' ),
+    );
     const PAGE_DEFAULT = 1000;
     const PAGE_MAX = 5000;
 
@@ -1141,6 +1160,8 @@ class ViewerApp
         if( $model !== 'display-v0' && !( $model === 'scm-v1' && isset( self::SCM_RESOURCES[(string)$resource] ) ) )
             throw new ViewerException( 'model: display-v0' . ( isset( self::SCM_RESOURCES[(string)$resource] ) ? ' or scm-v1' : ' (this resource has no scm-v1 model yet)' ), 400 );
         $in['type'] = $type;
+        foreach( self::SCM_RESOURCE_ARGS[(string)$resource] ?? array() as $k => $v )
+            $in[$k] = $v;
         if( $name !== null )
         {
             // the name goes into a pan-os-php filter: only characters that can not change the filter
