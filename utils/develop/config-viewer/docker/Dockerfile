@@ -30,6 +30,9 @@ COPY lib ./lib
 COPY phpseclib ./phpseclib
 COPY git-php ./git-php
 COPY utils ./utils
+# utils/lib/UTIL.php loads the migration parser at start
+COPY migration ./migration
+COPY appid-toolbox ./appid-toolbox
 COPY CHANGELOG.txt .
 
 # the data directory: owned by the runtime user, so that a new volume mounted here gets the same owner

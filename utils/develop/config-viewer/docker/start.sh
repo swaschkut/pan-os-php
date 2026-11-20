@@ -11,6 +11,8 @@ as_user() {
 }
 groups_default="$(id -g "$RUNAS" 2>/dev/null || echo 0)"
 if [ "$(id -u)" = "0" ]; then chown "$RUNAS:$RUNAS" "$PANOSPHP_VIEWER_DATA"; fi
+# the home of the runtime user, not the one of root (the docker client looks for its settings there)
+if [ "$(id -u)" = "0" ]; then export HOME="$(getent passwd "$RUNAS" | cut -d: -f6)"; fi
 
 case "${1:-web}" in
 web)
