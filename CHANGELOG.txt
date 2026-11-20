@@ -27,6 +27,7 @@ UTIL:
 * prototype config-viewer | introduction
 * type=securityprofile | introduce actions=alert-only-set/best-practice-set
 * extend todo with config anonymize skript | bring in first version
+* alpha-ldl-like-firewall change behaviour to FW
 
 BUGFIX:
 * SCM export after first production run / IAM patch

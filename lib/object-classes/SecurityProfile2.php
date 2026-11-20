@@ -1497,7 +1497,8 @@ class SecurityProfile2
      * Set-actions: local-deep-learning of every AS detector the BP JSON lists ('any': all) gets the value asked for
      * (positive: that value; '!disable': 'enable', '!enable': 'disable'). Only detectors that have local deep learning
      * in the PAN-OS version of the location ($localDeepLearningMinVersion); others are never set.
-     * Nothing listed / PAN-OS without local deep learning: no change. @return bool TRUE: changed
+     * A listed model without the element gets it written explicitly (no element: not set; PANW documents no default).
+     * Nothing listed / PAN-OS without local deep learning: no change, nothing written. @return bool TRUE: changed
      */
     public function inlineML_localDeepLearningSetFromJSON( string $section, string $secprof_type = 'spyware' ): bool
     {
@@ -1522,12 +1523,18 @@ class SecurityProfile2
             {
                 if( !in_array( 'any', $entry['types'], TRUE ) && !in_array( $detector, $entry['types'], TRUE ) )
                     continue;
-                $node = DH::findFirstElementOrCreate( 'local-deep-learning', $detectorNode );
-                if( self::bpValueComplies( $node->textContent, $entry['validate'] ) )
+                // the BP JSON lists it: an existing element that complies is kept; otherwise the element is written
+                // explicitly - also when it is missing (no element: not set, PANW documents no default)
+                $node = DH::findFirstElement( 'local-deep-learning', $detectorNode );
+                if( $node !== FALSE && self::bpValueComplies( $node->textContent, $entry['validate'] ) )
                     continue;
                 $target = $entry['validate'];
                 if( strpos( $target, '!' ) === 0 )
                     $target = ( substr( $target, 1 ) == 'disable' ) ? 'enable' : 'disable';
+                if( $node === FALSE )
+                    $node = DH::findFirstElementOrCreate( 'local-deep-learning', $detectorNode );
+                elseif( $node->textContent === $target )
+                    continue;
                 $node->textContent = $target;
                 $this->additional[$t['container']][$detector]['local-deep-learning'] = $target;
                 $changed = TRUE;

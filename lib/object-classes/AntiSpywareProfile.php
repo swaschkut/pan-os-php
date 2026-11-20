@@ -383,11 +383,8 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     $xml .= '<entry name="' . $detector . ' Command and Control detector">'
                         . '<inline-policy-action>' . ( $mode == 'alert' ? 'alert' : 'reset-both' ) . '</inline-policy-action>';
-                    // local deep learning only for the detectors that have it in this PAN-OS version
-                    $vParts = explode( '.', (string)$version );
-                    $versionInt = intval( $vParts[0] ) * 10 + intval( $vParts[1] ?? 0 );   // '11.2' / '11.2.7' -> 112
-                    if( $versionInt > 0 && self::localDeepLearningSupportedInVersion( 'spyware', $detector . ' Command and Control detector', $versionInt ) )
-                        $xml .= '<local-deep-learning>enable</local-deep-learning>';
+                    // no local-deep-learning: as the firewall writes a new profile; set from the BP JSON by
+                    // AlertOnlySet() / BestPracticeSet() (inlineML_localDeepLearningSetFromJSON()) when it lists it
                     $xml .= '</entry>';
                 }
                 $xml .= '</mica-engine-spyware-enabled><cloud-inline-analysis>yes</cloud-inline-analysis>';
