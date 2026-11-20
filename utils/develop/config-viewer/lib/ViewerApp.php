@@ -833,6 +833,7 @@ class ViewerApp
         }
         // %FILES% / %JOB%: the folders of the project files and of this run - set here, never by a request
         $args = array_values( array_filter( $args, 'is_string' ) );
+        $rawArgs = $args;
         foreach( $args as $i => $a )
         {
             if( preg_match( '#^[a-z-]+=%FILES%/([0-9a-f]{32}\.json)$#', $a, $m ) && !is_file( $dir . '/files/' . $m[1] ) )
@@ -842,7 +843,9 @@ class ViewerApp
             }
             $args[$i] = str_replace( array( '%FILES%', '%JOB%' ), array( $dir . '/files', $jobDir ), $a );
         }
-        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $config );
+        // pid / jid / file / rawArgs: for a run in a container (ViewerContainer), where the folders have other paths
+        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $config,
+            'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $j['file'], 'rawArgs' => $rawArgs );
     }
 
     /** 'running' (still wanted), 'cancelled', or null when the job / project was deleted */

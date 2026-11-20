@@ -28,7 +28,10 @@
  *
  * Environment: PANOSPHP_VIEWER_DATA, PANOSPHP_VIEWER_JOBS (parallel runs, default 2),
  * PANOSPHP_VIEWER_JOB_TIMEOUT (seconds per run, default 3600).
- * Not yet: one container per job (todo/config-viewer-api.md, decision 2) - today a run is a process of this OS user.
+ * PANOSPHP_VIEWER_CONTAINER=docker|podman: every run is one container (lib/ViewerContainer.php: no network, read-only,
+ * only the project folder read-only and the folder of the run). Then this process is the only part that needs the
+ * container runtime - run it apart from the web part (own container / own OS user); the web part gets no access.
+ * Without it a run is a process of this OS user.
  */
 if( PHP_SAPI !== 'cli' )
 {
@@ -36,6 +39,7 @@ if( PHP_SAPI !== 'cli' )
     exit;
 }
 require_once dirname(__FILE__) . '/../lib/ViewerApp.php';
+require_once dirname(__FILE__) . '/../lib/ViewerContainer.php';
 
 $app = new ViewerApp();
 $parallel = max( 1, min( 16, (int)( getenv( 'PANOSPHP_VIEWER_JOBS' ) ?: 2 ) ) );
@@ -48,7 +52,21 @@ if( !$lock || !flock( $lock, LOCK_EX | LOCK_NB ) )
     fwrite( STDERR, "config-viewer jobs: already running for " . $app->dataDir . "\n" );
     exit( 1 );
 }
+try
+{
+    $container = ViewerContainer::fromEnv( $app->dataDir );
+    if( $container !== null && ( $err = $container->check() ) !== null )
+        throw new Exception( $err );
+}
+catch( Exception $e )
+{
+    // no fall back to runs without a container: that would be less isolation than configured
+    fwrite( STDERR, "config-viewer jobs: container: " . $e->getMessage() . "\n" );
+    exit( 1 );
+}
 $app->runnerReset();
+if( $container !== null )
+    $container->cleanup();
 
 $running = array();   // job id => array( proc, started )
 $stop = FALSE;
@@ -58,10 +76,14 @@ if( function_exists( 'pcntl_async_signals' ) )
     foreach( array( SIGTERM, SIGINT ) as $sig )
         pcntl_signal( $sig, function() use ( &$stop ) { $stop = TRUE; } );
 }
-print "config-viewer jobs: running (" . $parallel . " parallel, data " . $app->dataDir . ")\n";
+print "config-viewer jobs: running (" . $parallel . " parallel, data " . $app->dataDir . ", " . ( $container !== null ? "one " . $container->program . " container per run, image " . $container->image : "no container" ) . ")\n";
 
-function jobsKill( $proc ): void
+function jobsKill( $proc, ?string $jid = null ): void
 {
+    global $container;
+    // the process is only the client of the runtime - the container itself has to be removed
+    if( $container !== null && $jid !== null )
+        $container->kill( $jid );
     $st = proc_get_status( $proc );
     if( $st['running'] )
     {
@@ -89,14 +111,14 @@ while( !$stop )
         }
         elseif( $state !== 'running' )
         {
-            jobsKill( $r['proc'] );
+            jobsKill( $r['proc'], $r['jid'] );
             if( $state === null )
                 ViewerApp::rmTree( $r['dir'] );
             unset( $running[$id] );
         }
         elseif( time() - $r['started'] > $timeout )
         {
-            jobsKill( $r['proc'] );
+            jobsKill( $r['proc'], $r['jid'] );
             $app->runnerFinish( $id, 'failed', 'stopped after ' . $timeout . ' seconds' );
             unset( $running[$id] );
         }
@@ -104,23 +126,42 @@ while( !$stop )
 
     while( count( $running ) < $parallel && ( $job = $app->runnerTake() ) !== null )
     {
-        $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['type'], 'in=' . $job['config'] ), $job['args'] );
         $log = $job['dir'] . '/run.log';
-        $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, 'w' ), 2 => array( 'file', $log, 'a' ) ), $pipes, $job['dir'],
-            array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'] ) );
+        $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'] );
+        if( $container !== null )
+        {
+            try
+            {
+                $cmd = $container->runCommand( $job );
+            }
+            catch( Exception $e )
+            {
+                $app->runnerFinish( $job['id'], 'failed', 'the run could not be started' );
+                continue;
+            }
+            // the client of the runtime: where the runtime is (DOCKER_HOST, rootless podman), nothing of the job
+            foreach( array( 'DOCKER_HOST', 'DOCKER_CONFIG', 'CONTAINER_HOST', 'XDG_RUNTIME_DIR' ) as $k )
+                if( getenv( $k ) !== FALSE )
+                    $env[$k] = (string)getenv( $k );
+            $env['HOME'] = (string)( getenv( 'HOME' ) ?: '/' );
+            unset( $env['TMPDIR'] );
+        }
+        else
+            $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['type'], 'in=' . $job['config'] ), $job['args'] );
+        $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, 'w' ), 2 => array( 'file', $log, 'a' ) ), $pipes, $job['dir'], $env );
         if( !is_resource( $proc ) )
         {
             $app->runnerFinish( $job['id'], 'failed', 'the run could not be started' );
             continue;
         }
-        $running[$job['id']] = array( 'proc' => $proc, 'started' => time(), 'dir' => $job['dir'] );
+        $running[$job['id']] = array( 'proc' => $proc, 'started' => time(), 'dir' => $job['dir'], 'jid' => $job['jid'] );
     }
     usleep( 250000 );
 }
 
 foreach( $running as $id => $r )
 {
-    jobsKill( $r['proc'] );
+    jobsKill( $r['proc'], $r['jid'] );
     $app->runnerFinish( $id, 'failed', 'the job runner was stopped' );
 }
 print "config-viewer jobs: stopped\n";

@@ -14,7 +14,7 @@ Background and open points: [todo/ui-config-in-browser.md](../../../todo/ui-conf
 | API | `api.php` → `lib/ViewerApp.php` | JSON API; users / projects / members / versions in SQLite; every request is checked against the project permission |
 | service | `bin/service.php` | the one long running process; starts a worker when a version is opened |
 | worker | `bin/worker.php` | one per opened version: loads the configuration **once** and keeps it in memory (`UTIL::$sharedConfig`); reads and changes run on that memory |
-| jobs | `bin/jobs.php` | second long running process: executes the queued runs (`stats`), result files in the folder of the run |
+| jobs | `bin/jobs.php` | second long running process: executes the queued runs (`stats`, `playbook`), result files in the folder of the run; optional one container per run |
 | users | `bin/user.php` | create users on the command line |
 
 **Load once:** the first request for a version loads it (seconds to minutes for a large Panorama configuration), every
@@ -332,3 +332,35 @@ input checks, load once, change in memory, save as new version, recovery of unsa
 
 The project page shows, next to versions and members: **Runs** (start a `stats` / `playbook` run on a version, optional BP JSON, state refreshes while a run is open, result files, "Result as new version"), **Project files** (playbook JSON / BP JSON upload, download, delete), **Members** with the limits per member (types, locations), **API tokens** (create - the token is shown once -, list, delete) and for the owner the **Audit log** of the project. Admins see the audit log of everything under "Account".
 A member limited to types or locations sees no runs card and no upload / download / delete of whole versions; the viewer offers only its types and starts with its first location. The page only hides what the server refuses anyway - the checks are in `ViewerApp`.
+
+## One container per run
+
+Without a setting a run is a process of the job runner. With `PANOSPHP_VIEWER_CONTAINER=docker` (or `podman`) for `bin/jobs.php` every run is one container, built in `lib/ViewerContainer.php`:
+
+```
+docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
+  --network none --read-only --cap-drop ALL --security-opt no-new-privileges
+  --pids-limit 256 --memory 2g --cpus 2 --tmpfs /tmp:rw,noexec,nosuid,size=256m
+  --mount <data>/projects/<pid>             -> /project  (read-only: version files, playbooks, BP JSON)
+  --mount <data>/projects/<pid>/jobs/<jid>  -> /job      (read-write: working directory, result files)
+  --workdir /job --user <uid:gid> --entrypoint php <image>
+  /tools/pan-os-php/utils/pan-os-php.php type=<type> in=/project/<version>.xml <checked arguments>
+```
+
+* From the job come only project id, job id, version file name (each checked) and the pan-os-php arguments. They stand after the image, so they are arguments of pan-os-php and can not become options of the runtime.
+* A run sees the versions and files of its own project (read-only), no other project, not the database, no network.
+* Cancel, time limit and delete remove the container (`rm --force`); at its start the job runner removes containers left over from this installation.
+* A wrong setting or a runtime that does not answer stops the job runner. It does not fall back to runs without a container.
+
+| Setting (for `bin/jobs.php`) | Meaning |
+|---|---|
+| `PANOSPHP_VIEWER_CONTAINER` | `docker` or `podman`; empty: no container |
+| `PANOSPHP_VIEWER_CONTAINER_IMAGE` | image with pan-os-php, same version as the viewer (needed) |
+| `PANOSPHP_VIEWER_CONTAINER_DATA` | where the **runtime** finds the data directory: absolute path on its host, or the name of the volume that holds it. Default: `PANOSPHP_VIEWER_DATA` (job runner directly on the host) |
+| `PANOSPHP_VIEWER_CONTAINER_TOOL` | `pan-os-php.php` in the image (default `/tools/pan-os-php/utils/pan-os-php.php`) |
+| `PANOSPHP_VIEWER_CONTAINER_MEMORY`, `_CPUS` | limits per run (default `2g`, `2`) |
+| `PANOSPHP_VIEWER_CONTAINER_USER` | `uid:gid` in the container (default: the one of the job runner, so that it can read the result files) |
+
+**Viewer itself in containers (Docker).** Three services with the same data volume: web (`api.php`), service (`bin/service.php`), job runner (`bin/jobs.php`). Only the job runner gets the Docker socket (`/var/run/docker.sock`) and the `docker` client; web and service get neither. Who controls the socket controls the host - that is why it stays in the one process that builds the call from fixed parts and takes no request from the network. The run containers are started by the Docker of the host, so `PANOSPHP_VIEWER_CONTAINER_DATA` must be the volume name (as `docker volume ls` shows it, with the compose project prefix) or the host path of the data directory, not the path inside the job runner.
+
+**Not checked yet:** the flow is tested with a stand-in `docker` program (`tests/test_config_viewer_container.php`), not against a real Docker or Podman. To check on a real installation: one stats run and one playbook run; a volume name needs `volume-subpath` of `--mount` (current Docker Engine; Podman not checked - use a host path there); on Docker Desktop (macOS) the owner of the result files with `--user`. The interactive workers (`bin/worker.php`) are not in containers yet.
