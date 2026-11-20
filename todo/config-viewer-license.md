@@ -42,9 +42,43 @@ without paying needs step 2: its code is not in the public image at all.
   (b) a list of withdrawn licence ids that ships with every new image / release. Both together; nothing immediate.
 * **Trial:** a licence with a short run time, same mechanism.
 
+## Proposal for decision 6: encrypted plug-ins (2026-11-20, not decided)
+
+A form of step 2 that fits air gap, binding to the customer and the open core. Licensed features are **plug-ins**
+whose code is never in the public repository; in the image / bundle they are encrypted.
+
+* **Plug-in package:** the code of a feature (`migration`, `cdss`, …) is encrypted with its own key and signed at
+  Sven's side (PHP `sodium`: secretbox + Ed25519). Without the key it is not readable.
+* **Licence:** the signed licence file holds - next to customer, features, end date - the key(s) of the unlocked
+  plug-ins. The public key in the viewer only **verifies** licence and plug-in (it does not decrypt).
+* **Start:** verify licence → verify plug-in → decrypt in memory → load. No clear text on disk.
+* **Run time:** the check of the end date is also inside the plug-in (the encrypted part), so it can not be removed by
+  changing the open code.
+* **New key per release:** every new plug-in version gets a new key. Without a renewed licence new versions do not
+  load - the customer stays on the old version at most. This is the withdrawal that works without an online check.
+* **Optional, package per customer:** own key and mark per customer, so that a passed-on copy can be traced; costs
+  one build per customer.
+
+| Against | Protection |
+|---|---|
+| somebody without a licence | complete: the code is not there, even with the image |
+| customer with an ended licence | partly: still has the key; the check inside the plug-in stops it unless the plug-in is decrypted and rebuilt |
+| customer with a valid licence who wants the code | none that can be guaranteed: what runs on his computer is in clear text in memory at some point (effort, breach of contract) |
+
+Needed for it:
+
+* a **plug-in interface** in the viewer: a plug-in registers routes, run types, playbook step types, pages (needed
+  anyway once `migration` / `cdss` are built apart from the core);
+* a **private repository** for the plug-in code;
+* a **tool at Sven's side**: encrypt + sign plug-ins, issue licences with the fitting keys, register;
+* in the bundle (`airgap/make-bundle.sh`): the encrypted plug-ins.
+
+Alternative for the encryption: commercial encoders (ionCube, SourceGuardian) - byte code instead of source, harder
+to rebuild; licence fees, a loader extension in the image, supported PHP versions to check first.
+
 ## Open
 
-1. Confirm strength: step 1 now (decision 6)?
+1. Decision 6 (on hold): signed licence checked in the open code only (step 1), or encrypted plug-ins (proposal above)? Own encryption or a commercial encoder? One package for all customers or one per customer?
 2. Run time by default (12 months?) and grace period after the end (0 / 14 / 30 days?).
 3. Where the register of created licences lives (file next to the private key / small database).
 4. Feature names and what exactly belongs to `migration` and `cdss` (routes, run types, playbook steps).
@@ -56,3 +90,5 @@ without paying needs step 2: its code is not in the public image at all.
    expired, clock set back, withdrawn id).
 2. `GET` / `PUT license`, page under Account, `needFeature()`, `meta` tells the page which features are on.
 3. First licensed feature uses it.
+4. With encrypted plug-ins: plug-in interface, loader (verify, decrypt in memory), packaging tool, key per release in
+   the licence, plug-ins in the air-gap bundle.
