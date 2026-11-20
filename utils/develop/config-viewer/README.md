@@ -54,6 +54,12 @@ All members of a project work on the same loaded configuration of a version (one
   to one user and **one project**, has a role (`read` / `write`, never more than the user) and an expiry (1–365 days);
   only the SHA-256 of the secret is stored, the value is shown once. A token follows the grants of its user, can not
   manage members, tokens, projects or users (also not for an admin) and stops working when the user leaves the project.
+* **Audit log:** one line for every login (also a failed one), every request that is not a plain read (changes, save,
+  uploads, members, tokens, runs, deletes – also refused ones, with their HTTP status) and every download: time, user,
+  token id, client address, project, method, route, status and the request fields that describe it (`actions`,
+  `filter`, `user`, `role`, …) – never passwords, token secrets or file content. The owner reads the log of a
+  project (`projects/<pid>/audit`), an admin everything (`audit`); not with an API token. Lines are kept
+  `PANOSPHP_VIEWER_AUDIT_DAYS` days (default 365).
 * **Users:** created by an admin (UI) or with `bin/user.php`; there is no self registration and no default user.
 * **Files:** stored under random names in the data directory, which must be **outside the web root** (the API refuses
   to work otherwise). The uploaded file name is only a label. An upload must be XML with the root element `<config>`.
@@ -68,7 +74,7 @@ All members of a project work on the same loaded configuration of a version (one
 
 Known limits of the prototype: no OS level isolation between projects (all workers run as the web server user); the
 action deny list is a pattern list, not a reviewed allow list per action; an owner can find out whether a user name
-exists (adding a member); no audit log besides the version history; sessions are PHP file sessions.
+exists (adding a member); sessions are PHP file sessions.
 
 ## Run it (lab)
 
@@ -153,6 +159,7 @@ server **and** the service, run the service as the web server user. With TLS at 
 | `PANOSPHP_VIEWER_SESSION_IDLE_MIN` | 120 | login session idle timeout |
 | `PANOSPHP_VIEWER_MAX_UPLOAD_MB` | 200 | upload limit (also `upload_max_filesize` / `post_max_size` of PHP) |
 | `PANOSPHP_VIEWER_LOAD_TIMEOUT` | 600 | seconds to wait for the first load of a version |
+| `PANOSPHP_VIEWER_AUDIT_DAYS` | 365 | days the audit log keeps a line |
 | `PANOSPHP_VIEWER_ALLOW_HTTP` | – | `1` allows HTTP from other hosts (lab only) |
 | `PANOSPHP_VIEWER_TLS_PROXY` | – | `1` when TLS ends at a reverse proxy in front of PHP (cookie gets `Secure`); the proxy must be the only way in |
 
@@ -186,6 +193,8 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `meta` | GET | login | offered types with their actions (arguments, help) and filters, rule types, profile types |
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
 | `users/<name>` | DELETE | admin | delete a user and the projects the user owns |
+| `audit` | GET | admin | audit log, newest first; query `user`, `before` (id), `limit` (1–1000) |
+| `projects/<pid>/audit` | GET | owner | audit log of the project |
 | `projects` | GET / POST | login | own and shared projects / create (`name`) |
 | `projects/<pid>` | GET / DELETE | read / owner | project with own permission / delete |
 | `projects/<pid>/members` | GET / PUT | read / owner | list / add or change (`user`, `role` = `read` or `write`, optional `types`, `scope`) |
@@ -316,5 +325,5 @@ more than its name, arguments and the scanned calls show – that is what the re
 cd tests && php test_config_viewer.php
 ```
 
-326 checks: login, allow list per action, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+340 checks: login, allow list per action, audit log, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

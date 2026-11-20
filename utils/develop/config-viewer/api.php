@@ -20,7 +20,8 @@
 /**
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
  *   POST login, POST logout, GET me, POST password, GET meta
- *   GET|POST users, DELETE users/<name>                                   (admin)
+ *   GET|POST users, DELETE users/<name>, GET audit                        (admin)
+ *   GET projects/<pid>/audit                                              (owner)
  *   GET|POST projects, GET|DELETE projects/<pid>
  *   GET|PUT projects/<pid>/members, DELETE projects/<pid>/members/<name>
  *   GET|POST projects/<pid>/tokens, DELETE projects/<pid>/tokens/<tid>                (API tokens for scripts)
@@ -40,8 +41,25 @@ header( 'X-Frame-Options: DENY' );
 header( 'Referrer-Policy: no-referrer' );
 header( "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'" );
 
+/**
+ * Audit log: one line for every login (also a failed one), every request that is not a plain read, and every
+ * download (configuration, project file, result file of a run). Filled while the request is handled.
+ */
+$viewerAudit = array( 'app' => null, 'user' => null, 'token' => null, 'pid' => null, 'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
+    'route' => (string)( $_SERVER['PATH_INFO'] ?? '' ), 'body' => array(), 'download' => FALSE );
+
+function viewerAudit( int $code ): void
+{
+    global $viewerAudit;
+    $a = $viewerAudit;
+    if( $a['app'] === null || ( $a['method'] === 'GET' && !$a['download'] ) )
+        return;
+    $a['app']->auditWrite( $a['user'], $a['token'], (string)( $_SERVER['REMOTE_ADDR'] ?? '' ), $a['pid'], $a['method'], $a['route'], $code, $a['body'] + $_GET );
+}
+
 function viewerOut( $data, int $code = 200 ): void
 {
+    viewerAudit( $code );
     http_response_code( $code );
     print json_encode( $data, JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE );
     exit;
@@ -55,12 +73,14 @@ function viewerBody(): array
     $j = json_decode( $raw, TRUE );
     if( !is_array( $j ) )
         throw new ViewerException( 'JSON body expected', 400 );
+    $GLOBALS['viewerAudit']['body'] = $j;
     return $j;
 }
 
 try
 {
     $app = new ViewerApp();
+    $viewerAudit['app'] = $app;
     // HTTPS directly, or TLS ends at a reverse proxy in front (then the proxy must be the only way in)
     $secure = ( !empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) || getenv( 'PANOSPHP_VIEWER_TLS_PROXY' ) === '1';
     // without HTTPS the session cookie would travel in clear text: only from this machine itself, or when
@@ -83,6 +103,8 @@ try
     if( $r0 === 'login' && $method === 'POST' )
     {
         $b = viewerBody();
+        $viewerAudit['user'] = is_string( $b['user'] ?? null ) ? $b['user'] : null;
+        $viewerAudit['body'] = array();
         $u = $app->login( $b['user'] ?? null, $b['password'] ?? null, (string)( $_SERVER['REMOTE_ADDR'] ?? '' ) );
         session_regenerate_id( TRUE );
         $_SESSION = array( 'uid' => (int)$u['id'], 'csrf' => bin2hex( random_bytes( 32 ) ), 'since' => time(), 'seen' => time() );
@@ -101,6 +123,7 @@ try
             throw new ViewerException( 'API token unknown or expired', 401 );
         $user['is_admin'] = 0;
         $csrf = null;
+        $viewerAudit['token'] = $user['token']['tid'];
         if( in_array( $r0, array( 'logout', 'password', 'users' ), TRUE ) )
             throw new ViewerException( 'not found', 404 );
     }
@@ -122,6 +145,7 @@ try
     if( !( $r0 === 'logout' || $r0 === 'password' ) )
         session_write_close();
 
+    $viewerAudit['user'] = $user['name'];
     $admin = (bool)$user['is_admin'];
     $key = $method . ' ' . $r0;
 
@@ -145,6 +169,9 @@ try
     }
     if( $key === 'GET meta' )
         viewerOut( $app->meta() );
+
+    if( $r0 === 'audit' && $method === 'GET' && count( $route ) == 1 )
+        viewerOut( array( 'audit' => $app->auditList( $user, null, $_GET ) ) );
 
     if( $r0 === 'users' )
     {
@@ -173,6 +200,9 @@ try
         $sub = $route[2] ?? null;
         $cid = $route[3] ?? null;
         $op = $route[4] ?? null;
+        $viewerAudit['pid'] = is_string( $pid ) ? $pid : null;
+        if( $sub === 'audit' && $n == 3 && $method === 'GET' )
+            viewerOut( array( 'audit' => $app->auditList( $user, $pid, $_GET ) ) );
 
         if( $n == 1 && $method === 'GET' )
             viewerOut( array( 'projects' => $app->projectList( $user ) ) );
@@ -235,6 +265,8 @@ try
             if( $n == 5 && $method === 'GET' && $route[4] === 'download' )
             {
                 $f = $app->fileDownload( $user, $pid, $route[3] );
+                $viewerAudit['download'] = TRUE;
+                viewerAudit( 200 );
                 header( 'Content-Type: application/json' );
                 header( 'Content-Disposition: attachment; filename="' . $f['name'] . '"' );
                 print $f['content'];
@@ -262,6 +294,8 @@ try
             if( $n >= 6 && $method === 'GET' && $route[4] === 'files' )
             {
                 $f = $app->jobFile( $user, $pid, $route[3], implode( '/', array_map( 'rawurldecode', array_slice( $route, 5 ) ) ) );
+                $viewerAudit['download'] = TRUE;
+                viewerAudit( 200 );
                 header( 'Content-Type: application/octet-stream' );
                 header( 'Content-Disposition: attachment; filename="' . preg_replace( '/[^A-Za-z0-9._-]/', '_', $f['name'] ) . '"' );
                 header( 'Content-Length: ' . strlen( $f['content'] ) );
@@ -284,6 +318,8 @@ try
             if( $n == 5 && $method === 'GET' && $op === 'download' )
             {
                 $d = $app->configDownload( $user, $pid, $cid );
+                $viewerAudit['download'] = TRUE;
+                viewerAudit( 200 );
                 header( 'Content-Type: application/xml' );
                 header( 'Content-Disposition: attachment; filename="' . $d['name'] . '"' );
                 header( 'Content-Length: ' . filesize( $d['path'] ) );
@@ -328,6 +364,9 @@ try
 catch( ViewerException $e )
 {
     $code = $e->getCode();
+    // a refused download is logged as well
+    if( $viewerAudit['method'] === 'GET' && preg_match( '#/download$|/runs/[0-9a-f]+/files/#', $viewerAudit['route'] ) )
+        $viewerAudit['download'] = TRUE;
     viewerOut( array( 'error' => $e->getMessage() ), $code >= 400 && $code < 600 ? $code : 400 );
 }
 catch( Throwable $e )

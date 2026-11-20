@@ -154,6 +154,10 @@ class ViewerApp
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, fid TEXT NOT NULL UNIQUE,
             project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE, kind TEXT NOT NULL, name TEXT NOT NULL, file TEXT NOT NULL,
             size INTEGER NOT NULL, created_by INTEGER, created INTEGER NOT NULL)' );
+        // audit log: who did what (logins, every request that is not a plain read, downloads)
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, ts INTEGER NOT NULL, user TEXT, token TEXT, ip TEXT,
+            pid TEXT, method TEXT NOT NULL, route TEXT NOT NULL, status INTEGER NOT NULL, detail TEXT)' );
+        $this->db->exec( 'CREATE INDEX IF NOT EXISTS audit_pid ON audit (pid, id)' );
         // grants of a member: types (JSON list, NULL = all offered types) and scope (JSON list of locations, NULL = whole configuration)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(members)' )->fetchAll(), 'name' );
         if( !in_array( 'types', $cols, TRUE ) )
@@ -859,6 +863,69 @@ class ViewerApp
         $this->q( "UPDATE jobs SET state = 'failed', finished = ?, error = 'the job runner was stopped' WHERE state = 'running'", array( time() ) );
     }
 
+    // ------------------------------------------------------------------ audit log
+
+    /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
+    const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
+        'name', 'playbook', 'bp', 'admin', 'kind' );
+
+    /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
+    public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void
+    {
+        try
+        {
+            $keep = array();
+            foreach( self::AUDIT_FIELDS as $k )
+                if( isset( $detail[$k] ) && ( is_scalar( $detail[$k] ) || is_array( $detail[$k] ) ) )
+                    $keep[$k] = is_string( $detail[$k] ) ? substr( $detail[$k], 0, 2000 ) : $detail[$k];
+            $this->q( 'INSERT INTO audit (ts, user, token, ip, pid, method, route, status, detail) VALUES (?,?,?,?,?,?,?,?,?)',
+                array( time(), $user !== null ? substr( $user, 0, 64 ) : null, $token, substr( $ip, 0, 64 ), $pid !== null && preg_match( '/^[0-9a-f]{32}$/', $pid ) ? $pid : null,
+                    substr( $method, 0, 10 ), substr( $route, 0, 300 ), $status, count( $keep ) > 0 ? json_encode( $keep ) : null ) );
+            if( random_int( 1, 200 ) === 1 )
+                $this->q( 'DELETE FROM audit WHERE ts < ?', array( time() - max( 1, (int)( getenv( 'PANOSPHP_VIEWER_AUDIT_DAYS' ) ?: 365 ) ) * 86400 ) );
+        }
+        catch( Throwable $e )
+        {
+            error_log( 'config-viewer audit: ' . $e->getMessage() );
+        }
+    }
+
+    /**
+     * the audit log, newest first: of one project (its owner) or of everything (admin, $pid null).
+     * Not with an API token. Filters: 'user', 'before' (id), 'limit' (1-1000, default 200).
+     */
+    public function auditList( array $user, $pid, array $in ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $where = array();
+        $args = array();
+        if( $pid !== null )
+        {
+            $p = $this->projectGet( $user, $pid, 'owner' );
+            $where[] = 'pid = ?';
+            $args[] = $p['pid'];
+        }
+        elseif( empty( $user['is_admin'] ) )
+            throw new ViewerException( 'not found', 404 );
+        if( isset( $in['user'] ) && is_string( $in['user'] ) && $in['user'] !== '' )
+        {
+            $where[] = 'user = ? COLLATE NOCASE';
+            $args[] = $in['user'];
+        }
+        if( isset( $in['before'] ) && is_numeric( $in['before'] ) )
+        {
+            $where[] = 'id < ?';
+            $args[] = (int)$in['before'];
+        }
+        $limit = isset( $in['limit'] ) && is_numeric( $in['limit'] ) ? max( 1, min( 1000, (int)$in['limit'] ) ) : 200;
+        $rows = $this->q( 'SELECT id, ts, user, token, ip, pid, method, route, status, detail FROM audit' . ( count( $where ) ? ' WHERE ' . implode( ' AND ', $where ) : '' )
+            . ' ORDER BY id DESC LIMIT ' . $limit, $args )->fetchAll();
+        foreach( $rows as $i => $r )
+            $rows[$i]['detail'] = $r['detail'] !== null ? json_decode( $r['detail'], TRUE ) : null;
+        return $rows;
+    }
+
     // ------------------------------------------------------------------ API tokens (scripts)
 
     const TOKEN_MAX_DAYS = 365;
@@ -930,7 +997,7 @@ class ViewerApp
             return null;
         if( (int)$t['last_used'] < time() - 60 )
             $this->q( 'UPDATE tokens SET last_used = ? WHERE id = ?', array( time(), $t['id'] ) );
-        $u['token'] = array( 'project_id' => (int)$t['project_id'], 'role' => $t['role'] );
+        $u['token'] = array( 'project_id' => (int)$t['project_id'], 'role' => $t['role'], 'tid' => $t['tid'] );
         return $u;
     }
 

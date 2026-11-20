@@ -580,6 +580,56 @@ eq( array( isset( $meta['address']['actions']['description-append'] ), isset( $m
     array( TRUE, FALSE, FALSE, FALSE, TRUE, FALSE ), 'allow list: change actions offered; network / file actions not' );
 eq( array( $meta['edl']['readonly'] ?? null, count( $meta['edl']['actions'] ?? array( 1 ) ) ), array( TRUE, 0 ), 'allow list: a type that is not reviewed stays read only' );
 
+// ---- 12l. audit log
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Audit' ) );
+$AU = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $AU . '/configs', null, array( 'a.xml', $xml ) );
+$AUC = $AU . '/configs/' . $r[1]['cid'];
+$alice->call( 'PUT', $AU . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
+$alice->call( 'POST', $AUC . '/addresses/actions', array( 'location' => 'shared', 'filter' => '(name eq shared-host1)', 'actions' => 'description-append:-audit' ) );
+$alice->call( 'GET', $AUC . '/addresses' );
+$bob->call( 'GET', $AUC . '/download' );
+$bob->call( 'POST', $AUC . '/addresses/actions', array( 'location' => 'shared', 'actions' => 'description-append:x' ) );
+$r = $alice->call( 'POST', $AU . '/tokens', array( 'label' => 'audit token', 'role' => 'read', 'days' => 1 ) );
+$atk = new Client(); $atk->bearer = $r[1]['token'];
+$atk->call( 'GET', $AUC . '/download' );
+$wrong = new Client(); $wrong->login( 'alice', 'this-is-wrong' );
+$log = $alice->call( 'GET', $AU . '/audit' );
+$lines = $log[1]['audit'] ?? array();
+$find = function( $method, $suffix, $status ) use ( &$lines )
+{
+    foreach( $lines as $l )
+        if( $l['method'] === $method && substr( $l['route'], -strlen( $suffix ) ) === $suffix && (int)$l['status'] === $status )
+            return $l;
+    return null;
+};
+eq( status( $log ), 200, 'audit: the owner reads the log of the project' );
+$l = $find( 'POST', '/addresses/actions', 200 );
+eq( array( $l['user'] ?? null, $l['detail']['actions'] ?? null, $l['detail']['filter'] ?? null ), array( 'alice', 'description-append:-audit', '(name eq shared-host1)' ), 'audit: change with user, actions and filter' );
+$l = $find( 'PUT', '/members', 200 );
+eq( array( $l['detail']['user'] ?? null, $l['detail']['role'] ?? null ), array( 'bob', 'read' ), 'audit: member change' );
+eq( $find( 'GET', '/addresses', 200 ), null, 'audit: a plain read is not logged' );
+$l = $find( 'GET', '/download', 200 );
+eq( in_array( $l['user'] ?? null, array( 'bob', 'alice' ), TRUE ), TRUE, 'audit: download logged' );
+eq( ( $find( 'POST', '/addresses/actions', 403 )['user'] ?? null ), 'bob', 'audit: refused change logged with its status' );
+$tokenLine = null;
+foreach( $lines as $l ) if( $l['token'] !== null && substr( $l['route'], -9 ) === '/download' ) $tokenLine = $l;
+eq( array( $tokenLine['user'] ?? null, strlen( (string)( $tokenLine['token'] ?? '' ) ) ), array( 'alice', 16 ), 'audit: a request with an API token names the token id' );
+eq( strpos( json_encode( $lines ), 'pvt_' ), FALSE, 'audit: no token secret in the log' );
+eq( status( $bob->call( 'GET', $AU . '/audit' ) ), 403, 'audit: a member that is not the owner can not read it' );
+eq( status( $atk->call( 'GET', $AU . '/audit' ) ), 404, 'audit: not with an API token' );
+eq( status( $bob->call( 'GET', 'audit' ) ), 404, 'audit: the whole log only for an admin' );
+$all = $alice->call( 'GET', 'audit?limit=1000' );
+$failedLogin = null; $hasPassword = FALSE;
+foreach( $all[1]['audit'] ?? array() as $l )
+{
+    if( $l['route'] === '/login' && (int)$l['status'] === 401 && $l['user'] === 'alice' ) $failedLogin = $l;
+    if( strpos( json_encode( $l ), 'this-is-wrong' ) !== FALSE || strpos( json_encode( $l ), 'alice-secret-1' ) !== FALSE ) $hasPassword = TRUE;
+}
+eq( array( status( $all ), $failedLogin !== null, $hasPassword ), array( 200, TRUE, FALSE ), 'audit: admin reads everything; failed login logged; no password in the log' );
+eq( count( $alice->call( 'GET', 'audit?user=bob&limit=5' )[1]['audit'] ?? array() ) <= 5, TRUE, 'audit: filter and limit' );
+eq( status( $alice->call( 'DELETE', $AU ) ), 200, 'audit project deleted' );
+
 // ---- 12a. grants per member: types and scope (locations)
 $alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );
 $dave = new Client(); eq( status( $dave->login( 'dave', 'dave-secret-45' ) ), 200, 'dave logs in' );
