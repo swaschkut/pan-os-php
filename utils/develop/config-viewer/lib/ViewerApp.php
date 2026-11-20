@@ -100,6 +100,16 @@ class ViewerApp
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS sessions (sid TEXT PRIMARY KEY, project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
             config_id INTEGER NOT NULL, created INTEGER NOT NULL)' );
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS login_fail (name TEXT NOT NULL, ip TEXT NOT NULL, ts INTEGER NOT NULL)' );
+        // API tokens: only the hash of the secret is stored; bound to one user and one project, role capped by 'role'
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS tokens (id INTEGER PRIMARY KEY, tid TEXT NOT NULL UNIQUE, hash TEXT NOT NULL,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            role TEXT NOT NULL, label TEXT NOT NULL, expires INTEGER NOT NULL, created INTEGER NOT NULL, last_used INTEGER)' );
+        // grants of a member: types (JSON list, NULL = all offered types) and scope (JSON list of locations, NULL = whole configuration)
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(members)' )->fetchAll(), 'name' );
+        if( !in_array( 'types', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE members ADD COLUMN types TEXT' );
+        if( !in_array( 'scope', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE members ADD COLUMN scope TEXT' );
     }
 
     private function q( string $sql, array $args = array() ): PDOStatement
@@ -223,6 +233,8 @@ class ViewerApp
 
     public function projectCreate( array $user, $name ): array
     {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
         $name = self::checkLabel( $name, 'project name' );
         $pid = self::randomId();
         if( !mkdir( $this->projectDir( $pid ), 0700, TRUE ) )
@@ -238,6 +250,16 @@ class ViewerApp
             FROM projects p JOIN users o ON o.id = p.owner_id
             LEFT JOIN members m ON m.project_id = p.id AND m.user_id = :u
             WHERE p.owner_id = :u OR m.user_id = :u ORDER BY p.name', array( ':u' => $user['id'] ) )->fetchAll();
+        if( isset( $user['token'] ) )
+        {
+            $out = array();
+            foreach( $rows as $r )
+            {
+                try { $out[] = self::projectPublic( $this->projectGet( $user, $r['pid'] ) ); }
+                catch( ViewerException $e ) { }
+            }
+            return $out;
+        }
         return $rows;
     }
 
@@ -249,6 +271,8 @@ class ViewerApp
     public function projectGet( array $user, $pid, string $need = 'read' ): array
     {
         $p = null;
+        $types = null;
+        $scope = null;
         if( is_string( $pid ) && preg_match( '/^[0-9a-f]{32}$/', $pid ) )
             $p = $this->q( 'SELECT p.*, o.name AS owner FROM projects p JOIN users o ON o.id = p.owner_id WHERE p.pid = ?', array( $pid ) )->fetch();
         $role = null;
@@ -258,9 +282,22 @@ class ViewerApp
                 $role = 'owner';
             else
             {
-                $m = $this->q( 'SELECT role FROM members WHERE project_id = ? AND user_id = ?', array( $p['id'], $user['id'] ) )->fetch();
+                $m = $this->q( 'SELECT role, types, scope FROM members WHERE project_id = ? AND user_id = ?', array( $p['id'], $user['id'] ) )->fetch();
                 if( $m && in_array( $m['role'], self::ROLES, TRUE ) )
+                {
                     $role = $m['role'];
+                    $types = $m['types'] !== null ? json_decode( $m['types'], TRUE ) : null;
+                    $scope = $m['scope'] !== null ? json_decode( $m['scope'], TRUE ) : null;
+                }
+            }
+            // a request with an API token: only the project of the token, at most the role of the token,
+            // never 'owner' (no member / token / project management with a token)
+            if( $role !== null && isset( $user['token'] ) )
+            {
+                if( (int)$user['token']['project_id'] !== (int)$p['id'] )
+                    $role = null;
+                else
+                    $role = ( $role === 'read' || $user['token']['role'] === 'read' ) ? 'read' : 'write';
             }
         }
         if( $role === null )
@@ -270,12 +307,28 @@ class ViewerApp
         if( !isset( $rank[$need] ) || $rank[$role] < $rank[$need] )
             throw new ViewerException( 'not allowed: this needs the project permission "' . $need . '" (yours: "' . $role . '")', 403 );
         $p['role'] = $role;
+        $p['types'] = is_array( $types ) ? $types : null;
+        $p['scope'] = is_array( $scope ) ? $scope : null;
         return $p;
     }
 
     public static function projectPublic( array $p ): array
     {
-        return array( 'pid' => $p['pid'], 'name' => $p['name'], 'owner' => $p['owner'], 'role' => $p['role'], 'created' => (int)$p['created'] );
+        return array( 'pid' => $p['pid'], 'name' => $p['name'], 'owner' => $p['owner'], 'role' => $p['role'], 'created' => (int)$p['created'],
+            'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null );
+    }
+
+    /** TRUE when the grant of the user on the project is limited to some types or to some locations */
+    private static function limited( array $p ): bool
+    {
+        return $p['types'] !== null || $p['scope'] !== null;
+    }
+
+    /** whole-configuration operations (download, upload, delete a version) need a grant without type / scope limit */
+    private static function needUnlimited( array $p, string $what ): void
+    {
+        if( self::limited( $p ) )
+            throw new ViewerException( 'not allowed: ' . $what . ' needs access to the whole configuration (your access is limited to some types or locations)', 403 );
     }
 
     public function projectDelete( array $user, $pid ): void
@@ -290,13 +343,21 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $list = array( array( 'user' => $p['owner'], 'role' => 'owner' ) );
-        foreach( $this->q( 'SELECT u.name AS user, m.role FROM members m JOIN users u ON u.id = m.user_id WHERE m.project_id = ? ORDER BY u.name',
+        foreach( $this->q( 'SELECT u.name AS user, m.role, m.types, m.scope FROM members m JOIN users u ON u.id = m.user_id WHERE m.project_id = ? ORDER BY u.name',
             array( $p['id'] ) )->fetchAll() as $m )
+        {
+            $m['types'] = $m['types'] !== null ? json_decode( $m['types'], TRUE ) : null;
+            $m['scope'] = $m['scope'] !== null ? json_decode( $m['scope'], TRUE ) : null;
             $list[] = $m;
+        }
         return $list;
     }
 
-    public function memberSet( array $user, $pid, $memberName, $role ): void
+    /**
+     * @param array|null $types offered types the member may use (null = all)
+     * @param array|null $scope locations (device group, vsys, 'shared', template, SCM folder / snippet) the member may use (null = whole configuration)
+     */
+    public function memberSet( array $user, $pid, $memberName, $role, $types = null, $scope = null ): void
     {
         $p = $this->projectGet( $user, $pid, 'owner' );
         if( !in_array( $role, self::ROLES, TRUE ) )
@@ -306,8 +367,25 @@ class ViewerApp
             throw new ViewerException( 'unknown user', 404 );
         if( (int)$m['id'] === (int)$p['owner_id'] )
             throw new ViewerException( 'the owner has all permissions already', 400 );
-        $this->q( 'INSERT INTO members (project_id, user_id, role) VALUES (?,?,?)
-            ON CONFLICT(project_id, user_id) DO UPDATE SET role = excluded.role', array( $p['id'], $m['id'], $role ) );
+        if( $types !== null )
+        {
+            $offered = array_keys( $this->meta()['types'] );
+            if( !is_array( $types ) || count( $types ) == 0 || count( array_diff( $types, $offered ) ) > 0 )
+                throw new ViewerException( 'types: a list out of ' . implode( ', ', $offered ) . ' (or leave it out for all)', 400 );
+            $types = json_encode( array_values( array_unique( $types ) ) );
+        }
+        if( $scope !== null )
+        {
+            if( !is_array( $scope ) || count( $scope ) == 0 || count( $scope ) > 200 )
+                throw new ViewerException( 'scope: a list of locations (or leave it out for the whole configuration)', 400 );
+            foreach( $scope as $loc )
+                if( !is_string( $loc ) || !preg_match( '/^[A-Za-z0-9 _.\-]{1,63}$/', $loc ) || strtolower( $loc ) === 'any' )
+                    throw new ViewerException( 'scope: location names with letters, digits, space and . _ - only, not "any"', 400 );
+            $scope = json_encode( array_values( array_unique( $scope ) ) );
+        }
+        $this->q( 'INSERT INTO members (project_id, user_id, role, types, scope) VALUES (?,?,?,?,?)
+            ON CONFLICT(project_id, user_id) DO UPDATE SET role = excluded.role, types = excluded.types, scope = excluded.scope',
+            array( $p['id'], $m['id'], $role, $types, $scope ) );
     }
 
     public function memberRemove( array $user, $pid, $memberName ): void
@@ -318,6 +396,82 @@ class ViewerApp
         if( $m === null || ( $p['role'] !== 'owner' && (int)$m['id'] !== (int)$user['id'] ) )
             throw new ViewerException( $p['role'] !== 'owner' ? 'not allowed' : 'unknown user', $p['role'] !== 'owner' ? 403 : 404 );
         $this->q( 'DELETE FROM members WHERE project_id = ? AND user_id = ?', array( $p['id'], $m['id'] ) );
+        $this->q( 'DELETE FROM tokens WHERE project_id = ? AND user_id = ?', array( $p['id'], $m['id'] ) );
+    }
+
+    // ------------------------------------------------------------------ API tokens (scripts)
+
+    const TOKEN_MAX_DAYS = 365;
+
+    /**
+     * A new API token of $user for one project. The secret is returned once and never stored (only its hash).
+     * The token acts as the user, on this project only, with at most $role - and with the types / scope of the member.
+     * @return array token (incl. 'token' = the value for "Authorization: Bearer")
+     */
+    public function tokenCreate( array $user, $pid, $label, $role, $days ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $label = self::checkLabel( $label, 'label' );
+        if( !in_array( $role, self::ROLES, TRUE ) )
+            throw new ViewerException( 'role must be one of: ' . implode( ', ', self::ROLES ), 400 );
+        if( $role === 'write' && $p['role'] === 'read' )
+            throw new ViewerException( 'not allowed: your own permission on this project is "read"', 403 );
+        if( !is_int( $days ) || $days < 1 || $days > self::TOKEN_MAX_DAYS )
+            throw new ViewerException( 'days: 1-' . self::TOKEN_MAX_DAYS, 400 );
+        $tid = self::randomId( 8 );
+        $secret = self::randomId( 32 );
+        $expires = time() + $days * 86400;
+        $this->q( 'INSERT INTO tokens (tid, hash, user_id, project_id, role, label, expires, created) VALUES (?,?,?,?,?,?,?,?)',
+            array( $tid, hash( 'sha256', $secret ), $user['id'], $p['id'], $role, $label, $expires, time() ) );
+        return array( 'tid' => $tid, 'label' => $label, 'role' => $role, 'expires' => $expires, 'token' => 'pvt_' . $tid . '_' . $secret );
+    }
+
+    /** tokens of a project: the owner sees all, a member its own. Never the secret. */
+    public function tokenList( array $user, $pid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $sql = 'SELECT t.tid, t.label, t.role, t.expires, t.created, t.last_used, u.name AS user FROM tokens t JOIN users u ON u.id = t.user_id WHERE t.project_id = ?';
+        $args = array( $p['id'] );
+        if( $p['role'] !== 'owner' )
+        {
+            $sql .= ' AND t.user_id = ?';
+            $args[] = $user['id'];
+        }
+        return $this->q( $sql . ' ORDER BY t.id', $args )->fetchAll();
+    }
+
+    public function tokenDelete( array $user, $pid, $tid ): void
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $t = is_string( $tid ) ? $this->q( 'SELECT id, user_id FROM tokens WHERE tid = ? AND project_id = ?', array( $tid, $p['id'] ) )->fetch() : FALSE;
+        if( !$t || ( $p['role'] !== 'owner' && (int)$t['user_id'] !== (int)$user['id'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $this->q( 'DELETE FROM tokens WHERE id = ?', array( $t['id'] ) );
+    }
+
+    /**
+     * The user of an "Authorization: Bearer" value; null when the token is unknown, wrong or expired.
+     * The one place that checks a token - another source (OIDC) can be added next to it.
+     * @return array|null user row with 'token' => array( project_id, role )
+     */
+    public function userByToken( $bearer ): ?array
+    {
+        if( !is_string( $bearer ) || !preg_match( '/^pvt_([0-9a-f]{16})_([0-9a-f]{64})$/', $bearer, $m ) )
+            return null;
+        $t = $this->q( 'SELECT * FROM tokens WHERE tid = ?', array( $m[1] ) )->fetch();
+        if( !$t || !hash_equals( $t['hash'], hash( 'sha256', $m[2] ) ) || (int)$t['expires'] < time() )
+            return null;
+        $u = $this->userById( (int)$t['user_id'] );
+        if( $u === null )
+            return null;
+        if( (int)$t['last_used'] < time() - 60 )
+            $this->q( 'UPDATE tokens SET last_used = ? WHERE id = ?', array( time(), $t['id'] ) );
+        $u['token'] = array( 'project_id' => (int)$t['project_id'], 'role' => $t['role'] );
+        return $u;
     }
 
     // ------------------------------------------------------------------ configurations (versions)
@@ -374,6 +528,7 @@ class ViewerApp
     public function configUpload( array $user, $pid, ?array $upload ): array
     {
         $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'upload' );
         if( $upload === null || !isset( $upload['tmp_name'], $upload['error'] ) || is_array( $upload['tmp_name'] ) )
             throw new ViewerException( 'no file uploaded (field "config")', 400 );
         if( $upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
@@ -403,6 +558,7 @@ class ViewerApp
     public function configDelete( array $user, $pid, $cid ): void
     {
         $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'deleting a version' );
         $c = $this->configGet( $p, $cid );
         $this->sessionStop( $p, (int)$c['id'] );
         $this->q( 'UPDATE configs SET parent_id = NULL WHERE parent_id = ?', array( $c['id'] ) );
@@ -414,6 +570,7 @@ class ViewerApp
     public function configDownload( array $user, $pid, $cid ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'download' );
         $c = $this->configGet( $p, $cid );
         $name = preg_replace( '/[^A-Za-z0-9._-]+/', '_', $c['name'] );
         if( !preg_match( '/\.xml$/i', $name ) )
@@ -468,16 +625,24 @@ class ViewerApp
     }
 
     /** validates the query of a read / change request and returns the pan-os-php arguments (without in / out / actions) */
-    private function queryArgs( array $in ): array
+    private function queryArgs( array $in, array $project ): array
     {
         $type = $in['type'] ?? '';
         if( !is_string( $type ) || !isset( $this->meta()['types'][$type] ) )
             throw new ViewerException( 'type must be one of: ' . implode( ', ', array_keys( $this->meta()['types'] ) ), 400 );
+        if( $project['types'] !== null && !in_array( $type, $project['types'], TRUE ) )
+            throw new ViewerException( 'not allowed: your access to this project does not include type ' . $type, 403 );
+        // template based types are not covered by a location scope yet
+        if( $project['scope'] !== null && $type === 'zone' )
+            throw new ViewerException( 'not allowed: type zone is not available with access limited to locations', 403 );
         $args = array( 'type=' . $type );
 
         $location = $in['location'] ?? 'any';
         if( $location === '' )
             $location = 'any';
+        // limited to locations: exactly one location of the scope per request (no 'any', no list) - enforced here, not in the UI
+        if( $project['scope'] !== null && !in_array( $location, $project['scope'], TRUE ) )
+            throw new ViewerException( 'not allowed: your access is limited to the locations: ' . implode( ', ', $project['scope'] ), 403 );
         if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.,:\-]{1,200}$/', $location ) )
             throw new ViewerException( 'location: letters, digits, space and . _ - , : only', 400 );
         $args[] = 'location=' . $location;
@@ -514,7 +679,7 @@ class ViewerApp
     }
 
     /** validates "actions" of a change request: every action must be an offered action of the type */
-    private function actionsArg( string $type, $actions ): string
+    private function actionsArg( string $type, $actions, array $project ): string
     {
         if( !is_string( $actions ) || trim( $actions ) === '' )
             throw new ViewerException( 'actions missing', 400 );
@@ -527,6 +692,9 @@ class ViewerApp
             $name = strtolower( trim( explode( ':', $one )[0] ) );
             if( !isset( $offered[$name] ) )
                 throw new ViewerException( 'action "' . substr( $name, 0, 60 ) . '" is not available here for type ' . $type, 400 );
+            // an action that moves / copies objects to another location would act outside the scope
+            if( $project['scope'] !== null && preg_match( '/move|copy|clone|replace-by|merge/', $name ) )
+                throw new ViewerException( 'not allowed: action "' . substr( $name, 0, 60 ) . '" can act outside your locations', 403 );
         }
         return 'actions=' . $actions;
     }
@@ -717,7 +885,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $c = $this->configGet( $p, $cid );
-        $args = $this->queryArgs( $in );
+        $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type, 'args' => array_merge( $args, array( 'actions=display' ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() );
@@ -736,9 +904,9 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'write' );
         $c = $this->configGet( $p, $cid );
-        $args = $this->queryArgs( $in );
+        $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
-        $args[] = $this->actionsArg( $type, $in['actions'] ?? null );
+        $args[] = $this->actionsArg( $type, $in['actions'] ?? null, $p );
         $note = 'type=' . $type . ' ' . implode( ' ', $args ) . ' [' . $user['name'] . ']';
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'change', 'type' => $type, 'args' => $args, 'note' => $note ) );
         return array( 'processed' => count( self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() ) ),

@@ -75,12 +75,14 @@ class Client
     public $cookie = '';
     public $csrf = null;
     public $sendCsrf = TRUE;
+    public $bearer = null;
 
     /** @return array [ status, decoded JSON or raw body ] */
     function call( $method, $path, $body = null, $upload = null )
     {
         global $base;
         $headers = array();
+        if( $this->bearer !== null ) $headers[] = 'Authorization: Bearer ' . $this->bearer;
         if( $this->cookie !== '' ) $headers[] = 'Cookie: ' . $this->cookie;
         if( $method !== 'GET' && $this->csrf !== null && $this->sendCsrf ) $headers[] = 'X-CSRF-Token: ' . $this->csrf;
         $content = null;
@@ -269,6 +271,78 @@ eq( status( $alice->call( 'GET', 'projects' ) ), 401, 'the session is gone after
 for( $i = 0; $i < 5; $i++ )
     $anon->login( 'carol', 'wrong-' . $i );
 eq( status( $anon->login( 'carol', 'carol-secret-3' ) ), 429, 'too many failed logins block the login for a while' );
+
+// ---- 12a. grants per member: types and scope (locations)
+$alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );
+$dave = new Client(); eq( status( $dave->login( 'dave', 'dave-secret-45' ) ), 200, 'dave logs in' );
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Grants' ) );
+$G = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $G . '/configs', null, array( 'g.xml', $xml ) );
+$GC = $G . '/configs/' . $r[1]['cid'];
+eq( status( $alice->call( 'PUT', $G . '/members', array( 'user' => 'dave', 'role' => 'write', 'types' => array( 'nosuchtype' ) ) ) ), 400, 'grant: unknown type refused' );
+eq( status( $alice->call( 'PUT', $G . '/members', array( 'user' => 'dave', 'role' => 'write', 'scope' => array( 'any' ) ) ) ), 400, 'grant: scope "any" refused' );
+eq( status( $alice->call( 'PUT', $G . '/members', array( 'user' => 'dave', 'role' => 'write', 'scope' => array( '../x' ) ) ) ), 400, 'grant: scope with path characters refused' );
+$r = $alice->call( 'PUT', $G . '/members', array( 'user' => 'dave', 'role' => 'write', 'types' => array( 'address', 'tag' ), 'scope' => array( 'shared' ) ) );
+eq( status( $r ), 200, 'grant: dave write, types address + tag, scope shared' );
+$m = null;
+foreach( $r[1]['members'] as $x ) if( $x['user'] === 'dave' ) $m = $x;
+eq( array( $m['types'] ?? null, $m['scope'] ?? null ), array( array( 'address', 'tag' ), array( 'shared' ) ), 'grant: shown in the member list' );
+eq( $dave->call( 'GET', $G )[1]['scope'] ?? null, array( 'shared' ), 'grant: dave sees her own scope' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=address&location=shared' ) ), 200, 'limited: granted type in granted location' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=service&location=shared' ) ), 403, 'limited: other type refused' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=address&location=any' ) ), 403, 'limited: location any refused' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=address' ) ), 403, 'limited: no location (= any) refused' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=address&location=' . urlencode( 'shared,any' ) ) ), 403, 'limited: location list refused' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=address&location=nosuchlocation' ) ), 403, 'limited: other location refused' );
+eq( status( $dave->call( 'GET', $GC . '/download' ) ), 403, 'limited: no download of the whole configuration' );
+eq( status( $dave->call( 'POST', $G . '/configs', null, array( 'c.xml', $xml ) ) ), 403, 'limited: no upload' );
+eq( status( $dave->call( 'DELETE', $GC ) ), 403, 'limited: no delete of a version' );
+eq( status( $dave->call( 'POST', $GC . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host1)', 'actions' => 'move:shared' ) ) ), 403, 'limited: action that can act outside the scope refused' );
+eq( status( $dave->call( 'POST', $GC . '/change', array( 'type' => 'service', 'location' => 'shared', 'actions' => 'description-append:x' ) ) ), 403, 'limited: change of another type refused' );
+$r = $dave->call( 'POST', $GC . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host1)', 'actions' => 'description-append:-grant' ) );
+eq( array( status( $r ), $r[1]['processed'] ?? null ), array( 200, 1 ), 'limited: change of a granted type in the scope' );
+eq( status( $alice->call( 'PUT', $G . '/members', array( 'user' => 'dave', 'role' => 'read' ) ) ), 200, 'grant: back to read without limits' );
+eq( status( $dave->call( 'GET', $GC . '/objects?type=service&location=any' ) ), 200, 'unlimited again: every type, location any' );
+eq( status( $dave->call( 'GET', $GC . '/download' ) ), 200, 'unlimited again: download' );
+
+// ---- 12b. API tokens (scripts): Authorization: Bearer, no cookie, no CSRF token
+eq( status( $dave->call( 'POST', $G . '/tokens', array( 'label' => 'x', 'role' => 'write', 'days' => 1 ) ) ), 403, 'token: a read member gets no write token' );
+eq( status( $dave->call( 'POST', $G . '/tokens', array( 'label' => 'x', 'role' => 'read', 'days' => 0 ) ) ), 400, 'token: days checked' );
+$r = $dave->call( 'POST', $G . '/tokens', array( 'label' => 'dave script', 'role' => 'read', 'days' => 1 ) );
+eq( array( status( $r ), (bool)preg_match( '/^pvt_[0-9a-f]{16}_[0-9a-f]{64}$/', $r[1]['token'] ?? '' ) ), array( 201, TRUE ), 'token: created' );
+$daveTid = $r[1]["tid"];
+$ct = new Client(); $ct->bearer = $r[1]['token'];
+$r = $alice->call( 'POST', $G . '/tokens', array( 'label' => 'alice script', 'role' => 'write', 'days' => 1 ) );
+$at = new Client(); $at->bearer = $r[1]['token'];
+$aliceTid = $r[1]['tid'];
+$db = new PDO( 'sqlite:' . $data . '/viewer.sqlite' );
+eq( strpos( json_encode( $db->query( 'SELECT * FROM tokens' )->fetchAll( PDO::FETCH_ASSOC ) ), substr( $at->bearer, 21 ) ), FALSE, 'token: the secret is not stored' );
+eq( strpos( json_encode( $alice->call( 'GET', $G . '/tokens' )[1] ), 'pvt_' ), FALSE, 'token: the list never shows a secret' );
+eq( count( $alice->call( 'GET', $G . '/tokens' )[1]['tokens'] ), 2, 'token: the owner sees all tokens of the project' );
+eq( count( $dave->call( 'GET', $G . '/tokens' )[1]['tokens'] ), 1, 'token: a member sees only its own' );
+eq( status( $ct->call( 'GET', $GC . '/objects?type=address&location=shared' ) ), 200, 'token: read without cookie' );
+eq( status( $ct->call( 'POST', $GC . '/change', array( 'type' => 'address', 'location' => 'shared', 'actions' => 'description-append:x' ) ) ), 403, 'token (read): no change' );
+$r = $at->call( 'POST', $GC . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host1)', 'actions' => 'description-append:-token' ) );
+eq( array( status( $r ), $r[1]['processed'] ?? null ), array( 200, 1 ), 'token (write): change without CSRF token' );
+eq( status( $at->call( 'PUT', $G . '/members', array( 'user' => 'bob', 'role' => 'read' ) ) ), 403, 'token of the owner: no member management' );
+eq( status( $at->call( 'DELETE', $G ) ), 403, 'token of the owner: no project delete' );
+eq( status( $at->call( 'POST', $G . '/tokens', array( 'label' => 'y', 'role' => 'read', 'days' => 1 ) ) ), 403, 'token: can not create tokens' );
+eq( status( $at->call( 'POST', 'projects', array( 'name' => 'by token' ) ) ), 403, 'token: can not create projects' );
+eq( status( $at->call( 'GET', 'users' ) ), 404, 'token of an admin: no admin routes' );
+eq( status( $at->call( 'GET', $C . '/objects?type=address' ) ), 404, 'token: other project of the same user is not reachable' );
+eq( count( $at->call( 'GET', 'projects' )[1]['projects'] ?? array() ), 1, 'token: project list shows only its project' );
+$bad = new Client(); $bad->bearer = substr( $at->bearer, 0, -1 ) . ( substr( $at->bearer, -1 ) === '0' ? '1' : '0' );
+eq( status( $bad->call( 'GET', $GC . '/objects?type=address' ) ), 401, 'token: wrong secret' );
+$db->exec( 'UPDATE tokens SET expires = ' . ( time() - 10 ) . " WHERE tid = '" . $aliceTid . "'" );
+eq( status( $at->call( 'GET', $GC . '/objects?type=address' ) ), 401, 'token: expired' );
+eq( status( $alice->call( 'PUT', $G . '/members', array( 'user' => 'dave', 'role' => 'read', 'types' => array( 'tag' ) ) ) ), 200, 'grant changed while a token exists' );
+eq( status( $ct->call( 'GET', $GC . '/objects?type=address&location=shared' ) ), 403, 'token: follows the grant of its user (type removed)' );
+eq( status( $ct->call( 'GET', $GC . '/objects?type=tag&location=shared' ) ), 200, 'token: granted type' );
+eq( status( $bob->call( 'DELETE', $G . '/tokens/' . $daveTid ) ), 404, 'token: a stranger can not delete it' );
+eq( status( $alice->call( 'DELETE', $G . '/members/dave' ) ), 200, 'member removed' );
+eq( status( $ct->call( 'GET', $GC . '/objects?type=tag&location=shared' ) ), 401, 'token: gone with the membership' );
+eq( status( $alice->call( 'DELETE', $G . '/tokens/' . $aliceTid ) ), 200, 'token: deleted by its user' );
+eq( status( $alice->call( 'DELETE', $G ) ), 200, 'grants project deleted' );
 
 // ---- 13. stopping the service stops its workers
 $bob->login( 'bob', 'bob-secret-12' );

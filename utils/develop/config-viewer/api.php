@@ -23,9 +23,11 @@
  *   GET|POST users, DELETE users/<name>                                   (admin)
  *   GET|POST projects, GET|DELETE projects/<pid>
  *   GET|PUT projects/<pid>/members, DELETE projects/<pid>/members/<name>
+ *   GET|POST projects/<pid>/tokens, DELETE projects/<pid>/tokens/<tid>                (API tokens for scripts)
  *   GET|POST projects/<pid>/configs, DELETE projects/<pid>/configs/<cid>, GET …/<cid>/download
  *   GET …/<cid>/objects, GET …/<cid>/status, POST …/<cid>/change, POST …/<cid>/save, POST …/<cid>/discard
- * Every route except login needs a session; every route that is not GET needs the header X-CSRF-Token.
+ * Every route except login needs a session (browser) or "Authorization: Bearer <API token>" (scripts);
+ * with a session every route that is not GET needs the header X-CSRF-Token.
  */
 require_once dirname(__FILE__) . '/lib/ViewerApp.php';
 
@@ -86,6 +88,22 @@ try
     }
 
     // ---- everything else: logged in user, taken from the DB on every request
+    // scripts: "Authorization: Bearer <API token>" instead of the session cookie. A token is never sent by a browser
+    // on its own, so no CSRF token is needed; it is limited to its project and never has admin rights.
+    $auth = (string)( $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '' );
+    $byToken = stripos( $auth, 'Bearer ' ) === 0;
+    if( $byToken )
+    {
+        $user = $app->userByToken( trim( substr( $auth, 7 ) ) );
+        if( $user === null )
+            throw new ViewerException( 'API token unknown or expired', 401 );
+        $user['is_admin'] = 0;
+        $csrf = null;
+        if( in_array( $r0, array( 'logout', 'password', 'users' ), TRUE ) )
+            throw new ViewerException( 'not found', 404 );
+    }
+    else
+    {
     $idle = max( 5, (int)( getenv( 'PANOSPHP_VIEWER_SESSION_IDLE_MIN' ) ?: 120 ) ) * 60;
     $user = isset( $_SESSION['uid'], $_SESSION['csrf'], $_SESSION['seen'] ) && time() - $_SESSION['seen'] <= $idle ? $app->userById( (int)$_SESSION['uid'] ) : null;
     if( $user === null )
@@ -97,6 +115,7 @@ try
     if( $method !== 'GET' && !hash_equals( (string)$_SESSION['csrf'], (string)( $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '' ) ) )
         throw new ViewerException( 'CSRF token missing or wrong', 403 );
     $csrf = $_SESSION['csrf'];
+    }
     // the session file is not needed any more: do not block parallel requests of the same user
     if( !( $r0 === 'logout' || $r0 === 'password' ) )
         session_write_close();
@@ -172,12 +191,28 @@ try
             if( $n == 3 && $method === 'PUT' )
             {
                 $b = viewerBody();
-                $app->memberSet( $user, $pid, $b['user'] ?? null, $b['role'] ?? null );
+                $app->memberSet( $user, $pid, $b['user'] ?? null, $b['role'] ?? null, $b['types'] ?? null, $b['scope'] ?? null );
                 viewerOut( array( 'members' => $app->memberList( $user, $pid ) ) );
             }
             if( $n == 4 && $method === 'DELETE' )
             {
                 $app->memberRemove( $user, $pid, $route[3] );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+        }
+
+        if( $sub === 'tokens' )
+        {
+            if( $n == 3 && $method === 'GET' )
+                viewerOut( array( 'tokens' => $app->tokenList( $user, $pid ) ) );
+            if( $n == 3 && $method === 'POST' )
+            {
+                $b = viewerBody();
+                viewerOut( $app->tokenCreate( $user, $pid, $b['label'] ?? null, $b['role'] ?? 'read', $b['days'] ?? 30 ), 201 );
+            }
+            if( $n == 4 && $method === 'DELETE' )
+            {
+                $app->tokenDelete( $user, $pid, $route[3] );
                 viewerOut( array( 'ok' => TRUE ) );
             }
         }

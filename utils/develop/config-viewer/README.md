@@ -43,6 +43,16 @@ All members of a project work on the same loaded configuration of a version (one
   answers `404` like a project that does not exist. Project and version ids are random (128 bit).
 * **Permissions per project:** `read` (view, download), `write` (upload, change, save, discard, delete versions),
   `owner` (members, delete project). Only the owner adds members, by exact user name.
+* **Grants per member** (owner sets them): besides `read` / `write` a member can be limited to some **types**
+  (`types`: list of offered types) and to some **locations** (`scope`: device groups, vsys, `shared`, SCM folders /
+  snippets). Enforced on the server for every read and change: a limited member must name exactly one location of its
+  scope (no `any`, no list), can not use another type, can not download / upload / delete whole versions and can not
+  run actions that move or copy objects to another location. Not covered yet: type `zone` with a scope (templates) –
+  refused; objects of `shared` / parent device groups referenced from the scope are not shown.
+* **API tokens** (scripts, e.g. CDSS): `Authorization: Bearer pvt_…` instead of cookie + CSRF token. A token belongs
+  to one user and **one project**, has a role (`read` / `write`, never more than the user) and an expiry (1–365 days);
+  only the SHA-256 of the secret is stored, the value is shown once. A token follows the grants of its user, can not
+  manage members, tokens, projects or users (also not for an admin) and stops working when the user leaves the project.
 * **Users:** created by an admin (UI) or with `bin/user.php`; there is no self registration and no default user.
 * **Files:** stored under random names in the data directory, which must be **outside the web root** (the API refuses
   to work otherwise). The uploaded file name is only a label. An upload must be XML with the root element `<config>`.
@@ -161,8 +171,8 @@ user in the UI / CLI removes the files.
 
 ### API (`api.php/<route>`, JSON)
 
-Every route except `login` needs the session cookie; every route that is not `GET` needs the header `X-CSRF-Token`
-(value from `login` / `me`). Errors: `{"error": "…"}` with HTTP status 400 (input / pan-os-php error), 401 (login
+Every route except `login` needs the session cookie or `Authorization: Bearer <API token>`; with the cookie every
+route that is not `GET` needs the header `X-CSRF-Token` (value from `login` / `me`). Errors: `{"error": "…"}` with HTTP status 400 (input / pan-os-php error), 401 (login
 required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 429, 5xx.
 
 | Route | Method | Permission | Function |
@@ -176,7 +186,9 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `users/<name>` | DELETE | admin | delete a user and the projects the user owns |
 | `projects` | GET / POST | login | own and shared projects / create (`name`) |
 | `projects/<pid>` | GET / DELETE | read / owner | project with own permission / delete |
-| `projects/<pid>/members` | GET / PUT | read / owner | list / add or change (`user`, `role` = `read` or `write`) |
+| `projects/<pid>/members` | GET / PUT | read / owner | list / add or change (`user`, `role` = `read` or `write`, optional `types`, `scope`) |
+| `projects/<pid>/tokens` | GET / POST | read | own tokens (owner: all) / create (`label`, `role`, `days`) → `token` (shown once) |
+| `projects/<pid>/tokens/<tid>` | DELETE | own token or owner | delete |
 | `projects/<pid>/members/<name>` | DELETE | owner (or the member itself) | remove / leave |
 | `projects/<pid>/configs` | GET / POST | read / write | versions / upload (multipart field `config`) |
 | `projects/<pid>/configs/<cid>` | DELETE | write | delete a version |
@@ -224,5 +236,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-100 checks: login, separation between users (every project route `404` without access), read / write / owner, CSRF,
+149 checks: login, grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

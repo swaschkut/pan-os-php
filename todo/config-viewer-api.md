@@ -28,6 +28,17 @@
 | XML | – | `LIBXML_NONET`; an upload with a DOCTYPE is rejected |
 | errors | HTTP 200 with the error as text; server paths in messages | 4xx / 5xx with `{"error": …}`, no paths |
 
+## Progress
+
+| Date | Step | State |
+|---|---|---|
+| 2026-11-20 | **API tokens** (decision 1): table `tokens` (hash only), `Authorization: Bearer`, bound to user + project, role, expiry; one check `ViewerApp::userByToken()` (place for OIDC later); routes `projects/<pid>/tokens` | done, tests |
+| 2026-11-20 | **Grants per member** (decision 5, first part): `types` and `scope` (locations) per member, enforced in `ViewerApp::queryArgs()` / `actionsArg()`; limited members: one location of the scope per request, no whole-version download / upload / delete, no move / copy actions | done, tests; open: UI (`app.js`) for grants and tokens, templates / template stacks (`zone` refused with a scope), referenced objects of `shared` / parents, device-access rights |
+| | REST resources per type, all types, JSON model (decision 4) | open |
+| | job runner + result files (decision 3) | open |
+| | container per job / per worker (decision 2) | open |
+| | audit log, secrets at rest, `tool.php` behind login, errors as HTTP status | open |
+
 ## Plan
 
 ### Function
