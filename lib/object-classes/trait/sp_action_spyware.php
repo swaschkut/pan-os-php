@@ -1114,8 +1114,8 @@ trait sp_action_spyware
             }
         }
 
-        // local deep learning as the BP JSON lists it (HTTP / HTTP2 C2, 11.2+)
-        $this->inlineML_localDeepLearningSetFromJSON( 'bp', 'spyware' );
+        // local deep learning of the detectors that have it in this PAN-OS version (HTTP / HTTP2 C2, 11.2+)
+        $this->inlineML_localDeepLearningEnable( 'spyware', 'mica-engine-spyware-enabled' );
     }
 
     public function rules_BestPracticeSet(): void
@@ -1374,8 +1374,8 @@ trait sp_action_spyware
             }
         }
 
-        // local deep learning as the visibility JSON lists it (HTTP / HTTP2 C2, 11.2+)
-        $this->inlineML_localDeepLearningSetFromJSON( 'visibility', 'spyware' );
+        // local deep learning of the detectors that have it in this PAN-OS version (HTTP / HTTP2 C2, 11.2+)
+        $this->inlineML_localDeepLearningEnable( 'spyware', 'mica-engine-spyware-enabled' );
     }
 
     public function rules_AlertOnlySet(): void
