@@ -45,6 +45,14 @@ class ViewerApp
     const SPTYPES = array( 'any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'data-filtering', 'wildfire-analysis',
         'custom-url-category', 'dns-security', 'saas-security' );
 
+    /** types a grant limited to locations (scope) can use: their objects live in a location (device group, vsys, shared, SCM folder) */
+    const SCOPE_TYPES = array( 'address', 'service', 'tag', 'rule', 'schedule', 'securityprofile', 'securityprofilegroup' );
+    /** REST resource name of a type, where "<type>s" does not fit */
+    const RESOURCES = array( 'address' => 'addresses', 'securityprofile' => 'security-profiles', 'securityprofilegroup' => 'security-profile-groups',
+        'routing' => 'routing', 'dhcp' => 'dhcp', 'virtualwire' => 'virtual-wires' );
+    const PAGE_DEFAULT = 1000;
+    const PAGE_MAX = 5000;
+
     /** actions that read / write other files or reach other systems are not offered by the prototype */
     const ACTION_DENY_NAME = '/^export|^upload-|-fastapi$|reverse-dns|^decommission$|from-file|-edl-/';
     const ACTION_DENY_ARG = '/(?<!pro)file|path|folder/i';
@@ -618,10 +626,42 @@ class ViewerApp
                         $ops[] = (string)$op;
                 $filters[(string)$field] = $ops;
             }
-            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters );
+            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => FALSE, 'resource' => self::resourceName( $type ) );
+        }
+        // every other type that shows objects (action 'display'): read only, until its actions are in a reviewed allow list
+        foreach( $j as $type => $def )
+        {
+            if( isset( $meta[$type] ) || !is_array( $def ) || !isset( $def['action']['display'] ) || !preg_match( '/^[a-z][a-z0-9-]{1,40}$/', (string)$type ) )
+                continue;
+            $filters = array();
+            foreach( (array)( $def['filter'] ?? array() ) as $field => $f )
+            {
+                $ops = array();
+                foreach( array_keys( (array)( $f['operators'] ?? array() ) ) as $op )
+                    if( !preg_match( '/\.file$|\.file\./', (string)$op ) )
+                        $ops[] = (string)$op;
+                $filters[(string)$field] = $ops;
+            }
+            $meta[$type] = array( 'actions' => array(), 'filters' => $filters, 'readonly' => TRUE, 'resource' => self::resourceName( $type ) );
         }
         $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES );
         return $this->meta;
+    }
+
+    public static function resourceName( string $type ): string
+    {
+        return self::RESOURCES[$type] ?? ( substr( $type, -1 ) === 's' ? $type . 'es' : $type . 's' );
+    }
+
+    /** the type of a REST resource name (e.g. 'addresses' -> 'address'); null: unknown */
+    public function resourceType( $resource ): ?string
+    {
+        if( !is_string( $resource ) )
+            return null;
+        foreach( $this->meta()['types'] as $type => $m )
+            if( $m['resource'] === $resource )
+                return $type;
+        return null;
     }
 
     /** validates the query of a read / change request and returns the pan-os-php arguments (without in / out / actions) */
@@ -632,9 +672,9 @@ class ViewerApp
             throw new ViewerException( 'type must be one of: ' . implode( ', ', array_keys( $this->meta()['types'] ) ), 400 );
         if( $project['types'] !== null && !in_array( $type, $project['types'], TRUE ) )
             throw new ViewerException( 'not allowed: your access to this project does not include type ' . $type, 403 );
-        // template based types are not covered by a location scope yet
-        if( $project['scope'] !== null && $type === 'zone' )
-            throw new ViewerException( 'not allowed: type zone is not available with access limited to locations', 403 );
+        // only types whose objects live in a location are covered by a location scope (templates: not yet)
+        if( $project['scope'] !== null && !in_array( $type, self::SCOPE_TYPES, TRUE ) )
+            throw new ViewerException( 'not allowed: type ' . $type . ' is not available with access limited to locations', 403 );
         $args = array( 'type=' . $type );
 
         $location = $in['location'] ?? 'any';
@@ -881,7 +921,7 @@ class ViewerApp
     }
 
     /** read: all objects of one type, filtered by pan-os-php, from the configuration in memory */
-    public function objects( array $user, $pid, $cid, array $in ): array
+    public function objects( array $user, $pid, $cid, array $in, int $max = 50000 ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $c = $this->configGet( $p, $cid );
@@ -894,9 +934,38 @@ class ViewerApp
         foreach( $rows as $row )
             foreach( $row as $k => $v )
                 $columns[$k] = TRUE;
-        $max = 50000;
         return array( 'total' => count( $rows ), 'truncated' => count( $rows ) > $max, 'columns' => array_keys( $columns ),
             'rows' => array_slice( $rows, 0, $max ), 'status' => $r['status'] ?? null );
+    }
+
+    /**
+     * REST: GET …/configs/<cid>/<resource>[/<name>] - the objects of one type as items, with paging.
+     * 'model' names the shape of an item: 'display-v0' = the fields of pan-os-php actions=display (not a stable model yet).
+     */
+    public function resourceList( array $user, $pid, $cid, string $type, array $in, ?string $name = null ): array
+    {
+        $in['type'] = $type;
+        if( $name !== null )
+        {
+            // the name goes into a pan-os-php filter: only characters that can not change the filter
+            if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._\-]{0,127}$/', $name ) )
+                throw new ViewerException( 'object name: letters, digits, space and . _ - only (use ?filter= for other names)', 400 );
+            $in['filter'] = '(name eq ' . $name . ')';
+        }
+        $limit = $in['limit'] ?? self::PAGE_DEFAULT;
+        $offset = $in['offset'] ?? 0;
+        if( !is_numeric( $limit ) || (int)$limit < 1 || (int)$limit > self::PAGE_MAX || !is_numeric( $offset ) || (int)$offset < 0 )
+            throw new ViewerException( 'limit: 1-' . self::PAGE_MAX . ', offset: 0 or more', 400 );
+        $r = $this->objects( $user, $pid, $cid, $in, PHP_INT_MAX );
+        $items = $r['rows'];
+        if( $name !== null )
+        {
+            $items = array_values( array_filter( $items, function( $o ) use ( $name ) { return isset( $o['name'] ) && (string)$o['name'] === $name; } ) );
+            if( count( $items ) == 0 )
+                throw new ViewerException( 'not found', 404 );
+        }
+        return array( 'type' => $type, 'resource' => self::resourceName( $type ), 'model' => 'display-v0', 'total' => count( $items ),
+            'offset' => (int)$offset, 'limit' => (int)$limit, 'items' => array_slice( $items, (int)$offset, (int)$limit ), 'status' => $r['status'] );
     }
 
     /** change: runs actions on the configuration in memory. Nothing is written until save(). */

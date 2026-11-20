@@ -25,6 +25,7 @@
  *   GET|PUT projects/<pid>/members, DELETE projects/<pid>/members/<name>
  *   GET|POST projects/<pid>/tokens, DELETE projects/<pid>/tokens/<tid>                (API tokens for scripts)
  *   GET|POST projects/<pid>/configs, DELETE projects/<pid>/configs/<cid>, GET …/<cid>/download
+ *   GET …/<cid>/<resource>[/<name>], POST …/<cid>/<resource>/actions            (REST per type, e.g. addresses, rules)
  *   GET …/<cid>/objects, GET …/<cid>/status, POST …/<cid>/change, POST …/<cid>/save, POST …/<cid>/discard
  * Every route except login needs a session (browser) or "Authorization: Bearer <API token>" (scripts);
  * with a session every route that is not GET needs the header X-CSRF-Token.
@@ -249,6 +250,20 @@ try
             {
                 $app->discard( $user, $pid, $cid );
                 viewerOut( array( 'ok' => TRUE ) );
+            }
+
+            // REST resources per type: …/configs/<cid>/<resource>            GET  list (location, filter, limit, offset, ruletype, securityprofiletype)
+            //                          …/configs/<cid>/<resource>/<name>     GET  one object (all locations, or ?location=)
+            //                          …/configs/<cid>/<resource>/actions    POST change: body location, filter, actions
+            $type = $n >= 5 ? $app->resourceType( $op ) : null;
+            if( $type !== null )
+            {
+                if( $n == 5 && $method === 'GET' )
+                    viewerOut( $app->resourceList( $user, $pid, $cid, $type, $_GET ) );
+                if( $n == 6 && $method === 'GET' )
+                    viewerOut( $app->resourceList( $user, $pid, $cid, $type, $_GET, rawurldecode( $route[5] ) ) );
+                if( $n == 6 && $method === 'POST' && $route[5] === 'actions' )
+                    viewerOut( $app->change( $user, $pid, $cid, array( 'type' => $type ) + viewerBody() ) );
             }
         }
     }

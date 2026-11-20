@@ -272,6 +272,52 @@ for( $i = 0; $i < 5; $i++ )
     $anon->login( 'carol', 'wrong-' . $i );
 eq( status( $anon->login( 'carol', 'carol-secret-3' ) ), 429, 'too many failed logins block the login for a while' );
 
+// ---- 12r. REST resources per type
+$alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'REST' ) );
+$R = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $R . '/configs', null, array( 'r.xml', $xml ) );
+$RC = $R . '/configs/' . $r[1]['cid'];
+$meta = $alice->call( 'GET', 'meta' )[1]['types'];
+eq( array( $meta['address']['resource'], $meta['securityprofile']['resource'], $meta['address']['readonly'], $meta['application']['readonly'] ?? null ),
+    array( 'addresses', 'security-profiles', FALSE, TRUE ), 'REST: meta lists resource names; other display types are read only' );
+eq( count( $meta ) > 25, TRUE, 'REST: all types with objects are offered (' . count( $meta ) . ')' );
+$r = $alice->call( 'GET', $RC . '/addresses' );
+eq( array( status( $r ), $r[1]['type'] ?? null, $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['model'] ?? null ), array( 200, 'address', 27, 27, 'display-v0' ), 'REST: GET addresses' );
+$r = $alice->call( 'GET', $RC . '/addresses?location=shared&limit=5&offset=10' );
+eq( array( status( $r ), $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['offset'] ?? null ), array( 200, 13, 3, 10 ), 'REST: paging (13 in shared, offset 10, limit 5)' );
+eq( status( $alice->call( 'GET', $RC . '/addresses?limit=0' ) ), 400, 'REST: limit checked' );
+eq( status( $alice->call( 'GET', $RC . '/addresses?limit=999999' ) ), 400, 'REST: limit maximum' );
+$r = $alice->call( 'GET', $RC . '/addresses/shared-host1' );
+eq( array( status( $r ), $r[1]['items'][0]['name'] ?? null, $r[1]['items'][0]['location'] ?? null ), array( 200, 'shared-host1', 'shared' ), 'REST: GET one address' );
+eq( status( $alice->call( 'GET', $RC . '/addresses/no-such-object' ) ), 404, 'REST: unknown object' );
+eq( status( $alice->call( 'GET', $RC . '/addresses/' . rawurlencode( 'x) or (name regex /./' ) ) ), 400, 'REST: a name can not change the filter' );
+eq( status( $alice->call( 'GET', $RC . '/nosuchresource' ) ), 404, 'REST: unknown resource' );
+eq( $alice->call( 'GET', $RC . '/rules?ruletype=security' )[1]['total'] ?? null, 9, 'REST: GET rules' );
+eq( status( $alice->call( 'GET', $RC . '/security-profiles' ) ), 200, 'REST: GET security-profiles' );
+foreach( array( 'applications', 'devices', 'interfaces', 'log-profiles', 'dns-rules', 'threat-rules' ) as $res )
+{
+    $r = $alice->call( 'GET', $RC . '/' . $res . '?limit=2' );
+    eq( array( status( $r ), ( $r[1]['total'] ?? 0 ) > 0 ), array( 200, TRUE ), 'REST: read only type ' . $res );
+}
+foreach( array( 'schedules', 'edls', 'zone-protection-profiles', 'ike-gateways', 'static-routes' ) as $res )
+    eq( status( $alice->call( 'GET', $RC . '/' . $res ) ), 200, 'REST: type without objects in this configuration: ' . $res );
+eq( status( $alice->call( 'POST', $RC . '/applications/actions', array( 'location' => 'any', 'actions' => 'display' ) ) ), 400, 'REST: no actions on a read only type' );
+$r = $alice->call( 'POST', $RC . '/addresses/actions', array( 'type' => 'service', 'location' => 'shared', 'filter' => '(name eq shared-host1)', 'actions' => 'description-append:-rest' ) );
+eq( array( status( $r ), $r[1]['processed'] ?? null ), array( 200, 1 ), 'REST: POST addresses/actions (the type comes from the resource, not from the body)' );
+eq( status( $alice->call( 'GET', $RC . '/addresses', null ) ), 200, 'REST: read after change' );
+$anon2 = new Client();
+eq( status( $anon2->call( 'GET', $RC . '/addresses' ) ), 401, 'REST: no login' );
+eq( status( $bob->call( 'GET', $RC . '/addresses' ) ), 404, 'REST: no access' );
+eq( status( $alice->call( 'PUT', $R . '/members', array( 'user' => 'bob', 'role' => 'read', 'types' => array( 'address', 'application' ), 'scope' => array( 'shared' ) ) ) ), 200, 'REST: bob limited' );
+eq( status( $bob->call( 'GET', $RC . '/addresses?location=shared' ) ), 200, 'REST limited: granted' );
+eq( status( $bob->call( 'GET', $RC . '/addresses' ) ), 403, 'REST limited: location needed' );
+eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1' ) ), 403, 'REST limited: one object without location' );
+eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1?location=shared' ) ), 200, 'REST limited: one object in the scope' );
+eq( status( $bob->call( 'GET', $RC . '/services?location=shared' ) ), 403, 'REST limited: other type' );
+eq( status( $bob->call( 'GET', $RC . '/applications?location=shared' ) ), 403, 'REST limited: type without location objects refused with a scope' );
+eq( status( $alice->call( 'DELETE', $R ) ), 200, 'REST project deleted' );
+
 // ---- 12a. grants per member: types and scope (locations)
 $alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );
 $dave = new Client(); eq( status( $dave->login( 'dave', 'dave-secret-45' ) ), 200, 'dave logs in' );

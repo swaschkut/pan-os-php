@@ -193,11 +193,21 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `projects/<pid>/configs` | GET / POST | read / write | versions / upload (multipart field `config`) |
 | `projects/<pid>/configs/<cid>` | DELETE | write | delete a version |
 | `…/<cid>/download` | GET | read | the XML file |
+| `…/<cid>/<resource>` | GET | read | REST per type, e.g. `addresses`, `rules`, `security-profiles` (names: `meta` → `resource`). Query `location`, `filter`, `ruletype`, `securityprofiletype`, `limit` (1–5000, default 1000), `offset` → `type`, `model`, `total`, `offset`, `limit`, `items` |
+| `…/<cid>/<resource>/<name>` | GET | read | the object(s) with this name (all locations, or `?location=`); `404` when there is none |
+| `…/<cid>/<resource>/actions` | POST | write | body `location`, `filter`, `actions` → like `change`; the type comes from the resource |
 | `…/<cid>/objects` | GET | read | query `type`, `location`, `filter`, `ruletype`, `securityprofiletype` → `total`, `columns`, `rows`, `status`; starts the worker if needed |
 | `…/<cid>/status` | GET | read | `loaded`, `dirty`, `changes`, `saved`, `autosaved` (does not start a worker) |
 | `…/<cid>/change` | POST | write | body like `objects` plus `actions` → `processed`, `log`, `status` |
 | `…/<cid>/save` | POST | write | → `saved`, `cid` of the new version, `status` |
 | `…/<cid>/discard` | POST | write | drops unsaved changes (stops the worker) |
+
+**Types.** Every pan-os-php type with objects (action `display`, 34 today) has a REST resource. The 8 types of
+`ViewerApp::TYPES` can be changed; all others are **read only** until their actions are in a reviewed allow list.
+`model` = `display-v0`: an item has the fields of `actions=display`; this is not a stable object model yet. Verified
+with objects in the test configuration: address, application, device, dns-rule, interface, log-profile, rule,
+securityprofile, securityprofilegroup, service, tag, threat, threat-rule, zone; the other types answer, verified only
+with an empty result. Types without objects (`playbook`, `stats`, mergers, …) are not offered yet (jobs).
 
 ### Processes
 
@@ -236,5 +246,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-149 checks: login, grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+185 checks: login, REST resources per type, grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.
