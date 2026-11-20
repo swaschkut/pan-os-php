@@ -1,71 +1,76 @@
-# Stable JSON object model for the API (`model: v1`)
+# JSON object model for the API: the SCM API schema
 
-**Status:** proposal, to decide (2026-11-20)
-**Code reference:** `alpha` – REST resources of the config-viewer (`ViewerApp::resourceList()`, today `model: display-v0`
-= the fields of `actions=display` in `shadow-json`)
+**Status:** decided 2026-11-20 – the model is the Strata Cloud Manager (SCM) API schema; details below open
+**Code reference:** `alpha` – `lib/resources/scm/scm-ngfw-config-schema.json` (49 resources, request schema per
+resource, generated from the official SCM API description), `lib/misc-classes/SCMImporter.php` (Panorama / firewall
+XML → SCM configuration), `SCMChangeGenerator`; REST resources of the config-viewer (`ViewerApp::resourceList()`,
+today `model: display-v0`)
 **Related:** [config-viewer-api.md](config-viewer-api.md) (decision 4), [ui-config-in-browser.md](ui-config-in-browser.md)
 (open decision 3), [api-rest.md](api-rest.md)
 
-## Why
+## Decision
 
-`display-v0` is what `actions=display` prints. It was made for reading, not for programs:
+- An item of the API has the **shape of the SCM API** for that resource: resource names, field names (`snake_case`),
+  types and structure as in `scm-ngfw-config-schema.json`. Nothing own is designed where PANW has defined it.
+- **What the SCM API does not have is defined by pan-os-php**, in the same style, until PANW defines it; then the own
+  definition is replaced by the PANW one.
+- The same model for PAN-OS / Panorama XML and SCM input, so a client (CDSS, UI) reads one format.
 
-| Problem today | Example |
-|---|---|
-| text instead of structure | address `tag`: `"tag: 'grp.shared-group1'"` |
-| booleans / null as text | rule `disabled`: `"false"`, `securityprofilegroup`: `"null"` |
-| field names from the display code | service `count values`, `string legth`; securityprofile `ALLOW`, `ALERT`, `BLOCK` |
-| computed and configured values mixed | address `ipcount`, rule `srv_count_tcp` next to `value`, `service` |
-| shape depends on the object | address group: `members` + `memberscount`; address: `value` |
+Why not the `display` fields (`display-v0`): made for reading – text instead of structure (address `tag`:
+`"tag: 'grp.shared-group1'"`), booleans / null as text (`"false"`, `"null"`), names from the display code
+(`count values`, `ALLOW`), configured and computed values mixed.
 
-## Proposal
+## What this means
 
-### Common to every item
-
-| Field | Type | Content |
+| | Today (`display-v0`) | With the SCM schema |
 |---|---|---|
-| `name` | string | object name |
-| `location` | string | `shared`, device group, vsys, template, SCM folder / snippet |
-| `kind` | string | sub type, lower case with dashes (`ip-netmask`, `group-static`, `security`, `url-filtering`, …) |
-| `description` | string | empty string when not set |
-| `tags` | string[] | tag names |
-| `refs` | integer | number of references (optional, `?fields=refs`) |
-| `computed` | object | values pan-os-php calculates (never configuration), e.g. `ip_count` |
+| resource names | one per pan-os-php type: `addresses`, `services`, `rules`, `security-profiles`, `security-profile-groups` | as SCM: `addresses`, `address-groups`, `services`, `service-groups`, `tags`, `security-rules`, `nat-rules`, `decryption-rules`, `app-override-rules`, `authentication-rules`, `pbf-rules`, `qos-policy-rules`, `zones`, `schedules`, `profile-groups`, `anti-spyware-profiles`, `vulnerability-protection-profiles`, `url-access-profiles`, `file-blocking-profiles`, `wildfire-anti-virus-profiles`, `dns-security-profiles`, `external-dynamic-lists`, `url-categories`, `log-forwarding-profiles`, `zone-protection-profiles`, `ike-gateways`, `ipsec-tunnels`, … |
+| address | `type`, `value`, `tag` (text) | `name`, `description`, `tag` (string[]), one of `ip_netmask` / `ip_range` / `ip_wildcard` / `fqdn` |
+| security rule | `sourcenegated: "false"`, `securityprofilegroup: "null"`, `logsetting: {"end":"true"}` | `from`, `to`, `source`, `negate_source`, `destination`, `negate_destination`, `source_user`, `source_hip`, `destination_hip`, `application`, `service`, `category`, `action`, `disabled`, `profile_setting`, `log_start`, `log_end`, `log_setting`, `schedule`, `tag` |
+| profile group | `securityprofiles: {count, virus, …}` | `spyware`, `vulnerability`, `url_filtering`, `file_blocking`, `dns_security`, `virus_and_wildfire_analysis`, … (string[]) |
+| tag | `color`, `comments` | `name`, `color`, `comments` |
 
-Rules: lower case `snake_case` names; booleans are booleans; "not set" is `null` (single value) or `[]` (list); names of
-other objects as strings (lists of names), not nested objects; `any` stays the string `any` in a list (`["any"]`).
-
-### Per type (the 8 types that can be changed)
-
-| Type | Fields besides the common ones |
-|---|---|
-| address | `kind` `ip-netmask` / `ip-range` / `fqdn` / `ip-wildcard` / `group-static` / `group-dynamic`; `value` (string, objects); `members` (string[], static group); `filter` (string, dynamic group); `computed.ip_count`, `computed.members_resolved` (dynamic group) |
-| service | `kind` `service` / `group`; `protocol` (`tcp` / `udp` / …), `destination_port`, `source_port`, `timeout`, `halfclose_timeout`, `timewait_timeout` (null when not set); `members` (string[], group); `computed.port_count` |
-| tag | `color`, `comments` (as `description`) |
-| rule | `kind` (rule type: `security`, `nat`, …), `uuid`, `disabled` (bool), `position` (integer in its rulebase), `rulebase` (`pre` / `post` / `local`); security: `action`, `rule_type` (`universal` / `intrazone` / `interzone`), `from`, `to`, `source`, `source_negated`, `destination`, `destination_negated`, `source_user`, `hip`, `application`, `service`, `url_category` (all string[]), `profile_group` (string or null), `profiles` (object: `virus`, `spyware`, … → name or null), `log_start`, `log_end` (bool), `log_setting` (string or null), `schedule`; other rule types: their own fields in the same style |
-| zone | `kind` (`layer3`, `layer2`, `virtual-wire`, `tap`, `tunnel`, `external`), `interfaces` (string[]), `zone_protection_profile`, `log_setting`, `user_id` (bool), `template` |
-| schedule | `kind` `recurring` / `non-recurring`, `recurring` (object: `daily` / `weekly`), `non_recurring` (string[]) |
-| securityprofile | `kind` (`virus`, `spyware`, `vulnerability`, `url-filtering`, `file-blocking`, `wildfire-analysis`, …); content per kind as the XML structure in JSON (`rules`, `decoder`, `inline`, `site_access` → `allow` / `alert` / `block` …, `credential_enforcement`); `computed.visibility`, `computed.best_practice` (true / false / null = N/A) with `computed.checks` (per check) |
-| securityprofilegroup | `profiles` (object: `virus`, `spyware`, `vulnerability`, `url-filtering`, `file-blocking`, `wildfire-analysis`, `data-filtering` → name or null); `computed.visibility`, `computed.best_practice` |
-
-Example (address):
+Example (address, PAN-OS input):
 
 ```json
-{ "name": "shared-host1", "location": "shared", "kind": "ip-netmask", "value": "1.2.2.3/32", "description": "",
-  "tags": ["grp.shared-group1"], "computed": { "ip_count": 1 } }
+{ "name": "shared-host1", "description": "", "tag": ["grp.shared-group1"], "ip_netmask": "1.2.2.3/32",
+  "device_group": "shared" }
 ```
+
+Building blocks that exist: `SCMImporter` already translates Panorama / firewall XML into the SCM configuration, and
+the schema file names the fields per resource. The API model is that translation per object, not a new mapper.
+
+## Own definitions (where the SCM API has nothing)
+
+| Topic | SCM | PAN-OS / Panorama | Proposal |
+|---|---|---|---|
+| location | `folder` / `snippet` / `device` | `shared`, device group, vsys, template, template stack | own fields `device_group`, `vsys`, `template`, `template_stack` next to the SCM ones (`"device_group": "shared"` for shared); `scm-panorama-to-change` maps shared → folder `All`, DG → folder, template → snippet – for reading a PAN-OS file the real location is kept |
+| antivirus and WildFire | one resource `wildfire-anti-virus-profiles` | two profiles: `virus`, `wildfire-analysis` | own resources `antivirus-profiles`, `wildfire-analysis-profiles` with the PAN-OS XML structure in `snake_case`; `profile-groups` gets own fields `virus`, `wildfire_analysis` |
+| data filtering, custom objects, … | not in the schema file (49 resources) | exist in PAN-OS | own resource per pan-os-php type, XML structure in `snake_case` |
+| fields PAN-OS has and SCM not | – | e.g. rule `uuid`, `rule_type` (`universal` / `intrazone` / `interzone`), `position`, `rulebase` (`pre` / `post`), security profile fields of a newer PAN-OS (`local_deep_learning`) | same name as the PAN-OS XML element in `snake_case`, on the object |
+| computed values | – | `ip_count`, references, visibility / best practice with the single checks | not configuration: in one own object `_panosphp` on the item (`{"ip_count": 1, "visibility": true, "best_practice": false, "checks": {…}}`), only when asked (`?computed=1`) |
+| types without objects | – | `stats`, `playbook`, … | runs (jobs), not part of the object model |
+
+Every own resource / field is listed in one file (`lib/resources/scm/panosphp-extensions.json`, same format as the
+schema file), so it is visible what is own and can be removed when PANW defines it.
+
+## Consequences for what is built
+
+- The REST resource names of the config-viewer change to the SCM names (today one resource per pan-os-php type);
+  `display-v0` stays reachable for a while (`?model=display-v0`).
+- Filters stay pan-os-php filters (`?filter=`); `location=` stays, plus `folder=` / `snippet=` for SCM input.
+- Changes stay actions for now; writing an item in the SCM shape (`POST` / `PUT` like the SCM API) is the next step
+  and can reuse `SCMChangeGenerator` in the other direction.
 
 ## Open decisions
 
-1. **Where the model is built:** (a) in the library – one method per class, e.g. `Address::toArray()`, used by
-   `shadow-json` and the API (one source, also for the CLI; more work in the core), or (b) in the viewer – a mapper
-   from the `display` output (fast, but parses texts and breaks when `display` changes). Proposal: (a).
-2. **`display-v0` next to `v1`:** keep both for a while (`?model=display-v0`), or switch per type as soon as `v1`
-   exists? Proposal: both, `v1` default once a type has it.
-3. **Security profiles:** JSON as the XML structure (complete, version dependent) or a normalised form per kind
-   (stable, more work)? Proposal: XML structure first, plus `computed` for the checks.
-4. **Field names:** `snake_case` as proposed, or the PAN-OS XML names (`source-user`, `log-end`)? XML names are known
-   to PAN-OS users and match set commands; `snake_case` is easier in code.
-5. **Order of types:** address, service, tag, rule (security) first – or what CDSS reads first (securityprofile,
-   securityprofilegroup, rule, zone)?
-6. **Writing with the model** (`PUT` / `PATCH` of an item) – later, or part of `v1`? Today changes are actions.
+1. **Location of PAN-OS objects:** own fields (`device_group`, `vsys`, `template`, `template_stack`) as proposed, or
+   always the SCM fields with the mapping of `scm-panorama-to-change` (shared → `folder: "All"`, DG → folder,
+   template → snippet)?
+2. **Antivirus / WildFire on PAN-OS:** two own resources as proposed, or forced into `wildfire-anti-virus-profiles`?
+3. **Computed values:** `_panosphp` object as proposed, or separate routes (`…/addresses/<name>/references`,
+   `…/security-rules/<name>/checks`)?
+4. **Order:** which resources first – what CDSS reads (`security-rules`, profiles, `profile-groups`, `zones`), or
+   `addresses`, `services`, `tags` first?
+5. **Where it is built:** in the library (`SCMImporter` per object, usable by `shadow-json` of the CLI too) – or only
+   in the viewer? Proposal: library.
