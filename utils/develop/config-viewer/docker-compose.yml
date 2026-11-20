@@ -1,30 +1,36 @@
-# pan-os-php config viewer (prototype) - everything with one command, from the repository root:
+# pan-os-php config viewer (prototype) - everything with one command (needs only this file and the image):
 #
-#   docker compose -f utils/develop/config-viewer/docker-compose.yml up -d --build
-#   docker compose -f utils/develop/config-viewer/docker-compose.yml logs web      # first start: user and password
+#   docker compose -f docker-compose.yml up -d
+#   docker compose -f docker-compose.yml logs web      # first start: user "admin" and its password
 #
 # then http://127.0.0.1:8080/ on this computer. Stop: ... down   (the data stays in the volume; "down -v" deletes it)
+# New version of the image: ... pull  and  ... up -d
 #
-# The page is reachable from this computer only (127.0.0.1) and without HTTPS. For other computers put a reverse
-# proxy with HTTPS in front, set PANOSPHP_VIEWER_TLS_PROXY=1 and remove PANOSPHP_VIEWER_ALLOW_HTTP.
+# Image: the normal pan-os-php image (VIEWER_IMAGE, default swaschkut/pan-os-php:alpha). Own build from the
+# repository root:  docker build -t swaschkut/pan-os-php:alpha -f docker/Dockerfile .
+#
+# The page is reachable from this computer only (127.0.0.1) and without HTTPS. For other computers add
+# docker-compose.https.yml (reverse proxy with HTTPS). Without internet: airgap/ (bundle with the images).
 name: panosphp-viewer
 
 x-viewer: &viewer
-  image: panosphp-viewer:local
+  image: "${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}"
   restart: unless-stopped
+  # starts as root only to hand over the data volume (and, jobs, the group of the docker socket); the PHP processes
+  # run as the user "ubuntu" (docker/start.sh)
+  user: "0:0"
+  entrypoint: [ "/bin/bash", "/tools/pan-os-php/utils/develop/config-viewer/docker/start.sh" ]
   volumes:
     - data:/data
 
 services:
   web:
     <<: *viewer
-    build:
-      context: ../../..
-      dockerfile: utils/develop/config-viewer/docker/Dockerfile
     command: [ "web" ]
     ports:
       - "127.0.0.1:${VIEWER_PORT:-8080}:8080"
     environment:
+      PANOSPHP_VIEWER_DATA: "/data"
       PANOSPHP_VIEWER_ALLOW_HTTP: "1"
       PHP_CLI_SERVER_WORKERS: "4"
       VIEWER_ADMIN_USER: "${VIEWER_ADMIN_USER:-admin}"
@@ -35,6 +41,11 @@ services:
     command: [ "service" ]
     depends_on: [ web ]
     network_mode: "none"
+    # the web part checks whether a worker (started by the service) is still alive by its process id:
+    # both must see the same processes
+    pid: "service:web"
+    environment:
+      PANOSPHP_VIEWER_DATA: "/data"
 
   # the only part with the docker socket: starts one container per run (no network, read-only, only the project folder)
   jobs:
@@ -46,8 +57,9 @@ services:
       - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      PANOSPHP_VIEWER_DATA: "/data"
       PANOSPHP_VIEWER_CONTAINER: "docker"
-      PANOSPHP_VIEWER_CONTAINER_IMAGE: "panosphp-viewer:local"
+      PANOSPHP_VIEWER_CONTAINER_IMAGE: "${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}"
       PANOSPHP_VIEWER_CONTAINER_DATA: "panosphp-viewer-data"
 
 volumes:

@@ -2,6 +2,7 @@
 # Start of one part of the config viewer in a container: web | service | jobs  (see ../docker-compose.yml)
 set -eu
 cd "$(dirname "$0")/.."
+: "${PANOSPHP_VIEWER_DATA:=/data}"; export PANOSPHP_VIEWER_DATA
 RUNAS="${VIEWER_RUN_AS:-ubuntu}"
 
 # as the runtime user; started as root only to hand over the data volume and (jobs) the group of the docker socket

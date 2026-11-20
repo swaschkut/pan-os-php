@@ -78,30 +78,29 @@ exists (adding a member); sessions are PHP file sessions.
 
 ## Run it with one command (Docker)
 
-Needs Docker with `docker compose` (Docker Desktop on macOS / Windows, Docker Engine on Linux). From the repository root:
+Needs Docker with `docker compose` and the pan-os-php image (`swaschkut/pan-os-php:alpha`; it holds the viewer, since `docker/Dockerfile` installs SQLite for PHP and the docker client). Only `docker-compose.yml` of this folder is needed, not the repository:
 
 ```bash
-docker compose -f utils/develop/config-viewer/docker-compose.yml up -d --build
-docker compose -f utils/develop/config-viewer/docker-compose.yml logs web     # first start: user "admin" and its password
+docker compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml logs web     # first start: user "admin" and its password
 ```
 
 Browser: `http://127.0.0.1:8080/` → log in → change the password under Account → create a project → upload a configuration.
 
-* It builds one image (`panosphp-viewer:local`, `docker/Dockerfile`) and starts three containers from it: `web`, `service` (workers) and `jobs` (job runner). Runs (`stats`, `playbook`) get their own container each - see "One container per run".
-* Data (database, versions, result files) is in the volume `panosphp-viewer-data`. `... down` stops everything and keeps the data, `... down -v` deletes it. After `git pull`: the same `up -d --build` again.
-* Own first user / port: `VIEWER_ADMIN_USER=sven VIEWER_ADMIN_PASSWORD='ten+ characters' VIEWER_PORT=9000 docker compose ... up -d --build` (the password is used at the first start only).
-* The page answers on this computer only (`127.0.0.1`), over HTTP, with the built-in web server of PHP. That fits one person on a notebook. For a server for several people: reverse proxy with HTTPS in front, `PANOSPHP_VIEWER_TLS_PROXY=1` instead of `PANOSPHP_VIEWER_ALLOW_HTTP`.
-* Only `jobs` gets the Docker socket; `service` and `jobs` have no network.
-
-**Not checked yet:** image build and start were not run with a real Docker (none available where it was written). Checked: the compose file is valid (`docker compose config`), the start script creates the first user and starts each part, the container call is tested with a stand-in. Expect small fixes at the first real start.
+* Three containers from the one image: `web`, `service` (workers) and `jobs` (job runner). Runs (`stats`, `playbook`) get their own container each - see "One container per run".
+* Data (database, versions, result files) is in the volume `panosphp-viewer-data`. `... down` stops everything and keeps the data, `... down -v` deletes it. New image: `... pull`, then `... up -d`.
+* Other image / tag: `VIEWER_IMAGE=swaschkut/pan-os-php:develop`. Own build from the repository root: `docker build -t swaschkut/pan-os-php:alpha -f docker/Dockerfile .`
+* Own first user / port: `VIEWER_ADMIN_USER=sven VIEWER_ADMIN_PASSWORD='ten+ characters' VIEWER_PORT=9000 docker compose ... up -d` (the password is used at the first start only).
+* The page answers on this computer only (`127.0.0.1`), over HTTP, with the built-in web server of PHP. That fits one person on a notebook; for several people see HTTPS below.
+* Only `jobs` gets the Docker socket; `service` and `jobs` have no network. `service` shares the process ids of `web` (`pid: "service:web"`): the web part checks by process id whether a worker is alive - without it every version fails with "the configuration could not be loaded".
+* The containers start as root only to hand over the data volume and (jobs) the group of the Docker socket; the PHP processes run as the user `ubuntu` (`docker/start.sh`).
 
 ## HTTPS (several users, server)
 
 A reverse proxy (Caddy) in front; the web part is then reachable through it only. `VIEWER_DOMAIN` is the name the users type into the browser:
 
 ```bash
-VIEWER_DOMAIN=viewer.example.com docker compose -f utils/develop/config-viewer/docker-compose.yml \
-    -f utils/develop/config-viewer/docker-compose.https.yml up -d --build
+VIEWER_DOMAIN=viewer.example.com docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
 | Certificate | Setting | Fits |
@@ -112,17 +111,9 @@ VIEWER_DOMAIN=viewer.example.com docker compose -f utils/develop/config-viewer/d
 
 Ports: 443 and 80 (redirect), change with `VIEWER_HTTPS_PORT` / `VIEWER_HTTP_PORT`. Behind the proxy the audit log and the login lock use the client address the proxy reports (last entry of `X-Forwarded-For`).
 
-**Air gap:** build on a computer with internet, carry the images over, start without `--build`:
+**Air gap (no internet at the customer):** `airgap/make-bundle.sh [image] [platform]` on a computer with internet writes one file `panosphp-viewer-<tag>-<platform>-<date>.tar.gz` with the images (pan-os-php, proxy), both compose files, the proxy settings, `install.sh` and `README.txt`. At the customer: unpack, `./install.sh` (or `VIEWER_DOMAIN=… ./install.sh` for HTTPS). The same again with a newer bundle is the update. One bundle per platform: `linux/amd64` (Intel / AMD) and `linux/arm64` (Apple silicon); `install.sh` refuses the wrong one. Docker itself must already be installed there.
 
-```bash
-docker compose -f utils/develop/config-viewer/docker-compose.yml build && docker pull caddy:2
-docker save panosphp-viewer:local caddy:2 | gzip > panosphp-viewer-images.tar.gz
-# on the air-gapped host (with the repository folder or at least utils/develop/config-viewer):
-gunzip -c panosphp-viewer-images.tar.gz | docker load
-VIEWER_DOMAIN=… docker compose -f … -f … up -d
-```
-
-**Not checked yet:** the proxy part was not started with a real Docker / Caddy. Checked: both compose files together are valid and the web part is no longer published; the client address behind a proxy.
+**Not checked yet:** the proxy part and the bundle scripts were not run with a real Docker / Caddy. Checked: both compose files together are valid and the web part is no longer published; the client address behind a proxy; `make-bundle.sh` / `install.sh` with a stand-in `docker` (content of the bundle, order of the calls, wrong platform refused).
 
 ## Run it without Docker (lab)
 

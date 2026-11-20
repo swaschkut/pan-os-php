@@ -1,4 +1,7 @@
 ARG IMAGE=ubuntu:26.04
+# docker client (no daemon) for the config viewer: its job runner starts one container per run
+FROM docker:cli AS dockercli
+
 FROM ${IMAGE}
 
 #apt-cache search python3-mpmath
@@ -30,6 +33,7 @@ RUN apt-get update --fix-missing \
     php$php_var-bcmath \
     php$php_var-yaml \
     php$php_var-ldap \
+    php$php_var-sqlite3 \
     python3 \
     python3-pandas \
     python3-bs4 \
@@ -62,6 +66,11 @@ COPY --chmod=777 CHANGELOG.txt .
 RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini \
   && chmod 777 /tools/pan-os-php \
   && ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php
+
+# config viewer (utils/develop/config-viewer/docker-compose.yml): docker client, data directory owned by the runtime
+# user so that a new volume mounted there gets the same owner
+COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
+RUN mkdir /data && chown $user_var:$user_var /data && chmod 700 /data
 
 USER $user_var
 

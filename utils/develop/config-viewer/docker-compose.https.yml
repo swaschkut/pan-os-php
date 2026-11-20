@@ -1,8 +1,7 @@
 # HTTPS for the config viewer: a reverse proxy (Caddy) in front, the web part is no longer published itself.
-# From the repository root - the name must be the one the users type into the browser:
+# VIEWER_DOMAIN must be the name the users type into the browser:
 #
-#   VIEWER_DOMAIN=viewer.example.com docker compose -f utils/develop/config-viewer/docker-compose.yml \
-#       -f utils/develop/config-viewer/docker-compose.https.yml up -d --build
+#   VIEWER_DOMAIN=viewer.example.com docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 #
 # Certificate (VIEWER_TLS, see docker/Caddyfile):
 #   default "internal": Caddy makes its own CA and certificate - works without internet (air gap). Browsers warn
