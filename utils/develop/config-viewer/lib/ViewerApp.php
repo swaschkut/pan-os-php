@@ -150,6 +150,10 @@ class ViewerApp
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY, jid TEXT NOT NULL UNIQUE,
             project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE, config_id INTEGER NOT NULL, user_id INTEGER,
             type TEXT NOT NULL, args TEXT NOT NULL, state TEXT NOT NULL, created INTEGER NOT NULL, started INTEGER, finished INTEGER, error TEXT)' );
+        // project files: playbook JSON and BP JSON, used by runs
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, fid TEXT NOT NULL UNIQUE,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE, kind TEXT NOT NULL, name TEXT NOT NULL, file TEXT NOT NULL,
+            size INTEGER NOT NULL, created_by INTEGER, created INTEGER NOT NULL)' );
         // grants of a member: types (JSON list, NULL = all offered types) and scope (JSON list of locations, NULL = whole configuration)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(members)' )->fetchAll(), 'name' );
         if( !in_array( 'types', $cols, TRUE ) )
@@ -451,7 +455,7 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats' );
+    const JOB_TYPES = array( 'stats', 'playbook' );
     const JOB_QUEUE_MAX = 20;          // queued + running jobs per project
     const JOB_FILE_MAX = 104857600;    // largest result file that can be downloaded
 
@@ -480,6 +484,17 @@ class ViewerApp
                 throw new ViewerException( 'location: letters, digits, space and . _ - only', 400 );
             $args = array( 'location=' . $location, 'actions=display-bpa', 'json-to-folder', 'debugapi' );
         }
+        if( $type === 'playbook' )
+        {
+            // the playbook file of the project, checked again now (PLAYBOOK_* rules); the stage files, the set commands
+            // and the result configuration stay in the folder of the run
+            $pb = $this->fileGet( $p, $in['playbook'] ?? null, 'playbook' );
+            $this->playbookCheck( json_decode( (string)file_get_contents( $pb['path'] ), TRUE ) );
+            $args = array( 'json=%FILES%/' . $pb['file'], 'out=%JOB%/out.xml', 'stagename=stage/step-', 'outputformatset=set-commands.txt' );
+        }
+        // the BP JSON of the project instead of the one shipped with pan-os-php
+        if( isset( $in['bp'] ) )
+            $args[] = 'shadow-bpjsonfile=%FILES%/' . $this->fileGet( $p, $in['bp'], 'bp' )['file'];
         $open = (int)$this->q( "SELECT COUNT(*) AS c FROM jobs WHERE project_id = ? AND state IN ('queued','running')", array( $p['id'] ) )->fetch()['c'];
         if( $open >= self::JOB_QUEUE_MAX )
             throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
@@ -575,6 +590,201 @@ class ViewerApp
         self::rmTree( $this->jobDir( $p, $j['jid'] ) );
     }
 
+    /** the result configuration of a finished playbook run (out.xml) becomes a new version of the project */
+    public function jobSaveConfig( array $user, $pid, $jid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'a new version' );
+        $j = $this->jobRow( $p, $jid );
+        $out = $this->jobDir( $p, $j['jid'] ) . '/out.xml';
+        if( $j['state'] !== 'done' || $j['type'] !== 'playbook' || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
+            throw new ViewerException( 'this run has no result configuration', 409 );
+        $parent = $this->q( 'SELECT id, name FROM configs WHERE id = ? AND project_id = ?', array( $j['config_id'], $p['id'] ) )->fetch();
+        $file = self::randomId() . '.xml';
+        if( !copy( $out, $this->projectDir( $p['pid'] ) . '/' . $file ) )
+            throw new ViewerException( 'file can not be stored', 500 );
+        @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
+        return $this->configInsert( $p, $user, $parent ? $parent['name'] : 'playbook result', $file, $parent ? (int)$parent['id'] : null, 'playbook run ' . substr( $j['jid'], 0, 8 ) );
+    }
+
+    // ------------------------------------------------------------------ project files (playbook JSON, BP JSON)
+
+    const FILE_KINDS = array( 'playbook', 'bp' );
+    const FILE_MAX = 2097152;
+
+    /** types a playbook step may run: they work on the configuration file only (no device, no other system) */
+    const PLAYBOOK_TYPES = array( 'xml-issue', 'address', 'service', 'tag', 'schedule', 'rule', 'zone', 'zone-protection-profile', 'securityprofile',
+        'securityprofilegroup', 'log-profile', 'device', 'edl', 'application', 'threat-rule', 'dns-rule', 'interface', 'routing', 'static-route', 'stats', 'html-merger' );
+    /** arguments a playbook step may have (lower case name); everything else - in, out, json, projectfolder, shadow-bpjsonfile, … - is refused */
+    const PLAYBOOK_ARGS = array( 'actions', 'filter', 'location', 'template', 'ruletype', 'securityprofiletype', 'devicetype', 'outputformatset', 'exportcsv',
+        'adddefaulthtml', 'json-to-folder', 'debugapi', 'stats' );
+    /** keys of a step that are no arguments (PLAYBOOK__.php removes them) */
+    const PLAYBOOK_NOARG_KEYS = '/^(comment|pie_slice|platform|html-merger-.*)$/';
+    /** actions of a step that reach other systems or read files of the server */
+    const PLAYBOOK_ACTION_DENY = '/^upload-|-fastapi$|reverse-dns|^decommission$|from-file|-edl-/';
+    const PLAYBOOK_FILENAME = '/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/';
+
+    /**
+     * Checks a playbook before it is stored and before every run: every step, every argument. A playbook can only
+     * work on the configuration of the run and write plain file names into the folder of the run.
+     */
+    public function playbookCheck( $j ): void
+    {
+        $bad = function( string $msg ) { throw new ViewerException( 'playbook: ' . $msg, 400 ); };
+        if( !is_array( $j ) || !isset( $j['command'] ) || !is_array( $j['command'] ) || count( $j['command'] ) == 0 )
+            $bad( 'JSON object with a list "command" expected' );
+        foreach( array( 'in', 'out', 'projectfolder', 'json' ) as $k )
+            if( array_key_exists( $k, $j ) )
+                $bad( 'the key "' . $k . '" is not allowed (input, output and folders are set by the run)' );
+        if( count( $j['command'] ) > 500 )
+            $bad( 'too many steps' );
+        foreach( array_values( $j['command'] ) as $n => $step )
+        {
+            $at = 'step ' . ( $n + 1 ) . ': ';
+            if( !is_array( $step ) || !isset( $step['type'] ) || !is_string( $step['type'] ) )
+                $bad( $at . '"type" missing' );
+            if( !in_array( $step['type'], self::PLAYBOOK_TYPES, TRUE ) )
+                $bad( $at . 'type "' . substr( $step['type'], 0, 40 ) . '" is not available in a playbook here' );
+            $values = array();
+            foreach( $step as $key => $value )
+            {
+                if( $key === 'type' || preg_match( self::PLAYBOOK_NOARG_KEYS, (string)$key ) )
+                {
+                    if( !is_string( $value ) )
+                        $bad( $at . '"' . $key . '" must be text' );
+                    continue;
+                }
+                // "scm": false / { … } - other arguments on SCM input: checked like the step itself
+                if( $key === 'scm' )
+                {
+                    if( is_array( $value ) )
+                    {
+                        foreach( $value as $k2 => $v2 )
+                            if( !preg_match( self::PLAYBOOK_NOARG_KEYS, (string)$k2 ) )
+                                $values[] = $v2;
+                    }
+                    elseif( !is_bool( $value ) )
+                        $bad( $at . '"scm" must be false or an object' );
+                    continue;
+                }
+                $values[] = $value;
+            }
+            foreach( $values as $value )
+                $this->playbookCheckArg( $step['type'], $value, $at, $bad );
+        }
+    }
+
+    private function playbookCheckArg( string $type, $value, string $at, callable $bad ): void
+    {
+        if( !is_string( $value ) || strlen( $value ) > 4000 || preg_match( '/[\x00-\x1F\x7F]/', $value ) )
+            $bad( $at . 'every argument must be text without control characters' );
+        $parts = explode( '=', $value, 2 );
+        $name = strtolower( $parts[0] );
+        $arg = $parts[1] ?? null;
+        if( !in_array( $name, self::PLAYBOOK_ARGS, TRUE ) )
+            $bad( $at . 'argument "' . substr( $parts[0], 0, 40 ) . '" is not allowed' );
+        if( $arg === null )
+            return;
+        if( $name === 'outputformatset' || $name === 'exportcsv' )
+        {
+            if( !preg_match( self::PLAYBOOK_FILENAME, $arg ) )
+                $bad( $at . $parts[0] . ': a plain file name (letters, digits, . _ -), it is written into the folder of the run' );
+            return;
+        }
+        if( $name === 'filter' )
+        {
+            if( preg_match( '/\.file\b/i', $arg ) )
+                $bad( $at . 'filter operators that read a file are not available' );
+            return;
+        }
+        if( $name === 'actions' )
+        {
+            foreach( explode( '/', str_replace( '//', "\x01", $arg ) ) as $one )
+            {
+                $one = str_replace( "\x01", '/', $one );
+                $ap = explode( ':', $one, 2 );
+                $action = strtolower( trim( $ap[0] ) );
+                if( $action === '' || preg_match( self::PLAYBOOK_ACTION_DENY, $action ) )
+                    $bad( $at . 'action "' . substr( $ap[0], 0, 40 ) . '" is not available in a playbook here' );
+                // actions that write a file (exportToExcel:<file>,…): the first argument is a plain file name
+                if( preg_match( '/^export/', $action ) )
+                {
+                    $file = explode( ',', $ap[1] ?? '' )[0];
+                    if( !preg_match( self::PLAYBOOK_FILENAME, $file ) )
+                        $bad( $at . 'action ' . $ap[0] . ': a plain file name (letters, digits, . _ -) as first argument' );
+                }
+            }
+            return;
+        }
+        if( !preg_match( '/^[A-Za-z0-9 _.,:|\-]{0,300}$/', $arg ) )
+            $bad( $at . $parts[0] . ': letters, digits, space and . _ - , : | only' );
+    }
+
+    /** @return array file row incl. absolute 'path'; the file must belong to the project and be of $kind */
+    private function fileGet( array $project, $fid, ?string $kind = null ): array
+    {
+        $f = is_string( $fid ) && preg_match( '/^[0-9a-f]{32}$/', $fid )
+            ? $this->q( 'SELECT * FROM files WHERE fid = ? AND project_id = ?', array( $fid, $project['id'] ) )->fetch() : FALSE;
+        if( !$f || !preg_match( '/^[0-9a-f]{32}\.json$/', $f['file'] ) || ( $kind !== null && $f['kind'] !== $kind ) )
+            throw new ViewerException( $kind === null ? 'not found' : 'unknown ' . ( $kind === 'bp' ? 'BP JSON' : 'playbook' ) . ' file of this project', $kind === null ? 404 : 400 );
+        $f['path'] = $this->projectDir( $project['pid'] ) . '/files/' . $f['file'];
+        if( !is_file( $f['path'] ) )
+            throw new ViewerException( 'not found', 404 );
+        return $f;
+    }
+
+    public function fileList( array $user, $pid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        return $this->q( 'SELECT f.fid, f.kind, f.name, f.size, f.created, u.name AS created_by FROM files f LEFT JOIN users u ON u.id = f.created_by
+            WHERE f.project_id = ? ORDER BY f.id DESC', array( $p['id'] ) )->fetchAll();
+    }
+
+    /** upload of a playbook JSON (checked: playbookCheck()) or a BP JSON; stored under a random name */
+    public function fileUpload( array $user, $pid, $kind, ?array $upload ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'uploading a project file' );
+        if( !in_array( $kind, self::FILE_KINDS, TRUE ) )
+            throw new ViewerException( 'kind must be one of: ' . implode( ', ', self::FILE_KINDS ), 400 );
+        if( $upload === null || !isset( $upload['tmp_name'], $upload['error'] ) || is_array( $upload['tmp_name'] ) || $upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
+            throw new ViewerException( 'no file uploaded (field "file")', 400 );
+        if( filesize( $upload['tmp_name'] ) > self::FILE_MAX )
+            throw new ViewerException( 'file too large', 413 );
+        $j = json_decode( (string)file_get_contents( $upload['tmp_name'] ), TRUE );
+        if( !is_array( $j ) )
+            throw new ViewerException( 'not a JSON file', 400 );
+        if( $kind === 'playbook' )
+            $this->playbookCheck( $j );
+        $label = self::checkLabel( basename( str_replace( '\\', '/', (string)( $upload['name'] ?? 'file.json' ) ) ), 'file name', 120 );
+        $dir = $this->projectDir( $p['pid'] ) . '/files';
+        if( !is_dir( $dir ) && !@mkdir( $dir, 0700, TRUE ) )
+            throw new ViewerException( 'file can not be stored', 500 );
+        $fid = self::randomId();
+        if( !move_uploaded_file( $upload['tmp_name'], $dir . '/' . $fid . '.json' ) )
+            throw new ViewerException( 'file can not be stored', 500 );
+        @chmod( $dir . '/' . $fid . '.json', 0600 );
+        $this->q( 'INSERT INTO files (fid, project_id, kind, name, file, size, created_by, created) VALUES (?,?,?,?,?,?,?,?)',
+            array( $fid, $p['id'], $kind, $label, $fid . '.json', filesize( $dir . '/' . $fid . '.json' ), $user['id'], time() ) );
+        return array( 'fid' => $fid, 'kind' => $kind, 'name' => $label );
+    }
+
+    public function fileDownload( array $user, $pid, $fid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $f = $this->fileGet( $p, $fid );
+        return array( 'name' => preg_replace( '/[^A-Za-z0-9._-]/', '_', $f['name'] ), 'content' => (string)file_get_contents( $f['path'] ) );
+    }
+
+    public function fileDelete( array $user, $pid, $fid ): void
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'deleting a project file' );
+        $f = $this->fileGet( $p, $fid );
+        $this->q( 'DELETE FROM files WHERE id = ?', array( $f['id'] ) );
+        @unlink( $f['path'] );
+    }
+
     // ---- used by bin/jobs.php only (CLI)
 
     /** @return array|null the next queued job with 'dir', 'config' (absolute paths) - marked as running */
@@ -602,7 +812,18 @@ class ViewerApp
             $this->runnerFinish( (int)$j['id'], 'failed', 'the folder of the run can not be created' );
             return $this->runnerTake();
         }
-        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'args' => array_values( array_filter( $args, 'is_string' ) ), 'dir' => $jobDir, 'config' => $config );
+        // %FILES% / %JOB%: the folders of the project files and of this run - set here, never by a request
+        $args = array_values( array_filter( $args, 'is_string' ) );
+        foreach( $args as $i => $a )
+        {
+            if( preg_match( '#^[a-z-]+=%FILES%/([0-9a-f]{32}\.json)$#', $a, $m ) && !is_file( $dir . '/files/' . $m[1] ) )
+            {
+                $this->runnerFinish( (int)$j['id'], 'failed', 'a file of the run (playbook / BP JSON) does not exist any more' );
+                return $this->runnerTake();
+            }
+            $args[$i] = str_replace( array( '%FILES%', '%JOB%' ), array( $dir . '/files', $jobDir ), $a );
+        }
+        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $config );
     }
 
     /** 'running' (still wanted), 'cancelled', or null when the job / project was deleted */

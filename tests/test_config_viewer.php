@@ -91,7 +91,7 @@ class Client
         {
             $b = '----viewertest' . bin2hex( random_bytes( 6 ) );
             $headers[] = 'Content-Type: multipart/form-data; boundary=' . $b;
-            $content = "--" . $b . "\r\nContent-Disposition: form-data; name=\"config\"; filename=\"" . $upload[0] . "\"\r\nContent-Type: text/xml\r\n\r\n" . $upload[1] . "\r\n--" . $b . "--\r\n";
+            $content = "--" . $b . "\r\nContent-Disposition: form-data; name=\"" . ( $upload[2] ?? 'config' ) . "\"; filename=\"" . $upload[0] . "\"\r\nContent-Type: text/xml\r\n\r\n" . $upload[1] . "\r\n--" . $b . "--\r\n";
         }
         elseif( $body !== null )
         {
@@ -397,7 +397,7 @@ $r = $alice->call( 'POST', $J . '/configs', null, array( 'j.xml', $xml ) );
 $JC = $J . '/configs/' . $r[1]['cid'];
 eq( status( $anon2->call( 'POST', $JC . '/stats/runs', array() ) ), 401, 'runs: no login' );
 eq( status( $bob->call( 'POST', $JC . '/stats/runs', array() ) ), 404, 'runs: no access' );
-eq( status( $alice->call( 'POST', $JC . '/playbook/runs', array() ) ), 404, 'runs: type that is not offered' );
+eq( status( $alice->call( 'POST', $JC . '/diff/runs', array() ) ), 404, 'runs: type that is not offered' );
 eq( status( $alice->call( 'POST', $JC . '/stats/runs', array( 'location' => '../x' ) ) ), 400, 'runs: location checked' );
 $r = $alice->call( 'POST', $JC . '/stats/runs', array( 'location' => 'any', 'in' => '/etc/passwd', 'actions' => 'exportToExcel:/tmp/x', 'out' => '/tmp/y' ) );
 eq( array( status( $r ), $r[1]['state'] ?? null, $r[1]['args'] ?? null ), array( 202, 'queued', array( 'location=any', 'actions=display-bpa', 'json-to-folder', 'debugapi' ) ), 'runs: stats queued; arguments of the request are not taken over' );
@@ -432,6 +432,102 @@ eq( waitRun( $tk, $J . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'done', 'r
 eq( status( $alice->call( 'DELETE', $run ) ), 200, 'runs: finished run deleted' );
 eq( status( $alice->call( 'GET', $run ) ), 404, 'runs: gone' );
 eq( status( $alice->call( 'DELETE', $J ) ), 200, 'runs project deleted' );
+
+// ---- 12p. project files (playbook JSON, BP JSON) and playbook runs
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Playbook' ) );
+$PB = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $PB . '/configs', null, array( 'p.xml', $xml ) );
+$PBC = $PB . '/configs/' . $r[1]['cid'];
+$steps = array(
+    array( 'type' => 'address', 'actions' => 'actions=exportToExcel:addresses.html', 'location' => 'location=any', 'comment' => 'export' ),
+    array( 'type' => 'address', 'actions' => 'actions=description-Append:-pb', 'filter' => 'filter=(name eq shared-host1)', 'location' => 'location=shared', 'pie_slice' => 'x' ),
+    array( 'type' => 'rule', 'actions' => 'actions=logend-Enable', 'location' => 'location=any', 'outputformatset' => 'outputformatset=rules-set.txt' ),
+);
+$good = json_encode( array( 'stagename' => 'whatever/x-', 'header-comment' => 'test', 'command' => $steps ) );
+$up = function( $client, $path, $kind, $content ) { return $client->call( 'POST', $path . '/files?kind=' . $kind, null, array( 'pb.json', $content, 'file' ) ); };
+$badPlaybooks = array(
+    'not JSON' => '{',
+    'no command list' => json_encode( array( 'x' => 1 ) ),
+    'key in' => json_encode( array( 'in' => '/etc/passwd', 'command' => $steps ) ),
+    'key projectfolder' => json_encode( array( 'projectfolder' => '/tmp', 'command' => $steps ) ),
+    'type not offered' => json_encode( array( 'command' => array( array( 'type' => 'upload', 'actions' => 'actions=display' ) ) ) ),
+    'type ssh-connector' => json_encode( array( 'command' => array( array( 'type' => 'ssh-connector' ) ) ) ),
+    'argument in=' => json_encode( array( 'command' => array( array( 'type' => 'address', 'x' => 'in=/etc/passwd', 'actions' => 'actions=display' ) ) ) ),
+    'argument out=' => json_encode( array( 'command' => array( array( 'type' => 'address', 'x' => 'out=/tmp/x.xml' ) ) ) ),
+    'argument shadow-bpjsonfile=' => json_encode( array( 'command' => array( array( 'type' => 'securityprofile', 'x' => 'shadow-bpjsonfile=/etc/passwd' ) ) ) ),
+    'export with a path' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=exportToExcel:../../x.html' ) ) ) ),
+    'export with an absolute path' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=exportToExcel:/tmp/x.html' ) ) ) ),
+    'second action with a path' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=display/exportToExcel:../x.html' ) ) ) ),
+    'outputformatset with a path' => json_encode( array( 'command' => array( array( 'type' => 'rule', 'actions' => 'actions=display', 'o' => 'outputformatset=../x.txt' ) ) ) ),
+    'exportCSV with a path' => json_encode( array( 'command' => array( array( 'type' => 'html-merger', 'e' => 'exportCSV=/tmp/x.xlsx' ) ) ) ),
+    'file filter' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=display', 'filter' => 'filter=(name is.in.file /etc/passwd)' ) ) ) ),
+    'action that reaches another system' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=upload-x' ) ) ) ),
+    'argument that is no text' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => array( 'actions=display' ) ) ) ) ),
+    'path in the scm variant of a step' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=display', 'scm' => array( 'actions' => 'actions=exportToExcel:/tmp/x.html' ) ) ) ) ),
+);
+foreach( $badPlaybooks as $what => $content )
+    eq( status( $up( $alice, $PB, 'playbook', $content ) ), 400, 'playbook refused: ' . $what );
+foreach( array( 'the visibility playbook shipped with pan-os-php (with scm variants)' => $here . '/../utils/api/v1/playbook/visibility.json' ) as $what => $file )
+{
+    $r = $up( $alice, $PB, 'playbook', file_get_contents( $file ) );
+    eq( status( $r ), 201, 'playbook accepted: ' . $what . ( status( $r ) !== 201 ? ' - ' . json_encode( $r[1] ) : '' ) );
+    $alice->call( 'DELETE', $PB . '/files/' . ( $r[1]['fid'] ?? 'x' ) );
+}
+eq( status( $up( $alice, $PB, 'playbook', json_encode( array( 'command' => array( array( 'type' => 'address', 'scm' => 'x' ) ) ) ) ) ), 400, 'playbook refused: scm that is neither false nor an object' );
+eq( status( $up( $alice, $PB, 'nosuchkind', $good ) ), 400, 'files: kind checked' );
+eq( status( $up( $bob, $PB, 'playbook', $good ) ), 404, 'files: no access' );
+$r = $up( $alice, $PB, 'playbook', $good );
+eq( status( $r ), 201, 'files: playbook uploaded' );
+$pbFid = $r[1]['fid'];
+$bpJson = file_get_contents( $here . '/../utils/api/v1/bp/scm_bp_sp_panw.json' );
+$r = $up( $alice, $PB, 'bp', $bpJson );
+eq( status( $r ), 201, 'files: BP JSON uploaded' );
+$bpFid = $r[1]['fid'];
+eq( count( $alice->call( 'GET', $PB . '/files' )[1]['files'] ?? array() ), 2, 'files: list' );
+eq( status( $alice->call( 'GET', $PB . '/files/' . $pbFid . '/download' ) ), 200, 'files: download' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array() ) ), 400, 'playbook run: playbook file needed' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $bpFid ) ) ), 400, 'playbook run: a BP JSON is no playbook' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid, 'bp' => $pbFid ) ) ), 400, 'playbook run: a playbook is no BP JSON' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => '../../x' ) ) ), 400, 'playbook run: file id checked' );
+$r = $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid, 'bp' => $bpFid ) );
+eq( status( $r ), 202, 'playbook run: queued' );
+$prun = $PB . '/runs/' . $r[1]['jid'];
+eq( strpos( json_encode( $r[1] ), $data ), FALSE, 'playbook run: no server path in the answer' );
+$r = waitRun( $alice, $prun );
+if( ( $r[1]['state'] ?? '' ) !== 'done' )
+    print "run.log:\n" . substr( (string)$alice->call( 'GET', $prun . '/files/run.log' )[1], -1500 ) . "\n";
+eq( $r[1]['state'] ?? null, 'done', 'playbook run: done' );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( in_array( 'out.xml', $names, TRUE ), in_array( 'addresses.html', $names, TRUE ), in_array( 'rules-set.txt', $names, TRUE ), in_array( 'run.log', $names, TRUE ) ),
+    array( TRUE, TRUE, TRUE, TRUE ), 'playbook run: result configuration, export and set commands in the folder of the run (' . implode( ', ', $names ) . ')' );
+$outside = FALSE;
+foreach( $names as $nm ) if( strpos( $nm, '..' ) !== FALSE || $nm[0] === '/' ) $outside = TRUE;
+eq( array( $outside, count( glob( $viewer . '/addresses.html' ) ?: array() ) ), array( FALSE, 0 ), 'playbook run: nothing written outside the folder of the run' );
+$out = $alice->call( 'GET', $prun . '/files/out.xml' );
+eq( array( status( $out ), strpos( (string)$out[1], '-pb' ) !== FALSE ), array( 200, TRUE ), 'playbook run: the result configuration has the change of step 2' );
+eq( status( $bob->call( 'POST', $prun . '/save' ) ), 404, 'playbook run: stranger can not save the result' );
+$r = $alice->call( 'POST', $prun . '/save' );
+eq( array( status( $r ), strpos( $r[1]['note'] ?? '', 'playbook run' ) ), array( 201, 0 ), 'playbook run: result saved as a new version' );
+$r2 = $alice->call( 'GET', $PB . '/configs/' . $r[1]['cid'] . '/addresses/shared-host1' );
+eq( strpos( $r2[1]['items'][0]['description'] ?? '', '-pb' ) !== FALSE, TRUE, 'playbook run: the new version has the change' );
+$r = $alice->call( 'POST', $PBC . '/stats/runs', array( 'bp' => $bpFid ) );
+eq( array( status( $r ), in_array( 'shadow-bpjsonfile=%FILES%/' . $bpFid . '.json', $r[1]['args'] ?? array(), TRUE ) ), array( 202, TRUE ), 'stats run with the BP JSON of the project' );
+eq( waitRun( $alice, $PB . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'done', 'stats run with the BP JSON: done' );
+// the visibility playbook shipped with pan-os-php, end to end through the API
+$r = $up( $alice, $PB, 'playbook', file_get_contents( $here . '/../utils/api/v1/playbook/visibility.json' ) );
+$r = $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $r[1]['fid'], 'bp' => $bpFid ) );
+$vrun = $PB . '/runs/' . $r[1]['jid'];
+$r = waitRun( $alice, $vrun );
+if( ( $r[1]['state'] ?? '' ) !== 'done' )
+    print "run.log:\n" . substr( (string)$alice->call( 'GET', $vrun . '/files/run.log' )[1], -1500 ) . "\n";
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( $r[1]['state'] ?? null, in_array( 'out.xml', $names, TRUE ), in_array( 'set-commands.txt', $names, TRUE ) ), array( 'done', TRUE, TRUE ),
+    'visibility playbook through the API: done, result configuration and set commands' );
+$out = (string)$alice->call( 'GET', $vrun . '/files/out.xml' )[1];
+eq( array( strpos( $out, 'Alert-Only-AS' ) !== FALSE, strpos( $out, 'Alert_Only_Zone_Protection' ) !== FALSE ), array( TRUE, TRUE ), 'visibility playbook: the result has the alert-only profiles' );
+eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: deleted' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
+eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );
 
 // ---- 12a. grants per member: types and scope (locations)
 $alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );

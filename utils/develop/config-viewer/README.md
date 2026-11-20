@@ -198,7 +198,11 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `…/<cid>/<resource>` | GET | read | REST per type, e.g. `addresses`, `rules`, `security-profiles` (names: `meta` → `resource`). Query `location`, `filter`, `ruletype`, `securityprofiletype`, `limit` (1–5000, default 1000), `offset` → `type`, `model`, `total`, `offset`, `limit`, `items` |
 | `…/<cid>/<resource>/<name>` | GET | read | the object(s) with this name (all locations, or `?location=`); `404` when there is none |
 | `…/<cid>/<resource>/actions` | POST | write | body `location`, `filter`, `actions` → like `change`; the type comes from the resource |
-| `…/<cid>/stats/runs` | POST | read, whole configuration | queues a run (`type=stats actions=display-bpa json-to-folder`), body `location` (default `any`) → `202` with `jid`, `state` |
+| `projects/<pid>/files?kind=playbook\|bp` | GET / POST | read / write | project files: list / upload (multipart field `file`) of a playbook JSON (checked, see below) or a BP JSON |
+| `projects/<pid>/files/<fid>[/download]` | DELETE / GET | write / read | delete / download a project file |
+| `…/<cid>/stats/runs` | POST | read, whole configuration | queues a run (`type=stats actions=display-bpa json-to-folder`), body `location` (default `any`), optional `bp` (BP JSON of the project) → `202` with `jid`, `state` |
+| `…/<cid>/playbook/runs` | POST | read, whole configuration | queues `type=playbook` on this version: body `playbook` (file id), optional `bp` (file id, becomes `shadow-bpjsonfile=`) |
+| `projects/<pid>/runs/<jid>/save` | POST | write | the result configuration (`out.xml`) of a finished playbook run becomes a new version |
 | `projects/<pid>/runs` | GET | read, whole configuration | the last 200 runs |
 | `projects/<pid>/runs/<jid>` | GET / DELETE | read / who started it or write | `state` (`queued`, `running`, `done`, `failed`, `cancelled`), `files` / cancel an open run, delete a finished one with its files |
 | `projects/<pid>/runs/<jid>/files/<name>` | GET | read, whole configuration | one result file (e.g. `json/debugAPI_string.json`, `run.log`) |
@@ -234,9 +238,23 @@ with an empty result. Types without objects (`playbook`, `stats`, mergers, …) 
 parallel runs, default 2; `PANOSPHP_VIEWER_JOB_TIMEOUT` seconds, default 3600). The pan-os-php arguments are built on the
 server from checked values (`ViewerApp::jobCreate()`); nothing of the request becomes an argument, a file name or a path.
 `in=` is the version file, the working directory is `<data>/projects/<pid>/jobs/<jid>/`, where the result files and
-`run.log` stay; server paths are replaced when a file is downloaded. At most 20 open runs per project. Today only
-`stats` (with the default BP JSON); not yet: `playbook`, `html-merger`, mergers, BP JSON / playbook files per project,
-one container per run.
+`run.log` stay; server paths are replaced when a file is downloaded. At most 20 open runs per project. Run types:
+`stats` and `playbook`; not yet: mergers, `diff`, one container per run.
+
+**Playbook runs.** The playbook JSON and the BP JSON are files of the project (`projects/<pid>/files`). A playbook is
+checked when it is uploaded and again before every run (`ViewerApp::playbookCheck()`):
+* no keys `in`, `out`, `projectfolder`, `json` – input, output and folders are set by the run;
+* every step: `type` out of `ViewerApp::PLAYBOOK_TYPES` (types that work on the configuration file only), every
+  argument out of `PLAYBOOK_ARGS` (`actions`, `filter`, `location`, `template`, `ruletype`, `securityprofiletype`,
+  `devicetype`, `outputformatset`, `exportCSV`, …) – `in=`, `out=`, `shadow-bpjsonfile=` and anything else is refused;
+* file names (`outputformatset=`, `exportCSV=`, first argument of `export…` actions) are plain names without a path;
+  filters that read a file and actions that reach other systems are refused; the `scm` variant of a step is checked
+  the same way.
+
+The run calls `type=playbook in=<version> json=<playbook> out=out.xml stagename=stage/step- outputformatset=set-commands.txt`
+(+ `shadow-bpjsonfile=<BP JSON>`) in the folder of the run; exports, set commands, stage files and `out.xml` are its
+result files. `POST …/runs/<jid>/save` takes `out.xml` as a new version.
+
 
 ### Processes
 
@@ -275,5 +293,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-257 checks: login, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+303 checks: login, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

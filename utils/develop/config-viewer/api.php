@@ -219,6 +219,29 @@ try
             }
         }
 
+        // project files: …/projects/<pid>/files?kind=playbook|bp   GET list, POST upload (multipart field "file")
+        //                …/projects/<pid>/files/<fid>[/download]  DELETE, GET download
+        if( $sub === 'files' )
+        {
+            if( $n == 3 && $method === 'GET' )
+                viewerOut( array( 'files' => $app->fileList( $user, $pid ) ) );
+            if( $n == 3 && $method === 'POST' )
+                viewerOut( $app->fileUpload( $user, $pid, $_GET['kind'] ?? null, $_FILES['file'] ?? null ), 201 );
+            if( $n == 4 && $method === 'DELETE' )
+            {
+                $app->fileDelete( $user, $pid, $route[3] );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+            if( $n == 5 && $method === 'GET' && $route[4] === 'download' )
+            {
+                $f = $app->fileDownload( $user, $pid, $route[3] );
+                header( 'Content-Type: application/json' );
+                header( 'Content-Disposition: attachment; filename="' . $f['name'] . '"' );
+                print $f['content'];
+                exit;
+            }
+        }
+
         // runs (jobs): …/projects/<pid>/runs                      GET  list
         //              …/projects/<pid>/runs/<jid>                GET  state + result files, DELETE cancel / delete
         //              …/projects/<pid>/runs/<jid>/files/<name…>  GET  one result file
@@ -233,6 +256,9 @@ try
                 $app->jobDelete( $user, $pid, $route[3] );
                 viewerOut( array( 'ok' => TRUE ) );
             }
+            // the result configuration of a playbook run as a new version of the project
+            if( $n == 5 && $method === 'POST' && $route[4] === 'save' )
+                viewerOut( $app->jobSaveConfig( $user, $pid, $route[3] ), 201 );
             if( $n >= 6 && $method === 'GET' && $route[4] === 'files' )
             {
                 $f = $app->jobFile( $user, $pid, $route[3], implode( '/', array_map( 'rawurldecode', array_slice( $route, 5 ) ) ) );
