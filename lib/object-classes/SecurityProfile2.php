@@ -61,7 +61,8 @@ class SecurityProfile2
      * with the first PAN-OS version that has it. Only these models get / are set to / are shown with
      * local-deep-learning; a model not listed, or a PAN-OS version below the one listed: never written.
      * - AS: HTTP / HTTP2 C2 detectors, PAN-OS 11.2 (PANW: Advanced Threat Prevention > Configure Inline Cloud Analysis)
-     * - VP: SQL Injection / Command Injection, PAN-OS 12.2 (verified with a 12.2.2 firewall configuration)
+     * - VP: SQL Injection / Command Injection, PAN-OS 12.2 (verified with a 12.2.2 firewall configuration: both models
+     *   have the element; PANW New Features PAN-OS 12.2 names Command Injection)
      */
     public static $localDeepLearningMinVersion = array(
         'spyware' => array(

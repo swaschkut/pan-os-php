@@ -41,6 +41,12 @@ pan-os-php already encodes many such cases on purpose (section 4). They must be 
   (`no snippet for PAN-OS 12.2 - using the snippet of PAN-OS 12.1`); only a PAN-OS older than the oldest snippet is
   an error. Before, 12.2 stopped the visibility playbook (`logforwardingprofile-create-bp`). Test:
   `tests/test_ironskillet_version.php`.
+- **iron-skillet 12.1 / 12.2** (2026-11-20): 12.2 has its own snippets (`PH::IRONSKILLET_VERSIONS`). They are the 12.1
+  snippets plus the only profile change of 12.2 (PANW: New Features PAN-OS 12.2): VP `local-deep-learning enable` for
+  SQL Injection and Command Injection in every profile with inline cloud analysis (PANW names Command Injection; a 12.2.2
+  configuration has the element for both models). 12.1 has no security profile
+  changes (PANW: New Features PAN-OS 12.1). `sp_spg-create` passes the PAN-OS version from 12.1 on (before: fixed
+  `"12.1"`). Not yet: the URL HTTP header logging options of 12.2 (XML element names to verify with a 12.2 configuration).
 - **Check tool:** `utils/develop/ironskillet/url_categories_check.php` (read-only) reports, per iron-skillet version, the
   predefined URL categories the URL profiles do not list.
 

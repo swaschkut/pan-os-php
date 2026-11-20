@@ -98,7 +98,7 @@ check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'spyware', 'HTTP 
 check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'spyware', 'SSL Command and Control detector', 122 ), 'AS SSL never' );
 check( SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'Command Injection', 122 ), 'VP Command Injection 12.2' );
 check( SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'SQL Injection', 122 ), 'VP SQL Injection 12.2' );
-check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'SQL Injection', 121 ), 'VP SQL Injection not 12.1' );
+check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'Command Injection', 121 ), 'VP Command Injection not 12.1' );
 
 foreach( array(
              // version => array( after load AS, after load VP, after alert-only-set AS, after alert-only-set VP )

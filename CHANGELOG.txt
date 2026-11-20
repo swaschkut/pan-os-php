@@ -37,6 +37,7 @@ UTIL:
 * type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
 * class URLProfile - BP Json has no longer URL mica BP checks, so do not mention it is a customised check
 * SP classes - change to single place for versioning
+* extend XML snippets for PAN-OS 12.2
 
 BUGFIX:
 * type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
