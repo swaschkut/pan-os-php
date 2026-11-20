@@ -1,0 +1,55 @@
+# pan-os-php config viewer (prototype) - everything with one command, from the repository root:
+#
+#   docker compose -f utils/develop/config-viewer/docker-compose.yml up -d --build
+#   docker compose -f utils/develop/config-viewer/docker-compose.yml logs web      # first start: user and password
+#
+# then http://127.0.0.1:8080/ on this computer. Stop: ... down   (the data stays in the volume; "down -v" deletes it)
+#
+# The page is reachable from this computer only (127.0.0.1) and without HTTPS. For other computers put a reverse
+# proxy with HTTPS in front, set PANOSPHP_VIEWER_TLS_PROXY=1 and remove PANOSPHP_VIEWER_ALLOW_HTTP.
+name: panosphp-viewer
+
+x-viewer: &viewer
+  image: panosphp-viewer:local
+  restart: unless-stopped
+  volumes:
+    - data:/data
+
+services:
+  web:
+    <<: *viewer
+    build:
+      context: ../../..
+      dockerfile: utils/develop/config-viewer/docker/Dockerfile
+    command: [ "web" ]
+    ports:
+      - "127.0.0.1:${VIEWER_PORT:-8080}:8080"
+    environment:
+      PANOSPHP_VIEWER_ALLOW_HTTP: "1"
+      PHP_CLI_SERVER_WORKERS: "4"
+      VIEWER_ADMIN_USER: "${VIEWER_ADMIN_USER:-admin}"
+      VIEWER_ADMIN_PASSWORD: "${VIEWER_ADMIN_PASSWORD:-}"
+
+  service:
+    <<: *viewer
+    command: [ "service" ]
+    depends_on: [ web ]
+    network_mode: "none"
+
+  # the only part with the docker socket: starts one container per run (no network, read-only, only the project folder)
+  jobs:
+    <<: *viewer
+    command: [ "jobs" ]
+    depends_on: [ web ]
+    network_mode: "none"
+    volumes:
+      - data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      PANOSPHP_VIEWER_CONTAINER: "docker"
+      PANOSPHP_VIEWER_CONTAINER_IMAGE: "panosphp-viewer:local"
+      PANOSPHP_VIEWER_CONTAINER_DATA: "panosphp-viewer-data"
+
+volumes:
+  data:
+    name: panosphp-viewer-data

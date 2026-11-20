@@ -76,7 +76,26 @@ Known limits of the prototype: no OS level isolation between projects (all worke
 action deny list is a pattern list, not a reviewed allow list per action; an owner can find out whether a user name
 exists (adding a member); sessions are PHP file sessions.
 
-## Run it (lab)
+## Run it with one command (Docker)
+
+Needs Docker with `docker compose` (Docker Desktop on macOS / Windows, Docker Engine on Linux). From the repository root:
+
+```bash
+docker compose -f utils/develop/config-viewer/docker-compose.yml up -d --build
+docker compose -f utils/develop/config-viewer/docker-compose.yml logs web     # first start: user "admin" and its password
+```
+
+Browser: `http://127.0.0.1:8080/` → log in → change the password under Account → create a project → upload a configuration.
+
+* It builds one image (`panosphp-viewer:local`, `docker/Dockerfile`) and starts three containers from it: `web`, `service` (workers) and `jobs` (job runner). Runs (`stats`, `playbook`) get their own container each - see "One container per run".
+* Data (database, versions, result files) is in the volume `panosphp-viewer-data`. `... down` stops everything and keeps the data, `... down -v` deletes it. After `git pull`: the same `up -d --build` again.
+* Own first user / port: `VIEWER_ADMIN_USER=sven VIEWER_ADMIN_PASSWORD='ten+ characters' VIEWER_PORT=9000 docker compose ... up -d --build` (the password is used at the first start only).
+* The page answers on this computer only (`127.0.0.1`), over HTTP, with the built-in web server of PHP. That fits one person on a notebook. For a server for several people: reverse proxy with HTTPS in front, `PANOSPHP_VIEWER_TLS_PROXY=1` instead of `PANOSPHP_VIEWER_ALLOW_HTTP`.
+* Only `jobs` gets the Docker socket; `service` and `jobs` have no network.
+
+**Not checked yet:** image build and start were not run with a real Docker (none available where it was written). Checked: the compose file is valid (`docker compose config`), the start script creates the first user and starts each part, the container call is tested with a stand-in. Expect small fixes at the first real start.
+
+## Run it without Docker (lab)
 
 Needs PHP ≥ 7.4 with `pdo_sqlite`; the PHP **CLI** also needs `pcntl` and `posix` (service / worker). Check:
 
