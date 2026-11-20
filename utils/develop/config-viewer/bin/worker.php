@@ -110,6 +110,28 @@ function viewerRun( $type, array $args )
     // 'x-computed' is no pan-os-php argument: the API object model also gets its computed values (_panosphp)
     ApiObjectModel::$withComputed = in_array( 'x-computed', $args, TRUE );
     $args = array_values( array_diff( $args, array( 'x-computed' ) ) );
+    // 'x-bp=<file>' is no pan-os-php argument either: the BP JSON of the project for this one run (checks, computed
+    // verdicts, alert-only-set / best-practice-set). Only a file of the folder "files" of this project; afterwards the
+    // BP JSON the configuration was loaded with is used again.
+    $bp = null;
+    foreach( $args as $i => $a )
+        if( strpos( $a, 'x-bp=' ) === 0 )
+        {
+            $bp = substr( $a, 5 );
+            unset( $args[$i] );
+        }
+    $args = array_values( $args );
+    // the BP JSON the configuration was loaded with: taken when it is first replaced (the load has set it by then)
+    static $defaultBp = null;
+    if( $bp !== null )
+    {
+        if( $defaultBp === null )
+            $defaultBp = array( PH::$shadow_bp_jsonfilename );
+        if( !preg_match( '#^' . preg_quote( dirname( $configFile ) . '/files/', '#' ) . '[0-9a-f]{32}\.json$#', $bp ) || !is_file( $bp ) )
+            return json_encode( array( 'error' => 'BP JSON file of the project not found' ) );
+        PH::$shadow_bp_jsonfilename = $bp;
+        PH::$shadow_bp_jsonfile = null;
+    }
     $argv = array_merge( array( 'config-viewer', 'in=' . $configFile, 'shadow-json' ), $args );
     $argc = count( $argv );
     PH::resetCliArgs( $argv );
@@ -119,7 +141,13 @@ function viewerRun( $type, array $args )
     ob_start();
     $util = PH::callPANOSPHP( $type, $argv, $argc, 'config-viewer' );
     unset( $util );
-    return (string)ob_get_clean();
+    $out = (string)ob_get_clean();
+    if( $bp !== null )
+    {
+        PH::$shadow_bp_jsonfilename = $defaultBp[0];
+        PH::$shadow_bp_jsonfile = null;
+    }
+    return $out;
 }
 
 function viewerDecode( $out )

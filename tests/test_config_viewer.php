@@ -526,6 +526,27 @@ eq( strpos( $r2[1]['items'][0]['description'] ?? '', '-pb' ) !== FALSE, TRUE, 'p
 $r = $alice->call( 'POST', $PBC . '/stats/runs', array( 'bp' => $bpFid ) );
 eq( array( status( $r ), in_array( 'shadow-bpjsonfile=%FILES%/' . $bpFid . '.json', $r[1]['args'] ?? array(), TRUE ) ), array( 202, TRUE ), 'stats run with the BP JSON of the project' );
 eq( waitRun( $alice, $PB . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'done', 'stats run with the BP JSON: done' );
+// BP JSON of the project for reads and changes (?bp=<file id> / body "bp")
+$empty = $up( $alice, $PB, 'bp', '{}' )[1]['fid'];
+$asName = null;
+$def = $alice->call( 'GET', $PBC . '/anti-spyware-profiles?computed=1' );
+$withBp = $alice->call( 'GET', $PBC . '/anti-spyware-profiles?computed=1&bp=' . $bpFid );
+$withEmpty = $alice->call( 'GET', $PBC . '/anti-spyware-profiles?computed=1&bp=' . $empty );
+eq( array( status( $withBp ), $withBp[1]['items'][0]['_panosphp'] ?? null ), array( 200, $def[1]['items'][0]['_panosphp'] ?? 'x' ), 'bp: the same BP JSON as the default gives the same verdicts' );
+$pe = $withEmpty[1]['items'][0]['_panosphp'] ?? array();
+eq( array( status( $withEmpty ), array_key_exists( 'visibility', $pe ) && $pe['visibility'] === null, array_key_exists( 'best_practice', $pe ) && $pe['best_practice'] === null,
+    ( $def[1]['items'][0]['_panosphp']['visibility'] ?? null ) !== null ),
+    array( 200, TRUE, TRUE, TRUE ), 'bp: an empty BP JSON of the project - no check, verdicts N/A (null), while the default BP JSON gives a verdict' );
+$again = $alice->call( 'GET', $PBC . '/anti-spyware-profiles?computed=1' );
+eq( $again[1]['items'][0]['_panosphp'] ?? null, $def[1]['items'][0]['_panosphp'] ?? 'x', 'bp: the next request without bp uses the default BP JSON again' );
+eq( status( $alice->call( 'GET', $PBC . '/anti-spyware-profiles?computed=1&bp=' . $pbFid ) ), 400, 'bp: a playbook file is no BP JSON' );
+eq( status( $alice->call( 'GET', $PBC . '/anti-spyware-profiles?bp=' . urlencode( '../../../etc/passwd' ) ) ), 400, 'bp: file id checked' );
+$r = $alice->call( 'POST', $PBC . '/security-profiles/actions', array( 'location' => 'shared', 'securityprofiletype' => 'spyware', 'actions' => 'alert-only-set', 'bp' => $bpFid ) );
+eq( status( $r ), 200, 'bp: change (alert-only-set) with the BP JSON of the project' );
+$after = $alice->call( 'GET', $PBC . '/tags?computed=1' );
+eq( status( $after ), 200, 'bp: after a change with a BP JSON the loaded configuration still answers (default BP JSON restored)' );
+$alice->call( 'POST', $PBC . '/discard' );
+
 // the visibility playbook shipped with pan-os-php, end to end through the API
 $r = $up( $alice, $PB, 'playbook', file_get_contents( $here . '/../utils/api/v1/playbook/visibility.json' ) );
 $r = $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $r[1]['fid'], 'bp' => $bpFid ) );

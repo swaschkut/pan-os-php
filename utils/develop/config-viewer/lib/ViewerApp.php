@@ -1360,6 +1360,14 @@ class ViewerApp
         return $rows;
     }
 
+    /** 'bp' of a request: a BP JSON file of the project (file id) for this one read / change; the worker gets its path */
+    private function bpArg( array $project, array $in ): array
+    {
+        if( !isset( $in['bp'] ) || $in['bp'] === '' )
+            return array();
+        return array( 'x-bp=' . $this->fileGet( $project, $in['bp'], 'bp' )['path'] );
+    }
+
     /** read: all objects of one type, filtered by pan-os-php, from the configuration in memory */
     public function objects( array $user, $pid, $cid, array $in, int $max = 50000, bool $computed = FALSE ): array
     {
@@ -1367,7 +1375,8 @@ class ViewerApp
         $c = $this->configGet( $p, $cid );
         $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
-        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type, 'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array() ) ) );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type,
+            'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() );
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
@@ -1440,8 +1449,9 @@ class ViewerApp
         $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
         $args[] = $this->actionsArg( $type, $in['actions'] ?? null, $p );
+        $bpArg = $this->bpArg( $p, $in );
         $note = 'type=' . $type . ' ' . implode( ' ', $args ) . ' [' . $user['name'] . ']';
-        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'change', 'type' => $type, 'args' => $args, 'note' => $note ) );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'change', 'type' => $type, 'args' => array_merge( $args, $bpArg ), 'note' => $note ) );
         return array( 'processed' => count( self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() ) ),
             'log' => isset( $r['json']['log'] ) && is_string( $r['json']['log'] ) ? substr( $this->hidePaths( $r['json']['log'] ), 0, 200000 ) : '',
             'status' => $r['status'] ?? null );

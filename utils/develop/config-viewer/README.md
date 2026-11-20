@@ -226,7 +226,9 @@ the object (`device_group` – `"shared"` for shared –, `vsys`, `template` / `
 `{"name": "shared-host1", "ip_netmask": "1.2.2.3/32", "tag": ["grp.shared-group1"], "device_group": "shared"}`.
 `?computed=1` adds what pan-os-php calculates as `_panosphp` (never configuration): `references`, `ip_count`
 (address), `visibility` / `best_practice` with the single `checks` (security profiles, profile groups; `null` = N/A),
-`profiles_visibility` / `profiles_best_practice` (security rules). The verdicts use the BP JSON shipped with pan-os-php.
+`profiles_visibility` / `profiles_best_practice` (security rules). The verdicts use the BP JSON shipped with pan-os-php,
+or a BP JSON file of the project with `?bp=<file id>` (also for `objects`, and as `bp` in the body of a change, where
+`alert-only-set` / `best-practice-set` then set what that file lists). It applies to this one request only.
 `?model=display-v0` gives the display fields of the pan-os-php type instead. The other resources follow in the order of
 their dependencies ([todo/json-object-model.md](../../../todo/json-object-model.md)).
 
@@ -296,5 +298,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-309 checks: login, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+316 checks: login, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.
