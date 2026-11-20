@@ -61,7 +61,7 @@ BUGFIX:
 * bugfix to get N/A output correct running
 * type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
 * type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
-* bugfix VP / Spyware - to set local-inline to enable with alert-only-set
+* [reverted] bugfix VP / Spyware - to set local-inline to enable with alert-only-set
 * url.alert-only-set-no-empty-alert-allow-members
 * ancestor-objects-take-precedence-rule-filters
 * spyware-local-deep-learning-is-never-written
