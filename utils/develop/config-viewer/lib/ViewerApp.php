@@ -617,7 +617,7 @@ class ViewerApp
         'securityprofilegroup', 'log-profile', 'device', 'edl', 'application', 'threat-rule', 'dns-rule', 'interface', 'routing', 'static-route', 'stats', 'html-merger' );
     /** arguments a playbook step may have (lower case name); everything else - in, out, json, projectfolder, shadow-bpjsonfile, … - is refused */
     const PLAYBOOK_ARGS = array( 'actions', 'filter', 'location', 'template', 'ruletype', 'securityprofiletype', 'devicetype', 'outputformatset', 'exportcsv',
-        'adddefaulthtml', 'json-to-folder', 'debugapi', 'stats' );
+        'adddefaulthtml', 'json-to-folder', 'debugapi', 'stats', 'shadow-ignoreinvalidaddressobjects' );
     /** keys of a step that are no arguments (PLAYBOOK__.php removes them) */
     const PLAYBOOK_NOARG_KEYS = '/^(comment|pie_slice|platform|html-merger-.*)$/';
     /** actions of a step that reach other systems or read files of the server */
@@ -681,7 +681,9 @@ class ViewerApp
         $parts = explode( '=', $value, 2 );
         $name = strtolower( $parts[0] );
         $arg = $parts[1] ?? null;
-        if( !in_array( $name, self::PLAYBOOK_ARGS, TRUE ) )
+        // subquery1=…: part of a filter, checked like a filter
+        $subquery = (bool)preg_match( '/^subquery[0-9]{1,2}$/', $name );
+        if( !$subquery && !in_array( $name, self::PLAYBOOK_ARGS, TRUE ) )
             $bad( $at . 'argument "' . substr( $parts[0], 0, 40 ) . '" is not allowed' );
         if( $arg === null )
             return;
@@ -691,7 +693,7 @@ class ViewerApp
                 $bad( $at . $parts[0] . ': a plain file name (letters, digits, . _ -), it is written into the folder of the run' );
             return;
         }
-        if( $name === 'filter' )
+        if( $name === 'filter' || $subquery )
         {
             if( preg_match( '/\.file\b/i', $arg ) )
                 $bad( $at . 'filter operators that read a file are not available' );
@@ -706,12 +708,25 @@ class ViewerApp
                 $action = strtolower( trim( $ap[0] ) );
                 if( $action === '' || preg_match( self::PLAYBOOK_ACTION_DENY, $action ) )
                     $bad( $at . 'action "' . substr( $ap[0], 0, 40 ) . '" is not available in a playbook here' );
-                // actions that write a file (exportToExcel:<file>,…): the first argument is a plain file name
-                if( preg_match( '/^export/', $action ) )
+                // allow list per action (action-classes.json): only actions that show, change or write a file into the
+                // folder of the run; an action that is not in the list, reads a server file or reaches another system is refused
+                $fileAt = null;
+                if( isset( $this->actionClasses()['types'][$type] ) )
                 {
-                    $file = explode( ',', $ap[1] ?? '' )[0];
+                    $class = $this->actionClass( $type, $action );
+                    if( $class === null || !in_array( $class['class'], array( 'read', 'change', 'writes-file' ), TRUE ) )
+                        $bad( $at . 'action "' . substr( $ap[0], 0, 40 ) . '" is not available in a playbook here' . ( $class !== null ? ' (' . $class['class'] . ')' : '' ) );
+                    if( $class['class'] === 'writes-file' && isset( $class['file_arg'] ) )
+                        $fileAt = (int)$class['file_arg'];
+                }
+                elseif( preg_match( '/^export/', $action ) )
+                    $fileAt = 0;
+                // the file name argument of an action that writes a file: a plain file name
+                if( $fileAt !== null )
+                {
+                    $file = explode( ',', $ap[1] ?? '' )[$fileAt] ?? '';
                     if( !preg_match( self::PLAYBOOK_FILENAME, $file ) )
-                        $bad( $at . 'action ' . $ap[0] . ': a plain file name (letters, digits, . _ -) as first argument' );
+                        $bad( $at . 'action ' . $ap[0] . ': a plain file name (letters, digits, . _ -) as file argument' );
                 }
             }
             return;
@@ -1026,6 +1041,30 @@ class ViewerApp
     // ------------------------------------------------------------------ pan-os-php: meta data, read, change
 
     /** types, actions and filters the prototype offers (from utils/lib/util_action_filter.json) */
+    private $actionClasses = null;
+
+    /**
+     * the risk class of every action (action-classes.json, built by bin/action-classes.php): the allow list per action.
+     * @return array 'reviewed' => types a person has checked, 'types' => type => action => array( 'class', 'file_arg' )
+     */
+    public function actionClasses(): array
+    {
+        if( $this->actionClasses === null )
+        {
+            $j = json_decode( (string)@file_get_contents( dirname(__FILE__) . '/../action-classes.json' ), TRUE );
+            $this->actionClasses = array( 'reviewed' => is_array( $j['reviewed'] ?? null ) ? $j['reviewed'] : array(),
+                'types' => is_array( $j['types'] ?? null ) ? $j['types'] : array() );
+        }
+        return $this->actionClasses;
+    }
+
+    /** class of an action of a type: 'read', 'change', 'writes-file', 'reads-file', 'network'; null: not in the list (never offered) */
+    public function actionClass( string $type, string $action ): ?array
+    {
+        $e = $this->actionClasses()['types'][$type][strtolower( $action )] ?? null;
+        return is_array( $e ) && isset( $e['class'] ) ? $e : null;
+    }
+
     public function meta(): array
     {
         if( $this->meta !== null )
@@ -1040,6 +1079,10 @@ class ViewerApp
             foreach( (array)$j[$type]['action'] as $name => $a )
             {
                 if( $name === 'display' || preg_match( self::ACTION_DENY_NAME, $name ) )
+                    continue;
+                // allow list per action: only actions that change the configuration in memory (or only show it)
+                $class = $this->actionClass( $type, (string)$name );
+                if( $class === null || !in_array( $class['class'], array( 'read', 'change' ), TRUE ) )
                     continue;
                 $args = array();
                 $deny = FALSE;
@@ -1079,7 +1122,22 @@ class ViewerApp
                         $ops[] = (string)$op;
                 $filters[(string)$field] = $ops;
             }
-            $meta[$type] = array( 'actions' => array(), 'filters' => $filters, 'readonly' => TRUE, 'resource' => self::resourceName( $type ) );
+            // a type a person has reviewed (action-classes.json "reviewed") can be changed: its 'read' / 'change' actions
+            $actions = array();
+            if( in_array( $type, $this->actionClasses()['reviewed'], TRUE ) )
+                foreach( (array)$def['action'] as $name => $a )
+                {
+                    $class = $this->actionClass( (string)$type, (string)$name );
+                    if( $name === 'display' || preg_match( self::ACTION_DENY_NAME, (string)$name ) || $class === null || !in_array( $class['class'], array( 'read', 'change' ), TRUE ) )
+                        continue;
+                    $args = array();
+                    foreach( (array)( $a['args'] ?? array() ) as $argName => $arg )
+                        $args[] = array( 'name' => (string)$argName, 'default' => isset( $arg['default'] ) && is_scalar( $arg['default'] ) ? (string)$arg['default'] : '',
+                            'help' => isset( $arg['help'] ) && is_string( $arg['help'] ) ? $arg['help'] : '' );
+                    $actions[(string)$name] = $args;
+                }
+            ksort( $actions );
+            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => count( $actions ) == 0, 'resource' => self::resourceName( $type ) );
         }
         $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES,
             'resources' => array_map( function( $t ) { return array( 'type' => $t, 'model' => 'scm-v1' ); }, self::SCM_RESOURCES ) );

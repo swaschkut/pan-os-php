@@ -475,12 +475,19 @@ $badPlaybooks = array(
     'exportCSV with a path' => json_encode( array( 'command' => array( array( 'type' => 'html-merger', 'e' => 'exportCSV=/tmp/x.xlsx' ) ) ) ),
     'file filter' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=display', 'filter' => 'filter=(name is.in.file /etc/passwd)' ) ) ) ),
     'action that reaches another system' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=upload-x' ) ) ) ),
+    'file-writing action that is not an export, with a path' => json_encode( array( 'command' => array( array( 'type' => 'device', 'actions' => 'actions=display-shadowrule:../x.xlsx' ) ) ) ),
+    'action that reads a file of the server' => json_encode( array( 'command' => array( array( 'type' => 'rule', 'actions' => 'actions=dst-add-from-file:/etc/passwd' ) ) ) ),
+    'action that does a DNS lookup' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=value-set-reverse-dns' ) ) ) ),
+    'action that is not in the allow list' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=no-such-action' ) ) ) ),
+    'subquery that reads a file' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=display', 'filter' => 'filter=(name eq x)', 's' => 'subquery1=(name is.in.file /etc/passwd)' ) ) ) ),
     'argument that is no text' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => array( 'actions=display' ) ) ) ) ),
     'path in the scm variant of a step' => json_encode( array( 'command' => array( array( 'type' => 'address', 'actions' => 'actions=display', 'scm' => array( 'actions' => 'actions=exportToExcel:/tmp/x.html' ) ) ) ) ),
 );
 foreach( $badPlaybooks as $what => $content )
     eq( status( $up( $alice, $PB, 'playbook', $content ) ), 400, 'playbook refused: ' . $what );
-foreach( array( 'the visibility playbook shipped with pan-os-php (with scm variants)' => $here . '/../utils/api/v1/playbook/visibility.json' ) as $what => $file )
+foreach( array( 'the visibility playbook shipped with pan-os-php (with scm variants)' => $here . '/../utils/api/v1/playbook/visibility.json',
+             'a shipped playbook with subquery and shadow-ignoreInvalidAddressObjects' => $here . '/../utils/api/v1/playbook/visibility_misconfiguration.json',
+             'a shipped playbook with subquery' => $here . '/../utils/api/v1/playbook/best-practice_SP.json' ) as $what => $file )
 {
     $r = $up( $alice, $PB, 'playbook', file_get_contents( $file ) );
     eq( status( $r ), 201, 'playbook accepted: ' . $what . ( status( $r ) !== 201 ? ' - ' . json_encode( $r[1] ) : '' ) );
@@ -562,6 +569,16 @@ eq( array( strpos( $out, 'Alert-Only-AS' ) !== FALSE, strpos( $out, 'Alert_Only_
 eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: deleted' );
 eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
 eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );
+
+// ---- 12c. allow list per action (action-classes.json)
+$chk = proc_open( array( PHP_BINARY, $viewer . '/bin/action-classes.php', 'check' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes );
+stream_get_contents( $pipes[1] );
+eq( proc_close( $chk ), 0, 'action-classes.json is up to date with util_action_filter.json and the action sources' );
+$meta = $alice->call( 'GET', 'meta' )[1]['types'];
+eq( array( isset( $meta['address']['actions']['description-append'] ), isset( $meta['address']['actions']['value-set-reverse-dns'] ), isset( $meta['address']['actions']['exporttoexcel'] ),
+    isset( $meta['address']['actions']['create-address-from-file'] ), isset( $meta['rule']['actions']['logend-enable'] ), isset( $meta['rule']['actions']['logend-enable-fastapi'] ) ),
+    array( TRUE, FALSE, FALSE, FALSE, TRUE, FALSE ), 'allow list: change actions offered; network / file actions not' );
+eq( array( $meta['edl']['readonly'] ?? null, count( $meta['edl']['actions'] ?? array( 1 ) ) ), array( TRUE, 0 ), 'allow list: a type that is not reviewed stays read only' );
 
 // ---- 12a. grants per member: types and scope (locations)
 $alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );

@@ -285,12 +285,30 @@ to `array( 'xmlDoc' => DOMDocument, 'pan' => null )`; the first `UTIL` run loads
 later run in the same process reuses it instead of reading `in=` again, and `UTIL::__destruct()` leaves it alone.
 Used by `bin/worker.php` only.
 
+### Allow list per action
+
+`action-classes.json` (built by `php bin/action-classes.php`; `… check` tells whether it is up to date) holds the risk
+class of every pan-os-php action, from its arguments and its source:
+
+| Class | Meaning | Interactive change | Playbook run |
+|---|---|---|---|
+| `read` | shows objects | offered | offered |
+| `change` | changes the configuration in memory | offered | offered |
+| `writes-file` | writes a file (`export…`, `display-shadowrule`, …); `file_arg` = position of the file name | not offered | offered, plain file name, folder of the run |
+| `reads-file` | reads a file of the server (`…-from-file`, …) | never | never |
+| `network` | reaches another system or handles keys (DNS lookup, LDAP, `…-fastapi`, `upload-…`, `authkey-…`, `system-…`) | never | never |
+
+An action that is not in the file is never offered. A type can be **changed** only when it is in `"reviewed"` – the 8
+types of the prototype today; add a type there after reading its classes (and correct single actions in `"override"`,
+which survives a rebuild). All other types stay read only. The classes are generated, not proven: an action can do
+more than its name, arguments and the scanned calls show – that is what the review per type is for.
+
 ### Extending
 
 * another type: `ViewerApp::TYPES` (the type must be in `utils/lib/util_action_filter.json` and print its objects
   with `actions=display` in `shadow-json`)
-* offered actions: every action of the type except `display`, the name patterns `ViewerApp::ACTION_DENY_NAME` and
-  actions with an argument matching `ViewerApp::ACTION_DENY_ARG`
+* offered actions: the `read` / `change` actions of `action-classes.json` (except `display`); in addition still the
+  name patterns `ViewerApp::ACTION_DENY_NAME` and actions with an argument matching `ViewerApp::ACTION_DENY_ARG`
 
 ## Test
 
@@ -298,5 +316,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-316 checks: login, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+326 checks: login, allow list per action, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.
