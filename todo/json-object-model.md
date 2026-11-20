@@ -46,6 +46,7 @@ the schema file names the fields per resource. The API model is that translation
 |---|---|---|---|
 | location | `folder` / `snippet` / `device` | `shared`, device group, vsys, template, template stack | own fields `device_group`, `vsys`, `template`, `template_stack` next to the SCM ones (`"device_group": "shared"` for shared); `scm-panorama-to-change` maps shared → folder `All`, DG → folder, template → snippet – for reading a PAN-OS file the real location is kept |
 | antivirus and WildFire | one resource `wildfire-anti-virus-profiles` | two profiles: `virus`, `wildfire-analysis` | own resources `antivirus-profiles`, `wildfire-analysis-profiles` with the PAN-OS XML structure in `snake_case`; `profile-groups` gets own fields `virus`, `wildfire_analysis` |
+| anti-spyware and DNS security | two resources: `anti-spyware-profiles` and `dns-security-profiles` | one profile: DNS security is part of the anti-spyware profile (`botnet-domains`: DNS lists, DNS security categories, sinkhole) | Panorama / firewall: stays inside the `anti-spyware-profiles` item as own field `botnet_domains` (PAN-OS XML structure in `snake_case`); `dns-security-profiles` exists only for SCM input. Nothing is split or merged when reading. |
 | data filtering, custom objects, … | not in the schema file (49 resources) | exist in PAN-OS | own resource per pan-os-php type, XML structure in `snake_case` |
 | fields PAN-OS has and SCM not | – | e.g. rule `uuid`, `rule_type` (`universal` / `intrazone` / `interzone`), `position`, `rulebase` (`pre` / `post`), security profile fields of a newer PAN-OS (`local_deep_learning`) | same name as the PAN-OS XML element in `snake_case`, on the object |
 | computed values | – | `ip_count`, references, visibility / best practice with the single checks | not configuration: in one own object `_panosphp` on the item (`{"ip_count": 1, "visibility": true, "best_practice": false, "checks": {…}}`), only when asked (`?computed=1`) |
@@ -69,6 +70,8 @@ schema file), so it is visible what is own and can be removed when PANW defines 
    `device`). No mapping of a PAN-OS location to a folder / snippet when reading.
 2. **Antivirus / WildFire:** Panorama / firewall separate (own resources `antivirus-profiles`,
    `wildfire-analysis-profiles`), SCM combined (`wildfire-anti-virus-profiles`).
+   The same rule for **anti-spyware / DNS security**: SCM separate (`anti-spyware-profiles`, `dns-security-profiles`),
+   Panorama / firewall together in the anti-spyware profile (`botnet_domains`).
 3. **Computed values** (proposal, used unless decided otherwise): one own object `_panosphp` on the item, only when
    asked with `?computed=1` – `{"ip_count": …, "references": …, "visibility": true|false|null, "best_practice": …,
    "checks": {…}}`. One request gives object and checks together (what the SPR report of CDSS needs per profile /

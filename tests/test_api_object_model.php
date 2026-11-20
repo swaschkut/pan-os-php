@@ -102,6 +102,9 @@ eq( array( $lfp['item']['match_list'][0]['send_to_panorama'] ?? null, isset( $lf
 $as = ApiObjectModel::item( $v->AntiSpywareProfileStore->find( 'as1' ) );
 eq( array( $as['resource'], json_encode( $as['item']['rules'][0]['action'] ), json_encode( $as['item']['rules'][1]['action'] ), $as['item']['rules'][1]['packet_capture'] ),
     array( 'anti-spyware-profiles', '{"default":{}}', '{"reset_both":{}}', 'single-packet' ), 'anti-spyware profile: rule actions, also the one the SCM schema does not know (default)' );
+// DNS security: Panorama / firewall have it inside the anti-spyware profile (botnet-domains), SCM in its own dns-security-profiles
+eq( array( isset( $as['item']['botnet_domains']['dns_security_categories'] ), isset( $as['item']['botnet_domains']['lists'] ), isset( $as['item']['_panosphp'] ) ),
+    array( TRUE, TRUE, FALSE ), 'anti-spyware profile of a firewall: DNS security stays inside (botnet_domains), nothing dropped' );
 $av = ApiObjectModel::item( $v->AntiVirusProfileStore->find( 'av1' ) );
 eq( array( $av['resource'], $av['item']['decoder'][0]['name'] ?? null, $av['item']['decoder'][0]['wildfire_action'] ?? null, $av['item']['vsys'] ?? null ),
     array( 'antivirus-profiles', 'http', 'reset-both', 'vsys1' ), 'antivirus profile: own resource (Panorama / firewall)' );

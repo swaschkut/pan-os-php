@@ -211,7 +211,8 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 **Object model.** `tags`, `addresses`, `address-groups`, `services`, `service-groups`, `schedules`, `url-categories`,
 `external-dynamic-lists`, `log-forwarding-profiles`, the security profile resources (`anti-spyware-profiles`,
 `vulnerability-protection-profiles`, `url-access-profiles`, `file-blocking-profiles`, `dns-security-profiles`,
-`wildfire-anti-virus-profiles`; Panorama / firewall: own `antivirus-profiles`, `wildfire-analysis-profiles`),
+`wildfire-anti-virus-profiles`; Panorama / firewall: own `antivirus-profiles`, `wildfire-analysis-profiles`, and DNS
+security inside the anti-spyware profile as `botnet_domains` – SCM has it apart in `dns-security-profiles`),
 `profile-groups`, `zones` and `zone-protection-profiles` answer in the shape of the
 SCM API (`model: scm-v1`, `lib/misc-classes/ApiObjectModel.php`): SCM field names and structure, plus the location of
 the object (`device_group` – `"shared"` for shared –, `vsys`, `template` / `template_stack`; SCM input: `folder`, `snippet`, `device`). Example:
