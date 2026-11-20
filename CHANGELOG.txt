@@ -64,6 +64,7 @@ BUGFIX:
 * bugfix VP / Spyware - to set local-inline to enable with alert-only-set
 * url.alert-only-set-no-empty-alert-allow-members
 * ancestor-objects-take-precedence-rule-filters
+* spyware-local-deep-learning-is-never-written
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes

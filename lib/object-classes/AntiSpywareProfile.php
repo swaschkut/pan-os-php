@@ -383,8 +383,7 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     $xml .= '<entry name="' . $detector . ' Command and Control detector">'
                         . '<inline-policy-action>' . ( $mode == 'alert' ? 'alert' : 'reset-both' ) . '</inline-policy-action>';
-                    if( version_compare( $version, '11.2', '>=' ) )
-                        $xml .= '<local-deep-learning>enable</local-deep-learning>';
+                    // no local deep learning: this release never writes it
                     $xml .= '</entry>';
                 }
                 $xml .= '</mica-engine-spyware-enabled><cloud-inline-analysis>yes</cloud-inline-analysis>';

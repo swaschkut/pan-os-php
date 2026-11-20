@@ -78,59 +78,32 @@ trait sp_action_spyware
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
                 }
 
+                // local deep learning: read only - this release never writes it (not added, not enabled)
                 $tmp_local_deep_learning = DH::findFirstElement("local-deep-learning", $tmp_entry1);
                 if( $tmp_local_deep_learning !== FALSE )
                     $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = $tmp_local_deep_learning->textContent;
-                else
-                {
-                    if( $this->owner->owner->version >= 112 )
-                    {
-                        $tmp_local_deep_learning = DH::findFirstElementOrCreate("local-deep-learning", $tmp_entry1);
-                        $tmp_local_deep_learning->textContent = "disable";
-                        $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = "disable";
-                    }
-
-                }
             }
 
             $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
-            $Unkown_TCP_xmlstring_112 = '<entry name="Unknown-TCP Command and Control detector">
-  <inline-policy-action>alert</inline-policy-action>
-  <local-deep-learning>disable</local-deep-learning>
-</entry>';
 
             $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
-            $Unkown_UDP_xmlstring_112 = '<entry name="Unknown-UDP Command and Control detector">
-  <inline-policy-action>alert</inline-policy-action>
-  <local-deep-learning>disable</local-deep-learning>
-</entry>';
             if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 102)
             {
-                if( $this->owner->owner->version >= 112 )
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring_112);
-                else
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
-                if( $this->owner->owner->version >= 112 )
-                    $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "disable";
             }
             if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 102 )
             {
-                if( $this->owner->owner->version >= 112 )
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring_112);
-                else
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
-                if( $this->owner->owner->version >= 112 )
-                    $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "disable";
             }
         }
         else
@@ -153,35 +126,9 @@ trait sp_action_spyware
   </entry>
 </mica-engine-spyware-enabled>';
 
-            $xmlstring_112 = '<mica-engine-spyware-enabled>
-  <entry name="HTTP Command and Control detector">
-    <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
-  </entry>
-  <entry name="HTTP2 Command and Control detector">
-    <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
-  </entry>
-  <entry name="SSL Command and Control detector">
-    <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
-  </entry>
-  <entry name="Unknown-TCP Command and Control detector">
-    <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
-  </entry>
-  <entry name="Unknown-UDP Command and Control detector">
-    <inline-policy-action>alert</inline-policy-action>
-    <local-deep-learning>enable</local-deep-learning>
-  </entry>
-</mica-engine-spyware-enabled>';
 
-            if( $this->owner !== null && $this->owner->owner->version >= 112 )
-            {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_112);
-                $xml->appendChild($xmlElement);
-            }
-            elseif( $this->owner !== null && $this->owner->owner->version >= 102 )
+            // no local deep learning: this release never writes it
+            if( $this->owner !== null && $this->owner->owner->version >= 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_102);
                 $xml->appendChild($xmlElement);
@@ -196,15 +143,6 @@ trait sp_action_spyware
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
 
-                if( $this->owner !== null && $this->owner->owner->version >= 112 )
-                {
-                    $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['local-deep-learning'] = "enable";
-                    $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['local-deep-learning'] = "enable";
-                    $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['local-deep-learning'] = "enable";
-
-                    $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "enable";
-                    $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "enable";
-                }
             }
         }
 
