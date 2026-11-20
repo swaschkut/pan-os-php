@@ -1,0 +1,4 @@
+{
+    "about": "public keys that may sign licences of pan-os-php plug-ins (PluginLicense). Add the entry that 'license.php keygen' prints (licence tool, private repository). Only public keys here - never a signing key.",
+    "keys": []
+}

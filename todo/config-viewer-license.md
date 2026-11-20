@@ -1,6 +1,6 @@
 # Config viewer: licences (editions and features)
 
-**Status:** decisions taken 2026-11-20, nothing built yet. **On hold (Sven, 2026-11-20):** the open decision on the strength (6) is postponed - do not build before it is taken.
+**Status:** all decisions taken 2026-11-20; foundation built (see Progress).
 **Related:** [config-viewer-api.md](config-viewer-api.md)
 
 ## Decisions (Sven, 2026-11-20)
@@ -12,7 +12,11 @@
 | 3 | Licensed features | future work, each one a feature name: `migration`, `cdss`, more to come |
 | 4 | Bound to | the **customer** only (name in the licence) - not to an installation, not to a number of users |
 | 5 | Withdraw | no immediate withdrawal offline; see "Withdraw" below |
-| 6 | Strength (proposal, not yet confirmed) | step 1: signed licence file checked in the open code; built so that step 2 (licensed features as a separate, not public add-on) fits later |
+| 6 | Strength | **encrypted plug-ins** (Sven, 2026-11-20): the code of a licensed plug-in is shipped encrypted, the key comes with the signed licence; a new key per release |
+| 7 | Encryption | **own, with PHP sodium** (XChaCha20-Poly1305 for packages, Ed25519 for licences) - no commercial encoder |
+| 8 | Packages | **one package for all customers** per release (no build per customer) |
+| 9 | Run time | **12 months, 14 days grace** by default; warning 30 days before the end; after the grace only licensed plug-ins stop - basic and all data stay |
+| 10 | Licence per | **vendor family** (from config-viewer-migration.md: Cisco, CheckPoint, Juniper, Forcepoint, Sophos, …) - one feature name per family, e.g. `migration-cisco` |
 
 ## What a licence can and can not do
 
@@ -78,9 +82,17 @@ Needed for it:
 Alternative for the encryption: commercial encoders (ionCube, SourceGuardian) - byte code instead of source, harder
 to rebuild; licence fees, a loader extension in the image, supported PHP versions to check first.
 
+## Progress
+
+| Date | Step | State |
+|---|---|---|
+| 2026-11-20 | `lib/misc-classes/PluginLicense.php` (verify Ed25519 licence, states valid / warning / grace / expired, withdrawn ids `lib/resources/license/revoked.json`, trusted public keys `lib/resources/license/keys.json`), `PluginPackage.php` (encrypted `<name>.ppp`, mounted in memory as `ppp://<name>/…`, `PANOSPHP_PLUGIN_PACKAGES` + `PANOSPHP_LICENSE` for runs) | done, `tests/test_plugin_license.php` (23 checks) |
+| 2026-11-20 | viewer: licence in the data directory (`license.txt`), `GET` / `PUT` / `DELETE license` (admin), page Account → Licence; packages in the plug-in folders load only when licensed (Account → Plug-ins shows why not); runs of a package get the package and the licence (process and container); clock set back → locked; job runner reloads plug-ins when the licence changes | done, `tests/test_config_viewer.php` (licence part), container test |
+| 2026-11-20 | licence tool `license/license.php` in the private repository: `keygen`, `pack`, `create`, `show`, `list`; key folder with signing key, release keys, register | done, tried end to end (pack migration → licence → run from the package) |
+| | Sven: `keygen` once, public key into `keys.json`, commit; packages into the air-gap bundle; licence for the first customer | open |
+
 ## Open
 
-1. Decision 6 (on hold): signed licence checked in the open code only (step 1), or encrypted plug-ins (proposal above)? Own encryption or a commercial encoder? One package for all customers or one per customer?
 2. Run time by default (12 months?) and grace period after the end (0 / 14 / 30 days?).
 3. Where the register of created licences lives (file next to the private key / small database).
 4. Feature names and what exactly belongs to `migration` and `cdss` (routes, run types, playbook steps).

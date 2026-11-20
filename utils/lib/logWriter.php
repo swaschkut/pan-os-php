@@ -56,18 +56,23 @@ class logWriter
     {
         $this->util = $util;
 
-        $log_folder = __DIR__ . "/../../log";
+        // PANOSPHP_LOG_DIR: where the log goes (e.g. the folder of a run in the config viewer). Default: log/ of
+        // pan-os-php; when that can not be written (read-only installation, container), the temp folder.
+        $log_folder = getenv( 'PANOSPHP_LOG_DIR' ) ?: __DIR__ . "/../../log";
+        if( !is_dir( $log_folder ) && !@mkdir( $log_folder, 0777, true ) && !is_dir( $log_folder ) )
+            $log_folder = sys_get_temp_dir() . "/pan-os-php-log";
+        if( !is_dir( $log_folder ) )
+            @mkdir( $log_folder, 0700, true );
         $log_file = $log_folder."/tool-log.txt";
         $this->log_file = $log_file;
         $this->params = array_merge($this->options, $params);
         //Create log file if it doesn't exist.
         if( !file_exists($log_file) )
         {
-            if( !file_exists($log_folder) )
-            {
-                mkdir($log_folder, 0777, true);
-            }
-            fopen($log_file, 'w') or exit("Can't create $log_file!");
+            $fh = @fopen($log_file, 'w');
+            if( $fh === FALSE )
+                exit("Can't create $log_file!");
+            fclose( $fh );
         }
         //Check permissions of file.
         if( !is_writable($log_file) )

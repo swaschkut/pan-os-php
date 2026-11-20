@@ -448,3 +448,15 @@ VIEWER_PLUGINS_DIR=/path/to/plugins docker compose -f docker-compose.yml up -d
 The compose file mounts it read-only into web, service and job runner (`/plugins`) and tells the job runner the host path (`PANOSPHP_VIEWER_CONTAINER_PLUGINS`), so that a run of the plug-in gets its folder. Without Docker: `PANOSPHP_VIEWER_PLUGINS=/path/to/plugins` for web part, service and job runner. Account → Plug-ins shows whether it was loaded.
 
 A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes and own pages, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
+
+## Licence and licensed plug-ins
+
+Basic is everything without a licence. Licensed plug-ins (e.g. migration) are delivered as encrypted packages `<name>.ppp`: put the file into the plug-in folder (`VIEWER_PLUGINS_DIR` / `PANOSPHP_VIEWER_PLUGINS`) and install the licence under Account → Licence (admin; paste the text or choose the file). Account → Plug-ins shows each package as on or locked, with the reason (no licence, feature missing, licence ended, key of this release missing, clock set back).
+
+* The licence is signed (Ed25519) by the maker; the public keys pan-os-php trusts are in `lib/resources/license/keys.json`, withdrawn licence ids in `lib/resources/license/revoked.json` (ship with every release - the way to withdraw without an online check).
+* A package is decrypted only in memory (`ppp://<name>/…`); its key is in the licence, a new key per release - a licence that is not renewed does not open newer releases.
+* After the end date: 14 days grace (default), then the packages are locked. Basic and all data stay.
+* The licence is stored in the data directory (`license.txt`); `GET license` shows it without keys; the audit log notes the change, not the text.
+* What it does not do: stop a customer who changes pan-os-php on his own computer. It does stop everyone without a licence from having the code at all.
+
+Licences and packages are made with the licence tool in the private repository (`license/license.php`).

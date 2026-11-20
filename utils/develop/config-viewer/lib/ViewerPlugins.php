@@ -36,8 +36,12 @@
  * would install as part of the viewer. What a plug-in may NOT do is decided here, at load time: a description that
  * does not fit is refused as a whole (ViewerPlugins::$errors, shown to admins).
  *
- * 'feature' names the licensed feature the plug-in belongs to (todo/config-viewer-license.md) - checked through
- * ViewerApp::featureOn(); a plug-in without it belongs to basic.
+ * 'feature' names the licensed feature the plug-in belongs to (todo/config-viewer-license.md); a plug-in without it
+ * belongs to basic.
+ *
+ * Two forms: a folder <name>/ with plugin.php (the source - development, or a basic plug-in), or an encrypted
+ * package <name>.ppp (licensed plug-ins as delivered): loaded only with a licence that holds its feature and the key
+ * of its release (lib/misc-classes/PluginPackage.php); its files are read from memory as ppp://<name>/….
  */
 class ViewerPlugins
 {
@@ -51,7 +55,10 @@ class ViewerPlugins
     /** @var string[] folder => why it was not loaded */
     public $errors = array();
 
-    public static function load( string $viewerDir ): ViewerPlugins
+    /** @var array name => header of packages that were not loaded (not licensed) - shown to admins */
+    public $locked = array();
+
+    public static function load( string $viewerDir, ?PluginLicense $licence = null, ?callable $featureOn = null ): ViewerPlugins
     {
         $all = new ViewerPlugins();
         $dirs = array( $viewerDir . '/plugins' );
@@ -59,6 +66,42 @@ class ViewerPlugins
         if( $extra !== '' )
             $dirs[] = rtrim( $extra, '/' );
         foreach( $dirs as $dir )
+        {
+            // encrypted packages
+            foreach( glob( $dir . '/*.ppp' ) ?: array() as $pkg )
+            {
+                $folder = basename( $pkg, '.ppp' );
+                try
+                {
+                    $head = PluginPackage::header( $pkg );
+                    if( $head['name'] !== $folder )
+                        throw new Exception( 'the file name must be ' . $head['name'] . '.ppp' );
+                    if( $licence === null )
+                        throw new Exception( 'not licensed: no licence installed' );
+                    if( $featureOn !== null && !$featureOn( $head['feature'] ) )
+                        throw new Exception( 'not licensed: the licence does not hold the feature ' . $head['feature'] . ', ended, or the clock was set back' );
+                    PluginPackage::mount( $pkg, $licence );
+                    $p = self::check( $folder, self::read( 'ppp://' . $folder . '/plugin.php' ) );
+                    if( $p['feature'] !== $head['feature'] )
+                        throw new Exception( 'the feature of the package and of plugin.php differ' );
+                    if( isset( $all->plugins[$p['name']] ) )
+                        throw new Exception( 'a plug-in with this name is loaded already' );
+                    $p['dir'] = 'ppp://' . $folder;
+                    $p['builtin'] = FALSE;
+                    $p['package'] = (string)realpath( $pkg );
+                    foreach( $p['runs'] as $k => $r )
+                        $p['runs'][$k] += array( 'dir' => $p['dir'], 'builtin' => FALSE, 'package' => $p['package'] );
+                    $all->plugins[$p['name']] = $p;
+                }
+                catch( Throwable $e )
+                {
+                    if( isset( $head ) && strpos( $e->getMessage(), 'not licensed' ) === 0 )
+                        $all->locked[$folder] = array( 'version' => (string)( $head['version'] ?? '' ), 'feature' => $head['feature'], 'why' => $e->getMessage() );
+                    else
+                        $all->errors[$folder . '.ppp'] = $e->getMessage();
+                }
+                unset( $head );
+            }
             foreach( glob( $dir . '/*/plugin.php' ) ?: array() as $file )
             {
                 $folder = basename( dirname( $file ) );
@@ -82,6 +125,7 @@ class ViewerPlugins
                     $all->errors[$folder] = $e->getMessage();
                 }
             }
+        }
         return $all;
     }
 
@@ -174,7 +218,7 @@ class ViewerPlugins
                 throw new Exception( 'run ' . $run . ': "input" is version or none' );
             if( $input === 'none' && $result === null )
                 throw new Exception( 'run ' . $run . ': a run without a version needs "result"' );
-            $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'input' => $input, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
+            $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'feature' => $out['feature'], 'input' => $input, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
                 'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'], 'env' => $env );
         }
         foreach( (array)( $p['playbookTypes'] ?? array() ) as $t )

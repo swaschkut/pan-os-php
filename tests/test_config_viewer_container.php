@@ -84,6 +84,15 @@ $cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plug
 eq( array( in_array( 'type=bind,src=/srv/plugins/migration,dst=/plugin,readonly', $cmd, TRUE ), in_array( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ),
     array_search( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ) < array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ),
     'plug-in with files: its folder read-only at /plugin, environment before the image' );
+// an encrypted plug-in: the package file read-only, the licence (one line) and %PLUGIN% = ppp://<name>
+$pp = array( 'pluginPackage' => '/plugins/migration.ppp', 'licence' => '-----BEGIN PAN-OS-PHP LICENSE-----' . str_repeat( 'QUJD', 20 ) . '-----END PAN-OS-PHP LICENSE-----' ) + $pj;
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pp ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pp ); } );
+eq( array( in_array( 'type=bind,src=/srv/plugins/migration.ppp,dst=/plugins/migration.ppp,readonly', $cmd, TRUE ), in_array( 'PANOSPHP_PLUGIN_PACKAGES=/plugins/migration.ppp', $cmd, TRUE ),
+    in_array( $pp['licence'], array_map( function( $a ) { return substr( $a, strlen( 'PANOSPHP_LICENSE=' ) ); }, preg_grep( '/^PANOSPHP_LICENSE=/', $cmd ) ), TRUE ),
+    in_array( 'PANOSPHP_MIGRATION_PARSERS=ppp://migration/parser', $cmd, TRUE ), in_array( 'type=bind,src=/srv/plugins/migration,dst=/plugin,readonly', $cmd, TRUE ) ),
+    array( TRUE, TRUE, TRUE, TRUE, FALSE ), 'encrypted plug-in: package file, licence, files of the plug-in from ppp:// - no folder of clear text' );
+eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pp ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'licence' => "x\n--privileged" ) + $pp ); } ), 0, 6 ),
+    'error:', 'encrypted plug-in: a licence value that is no licence block is refused' );
 eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/../etc' ), function() { ViewerContainer::fromEnv( '/data' ); return 'x'; } ), 0, 6 ), 'error:', 'refused setting: plug-in folder with ..' );
 $cmd = withEnv( array( 'PANOSPHP_VIEWER_CONTAINER' => 'podman' ) + $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
 eq( $cmd[0], 'podman', 'podman: same call' );

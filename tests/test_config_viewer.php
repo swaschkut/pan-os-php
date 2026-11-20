@@ -59,8 +59,24 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
         'args' => function( \$run ) { return array( 'vendor=' . \$run->choice( 'vendor' ), 'file=' . \$run->file( 'source', 'mig-source' ), 'out=' . \$run->out( 'out.xml' ),
             'shadow-ignoreinvalidaddressobjects', '#kinds=' . implode( '+', \$run->choices( 'kinds' ) ) ); } ) ) );" );
 
+// an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
+require_once $here . '/../lib/misc-classes/PluginLicense.php';
+require_once $here . '/../lib/misc-classes/PluginPackage.php';
+require_once $here . '/plugin_license_helper.php';
+$licKeys = testLicenceKeys();
+$pkFiles = array( 'plugin.php' => "<?php return array( 'api' => 1, 'name' => 'pack', 'title' => 'Packed', 'version' => '1.0', 'feature' => 'test-pack',
+    'kinds' => array( 'cfg' => array( 'title' => 'router configuration', 'format' => 'raw' ) ),
+    'runs' => array( 'import' => array( 'title' => 'Packed import', 'tool' => 'vendor-migration', 'input' => 'none', 'result' => 'out.xml',
+        'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' ),
+        'fields' => array( array( 'name' => 'source', 'kind' => 'file:cfg', 'required' => TRUE ) ),
+        'args' => function( \$run ) { return array( 'vendor=ciscoisr', 'file=' . \$run->file( 'source', 'pack-cfg' ), 'out=' . \$run->out( 'out.xml' ) ); } ) ) );" );
+foreach( glob( $here . '/../migration/parser/CISCOISR/*.php' ) as $f )
+    $pkFiles['parser/CISCOISR/' . basename( $f )] = file_get_contents( $f );
+$pkRel = testPack( $plugins, 'pack', '1.0', 'test-pack', $pkFiles );
+
 // ---- users, server
-$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins );
+$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins,
+    'PANOSPHP_LICENSE_TEST_KEYS' => testTrustedJson( $licKeys ) );
 foreach( array( 'alice' => 'alice-secret-1 admin', 'bob' => 'bob-secret-12', 'carol' => 'carol-secret-3' ) as $name => $spec )
 {
     $parts = explode( ' ', $spec );
@@ -804,6 +820,46 @@ eq( count( $alice->call( 'GET', 'projects/' . $OPT . '/configs' )[1]['configs'] 
 eq( status( $alice->call( 'POST', $migRun . '/save', array( 'project' => substr( $P, 9 ) === $OPT ? 'x' : str_repeat( '0', 32 ) ) ) ), 404, 'plug-ins: no result into an unknown project' );
 eq( status( $alice->call( 'DELETE', 'projects/' . $OPT ) ), 200, 'plug-ins: other project deleted' );
 eq( status( $alice->call( 'DELETE', $PL ) ), 200, 'plug-ins: project deleted' );
+
+// ---- 12l. licence and an encrypted plug-in package
+$m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
+$pk = array_values( array_filter( $m['plugins'] ?? array(), function( $x ) { return $x['name'] === 'pack'; } ) )[0] ?? array();
+eq( array( $pk['on'] ?? null, $pk['form'] ?? null, $pk['why'] ?? null, isset( $m['runs']['pack-import'] ) ), array( FALSE, 'package', 'not licensed: no licence installed', FALSE ),
+    'licence: without a licence the package is locked, the admin sees why, no run type' );
+eq( status( $bob->call( 'GET', 'license' ) ), 404, 'licence: not for users who are no admin' );
+$r = $alice->call( 'GET', 'license' );
+eq( array( status( $r ), array_key_exists( 'licence', (array)$r[1] ) ? $r[1]['licence'] : 'x' ), array( 200, null ), 'licence: none installed' );
+$licText = testLicence( $licKeys, array( 'id' => 'L-VIEWER', 'customer' => 'Viewer test', 'features' => array( 'test-pack' ), 'keys' => array( $pkRel['kid'] => $pkRel['key'] ) ) );
+$r = $alice->call( 'PUT', 'license', array( 'license' => str_replace( 'Viewer test', 'Viewer tesT', $licText ) ) );
+eq( status( $r ), 200, 'licence: the text around the block is not part of the licence' );
+$forged = testLicence( testLicenceKeys(), array( 'features' => array( 'test-pack' ) ) );
+eq( array( status( $r = $alice->call( 'PUT', 'license', array( 'license' => $forged ) ) ), strpos( $r[1]['error'] ?? '', 'licence: signed with an unknown key' ) ), array( 400, 0 ), 'licence: a licence of an unknown key is refused' );
+$r = $alice->call( 'PUT', 'license', array( 'license' => $licText ) );
+eq( array( status( $r ), $r[1]['licence']['customer'] ?? null, $r[1]['licence']['state'] ?? null, array_key_exists( 'keys', $r[1]['licence'] ?? array( 'keys' => 1 ) ) ),
+    array( 200, 'Viewer test', 'valid', FALSE ), 'licence: installed, shown without keys' );
+$m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
+eq( array( isset( $m['runs']['pack-import'] ), $m['kinds']['pack-cfg'] ?? null ), array( TRUE, 'router configuration' ), 'licence: the package is loaded, its run type is offered' );
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Licensed' ) );
+$LP = 'projects/' . $r[1]['pid'];
+$cfgFid = $up( $alice, $LP, 'pack-cfg', "hostname R1\nip access-list extended T1\n permit tcp host 10.1.1.1 host 10.2.0.9 eq 443\n deny ip any any\n" )[1]['fid'] ?? '';
+$r = $alice->call( 'POST', $LP . '/pack-import/runs', array( 'source' => $cfgFid ) );
+eq( status( $r ), 202, 'licence: run of the package queued' );
+$lrun = $LP . '/runs/' . ( $r[1]['jid'] ?? 'x' );
+$r = waitRun( $alice, $lrun );
+eq( array( $r[1]['state'] ?? null, $r[1]['error'] ?? null ), array( 'done', null ), 'licence: run of the package done' );
+$log = (string)( $alice->call( 'GET', $lrun . '/files/run.log' )[1] ?? '' );
+eq( strpos( $log, 'vendor parser from PANOSPHP_MIGRATION_PARSERS: CISCOISR/CISCOISR.php' ) !== FALSE, TRUE, 'licence: the run used the parser from the package (decrypted in memory)' );
+eq( preg_grep( '/BEGIN PAN-OS-PHP LICENSE|LICENSE-----/', array_column( $r[1]['files'] ?? array(), 'name' ) ), array(), 'licence: no licence among the result files' );
+$au = json_encode( $alice->call( 'GET', 'audit?limit=50' )[1] ?? array() );
+eq( array( strpos( $au, 'PUT' ) !== FALSE, strpos( $au, 'BEGIN PAN-OS-PHP' ) ), array( TRUE, FALSE ), 'licence: installing is in the audit log, the licence text is not' );
+// a clock that is set back locks licensed plug-ins
+file_put_contents( $data . '/license-clock', (string)( time() + 86400 * 400 ) );
+$m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
+eq( array( isset( $m['runs']['pack-import'] ), $alice->call( 'GET', 'license' )[1]['clock'] ?? null ), array( FALSE, 'set back' ), 'licence: clock set back - package locked' );
+unlink( $data . '/license-clock' );
+eq( status( $alice->call( 'DELETE', 'license' ) ), 200, 'licence: removed' );
+eq( isset( ( $alice->call( 'GET', 'meta' )[1]['plugins']['runs'] ?? array() )['pack-import'] ), FALSE, 'licence: removed - package locked again' );
+eq( status( $alice->call( 'DELETE', $LP ) ), 200, 'licence: project deleted' );
 
 // ---- 13. stopping the service stops its workers
 $bob->login( 'bob', 'bob-secret-12' );

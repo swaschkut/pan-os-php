@@ -32,6 +32,9 @@
  *    which accepts only paths inside the data directory; a worker only gets validated arguments (whitelist of types
  *    and actions, no file / API input)
  */
+// licences and encrypted plug-in packages (no other part of the pan-os-php library is loaded by the web part)
+require_once dirname(__FILE__) . '/../../../../lib/misc-classes/PluginLicense.php';
+require_once dirname(__FILE__) . '/../../../../lib/misc-classes/PluginPackage.php';
 require_once dirname(__FILE__) . '/ViewerPlugins.php';
 
 class ViewerException extends Exception
@@ -119,7 +122,8 @@ class ViewerApp
         if( PHP_SAPI !== 'cli' && $docRoot !== FALSE && strpos( $this->dataDir . '/', rtrim( $docRoot, '/' ) . '/' ) === 0 )
             throw new ViewerException( 'data directory is inside the web root - set PANOSPHP_VIEWER_DATA to a folder outside of it', 500 );
 
-        $this->plugins = ViewerPlugins::load( dirname( __FILE__, 2 ) );
+        $this->plugins = ViewerPlugins::load( dirname( __FILE__, 2 ), $this->licence(), function( $f ) { return $this->featureOn( $f ); } );
+        $this->refreshPlugins();
         @mkdir( $this->dataDir . '/projects', 0700, TRUE );
         @mkdir( $this->dataDir . '/run', 0700, TRUE );
         if( strlen( $this->dataDir ) > 60 )
@@ -476,24 +480,128 @@ class ViewerApp
     }
 
     /** POST …/configs/<cid>/<type>/runs - queues a run; bin/jobs.php executes it */
+    // ------------------------------------------------------------------ licence (todo/config-viewer-license.md)
+
+    private $licenceCache = FALSE;
+
+    /** the installed licence (data directory: license.txt), or null when there is none or it is not valid */
+    public function licence(): ?PluginLicense
+    {
+        if( $this->licenceCache === FALSE )
+        {
+            $this->licenceCache = null;
+            $text = @file_get_contents( $this->dataDir . '/license.txt' );
+            if( is_string( $text ) && $text !== '' )
+                try
+                {
+                    $this->licenceCache = PluginLicense::parse( $text );
+                }
+                catch( Exception $e )
+                {
+                    $this->licenceError = $e->getMessage();
+                }
+        }
+        return $this->licenceCache;
+    }
+
+    private $licenceError = null;
+    private $licenceStamp = null;
+
     /**
-     * is a licensed feature switched on ? The one place for the licence check (todo/config-viewer-license.md).
-     * Until licences are built every feature is on; null = basic.
+     * long running processes (job runner): load the plug-ins again when the licence was installed, changed or removed
+     * since they were loaded
+     */
+    public function refreshPlugins(): void
+    {
+        clearstatcache( TRUE, $this->dataDir . '/license.txt' );
+        $stamp = @filemtime( $this->dataDir . '/license.txt' ) . ':' . @filesize( $this->dataDir . '/license.txt' );
+        if( $this->licenceStamp === null )
+            $this->licenceStamp = $stamp;
+        if( $stamp === $this->licenceStamp )
+            return;
+        $this->licenceStamp = $stamp;
+        $this->licenceCache = FALSE;
+        $this->licenceError = null;
+        $this->plugins = ViewerPlugins::load( dirname( __FILE__, 2 ), $this->licence(), function( $f ) { return $this->featureOn( $f ); } );
+    }
+
+    /**
+     * "now" for the licence: the newest time the viewer has seen (data directory: license-clock). A clock that is set
+     * back more than an hour before it is noted - licensed features stop until the clock is right again.
+     * @return int|null null = the clock was set back
+     */
+    private function licenceNow(): ?int
+    {
+        $file = $this->dataDir . '/license-clock';
+        $now = time();
+        $last = (int)@file_get_contents( $file );
+        if( $last > $now + 3600 )
+            return null;
+        if( $now - $last > 600 )
+            @file_put_contents( $file, (string)$now, LOCK_EX );
+        return max( $now, $last );
+    }
+
+    /**
+     * is a licensed feature switched on ? The one place for the licence check. null = basic (always on). Plug-ins in
+     * folders (source) are not checked here - only encrypted packages need the licence (ViewerPlugins).
      */
     public function featureOn( ?string $feature ): bool
     {
-        return TRUE;
+        if( $feature === null )
+            return TRUE;
+        $l = $this->licence();
+        $now = $this->licenceNow();
+        return $l !== null && $now !== null && $l->hasFeature( $feature, $now );
+    }
+
+    /** for the page (admins): the licence without its keys, its state, and what it unlocks */
+    public function licenceInfo(): array
+    {
+        $l = $this->licence();
+        $now = $this->licenceNow();
+        return array( 'licence' => $l !== null ? $l->summary( $now ?? time() ) : null, 'error' => $this->licenceError, 'clock' => $now === null ? 'set back' : 'ok',
+            'trusted_keys' => count( PluginLicense::trustedKeys() ) );
+    }
+
+    /** install a licence (admin): it must be valid for this installation, then it replaces the one before */
+    public function licenceSet( $text ): array
+    {
+        if( !is_string( $text ) || strlen( $text ) > 200000 )
+            throw new ViewerException( 'licence: text expected', 400 );
+        try
+        {
+            $l = PluginLicense::parse( $text );
+        }
+        catch( Exception $e )
+        {
+            throw new ViewerException( $e->getMessage(), 400 );
+        }
+        if( !$l->usable() )
+            throw new ViewerException( 'licence: ended on ' . $l->data['valid_until'], 400 );
+        $tmp = $this->dataDir . '/license.txt.tmp';
+        file_put_contents( $tmp, $l->text . "\n" );
+        @chmod( $tmp, 0600 );
+        rename( $tmp, $this->dataDir . '/license.txt' );
+        $this->licenceCache = FALSE;
+        return $this->licenceInfo();
+    }
+
+    public function licenceDelete(): void
+    {
+        @unlink( $this->dataDir . '/license.txt' );
+        $this->licenceCache = FALSE;
     }
 
     /** run types of the plug-ins that are switched on: name => description */
     public function pluginRuns(): array
     {
-        return $this->plugins->runs( function( $p ) { return $this->featureOn( $p['feature'] ); } );
+        return $this->plugins->runs();
     }
 
     private function pluginKinds(): array
     {
-        return $this->plugins->kinds( function( $p ) { return $this->featureOn( $p['feature'] ); } );
+        return $this->plugins->kinds();
     }
 
     /** all run types: the ones of the viewer and of the plug-ins */
@@ -508,8 +616,10 @@ class ViewerApp
         $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array() );
         foreach( $this->plugins->plugins as $p )
         {
-            $on = $this->featureOn( $p['feature'] );
-            $out['plugins'][] = array( 'name' => $p['name'], 'title' => $p['title'], 'version' => $p['version'], 'feature' => $p['feature'], 'on' => $on );
+            // a package is loaded only when it is licensed; a plug-in in a folder is the source (development / basic)
+            $on = TRUE;
+            $out['plugins'][] = array( 'name' => $p['name'], 'title' => $p['title'], 'version' => $p['version'], 'feature' => $p['feature'], 'on' => $on,
+                'form' => isset( $p['package'] ) ? 'package' : 'folder' );
             if( !$on )
                 continue;
             foreach( $p['runs'] as $name => $r )
@@ -521,6 +631,9 @@ class ViewerApp
                     $out['rawKinds'][] = $name;
             }
         }
+        foreach( $this->plugins->locked as $name => $l )
+            $out['plugins'][] = array( 'name' => $name, 'title' => $name, 'version' => $l['version'], 'feature' => $l['feature'], 'on' => FALSE, 'form' => 'package',
+                'why' => $admin ? $l['why'] : null );
         if( $admin )
             $out['errors'] = $this->plugins->errors;
         return $out;
@@ -740,7 +853,7 @@ class ViewerApp
             if( !is_array( $step ) || !isset( $step['type'] ) || !is_string( $step['type'] ) )
                 $bad( $at . '"type" missing' );
             if( !in_array( $step['type'], self::PLAYBOOK_TYPES, TRUE )
-                && !in_array( $step['type'], $this->plugins->playbookTypes( function( $p ) { return $this->featureOn( $p['feature'] ); } ), TRUE ) )
+                && !in_array( $step['type'], $this->plugins->playbookTypes(), TRUE ) )
                 $bad( $at . 'type "' . substr( $step['type'], 0, 40 ) . '" is not available in a playbook here' );
             $values = array();
             foreach( $step as $key => $value )
@@ -921,6 +1034,7 @@ class ViewerApp
     /** @return array|null the next queued job with 'dir', 'config' (absolute paths) - marked as running */
     public function runnerTake(): ?array
     {
+        $this->refreshPlugins();
         $this->db->beginTransaction();
         $j = $this->q( "SELECT j.*, p.pid, c.file FROM jobs j JOIN projects p ON p.id = j.project_id LEFT JOIN configs c ON c.id = j.config_id
             WHERE j.state = 'queued' ORDER BY j.id LIMIT 1" )->fetch();
@@ -964,7 +1078,23 @@ class ViewerApp
         $env = array();
         foreach( $pr['env'] ?? array() as $k => $v )
             $env[$k] = str_replace( '%PLUGIN%', $pr['dir'], $v );
+        // an encrypted plug-in: the run mounts the package itself (pan-os-php: PluginPackage::bootFromEnv) - with the licence
+        $package = $pr['package'] ?? null;
+        $licenceText = null;
+        if( $package !== null )
+        {
+            $l = $this->licence();
+            if( $l === null || !$this->featureOn( $pr['feature'] ?? '' ) )
+            {
+                $this->runnerFinish( (int)$j['id'], 'failed', 'not licensed (any more)' );
+                return $this->runnerTake();
+            }
+            $licenceText = $l->compact();
+            $env['PANOSPHP_PLUGIN_PACKAGES'] = $package;
+            $env['PANOSPHP_LICENSE'] = $licenceText;
+        }
         return array( 'env' => $env, 'rawEnv' => $pr['env'] ?? array(), 'plugin' => $pr['plugin'] ?? null, 'pluginBuiltin' => $pr['builtin'] ?? FALSE,
+            'pluginPackage' => $package, 'licence' => $licenceText,
             'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noVersion ? null : $config,
             'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noVersion ? null : $j['file'], 'rawArgs' => $rawArgs );
     }

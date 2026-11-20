@@ -110,10 +110,23 @@ class ViewerContainer
             '--tmpfs', '/tmp:rw,noexec,nosuid,size=256m',
             '--mount', $this->mount( 'projects/' . $job['pid'], '/project', TRUE ),
             '--mount', $this->mount( 'projects/' . $job['pid'] . '/jobs/' . $job['jid'], '/job', FALSE ),
-            '--workdir', '/job', '--env', 'HOME=/job', '--env', 'TMPDIR=/job' );
+            '--workdir', '/job', '--env', 'HOME=/job', '--env', 'TMPDIR=/job', '--env', 'PANOSPHP_LOG_DIR=/job/log' );
         // a run type of a plug-in that needs its files: the folder of the plug-in read-only at /plugin (a plug-in shipped in
         // the image is there already)
-        if( count( $job['rawEnv'] ?? array() ) )
+        if( !empty( $job['pluginPackage'] ) )
+        {
+            // an encrypted plug-in: the package file read-only, the licence as environment; the run decrypts in memory
+            if( !preg_match( '/^[a-z][a-z0-9]{1,30}$/', (string)( $job['plugin'] ?? '' ) ) || !preg_match( '#^[A-Za-z0-9+/=: _.-]{40,20000}$#', (string)( $job['licence'] ?? '' ) ) )
+                throw new Exception( 'container: invalid plug-in package' );
+            if( $this->plugins === '' )
+                throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS is not set (the folder of the plug-ins on the host)' );
+            array_push( $cmd, '--mount', 'type=bind,src=' . $this->plugins . '/' . $job['plugin'] . '.ppp,dst=/plugins/' . $job['plugin'] . '.ppp,readonly',
+                '--env', 'PANOSPHP_PLUGIN_PACKAGES=/plugins/' . $job['plugin'] . '.ppp', '--env', 'PANOSPHP_LICENSE=' . $job['licence'] );
+            foreach( $job['rawEnv'] ?? array() as $k => $v )
+                if( preg_match( '/^PANOSPHP_[A-Z0-9_]{1,40}$/', (string)$k ) && strpos( (string)$k, 'PANOSPHP_VIEWER_' ) !== 0 )
+                    array_push( $cmd, '--env', $k . '=' . str_replace( '%PLUGIN%', 'ppp://' . $job['plugin'], (string)$v ) );
+        }
+        elseif( count( $job['rawEnv'] ?? array() ) )
         {
             if( !preg_match( '/^[a-z][a-z0-9]{1,30}$/', (string)( $job['plugin'] ?? '' ) ) )
                 throw new Exception( 'container: invalid plug-in' );

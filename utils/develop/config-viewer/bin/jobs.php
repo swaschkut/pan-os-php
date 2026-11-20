@@ -127,9 +127,13 @@ while( !$stop )
     while( count( $running ) < $parallel && ( $job = $app->runnerTake() ) !== null )
     {
         $log = $job['dir'] . '/run.log';
-        $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'] );
+        // the log of pan-os-php (tool-log.txt) goes to the folder of the run, not into the installation
+        $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'], 'PANOSPHP_LOG_DIR' => $job['dir'] . '/log' );
         // what a run type of a plug-in sets (checked names: PANOSPHP_…, not PANOSPHP_VIEWER_…)
         $env += $job['env'];
+        // tests only: the extra licence keys of the test (lib/misc-classes/PluginLicense.php)
+        if( getenv( 'PANOSPHP_LICENSE_TEST_KEYS' ) )
+            $env['PANOSPHP_LICENSE_TEST_KEYS'] = (string)getenv( 'PANOSPHP_LICENSE_TEST_KEYS' );
         if( $container !== null )
         {
             try
@@ -148,11 +152,11 @@ while( !$stop )
                 if( getenv( $k ) !== FALSE )
                     $env[$k] = (string)getenv( $k );
             $env['HOME'] = (string)( getenv( 'HOME' ) ?: '/' );
-            unset( $env['TMPDIR'] );
+            unset( $env['TMPDIR'], $env['PANOSPHP_LOG_DIR'] );
         }
         else
             $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['tool'] ), $job['config'] !== null ? array( 'in=' . $job['config'] ) : array(), $job['args'] );
-        $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, 'w' ), 2 => array( 'file', $log, 'a' ) ), $pipes, $job['dir'], $env );
+        $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, 'w' ), 2 => array( 'redirect', 1 ) ), $pipes, $job['dir'], $env );
         if( !is_resource( $proc ) )
         {
             $app->runnerFinish( $job['id'], 'failed', 'the run could not be started' );

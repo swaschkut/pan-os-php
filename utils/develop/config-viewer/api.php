@@ -139,7 +139,7 @@ try
         $user['is_admin'] = 0;
         $csrf = null;
         $viewerAudit['token'] = $user['token']['tid'];
-        if( in_array( $r0, array( 'logout', 'password', 'users' ), TRUE ) )
+        if( in_array( $r0, array( 'logout', 'password', 'users', 'license' ), TRUE ) )
             throw new ViewerException( 'not found', 404 );
     }
     else
@@ -187,6 +187,22 @@ try
 
     if( $r0 === 'audit' && $method === 'GET' && count( $route ) == 1 )
         viewerOut( array( 'audit' => $app->auditList( $user, null, $_GET ) ) );
+
+    // licence (admins): GET state, PUT install {"license": "<text>"}, DELETE remove
+    if( $r0 === 'license' && count( $route ) == 1 )
+    {
+        if( !$admin )
+            throw new ViewerException( 'not found', 404 );
+        if( $method === 'GET' )
+            viewerOut( $app->licenceInfo() );
+        if( $method === 'PUT' )
+            viewerOut( $app->licenceSet( viewerBody()['license'] ?? null ) );
+        if( $method === 'DELETE' )
+        {
+            $app->licenceDelete();
+            viewerOut( array( 'ok' => TRUE ) );
+        }
+    }
 
     if( $r0 === 'users' )
     {

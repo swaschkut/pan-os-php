@@ -214,6 +214,10 @@ require_once $basedir . '/misc-classes/PanSCMAPIConnector.php';
 require_once $basedir . '/misc-classes/PanSCMExportConnector.php';
 require_once $basedir . '/misc-classes/SCMChangeGenerator.php';
 require_once $basedir . '/misc-classes/ApiObjectModel.php';
+require_once $basedir . '/misc-classes/PluginLicense.php';
+require_once $basedir . '/misc-classes/PluginPackage.php';
+// encrypted plug-in packages of a run (PANOSPHP_PLUGIN_PACKAGES + PANOSPHP_LICENSE): mounted as ppp://<name>/…
+PluginPackage::bootFromEnv();
 require_once $basedir . '/misc-classes/SCMImporter.php';
 require_once $basedir . '/misc-classes/trait/StatCollectorTrait.php';
 

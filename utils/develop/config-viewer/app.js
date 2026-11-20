@@ -99,12 +99,33 @@ async function showAccount() {
     if (state.admin) {
         const pl = (await api('GET', 'meta')).plugins || { plugins: [], errors: {} };
         const errs = Object.entries(pl.errors || {});
+        // licence: what is installed, install a new one (paste the text or choose the file), remove it
+        const lic = await api('GET', 'license');
+        const licText = el('textarea', { rows: 6, placeholder: 'paste the licence here (the whole text with -----BEGIN PAN-OS-PHP LICENSE-----)' });
+        const licFile = el('input', { type: 'file', accept: '.lic,.txt,text/plain' });
+        licFile.addEventListener('change', () => { if (licFile.files[0]) licFile.files[0].text().then(t => { licText.value = t; }); });
+        const L = lic.licence;
+        nodes.push(el('div', { class: 'card' }, el('h2', { text: 'Licence (admin)' }),
+            L ? table(['Customer', 'Licence', 'Valid until', 'Features', 'State'], [el('tr', {}, el('td', { text: L.customer }), el('td', { text: L.id }),
+                el('td', { text: L.valid_until + (L.grace_days ? ' (+' + L.grace_days + ' days grace)' : '') }), el('td', { class: 'wrap', text: L.features.join(', ') }),
+                el('td', {}, el('span', { class: 'badge' + (L.state === 'valid' ? '' : ' dirty'), text: L.state + (L.state === 'warning' || L.state === 'grace' ? ' - ' + L.days_left + ' days left' : '') })))])
+              : el('p', { class: 'muted', text: 'No licence installed - basic features only. Licensed plug-ins (packages) stay locked.' }),
+            lic.error ? el('p', { class: 'error', text: 'The installed licence is not valid: ' + lic.error }) : null,
+            lic.clock === 'set back' ? el('p', { class: 'error', text: 'The clock of this computer was set back - licensed plug-ins are locked until it is right again.' }) : null,
+            el('form', { onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                await api('PUT', 'license', { license: licText.value }); message('licence installed'); await showAccount();
+            }); } }, field('Licence file', licFile), licText, el('div', { class: 'row' }, el('button', { class: 'primary', type: 'submit', text: 'Install licence' }),
+                L ? el('button', { class: 'danger', type: 'button', text: 'Remove licence', onclick: () => run(async () => {
+                    if (!confirm('Remove the licence? Licensed plug-ins are locked afterwards.')) return;
+                    await api('DELETE', 'license'); await showAccount();
+                }) }) : null))));
         nodes.push(el('div', { class: 'card' }, el('h2', { text: 'Plug-ins (admin)' }),
             pl.plugins.length === 0 && errs.length === 0 ? el('p', { class: 'muted', text: 'No plug-ins installed.' }) :
-            table(['Plug-in', 'Version', 'Feature', 'State'], [
+            table(['Plug-in', 'Version', 'Feature', 'Form', 'State'], [
                 ...pl.plugins.map(x => el('tr', {}, el('td', { text: x.title + ' (' + x.name + ')' }), el('td', { text: x.version }), el('td', { text: x.feature || 'basic' }),
-                    el('td', {}, el('span', { class: 'badge', text: x.on ? 'on' : 'not licensed' })))),
-                ...errs.map(([folder, why]) => el('tr', {}, el('td', { text: folder }), el('td', {}), el('td', {}), el('td', { class: 'wrap', text: 'not loaded: ' + why })))])));
+                    el('td', { text: x.form === 'package' ? 'package (encrypted)' : 'folder (source)' }),
+                    el('td', { class: 'wrap' }, el('span', { class: 'badge' + (x.on ? '' : ' dirty'), text: x.on ? 'on' : 'locked' }), x.why ? el('span', { class: 'muted', text: ' ' + x.why }) : null))),
+                ...errs.map(([folder, why]) => el('tr', {}, el('td', { text: folder }), el('td', {}), el('td', {}), el('td', {}), el('td', { class: 'wrap', text: 'not loaded: ' + why })))])));
         nodes.push(auditCard('audit', 'Audit log (admin, all projects)'));
     }
     main(nodes);
