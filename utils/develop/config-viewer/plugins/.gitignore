@@ -1,0 +1,3 @@
+# plug-ins of the config viewer: one folder per plug-in with plugin.php (see README.md, "Plug-ins")
+*
+!.gitignore

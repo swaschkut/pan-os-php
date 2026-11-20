@@ -38,6 +38,12 @@ foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig' ) as $d )
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
 file_put_contents( $plugins . '/othername/plugin.php', "<?php return array( 'api' => 1, 'name' => 'stats' );" );
+foreach( array( 'badenv' => "'PANOSPHP_VIEWER_DATA' => '/tmp'", 'badenv2' => "'PANOSPHP_X' => '../../etc'" ) as $d => $e )
+{
+    mkdir( $plugins . '/' . $d );
+    file_put_contents( $plugins . '/' . $d . '/plugin.php', "<?php return array( 'api' => 1, 'name' => '" . $d . "', 'runs' => array( 'r' => array( 'tool' => 'address', 'env' => array( " . $e . " ),
+        'args' => function( \$run ) { return array(); } ) ) );" );
+}
 file_put_contents( $plugins . '/badargs/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badargs', 'runs' => array(
     'in' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'in=/etc/passwd' ); } ),
     'out' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'actions=display', 'out=/tmp/x.xml' ); } ) ) );" );
@@ -49,6 +55,7 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
         'fields' => array( array( 'name' => 'vendor', 'kind' => 'select', 'required' => TRUE, 'options' => array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ),
             array( 'name' => 'kinds', 'kind' => 'multi', 'options' => array( 'address' => 'addresses', 'rule' => 'rules' ) ),
             array( 'name' => 'source', 'kind' => 'file:source', 'required' => TRUE ) ),
+        'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/none' ),
         'args' => function( \$run ) { return array( 'vendor=' . \$run->choice( 'vendor' ), 'file=' . \$run->file( 'source', 'mig-source' ), 'out=' . \$run->out( 'out.xml' ),
             'shadow-ignoreinvalidaddressobjects', '#kinds=' . implode( '+', \$run->choices( 'kinds' ) ) ); } ) ) );" );
 
@@ -729,7 +736,7 @@ eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'ex
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
     array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
 eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
-eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason' );
+eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badenv', 'badenv2', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
 eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
 $PL = 'projects/' . $r[1]['pid'];

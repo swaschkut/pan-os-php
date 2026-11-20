@@ -36,10 +36,12 @@
  *   PANOSPHP_VIEWER_CONTAINER_TOOL    pan-os-php.php in the image (default /tools/pan-os-php/utils/pan-os-php.php)
  *   PANOSPHP_VIEWER_CONTAINER_MEMORY  default 2g      PANOSPHP_VIEWER_CONTAINER_CPUS  default 2
  *   PANOSPHP_VIEWER_CONTAINER_USER    uid:gid in the container (default: the one of the job runner)
+ *   PANOSPHP_VIEWER_CONTAINER_PLUGINS absolute path on the host of the runtime of the folder that holds plug-ins which
+ *                                     are not in the image (a run of such a plug-in gets its folder read-only at /plugin)
  */
 class ViewerContainer
 {
-    public string $program, $image, $data, $tool, $memory, $cpus, $user, $label;
+    public string $program, $image, $data, $tool, $memory, $cpus, $user, $label, $plugins;
 
     /** null when PANOSPHP_VIEWER_CONTAINER is not set */
     public static function fromEnv( string $dataDir ): ?ViewerContainer
@@ -57,6 +59,10 @@ class ViewerContainer
         $c->data = rtrim( (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_DATA' ) ?: $dataDir ), '/' );
         if( !preg_match( '#^(/[A-Za-z0-9._ /-]+|[A-Za-z0-9][A-Za-z0-9_.-]*)$#', $c->data ) || strpos( $c->data, '..' ) !== FALSE )
             throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_DATA must be an absolute path or a volume name' );
+        // plug-ins that are not part of the image: where the runtime finds the folder that holds them (absolute path on its host)
+        $c->plugins = rtrim( (string)getenv( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' ), '/' );
+        if( $c->plugins !== '' && ( !preg_match( '#^/[A-Za-z0-9._ /-]+$#', $c->plugins ) || strpos( $c->plugins, '..' ) !== FALSE ) )
+            throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS must be an absolute path' );
         $c->tool = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_TOOL' ) ?: '/tools/pan-os-php/utils/pan-os-php.php' );
         $c->memory = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_MEMORY' ) ?: '2g' );
         $c->cpus = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_CPUS' ) ?: '2' );
@@ -105,6 +111,25 @@ class ViewerContainer
             '--mount', $this->mount( 'projects/' . $job['pid'], '/project', TRUE ),
             '--mount', $this->mount( 'projects/' . $job['pid'] . '/jobs/' . $job['jid'], '/job', FALSE ),
             '--workdir', '/job', '--env', 'HOME=/job', '--env', 'TMPDIR=/job' );
+        // a run type of a plug-in that needs its files: the folder of the plug-in read-only at /plugin (a plug-in shipped in
+        // the image is there already)
+        if( count( $job['rawEnv'] ?? array() ) )
+        {
+            if( !preg_match( '/^[a-z][a-z0-9]{1,30}$/', (string)( $job['plugin'] ?? '' ) ) )
+                throw new Exception( 'container: invalid plug-in' );
+            if( !empty( $job['pluginBuiltin'] ) )
+                $where = dirname( $this->tool ) . '/develop/config-viewer/plugins/' . $job['plugin'];
+            else
+            {
+                if( $this->plugins === '' )
+                    throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS is not set (the folder of the plug-ins on the host)' );
+                array_push( $cmd, '--mount', 'type=bind,src=' . $this->plugins . '/' . $job['plugin'] . ',dst=/plugin,readonly' );
+                $where = '/plugin';
+            }
+            foreach( $job['rawEnv'] as $k => $v )
+                if( preg_match( '/^PANOSPHP_[A-Z0-9_]{1,40}$/', (string)$k ) && strpos( (string)$k, 'PANOSPHP_VIEWER_' ) !== 0 )
+                    array_push( $cmd, '--env', $k . '=' . str_replace( '%PLUGIN%', $where, (string)$v ) );
+        }
         if( $this->user !== '' )
             array_push( $cmd, '--user', $this->user );
         array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ) );

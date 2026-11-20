@@ -128,6 +128,8 @@ while( !$stop )
     {
         $log = $job['dir'] . '/run.log';
         $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'] );
+        // what a run type of a plug-in sets (checked names: PANOSPHP_…, not PANOSPHP_VIEWER_…)
+        $env += $job['env'];
         if( $container !== null )
         {
             try
@@ -136,9 +138,11 @@ while( !$stop )
             }
             catch( Exception $e )
             {
-                $app->runnerFinish( $job['id'], 'failed', 'the run could not be started' );
+                $app->runnerFinish( $job['id'], 'failed', 'the run could not be started: ' . substr( $e->getMessage(), 0, 200 ) );
                 continue;
             }
+            foreach( array_keys( $job['env'] ) as $k )
+                unset( $env[$k] );
             // the client of the runtime: where the runtime is (DOCKER_HOST, rootless podman), nothing of the job
             foreach( array( 'DOCKER_HOST', 'DOCKER_CONFIG', 'CONTAINER_HOST', 'XDG_RUNTIME_DIR' ) as $k )
                 if( getenv( $k ) !== FALSE )

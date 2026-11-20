@@ -38,7 +38,7 @@ function eq( $actual, $expected, $msg )
 function withEnv( array $env, callable $fn )
 {
     $all = array( 'PANOSPHP_VIEWER_CONTAINER', 'PANOSPHP_VIEWER_CONTAINER_IMAGE', 'PANOSPHP_VIEWER_CONTAINER_DATA', 'PANOSPHP_VIEWER_CONTAINER_TOOL',
-        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER' );
+        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' );
     foreach( $all as $k )
         putenv( isset( $env[$k] ) ? $k . '=' . $env[$k] : $k );
     try { return $fn(); }
@@ -77,6 +77,14 @@ eq( array( in_array( 'type=volume,src=viewer-data,dst=/project,volume-subpath=pr
     in_array( 'type=volume,src=viewer-data,dst=/job,volume-subpath=projects/' . $pid . '/jobs/' . $jid, $cmd, TRUE ), in_array( '512m', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ), 'volume name: sub paths of the volume' );
 $cmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'file' => null, 'tool' => 'vendor-migration' ) + $job ); } );
 eq( array( in_array( 'type=vendor-migration', $cmd, TRUE ), count( preg_grep( '/^in=/', $cmd ) ) ), array( TRUE, 0 ), 'a run without a version: the type the plug-in names, no in=' );
+// a run type of a plug-in with files of its own: the folder of the plug-in read-only, the environment with its path there
+$pj = array( 'file' => null, 'tool' => 'vendor-migration', 'plugin' => 'migration', 'pluginBuiltin' => FALSE, 'rawEnv' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' ) ) + $job;
+eq( substr( (string)withEnv( $base, function() use ( $pj ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pj ); } ), 0, 6 ), 'error:', 'plug-in with files, PANOSPHP_VIEWER_CONTAINER_PLUGINS not set: refused' );
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pj ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pj ); } );
+eq( array( in_array( 'type=bind,src=/srv/plugins/migration,dst=/plugin,readonly', $cmd, TRUE ), in_array( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ),
+    array_search( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ) < array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ),
+    'plug-in with files: its folder read-only at /plugin, environment before the image' );
+eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/../etc' ), function() { ViewerContainer::fromEnv( '/data' ); return 'x'; } ), 0, 6 ), 'error:', 'refused setting: plug-in folder with ..' );
 $cmd = withEnv( array( 'PANOSPHP_VIEWER_CONTAINER' => 'podman' ) + $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
 eq( $cmd[0], 'podman', 'podman: same call' );
 foreach( array( 'pid' => '../../etc', 'jid' => 'x', 'file' => '../viewer.sqlite', 'type' => 'stats --privileged' ) as $k => $v )

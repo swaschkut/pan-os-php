@@ -437,4 +437,14 @@ What a plug-in run can do is limited by the viewer, not by the plug-in:
 
 A plug-in is PHP code inside the web part and the job runner - install only what you would install as part of the viewer. `'feature' => '<name>'` marks a plug-in as a licensed feature; `ViewerApp::featureOn()` is the one place for that check and says yes to everything until licences are built ([todo/config-viewer-license.md](../../../todo/config-viewer-license.md)).
 
+**Files of a plug-in in its runs:** a run type can set environment variables for pan-os-php (`'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' )`; names `PANOSPHP_…`, not `PANOSPHP_VIEWER_…`; `%PLUGIN%` is the folder of the plug-in). With one container per run that folder is mounted read-only at `/plugin`.
+
+**Install a plug-in that is not in the image (Docker):** put its folder (e.g. `migration/` with `plugin.php`) into a folder on the host and start with that folder:
+
+```bash
+VIEWER_PLUGINS_DIR=/path/to/plugins docker compose -f docker-compose.yml up -d
+```
+
+The compose file mounts it read-only into web, service and job runner (`/plugins`) and tells the job runner the host path (`PANOSPHP_VIEWER_CONTAINER_PLUGINS`), so that a run of the plug-in gets its folder. Without Docker: `PANOSPHP_VIEWER_PLUGINS=/path/to/plugins` for web part, service and job runner. Account → Plug-ins shows whether it was loaded.
+
 A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes and own pages, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).

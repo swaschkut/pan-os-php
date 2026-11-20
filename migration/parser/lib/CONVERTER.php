@@ -150,22 +150,37 @@ class CONVERTER extends UTIL
         exit(1);
     }
 
+    /**
+     * the file of a vendor parser. PANOSPHP_MIGRATION_PARSERS=<folder> (e.g. the migration plug-in): a parser found
+     * there - same relative path, e.g. CISCOISR/CISCOISR.php - is used instead of the one shipped here.
+     */
+    private function parserFile( string $relative ): string
+    {
+        $other = getenv( 'PANOSPHP_MIGRATION_PARSERS' );
+        if( is_string( $other ) && $other !== '' && is_file( rtrim( $other, '/' ) . '/' . $relative ) )
+        {
+            PH::print_stdout( " - vendor parser from PANOSPHP_MIGRATION_PARSERS: " . $relative );
+            return rtrim( $other, '/' ) . '/' . $relative;
+        }
+        return dirname(__FILE__) . "/../" . $relative;
+    }
+
     private function vendor_require()
     {
         //DEFINE VENDOR specific RECUIRE
         if( $this->vendor == "ciscoasa" )
         {
-            require_once(dirname(__FILE__)."/../CISCO/CISCOASA.php");
+            require_once( $this->parserFile( "CISCO/CISCOASA.php" ) );
             $this->myParserClass = "CISCOASA";
         }
         elseif( $this->vendor == "ciscoisr" )
         {
-            require_once(dirname(__FILE__)."/../CISCOISR/CISCOISR.php");
+            require_once( $this->parserFile( "CISCOISR/CISCOISR.php" ) );
             $this->myParserClass = "CISCOISR";
         }
         elseif( $this->vendor == "ciscoswitch" )
         {
-            require_once(dirname(__FILE__)."/../CISCOSWITCH/CISCOSWITCH.php");
+            require_once( $this->parserFile( "CISCOSWITCH/CISCOSWITCH.php" ) );
             $this->myParserClass = "CISCOSWITCH";
         }
         elseif( $this->vendor == "netscreen" )

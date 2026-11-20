@@ -74,7 +74,8 @@ after a look at how clean the parsers separate.
 |---|---|---|
 | 2026-11-20 | interface: raw file kinds, runs without a version, select / multi fields, result into another project | done in pan-os-php (see config-viewer-api.md) |
 | 2026-11-20 | local migration report (`report/migration-report.php` in the private repository) | done; first real report: the file is in ASA / PIX / FWSM form (`access-list <name> extended …`, `static (if,if) …`), not IOS switch form |
-| | migration plug-in (private repository): upload → import → version for Cisco switch / router | next |
+| 2026-11-20 | migration plug-in v0.1 (private repository, `migration/plugin.php`): upload → import (Cisco IOS router) → version in this or another project; parser `CISCOISR` in the plug-in with 4 fixes (lpd = 515, tcp / udp without a port = all ports of that protocol, icmp = application icmp / ping, wildcard mask that is no prefix = ip-wildcard object; dumps only with `debug`) | done, synthetic test (20 checks), checked on a real router configuration at Sven's side |
+| | Cisco router: zones from interfaces + ACL bindings, interfaces, static routes, NAT, IKE / IPsec (crypto profiles, gateways, tunnels); ACLs that only select traffic for VPN / NAT are no security rules | next |
 
 ## Order (proposal)
 

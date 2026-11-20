@@ -26,6 +26,8 @@
  *   - file kinds  files of a project that its runs use (…/files?kind=<plugin>-<kind>): JSON, or 'format' => 'raw'
  *                 for any other file (a 3rd party configuration), with its own size limit
  *   - step types  pan-os-php types that a playbook may use in addition
+ * A run type can set environment variables for its run ('env', %PLUGIN% = the folder of the plug-in) - so pan-os-php can
+ * load files that the plug-in brings (e.g. PANOSPHP_MIGRATION_PARSERS => '%PLUGIN%/parser').
  * The browser page shows the run types with the fields the plug-in declares - a plug-in brings no script for the page.
  *
  * A plug-in is a folder <name>/ with plugin.php, which returns the description as an array (see
@@ -63,6 +65,11 @@ class ViewerPlugins
                 try
                 {
                     $p = self::check( $folder, self::read( $file ) );
+                    // where the plug-in is: for %PLUGIN% in the environment of its runs; 'builtin': shipped in the folder plugins/ of the viewer
+                    $p['dir'] = (string)realpath( dirname( $file ) );
+                    $p['builtin'] = $dir === $viewerDir . '/plugins';
+                    foreach( $p['runs'] as $k => $r )
+                        $p['runs'][$k] += array( 'dir' => $p['dir'], 'builtin' => $p['builtin'] );
                     if( isset( $all->plugins[$p['name']] ) )
                         throw new Exception( 'a plug-in with this name is loaded already' );
                     foreach( array_keys( $p['runs'] ) as $run )
@@ -153,13 +160,22 @@ class ViewerPlugins
             $result = $r['result'] ?? null;
             if( $result !== null && ( !is_string( $result ) || !preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}\.xml$/', $result ) ) )
                 throw new Exception( 'run ' . $run . ': "result" must be a plain .xml file name' );
+            // environment of the run, e.g. where pan-os-php finds files of the plug-in: %PLUGIN% is the folder of the plug-in
+            $env = array();
+            foreach( (array)( $r['env'] ?? array() ) as $k => $v )
+            {
+                if( !is_string( $k ) || !preg_match( '/^PANOSPHP_[A-Z0-9_]{1,40}$/', $k ) || strpos( $k, 'PANOSPHP_VIEWER_' ) === 0
+                    || !is_string( $v ) || !preg_match( '#^[A-Za-z0-9_./%-]{1,200}$#', $v ) || strpos( $v, '..' ) !== FALSE )
+                    throw new Exception( 'run ' . $run . ': "env" names start with PANOSPHP_ (not PANOSPHP_VIEWER_), values are plain paths / words' );
+                $env[$k] = $v;
+            }
             $input = $r['input'] ?? 'version';
             if( !in_array( $input, array( 'version', 'none' ), TRUE ) )
                 throw new Exception( 'run ' . $run . ': "input" is version or none' );
             if( $input === 'none' && $result === null )
                 throw new Exception( 'run ' . $run . ': a run without a version needs "result"' );
             $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'input' => $input, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
-                'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'] );
+                'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'], 'env' => $env );
         }
         foreach( (array)( $p['playbookTypes'] ?? array() ) as $t )
         {

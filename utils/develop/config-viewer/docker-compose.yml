@@ -11,6 +11,9 @@
 #
 # The page is reachable from this computer only (127.0.0.1) and without HTTPS. For other computers add
 # docker-compose.https.yml (reverse proxy with HTTPS). Without internet: airgap/ (bundle with the images).
+#
+# Plug-ins that are not part of the image (e.g. the migration plug-in): the folder that holds them, as an absolute path:
+#   VIEWER_PLUGINS_DIR=/path/to/plugins docker compose -f docker-compose.yml up -d
 name: panosphp-viewer
 
 x-viewer: &viewer
@@ -22,6 +25,8 @@ x-viewer: &viewer
   entrypoint: [ "/bin/bash", "/tools/pan-os-php/utils/develop/config-viewer/docker/start.sh" ]
   volumes:
     - data:/data
+    # plug-ins that are not part of the image: VIEWER_PLUGINS_DIR = absolute path of the folder that holds them
+    - "${VIEWER_PLUGINS_DIR:-./plugins}:/plugins:ro"
 
 services:
   web:
@@ -31,6 +36,7 @@ services:
       - "127.0.0.1:${VIEWER_PORT:-8080}:8080"
     environment:
       PANOSPHP_VIEWER_DATA: "/data"
+      PANOSPHP_VIEWER_PLUGINS: "/plugins"
       PANOSPHP_VIEWER_ALLOW_HTTP: "1"
       PHP_CLI_SERVER_WORKERS: "4"
       VIEWER_ADMIN_USER: "${VIEWER_ADMIN_USER:-admin}"
@@ -46,6 +52,7 @@ services:
     pid: "service:web"
     environment:
       PANOSPHP_VIEWER_DATA: "/data"
+      PANOSPHP_VIEWER_PLUGINS: "/plugins"
 
   # the only part with the docker socket: starts one container per run (no network, read-only, only the project folder)
   jobs:
@@ -55,12 +62,16 @@ services:
     network_mode: "none"
     volumes:
       - data:/data
+      - "${VIEWER_PLUGINS_DIR:-./plugins}:/plugins:ro"
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       PANOSPHP_VIEWER_DATA: "/data"
+      PANOSPHP_VIEWER_PLUGINS: "/plugins"
       PANOSPHP_VIEWER_CONTAINER: "docker"
       PANOSPHP_VIEWER_CONTAINER_IMAGE: "${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}"
       PANOSPHP_VIEWER_CONTAINER_DATA: "panosphp-viewer-data"
+      # the same folder as the Docker of the host sees it (a run of a plug-in gets its folder read-only)
+      PANOSPHP_VIEWER_CONTAINER_PLUGINS: "${VIEWER_PLUGINS_DIR:-}"
 
 volumes:
   data:

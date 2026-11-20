@@ -959,7 +959,13 @@ class ViewerApp
         }
         // pid / jid / file / rawArgs: for a run in a container (ViewerContainer), where the folders have other paths
         // 'tool': the pan-os-php type that runs - for a run type of a plug-in the one it names
-        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noVersion ? null : $config,
+        // environment a run type of a plug-in asks for: %PLUGIN% is the folder of the plug-in (in a container: where it is mounted)
+        $pr = $this->pluginRuns()[$j['type']] ?? null;
+        $env = array();
+        foreach( $pr['env'] ?? array() as $k => $v )
+            $env[$k] = str_replace( '%PLUGIN%', $pr['dir'], $v );
+        return array( 'env' => $env, 'rawEnv' => $pr['env'] ?? array(), 'plugin' => $pr['plugin'] ?? null, 'pluginBuiltin' => $pr['builtin'] ?? FALSE,
+            'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noVersion ? null : $config,
             'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noVersion ? null : $j['file'], 'rawArgs' => $rawArgs );
     }
 
