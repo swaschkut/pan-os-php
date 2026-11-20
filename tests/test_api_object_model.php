@@ -62,7 +62,16 @@ $objects = '<tag><entry name="t1"><color>color1</color><comments>c</comments></e
     . '<wildfire-analysis><entry name="wf1"><rules><entry name="all"><application><member>any</member></application><file-type><member>any</member></file-type>'
     . '<direction>both</direction><analysis>public-cloud</analysis></entry></rules></entry></wildfire-analysis></profiles>'
     . '<profile-group><entry name="pg1"><spyware><member>as1</member></spyware><virus><member>av1</member></virus><wildfire-analysis><member>wf1</member></wildfire-analysis></entry></profile-group>'
-    . '<zone><entry name="trust"><network><layer3><member>ethernet1/1</member></layer3></network></entry></zone>';
+    . '<zone><entry name="trust"><network><layer3><member>ethernet1/1</member></layer3></network></entry></zone>'
+    . '<rulebase><security><rules>'
+    . '<entry name="r-first" uuid="11111111-1111-1111-1111-111111111111"><from><member>trust</member></from><to><member>any</member></to><source><member>h1</member></source>'
+    . '<destination><member>any</member></destination><source-user><member>any</member></source-user><category><member>any</member></category>'
+    . '<application><member>any</member></application><service><member>s1</member></service><action>allow</action><rule-type>intrazone</rule-type>'
+    . '<profile-setting><group><member>pg1</member></group></profile-setting><log-end>yes</log-end><disabled>yes</disabled><negate-source>yes</negate-source></entry>'
+    . '<entry name="r-second" uuid="22222222-2222-2222-2222-222222222222"><from><member>any</member></from><to><member>any</member></to><source><member>any</member></source>'
+    . '<destination><member>any</member></destination><application><member>any</member></application><service><member>any</member></service><action>deny</action></entry>'
+    . '</rules></security><nat><rules><entry name="n1"><from><member>trust</member></from><to><member>trust</member></to><source><member>any</member></source>'
+    . '<destination><member>any</member></destination><service>any</service></entry></rules></nat></rulebase>';
 
 // ---- firewall: vsys
 $fw = new PANConf();
@@ -115,6 +124,18 @@ eq( ApiObjectModel::item( $v->securityProfileGroupStore->find( 'pg1' ) ), array(
     'profile group: SCM fields + own fields virus / wildfire_analysis' );
 eq( ApiObjectModel::item( $v->zoneStore->find( 'trust' ) ), array( 'resource' => 'zones',
     'item' => array( 'name' => 'trust', 'network' => array( 'layer3' => array( 'ethernet1/1' ) ), 'vsys' => 'vsys1' ) ), 'zone' );
+
+// ---- rules
+$r1 = ApiObjectModel::item( $v->securityRules->find( 'r-first' ) );
+eq( $r1['resource'], 'security-rules', 'security rule resource' );
+eq( array( $r1['item']['from'], $r1['item']['source'], $r1['item']['service'], $r1['item']['action'], $r1['item']['profile_setting'] ?? null ),
+    array( array( 'trust' ), array( 'h1' ), array( 's1' ), 'allow', array( 'group' => array( 'pg1' ) ) ), 'security rule: SCM fields' );
+eq( array( $r1['item']['disabled'] ?? null, $r1['item']['negate_source'] ?? null, $r1['item']['log_end'] ?? null ), array( TRUE, TRUE, TRUE ), 'security rule: booleans' );
+eq( array( $r1['item']['uuid'] ?? null, $r1['item']['rulebase'] ?? null, $r1['item']['position'] ?? null, $r1['item']['rule_type'] ?? null, $r1['item']['vsys'] ?? null ),
+    array( '11111111-1111-1111-1111-111111111111', 'local', 1, 'intrazone', 'vsys1' ), 'security rule: own fields uuid, rulebase, position, rule_type; location' );
+eq( ApiObjectModel::item( $v->securityRules->find( 'r-second' ) )['item']['position'] ?? null, 2, 'second rule: position 2' );
+$n1 = ApiObjectModel::item( $v->natRules->find( 'n1' ) );
+eq( array( $n1['resource'], $n1['item']['rulebase'] ?? null, $n1['item']['position'] ?? null ), array( 'nat-rules', 'local', 1 ), 'NAT rule' );
 
 // ---- Panorama: shared and device group
 $pano = new PanoramaConf();

@@ -213,7 +213,10 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 `vulnerability-protection-profiles`, `url-access-profiles`, `file-blocking-profiles`, `dns-security-profiles`,
 `wildfire-anti-virus-profiles`; Panorama / firewall: own `antivirus-profiles`, `wildfire-analysis-profiles`, and DNS
 security inside the anti-spyware profile as `botnet_domains` – SCM has it apart in `dns-security-profiles`),
-`profile-groups`, `zones` and `zone-protection-profiles` answer in the shape of the
+`profile-groups`, `zones`, `zone-protection-profiles` and the rule resources (`security-rules`, `nat-rules`,
+`decryption-rules`, `app-override-rules`, `authentication-rules`, `pbf-rules`, `qos-policy-rules`; own: `dos-rules`,
+`tunnel-inspection-rules`, `captive-portal-rules`, `default-security-rules`, `sdwan-rules`,
+`network-packet-broker-rules`; rules carry the own fields `uuid`, `rulebase`, `position`) answer in the shape of the
 SCM API (`model: scm-v1`, `lib/misc-classes/ApiObjectModel.php`): SCM field names and structure, plus the location of
 the object (`device_group` – `"shared"` for shared –, `vsys`, `template` / `template_stack`; SCM input: `folder`, `snippet`, `device`). Example:
 `{"name": "shared-host1", "ip_netmask": "1.2.2.3/32", "tag": ["grp.shared-group1"], "device_group": "shared"}`.
@@ -272,5 +275,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-242 checks: login, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+257 checks: login, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

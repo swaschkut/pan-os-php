@@ -60,7 +60,11 @@ class ViewerApp
         'file-blocking-profiles' => 'securityprofile', 'dns-security-profiles' => 'securityprofile', 'wildfire-anti-virus-profiles' => 'securityprofile',
         // own resources (Panorama / firewall keep antivirus and WildFire analysis apart)
         'antivirus-profiles' => 'securityprofile', 'wildfire-analysis-profiles' => 'securityprofile',
-        'profile-groups' => 'securityprofilegroup', 'zones' => 'zone', 'zone-protection-profiles' => 'zone-protection-profile' );
+        'profile-groups' => 'securityprofilegroup', 'zones' => 'zone', 'zone-protection-profiles' => 'zone-protection-profile',
+        // rules: one resource per rule type (SCM names; the last six are own resources)
+        'security-rules' => 'rule', 'nat-rules' => 'rule', 'decryption-rules' => 'rule', 'app-override-rules' => 'rule', 'authentication-rules' => 'rule',
+        'pbf-rules' => 'rule', 'qos-policy-rules' => 'rule', 'dos-rules' => 'rule', 'tunnel-inspection-rules' => 'rule', 'captive-portal-rules' => 'rule',
+        'default-security-rules' => 'rule', 'sdwan-rules' => 'rule', 'network-packet-broker-rules' => 'rule' );
     /** arguments a SCM resource fixes for its pan-os-php type */
     const SCM_RESOURCE_ARGS = array(
         // all profile kinds are read (also the predefined profiles), the resource picks its class
@@ -73,6 +77,12 @@ class ViewerApp
         'wildfire-anti-virus-profiles' => array( 'securityprofiletype' => 'any' ),
         'antivirus-profiles' => array( 'securityprofiletype' => 'any' ),
         'wildfire-analysis-profiles' => array( 'securityprofiletype' => 'any' ),
+        'security-rules' => array( 'ruletype' => 'security' ), 'nat-rules' => array( 'ruletype' => 'nat' ), 'decryption-rules' => array( 'ruletype' => 'decryption' ),
+        'app-override-rules' => array( 'ruletype' => 'appoverride' ), 'authentication-rules' => array( 'ruletype' => 'authentication' ),
+        'pbf-rules' => array( 'ruletype' => 'pbf' ), 'qos-policy-rules' => array( 'ruletype' => 'qos' ), 'dos-rules' => array( 'ruletype' => 'dos' ),
+        'tunnel-inspection-rules' => array( 'ruletype' => 'tunnelinspection' ), 'captive-portal-rules' => array( 'ruletype' => 'captiveportal' ),
+        'default-security-rules' => array( 'ruletype' => 'defaultsecurity' ), 'sdwan-rules' => array( 'ruletype' => 'sdwan' ),
+        'network-packet-broker-rules' => array( 'ruletype' => 'networkpacketbroker' ),
     );
     const PAGE_DEFAULT = 1000;
     const PAGE_MAX = 5000;

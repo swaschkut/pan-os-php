@@ -57,13 +57,27 @@ class ApiObjectModel
         'SecurityProfileGroup' => 'profile-groups',
         'ZoneProtectionProfile' => 'zone-protection-profiles',
         'Zone' => 'zones',
+        'SecurityRule' => 'security-rules',
+        'NatRule' => 'nat-rules',
+        'DecryptionRule' => 'decryption-rules',
+        'AppOverrideRule' => 'app-override-rules',
+        'AuthenticationRule' => 'authentication-rules',
+        'PbfRule' => 'pbf-rules',
+        'QoSRule' => 'qos-policy-rules',
+        'DoSRule' => 'dos-rules',
+        'TunnelInspectionRule' => 'tunnel-inspection-rules',
+        'CaptivePortalRule' => 'captive-portal-rules',
+        'DefaultSecurityRule' => 'default-security-rules',
+        'SDWanRule' => 'sdwan-rules',
+        'NetworkPacketBrokerRule' => 'network-packet-broker-rules',
     );
 
     /**
      * own resources: the SCM API has none (todo/json-object-model.md). The item is the XML of the object in snake_case.
      * Panorama / firewall keep antivirus and WildFire analysis apart; SCM has them in wildfire-anti-virus-profiles.
      */
-    public static $ownResources = array( 'antivirus-profiles', 'wildfire-analysis-profiles' );
+    public static $ownResources = array( 'antivirus-profiles', 'wildfire-analysis-profiles',
+        'dos-rules', 'tunnel-inspection-rules', 'captive-portal-rules', 'default-security-rules', 'sdwan-rules', 'network-packet-broker-rules' );
 
     /** @var SCMChangeGenerator|null */
     private static $generator = null;
@@ -125,7 +139,7 @@ class ApiObjectModel
         if( in_array( $resource, self::$ownResources, TRUE ) )
         {
             $own = self::generic( $object->xmlroot );
-            return array( 'resource' => $resource, 'item' => array( 'name' => $object->name() ) + ( is_array( $own ) ? $own : array() ) + self::location( $object ) );
+            return array( 'resource' => $resource, 'item' => array( 'name' => $object->name() ) + ( is_array( $own ) ? $own : array() ) + self::ruleFields( $object ) + self::location( $object ) );
         }
 
         $dropped = array();
@@ -145,10 +159,32 @@ class ApiObjectModel
             if( !$placed )
                 $notConverted[] = $path;
         }
-        $item = $body + self::location( $object );
+        $item = $body + self::ruleFields( $object ) + self::location( $object );
         if( count( $notConverted ) > 0 )
             $item['_panosphp'] = array( 'not_converted' => $notConverted );
         return array( 'resource' => $resource, 'item' => $item );
+    }
+
+    /**
+     * own fields of a rule (the SCM API has the position only as a query of the request and no uuid in the body):
+     * uuid, rulebase 'pre' / 'post' (Panorama, SCM) or 'local' (firewall), position (1 = first rule of its rulebase)
+     */
+    public static function ruleFields( $object ): array
+    {
+        if( !( $object instanceof Rule ) )
+            return array();
+        $out = array();
+        if( $object->xmlroot->hasAttribute( 'uuid' ) )
+            $out['uuid'] = $object->xmlroot->getAttribute( 'uuid' );
+        if( get_class( $object ) == 'DefaultSecurityRule' )
+            return $out;
+        $out['rulebase'] = $object->isPreRule() ? 'pre' : ( $object->isPostRule() ? 'post' : 'local' );
+        $position = 1;
+        for( $n = $object->xmlroot->previousSibling; $n !== null; $n = $n->previousSibling )
+            if( $n->nodeType == XML_ELEMENT_NODE )
+                $position++;
+        $out['position'] = $position;
+        return $out;
     }
 
     /** puts the generic conversion of $node into $body at the place of its XML path below $root; FALSE: no such place */

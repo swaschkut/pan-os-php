@@ -329,7 +329,22 @@ $r = $alice->call( 'GET', $RC . '/profile-groups' );
 eq( array( $r[1]['total'] ?? null, $r[1]['items'][0]['device_group'] ?? null ), array( 1, 'shared' ), 'scm-v1: profile-groups' );
 $r = $alice->call( 'GET', $RC . '/zones' );
 eq( array( $r[1]['total'] ?? null, isset( $r[1]['items'][0]['template'] ), isset( $r[1]['items'][0]['network'] ) ), array( 3, TRUE, TRUE ), 'scm-v1: zones with their template' );
-eq( status( $alice->call( 'GET', $RC . '/rules?model=scm-v1' ) ), 400, 'scm-v1: not yet for rules' );
+$r = $alice->call( 'GET', $RC . '/security-rules' );
+$rule = $r[1]['items'][0] ?? array();
+eq( array( status( $r ), $r[1]['model'] ?? null, $r[1]['total'] ?? null ), array( 200, 'scm-v1', 9 ), 'scm-v1: security-rules' );
+eq( array( is_array( $rule['from'] ?? null ), is_array( $rule['source'] ?? null ), isset( $rule['action'] ), (bool)preg_match( '/^[0-9a-f-]{36}$/', $rule['uuid'] ?? '' ),
+    in_array( $rule['rulebase'] ?? '', array( 'pre', 'post' ), TRUE ), is_int( $rule['position'] ?? null ), isset( $rule['device_group'] ) ),
+    array( TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE ), 'scm-v1: security rule with SCM fields + uuid, rulebase, position, device_group' );
+foreach( array( 'nat-rules', 'decryption-rules', 'authentication-rules', 'default-security-rules' ) as $res )
+{
+    $r = $alice->call( 'GET', $RC . '/' . $res );
+    eq( array( status( $r ), ( $r[1]['total'] ?? 0 ) > 0, isset( $r[1]['items'][0]['name'] ) ), array( 200, TRUE, TRUE ), 'scm-v1: ' . $res );
+}
+foreach( array( 'app-override-rules', 'pbf-rules', 'qos-policy-rules', 'dos-rules', 'tunnel-inspection-rules', 'captive-portal-rules', 'sdwan-rules', 'network-packet-broker-rules' ) as $res )
+    eq( status( $alice->call( 'GET', $RC . '/' . $res ) ), 200, 'scm-v1: ' . $res . ' (none in this test configuration)' );
+eq( status( $alice->call( 'GET', $RC . '/security-rules?ruletype=nat' ) ) === 200 && ( $alice->call( 'GET', $RC . '/security-rules?ruletype=nat' )[1]['total'] ?? null ) === 9, TRUE, 'scm-v1: the rule type of a rule resource can not be changed by the request' );
+eq( status( $alice->call( 'GET', $RC . '/rules?model=scm-v1' ) ), 400, 'scm-v1: the type resource rules has no scm-v1 model (use security-rules, …)' );
+
 eq( status( $alice->call( 'GET', $RC . '/addresses?model=nosuch' ) ), 400, 'model checked' );
 eq( isset( $alice->call( 'GET', 'meta' )[1]['resources']['address-groups'] ), TRUE, 'meta lists the SCM resources' );
 eq( status( $alice->call( 'GET', $RC . '/addresses?limit=0' ) ), 400, 'REST: limit checked' );
