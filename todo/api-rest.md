@@ -2,7 +2,7 @@
 
 **Status:** review / hardening needed (2026-11-17); smoke test and Postman collection review added 2026-11-18
 **Code reference:** `alpha` `45bc6d8`
-**Related:** [ui-config-in-browser.md](ui-config-in-browser.md), [util-class-refactoring.md](util-class-refactoring.md)
+**Related:** [config-viewer-api.md](config-viewer-api.md) (secured API via the config-viewer), [ui-config-in-browser.md](ui-config-in-browser.md), [util-class-refactoring.md](util-class-refactoring.md)
 (`exit()` in `UTIL`), [shell-autocompletion.md](shell-autocompletion.md) (same data source `util_action_filter.json`)
 
 ## Current state

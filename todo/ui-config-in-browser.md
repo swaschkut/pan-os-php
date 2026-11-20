@@ -98,8 +98,8 @@ Next:
 Function:
 
 - [ ] change a single object / a selection of rows (today: all objects of type + location + filter)
-- [ ] more types (today `address`, `service`, `tag`, `rule`, `zone`, `schedule`, `securityprofile`,
-  `securityprofilegroup`)
+- [ ] all types (today `address`, `service`, `tag`, `rule`, `zone`, `schedule`, `securityprofile`,
+  `securityprofilegroup`) – [config-viewer-api.md](config-viewer-api.md)
 - [ ] diff between two versions (`type=diff`); undo of the last change before save
 - [ ] object detail: references, XPath, XML
 - [ ] filter builder in the UI from the filter / operator list (`meta`), like the action list today
@@ -121,8 +121,9 @@ Model:
 
 ## Open decisions
 
-1. Build on pan-config-viewer (frontend, cooperation) or extend `utils/develop/ui/` – the prototype is a third, own
-   area (`utils/develop/config-viewer/`); decide whether it replaces `utils/develop/ui/`.
+1. ~~Build on pan-config-viewer (frontend, cooperation) or extend `utils/develop/ui/`; decide whether the prototype
+   replaces `utils/develop/ui/`.~~ Decided 2026-11-20: the config-viewer **stays next to** `utils/develop/ui/` and
+   `tool.php` for now; its API is extended to all pan-os-php types – [config-viewer-api.md](config-viewer-api.md).
 2. ~~Way A / B / C (or the combination).~~ Taken with the prototype: way A (loaded once on the server) + browser cache;
    save writes version files (the history of way B, without git).
 3. Common JSON object model – define first, as base for UI, API output (`shadow-json`) and SCM.
