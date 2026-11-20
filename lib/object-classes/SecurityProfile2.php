@@ -94,32 +94,126 @@ class SecurityProfile2
         return self::localDeepLearningSupportedInVersion( $secprof_type, $model, $version );
     }
 
+    /** local deep learning per profile type: XML container of the inline ML models and the $bpFeatureMinVersion key */
+    public static $localDeepLearningTypes = array(
+        'spyware' => array( 'container' => 'mica-engine-spyware-enabled', 'feature' => 'spyware-local-deep-learning' ),
+        'vulnerability' => array( 'container' => 'mica-engine-vulnerability-enabled', 'feature' => 'vulnerability-local-deep-learning' ),
+    );
+
     /**
-     * alert-only-set / best-practice-set: local-deep-learning 'enable' for every model of $container
-     * (mica-engine-spyware-enabled / mica-engine-vulnerability-enabled) that has it in this PAN-OS version
-     * ($localDeepLearningMinVersion) - cloud and local inline analysis can not be separated, so both are switched on.
+     * local-deep-learning entries of a BP JSON cloud-inline section ('bp' / 'visibility'):
+     *   "inline-policy-action": [ { "type": ["any"], "local-deep-learning": ["enable"] }, ... ]
+     * type: 'any' or model names; value: 'enable' / 'disable' / '!enable' / '!disable'
+     * @return array list of array( 'types' => [], 'validate' => string )
+     */
+    public static function inlineML_localDeepLearningEntries( $check_array ): array
+    {
+        $ret = array();
+        if( !isset( $check_array['inline-policy-action'] ) || !is_array( $check_array['inline-policy-action'] ) )
+            return $ret;
+        foreach( $check_array['inline-policy-action'] as $entry )
+        {
+            if( empty( $entry['local-deep-learning'] ) || empty( $entry['type'] ) )
+                continue;
+            $validate = is_array( $entry['local-deep-learning'] ) ? (string)$entry['local-deep-learning'][0] : (string)$entry['local-deep-learning'];
+            $types = is_array( $entry['type'] ) ? $entry['type'] : array( $entry['type'] );
+            $ret[] = array( 'types' => $types, 'validate' => $validate );
+        }
+        return $ret;
+    }
+
+    /** $value against a BP JSON value: 'enable' (equal) or '!disable' (not equal) */
+    public static function localDeepLearningValueComplies( string $value, string $validate ): bool
+    {
+        if( strpos( $validate, '!' ) === 0 )
+            return $value !== substr( $validate, 1 );
+        return $value === $validate;
+    }
+
+    /**
+     * local-deep-learning of one model against the BP JSON ($section 'bp' / 'visibility').
+     * null: the BP JSON lists nothing for this model, or the PAN-OS version has no local deep learning for it
+     * @return bool|null
+     */
+    public function inlineML_localDeepLearningDetectorComplies( string $section, string $detector, string $secprof_type = 'spyware' ): ?bool
+    {
+        $t = self::$localDeepLearningTypes[$secprof_type];
+        if( !$this->bpFeatureSupported( $t['feature'] ) || !$this->localDeepLearningSupported( $secprof_type, $detector ) )
+            return null;
+        $ret = null;
+        foreach( self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, $secprof_type ) ) as $entry )
+        {
+            if( !in_array( 'any', $entry['types'], TRUE ) && !in_array( $detector, $entry['types'], TRUE ) )
+                continue;
+            $value = $this->additional[$t['container']][$detector]['local-deep-learning'] ?? '';
+            if( !self::localDeepLearningValueComplies( $value, $entry['validate'] ) )
+                return FALSE;
+            $ret = TRUE;
+        }
+        return $ret;
+    }
+
+    /**
+     * local-deep-learning of all models of the profile (inlineML_localDeepLearningDetectorComplies()):
+     * FALSE: one listed model does not comply; TRUE: all listed comply; null: nothing listed / not supported
+     */
+    public function inlineML_localDeepLearningComplies( string $section, string $secprof_type = 'spyware' ): ?bool
+    {
+        $ret = null;
+        foreach( array_keys( $this->additional[ self::$localDeepLearningTypes[$secprof_type]['container'] ] ?? array() ) as $detector )
+        {
+            $tmp = $this->inlineML_localDeepLearningDetectorComplies( $section, $detector, $secprof_type );
+            if( $tmp === FALSE )
+                return FALSE;
+            if( $tmp === TRUE )
+                $ret = TRUE;
+        }
+        return $ret;
+    }
+
+    /**
+     * alert-only-set ('visibility') / best-practice-set ('bp'): local-deep-learning of every model the BP JSON lists
+     * ('any': all) gets the value asked for (positive: that value; '!disable': 'enable', '!enable': 'disable').
+     * Only models with local deep learning in the PAN-OS version of the location ($localDeepLearningMinVersion);
+     * others are never set. Nothing listed / PAN-OS without local deep learning: no change.
      * @return bool TRUE when something was changed
      */
-    public function inlineML_localDeepLearningEnable( string $secprof_type, string $container ): bool
+    public function inlineML_localDeepLearningSetFromJSON( string $section, string $secprof_type = 'spyware' ): bool
     {
-        $node = DH::findFirstElement( $container, $this->xmlroot );
-        if( $node === FALSE )
+        $t = self::$localDeepLearningTypes[$secprof_type];
+        if( !$this->bpFeatureSupported( $t['feature'] ) )
             return FALSE;
+        $container = DH::findFirstElement( $t['container'], $this->xmlroot );
+        if( $container === FALSE )
+            return FALSE;
+
+        $entries = self::inlineML_localDeepLearningEntries( $this->bp_visibility_JSON( $section, $secprof_type ) );
         $changed = FALSE;
-        foreach( $node->childNodes as $entry )
+        foreach( $container->childNodes as $detectorNode )
         {
-            if( $entry->nodeType != XML_ELEMENT_NODE )
+            if( $detectorNode->nodeType != XML_ELEMENT_NODE )
                 continue;
-            $model = DH::findAttribute( "name", $entry );
-            if( !$this->localDeepLearningSupported( $secprof_type, $model ) )
+            $detector = DH::findAttribute( "name", $detectorNode );
+            // only models with local deep learning in this PAN-OS version ($localDeepLearningMinVersion), also for type 'any'
+            if( !$this->localDeepLearningSupported( $secprof_type, $detector ) )
                 continue;
-            $ldl = DH::findFirstElementOrCreate( 'local-deep-learning', $entry );
-            if( $ldl->textContent !== 'enable' )
+            foreach( $entries as $entry )
             {
-                $ldl->textContent = 'enable';
+                if( !in_array( 'any', $entry['types'], TRUE ) && !in_array( $detector, $entry['types'], TRUE ) )
+                    continue;
+                $node = DH::findFirstElementOrCreate( 'local-deep-learning', $detectorNode );
+                if( self::localDeepLearningValueComplies( $node->textContent, $entry['validate'] ) )
+                {
+                    $this->additional[$t['container']][$detector]['local-deep-learning'] = $node->textContent;
+                    continue;
+                }
+                $target = $entry['validate'];
+                if( strpos( $target, '!' ) === 0 )
+                    $target = ( substr( $target, 1 ) == 'disable' ) ? 'enable' : 'disable';
+                $node->textContent = $target;
+                $this->additional[$t['container']][$detector]['local-deep-learning'] = $target;
                 $changed = TRUE;
             }
-            $this->additional[$container][$model]['local-deep-learning'] = 'enable';
         }
         return $changed;
     }
@@ -204,7 +298,7 @@ class SecurityProfile2
                     if( isset($check_array['inline-policy-action'] ) )
                     {
                         foreach ($check_array['inline-policy-action'] as $validate) {
-                            if (isset($validate['type']) && $validate['type'][0] == 'any') {
+                            if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action'])) {
                                 $bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                                 if (!$bp_set)
                                     return FALSE;
@@ -224,7 +318,7 @@ class SecurityProfile2
                     if( isset($check_array['inline-policy-action'] ) )
                     {
                         foreach ($check_array['inline-policy-action'] as $validate) {
-                            if (isset($validate['type']) && $validate['type'][0] == 'any') {
+                            if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action'])) {
                                 $bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                                 if (!$bp_set)
                                     return FALSE;
@@ -249,7 +343,7 @@ class SecurityProfile2
 
                         foreach( $check_array['inline-policy-action'] as $validate )
                         {
-                            if( isset($validate['type']) && $validate['type'][0] == 'any' )
+                            if( isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action']) )
                             {
                                 $bp_set = $this->bp_stringValidation($name, 'action', $validate['action'][0]);
 
@@ -280,7 +374,7 @@ class SecurityProfile2
                 if( isset($check_array['inline-policy-action'] ) )
                 {
                     foreach ($check_array['inline-policy-action'] as $validate) {
-                        if (isset($validate['type']) && $validate['type'][0] == 'any') {
+                        if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action'])) {
                             $bp_set = $this->bp_stringValidation($name, 'mlav-policy-action', $validate['action'][0]);
                             if (!$bp_set)
                                 return FALSE;
@@ -292,6 +386,12 @@ class SecurityProfile2
                 }
             }
         }
+
+        // local-deep-learning as the BP JSON lists it (AS 11.2+, VP 12.2+); nothing listed: not checked
+        if( isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled )
+            foreach( array_keys( self::$localDeepLearningTypes ) as $ldlType )
+                if( $this->inlineML_localDeepLearningComplies( 'bp', $ldlType ) === FALSE )
+                    return FALSE;
 
         return $bp_set;
     }
@@ -328,7 +428,7 @@ class SecurityProfile2
                     if( isset($check_array['inline-policy-action'] ) )
                     {
                         foreach ($check_array['inline-policy-action'] as $validate) {
-                            if (isset($validate['type']) && $validate['type'][0] == 'any') {
+                            if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action'])) {
                                 $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                                 if (!$bp_set)
                                     return FALSE;
@@ -348,7 +448,7 @@ class SecurityProfile2
                     if( isset($check_array['inline-policy-action'] ) )
                     {
                         foreach ($check_array['inline-policy-action'] as $validate) {
-                            if (isset($validate['type']) && $validate['type'][0] == 'any') {
+                            if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action'])) {
                                 $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                                 if (!$bp_set)
                                     return FALSE;
@@ -377,7 +477,7 @@ class SecurityProfile2
 
                         foreach ($check_array['inline-policy-action'] as $validate)
                         {
-                            if (isset($validate['type']) && $validate['type'][0] == 'any')
+                            if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action']))
                             {
                                 $bp_set = $this->visibility_stringValidation($name, 'action', $validate['action'][0]);
 
@@ -415,7 +515,7 @@ class SecurityProfile2
                 {
                     //$check_array is unique for all AV/AS/VP from JSON file
                     foreach ($check_array['inline-policy-action'] as $validate) {
-                        if (isset($validate['type']) && $validate['type'][0] == 'any') {
+                        if (isset($validate['type']) && $validate['type'][0] == 'any' && !empty($validate['action'])) {
                             $bp_set = $this->visibility_stringValidation($name, 'mlav-policy-action', $validate['action'][0]);
                             if (!$bp_set)
                                 return FALSE;
@@ -429,6 +529,12 @@ class SecurityProfile2
                 }
             }
         }
+
+        // local-deep-learning as the BP JSON lists it (AS 11.2+, VP 12.2+); nothing listed: not checked
+        if( isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled )
+            foreach( array_keys( self::$localDeepLearningTypes ) as $ldlType )
+                if( $this->inlineML_localDeepLearningComplies( 'visibility', $ldlType ) === FALSE )
+                    return FALSE;
 
         return $bp_set;
     }
@@ -492,7 +598,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any") {
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action'])) {
                                     if ($detailed_check['action'][0] !== $this->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'])
                                         $bp_set = FALSE;
                                 }
@@ -518,7 +624,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any") {
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action'])) {
                                     $validate = $detailed_check['action'][0];
                                     $negate_string = "";
                                     if (strpos($validate, "!") !== FALSE)
@@ -538,11 +644,26 @@ class SecurityProfile2
                     }
                 }
 
-                //Todo: swaschkut 2025115  LDL missing
+                // local-deep-learning: shown with the settings; not BP / not visible as the BP JSON lists it
                 if( isset($this->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning']) )
                 {
+                    $ldl_string = " - local-deep-learning :".$this->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning'];
+                    $ldl_bp = ( $bestPractice || $visibility ) ? $this->inlineML_localDeepLearningDetectorComplies( 'bp', $type, 'spyware' ) : null;
+                    $ldl_vis = ( $bestPractice || $visibility ) ? $this->inlineML_localDeepLearningDetectorComplies( 'visibility', $type, 'spyware' ) : null;
+                    $ldl_signs = "";
+                    if( $bestPractice && $ldl_bp === FALSE )
+                        $ldl_signs .= $bp_NOT_sign;
+                    if( $visibility && $ldl_vis === FALSE )
+                        $ldl_signs .= $visible_NOT_sign;
+
                     if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
-                        $tmp_string .= " - local-deep-learning :".$this->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning'];
+                        $tmp_string .= $ldl_string.$ldl_signs;
+                    elseif( ( $bestPractice && $ldl_bp === FALSE ) || ( $visibility && $ldl_vis === FALSE ) )
+                    {
+                        // list mode without signs: the model is listed because its local-deep-learning does not comply
+                        $tmp_string .= $ldl_string;
+                        $add_to_array = true;
+                    }
                 }
 
                 if( $add_to_array )
@@ -597,7 +718,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if( $detailed_check['type'][0] == "any" )
+                                if( $detailed_check['type'][0] == "any" && !empty($detailed_check['action']) )
                                 {
                                     if( $detailed_check['action'][0] !== $this->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'] )
                                         $bp_set = FALSE;
@@ -625,7 +746,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any")
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action']))
                                 {
                                     $validate = $detailed_check['action'][0];
                                     $negate_string = "";
@@ -648,10 +769,26 @@ class SecurityProfile2
 
                 }
 
+                // local-deep-learning: shown with the settings; not BP / not visible as the BP JSON lists it
                 if( isset($this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning']) )
                 {
+                    $ldl_string = " - local-deep-learning :".$this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning'];
+                    $ldl_bp = ( $bestPractice || $visibility ) ? $this->inlineML_localDeepLearningDetectorComplies( 'bp', $type, 'vulnerability' ) : null;
+                    $ldl_vis = ( $bestPractice || $visibility ) ? $this->inlineML_localDeepLearningDetectorComplies( 'visibility', $type, 'vulnerability' ) : null;
+                    $ldl_signs = "";
+                    if( $bestPractice && $ldl_bp === FALSE )
+                        $ldl_signs .= $bp_NOT_sign;
+                    if( $visibility && $ldl_vis === FALSE )
+                        $ldl_signs .= $visible_NOT_sign;
+
                     if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
-                        $tmp_string .= " - local-deep-learning :".$this->additional['mica-engine-vulnerability-enabled'][$type]['local-deep-learning'];
+                        $tmp_string .= $ldl_string.$ldl_signs;
+                    elseif( ( $bestPractice && $ldl_bp === FALSE ) || ( $visibility && $ldl_vis === FALSE ) )
+                    {
+                        // list mode without signs: the model is listed because its local-deep-learning does not comply
+                        $tmp_string .= $ldl_string;
+                        $add_to_array = true;
+                    }
                 }
 
                 if( $add_to_array )
@@ -689,7 +826,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any") {
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action'])) {
                                     if ($detailed_check['action'][0] !== $this->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'])
                                         $bp_set = FALSE;
                                 }
@@ -716,7 +853,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any")
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action']))
                                 {
                                     $validate = $detailed_check['action'][0];
                                     $negate_string = "";
@@ -794,7 +931,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any")
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action']))
                                 {
                                     if ($detailed_check['action'][0] !== $this->additional['mica-engine-wildfire-rules'][$type]['action'])
                                         $bp_set = FALSE;
@@ -822,7 +959,7 @@ class SecurityProfile2
                             $bp_set = TRUE;
                             foreach( $check_array['inline-policy-action'] as $detailed_check )
                             {
-                                if ($detailed_check['type'][0] == "any")
+                                if ($detailed_check['type'][0] == "any" && !empty($detailed_check['action']))
                                 {
                                     $validate = $detailed_check['action'][0];
                                     $negate_string = "";

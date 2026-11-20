@@ -271,7 +271,7 @@
                             "HTTP2 Command and Control detector"
                         ],
                         "local-deep-learning": [
-                            "enable"
+                            "disable"
                         ]
                     }
                 ]
@@ -292,7 +292,7 @@
                             "HTTP2 Command and Control detector"
                         ],
                         "local-deep-learning": [
-                            "enable"
+                            "disable"
                         ]
                     }
                 ]
@@ -346,6 +346,14 @@
                         "action": [
                             "reset-both"
                         ]
+                    },
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "local-deep-learning": [
+                            "disable"
+                        ]
                     }
                 ]
             },
@@ -357,6 +365,14 @@
                         ],
                         "action": [
                             "!allow"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "local-deep-learning": [
+                            "disable"
                         ]
                     }
                 ]
