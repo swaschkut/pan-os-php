@@ -43,6 +43,14 @@ müssen erhalten bleiben, und zwar an einer Stelle.
   Meldung (`no snippet for PAN-OS 12.2 - using the snippet of PAN-OS 12.1`); nur ein PAN-OS älter als das älteste
   Snippet ist ein Fehler. Vorher brach 12.2 das Visibility-Playbook ab (`logforwardingprofile-create-bp`). Test:
   `tests/test_ironskillet_version.php`.
+- **iron-skillet 12.1 / 12.2** (2026-11-20): 12.2 hat eigene Snippets (`PH::IRONSKILLET_VERSIONS`). Es sind die
+  12.1-Snippets plus die einzige Profiländerung von 12.2 (PANW: New Features PAN-OS 12.2): VP `local-deep-learning
+  enable` für SQL Injection und Command Injection in jedem Profil mit Inline Cloud Analysis (PANW nennt Command Injection;
+  eine 12.2.2-Konfiguration hat das Element bei beiden Modellen). 12.1 hat keine
+  Änderungen an Security-Profilen (PANW: New Features PAN-OS 12.1). `sp_spg-create` übergibt ab 12.1 die PAN-OS-Version
+  (vorher fest `"12.1"`). Noch nicht: die URL-Optionen für HTTP-Header-Logging von 12.2 (XML-Elementnamen mit einer
+  12.2-Konfiguration prüfen) –
+  [todo/ironskillet-url-http-header-logging-12.2.md](../../../todo/ironskillet-url-http-header-logging-12.2.md).
 - **Prüfwerkzeug:** `utils/develop/ironskillet/url_categories_check.php` (nur lesend) meldet je iron-skillet-Version
   die vordefinierten URL-Kategorien, die in den URL-Profilen fehlen.
 

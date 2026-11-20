@@ -338,7 +338,7 @@ class PH
      * iron-skillet PAN-OS versions (https://github.com/PaloAltoNetworks/iron-skillet) - the ONLY place to change when
      * iron-skillet adds a version (e.g. 12.2): add it here and the version differences in the ironSkilletXml() concerned
      */
-    const IRONSKILLET_VERSIONS = array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1' );
+    const IRONSKILLET_VERSIONS = array( '8.1', '9.1', '10.0', '10.1', '10.2', '11.0', '11.1', '11.2', '12.1', '12.2' );
 
     /**
      * iron-skillet snippets: name => array( oldest version, newest version (null = newest of IRONSKILLET_VERSIONS) );

@@ -2820,12 +2820,13 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
         }
         elseif( $context->object->owner->version >= 121 )
         {
-            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( "12.1" );
-            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( "12.1" );
-            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( "12.1" );
-            $context->url_xmlString = URLProfile::ironSkilletXml( "12.1" );
-            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( "12.1" );
-            $context->wf_xmlString = WildfireProfile::ironSkilletXml( "12.1" );
+            // 12.1 and later: the snippet of the PAN-OS version (12.2 has its own; newer: newest below, PH::ironSkilletVersion)
+            $context->av_xmlString = AntiVirusProfile::ironSkilletXml( $panVersion );
+            $context->as_xmlString = AntiSpywareProfile::ironSkilletXml( $panVersion );
+            $context->vp_xmlString = VulnerabilityProfile::ironSkilletXml( $panVersion );
+            $context->url_xmlString = URLProfile::ironSkilletXml( $panVersion );
+            $context->fb_xmlString = FileBlockingProfile::ironSkilletXml( $panVersion );
+            $context->wf_xmlString = WildfireProfile::ironSkilletXml( $panVersion );
         }
     },
     'function_panVersion' => function (DeviceCallContext $context) {
