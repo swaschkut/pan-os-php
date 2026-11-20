@@ -26,6 +26,7 @@
  *   GET|POST projects/<pid>/tokens, DELETE projects/<pid>/tokens/<tid>                (API tokens for scripts)
  *   GET|POST projects/<pid>/configs, DELETE projects/<pid>/configs/<cid>, GET …/<cid>/download
  *   GET …/<cid>/<resource>[/<name>], POST …/<cid>/<resource>/actions            (REST per type, e.g. addresses, rules)
+ *   POST …/<cid>/stats/runs; GET projects/<pid>/runs[/<jid>[/files/<name>]], DELETE projects/<pid>/runs/<jid>   (jobs)
  *   GET …/<cid>/objects, GET …/<cid>/status, POST …/<cid>/change, POST …/<cid>/save, POST …/<cid>/discard
  * Every route except login needs a session (browser) or "Authorization: Bearer <API token>" (scripts);
  * with a session every route that is not GET needs the header X-CSRF-Token.
@@ -218,6 +219,31 @@ try
             }
         }
 
+        // runs (jobs): …/projects/<pid>/runs                      GET  list
+        //              …/projects/<pid>/runs/<jid>                GET  state + result files, DELETE cancel / delete
+        //              …/projects/<pid>/runs/<jid>/files/<name…>  GET  one result file
+        if( $sub === 'runs' )
+        {
+            if( $n == 3 && $method === 'GET' )
+                viewerOut( array( 'runs' => $app->jobList( $user, $pid ) ) );
+            if( $n == 4 && $method === 'GET' )
+                viewerOut( $app->jobGet( $user, $pid, $route[3] ) );
+            if( $n == 4 && $method === 'DELETE' )
+            {
+                $app->jobDelete( $user, $pid, $route[3] );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+            if( $n >= 6 && $method === 'GET' && $route[4] === 'files' )
+            {
+                $f = $app->jobFile( $user, $pid, $route[3], implode( '/', array_map( 'rawurldecode', array_slice( $route, 5 ) ) ) );
+                header( 'Content-Type: application/octet-stream' );
+                header( 'Content-Disposition: attachment; filename="' . preg_replace( '/[^A-Za-z0-9._-]/', '_', $f['name'] ) . '"' );
+                header( 'Content-Length: ' . strlen( $f['content'] ) );
+                print $f['content'];
+                exit;
+            }
+        }
+
         if( $sub === 'configs' )
         {
             if( $n == 3 && $method === 'GET' )
@@ -255,6 +281,9 @@ try
             // REST resources per type: …/configs/<cid>/<resource>            GET  list (location, filter, limit, offset, ruletype, securityprofiletype)
             //                          …/configs/<cid>/<resource>/<name>     GET  one object (all locations, or ?location=)
             //                          …/configs/<cid>/<resource>/actions    POST change: body location, filter, actions
+            // …/configs/<cid>/<job type>/runs   POST  queue a run (stats, …) -> 202 with the run
+            if( $n == 6 && $method === 'POST' && $route[5] === 'runs' && in_array( $op, ViewerApp::JOB_TYPES, TRUE ) )
+                viewerOut( $app->jobCreate( $user, $pid, $cid, $op, viewerBody() ), 202 );
             $type = $n >= 5 ? $app->resourceType( $op ) : null;
             if( $type !== null )
             {

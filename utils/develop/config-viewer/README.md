@@ -14,6 +14,7 @@ Background and open points: [todo/ui-config-in-browser.md](../../../todo/ui-conf
 | API | `api.php` → `lib/ViewerApp.php` | JSON API; users / projects / members / versions in SQLite; every request is checked against the project permission |
 | service | `bin/service.php` | the one long running process; starts a worker when a version is opened |
 | worker | `bin/worker.php` | one per opened version: loads the configuration **once** and keeps it in memory (`UTIL::$sharedConfig`); reads and changes run on that memory |
+| jobs | `bin/jobs.php` | second long running process: executes the queued runs (`stats`), result files in the folder of the run |
 | users | `bin/user.php` | create users on the command line |
 
 **Load once:** the first request for a version loads it (seconds to minutes for a large Panorama configuration), every
@@ -86,6 +87,7 @@ cd utils/develop/config-viewer
 export PANOSPHP_VIEWER_DATA=$HOME/pan-os-php-viewer-data    # outside the web root; path ≤ 60 characters
 php bin/user.php add alice admin                            # once; asks for the password (10+ characters)
 php bin/service.php                                         # stays in the foreground, prints "running"
+php bin/jobs.php                                            # third terminal (or background): runs (stats)
 ```
 
 Terminal 2 – web server (lab only):
@@ -196,6 +198,10 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `…/<cid>/<resource>` | GET | read | REST per type, e.g. `addresses`, `rules`, `security-profiles` (names: `meta` → `resource`). Query `location`, `filter`, `ruletype`, `securityprofiletype`, `limit` (1–5000, default 1000), `offset` → `type`, `model`, `total`, `offset`, `limit`, `items` |
 | `…/<cid>/<resource>/<name>` | GET | read | the object(s) with this name (all locations, or `?location=`); `404` when there is none |
 | `…/<cid>/<resource>/actions` | POST | write | body `location`, `filter`, `actions` → like `change`; the type comes from the resource |
+| `…/<cid>/stats/runs` | POST | read, whole configuration | queues a run (`type=stats actions=display-bpa json-to-folder`), body `location` (default `any`) → `202` with `jid`, `state` |
+| `projects/<pid>/runs` | GET | read, whole configuration | the last 200 runs |
+| `projects/<pid>/runs/<jid>` | GET / DELETE | read / who started it or write | `state` (`queued`, `running`, `done`, `failed`, `cancelled`), `files` / cancel an open run, delete a finished one with its files |
+| `projects/<pid>/runs/<jid>/files/<name>` | GET | read, whole configuration | one result file (e.g. `json/debugAPI_string.json`, `run.log`) |
 | `…/<cid>/objects` | GET | read | query `type`, `location`, `filter`, `ruletype`, `securityprofiletype` → `total`, `columns`, `rows`, `status`; starts the worker if needed |
 | `…/<cid>/status` | GET | read | `loaded`, `dirty`, `changes`, `saved`, `autosaved` (does not start a worker) |
 | `…/<cid>/change` | POST | write | body like `objects` plus `actions` → `processed`, `log`, `status` |
@@ -208,6 +214,14 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 with objects in the test configuration: address, application, device, dns-rule, interface, log-profile, rule,
 securityprofile, securityprofilegroup, service, tag, threat, threat-rule, zone; the other types answer, verified only
 with an empty result. Types without objects (`playbook`, `stats`, mergers, …) are not offered yet (jobs).
+
+**Runs (jobs).** A run is queued by the API and executed by `bin/jobs.php` (start it like the service; `PANOSPHP_VIEWER_JOBS`
+parallel runs, default 2; `PANOSPHP_VIEWER_JOB_TIMEOUT` seconds, default 3600). The pan-os-php arguments are built on the
+server from checked values (`ViewerApp::jobCreate()`); nothing of the request becomes an argument, a file name or a path.
+`in=` is the version file, the working directory is `<data>/projects/<pid>/jobs/<jid>/`, where the result files and
+`run.log` stay; server paths are replaced when a file is downloaded. At most 20 open runs per project. Today only
+`stats` (with the default BP JSON); not yet: `playbook`, `html-merger`, mergers, BP JSON / playbook files per project,
+one container per run.
 
 ### Processes
 
@@ -246,5 +260,5 @@ Used by `bin/worker.php` only.
 cd tests && php test_config_viewer.php
 ```
 
-185 checks: login, REST resources per type, grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+213 checks: login, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.

@@ -45,6 +45,7 @@ $null = array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', '/dev
 $service = proc_open( array( PHP_BINARY, $viewer . '/bin/service.php' ), $null, $pipes, $viewer, $env );
 for( $i = 0; $i < 50 && !file_exists( $data . '/service.sock' ); $i++ )
     usleep( 100000 );
+$jobs = proc_open( array( PHP_BINARY, $viewer . '/bin/jobs.php' ), $null, $pipes, $viewer, $env + array( 'PANOSPHP_VIEWER_JOBS' => '1' ) );
 $sock = stream_socket_server( 'tcp://127.0.0.1:0' );
 $port = (int)substr( strrchr( stream_socket_get_name( $sock, FALSE ), ':' ), 1 );
 fclose( $sock );
@@ -59,7 +60,7 @@ function cleanup()
     global $server, $data;
     foreach( glob( $data . '/projects/*/work/*.pid' ) ?: array() as $f )
         @posix_kill( (int)file_get_contents( $f ), SIGKILL );
-    foreach( array( $server, $GLOBALS['service'] ) as $proc )
+    foreach( array( $server, $GLOBALS['service'], $GLOBALS['jobs'] ) as $proc )
         if( is_resource( $proc ) )
         {
             proc_terminate( $proc );
@@ -132,7 +133,7 @@ eq( status( $anon->call( 'POST', 'projects', array( 'name' => 'x' ) ) ), 401, 'n
 eq( status( $anon->call( 'GET', 'projects/' . str_repeat( 'a', 32 ) . '/configs/' . str_repeat( 'b', 32 ) . '/objects?type=address' ) ), 401, 'no login: objects' );
 eq( status( $anon->login( 'alice', 'wrong-password' ) ), 401, 'wrong password' );
 eq( status( $anon->login( 'nobody', 'wrong-password' ) ), 401, 'unknown user gives the same answer' );
-foreach( array( 'bin/worker.php', 'bin/user.php' ) as $f )
+foreach( array( 'bin/worker.php', 'bin/user.php', 'bin/jobs.php' ) as $f )
 {
     @file_get_contents( $base . $f );
     eq( (int)substr( $http_response_header[0], 9, 3 ), 404, $f . ' is not callable through the web server' );
@@ -317,6 +318,60 @@ eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1?location=shared' )
 eq( status( $bob->call( 'GET', $RC . '/services?location=shared' ) ), 403, 'REST limited: other type' );
 eq( status( $bob->call( 'GET', $RC . '/applications?location=shared' ) ), 403, 'REST limited: type without location objects refused with a scope' );
 eq( status( $alice->call( 'DELETE', $R ) ), 200, 'REST project deleted' );
+
+// ---- 12j. runs (jobs): stats
+function waitRun( $client, $path )
+{
+    for( $i = 0; $i < 600; $i++ )
+    {
+        $r = $client->call( 'GET', $path );
+        if( !in_array( $r[1]['state'] ?? '', array( 'queued', 'running' ), TRUE ) )
+            return $r;
+        usleep( 200000 );
+    }
+    return $r;
+}
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Runs' ) );
+$J = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $J . '/configs', null, array( 'j.xml', $xml ) );
+$JC = $J . '/configs/' . $r[1]['cid'];
+eq( status( $anon2->call( 'POST', $JC . '/stats/runs', array() ) ), 401, 'runs: no login' );
+eq( status( $bob->call( 'POST', $JC . '/stats/runs', array() ) ), 404, 'runs: no access' );
+eq( status( $alice->call( 'POST', $JC . '/playbook/runs', array() ) ), 404, 'runs: type that is not offered' );
+eq( status( $alice->call( 'POST', $JC . '/stats/runs', array( 'location' => '../x' ) ) ), 400, 'runs: location checked' );
+$r = $alice->call( 'POST', $JC . '/stats/runs', array( 'location' => 'any', 'in' => '/etc/passwd', 'actions' => 'exportToExcel:/tmp/x', 'out' => '/tmp/y' ) );
+eq( array( status( $r ), $r[1]['state'] ?? null, $r[1]['args'] ?? null ), array( 202, 'queued', array( 'location=any', 'actions=display-bpa', 'json-to-folder', 'debugapi' ) ), 'runs: stats queued; arguments of the request are not taken over' );
+$run = $J . '/runs/' . $r[1]['jid'];
+$r = waitRun( $alice, $run );
+eq( $r[1]['state'] ?? null, 'done', 'runs: stats done' );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( in_array( 'run.log', $names, TRUE ), in_array( 'json/debugAPI_string.json', $names, TRUE ) ), array( TRUE, TRUE ), 'runs: result files listed (' . implode( ', ', $names ) . ')' );
+$r = $alice->call( 'GET', $run . '/files/json/debugAPI_string.json' );
+eq( array( status( $r ), is_string( $r[1] ) ? ( strpos( $r[1], 'adoption' ) !== FALSE ) : isset( $r[1] ) ), array( 200, TRUE ), 'runs: result file downloaded' );
+$log = $alice->call( 'GET', $run . '/files/run.log' );
+eq( array( status( $log ), strpos( is_string( $log[1] ) ? $log[1] : json_encode( $log[1] ), $data ) ), array( 200, FALSE ), 'runs: no server path in the log' );
+eq( status( $alice->call( 'GET', $run . '/files/' . rawurlencode( '../../viewer.sqlite' ) ) ), 404, 'runs: no file outside the run (encoded ..)' );
+eq( status( $alice->call( 'GET', $run . '/files/nosuchfile' ) ), 404, 'runs: unknown file' );
+eq( count( $alice->call( 'GET', $J . '/runs' )[1]['runs'] ?? array() ), 1, 'runs: list' );
+eq( status( $bob->call( 'GET', $run ) ), 404, 'runs: other user' );
+eq( status( $alice->call( 'PUT', $J . '/members', array( 'user' => 'bob', 'role' => 'read' ) ) ), 200, 'runs: bob read' );
+eq( status( $bob->call( 'GET', $run . '/files/run.log' ) ), 200, 'runs: read member reads a result' );
+eq( status( $bob->call( 'DELETE', $run ) ), 403, 'runs: read member can not delete the run of another user' );
+$r = $bob->call( 'POST', $JC . '/stats/runs', array() );
+eq( status( $r ), 202, 'runs: read member starts a run' );
+eq( status( $bob->call( 'DELETE', $J . '/runs/' . $r[1]['jid'] ) ), 200, 'runs: cancel the own run' );
+eq( in_array( waitRun( $bob, $J . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, array( 'cancelled' ), TRUE ), TRUE, 'runs: cancelled' );
+eq( status( $alice->call( 'PUT', $J . '/members', array( 'user' => 'bob', 'role' => 'read', 'scope' => array( 'shared' ) ) ) ), 200, 'runs: bob limited' );
+eq( status( $bob->call( 'POST', $JC . '/stats/runs', array() ) ), 403, 'runs: limited member can not run on the whole configuration' );
+eq( status( $bob->call( 'GET', $run ) ), 403, 'runs: limited member can not read results of the whole configuration' );
+$r = $alice->call( 'POST', $J . '/tokens', array( 'label' => 'cdss', 'role' => 'read', 'days' => 1 ) );
+$tk = new Client(); $tk->bearer = $r[1]['token'];
+$r = $tk->call( 'POST', $JC . '/stats/runs', array() );
+eq( status( $r ), 202, 'runs: started with an API token' );
+eq( waitRun( $tk, $J . '/runs/' . $r[1]['jid'] )[1]['state'] ?? null, 'done', 'runs: done with an API token' );
+eq( status( $alice->call( 'DELETE', $run ) ), 200, 'runs: finished run deleted' );
+eq( status( $alice->call( 'GET', $run ) ), 404, 'runs: gone' );
+eq( status( $alice->call( 'DELETE', $J ) ), 200, 'runs project deleted' );
 
 // ---- 12a. grants per member: types and scope (locations)
 $alice = new Client(); $alice->login( 'alice', 'alice-secret-1' );

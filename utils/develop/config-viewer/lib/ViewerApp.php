@@ -112,6 +112,10 @@ class ViewerApp
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS tokens (id INTEGER PRIMARY KEY, tid TEXT NOT NULL UNIQUE, hash TEXT NOT NULL,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
             role TEXT NOT NULL, label TEXT NOT NULL, expires INTEGER NOT NULL, created INTEGER NOT NULL, last_used INTEGER)' );
+        // jobs: CLI-like runs (stats, ...) started by bin/jobs.php, never by the web server process
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY, jid TEXT NOT NULL UNIQUE,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE, config_id INTEGER NOT NULL, user_id INTEGER,
+            type TEXT NOT NULL, args TEXT NOT NULL, state TEXT NOT NULL, created INTEGER NOT NULL, started INTEGER, finished INTEGER, error TEXT)' );
         // grants of a member: types (JSON list, NULL = all offered types) and scope (JSON list of locations, NULL = whole configuration)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(members)' )->fetchAll(), 'name' );
         if( !in_array( 'types', $cols, TRUE ) )
@@ -405,6 +409,184 @@ class ViewerApp
             throw new ViewerException( $p['role'] !== 'owner' ? 'not allowed' : 'unknown user', $p['role'] !== 'owner' ? 403 : 404 );
         $this->q( 'DELETE FROM members WHERE project_id = ? AND user_id = ?', array( $p['id'], $m['id'] ) );
         $this->q( 'DELETE FROM tokens WHERE project_id = ? AND user_id = ?', array( $p['id'], $m['id'] ) );
+    }
+
+    // ------------------------------------------------------------------ jobs (CLI-like runs with result files)
+
+    /**
+     * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
+     * path of the request. 'in=' is the version file, the working directory is the folder of the job.
+     */
+    const JOB_TYPES = array( 'stats' );
+    const JOB_QUEUE_MAX = 20;          // queued + running jobs per project
+    const JOB_FILE_MAX = 104857600;    // largest result file that can be downloaded
+
+    private function jobDir( array $project, string $jid ): string
+    {
+        if( !preg_match( '/^[0-9a-f]{32}$/', $jid ) )
+            throw new ViewerException( 'not found', 404 );
+        return $this->projectDir( $project['pid'] ) . '/jobs/' . $jid;
+    }
+
+    /** POST …/configs/<cid>/<type>/runs - queues a run; bin/jobs.php executes it */
+    public function jobCreate( array $user, $pid, $cid, $type, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        if( !is_string( $type ) || !in_array( $type, self::JOB_TYPES, TRUE ) )
+            throw new ViewerException( 'not found', 404 );
+        // a run works on the whole configuration
+        self::needUnlimited( $p, 'a ' . $type . ' run' );
+        $c = $this->configGet( $p, $cid );
+
+        $args = array();
+        if( $type === 'stats' )
+        {
+            $location = $in['location'] ?? 'any';
+            if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.\-]{1,63}$/', $location ) )
+                throw new ViewerException( 'location: letters, digits, space and . _ - only', 400 );
+            $args = array( 'location=' . $location, 'actions=display-bpa', 'json-to-folder', 'debugapi' );
+        }
+        $open = (int)$this->q( "SELECT COUNT(*) AS c FROM jobs WHERE project_id = ? AND state IN ('queued','running')", array( $p['id'] ) )->fetch()['c'];
+        if( $open >= self::JOB_QUEUE_MAX )
+            throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
+        $jid = self::randomId();
+        $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created) VALUES (?,?,?,?,?,?,?,?)',
+            array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time() ) );
+        return $this->jobGet( $user, $pid, $jid );
+    }
+
+    private function jobRow( array $project, $jid ): array
+    {
+        $j = is_string( $jid ) && preg_match( '/^[0-9a-f]{32}$/', $jid )
+            ? $this->q( 'SELECT j.*, u.name AS user, c.cid FROM jobs j LEFT JOIN users u ON u.id = j.user_id LEFT JOIN configs c ON c.id = j.config_id
+                WHERE j.jid = ? AND j.project_id = ?', array( $jid, $project['id'] ) )->fetch() : FALSE;
+        if( !$j )
+            throw new ViewerException( 'not found', 404 );
+        return $j;
+    }
+
+    private static function jobPublic( array $j ): array
+    {
+        return array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'args' => json_decode( $j['args'], TRUE ), 'state' => $j['state'], 'user' => $j['user'],
+            'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null,
+            'finished' => $j['finished'] !== null ? (int)$j['finished'] : null, 'error' => $j['error'] );
+    }
+
+    /** result files of a job: names relative to the folder of the job */
+    private function jobFiles( array $project, string $jid ): array
+    {
+        $dir = $this->jobDir( $project, $jid );
+        $files = array();
+        if( is_dir( $dir ) )
+        {
+            $it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ) );
+            foreach( $it as $f )
+                if( $f->isFile() && !$f->isLink() )
+                    $files[] = array( 'name' => substr( $f->getPathname(), strlen( $dir ) + 1 ), 'size' => $f->getSize() );
+            usort( $files, function( $a, $b ) { return strcmp( $a['name'], $b['name'] ); } );
+        }
+        return $files;
+    }
+
+    public function jobList( array $user, $pid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the list of runs' );
+        $rows = $this->q( 'SELECT j.*, u.name AS user, c.cid FROM jobs j LEFT JOIN users u ON u.id = j.user_id LEFT JOIN configs c ON c.id = j.config_id
+            WHERE j.project_id = ? ORDER BY j.id DESC LIMIT 200', array( $p['id'] ) )->fetchAll();
+        return array_map( array( 'ViewerApp', 'jobPublic' ), $rows );
+    }
+
+    public function jobGet( array $user, $pid, $jid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'a run' );
+        $j = $this->jobRow( $p, $jid );
+        return self::jobPublic( $j ) + array( 'files' => in_array( $j['state'], array( 'done', 'failed' ), TRUE ) ? $this->jobFiles( $p, $j['jid'] ) : array() );
+    }
+
+    /** @return array 'name', 'content' of one result file; server paths are replaced in the content */
+    public function jobFile( array $user, $pid, $jid, string $name ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'a run' );
+        $j = $this->jobRow( $p, $jid );
+        if( !in_array( $j['state'], array( 'done', 'failed' ), TRUE ) )
+            throw new ViewerException( 'the run is not finished', 409 );
+        foreach( $this->jobFiles( $p, $j['jid'] ) as $f )
+            if( $f['name'] === $name )
+            {
+                if( $f['size'] > self::JOB_FILE_MAX )
+                    throw new ViewerException( 'file too large', 413 );
+                // the name comes from the list of the folder, never from the request
+                return array( 'name' => basename( $f['name'] ), 'content' => $this->hidePaths( (string)file_get_contents( $this->jobDir( $p, $j['jid'] ) . '/' . $f['name'] ) ) );
+            }
+        throw new ViewerException( 'not found', 404 );
+    }
+
+    /** cancel an open run (the runner stops it) or delete a finished one with its files; who started it, or write */
+    public function jobDelete( array $user, $pid, $jid ): void
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'a run' );
+        $j = $this->jobRow( $p, $jid );
+        if( $p['role'] === 'read' && (int)$j['user_id'] !== (int)$user['id'] )
+            throw new ViewerException( 'not allowed: only who started the run, or the project permission "write"', 403 );
+        if( in_array( $j['state'], array( 'queued', 'running' ), TRUE ) )
+        {
+            $this->q( "UPDATE jobs SET state = 'cancelled', finished = ? WHERE id = ? AND state IN ('queued','running')", array( time(), $j['id'] ) );
+            return;
+        }
+        $this->q( 'DELETE FROM jobs WHERE id = ?', array( $j['id'] ) );
+        self::rmTree( $this->jobDir( $p, $j['jid'] ) );
+    }
+
+    // ---- used by bin/jobs.php only (CLI)
+
+    /** @return array|null the next queued job with 'dir', 'config' (absolute paths) - marked as running */
+    public function runnerTake(): ?array
+    {
+        $this->db->beginTransaction();
+        $j = $this->q( "SELECT j.*, p.pid, c.file FROM jobs j JOIN projects p ON p.id = j.project_id LEFT JOIN configs c ON c.id = j.config_id
+            WHERE j.state = 'queued' ORDER BY j.id LIMIT 1" )->fetch();
+        if( $j )
+            $this->q( "UPDATE jobs SET state = 'running', started = ? WHERE id = ?", array( time(), $j['id'] ) );
+        $this->db->commit();
+        if( !$j )
+            return null;
+        $dir = $this->dataDir . '/projects/' . $j['pid'];
+        $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
+        $args = json_decode( $j['args'], TRUE );
+        if( $config === null || !is_file( $config ) || !in_array( $j['type'], self::JOB_TYPES, TRUE ) || !is_array( $args ) || !preg_match( '/^[0-9a-f]{32}$/', $j['jid'] ) )
+        {
+            $this->runnerFinish( (int)$j['id'], 'failed', 'the configuration version does not exist any more' );
+            return $this->runnerTake();
+        }
+        $jobDir = $dir . '/jobs/' . $j['jid'];
+        if( !is_dir( $jobDir ) && !@mkdir( $jobDir, 0700, TRUE ) )
+        {
+            $this->runnerFinish( (int)$j['id'], 'failed', 'the folder of the run can not be created' );
+            return $this->runnerTake();
+        }
+        return array( 'id' => (int)$j['id'], 'type' => $j['type'], 'args' => array_values( array_filter( $args, 'is_string' ) ), 'dir' => $jobDir, 'config' => $config );
+    }
+
+    /** 'running' (still wanted), 'cancelled', or null when the job / project was deleted */
+    public function runnerState( int $id ): ?string
+    {
+        $r = $this->q( 'SELECT state FROM jobs WHERE id = ?', array( $id ) )->fetch();
+        return $r ? $r['state'] : null;
+    }
+
+    public function runnerFinish( int $id, string $state, ?string $error = null ): void
+    {
+        $this->q( "UPDATE jobs SET state = ?, finished = ?, error = ? WHERE id = ? AND state = 'running'", array( $state, time(), $error, $id ) );
+    }
+
+    /** after a restart of the runner: nothing is running any more */
+    public function runnerReset(): void
+    {
+        $this->q( "UPDATE jobs SET state = 'failed', finished = ?, error = 'the job runner was stopped' WHERE state = 'running'", array( time() ) );
     }
 
     // ------------------------------------------------------------------ API tokens (scripts)
