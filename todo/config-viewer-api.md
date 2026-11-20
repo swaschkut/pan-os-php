@@ -48,16 +48,16 @@
    item 4).
 6. **BP JSON / playbook JSON per project.** `shadow-bpjsonfile=` and `type=playbook json=` only with files of the
    project (uploaded like a configuration, versioned), never a server path.
-7. **Same arguments as the CLI** where possible, so that a CLI call can be turned into an API call one to one
-   (documented mapping, OpenAPI description).
+7. **REST resources per type** (decision 4) with an OpenAPI description; the query parameters use the names of the
+   CLI arguments where possible (`location`, `filter`, `ruletype`, …), and a documented mapping CLI call → API call.
 
 ### Security
 
-1. **Allow list per type and action** instead of the deny patterns: reviewed list, each action with a risk class –
+1. **Permissions per user** (decision 5: access, types, scope) and an **allow list per type and action** instead of the deny patterns: reviewed list, each action with a risk class –
    `read`, `change`, `writes file`, `network`, `secrets`. Arguments that name files or hosts are only accepted in the
    forms of "Function" 3 / 6 / item 4 below.
-2. **Isolation.** Today all workers run as the web server user. Own OS user or container per project (or per job);
-   limits for memory, CPU and run time; rate limits per user and token; upload limit.
+2. **Isolation.** Today all workers run as the web server user. Decided: one container per job (decision 2); limits
+   for memory, CPU and run time; rate limits per user and token; upload limit.
 3. **Secrets.** Configurations contain encrypted secrets: data directory encrypted at rest; retention and deletion
    rules; downloads in the audit log; option to run `type=master-key actions=scrub` on upload.
 4. **`in=api://` / SCM** (only if offered): credentials per project, stored server side and encrypted, never in the
@@ -79,11 +79,45 @@
 - Tests: extend `tests/test_config_viewer.php` (100 checks today) with tokens, all types, jobs, result files, allow
   list, isolation.
 
-## Open decisions
+## Decisions (2026-11-20)
 
-1. Token model: own tokens in SQLite, or OIDC (client credentials) from the start?
-2. Isolation: OS user per project, or one container per job?
-3. Jobs: in the existing service / worker model (fork), or a separate queue process?
-4. API shape: keep `api.php/<route>` and add `…/run/<type>`, or REST resources per type (see
-   [api-rest.md](api-rest.md))?
-5. Which types may use `in=api://` / SCM at all.
+1. **Token model:** own API tokens in SQLite first (random value, only the hash stored, expiry, bound to user +
+   project, sent as `Authorization: Bearer`), built behind one check so that OIDC (client credentials and browser
+   login) can be added next to it later without changing the routes.
+2. **Isolation:** **one container per job.** A job sees only the folder of its project (read only for inputs, one
+   output folder), with limits for memory, CPU and run time, no network unless the job is allowed to use it (item 5).
+   The interactive worker of the viewer (configuration loaded once, kept in memory) also runs in its own container
+   per opened version, not as the web server user.
+3. **Jobs:** both ways –
+   * interactive reads / changes of the viewer: in the worker of the version (configuration in memory, forked copy
+     first), as today;
+   * CLI-like runs (`playbook`, `stats`, `html-merger`, mergers, `diff`, exports, SCM types, …): job runner with a
+     queue in SQLite (limit per user / project, status, cancel, result files); each job loads its input in its own
+     container.
+4. **API shape:** **REST resources per type** (for example `GET …/projects/<pid>/configs/<cid>/addresses?location=…&filter=…`,
+   `POST …/projects/<pid>/playbooks/runs`), described with OpenAPI. Needs the common JSON object model first
+   (open decision 3 in [ui-config-in-browser.md](ui-config-in-browser.md)); the generic run of the CLI arguments
+   is not offered as public API.
+5. **Permissions per user and project** – finer than today's `read` / `write` / `owner`:
+   * **access:** `read` or `write` per user;
+   * **types:** which pan-os-php types a user may use in this project (for example only `address`, `rule`,
+     `securityprofile`; `playbook` / `stats` for CDSS); the types that reach devices or tenants (`in=api://`,
+     `scm-api://`, `scm-*`, `ssh-connector`, `upload`, `traffic-log`, `session-browser`, actions `…-fastapi`,
+     `reverse-dns`) are types / rights of their own and are only allowed when granted;
+   * **scope:** access can be limited to device groups, templates, template stacks (Panorama) or SCM folders /
+     snippets / containers; inside the scope **all objects** of the granted types.
+   Grants are combinations, e.g. user A: `write` + `address`, `service`, `rule` + device group `DG-Berlin`; user B:
+   `read` + all types + whole configuration.
+
+## Open points of decision 5 (to decide while building)
+
+- **Parents and shared:** a user limited to a device group sees objects of `shared` and of the parent device groups
+  that the DG uses (references) – read only, or not at all? Writing outside the scope is never allowed.
+- **Actions that act outside the scope:** for example mergers that move objects to `shared` / the parent, `move`
+  actions, `type=playbook` with steps on `location=any` – rejected for scoped users, or limited to the scope?
+- **Template stack ↔ template:** does a grant on a template stack include its templates (in stack order), or only the
+  stack's own settings?
+- **Enforcement:** the scope must be enforced server side (`location=` / `template=` / SCM folder forced, results
+  filtered again), not only in the UI.
+- **Device access (`in=api://`, SCM):** which devices / TSGs a project may reach (allow list per project, credentials
+  encrypted per project) and whether writing into a device / tenant is allowed at all (commit with a second person?).
