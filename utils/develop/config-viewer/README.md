@@ -76,6 +76,30 @@ Known limits of the prototype: no OS level isolation between projects (all worke
 action deny list is a pattern list, not a reviewed allow list per action; an owner can find out whether a user name
 exists (adding a member); sessions are PHP file sessions.
 
+## Start it: ./panosphp-viewer
+
+The simple way - one script next to the compose files, for Sven and for customers:
+
+```bash
+cd utils/develop/config-viewer          # or the unpacked air-gap bundle
+./panosphp-viewer start                 # the first time: asks who uses it (this computer / HTTPS) and the port
+```
+
+| Command | What it does |
+|---|---|
+| `start` / `stop` / `restart` | start (questions the first time), stop (data stays), restart |
+| `status` | containers, address, licence and plug-ins |
+| `logs [web\|service\|jobs\|proxy]` | the last lines of the log |
+| `setup` | the questions again (port, HTTPS, name, certificate: own CA / own files / Let's Encrypt) |
+| `password [user]` | a new password (default user admin), shown once |
+| `license <file>` / `license` | install a licence / show it |
+| `plugin <file.ppp>` / `plugin` | add a licensed plug-in package to `plugins/` / list them |
+| `update` | newer images (`images.tar.gz` next to the script = air gap, else from Docker Hub), restart |
+
+The answers are kept in `.env` next to the script (readable only for the user; the environment wins, as with docker compose, so `VIEWER_HTTPS=yes VIEWER_DOMAIN=viewer.example.com ./panosphp-viewer setup` needs no questions). Plug-ins are in `plugins/` next to the script. `bin/license.php` is the command line for the licence inside the web container (`install <file|->`, `show`, `remove`).
+
+**Not checked yet:** the script was run against a stand-in `docker` (`tests/test_config_viewer_start.php`: calls, settings, password, licence, plug-in, update), not against a real Docker.
+
 ## Run it with one command (Docker)
 
 Needs Docker with `docker compose` and the pan-os-php image (`swaschkut/pan-os-php:alpha`; it holds the viewer, since `docker/Dockerfile` installs SQLite for PHP and the docker client). Only `docker-compose.yml` of this folder is needed, not the repository:

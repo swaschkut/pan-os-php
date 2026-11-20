@@ -5,23 +5,32 @@ Needs: Docker with the Compose plugin ("docker compose version" works). Nothing 
 
 Install / update
     ./install.sh
-  loads the images from images.tar.gz and starts the viewer: http://127.0.0.1:8080/ (this computer only).
-  First start: the script prints the user "admin" and its password once - change it under Account.
-  Update: unpack the newer bundle, ./install.sh again. The data stays (volume panosphp-viewer-data).
+  Loads the images from images.tar.gz, asks the first time who uses the viewer, starts it and shows the address.
+    1) only this computer       http://127.0.0.1:8080/
+    2) other computers too      HTTPS with a name (DNS must point to this computer; ports 443 and 80);
+                                certificate: own certificate authority of the viewer, your own cert.pem + key.pem,
+                                or Let's Encrypt (internet needed)
+  First start: the user "admin" and its password are shown once - change it under Account.
+  Update: unpack the newer bundle into the same folder, ./install.sh again. The data stays (volume panosphp-viewer-data).
 
-For several users (HTTPS)
-    VIEWER_DOMAIN=viewer.example.com ./install.sh
-  VIEWER_DOMAIN is the name the users type into the browser (DNS must point to this computer; ports 443 and 80).
-  Certificate:
-    default           the proxy makes its own CA. Browsers warn until its certificate is trusted. Export it:
-                      docker compose -f docker-compose.yml -f docker-compose.https.yml exec proxy \
-                          cat /data/caddy/pki/authorities/local/root.crt
-    own certificate   put cert.pem and key.pem into docker/certs/ and start with
-                      VIEWER_TLS="/certs/cert.pem /certs/key.pem" VIEWER_DOMAIN=... ./install.sh
+Every day
+    ./panosphp-viewer status             running? address, licence, plug-ins
+    ./panosphp-viewer stop | start | restart
+    ./panosphp-viewer logs [web|service|jobs|proxy]
+    ./panosphp-viewer password [user]    new password (forgotten / lost), shown once
+    ./panosphp-viewer setup              answer the questions again, then ./panosphp-viewer restart
 
-Stop / remove
-    docker compose -f docker-compose.yml -f docker-compose.https.yml down        stop (data stays)
-    docker compose -f docker-compose.yml -f docker-compose.https.yml down -v     stop and delete all data
+Licensed plug-ins (e.g. migration)
+    ./panosphp-viewer plugin migration.ppp      add a plug-in package (also: plug-ins in the folder plugins/ of this bundle)
+    ./panosphp-viewer license acme-2026.lic     install the licence (or in the browser: Account -> Licence)
+    ./panosphp-viewer license                   show it
 
-Other settings: VIEWER_PORT (default 8080, without HTTPS), VIEWER_ADMIN_USER / VIEWER_ADMIN_PASSWORD (first start).
-VERSION.txt names the image and the platform (linux/amd64 or linux/arm64) of this bundle.
+HTTPS with the own certificate authority
+  Browsers warn until its certificate is trusted. Export it:
+    docker compose -f docker-compose.yml -f docker-compose.https.yml exec proxy cat /data/caddy/pki/authorities/local/root.crt
+
+Remove everything (also all data!)
+    docker compose -f docker-compose.yml -f docker-compose.https.yml down -v
+
+Settings are kept in .env next to panosphp-viewer. VERSION.txt names the image and the platform (linux/amd64 or
+linux/arm64) of this bundle.

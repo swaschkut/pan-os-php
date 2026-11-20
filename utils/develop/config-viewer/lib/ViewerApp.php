@@ -508,13 +508,17 @@ class ViewerApp
     private $licenceStamp = null;
 
     /**
-     * long running processes (job runner): load the plug-ins again when the licence was installed, changed or removed
-     * since they were loaded
+     * long running processes (job runner): load the plug-ins again when the licence or a plug-in was installed,
+     * changed or removed since they were loaded
      */
     public function refreshPlugins(): void
     {
-        clearstatcache( TRUE, $this->dataDir . '/license.txt' );
+        clearstatcache();
         $stamp = @filemtime( $this->dataDir . '/license.txt' ) . ':' . @filesize( $this->dataDir . '/license.txt' );
+        // a plug-in added, changed or removed (e.g. panosphp-viewer plugin add)
+        foreach( array_filter( array( dirname( __FILE__, 2 ) . '/plugins', (string)getenv( 'PANOSPHP_VIEWER_PLUGINS' ) ) ) as $d )
+            foreach( array_merge( glob( rtrim( $d, '/' ) . '/*.ppp' ) ?: array(), glob( rtrim( $d, '/' ) . '/*/plugin.php' ) ?: array() ) as $f )
+                $stamp .= '|' . $f . ':' . @filemtime( $f );
         if( $this->licenceStamp === null )
             $this->licenceStamp = $stamp;
         if( $stamp === $this->licenceStamp )

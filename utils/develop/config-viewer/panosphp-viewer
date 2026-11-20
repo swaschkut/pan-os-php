@@ -1,0 +1,201 @@
+#!/bin/bash
+# pan-os-php config viewer - start and look after it with one command. Needs Docker with "docker compose".
+#
+#   ./panosphp-viewer start              first time: asks a few questions (port, HTTPS), then starts
+#   ./panosphp-viewer stop | restart | status | logs [web|service|jobs|proxy]
+#   ./panosphp-viewer setup              answer the questions again (port, HTTPS, certificate)
+#   ./panosphp-viewer password [user]    new password for a user (default admin), shown once
+#   ./panosphp-viewer license <file>     install a licence;  license  shows the installed one
+#   ./panosphp-viewer plugin <file.ppp>  add a licensed plug-in;  plugin  lists them
+#   ./panosphp-viewer update             newer images (images.tar.gz next to this script, else from Docker Hub), restart
+#
+# The answers are kept in .env next to this script; plug-ins in the folder plugins/ next to it.
+# Data (users, projects, versions, licence) is in the Docker volume panosphp-viewer-data and stays on stop / update.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE"
+ENV_FILE="$HERE/.env"
+PLUGINS="$HERE/plugins"
+DOCKER="${DOCKER:-docker}"
+
+say()  { printf '%s\n' "$*"; }
+fail() { printf 'panosphp-viewer: %s\n' "$*" >&2; exit 1; }
+
+need_docker() {
+    "$DOCKER" version >/dev/null 2>&1 || fail "Docker is not installed or not running - start Docker (Docker Desktop on a Mac) and try again"
+    "$DOCKER" compose version >/dev/null 2>&1 || fail "\"docker compose\" is missing (Compose plugin of Docker)"
+}
+
+# value of a setting: the environment, else .env - like docker compose (so that
+# "VIEWER_HTTPS=yes VIEWER_DOMAIN=x ./panosphp-viewer setup" works without questions, e.g. in an install script)
+setting() {
+    local v="${!1:-}"
+    [ -z "$v" ] && [ -f "$ENV_FILE" ] && v="$(sed -n "s/^$1=//p" "$ENV_FILE" | tail -1 | sed 's/^"\(.*\)"$/\1/')"
+    printf '%s' "$v"
+}
+
+# settings made by setup (a bundle brings a .env with the image only)
+configured() { [ -f "$ENV_FILE" ] && grep -q '^VIEWER_PORT=' "$ENV_FILE"; }
+
+ask() {   # ask <question> <default> -> answer (default when there is no terminal)
+    local a=""
+    if [ -t 0 ]; then read -r -p "$1 [$2]: " a || true; fi
+    printf '%s' "${a:-$2}"
+}
+
+setup() {
+    say "Settings of the config viewer (Enter keeps the value in [brackets])."
+    local port https domain tls certs mode image
+    image="$(setting VIEWER_IMAGE)"; image="${image:-${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}}"
+    say ""
+    say "Who uses the viewer?"
+    say "  1) only this computer - http://127.0.0.1:<port>/"
+    say "  2) other computers too - HTTPS with a name (needs ports 443 and 80)"
+    mode="$(ask "choice" "$( [ "$(setting VIEWER_HTTPS)" = "yes" ] && echo 2 || echo 1 )")"
+    if [ "$mode" = "2" ]; then
+        https=yes
+        domain="$(ask "name the users type into the browser (DNS name of this computer)" "$(setting VIEWER_DOMAIN)")"
+        [ -n "$domain" ] || fail "a name is needed for HTTPS"
+        say "Certificate:"
+        say "  1) own certificate authority of the viewer - works without internet; browsers warn until it is trusted"
+        say "  2) your own certificate (cert.pem + key.pem in a folder)"
+        say "  3) Let's Encrypt - public DNS name and internet needed"
+        local was; was="$(setting VIEWER_TLS)"
+        local def=1; [[ "$was" == /certs/* ]] && def=2; [[ "$was" == *@* ]] && def=3
+        case "$(ask "choice" "$def")" in
+            2) certs="$(ask "folder with cert.pem and key.pem" "$(setting VIEWER_CERTS)")"
+               [ -f "$certs/cert.pem" ] && [ -f "$certs/key.pem" ] || fail "no cert.pem / key.pem in $certs"
+               certs="$(cd "$certs" && pwd)"; tls="/certs/cert.pem /certs/key.pem" ;;
+            3) tls="$(ask "e-mail address for Let's Encrypt" "$( [[ "$was" == *@* ]] && echo "$was" )")"; certs=""
+               [[ "$tls" == *@* ]] || fail "an e-mail address is needed" ;;
+            *) tls="internal"; certs="" ;;
+        esac
+        port="$(setting VIEWER_PORT)"; port="${port:-8080}"
+    else
+        https=no; domain=""; tls=""; certs=""
+        port="$(ask "port" "$(setting VIEWER_PORT)")"; port="${port:-8080}"
+        [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ] || fail "port: a number 1-65535"
+    fi
+    mkdir -p "$PLUGINS"
+    umask 077
+    {
+        echo "# settings of panosphp-viewer (./panosphp-viewer setup to change them)"
+        echo "VIEWER_IMAGE=$image"
+        echo "VIEWER_PORT=$port"
+        echo "VIEWER_HTTPS=$https"
+        echo "VIEWER_DOMAIN=$domain"
+        echo "VIEWER_TLS=\"$tls\""
+        [ -n "$certs" ] && echo "VIEWER_CERTS=$certs"
+        echo "VIEWER_PLUGINS_DIR=$PLUGINS"
+    } > "$ENV_FILE"
+    chmod 600 "$ENV_FILE"
+    say ""
+    say "saved in $ENV_FILE"
+}
+
+compose() {
+    local files=( -f docker-compose.yml )
+    [ "$(setting VIEWER_HTTPS)" = "yes" ] && files+=( -f docker-compose.https.yml )
+    "$DOCKER" compose "${files[@]}" "$@"
+}
+
+url() {
+    if [ "$(setting VIEWER_HTTPS)" = "yes" ]; then echo "https://$(setting VIEWER_DOMAIN)/"; else echo "http://127.0.0.1:$(setting VIEWER_PORT)/"; fi
+}
+
+# a command in the web container, as the user the viewer runs as
+in_web() { compose exec -T -u ubuntu web "$@"; }
+
+wait_web() {
+    local i
+    for i in $(seq 1 60); do
+        in_web php -r 'exit(0);' >/dev/null 2>&1 && return 0
+        sleep 1
+    done
+    return 1
+}
+
+first_password() {
+    compose logs web 2>/dev/null | sed -n 's/.*config-viewer: \(first start.*\|password: .*\)$/  \1/p' | tail -2
+}
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$cmd" in
+start)
+    need_docker
+    configured || setup
+    mkdir -p "$PLUGINS"
+    compose up -d
+    say ""
+    say "config viewer: $(url)"
+    if wait_web; then
+        pw="$(first_password)"
+        if [ -n "$pw" ]; then say "$pw"; else say "  (log in with your user; forgot the password: ./panosphp-viewer password)"; fi
+    else
+        say "  the web part does not answer yet - ./panosphp-viewer logs web"
+    fi
+    ;;
+stop)
+    need_docker; compose down; say "stopped - the data stays (./panosphp-viewer start)" ;;
+restart)
+    need_docker; compose down; compose up -d; say "config viewer: $(url)" ;;
+status)
+    need_docker
+    compose ps
+    say ""
+    say "address: $(url)"
+    in_web php bin/license.php show 2>/dev/null || say "(not running)"
+    ;;
+logs)
+    need_docker; compose logs --tail 200 "$@" ;;
+setup)
+    setup
+    if [ -n "$("$DOCKER" compose -f docker-compose.yml ps -q 2>/dev/null || true)" ]; then say "running: ./panosphp-viewer restart to use the new settings"; fi
+    ;;
+password)
+    need_docker
+    user="${1:-admin}"
+    [[ "$user" =~ ^[A-Za-z0-9._@-]{1,64}$ ]] || fail "user name?"
+    pw="$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20 || true)"
+    compose exec -T -u ubuntu -e VIEWER_PASSWORD="$pw" web php bin/user.php password "$user" >/dev/null
+    say "new password of $user: $pw   (shown only now - change it under Account)"
+    ;;
+license|licence)
+    need_docker
+    if [ $# -eq 0 ]; then in_web php bin/license.php show; exit 0; fi
+    [ -f "$1" ] || fail "licence file not found: $1"
+    in_web php bin/license.php install - < "$1"
+    ;;
+plugin|plugins)
+    mkdir -p "$PLUGINS"
+    if [ $# -eq 0 ]; then
+        ls -1 "$PLUGINS" | grep -v '^\.' || say "no plug-ins in $PLUGINS"
+        exit 0
+    fi
+    [ -f "$1" ] || fail "file not found: $1"
+    name="$(basename "$1")"
+    [[ "$name" =~ ^[a-z][a-z0-9]{1,30}\.ppp$ ]] || fail "a plug-in package is a file <name>.ppp (e.g. migration.ppp)"
+    head -1 "$1" | grep -q '^PANOSPHP-PLUGIN 1$' || fail "$name is not a plug-in package of pan-os-php"
+    cp "$1" "$PLUGINS/$name"
+    chmod 644 "$PLUGINS/$name"
+    say "plug-in $name added - it is on when the licence holds its feature (./panosphp-viewer license)"
+    ;;
+update)
+    need_docker
+    if [ -f "$HERE/images.tar.gz" ]; then
+        say "loading the images from images.tar.gz ..."
+        gunzip -c "$HERE/images.tar.gz" | "$DOCKER" load
+    else
+        compose pull
+    fi
+    configured || setup
+    compose up -d
+    say "config viewer: $(url)"
+    ;;
+help|-h|--help)
+    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' ;;
+*)
+    fail "unknown command: $cmd (./panosphp-viewer help)" ;;
+esac
