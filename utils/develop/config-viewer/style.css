@@ -41,3 +41,7 @@ td.wrap { white-space: normal; }
 .statusbar .spacer { flex: 1; }
 pre.log { max-height: 240px; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-size: 12px; white-space: pre-wrap; }
 .pager { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+
+.token { width: 100%; font-family: monospace; }
+.filelink { display: inline-block; margin: 2px 14px 2px 0; }
+td.wrap { white-space: normal; overflow-wrap: anywhere; }

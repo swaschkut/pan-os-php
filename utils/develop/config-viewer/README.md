@@ -327,3 +327,8 @@ cd tests && php test_config_viewer.php
 
 340 checks: login, allow list per action, audit log, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.
+
+## Browser pages for the API parts
+
+The project page shows, next to versions and members: **Runs** (start a `stats` / `playbook` run on a version, optional BP JSON, state refreshes while a run is open, result files, "Result as new version"), **Project files** (playbook JSON / BP JSON upload, download, delete), **Members** with the limits per member (types, locations), **API tokens** (create - the token is shown once -, list, delete) and for the owner the **Audit log** of the project. Admins see the audit log of everything under "Account".
+A member limited to types or locations sees no runs card and no upload / download / delete of whole versions; the viewer offers only its types and starts with its first location. The page only hides what the server refuses anyway - the checks are in `ViewerApp`.

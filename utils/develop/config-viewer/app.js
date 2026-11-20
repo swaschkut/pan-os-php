@@ -96,6 +96,7 @@ async function showAccount() {
                         await api('DELETE', 'users/' + encodeURIComponent(u.name)); await showAccount();
                     }) }))))))));
     }
+    if (state.admin) nodes.push(auditCard('audit', 'Audit log (admin, all projects)'));
     main(nodes);
 }
 
@@ -113,47 +114,194 @@ async function showProjects() {
                 el('td', { text: p.owner }), el('td', {}, el('span', { class: 'badge', text: p.role })), el('td', { text: fmtTime(p.created) })))))));
 }
 
+function names(text) { return text.split(',').map(t => t.trim()).filter(t => t !== ''); }
+function table(head, rows) {
+    return el('table', { class: 'plain' }, el('thead', {}, el('tr', {}, head.map(h => el('th', { text: h })))), el('tbody', {}, rows));
+}
+
+// audit log: of one project (owner) or of everything (admin)
+function auditCard(path, title) {
+    const body = el('div', {});
+    const user = el('input', { autocomplete: 'off', placeholder: 'all users' });
+    async function load() {
+        const q = new URLSearchParams({ limit: '200' });
+        if (user.value.trim() !== '') q.set('user', user.value.trim());
+        const lines = (await api('GET', path + '?' + q)).audit;
+        body.replaceChildren(lines.length === 0 ? el('p', { class: 'muted', text: 'No entries.' }) :
+            el('div', { class: 'tablewrap' }, table(['Time', 'User', 'Token', 'Address', 'Request', 'Status', 'Details'], lines.map(l => el('tr', {},
+                el('td', { text: fmtTime(l.ts) }), el('td', { text: l.user || '' }), el('td', { text: l.token || '' }), el('td', { text: l.ip || '' }),
+                el('td', { class: 'wrap', text: l.method + ' ' + l.route }), el('td', { text: String(l.status) }),
+                el('td', { class: 'wrap', text: l.detail ? JSON.stringify(l.detail) : '' }))))));
+    }
+    return el('div', { class: 'card' }, el('h2', { text: title }),
+        el('p', { class: 'muted', text: 'Logins, every request that is not a plain read (also refused ones) and every download. Newest first, 200 entries.' }),
+        el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(load); } }, field('User', user), el('button', { type: 'submit', text: 'Show audit log' })), body);
+}
+
 async function showProject(pid) {
     const p = await api('GET', 'projects/' + pid);
     state.project = p; state.config = null; state.cache.clear();
-    const [members, configs] = await Promise.all([api('GET', 'projects/' + pid + '/members'), api('GET', 'projects/' + pid + '/configs')]);
     const canWrite = p.role !== 'read', owner = p.role === 'owner';
+    // access limited to some types / locations: no whole-configuration operations (download, upload, runs)
+    const limited = !!(p.types || p.scope);
+    const base = 'projects/' + pid;
+    const [members, configs, tokens, files] = await Promise.all([api('GET', base + '/members'), api('GET', base + '/configs'), api('GET', base + '/tokens'), api('GET', base + '/files')]);
 
+    // ---- versions
     const file = el('input', { type: 'file', accept: '.xml,text/xml,application/xml', required: true });
     const versions = el('div', { class: 'card' }, el('h2', { text: 'Configuration versions' }),
-        canWrite ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        canWrite && !limited ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
             const fd = new FormData(); fd.append('config', file.files[0]);
-            message('uploading ...'); await api('POST', 'projects/' + pid + '/configs', fd); await showProject(pid);
+            message('uploading ...'); await api('POST', base + '/configs', fd); await showProject(pid);
         }); } }, field('Upload a PAN-OS / Panorama XML configuration', file), el('button', { class: 'primary', type: 'submit', text: 'Upload' })) : null,
         configs.configs.length === 0 ? el('p', { class: 'muted', text: 'No configuration yet.' }) :
-        el('table', { class: 'plain' }, el('thead', {}, el('tr', {}, el('th', { text: 'File' }), el('th', { text: 'Created' }), el('th', { text: 'By' }), el('th', { text: 'Size' }), el('th', { text: 'How it was created' }), el('th', {}))),
-            el('tbody', {}, configs.configs.map(c => el('tr', {},
-                el('td', {}, el('button', { class: 'link', type: 'button', text: c.name, onclick: () => run(() => showViewer(c)) })),
-                el('td', { text: fmtTime(c.created) }), el('td', { text: c.created_by || '' }), el('td', { text: fmtSize(c.size) }), el('td', { class: 'wrap', text: c.note }),
-                el('td', {}, el('a', { href: API + '/projects/' + pid + '/configs/' + c.cid + '/download', text: 'Download' }), ' ',
-                    canWrite ? el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
-                        if (!confirm('Delete this version? Unsaved changes on it are lost.')) return;
-                        await api('DELETE', 'projects/' + pid + '/configs/' + c.cid); await showProject(pid);
-                    }) }) : null))))));
+        table(['File', 'Created', 'By', 'Size', 'How it was created', ''], configs.configs.map(c => el('tr', {},
+            el('td', {}, el('button', { class: 'link', type: 'button', text: c.name, onclick: () => run(() => showViewer(c)) })),
+            el('td', { text: fmtTime(c.created) }), el('td', { text: c.created_by || '' }), el('td', { text: fmtSize(c.size) }), el('td', { class: 'wrap', text: c.note }),
+            el('td', {}, limited ? null : el('a', { href: API + '/' + base + '/configs/' + c.cid + '/download', text: 'Download' }), ' ',
+                canWrite && !limited ? el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                    if (!confirm('Delete this version? Unsaved changes on it are lost.')) return;
+                    await api('DELETE', base + '/configs/' + c.cid); await showProject(pid);
+                }) }) : null)))));
 
+    // ---- members with their grants (types, locations)
     const mUser = el('input', { required: true, autocomplete: 'off' });
     const mRole = el('select', {}, el('option', { value: 'read', text: 'read' }), el('option', { value: 'write', text: 'write (change and save)' }));
+    const mTypes = el('input', { autocomplete: 'off', placeholder: 'all types' });
+    const mScope = el('input', { autocomplete: 'off', placeholder: 'whole configuration' });
     const memberCard = el('div', { class: 'card' }, el('h2', { text: 'Members' }),
         owner ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
-            await api('PUT', 'projects/' + pid + '/members', { user: mUser.value, role: mRole.value }); await showProject(pid);
-        }); } }, field('User name', mUser), field('Permission', mRole), el('button', { class: 'primary', type: 'submit', text: 'Add / change' })) : null,
-        el('table', { class: 'plain' }, el('thead', {}, el('tr', {}, el('th', { text: 'User' }), el('th', { text: 'Permission' }), el('th', {}))),
-            el('tbody', {}, members.members.map(m => el('tr', {}, el('td', { text: m.user }), el('td', {}, el('span', { class: 'badge', text: m.role })),
-                el('td', {}, m.role !== 'owner' && (owner || m.user === state.user) ? el('button', { class: 'danger', type: 'button', text: owner ? 'Remove' : 'Leave project', onclick: () => run(async () => {
-                    await api('DELETE', 'projects/' + pid + '/members/' + encodeURIComponent(m.user));
-                    if (owner) await showProject(pid); else await showProjects();
-                }) }) : null))))));
+            const body = { user: mUser.value, role: mRole.value };
+            if (names(mTypes.value).length) body.types = names(mTypes.value);
+            if (names(mScope.value).length) body.scope = names(mScope.value);
+            await api('PUT', base + '/members', body); await showProject(pid);
+        }); } }, field('User name', mUser), field('Permission', mRole),
+            el('label', { class: 'grow' }, 'Only these types (comma separated, e.g. address,service,rule)', mTypes),
+            el('label', { class: 'grow' }, 'Only these locations (comma separated, e.g. shared,DG-Berlin)', mScope),
+            el('button', { class: 'primary', type: 'submit', text: 'Add / change' })) : null,
+        owner ? el('p', { class: 'muted', text: 'A member limited to types or locations must name one of its locations for every read and change, and can not download, upload or delete whole versions or start runs.' }) : null,
+        table(['User', 'Permission', 'Types', 'Locations', ''], members.members.map(m => el('tr', {}, el('td', { text: m.user }), el('td', {}, el('span', { class: 'badge', text: m.role })),
+            el('td', { class: 'wrap', text: m.role === 'owner' ? 'all' : (m.types ? m.types.join(', ') : 'all') }),
+            el('td', { class: 'wrap', text: m.role === 'owner' ? 'whole configuration' : (m.scope ? m.scope.join(', ') : 'whole configuration') }),
+            el('td', {}, m.role !== 'owner' && (owner || m.user === state.user) ? el('button', { class: 'danger', type: 'button', text: owner ? 'Remove' : 'Leave project', onclick: () => run(async () => {
+                await api('DELETE', base + '/members/' + encodeURIComponent(m.user));
+                if (owner) await showProject(pid); else await showProjects();
+            }) }) : null)))));
+
+    // ---- API tokens (scripts)
+    const tLabel = el('input', { required: true, maxlength: 80, autocomplete: 'off' });
+    const tRole = el('select', {}, el('option', { value: 'read', text: 'read' }), canWrite ? el('option', { value: 'write', text: 'write' }) : null);
+    const tDays = el('input', { type: 'number', min: 1, max: 365, value: 30, required: true });
+    const tokenOnce = el('div', {});
+    const tokenCard = el('div', { class: 'card' }, el('h2', { text: 'API tokens' }),
+        el('p', { class: 'muted', text: 'For scripts: "Authorization: Bearer <token>" instead of a login. A token works for this project only, with at most the chosen permission, and follows your own types and locations.' }),
+        el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            const r = await api('POST', base + '/tokens', { label: tLabel.value, role: tRole.value, days: parseInt(tDays.value, 10) });
+            await showProject(pid);
+            // shown once: the server keeps only a hash
+            document.getElementById('token-once').replaceChildren(el('p', { text: 'New token "' + r.label + '" - copy it now, it is not shown again:' }),
+                el('input', { class: 'token', readonly: true, value: r.token, onfocus: (e) => e.target.select() }));
+        }); } }, field('Label', tLabel), field('Permission', tRole), field('Valid for (days)', tDays), el('button', { class: 'primary', type: 'submit', text: 'Create token' })),
+        Object.assign(tokenOnce, { id: 'token-once' }),
+        tokens.tokens.length === 0 ? el('p', { class: 'muted', text: 'No tokens.' }) :
+        table(['Label', 'User', 'Permission', 'Created', 'Expires', 'Last used', ''], tokens.tokens.map(t => el('tr', {},
+            el('td', { text: t.label }), el('td', { text: t.user }), el('td', {}, el('span', { class: 'badge', text: t.role })), el('td', { text: fmtTime(t.created) }),
+            el('td', { text: fmtTime(t.expires) + (t.expires * 1000 < Date.now() ? ' (expired)' : '') }), el('td', { text: fmtTime(t.last_used) }),
+            el('td', {}, el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                if (!confirm('Delete the token "' + t.label + '"? Scripts that use it stop working.')) return;
+                await api('DELETE', base + '/tokens/' + t.tid); await showProject(pid);
+            }) }))))));
+
+    // ---- project files: playbook JSON, BP JSON
+    const fKind = el('select', {}, el('option', { value: 'playbook', text: 'playbook JSON' }), el('option', { value: 'bp', text: 'BP JSON' }));
+    const fFile = el('input', { type: 'file', accept: '.json,application/json', required: true });
+    const filesCard = el('div', { class: 'card' }, el('h2', { text: 'Project files' }),
+        el('p', { class: 'muted', text: 'Playbooks and BP JSON files for runs, for the checks of a read (?bp=) and for alert-only-set / best-practice-set. A playbook is checked when it is uploaded: only steps that work on the configuration and write plain file names.' }),
+        canWrite && !limited ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            const fd = new FormData(); fd.append('file', fFile.files[0]);
+            await api('POST', base + '/files?kind=' + fKind.value, fd); await showProject(pid);
+        }); } }, field('Kind', fKind), field('JSON file', fFile), el('button', { class: 'primary', type: 'submit', text: 'Upload' })) : null,
+        files.files.length === 0 ? el('p', { class: 'muted', text: 'No files.' }) :
+        table(['File', 'Kind', 'Created', 'By', 'Size', ''], files.files.map(f => el('tr', {},
+            el('td', { text: f.name }), el('td', {}, el('span', { class: 'badge', text: f.kind })), el('td', { text: fmtTime(f.created) }), el('td', { text: f.created_by || '' }),
+            el('td', { text: fmtSize(f.size) }),
+            el('td', {}, el('a', { href: API + '/' + base + '/files/' + f.fid + '/download', text: 'Download' }), ' ',
+                canWrite && !limited ? el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                    if (!confirm('Delete the file "' + f.name + '"?')) return;
+                    await api('DELETE', base + '/files/' + f.fid); await showProject(pid);
+                }) }) : null)))));
+
+    // ---- runs (jobs): stats, playbook
+    let runsCard = null;
+    if (!limited) {
+        const rVersion = el('select', { required: true }, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
+        const rType = el('select', {}, el('option', { value: 'stats', text: 'stats (BPA figures)' }), el('option', { value: 'playbook', text: 'playbook' }));
+        const rPlaybook = el('select', {}, el('option', { value: '', text: '- choose a playbook -' }), files.files.filter(f => f.kind === 'playbook').map(f => el('option', { value: f.fid, text: f.name })));
+        const rBp = el('select', {}, el('option', { value: '', text: 'BP JSON shipped with pan-os-php' }), files.files.filter(f => f.kind === 'bp').map(f => el('option', { value: f.fid, text: f.name })));
+        const rLocation = el('input', { value: 'any', maxlength: 63 });
+        const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation);
+        const typeChanged = () => { pbField.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats'; };
+        rType.addEventListener('change', typeChanged); typeChanged();
+        const runsBody = el('div', {});
+        const openFiles = new Set();
+        let refreshRuns = async () => {};
+        async function drawRuns() {
+            const runs = (await api('GET', base + '/runs')).runs;
+            const details = new Map();
+            for (const r of runs) if (openFiles.has(r.jid)) details.set(r.jid, (await api('GET', base + '/runs/' + r.jid)).files);
+            runsBody.replaceChildren(runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
+                table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
+                    const open = r.state === 'queued' || r.state === 'running';
+                    const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
+                        el('td', {}, el('span', { class: 'badge' + (open ? ' dirty' : ''), text: r.state }), r.error ? el('span', { class: 'muted', text: ' ' + r.error }) : null),
+                        el('td', { text: r.user || '' }), el('td', { text: fmtTime(r.started) }), el('td', { text: fmtTime(r.finished) }),
+                        el('td', {},
+                            open ? null : el('button', { type: 'button', text: openFiles.has(r.jid) ? 'Hide files' : 'Result files', onclick: () => run(async () => {
+                                if (openFiles.has(r.jid)) openFiles.delete(r.jid); else openFiles.add(r.jid);
+                                await drawRuns();
+                            }) }), ' ',
+                            canWrite && r.type === 'playbook' && r.state === 'done' ? el('button', { type: 'button', text: 'Result as new version', onclick: () => run(async () => {
+                                await api('POST', base + '/runs/' + r.jid + '/save'); await showProject(pid); message('the result configuration of the run is a new version');
+                            }) }) : null, ' ',
+                            el('button', { class: 'danger', type: 'button', text: open ? 'Cancel' : 'Delete', onclick: () => run(async () => {
+                                if (!open && !confirm('Delete this run with its result files?')) return;
+                                await api('DELETE', base + '/runs/' + r.jid); openFiles.delete(r.jid); await refreshRuns();
+                            }) })));
+                    if (!details.has(r.jid)) return [row];
+                    const fl = details.get(r.jid);
+                    return [row, el('tr', {}, el('td', { colspan: 7, class: 'wrap' }, fl.length === 0 ? el('span', { class: 'muted', text: 'no files' }) :
+                        fl.map(f => el('span', { class: 'filelink' }, el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/' + f.name.split('/').map(encodeURIComponent).join('/'), text: f.name }),
+                            el('span', { class: 'muted', text: ' ' + fmtSize(f.size) }))))) ];
+                })));
+            return runs.some(r => r.state === 'queued' || r.state === 'running');
+        }
+        runsCard = el('div', { class: 'card' }, el('h2', { text: 'Runs' }),
+            el('p', { class: 'muted', text: 'A run works on one version in its own folder; exports, set commands and the result configuration are its result files. Nothing changes a version - the result of a playbook run can be taken as a new version.' }),
+            configs.configs.length === 0 ? el('p', { class: 'muted', text: 'Upload a configuration first.' }) :
+            el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                const body = {};
+                if (rBp.value) body.bp = rBp.value;
+                if (rType.value === 'playbook') { if (!rPlaybook.value) throw new Error('choose a playbook (upload one under "Project files")'); body.playbook = rPlaybook.value; }
+                else body.location = rLocation.value.trim() || 'any';
+                await api('POST', base + '/configs/' + rVersion.value + '/' + rType.value + '/runs', body);
+                message('run queued');
+                await refreshRuns();
+            }); } }, field('Run', rType), field('Version', rVersion), pbField, locField, field('BP JSON', rBp), el('button', { class: 'primary', type: 'submit', text: 'Start run' })),
+            runsBody);
+        // while a run is open: refresh the list
+        let openRuns = await drawRuns();
+        refreshRuns = async () => { openRuns = await drawRuns(); };
+        state.pendingTimers = [setInterval(() => { if (openRuns) refreshRuns().catch(() => {}); }, 4000)];
+    }
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
+        limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
         owner ? el('button', { class: 'danger', type: 'button', text: 'Delete project', onclick: () => run(async () => {
             if (!confirm('Delete project "' + p.name + '" with all configurations?')) return;
-            await api('DELETE', 'projects/' + pid); await showProjects();
-        }) }) : null), versions, memberCard);
+            await api('DELETE', base); await showProjects();
+        }) }) : null), versions, runsCard, filesCard, memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null);
+    // main() clears the timers of the page before - the ones of this page start now
+    if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
 }
 
 // ---------------------------------------------------------------- viewer / editor
@@ -163,12 +311,13 @@ async function showViewer(config) {
     const view = { rows: [], columns: [], sort: null, desc: false, page: 1, size: 50, quick: '' };
     const base = () => 'projects/' + pid + '/configs/' + state.config.cid;
 
-    const types = Object.keys(state.meta.types);
+    // access limited to some types: only these; limited to locations: start with the first one
+    const types = (p.types || Object.keys(state.meta.types)).filter(t => state.meta.types[t]);
     const type = el('select', {}, types.map(t => el('option', { value: t, text: t })));
     const ruletype = el('select', {}, state.meta.ruletypes.map(t => el('option', { value: t, text: t })));
     ruletype.value = 'security';
     const sptype = el('select', {}, state.meta.securityprofiletypes.map(t => el('option', { value: t, text: t })));
-    const location = el('input', { value: 'any', maxlength: 200 });
+    const location = el('input', { value: p.scope ? p.scope[0] : 'any', maxlength: 200 });
     const filter = el('input', { placeholder: '(name contains web) and (object is.unused)', maxlength: 2000 });
     const quick = el('input', { placeholder: 'text in any column', oninput: () => { view.quick = quick.value.toLowerCase(); view.page = 1; draw(); } });
     const rtField = field('Rule type', ruletype), spField = field('Profile type', sptype);
