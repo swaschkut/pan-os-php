@@ -79,6 +79,23 @@ class ApiObjectModel
     public static $ownResources = array( 'antivirus-profiles', 'wildfire-analysis-profiles',
         'dos-rules', 'tunnel-inspection-rules', 'captive-portal-rules', 'default-security-rules', 'sdwan-rules', 'network-packet-broker-rules' );
 
+    /**
+     * TRUE: item() adds the computed values (never configuration) as _panosphp: references, ip_count, visibility,
+     * best_practice and the single checks. Off by default - the item is then the plain SCM shape.
+     */
+    public static $withComputed = FALSE;
+
+    /** single checks per class: name in _panosphp.checks => method prefix ("<prefix>_visibility" / "<prefix>_best_practice") */
+    public static $checks = array(
+        'AntiSpywareProfile' => array( 'rules' => 'spyware_rules', 'inline' => 'cloud_inline_analysis', 'dns_lists' => 'spyware_dnslist',
+            'dns_security' => 'spyware_dns_security', 'advanced_dns_security' => 'spyware_advanced_dns_security' ),
+        'VulnerabilityProfile' => array( 'rules' => 'vulnerability_rules', 'inline' => 'cloud_inline_analysis' ),
+        'AntiVirusProfile' => array( 'actions' => 'av_actions', 'inline' => 'cloud_inline_analysis' ),
+        'WildfireProfile' => array( 'rules' => 'wildfire_rules', 'inline' => 'cloud_inline_analysis' ),
+        'FileBlockingProfile' => array( 'rules' => 'fileblocking_rules' ),
+        'URLProfile' => array( 'site_access' => 'url_siteaccess', 'credential' => 'url_usercredentialsubmission', 'inline' => 'url_mica_engine' ),
+    );
+
     /** @var SCMChangeGenerator|null */
     private static $generator = null;
 
@@ -139,7 +156,10 @@ class ApiObjectModel
         if( in_array( $resource, self::$ownResources, TRUE ) )
         {
             $own = self::generic( $object->xmlroot );
-            return array( 'resource' => $resource, 'item' => array( 'name' => $object->name() ) + ( is_array( $own ) ? $own : array() ) + self::ruleFields( $object ) + self::location( $object ) );
+            $item = array( 'name' => $object->name() ) + ( is_array( $own ) ? $own : array() ) + self::ruleFields( $object ) + self::location( $object );
+            if( self::$withComputed && count( $c = self::computed( $object ) ) > 0 )
+                $item['_panosphp'] = $c;
+            return array( 'resource' => $resource, 'item' => $item );
         }
 
         $dropped = array();
@@ -160,9 +180,57 @@ class ApiObjectModel
                 $notConverted[] = $path;
         }
         $item = $body + self::ruleFields( $object ) + self::location( $object );
+        $extra = self::$withComputed ? self::computed( $object ) : array();
         if( count( $notConverted ) > 0 )
-            $item['_panosphp'] = array( 'not_converted' => $notConverted );
+            $extra['not_converted'] = $notConverted;
+        if( count( $extra ) > 0 )
+            $item['_panosphp'] = $extra;
         return array( 'resource' => $resource, 'item' => $item );
+    }
+
+    /** TRUE / FALSE / null (N/A: the BP JSON has no check, or the PAN-OS version not the setting) */
+    private static function verdict( $v ): ?bool
+    {
+        return $v === null ? null : (bool)$v;
+    }
+
+    /**
+     * values pan-os-php calculates for an object (todo/json-object-model.md, decision 3):
+     * references, ip_count (address), visibility / best_practice (security profiles, profile groups) with the
+     * single checks, profiles_visibility / profiles_best_practice (security rules: the profiles of the rule)
+     */
+    public static function computed( $object ): array
+    {
+        $out = array();
+        if( method_exists( $object, 'countReferences' ) )
+            $out['references'] = (int)$object->countReferences();
+        $class = get_class( $object );
+        if( $class == 'Address' && method_exists( $object, 'getIPcount' ) )
+            $out['ip_count'] = $object->getIPcount();
+        if( $object instanceof Rule )
+        {
+            if( $object->isSecurityRule() || $object->isDefaultSecurityRule() )
+            {
+                $out['profiles_visibility'] = self::verdict( $object->SP_isVisibility() );
+                $out['profiles_best_practice'] = self::verdict( $object->SP_isBestPractice() );
+            }
+            return $out;
+        }
+        if( method_exists( $object, 'is_visibility' ) && method_exists( $object, 'is_best_practice' ) )
+        {
+            $out['visibility'] = self::verdict( $object->is_visibility() );
+            $out['best_practice'] = self::verdict( $object->is_best_practice() );
+            foreach( self::$checks[$class] ?? array() as $name => $prefix )
+            {
+                $check = array();
+                foreach( array( 'visibility', 'best_practice' ) as $section )
+                    if( method_exists( $object, $prefix . '_' . $section ) )
+                        $check[$section] = self::verdict( $object->{$prefix . '_' . $section}() );
+                if( count( $check ) > 0 )
+                    $out['checks'][$name] = $check;
+            }
+        }
+        return $out;
     }
 
     /**

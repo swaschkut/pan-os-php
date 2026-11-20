@@ -1361,13 +1361,13 @@ class ViewerApp
     }
 
     /** read: all objects of one type, filtered by pan-os-php, from the configuration in memory */
-    public function objects( array $user, $pid, $cid, array $in, int $max = 50000 ): array
+    public function objects( array $user, $pid, $cid, array $in, int $max = 50000, bool $computed = FALSE ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $c = $this->configGet( $p, $cid );
         $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
-        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type, 'args' => array_merge( $args, array( 'actions=display' ) ) ) );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type, 'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array() ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() );
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
@@ -1404,7 +1404,11 @@ class ViewerApp
         $offset = $in['offset'] ?? 0;
         if( !is_numeric( $limit ) || (int)$limit < 1 || (int)$limit > self::PAGE_MAX || !is_numeric( $offset ) || (int)$offset < 0 )
             throw new ViewerException( 'limit: 1-' . self::PAGE_MAX . ', offset: 0 or more', 400 );
-        $r = $this->objects( $user, $pid, $cid, $in, PHP_INT_MAX );
+        // ?computed=1: the values pan-os-php calculates (references, visibility, best practice, checks) as _panosphp
+        $computed = isset( $in['computed'] ) && (string)$in['computed'] === '1';
+        if( $computed && $model !== 'scm-v1' )
+            throw new ViewerException( 'computed=1 needs the scm-v1 model', 400 );
+        $r = $this->objects( $user, $pid, $cid, $in, PHP_INT_MAX, $computed );
         $items = $r['rows'];
         if( $model === 'scm-v1' )
         {

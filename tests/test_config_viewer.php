@@ -343,6 +343,19 @@ foreach( array( 'nat-rules', 'decryption-rules', 'authentication-rules', 'defaul
 foreach( array( 'app-override-rules', 'pbf-rules', 'qos-policy-rules', 'dos-rules', 'tunnel-inspection-rules', 'captive-portal-rules', 'sdwan-rules', 'network-packet-broker-rules' ) as $res )
     eq( status( $alice->call( 'GET', $RC . '/' . $res ) ), 200, 'scm-v1: ' . $res . ' (none in this test configuration)' );
 eq( status( $alice->call( 'GET', $RC . '/security-rules?ruletype=nat' ) ) === 200 && ( $alice->call( 'GET', $RC . '/security-rules?ruletype=nat' )[1]['total'] ?? null ) === 9, TRUE, 'scm-v1: the rule type of a rule resource can not be changed by the request' );
+// ?computed=1: the values pan-os-php calculates, as _panosphp
+$one = $alice->call( 'GET', $RC . '/addresses/shared-host1?computed=1' )[1]['items'][0] ?? array();
+eq( array( $one['_panosphp']['ip_count'] ?? null, ( $one['_panosphp']['references'] ?? 0 ) > 0 ), array( 1, TRUE ), 'computed=1: address with ip_count and references' );
+eq( isset( $alice->call( 'GET', $RC . '/addresses/shared-host1' )[1]['items'][0]['_panosphp'] ), FALSE, 'without computed=1: plain SCM shape' );
+$r = $alice->call( 'GET', $RC . '/anti-spyware-profiles?computed=1' );
+$c = $r[1]['items'][0]['_panosphp'] ?? array();
+eq( array( array_key_exists( 'visibility', $c ), array_key_exists( 'best_practice', $c ), isset( $c['checks']['rules'], $c['checks']['inline'] ) ), array( TRUE, TRUE, TRUE ),
+    'computed=1: anti-spyware profile with visibility, best_practice and single checks' );
+$c = $alice->call( 'GET', $RC . '/profile-groups?computed=1' )[1]['items'][0]['_panosphp'] ?? array();
+eq( array_key_exists( 'visibility', $c ), TRUE, 'computed=1: profile group' );
+$c = $alice->call( 'GET', $RC . '/security-rules?computed=1' )[1]['items'][0]['_panosphp'] ?? array();
+eq( array_key_exists( 'profiles_visibility', $c ), TRUE, 'computed=1: security rule with the verdict of its profiles' );
+eq( status( $alice->call( 'GET', $RC . '/addresses?model=display-v0&computed=1' ) ), 400, 'computed=1 only with scm-v1' );
 eq( status( $alice->call( 'GET', $RC . '/rules?model=scm-v1' ) ), 400, 'scm-v1: the type resource rules has no scm-v1 model (use security-rules, …)' );
 
 eq( status( $alice->call( 'GET', $RC . '/addresses?model=nosuch' ) ), 400, 'model checked' );

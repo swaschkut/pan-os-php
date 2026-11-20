@@ -107,6 +107,9 @@ function viewerWrite( $path )
 function viewerRun( $type, array $args )
 {
     global $configFile;
+    // 'x-computed' is no pan-os-php argument: the API object model also gets its computed values (_panosphp)
+    ApiObjectModel::$withComputed = in_array( 'x-computed', $args, TRUE );
+    $args = array_values( array_diff( $args, array( 'x-computed' ) ) );
     $argv = array_merge( array( 'config-viewer', 'in=' . $configFile, 'shadow-json' ), $args );
     $argc = count( $argv );
     PH::resetCliArgs( $argv );

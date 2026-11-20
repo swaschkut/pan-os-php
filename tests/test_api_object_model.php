@@ -137,6 +137,22 @@ eq( ApiObjectModel::item( $v->securityRules->find( 'r-second' ) )['item']['posit
 $n1 = ApiObjectModel::item( $v->natRules->find( 'n1' ) );
 eq( array( $n1['resource'], $n1['item']['rulebase'] ?? null, $n1['item']['position'] ?? null ), array( 'nat-rules', 'local', 1 ), 'NAT rule' );
 
+// ---- computed values (_panosphp): only when asked
+ApiObjectModel::$withComputed = TRUE;
+$c = ApiObjectModel::item( $v->addressStore->find( 'h1' ) )['item']['_panosphp'] ?? null;
+eq( array( $c['ip_count'] ?? null, ( $c['references'] ?? 0 ) >= 2 ), array( 1, TRUE ), 'computed: address ip_count, references (group g1, rule r-first)' );
+$c = ApiObjectModel::item( $v->AntiSpywareProfileStore->find( 'as1' ) )['item']['_panosphp'] ?? array();
+eq( array( array_key_exists( 'visibility', $c ), array_key_exists( 'best_practice', $c ), array_keys( $c['checks'] ?? array() ) ),
+    array( TRUE, TRUE, array( 'rules', 'inline', 'dns_lists', 'dns_security', 'advanced_dns_security' ) ), 'computed: anti-spyware profile verdicts and single checks' );
+eq( array( is_bool( $c['checks']['rules']['visibility'] ) || $c['checks']['rules']['visibility'] === null, $c['best_practice'] ), array( TRUE, FALSE ),
+    'computed: verdicts are true / false / null; this profile is not best practice' );
+$c = ApiObjectModel::item( $v->securityProfileGroupStore->find( 'pg1' ) )['item']['_panosphp'] ?? array();
+eq( array( array_key_exists( 'visibility', $c ), $c['references'] ?? null ), array( TRUE, 1 ), 'computed: profile group verdict, referenced by one rule' );
+$c = ApiObjectModel::item( $v->securityRules->find( 'r-first' ) )['item']['_panosphp'] ?? array();
+eq( array( array_key_exists( 'profiles_visibility', $c ), array_key_exists( 'profiles_best_practice', $c ) ), array( TRUE, TRUE ), 'computed: security rule - verdict of its profiles' );
+ApiObjectModel::$withComputed = FALSE;
+eq( isset( ApiObjectModel::item( $v->addressStore->find( 'h1' ) )['item']['_panosphp'] ), FALSE, 'computed: off by default - plain SCM shape' );
+
 // ---- Panorama: shared and device group
 $pano = new PanoramaConf();
 ob_start();
