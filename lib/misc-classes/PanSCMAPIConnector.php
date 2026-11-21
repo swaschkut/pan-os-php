@@ -9,6 +9,31 @@
 
 class PanSCMAPIConnector
 {
+    /**
+     * a text field of an SCM object (description, …) as a string: a string as it is; a list of strings / numbers (SCM
+     * sends some descriptions as an array) - its lines joined with a line break; anything else - null (not taken)
+     */
+    public static function scmText( $value )
+    {
+        if( is_string( $value ) )
+            return $value;
+        if( is_int( $value ) || is_float( $value ) )
+            return (string)$value;
+        if( is_array( $value ) )
+        {
+            $lines = array();
+            foreach( $value as $v )
+            {
+                if( is_string( $v ) || is_int( $v ) || is_float( $v ) )
+                    $lines[] = (string)$v;
+                elseif( $v !== null )
+                    return null;
+            }
+            return implode( "\n", $lines );
+        }
+        return null;
+    }
+
     public $name = 'connector';
 
     /** @var string */
@@ -1657,8 +1682,9 @@ class PanSCMAPIConnector
                         $tmp_obj = $sub->tagStore->findOrCreate($obj);
                         $tmp_rule->tags->addTag($tmp_obj);
                     }
-                if( isset($object['description']) )
-                    $tmp_rule->setDescription($object['description']);
+                // SCM: the description of a rule can come as a list (e.g. [] or several lines) - only text is taken
+                if( isset($object['description']) && ( $tmp_desc = self::scmText( $object['description'] ) ) !== null )
+                    $tmp_rule->setDescription($tmp_desc);
                 if( isset($object['category']) )
                     foreach( $object['category'] as $obj )
                     {
@@ -2977,8 +3003,8 @@ class PanSCMAPIConnector
         $root = null;
         $this->SCM_API_prepareMethodForImport( $object, $dom, $root );
         $this->SCM_API_arrayToXml( $dom, $root, $data );
-        if( isset($object['description']) && $object['description'] !== '' )
-            DH::createElement( $root, 'description', $object['description'] );
+        if( isset($object['description']) && ( $tmp_desc = self::scmText( $object['description'] ) ) !== null && $tmp_desc !== '' )
+            DH::createElement( $root, 'description', $tmp_desc );
         $node = $sub->xmlroot->ownerDocument->importNode( $root, TRUE );
 
         if( $type === 'nat-rules' )

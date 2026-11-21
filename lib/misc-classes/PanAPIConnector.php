@@ -588,7 +588,9 @@ class PanAPIConnector
                 $connector = new PanAPIConnector($host, $apiKey, 'panos', null, $port);
         }
 
-        if( self::isNamedEntry( $host ) || $host == "bpa-apikey" || $host == "license-apikey" || $host == "ldap-password" || $host == "maxmind-licensekey" || strpos($host, "tsg_id" || $host == "gcp-mysql-password") !== FALSE )
+        // named entries and SCM tenants (tsg_id<TSG>): no device to test - stored as they are
+        // (before: strpos($host, "tsg_id" || …) - the needle was TRUE, so every host with a "1" was stored untested)
+        if( self::isNamedEntry( $host ) || strpos( $host, "tsg_id" ) !== FALSE )
         {
             $checkConnectivity = false;
             self::$savedConnectors[] = $connector;
