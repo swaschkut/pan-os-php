@@ -157,3 +157,4 @@ details.mergersection > summary h4 { display: inline; margin: 0; }
 details.extracols { align-self: flex-end; }
 details.extracols > summary { cursor: pointer; }
 details.extracols .checks { margin-top: .3em; }
+td.mergersettings { white-space: pre-line; font-family: var(--mono, monospace); font-size: 12px; }

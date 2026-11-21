@@ -996,8 +996,9 @@ async function mergerTab(base, pid, canWrite, versions) {
     const runs = (await api('GET', base + '/runs')).runs.filter(r => MERGER_TYPES[r.type]);
     const fileLink = (r, name, text) => el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/' + name, target: '_blank', rel: 'noopener', text: text || name });
     const runList = runs.length === 0 ? el('p', { class: 'muted', text: 'No merger runs yet.' }) :
-        table(['Merger', 'Version', 'State', 'Started', ''], runs.slice(0, 30).map(r => el('tr', {},
+        table(['Merger', 'Version', 'Settings', 'State', 'Started', ''], runs.slice(0, 30).map(r => el('tr', {},
             el('td', { text: r.type }), el('td', { text: (versions.find(c => c.cid === r.cid) || { name: '-' }).name }),
+            el('td', { class: 'wrap mergersettings', text: mergerSettings(r).join('\n') }),
             el('td', { class: 'wrap' }, el('span', { class: 'badge' + (r.state === 'queued' || r.state === 'running' ? ' dirty' : ''), text: r.state }), r.error ? el('span', { class: 'muted', text: ' ' + r.error }) : null),
             el('td', { text: fmtTime(r.started) }),
             el('td', {}, el('div', { class: 'row' },
@@ -1031,6 +1032,11 @@ async function mergerTab(base, pid, canWrite, versions) {
 // merger-possible-report: status of a finding (pan-os-php MERGERPOSSIBLEREPORT) - the problems first
 const MERGE_PROBLEM = ['conflict', 'would-change-policy', 'not-checked'];
 const MERGE_ORDER = ['conflict', 'would-change-policy', 'not-checked', 'merge-ok', 'unchecked'];
+
+/** the settings a merger run ran with: its pan-os-php arguments without the files of the run */
+function mergerSettings(r) {
+    return (r.args || []).filter(a => !/^(out|exportjson|exportcsv)=/i.test(a));
+}
 
 /** the report of a merger run (merger.json) as tables, with a text filter */
 async function showMergerReport(base, r, out) {
@@ -1114,6 +1120,7 @@ async function showMergerReport(base, r, out) {
     [...typesSeen].sort().forEach(t => typeSel.append(el('option', { value: t, text: t })));
     out.dataset.jid = r.jid;
     out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }),
+        el('p', {}, el('span', { class: 'muted', text: 'Settings: ' }), el('code', { text: ['type=' + r.type].concat(mergerSettings(r)).join(' ') })),
         el('div', { class: 'row' }, typesSeen.size > 0 ? field('Object type', typeSel) : null,
             rep.type === 'merger-possible-report' ? field('Merge', statusSel) : null, field('Filter', filterBox),
             el('button', { type: 'button', class: 'small', text: 'Fold all', onclick: () => folds.forEach(d => { d.open = false; }) }),
