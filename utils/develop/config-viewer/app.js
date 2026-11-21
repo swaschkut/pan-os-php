@@ -1055,7 +1055,7 @@ function diffLines(items, other) {
  * ran on (new window).
  */
 function explainMergeSafety(d, link) {
-    const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'explain' });
+    const box = el('div', { class: 'objwin explainwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'explain' });
     const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
     const onKey = (ev) => { if (ev.key === 'Escape') close(); };
     function close() { document.removeEventListener('keydown', onKey); overlay.remove(); }
@@ -1151,7 +1151,7 @@ async function showMergerReport(base, r, out) {
     const explains = [];
     const pid = base.split('/')[1];
     const link = (x) => { const h = new URLSearchParams({ p: pid, c: r.cid, type: x.type, location: x.location, filter: '(name eq ' + x.name + ')' }); if (x.ruletype) h.set('ruletype', x.ruletype); return window.location.pathname + '#' + h.toString(); };
-    const explainBtn = (d) => { explains.push(d); return el('button', { type: 'button', class: 'small', 'data-explain': String(explains.length - 1), text: 'Explain', title: 'why the merge would change the policy' }); };
+    const explainBtn = (d) => { explains.push(d); return el('button', { type: 'button', class: 'small explainbtn', 'data-explain': String(explains.length - 1), text: 'Explain', title: 'why the merge would change the policy' }); };
     out.onclick = (ev) => { const b = ev.target.closest('[data-explain]'); if (b && explains[+b.dataset.explain]) explainMergeSafety(explains[+b.dataset.explain], link); };
     const ref = (x) => x ? (x.location ? x.location + ': ' : '') + x.name + (x.detail ? ' ' + x.detail : '') : '';
     const val = (v) => Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v));

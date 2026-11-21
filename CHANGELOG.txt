@@ -55,6 +55,7 @@ UTIL:
 * config-viewer | merger reports: the values of kept / not merged copies and of conflicting copies with their differences marked
 * type=object-merger / xyz-merger / merger-possible-report | a merge refused by the effective-policy check ("effective policy would change for firewalls of … before […] after […]") as data in exportJSON (skipped[].safety / blocked[].detail): firewalls, the user of the name, content before / after, how the name resolves level by level (device group, parents, shared) before and after, the members of a group, the simulated changes (removed, member renamed / added / removed); a group that would contain itself is marked as loop
 * config-viewer | merger reports: button "Explain" at a row the effective-policy check refused - before / after side by side with the differences marked, the resolution per level, the cause in words (copy of a lower level shadows, name does not resolve, group would contain itself / be empty), links to the objects in the version of the run
+* config-viewer | Explain: wider window (up to 1400px), long values wrap instead of running out on the right; the Explain button in the colour of the primary buttons
 
 BUGFIX:
 * type=merger-possible-report mergecheck | fatal error 'Call to undefined method Address::isDynamic()' when the common parent (e.g. shared) has the name of an address group as an address (or the other way round) - now a block with the reason "the common parent has '<name>' as address"

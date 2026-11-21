@@ -168,3 +168,13 @@ mark.diff.gone { background: #f6c2c2; }
 .explaintrace table { width: 100%; }
 tr.winrow td { font-weight: 600; background: rgba(46, 125, 50, .10); }
 p.warn, span.warn { color: var(--danger, #c0392b); }
+
+/* Explain: a wide window (before / after side by side), long values wrap instead of running out on the right */
+.objwin.explainwin { width: min(1400px, 96vw); }
+.explainwin table { table-layout: auto; }
+.explainwin td, .explainwin th { overflow-wrap: anywhere; word-break: break-word; }
+.explaincols > div { min-width: 0; overflow-x: auto; }
+/* the Explain button in the report rows: clearly visible */
+button.explainbtn { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; margin-top: 4px; }
+button.explainbtn:hover { background: #084c82; }
+.explainwin pre { white-space: pre-wrap; overflow-wrap: anywhere; }
