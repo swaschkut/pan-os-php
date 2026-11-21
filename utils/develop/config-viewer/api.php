@@ -219,6 +219,14 @@ try
             viewerOut( array( 'playbooks' => $app->playbooksSet( viewerBody()['enabled'] ?? null ) ) );
         }
     }
+    // the BP JSON shipped with pan-os-php (the template of a new BP JSON in the editor)
+    if( $key === 'GET bp-default' && count( $route ) === 1 )
+    {
+        viewerAudit( 200 );
+        header( 'Content-Type: application/json' );
+        readfile( $app->repoDir . '/utils/api/v1/bp/scm_bp_sp_panw.json' );
+        exit;
+    }
     if( $key === 'GET meta' )
         viewerOut( $app->meta() + array( 'plugins' => $app->pluginMeta( $admin ) ) );
 

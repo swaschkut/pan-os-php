@@ -264,6 +264,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `logout` | POST | login | ends the session |
 | `me` | GET | login | `user`, `admin`, `csrf` |
 | `password` | POST | login | body `old`, `new` |
+| `bp-default` | GET | login | the BP JSON shipped with pan-os-php (`utils/api/v1/bp/scm_bp_sp_panw.json`): start of a new BP JSON in the editor |
 | `meta` | GET | login | offered types with their actions (arguments, help) and filters (field → operator → `arg`, `example`, `help`; from `utils/lib/util_action_filter.json`), rule types, profile types |
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
 | `network` | GET / PUT | admin | network for runs (imports): `enabled`, `allow`, `deny` (lists: host, `*.domain`, IP, network, `tsg:<id>`, `*`; deny wins, empty allow list = nothing) |
@@ -374,6 +375,12 @@ The memory one run may use is the limit of its container - compose: `VIEWER_RUN_
 `./panosphp-viewer status` and `restart` show the limits the job runner really has (and name a `docker-compose.yml` that is
 too old for them). Setting them in the browser: idea, [todo/config-viewer-run-limits.md](../../../todo/config-viewer-run-limits.md). With Docker Desktop the VM needs
 more memory than that (Settings → Resources).
+
+**Editors** (`editor.php?e=playbook|bp`): the editors of pan-os-php (`utils/common/html/editor`), with their scripts
+inline (the playbook editor gets `utils/lib/util_action_filter.json` instead of its copy `json_array.js`), under a policy of
+their own - `sandbox allow-scripts` (an origin of their own: no cookies, no API), `connect-src 'none'`,
+`frame-ancestors 'self'`. The page sends the file with `postMessage` (`panosphp-editor-load`), the editor answers
+`panosphp-editor-save`; the page stores a new project file. Opened on their own the editors work as before.
 
 **App-ID database and MaxMind data.** pan-os-php reads `PANOSPHP_PREDEFINED_XML` (instead of
 `lib/object-classes/predefined.xml`) and `PANOSPHP_GEOIP_DIR` (instead of `lib/resources/geoip`). The viewer keeps its

@@ -752,6 +752,19 @@ eq( array( status( $r ), $r[1]['total'] ?? null, $alice->call( 'GET', $AP . '/ap
 $alice->call( 'DELETE', 'central/appid' );
 $alice->call( 'DELETE', $AP );
 @unlink( $preFile );
+
+// the editors of pan-os-php (playbook, BP JSON): served sandboxed, scripts inline, no network, only in the viewer
+$raw = @file_get_contents( $base . 'editor.php?e=playbook', FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
+$hdr = implode( "\n", $http_response_header ?? array() );
+eq( array( strpos( $hdr, ' 200' ) !== FALSE, strpos( $hdr, "sandbox allow-scripts" ) !== FALSE, strpos( $hdr, "connect-src 'none'" ) !== FALSE, strpos( $hdr, "frame-ancestors 'self'" ) !== FALSE,
+    strpos( (string)$raw, '<script src=' ), strpos( (string)$raw, 'var subjectObject = {' ) !== FALSE, strpos( (string)$raw, 'panosphp-editor-save' ) !== FALSE ),
+    array( TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE ), 'playbook editor: sandboxed, no network, actions / filters of util_action_filter.json inline, save goes to the viewer' );
+$raw = @file_get_contents( $base . 'editor.php?e=bp', FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
+eq( array( strpos( (string)$raw, '<script src=' ), strpos( (string)$raw, 'BP_VALIDATION' ) !== FALSE, strpos( (string)$raw, 'panosphp-editor-load' ) !== FALSE ), array( FALSE, TRUE, TRUE ), 'BP JSON editor: d3 and validation inline, load / save through the viewer' );
+@file_get_contents( $base . 'editor.php?e=../../etc', FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
+eq( strpos( implode( "\n", $http_response_header ?? array() ), ' 404' ) !== FALSE, TRUE, 'editor: only the two editors' );
+$r = $alice->call( 'GET', 'bp-default' );
+eq( array( status( $r ), is_array( $r[1] ) && count( $r[1] ) > 3, status( $anon->call( 'GET', 'bp-default' ) ) ), array( 200, TRUE, 401 ), 'BP JSON shipped with pan-os-php: the start of a new one (login)' );
 eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: deleted' );
 eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
 eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );

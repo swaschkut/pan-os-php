@@ -35,6 +35,11 @@ A run works on a copy of one version in its own folder and container (no network
   playbooks can not run in the viewer (e.g. mergers) - the list says why.
 - **own** - a playbook JSON uploaded under **Project files**; it is checked when it is uploaded and before every run.
 
+**Editors.** Under **Project files**: **Edit** opens a copy of a playbook / BP JSON in the editor of pan-os-php;
+**New playbook (editor)** / **New BP JSON (editor)** start a new one (a new BP JSON starts with the one shipped with
+pan-os-php). **SAVE** / **Export JSON** stores the result as a **new** project file (a playbook is checked like an
+upload). The editors run apart from the viewer - they can not reach the viewer, the project or the network.
+
 **Large configurations** need a lot of memory. Under **Options for large configurations** (playbook runs):
 
 - **Every step its own process** (`subprocess`) - needs the least memory, slower.

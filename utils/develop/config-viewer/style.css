@@ -86,3 +86,7 @@ button.refbtn.on { background: #e8f0fa; border-color: var(--accent); }
 .tabs button.on { border-color: var(--line); background: #fff; color: var(--fg); font-weight: 600; }
 span.row { margin: 0; }
 span.row[hidden] { display: none; }
+.editoroverlay { position: fixed; inset: 0; z-index: 50; background: #fff; display: flex; flex-direction: column; }
+.editorbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.editorbar .spacer { flex: 1; }
+iframe.editorframe { flex: 1; border: 0; width: 100%; }
