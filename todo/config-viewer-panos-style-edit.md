@@ -37,6 +37,49 @@ Status: **in progress** (Sven, 2026-11-21).
   exact / contains / regex, element names or values, attributes (`name=`), limited to a location / template; the hits
   with their XPath and a link to the object (window) where there is one
 * more network / device types editable as soon as their actions are reviewed (action-classes.json `reviewed`)
+* **object-merger in the viewer** (Sven, 2026-11-21) - see "Object merger in the viewer" below
+* **what can not be changed in the windows yet** - see "Not editable in the windows" below (missing pan-os-php
+  actions vs. windows not built)
+
+### Object merger in the viewer (open, 2026-11-21)
+
+* Today the viewer offers no merger: playbook steps `*-merger` are refused (`playbookCheck`), there is no run type for
+  `type=object-merger`, and the change window has no merge.
+* Wanted: `type=object-merger objecttype=<type>[,…]|any` (all object mergers, class `MERGER`) on the loaded version -
+  first a **preview** (which objects would be merged into which, with the merger's own report / `merger-possible-report`),
+  then **apply** on the memory as one change; with the git history the merge is **one commit** (all merged and
+  removed objects and every reference) and can be **undone** as a whole (step 3).
+* Arguments of the merger (`objecttype`, `location`, `pickfilter`, `excludefilter`, `allowmergingwithupperlevel`,
+  `mergecountlimit`, `DupAlgorithm`, …) as fields of the window with the values of the merger only (checked like the
+  playbook steps); a member limited to locations: only merges inside them (no upper level).
+* In the change list: one entry `object-merger …` (multi-edit / playbook: a step `type=object-merger`, allowed once
+  reviewed).
+* pan-os-php itself: set the single `xyz-merger` types to deprecated in favour of `type=object-merger`
+  ([merger-deprecate-single-types.md](merger-deprecate-single-types.md), planned, not built).
+
+### Not editable in the windows (state 2026-11-21)
+
+Fields of the own windows that are read only - **missing pan-os-php action** (the window shows why):
+
+| Type / field | Missing in pan-os-php |
+|---|---|
+| address: type, value of ip-range / fqdn / ip-wildcard | `value-set` / change of type (only `value-replace` for ip-netmask) |
+| address, service, rule: description | `description-set` (works as `description-delete` + `description-append`: two actions) |
+| address group: remove a member, dynamic filter | `remove-member`, an action for the filter |
+| service: protocol / port | `protocol-set`, `dstport-set` |
+| service group: members | `add-member` / `remove-member` (none for service groups) |
+| rule: URL category | `category-add` / `category-remove` |
+| NAT: persistent dynamic IP, DNAT distribution, interface IP as an object | in `snat-set` / `dnat-set` (built 2026-11-21) not yet |
+| zone: remove the zone protection profile | an action for it; yes / no fields show no current value |
+| every field outside descriptions / tag comments | `,` and `:` not possible (no aliases there) |
+
+Types with the **generic window only** (all fields, read only):
+
+| pan-os-php has change actions - only the window is missing | pan-os-php has no change action |
+|---|---|
+| EDL, schedule (name actions), security profiles (61, e.g. `alert-only-set`, `best-practice-set`), security profile groups (`securityprofile-set` / `-remove`), log forwarding, application (create / delete / move), interfaces (`name-rename`, AE group), zone protection profiles (`alert-only-set`), device (38), static routes / IKE / IPSec crypto (delete only), DHCP (reservation) | threats, threat rules, DNS rules, virtual wires, routing, IKE gateways, IPSec / GRE tunnels, GlobalProtect portals / gateways / tunnels, interface management profiles, certificates, certificate profiles, SSL/TLS service profiles |
+
+(counted from `utils/develop/config-viewer/action-classes.json`, class `change`)
 
 ## Goal
 
