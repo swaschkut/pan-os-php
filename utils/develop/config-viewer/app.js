@@ -1607,7 +1607,32 @@ async function showViewer(config, preset) {
                         !canWrite || f.kind === 'ro' || can ? null : el('div', { class: 'muted', text: 'read only: no pan-os-php action for it here (' + (f.needs || []).filter(a => !offered[a]).join(', ') + ')' })));
                 }))),
                 el('p', { class: 'muted', text: canWrite ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
+                objXml(), objHistory(),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
+        }
+        // the XML of the object (as it is in memory) and its history (git: every commit that changed its entry)
+        const opened = {};
+        function section(key, title, body) {
+            const d = el('details', { class: 'objsection' }, el('summary', { text: title }), body);
+            d.open = !!opened[key];
+            d.addEventListener('toggle', () => { opened[key] = d.open; });
+            return d;
+        }
+        function objXml() {
+            return obj.xml ? section('xml', 'XML', el('pre', { class: 'objxml', text: obj.xml })) : null;
+        }
+        function objHistory() {
+            const h = obj.history;
+            if (!h) return obj.xml ? el('p', { class: 'muted', text: 'History: none for this object (not in the history of the version - e.g. an object of a template, or no git)' }) : null;
+            const shown = { i: null };
+            const view = el('pre', { class: 'objxml', hidden: true });
+            const items = h.commits.map((c, i) => el('li', {},
+                el('button', { type: 'button', class: 'small', text: 'XML', title: 'the object after this commit', onclick: () => {
+                    if (shown.i === i && !view.hidden) { view.hidden = true; return; }
+                    shown.i = i; view.hidden = false; view.textContent = c.text === null ? '(removed by this commit)' : c.text; } }), ' ',
+                el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + c.user + ' - ' }), el('code', { text: c.subject })));
+            return section('history', 'History (' + h.commits.length + (h.commits.length >= 30 ? '+' : '') + ' commits)',
+                el('div', {}, el('p', { class: 'muted', text: 'entry ' + h.path + ' - newest first; a rename starts a new entry' }), el('ul', { class: 'objhist' }, items), view));
         }
         render();
         document.addEventListener('keydown', onKey);

@@ -36,6 +36,7 @@
 require_once dirname(__FILE__) . '/../../../../lib/misc-classes/PluginLicense.php';
 require_once dirname(__FILE__) . '/../../../../lib/misc-classes/PluginPackage.php';
 require_once dirname(__FILE__) . '/ViewerPlugins.php';
+require_once dirname(__FILE__) . '/ViewerGit.php';
 
 class ViewerException extends Exception
 {
@@ -3357,6 +3358,7 @@ class ViewerApp
         $refcount = $max !== PHP_INT_MAX && !empty( $this->meta()['types'][$type]['references'] );
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type,
             'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $refcount ? array( 'x-refcount' ) : array(),
+                $nested ? array( 'x-xml' ) : array(),
                 $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array(), $nested );
         if( $refcount && is_array( $r['refcounts'] ?? null ) )
@@ -3381,7 +3383,7 @@ class ViewerApp
             foreach( $row as $k => $v )
                 $columns[$k] = TRUE;
         return array( 'total' => count( $rows ), 'truncated' => count( $rows ) > $max, 'columns' => array_keys( $columns ),
-            'rows' => array_slice( $rows, 0, $max ), 'status' => $r['status'] ?? null );
+            'rows' => array_slice( $rows, 0, $max ), 'status' => $r['status'] ?? null ) + ( $nested ? array( 'xml' => is_array( $r['xml'] ?? null ) ? $r['xml'] : array() ) : array() );
     }
 
     /**
@@ -3500,9 +3502,35 @@ class ViewerApp
             {
                 $model = is_array( $row['model']['item'] ?? null ) ? $row['model']['item'] : null;
                 unset( $row['model'] );
-                return array( 'row' => $row, 'model' => $model, 'status' => $r['status'] );
+                // its XML and its history (git, the commits that changed its entry - the unsaved ones first)
+                $x = $r['xml'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . $name] ?? null;
+                $path = is_array( $x ) && is_string( $x['path'] ?? null ) ? $x['path'] : null;
+                return array( 'row' => $row, 'model' => $model, 'xml' => is_array( $x ) && is_string( $x['xml'] ?? null ) ? $x['xml'] : null,
+                    'history' => $path !== null ? $this->objectHistory( $user, $pid, $cid, $path ) : null, 'status' => $r['status'] );
             }
         throw new ViewerException( 'not found', 404 );
+    }
+
+    /**
+     * the commits of the history of the version (unsaved changes, then the versions it came from) that changed one
+     * entry: commit, time, user, subject, the change (trailers), the text of the entry after it (null: removed)
+     */
+    private function objectHistory( array $user, $pid, $cid, string $path ): ?array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        $git = new ViewerGit( $this->projectDir( $p['pid'] ) . '/history.git' );
+        if( !is_file( $git->dir() . '/HEAD' ) )
+            return null;
+        $key = basename( $c['file'], '.xml' );
+        $ref = $git->ref( 'refs/viewer/work/' . $key ) !== null ? 'refs/viewer/work/' . $key : 'refs/viewer/versions/' . $key;
+        $list = array();
+        foreach( $git->log( $ref, 30, $path ) as $e )
+        {
+            $e['text'] = $git->show( $e['commit'], $path );
+            $list[] = $e;
+        }
+        return array( 'path' => $path, 'commits' => $list );
     }
 
     /** change: runs actions on the configuration in memory. Nothing is written until save(). */

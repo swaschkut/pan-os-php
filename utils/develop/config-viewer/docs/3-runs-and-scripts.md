@@ -45,10 +45,15 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   it) and the change as its message (`Type:`, `Location:`, `Filter:`, `Action:`, `User:`). Save as new version: the
   new version is the state of the last commit; discard: the commits are dropped. `PANOSPHP_VIEWER_GIT=0` switches it
   off (then there is no undo).
+- **XML and history in the object window**: *XML* - the object as it is in memory; *History* - every commit that
+  changed its entry (unsaved changes and the versions before), newest first, with the object after each commit
+  (button *XML*). A rename starts a new entry; objects of a template are part of the rest (no history of their own
+  yet).
 - **Undo** (at every unsaved change): takes back exactly this change - the later changes stay. git takes the commit of
   the change back on the current state, pan-os-php loads the result again (nothing of the old memory is kept), and
-  the undo is one more commit. Refused when a later change touched the same lines of the same object (*take the later
-  change back first*). After the undo the viewer says which objects are used but not there any more (e.g. a rename
+  the undo is one more commit. git merges **per field** (a merge driver of pan-os-php): a later change of another field
+  of the same object stays (e.g. the description taken back, a tag added later kept; members are a set). Refused only
+  when a later change set the same field (*take the later change back first*). After the undo the viewer says which objects are used but not there any more (e.g. a rename
   undone while a later change uses the new name) and what pan-os-php changed when it loaded the result (it creates a
   missing tag, for example). The undone change is struck through; undone changes and undos are no playbook steps.
   A member limited to types / locations can undo only a change he could have made. API: `POST …/configs/<cid>/undo`

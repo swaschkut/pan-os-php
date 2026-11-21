@@ -439,7 +439,9 @@ function viewerRun( $type, array $args )
     ApiObjectModel::$withComputed = in_array( 'x-computed', $args, TRUE );
     // 'x-refcount': count the users of every object of the read ("location|name" => number, $GLOBALS['viewerRefcounts'])
     $refcount = in_array( 'x-refcount', $args, TRUE );
-    $args = array_values( array_diff( $args, array( 'x-computed', 'x-refcount' ) ) );
+    // 'x-xml': the XML of every object of the read and its entry in the history ("location|template|name" => path, xml)
+    $withXml = in_array( 'x-xml', $args, TRUE );
+    $args = array_values( array_diff( $args, array( 'x-computed', 'x-refcount', 'x-xml' ) ) );
     // 'x-bp=<file>' is no pan-os-php argument either: the BP JSON of the project for this one run (checks, computed
     // verdicts, alert-only-set / best-practice-set). Only a file of the folder "files" of this project; afterwards the
     // BP JSON the configuration was loaded with is used again.
@@ -479,6 +481,20 @@ function viewerRun( $type, array $args )
                 {
                     $loc = PH::getLocationString( $o );
                     $GLOBALS['viewerRefcounts'][( is_string( $loc ) ? $loc : '' ) . '|' . $o->name()] = count( viewerUsers( $o ) );
+                }
+    }
+    if( $withXml )
+    {
+        $GLOBALS['viewerXml'] = array();
+        foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
+            foreach( is_array( $set['objects'] ?? null ) ? $set['objects'] : array() as $o )
+                if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' ) && count( $GLOBALS['viewerXml'] ) < 20 )
+                {
+                    $loc = PH::getLocationString( $o );
+                    $tpl = PH::findTemplateOwner( $o );
+                    $key = ( is_string( $loc ) ? $loc : '' ) . '|' . ( is_object( $tpl ) && method_exists( $tpl, 'name' ) ? $tpl->name() : '' ) . '|' . $o->name();
+                    $GLOBALS['viewerXml'][$key] = array( 'path' => ConfigObjectSplit::entryPath( $o->xmlroot ),
+                        'xml' => substr( ConfigObjectSplit::canonical( $o->xmlroot ), 0, 200000 ) );
                 }
     }
     unset( $util );
@@ -532,6 +548,8 @@ function viewerChild( $conn, $type, array $args, $send )
         $r = viewerDecode( $out );
         if( isset( $GLOBALS['viewerRefcounts'] ) && $r['ok'] )
             $r['refcounts'] = $GLOBALS['viewerRefcounts'];
+        if( isset( $GLOBALS['viewerXml'] ) && $r['ok'] )
+            $r['xml'] = $GLOBALS['viewerXml'];
         if( !$done && $r['ok'] )
             $r = array( 'ok' => FALSE, 'error' => 'the run stopped' );
         if( $send || !$r['ok'] )

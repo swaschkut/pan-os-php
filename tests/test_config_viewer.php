@@ -460,6 +460,21 @@ $i2 = count( $r[1]['status']['changes'] ) - 1;
 $chg( 'shared-host2', 'tag-add:test-shared-new', 'tag' );
 $r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $i2 ) );
 eq( array( status( $r ), strpos( (string)( $r[1]['warning'] ?? '' ), 'added shared/tag/test-shared-new.xml' ) !== FALSE ), array( 200, TRUE ), 'undo: what pan-os-php changed when it loaded the result is said' );
+// merge per field (git step 4): undo of a description while a later change added a tag to the same object
+$r = $chg( 'shared-host1', 'description-append:UNDO-D' );
+$iD = count( $r[1]['status']['changes'] ) - 1;
+$chg( 'shared-host1', 'tag-add:test-shared', 'tag' );
+$r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $iD ) );
+$o1 = $bob->call( 'GET', $C2 . '/object?type=address&location=shared&name=shared-host1' )[1];
+eq( array( status( $r ), $o1['row']['description'] ?? null, in_array( 'test-shared', (array)( $o1['model']['tag'] ?? array() ), TRUE ) ), array( 200, $d1, TRUE ),
+    'undo: merged per field - the description back, the later tag stays' );
+// the object window: its XML and its history (the commits that changed its entry)
+$h1 = $o1['history'] ?? array();
+eq( array( strpos( (string)( $o1['xml'] ?? '' ), '<entry name="shared-host1">' ) === 0, $h1['path'] ?? null, $h1['commits'][0]['change']['type'] ?? null,
+    $h1['commits'][1]['change']['actions'] ?? null, strpos( (string)( $h1['commits'][1]['text'] ?? '' ), '<member>test-shared</member>' ) !== FALSE ),
+    array( TRUE, 'shared/address/shared-host1.xml', 'undo', 'tag-add:test-shared', TRUE ), 'object window: the XML of the object and its history with the entry after each commit' );
+$tz = $bob->call( 'GET', $C2 . '/object?type=zone&location=vsys1&template=' . urlencode( 'Datacenter Master Template' ) . '&name=WAN' )[1];
+eq( array( strpos( (string)( $tz['xml'] ?? '' ), '<entry name="WAN">' ) === 0, array_key_exists( 'history', (array)$tz ) && $tz['history'] === null ), array( TRUE, TRUE ), 'object window: an object of a template - its XML, no history (in _rest.xml)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
 eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 ) ) ), 403, 'undo: read only refused' );

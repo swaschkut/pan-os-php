@@ -30,10 +30,9 @@ Status: **in progress** (Sven, 2026-11-21).
 
 ### Still open (list of Sven, 2026-11-21)
 
-* git on object level (see below): steps 1 (split / join), 2 (a commit per change) and 3 (undo of one change) built 2026-11-21; next: step 4 (merge per field, branches for device import / users, XML snippet and history per object)
+* git on object level (see below): steps 1-3 and step 4a (merge per field, XML and history per object in the window) built 2026-11-21; open: step 4b (branches: import from a device = drift, a branch per user, merge when saved)
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
-* **the XML snippet of each object** - in the object window: the XML of exactly this object (`$obj->xmlroot`), read
-  only (later: the entry of the object in git)
+* ~~**the XML snippet of each object**~~ - built 2026-11-21 (git step 4a): XML and history in the object window
 * **search text in the whole XML** (as `type=xpath`): a name / text anywhere in the configuration, with options -
   exact / contains / regex, element names or values, attributes (`name=`), limited to a location / template; the hits
   with their XPath and a link to the object (window) where there is one
@@ -355,6 +354,33 @@ the volume (git is in the image), written with the plumbing commands:
 * Limits: the line merge of git - two changes of different fields in neighbouring lines of one object conflict
   (merge driver per field: step 4). A large configuration is loaded again for an undo (the time of opening it).
   Only unsaved changes (the list of the loaded version).
+
+### Step 4a built (2026-11-21): merge per field, XML and history per object
+
+* `lib/misc-classes/ConfigObjectMerge.php` (standalone): three-way merge of one entry - elements matched by key
+  (`<member>` by text = a set, `<entry>` by name, other elements by name + place), attributes per name; one side
+  changed = taken, both the same = taken, both different = conflict, removed on one side + changed on the other =
+  conflict. `_order`: removals out, additions after their predecessor, a move of one side kept. `_rest.xml` the same
+  (whole document).
+* Merge driver `utils/develop/config-viewer/bin/git-merge-entry.php %O %A %B %P`, set by `ViewerGit::ready()`:
+  `merge.panos.driver` in the repository config and `info/attributes` (`*.xml merge=panos`, `_order merge=panos`) -
+  git reads `info/attributes` also in a bare repository (tested with `git merge-tree`, git 2.43). Used by the undo.
+* Object window: `…/object` gives `xml` (canonical XML of `xmlroot`, worker read flag `x-xml`) and `history` (path of
+  the entry `ConfigObjectSplit::entryPath()`, `git log -- <path>` of the work ref, the entry after each commit);
+  `history` null for objects in `_rest.xml` (templates).
+* Tested: `tests/test_config_merge.php` (16 checks: fields, members, removal / change, attributes, `_order`,
+  `_rest.xml`, git undo with the driver vs. conflict); `tests/test_config_viewer.php` (undo merged per field; XML and
+  history of an object; a template object without history). Browser: XML and history in the window.
+
+### Step 4b open: branches
+
+* Import from a device (read only, todo/config-viewer-device-access.md) on its own branch
+  `refs/viewer/import/<project>/<time>`: diff against the version = what changed on the device (drift); merge into
+  the work with the merge driver - conflicts per field shown "mine or the device's".
+* A branch per user (several people on one version): today all members change the same memory of one worker (one
+  change list) - a branch per user needs a worker per user or a merge of their change lists when saving; decide first
+  whether it is wanted.
+* Objects of templates (Network / Device) split into entries (today `_rest.xml`): history and merge per object there.
 
 ### To check first
 

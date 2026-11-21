@@ -130,3 +130,10 @@ label.check code { font-size: 12px; }
 /* change list: an undone change, an undo */
 li.undone > code, li.undone > span:not(.muted) { text-decoration: line-through; opacity: .6; }
 li.undo { color: var(--muted, #666); }
+
+/* object window: XML and history */
+.objsection { margin: .5em 0; }
+.objsection summary { cursor: pointer; font-weight: 600; }
+pre.objxml { max-height: 320px; overflow: auto; font-size: 12px; background: var(--code-bg, #f5f5f5); padding: .5em; white-space: pre; }
+ul.objhist { list-style: none; padding-left: 0; margin: .3em 0; }
+ul.objhist li { margin: .15em 0; }

@@ -216,6 +216,35 @@ class ConfigObjectSplit
         return implode( '/', array_reverse( $parts ) );
     }
 
+    /**
+     * the path of an object in the repository (its xmlroot), as split() names it; null when it is not split (it is
+     * part of _rest.xml: templates, network, a store with other content)
+     */
+    public static function entryPath( DOMElement $e ): ?string
+    {
+        $store = $e->parentNode;
+        if( !$store instanceof DOMElement || $e->nodeName !== 'entry' || !self::splittable( $store ) )
+            return null;
+        // the location the store belongs to, and the store one of its stores
+        $doc = $e->ownerDocument;
+        $loc = null;
+        foreach( self::locations( $doc->documentElement ) as $l )
+        {
+            for( $n = $store->parentNode; $n instanceof DOMElement; $n = $n->parentNode )
+                if( $n === $l )
+                {
+                    $loc = $l;
+                    break 2;
+                }
+        }
+        if( $loc === null || !in_array( $store, self::stores( $loc ), TRUE ) )
+            return null;
+        foreach( self::collect( $doc )[self::path( $store )]['entries'] ?? array() as $key => $node )
+            if( $node === $e )
+                return self::path( $store ) . '/' . $key . '.xml';
+        return null;
+    }
+
     public static function enc( string $s ): string
     {
         $s = preg_replace_callback( '/[%\/\x00-\x1f\x7f]/', function( $m ) {

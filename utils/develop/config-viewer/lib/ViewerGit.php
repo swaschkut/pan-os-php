@@ -53,26 +53,57 @@ class ViewerGit
     {
         if( $this->run( array( '--version' ), '', FALSE )[0] !== 0 )
             return FALSE;
-        if( is_file( $this->dir . '/HEAD' ) )
-            return TRUE;
+        if( !is_file( $this->dir . '/HEAD' ) )
+        {
+            set_error_handler( function() { return TRUE; } );
+            try
+            {
+                mkdir( $this->dir, 0700, TRUE );
+            }
+            finally
+            {
+                restore_error_handler();
+            }
+            if( $this->run( array( 'init', '-q', '--bare', $this->dir ), '', FALSE )[0] !== 0 )
+                return FALSE;
+            // no hooks, no background maintenance in the data volume
+            foreach( glob( $this->dir . '/hooks/*' ) ?: array() as $h )
+                if( is_file( $h ) )
+                    unlink( $h );
+            $this->run( array( 'config', 'gc.auto', '0' ) );
+            $this->run( array( 'config', 'core.logAllRefUpdates', 'false' ) );
+        }
+        $this->mergeDriver();
+        return TRUE;
+    }
+
+    /**
+     * merge per field (git step 4): every entry (*.xml, _order) is merged by bin/git-merge-entry.php
+     * (ConfigObjectMerge) - info/attributes is read by git also in a bare repository (merge-tree of the undo)
+     */
+    private function mergeDriver(): void
+    {
+        $attr = "*.xml merge=panos\n_order merge=panos\n";
         set_error_handler( function() { return TRUE; } );
         try
         {
-            mkdir( $this->dir, 0700, TRUE );
+            if( !is_dir( $this->dir . '/info' ) )
+                mkdir( $this->dir . '/info', 0700 );
+            if( @file_get_contents( $this->dir . '/info/attributes' ) !== $attr )
+                file_put_contents( $this->dir . '/info/attributes', $attr );
         }
         finally
         {
             restore_error_handler();
         }
-        if( $this->run( array( 'init', '-q', '--bare', $this->dir ), '', FALSE )[0] !== 0 )
-            return FALSE;
-        // no hooks, no background maintenance in the data volume
-        foreach( glob( $this->dir . '/hooks/*' ) ?: array() as $h )
-            if( is_file( $h ) )
-                unlink( $h );
-        $this->run( array( 'config', 'gc.auto', '0' ) );
-        $this->run( array( 'config', 'core.logAllRefUpdates', 'false' ) );
-        return TRUE;
+        $php = PHP_BINARY !== '' ? PHP_BINARY : 'php';
+        $driver = escapeshellarg( $php ) . ' ' . escapeshellarg( realpath( dirname( __FILE__ ) . '/../bin/git-merge-entry.php' ) ) . ' %O %A %B %P';
+        list( $rc, $cur ) = $this->run( array( 'config', '--get', 'merge.panos.driver' ), '', FALSE );
+        if( trim( $cur ) !== $driver )
+        {
+            $this->run( array( 'config', 'merge.panos.name', 'pan-os-php entry per field' ) );
+            $this->run( array( 'config', 'merge.panos.driver', $driver ) );
+        }
     }
 
     /** the commit of a ref, null when there is none */
@@ -142,12 +173,16 @@ class ViewerGit
         return $m;
     }
 
-    /** the commits of a ref, newest first: sha, time, user, subject, trailers */
-    public function log( string $ref, int $max = 100 ): array
+    /** the commits of a ref (that changed $path), newest first: sha, time, user, subject, trailers */
+    public function log( string $ref, int $max = 100, ?string $path = null ): array
     {
         if( $this->ref( $ref ) === null )
             return array();
-        list( $rc, $out ) = $this->run( array( 'log', '-z', '--max-count=' . max( 1, $max ), '--format=%H%x1f%ct%x1f%cn%x1f%B', $ref ), '', FALSE );
+        // with a path: only the commits that changed this entry (a rename: the old name is another entry)
+        $args = array( 'log', '-z', '--max-count=' . max( 1, $max ), '--format=%H%x1f%ct%x1f%cn%x1f%B', $ref );
+        if( $path !== null )
+            $args = array_merge( $args, array( '--', $path ) );
+        list( $rc, $out ) = $this->run( $args, '', FALSE );
         $list = array();
         foreach( explode( "\0", $out ) as $rec )
         {
