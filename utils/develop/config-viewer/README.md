@@ -264,7 +264,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `logout` | POST | login | ends the session |
 | `me` | GET | login | `user`, `admin`, `csrf` |
 | `password` | POST | login | body `old`, `new` |
-| `meta` | GET | login | offered types with their actions (arguments, help) and filters, rule types, profile types |
+| `meta` | GET | login | offered types with their actions (arguments, help) and filters (field → operator → `arg`, `example`, `help`; from `utils/lib/util_action_filter.json`), rule types, profile types |
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
 | `users/<name>/password` | POST | admin | a new password for the user, made by the viewer → `password` (shown once) |
 | `users/<name>` | DELETE | admin | delete a user and the projects the user owns |
@@ -279,6 +279,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `projects/<pid>/configs` | GET / POST | read / write | versions / upload (multipart field `config`) |
 | `projects/<pid>/configs/<cid>` | DELETE | write | delete a version |
 | `…/<cid>/download` | GET | read | the XML file |
+| `…/<cid>/locations` | GET | read | locations of the version (loads it): `config` (`panorama` / `firewall` / `scm`), `any`, `locations` (`name`, `kind`: `shared`, `device-group`, `vsys`, `shared-gateway`, `container`, `snippet`); limited members: only theirs, `any` false |
 | `…/<cid>/<resource>` | GET | read | REST per type, e.g. `addresses`, `rules`, `security-profiles` (names: `meta` → `resource`). Query `location`, `filter`, `ruletype`, `securityprofiletype`, `limit` (1–5000, default 1000), `offset` → `type`, `model`, `total`, `offset`, `limit`, `items` |
 | `…/<cid>/<resource>/<name>` | GET | read | the object(s) with this name (all locations, or `?location=`); `404` when there is none |
 | `…/<cid>/<resource>/actions` | POST | write | body `location`, `filter`, `actions` → like `change`; the type comes from the resource |
@@ -409,6 +410,10 @@ more than its name, arguments and the scanned calls show – that is what the re
 
 ### Extending
 
+* `utils/lib/util_action_filter.json` (in the repository and the image) is written by `pan-os-php type=util_action-filter`
+  (`utils/lib/UTIL_GET_ACTION_FILTER.php`): per type the actions with their arguments and the filter fields with their
+  operators (`arg`, test string `ci.fString`, `help`). The viewer reads it for `meta` - actions (with the allow list),
+  and the filter suggestions of the page; run it again after new actions / filters, then `bin/action-classes.php`.
 * another type: `ViewerApp::TYPES` (the type must be in `utils/lib/util_action_filter.json` and print its objects
   with `actions=display` in `shadow-json`)
 * offered actions: the `read` / `change` actions of `action-classes.json` (except `display`); in addition still the

@@ -1688,6 +1688,32 @@ class ViewerApp
         return is_array( $e ) && isset( $e['class'] ) ? $e : null;
     }
 
+    /**
+     * filters of a type for the page: field => operator => arg (needs a value), example (from the test of the operator,
+     * e.g. "(name eq new test 1)"), help. Operators that read a file are left out.
+     */
+    private static function filterMeta( array $def ): array
+    {
+        $filters = array();
+        foreach( $def as $field => $f )
+        {
+            $ops = array();
+            foreach( (array)( $f['operators'] ?? array() ) as $op => $o )
+            {
+                if( preg_match( '/\.file$|\.file\./', (string)$op ) )
+                    continue;
+                $fs = is_array( $o ) && is_string( $o['ci']['fString'] ?? null ) ? $o['ci']['fString'] : null;
+                $ops[(string)$op] = array( 'arg' => is_array( $o ) && !empty( $o['arg'] ),
+                    'example' => $fs !== null ? str_replace( '%PROP%', $field . ' ' . $op, $fs ) : null,
+                    'help' => is_array( $o ) && is_string( $o['help'] ?? null ) ? $o['help'] : '' );
+            }
+            if( count( $ops ) > 0 )
+                $filters[(string)$field] = $ops;
+        }
+        ksort( $filters );
+        return $filters;
+    }
+
     public function meta(): array
     {
         if( $this->meta !== null )
@@ -1720,15 +1746,7 @@ class ViewerApp
                     $actions[$name] = $args;
             }
             ksort( $actions );
-            $filters = array();
-            foreach( (array)$j[$type]['filter'] as $field => $f )
-            {
-                $ops = array();
-                foreach( array_keys( (array)( $f['operators'] ?? array() ) ) as $op )
-                    if( !preg_match( '/\.file$|\.file\./', (string)$op ) )
-                        $ops[] = (string)$op;
-                $filters[(string)$field] = $ops;
-            }
+            $filters = self::filterMeta( (array)$j[$type]['filter'] );
             $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => FALSE, 'resource' => self::resourceName( $type ) );
         }
         // every other type that shows objects (action 'display'): read only, until its actions are in a reviewed allow list
@@ -1736,15 +1754,7 @@ class ViewerApp
         {
             if( isset( $meta[$type] ) || !is_array( $def ) || !isset( $def['action']['display'] ) || !preg_match( '/^[a-z][a-z0-9-]{1,40}$/', (string)$type ) )
                 continue;
-            $filters = array();
-            foreach( (array)( $def['filter'] ?? array() ) as $field => $f )
-            {
-                $ops = array();
-                foreach( array_keys( (array)( $f['operators'] ?? array() ) ) as $op )
-                    if( !preg_match( '/\.file$|\.file\./', (string)$op ) )
-                        $ops[] = (string)$op;
-                $filters[(string)$field] = $ops;
-            }
+            $filters = self::filterMeta( (array)( $def['filter'] ?? array() ) );
             // a type a person has reviewed (action-classes.json "reviewed") can be changed: its 'read' / 'change' actions
             $actions = array();
             if( in_array( $type, $this->actionClasses()['reviewed'], TRUE ) )
@@ -2162,6 +2172,28 @@ class ViewerApp
         return array( 'processed' => count( self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() ) ),
             'log' => isset( $r['json']['log'] ) && is_string( $r['json']['log'] ) ? substr( $this->hidePaths( $r['json']['log'] ), 0, 200000 ) : '',
             'status' => $r['status'] ?? null );
+    }
+
+    /**
+     * The locations of a version, for the location choice: Panorama - shared + device groups, firewall - shared + vsys,
+     * SCM - containers + snippets (loads the version like a read). A member limited to locations gets only those, and
+     * no 'any'.
+     */
+    public function locations( array $user, $pid, $cid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'locations' ), 120 );
+        $list = array();
+        foreach( is_array( $r['locations'] ?? null ) ? $r['locations'] : array() as $l )
+            if( is_array( $l ) && is_string( $l['name'] ?? null ) && is_string( $l['kind'] ?? null ) )
+                $list[] = array( 'name' => $l['name'], 'kind' => $l['kind'] );
+        if( $p['scope'] !== null )
+        {
+            $scope = array_map( 'strtolower', $p['scope'] );
+            $list = array_values( array_filter( $list, function( $l ) use ( $scope ) { return in_array( strtolower( $l['name'] ), $scope, TRUE ); } ) );
+        }
+        return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list );
     }
 
     /** state of the loaded configuration: unsaved changes, last autosave. Does not start a worker. */

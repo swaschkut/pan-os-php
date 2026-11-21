@@ -21,6 +21,7 @@
  * config-viewer worker: loads ONE configuration once and keeps it in memory (UTIL::$sharedConfig). Started by
  * bin/service.php on request of ViewerApp::session(), never by a user. Requests arrive on a unix socket inside the project folder, one JSON line
  * per connection:
+ *   locations                 -> the locations of the loaded configuration (device groups / vsys / containers, snippets)
  *   read    type, args        -> runs in a forked child (a failing run / exit() can not hurt the loaded configuration)
  *   change  type, args, note  -> tried in a forked child first; only when that worked it runs on the real memory
  *   save    file              -> writes the memory to a new file (only when there are unsaved changes)
@@ -94,6 +95,41 @@ function viewerStatus()
 {
     $s = $GLOBALS['viewerState'];
     return array( 'dirty' => $s['dirty'], 'changes' => $s['changes'], 'saved' => $s['saved'], 'autosaved' => $s['autosaved'], 'loaded' => $s['loaded'] );
+}
+
+/**
+ * the locations of the loaded configuration, for the location choice of the page: Panorama - shared and every device
+ * group; firewall - shared and every vsys (and shared gateway); SCM - every container (folder) and snippet
+ */
+function viewerLocations()
+{
+    $pan = UTIL::$sharedConfig['pan'] ?? null;
+    $out = array();
+    $add = function( $kind, $list ) use ( &$out ) {
+        foreach( is_array( $list ) ? $list : array() as $o )
+            if( is_object( $o ) && method_exists( $o, 'name' ) && is_string( $o->name() ) && $o->name() !== '' )
+                $out[] = array( 'name' => $o->name(), 'kind' => $kind );
+    };
+    if( $pan instanceof PanoramaConf )
+    {
+        $out[] = array( 'name' => 'shared', 'kind' => 'shared' );
+        $add( 'device-group', $pan->getDeviceGroups() );
+        return array( 'config' => 'panorama', 'locations' => $out );
+    }
+    if( $pan instanceof PANConf )
+    {
+        $out[] = array( 'name' => 'shared', 'kind' => 'shared' );
+        $add( 'vsys', $pan->getVirtualSystems() );
+        $add( 'shared-gateway', $pan->getSharedGateways() );
+        return array( 'config' => 'firewall', 'locations' => $out );
+    }
+    if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
+    {
+        $add( 'container', $pan->getContainers() );
+        $add( 'snippet', $pan->getSnippets() );
+        return array( 'config' => 'scm', 'locations' => $out );
+    }
+    return array( 'config' => 'unknown', 'locations' => $out );
 }
 
 function viewerWrite( $path )
@@ -237,7 +273,8 @@ if( !$doc->load( $configFile, XML_PARSE_BIG_LINES | LIBXML_NONET ) )
     exit( 5 );
 }
 UTIL::$sharedConfig = array( 'xmlDoc' => $doc, 'pan' => null );
-$first = viewerDecode( viewerRun( 'tag', array( 'location=shared', 'actions=display', 'filter=(name eq config-viewer-load)' ) ) );
+// location=any: an SCM configuration has no 'shared' (its containers are 'All', folders, snippets)
+$first = viewerDecode( viewerRun( 'tag', array( 'location=any', 'actions=display', 'filter=(name eq config-viewer-load)' ) ) );
 if( !$first['ok'] || UTIL::$sharedConfig['pan'] === null )
 {
     viewerLog( 'configuration can not be loaded: ' . ( $first['error'] ?? '' ) );
@@ -304,6 +341,11 @@ while( TRUE )
 
     if( $cmd['cmd'] === 'status' )
         viewerSend( $conn, array( 'ok' => TRUE, 'status' => viewerStatus() ) );
+    elseif( $cmd['cmd'] === 'locations' )
+    {
+        try { $r = array( 'ok' => TRUE ) + viewerLocations(); } catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'locations: ' . $e->getMessage() ); }
+        viewerSend( $conn, $r );
+    }
     elseif( $cmd['cmd'] === 'close' )
     {
         $GLOBALS['viewerState']['dirty'] = FALSE; // discard

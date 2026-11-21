@@ -1,5 +1,17 @@
 # Runs and scripts
 
+## Looking at a version
+
+Open a version, choose the **type** (address, rule, …) and press **Show**.
+
+- **Location**: *any* or one location of this configuration - Panorama: *shared* and every device group; firewall:
+  *shared* and every vsys; SCM: every folder (container) and snippet. A member limited to locations sees only those.
+- **pan-os-php filter**: type and the page suggests - first the fields of the type (`name`, `object`, `value`, …),
+  then their operators (`eq`, `regex`, `contains`, `is.unused`, …) with an example and whether a value is needed;
+  after a term `and (` / `or (`. Arrow keys + Enter (or Tab) take a suggestion.
+- **Action** (change the listed objects): type part of the name; the suggestions show the arguments of each action.
+
+
 ## Runs
 
 A run works on a copy of one version in its own folder and container (no network). Under **Runs** in a project:

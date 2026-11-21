@@ -65,3 +65,9 @@ details.pbopts summary { cursor: pointer; color: var(--accent); }
 input.narrow { width: 7em; }
 .badge.oom { background: #fdecea; color: var(--warn); border-color: #f1b8b2; }
 span.error { color: var(--warn); }
+.suggestwrap { position: relative; display: block; }
+.suggestwrap > input { width: 100%; box-sizing: border-box; }
+ul.suggest { position: absolute; z-index: 30; left: 0; min-width: 100%; top: 100%; max-height: 300px; overflow: auto; margin: 2px 0 0; padding: 0;
+  list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.12); color: var(--fg); font-size: 13px; }
+ul.suggest li { padding: 4px 9px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 900px; }
+ul.suggest li.on, ul.suggest li:hover { background: #e8f0fa; }

@@ -517,6 +517,73 @@ async function showProject(pid) {
     if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
 }
 
+// ---------------------------------------------------------------- suggestions while typing (filter, action)
+// items(text, cursor) -> { from, to, list: [{ label, detail, insert }] } or null; a chosen item replaces text[from, to)
+function suggest(input, items) {
+    const box = el('ul', { class: 'suggest', hidden: true });
+    let cur = null, sel = -1;
+    const close = () => { box.hidden = true; sel = -1; };
+    function pick(i) {
+        const it = cur && cur.list[i];
+        if (!it) return;
+        const v = input.value;
+        input.value = v.slice(0, cur.from) + it.insert + v.slice(cur.to);
+        const at = cur.from + it.insert.length;
+        input.focus(); input.setSelectionRange(at, at);
+        input.dispatchEvent(new Event('input'));
+        input.dispatchEvent(new Event('change'));
+    }
+    function update() {
+        cur = document.activeElement === input ? items(input.value, input.selectionStart === null ? input.value.length : input.selectionStart) : null;
+        if (!cur || cur.list.length === 0) return close();
+        sel = -1;
+        box.replaceChildren(...cur.list.slice(0, 60).map((it, i) => el('li', { title: it.label + (it.detail ? '  ' + it.detail : ''), onmousedown: (ev) => { ev.preventDefault(); pick(i); } },
+            el('span', { text: it.label }), it.detail ? el('small', { class: 'muted', text: '  ' + it.detail }) : null)));
+        box.hidden = false;
+    }
+    for (const ev of ['input', 'focus', 'click']) input.addEventListener(ev, update);
+    // a click into the list does not take the focus (mousedown: preventDefault), so leaving the field closes it
+    input.addEventListener('blur', close);
+    input.addEventListener('keydown', (ev) => {
+        if (box.hidden) return;
+        const n = box.children.length;
+        if (ev.key === 'ArrowDown') sel = (sel + 1) % n;
+        else if (ev.key === 'ArrowUp') sel = (sel - 1 + n) % n;
+        else if ((ev.key === 'Enter' || ev.key === 'Tab') && sel >= 0) { ev.preventDefault(); pick(sel); return; }
+        else if (ev.key === 'Escape') { close(); return; }
+        else return;
+        ev.preventDefault();
+        [...box.children].forEach((li, i) => li.classList.toggle('on', i === sel));
+        if (box.children[sel]) box.children[sel].scrollIntoView({ block: 'nearest' });
+    });
+    return el('span', { class: 'suggestwrap' }, input, box);
+}
+
+// the pan-os-php filter of a type: "(field operator value) and (...)" - fields and operators from util_action_filter.json
+function filterSuggest(filters, text, pos) {
+    const before = text.slice(0, pos);
+    const open = before.lastIndexOf('('), shut = before.lastIndexOf(')');
+    const has = (a, b) => a.toLowerCase().includes(b.toLowerCase());
+    // what starts with the typed text first, then what contains it
+    const rank = (list, w, key) => list.filter(x => has(key(x), w)).sort((a, b) => (key(b).toLowerCase().startsWith(w.toLowerCase()) ? 1 : 0) - (key(a).toLowerCase().startsWith(w.toLowerCase()) ? 1 : 0));
+    if (open > shut) {
+        const seg = before.slice(open + 1), parts = seg.split(' ');
+        if (parts.length === 1)
+            return { from: open + 1, to: pos, list: rank(Object.keys(filters), parts[0], f => f).map(f => ({ label: f, detail: Object.keys(filters[f]).length + ' operators', insert: f + ' ' })) };
+        const ops = filters[parts[0]];
+        if (!ops) return null;
+        if (parts.length === 2)
+            return { from: open + 1 + parts[0].length + 1, to: pos, list: rank(Object.entries(ops), parts[1], ([o]) => o).map(([o, d]) => ({
+                label: o, detail: (d.arg ? 'value' + (d.example ? ', e.g. ' + d.example : '') : 'no value') + (d.help ? ' - ' + d.help : ''), insert: o + (d.arg ? ' ' : ')') })) };
+        return null;
+    }
+    // outside a term: after a term "and (" / "or (", else a new term with a field
+    const word = (before.match(/[^\s()!]*$/) || [''])[0], from = pos - word.length;
+    if (/\)\s*$/.test(before.slice(0, from)))
+        return { from, to: pos, list: ['and (', 'or (', 'and !('].filter(x => x.startsWith(word.toLowerCase())).map(x => ({ label: x, insert: x })) };
+    return { from, to: pos, list: rank(Object.keys(filters), word, f => f).map(f => ({ label: '(' + f, detail: Object.keys(filters[f]).length + ' operators', insert: '(' + f + ' ' })) };
+}
+
 // ---------------------------------------------------------------- viewer / editor
 async function showViewer(config) {
     const p = state.project, pid = p.pid, canWrite = p.role !== 'read';
@@ -530,8 +597,23 @@ async function showViewer(config) {
     const ruletype = el('select', {}, state.meta.ruletypes.map(t => el('option', { value: t, text: t })));
     ruletype.value = 'security';
     const sptype = el('select', {}, state.meta.securityprofiletypes.map(t => el('option', { value: t, text: t })));
-    const location = el('input', { value: p.scope ? p.scope[0] : 'any', maxlength: 200 });
-    const filter = el('input', { placeholder: '(name contains web) and (object is.unused)', maxlength: 2000 });
+    // locations: 'any' and those of the version (Panorama: shared + device groups, firewall: shared + vsys, SCM: containers +
+    // snippets), known once the version is loaded; a member limited to locations gets only those
+    const location = el('select', {}, (p.scope || ['any']).map(l => el('option', { value: l, text: l })));
+    let locationsLoaded = false;
+    async function loadLocations() {
+        if (locationsLoaded) return;
+        locationsLoaded = true;
+        const r = await api('GET', base() + '/locations').catch(() => null);
+        if (!r || !r.locations.length) return;
+        const was = location.value, kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'snippet': 'snippets' };
+        const groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
+            r.locations.filter(l => l.kind === k).map(l => el('option', { value: l.name, text: l.name }))));
+        location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
+        if ([...location.options].some(o => o.value === was)) location.value = was;
+    }
+    const filter = el('input', { placeholder: '(name contains web) and (object is.unused) - type for fields and operators', maxlength: 2000, autocomplete: 'off', spellcheck: false });
+    const filterBox = suggest(filter, (text, pos) => filterSuggest(state.meta.types[type.value].filters || {}, text, pos));
     const quick = el('input', { placeholder: 'text in any column', oninput: () => { view.quick = quick.value.toLowerCase(); view.page = 1; draw(); } });
     const rtField = field('Rule type', ruletype), spField = field('Profile type', sptype);
     const info = el('span', { class: 'muted' });
@@ -551,12 +633,11 @@ async function showViewer(config) {
 
     function typeChanged() {
         rtField.hidden = type.value !== 'rule'; spField.hidden = type.value !== 'securityprofile';
-        const acts = state.meta.types[type.value].actions;
-        action.replaceChildren(el('option', { value: '', text: '- choose an action -' }), ...Object.keys(acts).map(a => el('option', { value: a, text: a })));
+        action.value = '';
         actionChanged();
     }
     function query() {
-        const q = new URLSearchParams({ type: type.value, location: location.value.trim() || 'any', filter: filter.value.trim() });
+        const q = new URLSearchParams({ type: type.value, location: location.value || 'any', filter: filter.value.trim() });
         if (type.value === 'rule') q.set('ruletype', ruletype.value);
         if (type.value === 'securityprofile') q.set('securityprofiletype', sptype.value);
         return q;
@@ -585,6 +666,7 @@ async function showViewer(config) {
         setStatus(data.status ? Object.assign({ loaded: true }, data.status) : lastStatus);
         view.rows = data.rows; view.columns = data.columns; view.page = 1;
         if (!view.columns.includes(view.sort)) view.sort = null;
+        loadLocations();
         info.textContent = data.total + ' objects' + (data.truncated ? ' (first ' + data.rows.length + ' shown)' : '') + (fromCache ? ' - from browser cache' : ' - ' + data.ms + ' ms');
         draw();
     }
@@ -621,13 +703,20 @@ async function showViewer(config) {
     }
 
     // change box
-    const action = el('select', { onchange: () => actionChanged() });
+    // the action: type to find it (actions of the type that may run here, from util_action_filter.json)
+    const action = el('input', { placeholder: 'type to find an action', autocomplete: 'off', spellcheck: false, onchange: () => actionChanged(), oninput: () => actionChanged() });
+    const actionBox = suggest(action, (text) => {
+        const acts = state.meta.types[type.value].actions, w = text.trim().toLowerCase();
+        const keys = Object.keys(acts).filter(a => a.toLowerCase().includes(w)).sort((a, b) => (b.toLowerCase().startsWith(w) ? 1 : 0) - (a.toLowerCase().startsWith(w) ? 1 : 0));
+        return { from: 0, to: text.length, list: keys.map(a => ({ label: a,
+            detail: acts[a].length ? acts[a].map(x => x.name + (x.default && x.default !== '*nodefault*' ? '=' + x.default : '')).join(', ') : '', insert: a })) };
+    });
     const actionArg = el('input', { maxlength: 1500 });
     const argHelp = el('span', { class: 'muted' });
     function actionChanged() {
         const args = (state.meta.types[type.value].actions[action.value] || []);
         actionArg.disabled = args.length === 0;
-        actionArg.value = '';
+        if (actionArg.dataset.for !== action.value) { actionArg.value = ''; actionArg.dataset.for = action.value; }
         actionArg.placeholder = args.map(a => a.name).join(',');
         argHelp.textContent = args.map(a => a.name + (a.help ? ': ' + a.help : '')).join(' | ');
     }
@@ -635,6 +724,7 @@ async function showViewer(config) {
         el('p', { class: 'muted', text: 'The action runs on all objects that match type, location and the pan-os-php filter above (not the quick filter). It changes the loaded configuration in memory only - nothing is written until you save.' }),
         el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
             if (!action.value) throw new Error('choose an action');
+            if (!state.meta.types[type.value].actions[action.value]) throw new Error('"' + action.value + '" is no action of ' + type.value + ' here - type part of the name to find one');
             const body = Object.fromEntries(query());
             body.actions = action.value + (actionArg.value.trim() !== '' ? ':' + actionArg.value.trim() : '');
             if (!confirm('Run "' + body.actions + '" on ' + view.rows.length + ' object(s) of the current list?')) return;
@@ -643,11 +733,11 @@ async function showViewer(config) {
             log.hidden = false; log.textContent = r.log;
             message('action done on ' + r.processed + ' object(s) - not saved yet');
             await load(true);
-        }); } }, field('Action', action), el('label', { class: 'grow' }, 'Arguments (comma separated)', actionArg), el('button', { class: 'primary', type: 'submit', text: 'Run on loaded configuration' })),
+        }); } }, field('Action', actionBox), el('label', { class: 'grow' }, 'Arguments (comma separated)', actionArg), el('button', { class: 'primary', type: 'submit', text: 'Run on loaded configuration' })),
         argHelp, el('h3', { text: 'Unsaved changes' }), changeList, log) : null;
 
     const title = el('h2', { text: 'Version of ' + fmtTime(config.created) + ' - ' + config.name });
-    type.addEventListener('change', typeChanged);
+    type.addEventListener('change', () => { typeChanged(); filter.value = ''; });
     main(el('div', { class: 'row' }, el('button', { type: 'button', text: '‹ ' + p.name, onclick: () => run(async () => {
             if (lastStatus && lastStatus.dirty && !confirm('There are unsaved changes. They stay in the loaded configuration on the server (recovery copy), but are not a version yet. Leave?')) return;
             await showProject(pid);
@@ -655,7 +745,7 @@ async function showViewer(config) {
         el('div', { class: 'statusbar' }, status, autosaveInfo, el('span', { class: 'spacer' }),
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
         el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-            field('Type', type), rtField, spField, field('Location', location), el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filter),
+            field('Type', type), rtField, spField, field('Location', location), el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
             el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
         el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), info),
         tableWrap, pager, changeBox);

@@ -328,6 +328,29 @@ $meta = $alice->call( 'GET', 'meta' )[1]['types'];
 eq( array( $meta['address']['resource'], $meta['securityprofile']['resource'], $meta['address']['readonly'], $meta['application']['readonly'] ?? null ),
     array( 'addresses', 'security-profiles', FALSE, TRUE ), 'REST: meta lists resource names; other display types are read only' );
 eq( count( $meta ) > 25, TRUE, 'REST: all types with objects are offered (' . count( $meta ) . ')' );
+// locations of a version (choice in the page) and the filters with operators (suggestions in the page)
+$r = $alice->call( 'GET', $RC . '/locations' );
+eq( array( status( $r ), $r[1]['config'] ?? null, $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), array_values( array_unique( array_column( $r[1]['locations'] ?? array(), 'kind' ) ) ) ),
+    array( 200, 'panorama', TRUE, array( 'shared', 'Perimeter-FWs', 'Datacenter-Firewalls', 'testDG', 'DE-Berlin Office', 'FR Datacenter' ), array( 'shared', 'device-group' ) ),
+    'locations: Panorama - shared and every device group' );
+$fw = '<?xml version="1.0"?><config version="10.1.0" urldb="paloaltonetworks"><mgt-config/><shared><address><entry name="h1"><ip-netmask>1.1.1.1</ip-netmask></entry></address></shared>'
+    . '<devices><entry name="localhost.localdomain"><deviceconfig><system><hostname>fw1</hostname></system></deviceconfig><vsys><entry name="vsys1"/><entry name="vsys2"/></vsys></entry></devices></config>';
+$fwc = $alice->call( 'POST', $R . '/configs', null, array( 'fw.xml', $fw ) )[1]['cid'] ?? '';
+$r = $alice->call( 'GET', $R . '/configs/' . $fwc . '/locations' );
+eq( array( $r[1]['config'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ) ), array( 'firewall', array( 'shared', 'vsys1', 'vsys2' ) ), 'locations: firewall - shared and every vsys' );
+$scmc = $alice->call( 'POST', $R . '/configs', null, array( 'scm.xml', file_get_contents( $here . '/input/SCM-import.xml' ) ) )[1]['cid'] ?? '';
+$r = $alice->call( 'GET', $R . '/configs/' . $scmc . '/locations' );
+if( ( $r[1]['config'] ?? '' ) !== 'scm' ) print "SCM locations: " . json_encode( $r ) . " cid " . json_encode( $scmc ) . "\n";
+$kinds = array_values( array_unique( array_column( $r[1]['locations'] ?? array(), 'kind' ) ) );
+sort( $kinds );
+eq( array( $r[1]['config'] ?? null, $kinds, in_array( 'All', array_column( $r[1]['locations'] ?? array(), 'name' ), TRUE ) ), array( 'scm', array( 'container', 'snippet' ), TRUE ),
+    'locations: SCM - containers (folders) and snippets' );
+foreach( array( $fwc, $scmc ) as $x )
+    $alice->call( 'DELETE', $R . '/configs/' . $x );
+$nf = $meta['address']['filters'] ?? array();
+eq( array( $nf['name']['eq'] ?? null, $nf['object']['is.unused']['arg'] ?? null, isset( $nf['name']['is.in.file'] ), isset( $nf['value']['ip4.match.exact.from.file'] ) ),
+    array( array( 'arg' => TRUE, 'example' => '(name eq new test 1)', 'help' => 'returns TRUE if object name matches the one specified in argument' ), FALSE, FALSE, FALSE ),
+    'meta: filters with operators - needs a value, example, help; no operators that read a file' );
 $r = $alice->call( 'GET', $RC . '/addresses?model=display-v0' );
 eq( array( status( $r ), $r[1]['type'] ?? null, $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['model'] ?? null ), array( 200, 'address', 27, 27, 'display-v0' ), 'REST: GET addresses, display-v0 (objects and groups)' );
 eq( isset( $r[1]['items'][0]['model'] ), FALSE, 'REST: display-v0 items carry no model field' );
@@ -430,6 +453,8 @@ eq( status( $anon2->call( 'GET', $RC . '/addresses' ) ), 401, 'REST: no login' )
 eq( status( $bob->call( 'GET', $RC . '/addresses' ) ), 404, 'REST: no access' );
 eq( status( $alice->call( 'PUT', $R . '/members', array( 'user' => 'bob', 'role' => 'read', 'types' => array( 'address', 'application' ), 'scope' => array( 'shared' ) ) ) ), 200, 'REST: bob limited' );
 eq( status( $bob->call( 'GET', $RC . '/addresses?location=shared' ) ), 200, 'REST limited: granted' );
+$r = $bob->call( 'GET', $RC . '/locations' );
+eq( array( status( $r ), $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ) ), array( 200, FALSE, array( 'shared' ) ), 'locations limited: only the granted ones, no any' );
 eq( status( $bob->call( 'GET', $RC . '/addresses' ) ), 403, 'REST limited: location needed' );
 eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1' ) ), 403, 'REST limited: one object without location' );
 eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1?location=shared' ) ), 200, 'REST limited: one object in the scope' );
