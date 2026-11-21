@@ -116,8 +116,7 @@ Approach: XML / JSON level (no object model), so every area is covered, also tho
 every `name` attribute (except predefined / keyword / interface / structural model names) gets one pseudonym, and every
 text value equal to a name is replaced by it – this keeps all references.
 
-Verified: `baseconfigpano-11_2-test-vcp5.xml` and a Panorama with template stacks: structure unchanged, leak scan clean,
-`type=stats` identical (1,100 / 1,782 figures), CDSS visibility playbook: same 924 changes.
+
 
 ## Open items
 
