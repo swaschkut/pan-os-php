@@ -161,6 +161,20 @@ Todo: [todo/config-viewer-api.md](../../../todo/config-viewer-api.md)
 
 ---
 
+## 8b. Public PANW data, support portal, live data of a device
+
+Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-panw-data-and-live.md) - list of Sven,
+2026-11-21, nothing built.
+
+* public data as tables with filters: EoL, release notes of the PANW products, CVE, firewall compare (front / back
+  panel, documentation link, ports copper / fibre for a migration), IANA protocol numbers (admin)
+* support portal with the user's login (2FA): serials per CSP account, search, register with auth codes (batch,
+  address), licences per serial - official API / terms of use to check first
+* live data (read only, personal key): session-browser (through Panorama?), system / traffic / threat log,
+  custom-report, xml-op-json
+
+---
+
 ## 9. Other
 
 * **IronSkillet 12.2** ([todo/ironskillet-url-http-header-logging-12.2.md](../../../todo/ironskillet-url-http-header-logging-12.2.md)):
