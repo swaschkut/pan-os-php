@@ -178,3 +178,6 @@ p.warn, span.warn { color: var(--danger, #c0392b); }
 button.explainbtn { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; margin-top: 4px; }
 button.explainbtn:hover { background: #084c82; }
 .explainwin pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+ul.objhistnotes { margin: 2px 0 4px 1.2em; padding: 0; font-size: 12px; }
+ul.objhistnotes li { overflow-wrap: anywhere; }
+ul.objhistnotes li.warn { color: var(--warn); }

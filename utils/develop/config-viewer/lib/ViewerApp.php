@@ -37,6 +37,7 @@ require_once dirname(__FILE__) . '/../../../../lib/misc-classes/PluginLicense.ph
 require_once dirname(__FILE__) . '/../../../../lib/misc-classes/PluginPackage.php';
 require_once dirname(__FILE__) . '/ViewerPlugins.php';
 require_once dirname(__FILE__) . '/ViewerGit.php';
+require_once dirname(__FILE__) . '/../../../../lib/misc-classes/ConfigObjectSplit.php';
 
 class ViewerException extends Exception
 {
@@ -1887,13 +1888,16 @@ class ViewerApp
         if( $j['state'] !== 'done' || $result === null || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
             throw new ViewerException( 'this run has no result configuration', 409 );
         $other = $target['id'] !== $p['id'];
-        $parent = $other ? FALSE : $this->q( 'SELECT id, name FROM configs WHERE id = ? AND project_id = ?', array( $j['config_id'], $p['id'] ) )->fetch();
+        $parent = $other ? FALSE : $this->q( 'SELECT id, name, file FROM configs WHERE id = ? AND project_id = ?', array( $j['config_id'], $p['id'] ) )->fetch();
         $file = self::randomId() . '.xml';
         if( !copy( $out, $this->projectDir( $target['pid'] ) . '/' . $file ) )
             throw new ViewerException( 'file can not be stored', 500 );
         @chmod( $this->projectDir( $target['pid'] ) . '/' . $file, 0600 );
         // the note says where a version comes from: the run, and the project when it is another one
         $note = $j['type'] . ' run ' . substr( $j['jid'], 0, 8 ) . ( $other ? ' of project "' . $p['name'] . '"' : '' );
+        // the history on object level: the result as one commit on the history of the version the run ran on
+        if( $parent )
+            $this->runHistory( $p, $j, $user, $parent['file'], $file );
         return $this->configInsert( $target, $user, $parent ? $parent['name'] : $j['type'] . ' result', $file, $parent ? (int)$parent['id'] : null, $note )
             + array( 'pid' => $target['pid'] );
     }
@@ -3687,16 +3691,95 @@ class ViewerApp
                 $x = $r['xml'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . $name] ?? null;
                 $path = is_array( $x ) && is_string( $x['path'] ?? null ) ? $x['path'] : null;
                 return array( 'row' => $row, 'model' => $model, 'xml' => is_array( $x ) && is_string( $x['xml'] ?? null ) ? $x['xml'] : null,
-                    'history' => $path !== null ? $this->objectHistory( $user, $pid, $cid, $path ) : null, 'status' => $r['status'] );
+                    'history' => $path !== null ? $this->objectHistory( $user, $pid, $cid, $path, ( $row['location'] ?? '' ) . ':' . $name ) : null, 'status' => $r['status'] );
             }
         throw new ViewerException( 'not found', 404 );
+    }
+
+    /**
+     * "Result as new version" of a run (object-merger, rule-merger, playbook, …): the result configuration as one commit
+     * on the history of the version the run ran on (refs/viewer/versions/<parent> - created from the parent file when
+     * that version was never opened) into refs/viewer/versions/<new>. The objects the run changed or removed get this
+     * commit in their History; the message names the run and its settings, for a merger also per object what happened
+     * (Merged: removed -> kept, Not-merged: copy (kept …): reason) - so the kept object shows the run as well although
+     * its own entry did not change. Never stops the save: errors only end up in the PHP error log.
+     */
+    private function runHistory( array $p, array $j, array $user, string $parentFile, string $newFile ): void
+    {
+        if( getenv( 'PANOSPHP_VIEWER_GIT' ) === '0' )
+            return;
+        try
+        {
+            $dir = $this->projectDir( $p['pid'] );
+            $git = new ViewerGit( $dir . '/history.git' );
+            if( !$git->ready() )
+                return;
+            $load = function( string $f ) {
+                $d = new DOMDocument();
+                if( !@$d->load( $f, LIBXML_PARSEHUGE | LIBXML_NONET ) )
+                    throw new Exception( 'can not read ' . basename( $f ) );
+                return ConfigObjectSplit::files( ConfigObjectSplit::state( $d ) );
+            };
+            $parentKey = basename( $parentFile, '.xml' );
+            $head = $git->ref( 'refs/viewer/versions/' . $parentKey );
+            if( $head === null )
+                $head = $git->commit( 'refs/viewer/versions/' . $parentKey, null, $load( $dir . '/' . $parentFile ), array(),
+                    "version " . $parentKey . "\n\nVersion: " . $parentKey . "\n", 'config-viewer', time(), TRUE );
+            $git->commit( 'refs/viewer/versions/' . basename( $newFile, '.xml' ), $head, $load( $dir . '/' . $newFile ), array(),
+                $this->runMessage( $p, $j, $user ), (string)$user['name'], time(), TRUE );
+        }
+        catch( Throwable $e )
+        {
+            error_log( 'config-viewer history (run ' . substr( $j['jid'], 0, 8 ) . '): ' . $e->getMessage() );
+        }
+    }
+
+    /** the message of the commit of a run result: subject, per object of a merger what happened, the trailers */
+    private function runMessage( array $p, array $j, array $user ): string
+    {
+        $args = array();
+        foreach( (array)json_decode( (string)$j['args'], TRUE ) as $a )
+            if( is_string( $a ) && !preg_match( '/^(in|out|exportjson|exportcsv|json)=/i', $a ) )
+                $args[] = $a;
+        $settings = $this->hidePaths( implode( ' ', $args ) );
+        $m = ViewerGit::oneLine( substr( $j['type'] . ' run ' . substr( $j['jid'], 0, 8 ) . ( $settings !== '' ? ': ' . $settings : '' ), 0, 200 ) ) . "\n\n";
+        $rep = $this->jobDir( $p, $j['jid'] ) . '/merger.json';
+        $r = is_file( $rep ) && !is_link( $rep ) && filesize( $rep ) < 200000000 ? json_decode( (string)file_get_contents( $rep ), TRUE ) : null;
+        $ref = function( $x ) { return is_array( $x ) ? ( ( $x['location'] ?? '' ) !== '' ? $x['location'] . ':' : '' ) . ( $x['name'] ?? '' ) : ''; };
+        $lines = array();
+        if( is_array( $r ) && ( $r['type'] ?? '' ) === 'rule-merger' )
+        {
+            foreach( $r['merged'] ?? array() as $x )
+                foreach( $x['removed'] ?? array() as $o )
+                    $lines[] = 'Merged: ' . ( $x['location'] ?? '' ) . ':' . ( $o['name'] ?? '' ) . ' -> ' . ( $x['location'] ?? '' ) . ':' . ( $x['rule'] ?? '' );
+            foreach( $r['skipped'] ?? array() as $x )
+                foreach( $x['notMergedWith'] ?? array() as $o )
+                    $lines[] = 'Not-merged: ' . ( $x['location'] ?? '' ) . ':' . ( $x['rule'] ?? '' ) . ( ( $o['name'] ?? '' ) !== '' ? ' (with ' . $o['name'] . ')' : '' ) . ': ' . ( $o['reason'] ?? '' );
+        }
+        elseif( is_array( $r ) )
+        {
+            foreach( $r['merged'] ?? array() as $x )
+                foreach( $x['removed'] ?? array() as $o )
+                    $lines[] = 'Merged: ' . $ref( $o ) . ' -> ' . $ref( $x['kept'] ?? null );
+            foreach( $r['skipped'] ?? array() as $x )
+                foreach( $x['notMergedWith'] ?? array() as $o )
+                    $lines[] = 'Not-merged: ' . $ref( $o ) . ( isset( $x['kept'] ) ? ' (kept ' . $ref( $x['kept'] ) . ')' : '' ) . ': ' . trim( implode( ' ', (array)( $x['reason'] ?? array() ) ) );
+        }
+        foreach( $lines as $l )
+            $m .= ViewerGit::oneLine( substr( $l, 0, 2000 ) ) . "\n";
+        if( count( $lines ) )
+            $m .= "\n";
+        $m .= 'Type: ' . ViewerGit::oneLine( (string)$j['type'] ) . "\n" . 'Run: ' . substr( $j['jid'], 0, 8 ) . "\n";
+        if( $settings !== '' )
+            $m .= 'Settings: ' . ViewerGit::oneLine( $settings ) . "\n";
+        return $m;
     }
 
     /**
      * the commits of the history of the version (unsaved changes, then the versions it came from) that changed one
      * entry: commit, time, user, subject, the change (trailers), the text of the entry after it (null: removed)
      */
-    private function objectHistory( array $user, $pid, $cid, string $path ): ?array
+    private function objectHistory( array $user, $pid, $cid, string $path, string $object = '' ): ?array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $c = $this->configGet( $p, $cid );
@@ -3706,12 +3789,41 @@ class ViewerApp
         $key = basename( $c['file'], '.xml' );
         $ref = $git->ref( 'refs/viewer/work/' . $key ) !== null ? 'refs/viewer/work/' . $key : 'refs/viewer/versions/' . $key;
         $list = array();
+        $seen = array();
+        // the lines of a run commit (Merged: / Not-merged:) about this object: "<location>:<name>" as a whole
+        $about = function( array $e ) use ( $object ) {
+            if( $object === '' )
+                return array();
+            $q = preg_quote( $object, '/' );
+            return array_values( array_filter( $e['notes'] ?? array(), function( $l ) use ( $q ) {
+                return preg_match( '/(?:^[A-Za-z-]+: |-> |\(kept |\(with )' . $q . '(?=$| |:|\))/', $l ) === 1; } ) );
+        };
         foreach( $git->log( $ref, 30, $path ) as $e )
         {
             $e['text'] = $git->show( $e['commit'], $path );
+            $e['notes'] = $about( $e );
+            $seen[$e['commit']] = TRUE;
             $list[] = $e;
         }
-        return array( 'path' => $path, 'commits' => $list );
+        // run results (merger) that name this object without changing its entry (e.g. the kept object of a merge)
+        $order = array();
+        foreach( $git->log( $ref, 200 ) as $i => $e )
+        {
+            $order[$e['commit']] = $i;
+            if( !isset( $seen[$e['commit']] ) && isset( $e['change']['run'] ) && count( $notes = $about( $e ) ) > 0 )
+            {
+                $e['text'] = $git->show( $e['commit'], $path );
+                $e['notes'] = $notes;
+                $list[] = $e;
+            }
+        }
+        // newest first: the order of git (commits of the same second keep their order)
+        usort( $list, function( $a, $b ) use ( $order ) {
+            return ( $order[$a['commit']] ?? PHP_INT_MAX ) <=> ( $order[$b['commit']] ?? PHP_INT_MAX ) ?: $b['time'] <=> $a['time']; } );
+        foreach( $list as &$e )
+            unset( $e['change']['settings'] );
+        unset( $e );
+        return array( 'path' => $path, 'commits' => array_slice( $list, 0, 40 ) );
     }
 
     /** change: runs actions on the configuration in memory. Nothing is written until save(). */

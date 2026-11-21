@@ -1988,7 +1988,9 @@ async function showViewer(config, preset) {
                 el('button', { type: 'button', class: 'small', text: 'XML', title: 'the object after this commit', onclick: () => {
                     if (shown.i === i && !view.hidden) { view.hidden = true; return; }
                     shown.i = i; view.hidden = false; view.textContent = c.text === null ? '(removed by this commit)' : c.text; } }), ' ',
-                el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + c.user + ' - ' }), el('code', { text: c.subject })));
+                el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + c.user + ' - ' }), el('code', { text: c.subject }),
+                // a run result (object-merger, rule-merger, …): what the run did with this object
+                (c.notes || []).length ? el('ul', { class: 'objhistnotes' }, c.notes.map(n => el('li', { class: /^Not-merged:/.test(n) ? 'warn' : '', text: n }))) : null));
             return section('history', 'History (' + h.commits.length + (h.commits.length >= 30 ? '+' : '') + ' commits)',
                 el('div', {}, el('p', { class: 'muted', text: 'entry ' + h.path + ' - newest first; a rename starts a new entry' }), el('ul', { class: 'objhist' }, items), view));
         }

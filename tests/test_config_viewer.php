@@ -1007,7 +1007,19 @@ eq( array( $mj['type'] ?? null, isset( $mj['summary']['address'], $mj['summary']
     count( array_filter( $mj['skipped'] ?? array(), function( $x ) { return count( $x['reason'] ?? array() ) > 0; } ) ) > 0 ),
     array( 'object-merger', TRUE, 'address', TRUE, TRUE, TRUE ), 'merger: merged (kept, removed) and skipped with the reason per object type' );
 $before = count( $alice->call( 'GET', $J . '/configs' )[1]['configs'] ?? array() );
-eq( array( status( $alice->call( 'POST', $mrun . '/save', array() ) ), count( $alice->call( 'GET', $J . '/configs' )[1]['configs'] ?? array() ) ), array( 201, $before + 1 ), 'merger: result as new version' );
+$sv = $alice->call( 'POST', $mrun . '/save', array() );
+eq( array( status( $sv ), count( $alice->call( 'GET', $J . '/configs' )[1]['configs'] ?? array() ) ), array( 201, $before + 1 ), 'merger: result as new version' );
+// the history on object level: the result is one commit on the history of the version the run ran on; the kept object
+// shows it with what the run did (Merged: removed -> kept) although its own entry did not change
+$k = $m0['kept'] ?? array();
+$ko = $alice->call( 'GET', $J . '/configs/' . ( $sv[1]['cid'] ?? '' ) . '/object?' . http_build_query( array( 'type' => 'address', 'location' => $k['location'] ?? '', 'name' => $k['name'] ?? '' ) ) )[1];
+$kc = $ko['history']['commits'][0] ?? array();
+$rem = ( $m0['removed'][0]['location'] ?? '' ) . ':' . ( $m0['removed'][0]['name'] ?? '' );
+eq( array( strpos( $kc['subject'] ?? '', 'object-merger run ' ) === 0, $kc['change']['type'] ?? null, isset( $kc['change']['run'] ),
+    in_array( 'Merged: ' . $rem . ' -> ' . ( $k['location'] ?? '' ) . ':' . ( $k['name'] ?? '' ), $kc['notes'] ?? array(), TRUE ),
+    strpos( json_encode( $kc ), 'out.xml' ) === FALSE, ( end( $ko['history']['commits'] )['subject'] ?? '' ) !== ( $kc['subject'] ?? '' ) ),
+    array( TRUE, 'object-merger', TRUE, TRUE, TRUE, TRUE ),
+    'merger result: the kept object has the run in its history (Merged: removed -> kept), on top of the history of the version it ran on' );
 $r = $alice->call( 'POST', $JC . '/rule-merger/runs', array( 'location' => 'any', 'method' => 'matchFromToSrcDstApp', 'rulebase' => 'pre', 'stopmergingifdenyseen' => TRUE, 'additionalmatch' => array( 'tag' ) ) );
 eq( $r[1]['args'] ?? null, array( 'location=any', 'out=%JOB%/out.xml', 'method=matchFromToSrcDstApp', 'panoramaPreRules', 'stopMergingIfDenySeen=yes', 'additionalMatch=tag', 'exportjson=merger.json', 'exportcsv=merger.html' ), 'rule-merger: arguments' );
 $r = waitRun( $alice, $J . '/runs/' . $r[1]['jid'] );

@@ -57,8 +57,16 @@ Counted from [action-classes.json](action-classes.json), class `change`.
   `lastDetail`: resolution per level before / after, members, simulated changes, cause in words)
 * open: Explain for the other refusals of MergeSafety (unreplaceable user, textual EDL / profile users) - today only
   the effective-policy check carries the detail; Explain from the object window (where-used → "why not mergeable")
-* open: **apply to the loaded version** - the merger in the worker on the memory as one change: one commit with every
-  merged / removed object and every reference, undone as a whole (git step 3)
+* ~~small variant~~ built 2026-11-21: **Result as new version** of a run = one commit on the history of the version
+  it ran on (run + settings, per object `Merged:` / `Not-merged:`); the History of the object window shows it, also at
+  the kept object of a merge
+* open (big variant): **merger on the loaded version** - the merger runs in the worker on the memory as one change
+  instead of a job on a copy: it appears in the change list (unsaved, with Undo / discard like every change), one
+  commit with every merged / removed object and every reference that was replaced; the commit message per object as
+  in the small variant (Merged / Not-merged with reason, Explain data); undo of the whole merge or of one merged object
+  (git revert of its entries: the removed object back, its references back - only when nothing later touched them);
+  a merge step in a playbook (today `*-merger` steps are refused); the report (merged / not merged / Explain) next to
+  the change list instead of the run list; large configurations: progress and cancel in the worker (git step 3)
 * open: members limited to locations (today the tab needs the whole configuration, like every run)
 * open: playbook steps `*-merger` (refused today)
 * pan-os-php: the single `xyz-merger` types deprecated in favour of `type=object-merger`

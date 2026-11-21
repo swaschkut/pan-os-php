@@ -56,6 +56,14 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   changed its entry (unsaved changes and the versions before), newest first, with the object after each commit
   (button *XML*). A rename starts a new entry; objects of a template are part of the rest (no history of their own
   yet).
+- **Run results in the history**: *Result as new version* of a run (object-merger, rule-merger, playbook, …) writes
+  the result configuration as one commit on the history of the version the run ran on (that version gets its first
+  commit then if it was never opened). Subject: `<type> run <id>: <settings>`; trailers `Type:`, `Run:`, `Settings:`.
+  For a merger the message also lists per object what happened - `Merged: DG-P:web -> DG-P:web2`,
+  `Not-merged: DG-P:x (kept DG-P:y): <reason>` (from `merger.json`). In the object window of the new version the
+  *History* shows the run at every object the run changed (e.g. a group whose member was replaced) and also at the kept
+  object of a merge with its `Merged:` lines, although its own entry did not change. Removed objects are not in the new
+  version any more - they are in the report of the run.
 - **Undo** (at every unsaved change): takes back exactly this change - the later changes stay. git takes the commit of
   the change back on the current state, pan-os-php loads the result again (nothing of the old memory is kept), and
   the undo is one more commit. git merges **per field** (a merge driver of pan-os-php): a later change of another field

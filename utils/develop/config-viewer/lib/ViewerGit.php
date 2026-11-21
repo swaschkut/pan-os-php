@@ -32,7 +32,7 @@ class ViewerGit
 {
     const TRAILERS = array( 'type' => 'Type', 'location' => 'Location', 'template' => 'Template', 'ruletype' => 'Ruletype',
         'securityprofiletype' => 'Securityprofiletype', 'filter' => 'Filter', 'actions' => 'Action', 'field' => 'Field', 'user' => 'User',
-        'reverts' => 'Reverts' );
+        'reverts' => 'Reverts', 'run' => 'Run', 'settings' => 'Settings' );
 
     private $dir;
     private $git;
@@ -194,7 +194,9 @@ class ViewerGit
             foreach( $lines as $l )
                 if( preg_match( '/^([A-Z][a-z]+): (.*)$/', $l, $m ) && in_array( $m[1], self::TRAILERS, TRUE ) )
                     $tr[array_search( $m[1], self::TRAILERS, TRUE )] = $m[2];
-            $list[] = array( 'commit' => $f[0], 'time' => (int)$f[1], 'user' => $f[2], 'subject' => $lines[0], 'change' => $tr );
+            // the lines of a run result (Merged: / Not-merged:) - what the run did per object
+            $notes = array_values( array_filter( $lines, function( $l ) { return preg_match( '/^(Merged|Not-merged): /', $l ) === 1; } ) );
+            $list[] = array( 'commit' => $f[0], 'time' => (int)$f[1], 'user' => $f[2], 'subject' => $lines[0], 'change' => $tr, 'notes' => $notes );
         }
         return $list;
     }
@@ -259,7 +261,7 @@ class ViewerGit
 
     // ------------------------------------------------------------------------------------------------------------
 
-    private static function oneLine( string $s ): string
+    public static function oneLine( string $s ): string
     {
         return trim( preg_replace( '/[\x00-\x1f]+/', ' ', $s ) );
     }
