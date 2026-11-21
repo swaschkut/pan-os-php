@@ -418,6 +418,56 @@ ksort( $tree, SORT_STRING );
 $diff = array_merge( array_keys( array_diff_assoc( $tree, $want ) ), array_keys( array_diff_assoc( $want, $tree ) ) );
 eq( array( count( $tree ) > 50, array_values( array_unique( $diff ) ) ), array( TRUE, array() ), 'history: the tree of the saved version = the split of the saved file (every object)' );
 
+// ---- 9c. undo of one change (git step 3): taken back on the current state, the later changes stay
+$chg = function( $name, $a, $field = 'description' ) use ( $bob, $C2 ) {
+    return $bob->call( 'POST', $C2 . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq ' . $name . ')', 'actions' => $a, 'field' => $field ) );
+};
+$desc = function( $name ) use ( $bob, $C2 ) {
+    return $bob->call( 'GET', $C2 . '/object?type=address&location=shared&name=' . urlencode( $name ) )[1]['row']['description'] ?? null;
+};
+$d1 = $desc( 'shared-host1' ); $d2 = $desc( 'shared-host2' );
+$chg( 'shared-host2', 'description-append:UNDO-A' );
+$chg( 'shared-host1', 'description-append:UNDO-B' );
+$r = $chg( 'shared-host2', 'description-append:UNDO-C' );
+$n0 = count( $r[1]['status']['changes'] ?? array() ) - 3;
+eq( array( is_string( $r[1]['status']['changes'][$n0]['commit'] ?? null ), $r[1]['status']['history']['commits'] ?? null ), array( TRUE, 3 ), 'undo: every change carries its commit' );
+$r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 ) );
+eq( array( status( $r ), strpos( (string)( $r[1]['error'] ?? '' ), 'shared/address/shared-host2.xml' ) !== FALSE, $desc( 'shared-host2' ) ), array( 400, TRUE, trim( $d2 . ' UNDO-A UNDO-C' ) ),
+    'undo: refused when a later change touched the same object (nothing changed)' );
+$r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 + 1 ) );
+$st = $r[1]['status']['changes'] ?? array();
+eq( array( status( $r ), $desc( 'shared-host1' ), $desc( 'shared-host2' ), !empty( $st[$n0 + 1]['undone'] ), end( $st )['type'] ?? null, end( $st )['index'] ?? null ),
+    array( 200, $d1, trim( $d2 . ' UNDO-A UNDO-C' ), TRUE, 'undo', $n0 + 1 ), 'undo: one change taken back, the others stay; marked undone, the undo in the list' );
+eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 + 1 ) ) ), 400, 'undo: twice refused' );
+eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => count( $st ) - 1 ) ) ), 404, 'undo: an undo itself can not be undone' );
+eq( array( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => 999 ) ) ), status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => 'x' ) ) ) ), array( 404, 400 ), 'undo: index checked' );
+$bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 + 2 ) );
+$r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 ) );
+eq( array( status( $r ), $desc( 'shared-host2' ) ), array( 200, $d2 ), 'undo: the later change undone first, then the earlier one works' );
+$log2 = $hg->log( 'refs/viewer/work/' . $saved, 20 );
+eq( array( $log2[0]['change']['type'] ?? null, $log2[0]['change']['reverts'] ?? null, $log2[0]['user'] ?? null, $hg->tree( $log2[0]['commit'] ) === $hg->tree( 'refs/viewer/versions/' . $saved ) ),
+    array( 'undo', $st[$n0]['commit'], 'bob', TRUE ), 'undo: a commit with Reverts:; all undone = the tree of the version again' );
+eq( status( $bob->call( 'GET', $C2 . '/playbook?source=unsaved' ) ), 400, 'undo: undone changes and undos are no playbook steps' );
+// a rename undone while a later change uses the new name: the object is used but not there - said
+$r = $chg( 'another object', 'name-rename:another-new', 'name' );
+$i1 = count( $r[1]['status']['changes'] ) - 1;
+$chg( 'test-group2', 'add-member:another-new', 'members' );
+$r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $i1 ) );
+eq( array( status( $r ), $r[1]['unresolved'] ?? null ), array( 200, array( 'shared address another-new' ) ), 'undo: an object that is used but not there any more is named' );
+// a tag rename undone while a later change uses the new name: pan-os-php creates the missing tag when it loads - said
+$r = $bob->call( 'POST', $C2 . '/change', array( 'type' => 'tag', 'location' => 'shared', 'filter' => '(name eq test-shared)', 'actions' => 'name-rename:test-shared-new', 'field' => 'name' ) );
+$i2 = count( $r[1]['status']['changes'] ) - 1;
+$chg( 'shared-host2', 'tag-add:test-shared-new', 'tag' );
+$r = $bob->call( 'POST', $C2 . '/undo', array( 'index' => $i2 ) );
+eq( array( status( $r ), strpos( (string)( $r[1]['warning'] ?? '' ), 'added shared/tag/test-shared-new.xml' ) !== FALSE ), array( 200, TRUE ), 'undo: what pan-os-php changed when it loaded the result is said' );
+// permissions: read only, limited to other locations
+$alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
+eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 ) ) ), 403, 'undo: read only refused' );
+$alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'write', 'scope' => array( 'DE-Berlin Office' ) ) );
+eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => $i1 + 1 ) ) ), 403, 'undo: limited to other locations refused' );
+$alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
+$bob->call( 'POST', $C2 . '/discard' );
+
 // ---- 10. a stopped worker with unsaved changes: recovered as a version
 $bob->call( 'POST', $C2 . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host2)', 'actions' => 'description-append:RECOVERME' ) );
 foreach( glob( $data . '/projects/' . $pid . '/work/*.pid' ) as $f )

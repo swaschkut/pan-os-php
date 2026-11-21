@@ -43,8 +43,16 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   UUID, the rest of the configuration as `_rest.xml`). The first load of a version is its first commit; every change
   is one commit with exactly the objects it changed (a rename: the object, its order and every object that refers to
   it) and the change as its message (`Type:`, `Location:`, `Filter:`, `Action:`, `User:`). Save as new version: the
-  new version is the state of the last commit; discard: the commits are dropped. Not in the page yet (undo of one
-  change, history of an object: next steps); `PANOSPHP_VIEWER_GIT=0` switches it off. The repository holds the
+  new version is the state of the last commit; discard: the commits are dropped. `PANOSPHP_VIEWER_GIT=0` switches it
+  off (then there is no undo).
+- **Undo** (at every unsaved change): takes back exactly this change - the later changes stay. git takes the commit of
+  the change back on the current state, pan-os-php loads the result again (nothing of the old memory is kept), and
+  the undo is one more commit. Refused when a later change touched the same lines of the same object (*take the later
+  change back first*). After the undo the viewer says which objects are used but not there any more (e.g. a rename
+  undone while a later change uses the new name) and what pan-os-php changed when it loaded the result (it creates a
+  missing tag, for example). The undone change is struck through; undone changes and undos are no playbook steps.
+  A member limited to types / locations can undo only a change he could have made. API: `POST …/configs/<cid>/undo`
+  with `{"index": n}` (the place in the change list, from 0). The repository holds the
   configuration like its version files (same protection, deleted with the project).
 - **Multi-edit …** (at a change of one object in the list of unsaved changes): the same action on more objects. The
   window suggests what they could have in common - taken from the changed object: name begins with …, same value,

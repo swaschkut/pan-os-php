@@ -30,7 +30,7 @@ Status: **in progress** (Sven, 2026-11-21).
 
 ### Still open (list of Sven, 2026-11-21)
 
-* git on object level (see below): step 1 (split / join) and step 2 (a commit per change in the worker) built 2026-11-21; next: step 3 (undo of one change)
+* git on object level (see below): steps 1 (split / join), 2 (a commit per change) and 3 (undo of one change) built 2026-11-21; next: step 4 (merge per field, branches for device import / users, XML snippet and history per object)
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
 * **the XML snippet of each object** - in the object window: the XML of exactly this object (`$obj->xmlroot`), read
   only (later: the entry of the object in git)
@@ -333,6 +333,28 @@ the volume (git is in the image), written with the plumbing commands:
 * Not yet: a version recovered from the autosave file (worker stopped) starts a new history (its first commit is the
   recovered state, without the commits before); a version made by a run (playbook, plug-in) the same. The page shows
   nothing of the history yet.
+
+### Step 3 built (2026-11-21): undo of one change
+
+* Each change of the list carries its commit (`commit`). `POST …/configs/<cid>/undo {index}` → worker `viewerUndo()`:
+  `git merge-tree --write-tree --merge-base=<commit> <head> <commit>^` (revert in memory, no working tree) → the tree
+  or the conflicting paths (refused: "take the later change back first"); the entries that differ between head and
+  that tree replace those of the memory (`ConfigObjectSplit::files()` of the state + `join()`), and **pan-os-php
+  loads the whole configuration again** - the plan "replace only the nodes and load these objects again" does not
+  work: the PHP objects of pan-os-php (values, members, references) are parsed from the XML once; changed nodes under
+  them would not be seen. Load of the result fails → the memory before stays.
+* Then one commit `undo: …` with `Reverts: <commit>`; the change is marked `undone`, an entry `type undo` follows in
+  the list; both are left out of the playbook. Checks after the load: objects used but not there (pan-os-php tmp
+  objects, new against before the undo) are named; when the tree in memory differs from the tree git computed
+  (pan-os-php creates a tag that is used but missing when it loads), the entries are named as a warning.
+* Permissions: write; a member limited to types / locations only for a change in them (`queryArgs` of the change).
+* Tested (`tests/test_config_viewer.php` 9c, 13 checks): conflict refused and nothing changed; one change undone, the
+  others stay; twice / an undo / a bad index refused; later change undone first, then the earlier one; all undone =
+  the tree of the version; playbook; a rename undone while a later change uses the new name (address: named as not
+  there; tag: pan-os-php creates it - said); read only and other locations refused. Browser: Undo in the change list.
+* Limits: the line merge of git - two changes of different fields in neighbouring lines of one object conflict
+  (merge driver per field: step 4). A large configuration is loaded again for an undo (the time of opening it).
+  Only unsaved changes (the list of the loaded version).
 
 ### To check first
 

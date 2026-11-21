@@ -31,7 +31,8 @@
 class ViewerGit
 {
     const TRAILERS = array( 'type' => 'Type', 'location' => 'Location', 'template' => 'Template', 'ruletype' => 'Ruletype',
-        'securityprofiletype' => 'Securityprofiletype', 'filter' => 'Filter', 'actions' => 'Action', 'field' => 'Field', 'user' => 'User' );
+        'securityprofiletype' => 'Securityprofiletype', 'filter' => 'Filter', 'actions' => 'Action', 'field' => 'Field', 'user' => 'User',
+        'reverts' => 'Reverts' );
 
     private $dir;
     private $git;
@@ -129,8 +130,11 @@ class ViewerGit
     {
         if( !is_array( $note ) )
             return self::oneLine( (string)$note ) . "\n";
-        $head = trim( ( $note['type'] ?? '' ) . ( isset( $note['ruletype'] ) && $note['ruletype'] !== '' ? '/' . $note['ruletype'] : '' ) . ' '
-            . ( $note['location'] ?? '' ) . ' ' . ( $note['filter'] ?? '' ) . ' -> ' . ( $note['actions'] ?? '' ) );
+        if( ( $note['type'] ?? '' ) === 'undo' )
+            $head = 'undo: ' . (string)( $note['undoes'] ?? '' );
+        else
+            $head = trim( ( $note['type'] ?? '' ) . ( isset( $note['ruletype'] ) && $note['ruletype'] !== '' ? '/' . $note['ruletype'] : '' ) . ' '
+                . ( $note['location'] ?? '' ) . ' ' . ( $note['filter'] ?? '' ) . ' -> ' . ( $note['actions'] ?? '' ) );
         $m = self::oneLine( substr( $head, 0, 200 ) ) . "\n\n";
         foreach( self::TRAILERS as $k => $t )
             if( isset( $note[$k] ) && is_scalar( $note[$k] ) && (string)$note[$k] !== '' )
@@ -164,6 +168,46 @@ class ViewerGit
     public function changed( string $sha ): array
     {
         list( $rc, $out ) = $this->run( array( 'diff-tree', '-r', '-z', '--no-commit-id', '--name-status', '--root', $sha ), '', FALSE );
+        $f = explode( "\0", rtrim( $out, "\0" ) );
+        $list = array();
+        for( $i = 0; $i + 1 < count( $f ); $i += 2 )
+            $list[$f[$i + 1]] = $f[$i];
+        return $list;
+    }
+
+    /**
+     * the tree of $head with the change of $commit taken back (git revert, in memory: merge-tree with the commit as
+     * base and its parent as the other side): array( 'tree' => id or null, 'conflicts' => paths )
+     */
+    public function revertTree( string $commit, string $head ): array
+    {
+        $parent = $this->ref( $commit . '^' );
+        if( $parent === null )
+            throw new Exception( 'the first commit of a version can not be taken back' );
+        list( $rc, $out ) = $this->run( array( 'merge-tree', '--write-tree', '--name-only', '--no-messages', '--merge-base=' . $commit, $head, $parent ), '', FALSE );
+        $lines = explode( "\n", rtrim( $out, "\n" ) );
+        $tree = trim( $lines[0] ?? '' );
+        if( !preg_match( '/^[0-9a-f]{40,64}$/', $tree ) || ( $rc !== 0 && $rc !== 1 ) )
+            throw new Exception( 'git merge-tree: ' . substr( trim( $out ), 0, 300 ) );
+        if( $rc === 0 )
+            return array( 'tree' => $tree, 'conflicts' => array() );
+        $conflicts = array();
+        foreach( array_slice( $lines, 1 ) as $l )
+            if( $l !== '' )
+                $conflicts[$l] = TRUE;
+        return array( 'tree' => null, 'conflicts' => array_keys( $conflicts ) );
+    }
+
+    /** the tree of a commit */
+    public function tree( string $commitOrTree ): string
+    {
+        return trim( $this->run( array( 'rev-parse', $commitOrTree . '^{tree}' ) )[1] );
+    }
+
+    /** the paths that differ between two trees / commits: path => A / M / D (seen from $a to $b) */
+    public function diff( string $a, string $b ): array
+    {
+        list( $rc, $out ) = $this->run( array( 'diff-tree', '-r', '-z', '--name-status', $a, $b ) );
         $f = explode( "\0", rtrim( $out, "\0" ) );
         $list = array();
         for( $i = 0; $i + 1 < count( $f ); $i += 2 )

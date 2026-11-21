@@ -1178,13 +1178,29 @@ async function showViewer(config, preset) {
         status.className = 'badge' + (s.dirty ? ' dirty' : '');
         saveBtn.disabled = !(canWrite && s.dirty); discardBtn.disabled = !(canWrite && s.dirty);
         autosaveInfo.textContent = s.autosaved ? 'recovery copy written ' + fmtTime(s.autosaved) : '';
-        changeList.replaceChildren(...(s.changes || []).map(c => typeof c === 'string' ? el('li', { text: c }) :
-            el('li', {}, el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + (c.user || '') + ' - ' }), el('code', { text: c.type + (c.ruletype ? '/' + c.ruletype : '') }), ' ',
+        changeList.replaceChildren(...(s.changes || []).map((c, i) => typeof c === 'string' ? el('li', { text: c }) : c.type === 'undo' ?
+            el('li', { class: 'undo' }, el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + (c.user || '') + ' - ' }), el('code', { text: 'undo' }),
+                el('span', { text: ' of change ' + ((c.index || 0) + 1) + ': ' + (c.undoes || '') })) :
+            el('li', { class: c.undone ? 'undone' : '' }, el('span', { class: 'muted', text: (i + 1) + '. ' + fmtTime(c.time) + ' ' + (c.user || '') + ' - ' }), el('code', { text: c.type + (c.ruletype ? '/' + c.ruletype : '') }), ' ',
                 el('span', { text: (c.template ? 'template ' + c.template + ' / ' : '') + (c.location || 'any') + (c.filter ? ' ' + c.filter : '') + ' → ' }), el('code', { text: c.actions || '' }),
                 c.field ? el('span', { class: 'muted', text: c.field === 'multi-edit' ? ' (multi-edit)' : ' (field ' + c.field + ')' }) : null,
                 // a change of one object: the same action on more objects (filter from the properties of the object)
-                canWrite && /^\(name eq .+\)$/.test(c.filter || '') && c.actions ? el('button', { type: 'button', class: 'small', text: 'Multi-edit …',
-                    title: 'the same action on more objects', onclick: () => run(() => openMultiEdit(c)) }) : null)));
+                canWrite && !c.undone && /^\(name eq .+\)$/.test(c.filter || '') && c.actions ? el('button', { type: 'button', class: 'small', text: 'Multi-edit …',
+                    title: 'the same action on more objects', onclick: () => run(() => openMultiEdit(c)) }) : null,
+                // undo of this change (git history of the version): taken back on the current state, the others stay
+                c.undone ? el('span', { class: 'muted', text: ' (undone)' }) : canWrite && c.commit ? el('button', { type: 'button', class: 'small', text: 'Undo',
+                    title: 'take this change back - the later changes stay', onclick: () => run(() => undoChange(i, c)) }) : null)));
+    }
+    async function undoChange(i, c) {
+        if (!confirm('Take back change ' + (i + 1) + '?\n' + c.type + ' ' + (c.location || '') + ' ' + (c.filter || '') + ' → ' + (c.actions || ''))) return;
+        const r = await api('POST', base() + '/undo', { index: i });
+        state.cache.clear();
+        setStatus(Object.assign({ loaded: true }, r.status || {}));
+        await load(true);
+        const notes = [];
+        if (r.unresolved && r.unresolved.length) notes.push('Used but not there any more after the undo: ' + r.unresolved.join(', '));
+        if (r.warning) notes.push(r.warning);
+        if (notes.length) alert(notes.join('\n\n'));
     }
     async function load(force) {
         const key = query().toString();

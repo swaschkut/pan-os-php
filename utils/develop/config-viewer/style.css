@@ -126,3 +126,7 @@ label.check code { font-size: 12px; }
 .parts { display: flex; flex-wrap: wrap; gap: 8px; }
 .parts .part { display: flex; flex-direction: column; gap: 2px; min-width: 150px; flex: 1; }
 .parts .part input, .parts .part select { width: 100%; }
+
+/* change list: an undone change, an undo */
+li.undone > code, li.undone > span:not(.muted) { text-decoration: line-through; opacity: .6; }
+li.undo { color: var(--muted, #666); }

@@ -267,12 +267,12 @@ function viewerHistoryStart( string $configFile ): void
     }
 }
 
-/** after a change on the memory: the objects that differ as one commit (the change as its message) */
-function viewerHistoryCommit( $note ): void
+/** after a change on the memory: the objects that differ as one commit (the change as its message); its id or null */
+function viewerHistoryCommit( $note ): ?string
 {
     $h = &$GLOBALS['viewerHistory'];
     if( !isset( $h['git'] ) )
-        return;
+        return null;
     try
     {
         $state = ConfigObjectSplit::state( UTIL::$sharedConfig['pan']->xmldoc );
@@ -282,13 +282,114 @@ function viewerHistoryCommit( $note ): void
         $h['head'] = $h['git']->commit( 'refs/viewer/work/' . $h['key'], $h['head'], $c['put'], $c['delete'], ViewerGit::message( $note ), $user, $time );
         $h['state'] = $state;
         $h['commits']++;
+        return $h['head'];
     }
     catch( Throwable $e )
     {
         // the history can not follow any more: switched off for this worker, the changes themselves go on
         viewerLog( 'history: ' . $e->getMessage() );
         $h = array( 'commits' => $h['commits'] ?? 0, 'error' => 'stopped: ' . $e->getMessage() );
+        return null;
     }
+}
+
+/** the objects of the loaded configuration that are used but not there (pan-os-php: tmp objects): "location type name" */
+function viewerUnresolved(): array
+{
+    $pan = UTIL::$sharedConfig['pan'] ?? null;
+    $locs = array( 'shared' => $pan );
+    foreach( array( 'getDeviceGroups', 'getVirtualSystems', 'getSharedGateways', 'getContainers', 'getSnippets' ) as $m )
+        if( is_object( $pan ) && method_exists( $pan, $m ) )
+            foreach( (array)$pan->$m() as $l )
+                if( is_object( $l ) && method_exists( $l, 'name' ) )
+                    $locs[$l->name()] = $l;
+    $out = array();
+    foreach( $locs as $name => $l )
+        foreach( array( 'addressStore' => 'address', 'serviceStore' => 'service', 'tagStore' => 'tag' ) as $store => $type )
+            if( is_object( $l ) && isset( $l->$store ) && is_object( $l->$store ) && method_exists( $l->$store, 'all' ) )
+                foreach( $l->$store->all() as $o )
+                    if( ( method_exists( $o, 'isTmpAddr' ) && $o->isTmpAddr() ) || ( method_exists( $o, 'isTmpSrv' ) && $o->isTmpSrv() )
+                        || ( $o instanceof Tag && $o->isTmp() ) )
+                        $out[] = $name . ' ' . $type . ' ' . $o->name();
+    sort( $out );
+    return array_values( array_unique( $out ) );
+}
+
+/**
+ * undo of one unsaved change (git step 3): git takes its commit back on the current state (merge-tree, in memory);
+ * the configuration of that tree is loaded by pan-os-php again (no object of the old memory is kept), the result is
+ * one more commit ("undo: …", Reverts: <commit>). Refused when a later change touched the same lines of an object.
+ * @return array( 'ok' => TRUE, 'unresolved' => objects used but not there any more ) or ok FALSE + error
+ */
+function viewerUndo( int $index, array $note ): array
+{
+    global $configFile;
+    $h = &$GLOBALS['viewerHistory'];
+    $changes = &$GLOBALS['viewerState']['changes'];
+    if( !isset( $h['git'] ) )
+        return array( 'ok' => FALSE, 'error' => 'undo needs the history (git) of the version: ' . ( $h['error'] ?? 'off' ) );
+    $c = $changes[$index] ?? null;
+    if( !is_array( $c ) || !is_string( $c['commit'] ?? null ) || ( $c['type'] ?? '' ) === 'undo' )
+        return array( 'ok' => FALSE, 'error' => 'this change can not be taken back (no commit of it)' );
+    if( !empty( $c['undone'] ) )
+        return array( 'ok' => FALSE, 'error' => 'this change is taken back already' );
+    $git = $h['git'];
+    $r = $git->revertTree( $c['commit'], $h['head'] );
+    if( $r['tree'] === null )
+        return array( 'ok' => FALSE, 'error' => 'a later change touched the same objects: ' . implode( ', ', array_slice( $r['conflicts'], 0, 10 ) )
+            . ' - take the later change back first', 'conflicts' => $r['conflicts'] );
+    $tree = $r['tree'];
+    // the configuration of the tree: the entries of the memory, the ones the undo touches from the tree
+    $files = ConfigObjectSplit::files( $h['state'] );
+    foreach( $git->diff( $h['head'], $tree ) as $path => $st )
+    {
+        if( $st === 'D' )
+            unset( $files[$path] );
+        else
+        {
+            $text = $git->show( $tree, $path );
+            if( $text === null )
+                return array( 'ok' => FALSE, 'error' => 'git: ' . $path . ' not readable' );
+            $files[$path] = $text;
+        }
+    }
+    $before = viewerUnresolved();
+    $doc = ConfigObjectSplit::join( $files );
+    $old = UTIL::$sharedConfig;
+    UTIL::$sharedConfig = array( 'xmlDoc' => $doc, 'pan' => null );
+    $load = viewerDecode( viewerRun( 'tag', array( 'location=any', 'actions=display', 'filter=(name eq config-viewer-load)' ) ) );
+    if( !$load['ok'] || UTIL::$sharedConfig['pan'] === null )
+    {
+        UTIL::$sharedConfig = $old;
+        return array( 'ok' => FALSE, 'error' => 'the configuration after the undo could not be loaded: ' . ( $load['error'] ?? '' ) );
+    }
+    unset( $old );
+    gc_collect_cycles();
+    $unresolved = array_values( array_diff( viewerUnresolved(), $before ) );
+
+    $note['type'] = 'undo';
+    $note['undoes'] = trim( ( $c['type'] ?? '' ) . ' ' . ( $c['location'] ?? '' ) . ' ' . ( $c['filter'] ?? '' ) . ' -> ' . ( $c['actions'] ?? '' ) );
+    $note['reverts'] = $c['commit'];
+    $note['index'] = $index;
+    $sha = viewerHistoryCommit( $note );
+    $warning = null;
+    if( $sha !== null && $git->tree( $sha ) !== $tree )
+    {
+        // pan-os-php loaded the configuration a little differently (e.g. it creates a tag that is used but missing):
+        // the commit holds what is in memory - said with the entries
+        $diff = array();
+        foreach( $git->diff( $tree, $sha ) as $path => $st )
+            $diff[] = ( $st === 'A' ? 'added ' : ( $st === 'D' ? 'removed ' : 'changed ' ) ) . $path;
+        $warning = 'pan-os-php changed the configuration when it loaded it after the undo: ' . implode( ', ', array_slice( $diff, 0, 10 ) );
+        viewerLog( 'undo: ' . $warning );
+    }
+    $changes[$index]['undone'] = TRUE;
+    $entry = array( 'time' => $note['time'] ?? time(), 'user' => $note['user'] ?? '', 'type' => 'undo', 'undoes' => $note['undoes'], 'index' => $index );
+    if( $sha !== null )
+        $entry['commit'] = $sha;
+    $changes[] = $entry;
+    $GLOBALS['viewerState']['dirty'] = TRUE;
+    return array( 'ok' => TRUE, 'unresolved' => $unresolved, 'warning' => $warning );
 }
 
 /** saved as a new version: it is the state of the last commit */
@@ -649,9 +750,21 @@ while( TRUE )
             }
             else
                 $note = substr( (string)$note, 0, 500 );
+            $sha = viewerHistoryCommit( $note );
+            if( is_array( $note ) && $sha !== null )
+                $note['commit'] = $sha;
             $GLOBALS['viewerState']['changes'][] = $note;
-            viewerHistoryCommit( $note );
         }
+        viewerSend( $conn, $r + array( 'status' => viewerStatus() ) );
+    }
+    elseif( $cmd['cmd'] === 'undo' )
+    {
+        $note = array();
+        foreach( array( 'time', 'user' ) as $k )
+            if( isset( $cmd['note'][$k] ) && is_scalar( $cmd['note'][$k] ) )
+                $note[$k] = is_string( $cmd['note'][$k] ) ? substr( $cmd['note'][$k], 0, 200 ) : $cmd['note'][$k];
+        try { $r = viewerUndo( is_int( $cmd['index'] ?? null ) ? $cmd['index'] : -1, $note ); }
+        catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'undo: ' . $e->getMessage() ); }
         viewerSend( $conn, $r + array( 'status' => viewerStatus() ) );
     }
     elseif( $cmd['cmd'] === 'save' )

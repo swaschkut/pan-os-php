@@ -30,7 +30,7 @@
  *   GET|POST projects/<pid>/configs, DELETE projects/<pid>/configs/<cid>, GET …/<cid>/download
  *   GET …/<cid>/<resource>[/<name>], POST …/<cid>/<resource>/actions            (REST per type, e.g. addresses, rules)
  *   POST …/<cid>/stats/runs; GET projects/<pid>/runs[/<jid>[/files/<name>]], DELETE projects/<pid>/runs/<jid>   (jobs)
- *   GET …/<cid>/objects, GET …/<cid>/status, POST …/<cid>/change, POST …/<cid>/save, POST …/<cid>/discard
+ *   GET …/<cid>/objects, GET …/<cid>/status, POST …/<cid>/change, POST …/<cid>/undo, POST …/<cid>/save, POST …/<cid>/discard
  * Every route except login needs a session (browser) or "Authorization: Bearer <API token>" (scripts);
  * with a session every route that is not GET needs the header X-CSRF-Token.
  */
@@ -526,6 +526,9 @@ try
                 viewerOut( $app->status( $user, $pid, $cid ) );
             if( $n == 5 && $method === 'POST' && $op === 'change' )
                 viewerOut( $app->change( $user, $pid, $cid, viewerBody() ) );
+            // undo of one unsaved change (body: index in the change list) - git history of the version
+            if( $n == 5 && $method === 'POST' && $op === 'undo' )
+                viewerOut( $app->undo( $user, $pid, $cid, viewerBody() ) );
             if( $n == 5 && $method === 'POST' && $op === 'save' )
                 viewerOut( $app->save( $user, $pid, $cid ) );
             if( $n == 5 && $method === 'POST' && $op === 'discard' )

@@ -3529,6 +3529,34 @@ class ViewerApp
     }
 
     /**
+     * undo of one unsaved change (POST …/configs/<cid>/undo, body index = its place in the change list): git takes its
+     * commit back on the current state, the worker loads the result again (bin/worker.php viewerUndo). Refused when a
+     * later change touched the same objects. A member limited to types / locations may undo only a change he could
+     * have made.
+     */
+    public function undo( array $user, $pid, $cid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        $c = $this->configGet( $p, $cid );
+        $index = $in['index'] ?? null;
+        if( !is_int( $index ) || $index < 0 )
+            throw new ViewerException( 'index: the number of the change in the list (from 0)', 400 );
+        $files = $this->session( $p, $c, $user );
+        $changes = (array)( $this->workerCall( $files, array( 'cmd' => 'status' ), 30 )['status']['changes'] ?? array() );
+        $ch = $changes[$index] ?? null;
+        if( !is_array( $ch ) || !is_string( $ch['type'] ?? null ) || $ch['type'] === 'undo' )
+            throw new ViewerException( 'no change with this number that can be taken back', 404 );
+        $q = array( 'type' => $ch['type'] );
+        foreach( array( 'location', 'template', 'ruletype', 'securityprofiletype' ) as $k )
+            if( isset( $ch[$k] ) && is_string( $ch[$k] ) )
+                $q[$k] = $ch[$k];
+        $this->queryArgs( $q, $p );
+        $r = $this->workerCall( $files, array( 'cmd' => 'undo', 'index' => $index, 'note' => array( 'time' => time(), 'user' => (string)$user['name'] ) ) );
+        return array( 'undone' => TRUE, 'unresolved' => array_values( array_filter( (array)( $r['unresolved'] ?? array() ), 'is_string' ) ),
+            'warning' => is_string( $r['warning'] ?? null ) ? $r['warning'] : null, 'status' => $r['status'] ?? null );
+    }
+
+    /**
      * The locations of a version, for the location choice: Panorama - shared + device groups, firewall - shared + vsys,
      * SCM - containers + snippets (loads the version like a read). A member limited to locations gets only those, and
      * no 'any'.
@@ -3596,7 +3624,8 @@ class ViewerApp
         $steps = array();
         foreach( $changes as $c )
         {
-            if( !is_array( $c ) || !is_string( $c['type'] ?? null ) || !is_string( $c['actions'] ?? null ) || $c['actions'] === '' )
+            // an undone change and the undo itself are no steps (the other changes replayed give the same result)
+            if( !is_array( $c ) || !is_string( $c['type'] ?? null ) || !is_string( $c['actions'] ?? null ) || $c['actions'] === '' || !empty( $c['undone'] ) || $c['type'] === 'undo' )
                 continue;
             $step = array( 'comment' => trim( ( isset( $c['time'] ) ? date( 'Y-m-d H:i T', (int)$c['time'] ) : '' ) . ' ' . (string)( $c['user'] ?? '' )
                 . ( isset( $c['field'] ) ? ( $c['field'] === 'multi-edit' ? ' - multi-edit' : ' - field ' . $c['field'] ) : '' ) ), 'type' => $c['type'] );
@@ -3642,7 +3671,9 @@ class ViewerApp
     {
         if( !is_array( $c ) )
             return (string)$c;
-        return 'type=' . ( $c['type'] ?? '?' ) . ' ' . implode( ' ', array_map( 'strval', (array)( $c['args'] ?? array() ) ) ) . ' [' . ( $c['user'] ?? '?' ) . ']';
+        if( ( $c['type'] ?? '' ) === 'undo' )
+            return 'undo of change ' . ( (int)( $c['index'] ?? -1 ) + 1 ) . ': ' . (string)( $c['undoes'] ?? '' ) . ' [' . ( $c['user'] ?? '?' ) . ']';
+        return ( !empty( $c['undone'] ) ? '(undone) ' : '' ) . 'type=' . ( $c['type'] ?? '?' ) . ' ' . implode( ' ', array_map( 'strval', (array)( $c['args'] ?? array() ) ) ) . ' [' . ( $c['user'] ?? '?' ) . ']';
     }
 
     /** discard: stops the loaded configuration without saving */
