@@ -79,6 +79,27 @@ foreach( array( array( 'mode=drop' ), array( 'mode=validation' ), array( 'mode=g
     $r = q( $bad, $o );
     eq( array( $r, strpos( $o, 'ERROR' ) !== FALSE ), array( array(), TRUE ), 'arguments checked: ' . implode( ' ', $bad ) );
 }
+// ldapServer=auto: the domain controllers from DNS, the first that works (one not reachable, one without TLS skipped)
+$srv = array( '_ldap._tcp.dc._msdcs.example.com' => array( array( 'target' => 'closed.example.com', 'pri' => 0, 'weight' => 300, 'port' => 389 ),
+    array( 'target' => 'tls.example.com', 'pri' => 0, 'weight' => 200, 'port' => 389 ), array( 'target' => 'dc1.example.com', 'pri' => 0, 'weight' => 100, 'port' => 389 ),
+    array( 'target' => 'evil.other.org', 'pri' => 0, 'weight' => 900, 'port' => 389 ) ) );
+@unlink( $log );
+$r = q( array( 'mode=validation', 'users=bob', 'ldapServer=auto', 'domain=example.com' ), $o );
+$fl = file( $log, FILE_IGNORE_NEW_LINES ) ?: array();
+eq( array( $r['server'] ?? null, count( $r['rows'] ?? array() ), array_values( preg_grep( '/^(reach|bind)/', $fl ) ) ),
+    array( 'ldaps://dc1.example.com:636', 1, array( 'reach closed.example.com:636', 'reach tls.example.com:636', 'bind ldaps://tls.example.com:636 alice@example.com bind-geheim reqcert=allow',
+        'reach dc1.example.com:636', 'bind ldaps://dc1.example.com:636 alice@example.com bind-geheim reqcert=allow' ) ),
+    'ldapServer=auto: DNS SRV of the domain, port closed and TLS failed skipped, the first that works; a server outside the domain never' );
+$r = q( array( 'mode=validation', 'users=bob', 'ldapServer=auto', 'dn=OU=Users;DC=example;DC=com' ) );
+eq( $r['server'] ?? null, 'ldaps://dc1.example.com:636', 'ldapServer=auto: the domain from the DC= parts of dn' );
+file_put_contents( $home . '/.panconfkeystore', "ldap_useralice@example.com:wrong\n" );
+$srv = array( '_ldap._tcp.dc._msdcs.example.com' => array( array( 'target' => 'dc1.example.com', 'pri' => 0, 'weight' => 200, 'port' => 389 ), array( 'target' => 'dc3.example.com', 'pri' => 0, 'weight' => 100, 'port' => 389 ) ) );
+@unlink( $log );
+q( array( 'mode=validation', 'users=bob', 'ldapServer=auto', 'domain=example.com' ), $o );
+eq( array( count( preg_grep( '/^bind/', file( $log, FILE_IGNORE_NEW_LINES ) ?: array() ) ), strpos( $o, 'wrong password or user' ) !== FALSE ), array( 1, TRUE ),
+    'ldapServer=auto: a refused login stops at once (no second domain controller - the account would be locked)' );
+file_put_contents( $home . '/.panconfkeystore', "ldap-password:old-wrong\nldap_userAlice@Example.com:bind-geheim\nldap_userbob@example.com:other\n" );
+
 // mode=discover: the domain controllers from DNS SRV, the base DN from the RootDSE of the first that answers (no login)
 $srv = array( '_ldap._tcp.dc._msdcs.example.com' => array( array( 'target' => 'dc2.example.com', 'pri' => 0, 'weight' => 100, 'port' => 389 ),
     array( 'target' => 'dc1.example.com', 'pri' => 0, 'weight' => 50, 'port' => 389 ), array( 'target' => 'evil.other.org', 'pri' => 0, 'weight' => 200, 'port' => 389 ) ) );
@@ -106,7 +127,7 @@ eq( array( strpos( $o, 'LDAP bind failed' ) !== FALSE, strpos( $o, 'wrong passwo
     array( TRUE, TRUE, FALSE ), 'a wrong password: bind failed, with the key store entry to check (not "died on warning")' );
 file_put_contents( $home . '/.panconfkeystore', "ldap_useralice@example.com:bind-geheim\n" );
 foreach( array( 'nohost.example.com' => 'DNS: the name nohost.example.com is not known', 'closed.example.com' => 'TCP: closed.example.com (10.9.9.9) port 636 not reachable: Connection refused',
-    'tls.example.com' => 'the TLS handshake of LDAPS failed' ) as $h => $want )
+    'tls.example.com' => 'the TLS handshake failed' ) as $h => $want )
 {
     q( array( 'mode=validation', 'users=bob', 'ldapServer=ldaps://' . $h . ':636' ), $o );
     eq( array( strpos( $o, $want ) !== FALSE, strpos( $o, 'Died on user notice' ) ), array( TRUE, FALSE ), 'server ' . $h . ': says why (' . $want . ')' );

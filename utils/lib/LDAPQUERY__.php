@@ -74,11 +74,27 @@ class LDAPQUERY__
         }
         if( !in_array($mode, self::MODES, TRUE) )
             derr( "mode: one of " . implode(', ', self::MODES) . ", discover", null, FALSE );
-        foreach( array( 'ldapserver', 'ldapuser', 'dn' ) as $need )
+        foreach( array( 'ldapuser', 'dn' ) as $need )
             if( !isset($args[$need]) || !is_string($args[$need]) || $args[$need] === '' )
                 derr( "argument '" . $need . "' is missing", null, FALSE );
-        if( !preg_match( '#^ldaps?://[A-Za-z0-9.-]+(:[0-9]{1,5})?$#', $args['ldapserver'] ) )
-            derr( "ldapServer: ldap://host[:port] or ldaps://host[:port]", null, FALSE );
+        // the server: given (ldapServer=ldaps://host[:port]), or automatic - ldapServer=auto (or none) with domain=<AD
+        // domain> (else the DC= parts of dn): the domain controllers from DNS, the first one that works
+        $server = isset($args['ldapserver']) && is_string($args['ldapserver']) ? trim( $args['ldapserver'] ) : 'auto';
+        if( $server === '' || strtolower( $server ) === 'auto' )
+        {
+            $domain = isset($args['domain']) && is_string($args['domain']) && $args['domain'] !== '' ? $args['domain'] : self::domainOfDn( (string)$args['dn'] );
+            if( $domain === null )
+                derr( "ldapServer=auto: domain=<AD domain> is needed (or DC=… in dn)", null, FALSE );
+            $ldaps = !isset($args['ldaps']) || !in_array( strtolower( (string)$args['ldaps'] ), array( 'no', 'n', '0', 'false' ), TRUE );
+            $uris = array();
+            foreach( self::domainServers( $domain, $ldaps ) as $sv )
+                if( $sv['inDomain'] )
+                    $uris[] = $sv['uri'];
+        }
+        elseif( !preg_match( '#^ldaps?://[A-Za-z0-9.-]+(:[0-9]{1,5})?$#', $server ) )
+            derr( "ldapServer: ldap://host[:port], ldaps://host[:port] or auto (with domain=)", null, FALSE );
+        else
+            $uris = array( $server );
         $this->base = str_replace( ';', ',', $args['dn'] );
         $this->attr = isset($args['filtercriteria']) && preg_match( '/^[A-Za-z][A-Za-z0-9-]{0,62}$/', $args['filtercriteria'] ) ? $args['filtercriteria'] : 'sAMAccountName';
         $users = isset($args['users']) ? array_values( array_filter( array_map( 'trim', explode( ',', (string)$args['users'] ) ), 'strlen' ) ) : array();
@@ -92,33 +108,7 @@ class LDAPQUERY__
         // the password of the bind user: key store entry ldap_user<bind user> (asked for and stored when missing)
         $password = PanAPIConnector::ldapPassword( $args['ldapuser'] );
 
-        // internal LDAPS with an own certificate authority (as the scripts of utils/develop/ldap)
-        putenv('LDAPTLS_REQCERT=allow');
-        PH::print_stdout( "Connecting to LDAP server: " . $args['ldapserver'] . " ..." );
-        // name and port first: "Can't contact LDAP server" of the LDAP library says neither which one nor why
-        self::reach( $args['ldapserver'], TRUE );
-        $this->conn = @ldap_connect( $args['ldapserver'] );
-        if( !$this->conn )
-            derr( "could not parse the LDAP server URI", null, FALSE );
-        ldap_set_option( $this->conn, LDAP_OPT_PROTOCOL_VERSION, 3 );
-        ldap_set_option( $this->conn, LDAP_OPT_REFERRALS, 0 );
-        ldap_set_option( $this->conn, LDAP_OPT_NETWORK_TIMEOUT, 15 );
-        if( !@ldap_bind( $this->conn, $args['ldapuser'], $password ) )
-        {
-            $err = ldap_error( $this->conn );
-            $diag = '';
-            if( defined( 'LDAP_OPT_DIAGNOSTIC_MESSAGE' ) && @ldap_get_option( $this->conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $d ) && is_string( $d ) && $d !== '' )
-                $diag = ' (' . $d . ')';
-            $hint = '';
-            if( stripos( $err, "can't contact" ) !== FALSE )
-                // name and port were reachable (reach): the TLS handshake of LDAPS failed
-                $hint = " - the server answers on the port, but the TLS handshake of LDAPS failed (certificate, TLS version)"
-                    . "; try ldap://<host>:389 to check the account, or ask for the LDAPS setup of the domain controller";
-            elseif( stripos( $err, 'invalid credentials' ) !== FALSE )
-                $hint = " - wrong password or user (key store entry " . PanAPIConnector::ldapUserEntry( $args['ldapuser'] ) . "), or the account is locked / expired";
-            derr( "LDAP bind failed as '" . $args['ldapuser'] . "': " . $err . $diag . $hint, null, FALSE );
-        }
-        PH::print_stdout( "LDAP bind successful (" . $args['ldapuser'] . ")" );
+        list( $this->conn, $used ) = self::bindFirst( $uris, $args['ldapuser'], $password );
         PH::print_stdout();
 
         if( $mode === 'validation' )
@@ -131,7 +121,7 @@ class LDAPQUERY__
             $this->result = $this->groupMembers( $group );
         @ldap_unbind( $this->conn );
 
-        $this->result = array( 'mode' => $mode, 'server' => $args['ldapserver'], 'base' => $this->base, 'time' => date('c') ) + $this->result;
+        $this->result = array( 'mode' => $mode, 'server' => $used, 'base' => $this->base, 'time' => date('c') ) + $this->result;
         if( isset($args['out']) && is_string($args['out']) && $args['out'] !== '' )
             file_put_contents( $args['out'], json_encode( $this->result, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE ) );
         if( isset($args['csv']) && is_string($args['csv']) && $args['csv'] !== '' )
@@ -150,35 +140,8 @@ class LDAPQUERY__
         if( !preg_match( '/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$/', $domain ) )
             derr( "domain: the DNS name of the AD domain, e.g. example.local", null, FALSE );
         $ldaps = !isset($args['ldaps']) || !in_array( strtolower( (string)$args['ldaps'] ), array( 'no', 'n', '0', 'false' ), TRUE );
-        $servers = array();
         $source = null;
-        foreach( array( '_ldap._tcp.dc._msdcs.' . $domain, '_ldap._tcp.' . $domain ) as $name )
-        {
-            PH::print_stdout( "DNS SRV " . $name . " ..." );
-            $records = function_exists( 'panosphp_test_dns_srv' ) ? panosphp_test_dns_srv( $name ) : @dns_get_record( $name, DNS_SRV );
-            foreach( is_array( $records ) ? $records : array() as $r )
-            {
-                $host = strtolower( rtrim( (string)( $r['target'] ?? '' ), '.' ) );
-                if( $host === '' || isset( $servers[$host] ) )
-                    continue;
-                $servers[$host] = array( 'host' => $host, 'priority' => (int)( $r['pri'] ?? 0 ), 'weight' => (int)( $r['weight'] ?? 0 ),
-                    'uri' => $ldaps ? 'ldaps://' . $host . ':636' : 'ldap://' . $host . ':' . (int)( $r['port'] ?? 389 ), 'inDomain' => substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain );
-            }
-            if( count( $servers ) > 0 )
-            {
-                $source = $name;
-                break;
-            }
-        }
-        if( count( $servers ) === 0 )
-        {
-            PH::print_stdout( "  no SRV records - the domain name itself is taken (in AD it points to the domain controllers)" );
-            $servers[$domain] = array( 'host' => $domain, 'priority' => 0, 'weight' => 0, 'uri' => ( $ldaps ? 'ldaps://' : 'ldap://' ) . $domain . ( $ldaps ? ':636' : ':389' ), 'inDomain' => TRUE );
-        }
-        $servers = array_values( $servers );
-        usort( $servers, function( $a, $b ) { return array( $a['priority'], -$a['weight'], $a['host'] ) <=> array( $b['priority'], -$b['weight'], $b['host'] ); } );
-        foreach( $servers as $s )
-            PH::print_stdout( "  - " . $s['uri'] . " (priority " . $s['priority'] . ", weight " . $s['weight'] . ")" . ( $s['inDomain'] ? "" : " - not in the domain, not asked" ) );
+        $servers = self::domainServers( $domain, $ldaps, $source );
 
         // RootDSE of the first server that answers (at most 3 are tried)
         putenv('LDAPTLS_REQCERT=allow');
@@ -224,6 +187,124 @@ class LDAPQUERY__
         return array( 'mode' => 'discover', 'domain' => $domain, 'time' => date('c'), 'source' => $source, 'servers' => $servers, 'rootDse' => $rootDse,
             'suggestion' => array( 'server' => $rootDse['server'] ?? $servers[0]['uri'], 'base_dn' => $base, 'base_from' => $rootDse !== null ? 'rootdse' : 'domain',
                 'bind_user' => '@' . $domain ) );
+    }
+
+    /**
+     * the domain controllers of an AD domain from DNS: SRV _ldap._tcp.dc._msdcs.<domain>, else _ldap._tcp.<domain>,
+     * ordered by priority / weight; none: the domain name itself. 'inDomain': the host is <name>.<domain> - only these
+     * are used (the config viewer allows *.<domain>).
+     */
+    public static function domainServers( string $domain, bool $ldaps, &$source = null ): array
+    {
+        $domain = strtolower( trim( $domain ) );
+        if( !preg_match( '/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$/', $domain ) )
+            derr( "domain: the DNS name of the AD domain, e.g. example.local", null, FALSE );
+        $servers = array();
+        $source = null;
+        foreach( array( '_ldap._tcp.dc._msdcs.' . $domain, '_ldap._tcp.' . $domain ) as $name )
+        {
+            PH::print_stdout( "DNS SRV " . $name . " ..." );
+            $records = function_exists( 'panosphp_test_dns_srv' ) ? panosphp_test_dns_srv( $name ) : @dns_get_record( $name, DNS_SRV );
+            foreach( is_array( $records ) ? $records : array() as $r )
+            {
+                $host = strtolower( rtrim( (string)( $r['target'] ?? '' ), '.' ) );
+                if( $host === '' || isset( $servers[$host] ) )
+                    continue;
+                $servers[$host] = array( 'host' => $host, 'priority' => (int)( $r['pri'] ?? 0 ), 'weight' => (int)( $r['weight'] ?? 0 ),
+                    'uri' => $ldaps ? 'ldaps://' . $host . ':636' : 'ldap://' . $host . ':' . (int)( $r['port'] ?? 389 ), 'inDomain' => substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain );
+            }
+            if( count( $servers ) > 0 )
+            {
+                $source = $name;
+                break;
+            }
+        }
+        if( count( $servers ) === 0 )
+        {
+            PH::print_stdout( "  no SRV records - the domain name itself is taken (in AD it points to the domain controllers)" );
+            $servers[$domain] = array( 'host' => $domain, 'priority' => 0, 'weight' => 0, 'uri' => ( $ldaps ? 'ldaps://' : 'ldap://' ) . $domain . ( $ldaps ? ':636' : ':389' ), 'inDomain' => TRUE );
+        }
+        $servers = array_values( $servers );
+        usort( $servers, function( $a, $b ) { return array( $a['priority'], -$a['weight'], $a['host'] ) <=> array( $b['priority'], -$b['weight'], $b['host'] ); } );
+        foreach( $servers as $s )
+            PH::print_stdout( "  - " . $s['uri'] . " (priority " . $s['priority'] . ", weight " . $s['weight'] . ")" . ( $s['inDomain'] ? "" : " - not in the domain, not asked" ) );
+
+        return $servers;
+    }
+
+    /** example.local from DC=example,DC=local (also with ';') */
+    public static function domainOfDn( string $dn ): ?string
+    {
+        if( !preg_match_all( '/(?:^|[,;])\s*DC=([^,;]+)/i', $dn, $m ) || count( $m[1] ) === 0 )
+            return null;
+        return strtolower( implode( '.', array_map( 'trim', $m[1] ) ) );
+    }
+
+    /**
+     * connect and bind to the first server of the list that works: a server that can not be reached (DNS, port,
+     * TLS handshake) is skipped, the next one is tried. A refused login stops at once - the same password on the
+     * next domain controller would only lock the account.
+     * @return array( connection, uri )
+     */
+    public static function bindFirst( array $uris, string $user, string $password ): array
+    {
+        // internal LDAPS with an own certificate authority (as the scripts of utils/develop/ldap)
+        putenv('LDAPTLS_REQCERT=allow');
+        // a failed ldap_* call warns - here it is an answer (pan-os-php: myErrorHandler dies on warnings, also with @)
+        $old = set_error_handler( function( $no, $str, $file = '', $line = 0 ) use ( &$old ) {
+            if( strpos( (string)$str, 'ldap_' ) === 0 )
+                return TRUE;
+            return is_callable( $old ) ? call_user_func( $old, $no, $str, $file, $line ) : FALSE;
+        } );
+        try
+        {
+            return self::bindFirstQuiet( $uris, $user, $password );
+        }
+        finally
+        {
+            restore_error_handler();
+        }
+    }
+
+    private static function bindFirstQuiet( array $uris, string $user, string $password ): array
+    {
+        $failed = array();
+        foreach( $uris as $uri )
+        {
+            PH::print_stdout( "Connecting to LDAP server: " . $uri . " ..." );
+            // name and port first: "Can't contact LDAP server" of the LDAP library says neither which one nor why
+            if( ( $why = self::reach( $uri, FALSE ) ) !== null )
+            {
+                $failed[] = $uri . ': ' . $why;
+                continue;
+            }
+            $c = @ldap_connect( $uri );
+            if( !$c )
+            {
+                $failed[] = $uri . ': not an LDAP URI';
+                continue;
+            }
+            ldap_set_option( $c, LDAP_OPT_PROTOCOL_VERSION, 3 );
+            ldap_set_option( $c, LDAP_OPT_REFERRALS, 0 );
+            ldap_set_option( $c, LDAP_OPT_NETWORK_TIMEOUT, 15 );
+            if( @ldap_bind( $c, $user, $password ) )
+            {
+                PH::print_stdout( "LDAP bind successful (" . $user . " at " . $uri . ")" );
+                return array( $c, $uri );
+            }
+            $err = ldap_error( $c );
+            $diag = '';
+            if( defined( 'LDAP_OPT_DIAGNOSTIC_MESSAGE' ) && @ldap_get_option( $c, LDAP_OPT_DIAGNOSTIC_MESSAGE, $d ) && is_string( $d ) && $d !== '' )
+                $diag = ' (' . $d . ')';
+            if( stripos( $err, "can't contact" ) === FALSE )
+                derr( "LDAP bind failed as '" . $user . "' at " . $uri . ": " . $err . $diag
+                    . ( stripos( $err, 'invalid credentials' ) !== FALSE ? " - wrong password or user (key store entry " . PanAPIConnector::ldapUserEntry( $user ) . "), or the account is locked / expired" : "" ), null, FALSE );
+            // name and port were reachable: the TLS handshake of LDAPS failed - this domain controller is skipped
+            $why = "the server answers on the port, but the TLS handshake failed (no LDAPS certificate on this domain controller, TLS version, or the network drops the large TLS packets)";
+            PH::print_stdout( "  " . $why . " - next server" );
+            $failed[] = $uri . ': ' . $why;
+        }
+        derr( count( $uris ) === 1 ? "LDAP server " . $failed[0] : "no LDAP server of the list could be used:\n  - " . implode( "\n  - ", $failed ), null, FALSE );
     }
 
     /**

@@ -196,6 +196,12 @@ class ViewerApp
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, server TEXT NOT NULL, bind_user TEXT NOT NULL,
             base_dn TEXT NOT NULL, attribute TEXT NOT NULL, mode TEXT NOT NULL, users TEXT NOT NULL, grp TEXT NOT NULL, transitive INTEGER NOT NULL,
             created INTEGER NOT NULL, updated INTEGER NOT NULL)' );
+        // the server of a query: given, or automatic (server '') - the domain controllers of 'domain' from DNS
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(ldap_queries)' )->fetchAll(), 'name' );
+        if( !in_array( 'domain', $cols, TRUE ) )
+            $this->db->exec( "ALTER TABLE ldap_queries ADD COLUMN domain TEXT NOT NULL DEFAULT ''" );
+        if( !in_array( 'ldaps', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE ldap_queries ADD COLUMN ldaps INTEGER NOT NULL DEFAULT 1' );
         // why a run failed: memory (killed / out of memory), timeout, error
         $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
         if( !in_array( 'reason', $cols, TRUE ) )
@@ -975,9 +981,20 @@ class ViewerApp
                 throw new ViewerException( $what . ': 1-' . $max . ' characters' . ( $deny !== '' ? ', no "' . stripslashes( $deny ) . '"' : '' ), 400 );
             return $v;
         };
+        // the server: given (ldaps://host[:port]), or empty = automatic: the domain controllers of the domain from DNS,
+        // the first one that works (pan-os-php ldapServer=auto) - then the allow list must cover the hosts of the domain
         $server = is_string( $in['server'] ?? null ) ? trim( $in['server'] ) : '';
-        if( !preg_match( '#^(ldaps?)://([A-Za-z0-9.-]{1,253})(:([0-9]{1,5}))?$#', $server, $m ) || ( isset( $m[4] ) && ( (int)$m[4] < 1 || (int)$m[4] > 65535 ) ) )
-            throw new ViewerException( 'server: ldaps://host[:port] or ldap://host[:port] (no automatic discovery - the host must be on the allow list)', 400 );
+        $domain = strtolower( trim( (string)( $in['domain'] ?? '' ) ) );
+        if( $domain !== '' && ( strlen( $domain ) > 253 || !preg_match( '/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$/', $domain ) ) )
+            throw new ViewerException( 'domain: the DNS name of the AD domain, e.g. example.local', 400 );
+        $m = array( 2 => '' );
+        if( $server === '' )
+        {
+            if( $domain === '' )
+                throw new ViewerException( 'server or domain: a server (ldaps://host[:port]), or the domain - then the first domain controller of it from DNS that works', 400 );
+        }
+        elseif( !preg_match( '#^(ldaps?)://([A-Za-z0-9.-]{1,253})(:([0-9]{1,5}))?$#', $server, $m ) || ( isset( $m[4] ) && ( (int)$m[4] < 1 || (int)$m[4] > 65535 ) ) )
+            throw new ViewerException( 'server: ldaps://host[:port] or ldap://host[:port] - or empty with the domain (automatic)', 400 );
         $mode = $in['mode'] ?? '';
         if( !is_string( $mode ) || !isset( self::LDAP_MODES[$mode] ) )
             throw new ViewerException( 'mode: ' . implode( ', ', array_keys( self::LDAP_MODES ) ), 400 );
@@ -995,7 +1012,8 @@ class ViewerApp
             $group = $txt( $group, 'group', 200, ',' );
         elseif( $mode !== 'validation' && count( $users ) === 0 )
             throw new ViewerException( 'users: at least one user', 400 );
-        return array( 'name' => self::checkLabel( $in['name'] ?? null, 'name' ), 'server' => $server, 'host' => strtolower( $m[2] ),
+        return array( 'name' => self::checkLabel( $in['name'] ?? null, 'name' ), 'server' => $server, 'host' => strtolower( $m[2] ), 'domain' => $domain,
+            'ldaps' => !array_key_exists( 'ldaps', $in ) || ( $in['ldaps'] !== FALSE && $in['ldaps'] !== 0 && $in['ldaps'] !== '0' && $in['ldaps'] !== 'false' && $in['ldaps'] !== 'no' ) ? 1 : 0,
             // the bind user goes into the arguments of a pan-os-php action (comma separated): UPN or DOMAIN\user
             'bind_user' => $txt( $in['bind_user'] ?? null, 'bind_user (UPN or DOMAIN\\user)', 200, ',' ),
             'base_dn' => $txt( $in['base_dn'] ?? null, 'base_dn', 500 ), 'attribute' => $attr, 'mode' => $mode, 'users' => implode( ',', $users ),
@@ -1004,7 +1022,8 @@ class ViewerApp
 
     private static function ldapQueryPublic( array $q ): array
     {
-        return array( 'qid' => $q['qid'], 'name' => $q['name'], 'server' => $q['server'], 'bind_user' => $q['bind_user'], 'base_dn' => $q['base_dn'],
+        return array( 'qid' => $q['qid'], 'name' => $q['name'], 'server' => $q['server'], 'domain' => (string)( $q['domain'] ?? '' ), 'ldaps' => (bool)( $q['ldaps'] ?? 1 ),
+            'auto' => $q['server'] === '', 'bind_user' => $q['bind_user'], 'base_dn' => $q['base_dn'],
             'attribute' => $q['attribute'], 'mode' => $q['mode'], 'users' => $q['users'] === '' ? array() : explode( ',', $q['users'] ), 'group' => $q['grp'],
             'transitive' => (bool)$q['transitive'], 'created' => (int)$q['created'], 'updated' => (int)$q['updated'] );
     }
@@ -1027,11 +1046,11 @@ class ViewerApp
         if( $qid === null )
         {
             $qid = self::randomId( 8 );
-            $this->q( 'INSERT INTO ldap_queries (qid, user_id, name, server, bind_user, base_dn, attribute, mode, users, grp, transitive, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                array( $qid, $user['id'], $q['name'], $q['server'], $q['bind_user'], $q['base_dn'], $q['attribute'], $q['mode'], $q['users'], $q['grp'], $q['transitive'], time(), time() ) );
+            $this->q( 'INSERT INTO ldap_queries (qid, user_id, name, server, domain, ldaps, bind_user, base_dn, attribute, mode, users, grp, transitive, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                array( $qid, $user['id'], $q['name'], $q['server'], $q['domain'], $q['ldaps'], $q['bind_user'], $q['base_dn'], $q['attribute'], $q['mode'], $q['users'], $q['grp'], $q['transitive'], time(), time() ) );
         }
-        elseif( $this->q( 'UPDATE ldap_queries SET name = ?, server = ?, bind_user = ?, base_dn = ?, attribute = ?, mode = ?, users = ?, grp = ?, transitive = ?, updated = ? WHERE qid = ? AND user_id = ?',
-            array( $q['name'], $q['server'], $q['bind_user'], $q['base_dn'], $q['attribute'], $q['mode'], $q['users'], $q['grp'], $q['transitive'], time(), $qid, $user['id'] ) )->rowCount() === 0 )
+        elseif( $this->q( 'UPDATE ldap_queries SET name = ?, server = ?, domain = ?, ldaps = ?, bind_user = ?, base_dn = ?, attribute = ?, mode = ?, users = ?, grp = ?, transitive = ?, updated = ? WHERE qid = ? AND user_id = ?',
+            array( $q['name'], $q['server'], $q['domain'], $q['ldaps'], $q['bind_user'], $q['base_dn'], $q['attribute'], $q['mode'], $q['users'], $q['grp'], $q['transitive'], time(), $qid, $user['id'] ) )->rowCount() === 0 )
             throw new ViewerException( 'not found', 404 );
         return self::ldapQueryPublic( $this->q( 'SELECT * FROM ldap_queries WHERE qid = ?', array( $qid ) )->fetch() );
     }
@@ -1075,6 +1094,21 @@ class ViewerApp
         return array( 'domain' => $domain, 'servers' => $servers, 'rootDse' => is_array( $r['rootDse'] ?? null ) ? $r['rootDse'] : null,
             'suggestion' => array( 'name' => $domain, 'server' => $first, 'base_dn' => (string)( $r['suggestion']['base_dn'] ?? '' ),
                 'base_from' => (string)( $r['suggestion']['base_from'] ?? '' ), 'bind_user' => $bind, 'bind_hint' => '<user>@' . $domain, 'attribute' => 'sAMAccountName' ) );
+    }
+
+    /**
+     * network rules for an LDAP target: a host, or auto:<domain> (the domain controllers of the domain from DNS - the
+     * allow list must cover the domain or its hosts, e.g. *.example.local; pan-os-php only asks hosts in the domain)
+     */
+    private function ldapRefusal( string $target ): ?string
+    {
+        if( strpos( $target, 'auto:' ) !== 0 )
+            return $this->networkRefusal( 'panos', $target );
+        $domain = substr( $target, 5 );
+        if( $this->networkRefusal( 'panos', $domain ) === null )
+            return null;
+        $why = $this->networkRefusal( 'panos', 'dc.' . $domain );
+        return $why === null ? null : $why . ' - the administrator puts *.' . $domain . ' on the allow list';
     }
 
     public function ldapQueryDelete( array $user, $qid ): void
@@ -1435,20 +1469,28 @@ class ViewerApp
             $k = $this->q( "SELECT * FROM user_keys WHERE user_id = ? AND kind = 'ldap' AND target = ?", array( $user['id'], strtolower( $qr['bind_user'] ) ) )->fetch();
             if( !$k )
                 throw new ViewerException( 'no LDAP account ' . $qr['bind_user'] . ' under Account, My API keys (kind LDAP account: bind user + password)', 400 );
-            $q = self::ldapQueryCheck( array( 'name' => $qr['name'], 'server' => $qr['server'], 'bind_user' => $qr['bind_user'], 'base_dn' => $qr['base_dn'],
+            $q = self::ldapQueryCheck( array( 'name' => $qr['name'], 'server' => $qr['server'], 'domain' => $qr['domain'] ?? '', 'ldaps' => (int)( $qr['ldaps'] ?? 1 ), 'bind_user' => $qr['bind_user'], 'base_dn' => $qr['base_dn'],
                 'attribute' => $qr['attribute'], 'mode' => $type === 'ldap' ? $qr['mode'] : 'validation', 'users' => $qr['users'], 'group' => $qr['grp'], 'transitive' => $qr['transitive'] ) );
+            // automatic server: the target is the domain (auto:<domain>) - the allow list must cover its hosts
+            $target = $q['server'] === '' ? 'auto:' . $q['domain'] : $q['host'];
             if( !$this->networkGet()['enabled'] )
-                throw new ViewerException( (string)$this->networkRefusal( 'panos', $q['host'] ), 403 );
+                throw new ViewerException( (string)$this->ldapRefusal( $target ), 403 );
             if( empty( $p['network'] ) )
                 throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
-            if( ( $why = $this->networkRefusal( 'panos', $q['host'] ) ) !== null )
+            if( ( $why = $this->ldapRefusal( $target ) ) !== null )
                 throw new ViewerException( $why, 403 );
-            $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $q['host'] );
+            $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $target );
             if( $type === 'ldap' )
             {
                 if( $q['mode'] === 'validation' && $q['users'] === '' )
                     throw new ViewerException( 'the query has no users to check', 400 );
-                array_push( $args, 'mode=' . $q['mode'], 'ldapServer=' . $q['server'], 'ldapUser=' . $q['bind_user'], 'dn=' . $q['base_dn'], 'filtercriteria=' . $q['attribute'] );
+                array_push( $args, 'mode=' . $q['mode'], 'ldapServer=' . ( $q['server'] === '' ? 'auto' : $q['server'] ), 'ldapUser=' . $q['bind_user'], 'dn=' . $q['base_dn'], 'filtercriteria=' . $q['attribute'] );
+                if( $q['server'] === '' )
+                {
+                    $args[] = 'domain=' . $q['domain'];
+                    if( !$q['ldaps'] )
+                        $args[] = 'ldaps=no';
+                }
                 if( $q['users'] !== '' )
                     $args[] = 'users=' . $q['users'];
                 if( $q['grp'] !== '' )
@@ -1464,8 +1506,14 @@ class ViewerApp
                 // ldaps%host[%port], base DN (';' instead of ','), attribute, existentUser
                 if( preg_match( '#[:/]#', $q['bind_user'] . $q['base_dn'] ) )
                     throw new ViewerException( 'bind user and base DN: no ":" or "/" for the check of the rules', 400 );
-                preg_match( '#^(ldaps?)://([^:]+)(?::([0-9]+))?$#', $q['server'], $s );
-                $server = $s[1] . '%' . $s[2] . ( isset( $s[3] ) ? '%' . $s[3] : '' );
+                if( $q['server'] === '' )
+                    // automatic: auto%<domain> (LDAPS) / auto-ldap%<domain>
+                    $server = ( $q['ldaps'] ? 'auto' : 'auto-ldap' ) . '%' . $q['domain'];
+                else
+                {
+                    preg_match( '#^(ldaps?)://([^:]+)(?::([0-9]+))?$#', $q['server'], $s );
+                    $server = $s[1] . '%' . $s[2] . ( isset( $s[3] ) ? '%' . $s[3] : '' );
+                }
                 $args[] = 'location=any';
                 $args[] = 'actions=user-check-ldap:' . ( $remove ? 'remove' : 'show' ) . ',' . $q['bind_user'] . ',' . $server . ',' . str_replace( ',', ';', $q['base_dn'] ) . ',' . $q['attribute'] . ',false';
                 if( $remove )
@@ -2225,7 +2273,8 @@ class ViewerApp
                 throw new ViewerException( 'the LDAP account of the run does not fit its bind user any more' );
         }
         $host = $type === 'geoip' ? self::MAXMIND_HOST : ( $type === 'ldap' || $type === 'ldap-users' ? (string)( $x['target'] ?? '' ) : $k['target'] );
-        if( ( $why = $this->networkRefusal( in_array( $type, array( 'geoip', 'ldap', 'ldap-users' ), TRUE ) ? 'panos' : $k['kind'], $host ) ) !== null )
+        $why = $type === 'ldap' || $type === 'ldap-users' ? $this->ldapRefusal( $host ) : $this->networkRefusal( $type === 'geoip' ? 'panos' : $k['kind'], $host );
+        if( $why !== null )
             throw new ViewerException( $why );
         $secret = $this->unseal( $k['secret'] );
         if( $secret === null )

@@ -6394,23 +6394,29 @@ RuleCallContext::$supportedActions[] = Array(
             $ldapPassword = PanAPIConnector::ldapPassword( $ldapUser );
 
             $ldapServer = $context->arguments['ldapServer'];
-            // ldaps%host[%port] / ldap%host[%port]: an LDAP URI in the arguments of an action (':' and '/' can not be used there)
-            if( preg_match( '/^(ldaps?)%([A-Za-z0-9.-]+)(?:%([0-9]{1,5}))?$/i', $ldapServer, $m ) )
-                $ldapServer = strtolower( $m[1] ) . '://' . $m[2] . ( isset( $m[3] ) && $m[3] !== '' ? ':' . $m[3] : '' );
-            // internal LDAPS with an own certificate authority (as utils/develop/ldap)
-            putenv('LDAPTLS_REQCERT=allow');
-
-            $context->ldapconn = ldap_connect( $ldapServer )
-            or die("Could not connect to LDAP server.");
-
-            if ($context->ldapconn)
+            // auto / auto-ldap: the domain controllers of the domain of dn (DC=…) from DNS, LDAPS / LDAP - the first that works
+            // auto%<domain>: that domain instead of the one of dn
+            if( preg_match( '/^(auto|auto-ldap)(?:%([A-Za-z0-9.-]+))?$/i', $ldapServer, $am ) )
             {
-                ldap_set_option( $context->ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3 );
-                ldap_set_option( $context->ldapconn, LDAP_OPT_REFERRALS, 0 );
-                $context->ldapbind = ldap_bind($context->ldapconn, $ldapUser, $ldapPassword);
-                if( !$context->ldapbind )
-                    derr( "LDAP connection not working", null, FALSE);
+                $domain = isset( $am[2] ) && $am[2] !== '' ? $am[2] : LDAPQUERY__::domainOfDn( $context->arguments['dn'] );
+                if( $domain === null )
+                    derr( "ldapServer=auto: the domain is taken from the DC= parts of dn - there are none (or auto%<domain>)", null, FALSE );
+                $uris = array();
+                foreach( LDAPQUERY__::domainServers( $domain, strtolower( $am[1] ) === 'auto' ) as $sv )
+                    if( $sv['inDomain'] )
+                        $uris[] = $sv['uri'];
             }
+            else
+            {
+                // ldaps%host[%port] / ldap%host[%port]: an LDAP URI in the arguments of an action (':' and '/' can not be used there)
+                if( preg_match( '/^(ldaps?)%([A-Za-z0-9.-]+)(?:%([0-9]{1,5}))?$/i', $ldapServer, $m ) )
+                    $ldapServer = strtolower( $m[1] ) . '://' . $m[2] . ( isset( $m[3] ) && $m[3] !== '' ? ':' . $m[3] : '' );
+                elseif( strpos( $ldapServer, '://' ) === FALSE )
+                    $ldapServer = 'ldap://' . $ldapServer;
+                $uris = array( $ldapServer );
+            }
+            list( $context->ldapconn, $used ) = LDAPQUERY__::bindFirst( $uris, $ldapUser, $ldapPassword );
+            $context->ldapbind = TRUE;
             $context->first = false;
         }
 
@@ -6553,7 +6559,7 @@ RuleCallContext::$supportedActions[] = Array(
         'ldapUser' => Array( 'type' => 'string', 'default' => '*nodefault*',
             'help' => "define LDAP user for authentication to server" ),
         'ldapServer' => Array( 'type' => 'string', 'default' => '*nodefault*',
-            'help' => "LDAP server fqdn / IP, or ldaps%fqdn[%port] / ldap%fqdn[%port]" ),
+            'help' => "LDAP server fqdn / IP, or ldaps%fqdn[%port] / ldap%fqdn[%port], or auto / auto-ldap[%domain]: the domain controllers of the domain (default: the DC= parts of dn) from DNS (LDAPS / LDAP), the first that works" ),
         'dn' => Array( 'type' => 'string', 'default' => 'OU=TEST;DC=domain;DC=local',
             'help' => "full OU to an LDAP part, sparated with ';' - this is a specific setting" ),
         'filtercriteria' => Array( 'type' => 'string', 'default' => 'mailNickname',

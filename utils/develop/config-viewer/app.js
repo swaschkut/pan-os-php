@@ -635,7 +635,7 @@ async function showProject(pid) {
                     const open = r.state === 'queued' || r.state === 'running';
                     const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
                             : r.type === 'ldap-discover' ? 'LDAP servers of ' + ((r.args || []).find(a => a.startsWith('x-ldap-discover-target=')) || '').slice(23)
-                            : r.type === 'ldap' ? 'LDAP ' + ((r.args || []).find(a => a.startsWith('x-ldap-target=')) || '').slice(14)
+                            : r.type === 'ldap' ? 'LDAP ' + ((r.args || []).find(a => a.startsWith('x-ldap-target=')) || '').slice(14).replace(/^auto:/, 'automatic: ')
                             : r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')
                             : !r.cid ? '-' : (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
                         el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
@@ -775,7 +775,10 @@ async function ldapTab(base, pid, p, owner, versions) {
     // the form: a new query, or a saved one to change
     const f = {
         name: el('input', { required: true, maxlength: 80, autocomplete: 'off' }),
-        server: el('input', { required: true, placeholder: 'ldaps://dc1.example.com:636', autocomplete: 'off', spellcheck: false }),
+        // empty = automatic: the first domain controller of the domain from DNS that works
+        server: el('input', { placeholder: 'empty = automatic (DNS of the domain)', autocomplete: 'off', spellcheck: false }),
+        domain: el('input', { placeholder: 'example.local', autocomplete: 'off', spellcheck: false }),
+        ldaps: el('input', { type: 'checkbox', checked: true }),
         bind_user: el('input', { required: true, placeholder: 'admin@example.com or EXAMPLE\\admin', autocomplete: 'off', spellcheck: false, list: 'ldap-accounts-' + pid }),
         base_dn: el('input', { required: true, placeholder: 'OU=Users,DC=example,DC=com', autocomplete: 'off', spellcheck: false }),
         attribute: el('input', { value: 'sAMAccountName', autocomplete: 'off', spellcheck: false }),
@@ -791,7 +794,8 @@ async function ldapTab(base, pid, p, owner, versions) {
     const saveBtn = el('button', { class: 'primary', type: 'submit', text: 'Save query' });
     const fill = (q) => {
         editing = q ? q.qid : null;
-        for (const k of ['name', 'server', 'bind_user', 'base_dn', 'attribute']) f[k].value = q ? q[k] : (k === 'attribute' ? 'sAMAccountName' : '');
+        for (const k of ['name', 'server', 'domain', 'bind_user', 'base_dn', 'attribute']) f[k].value = q ? q[k] : (k === 'attribute' ? 'sAMAccountName' : '');
+        f.ldaps.checked = q ? q.ldaps : true;
         f.mode.value = q ? q.mode : 'validation'; f.users.value = q ? q.users.join('\n') : ''; f.group.value = q ? q.group : ''; f.transitive.checked = q ? q.transitive : false;
         saveBtn.textContent = q ? 'Save changes' : 'Save query'; modeChanged();
     };
@@ -799,11 +803,12 @@ async function ldapTab(base, pid, p, owner, versions) {
     const accounts = el('datalist', { id: 'ldap-accounts-' + pid }, info.accounts.map(a => el('option', { value: a })));
     const form = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
         const body = {};
-        for (const k of ['name', 'server', 'bind_user', 'base_dn', 'attribute', 'mode', 'users', 'group']) body[k] = f[k].value.trim();
+        for (const k of ['name', 'server', 'domain', 'bind_user', 'base_dn', 'attribute', 'mode', 'users', 'group']) body[k] = f[k].value.trim();
+        body.ldaps = f.ldaps.checked;
         body.transitive = f.transitive.checked;
         await api(editing ? 'PUT' : 'POST', 'ldap' + (editing ? '/' + editing : ''), body);
         await redraw(); message('LDAP query saved');
-    }); } }, field('Name', f.name), field('Server', f.server), field('Bind user (my account)', f.bind_user), field('Base DN', f.base_dn), field('User attribute', f.attribute),
+    }); } }, field('Name', f.name), field('Domain', f.domain), field('Server (optional)', f.server), field('LDAPS', f.ldaps), field('Bind user (my account)', f.bind_user), field('Base DN', f.base_dn), field('User attribute', f.attribute),
         field('What', f.mode), fUsers, fGroup, fTrans, saveBtn, el('button', { type: 'button', text: 'New', onclick: () => fill(null) }));
 
     const why = !p.network_global ? 'Network for runs is off (an administrator turns it on under Account).'
@@ -826,7 +831,8 @@ async function ldapTab(base, pid, p, owner, versions) {
                 + (sg.bind_user ? '' : ' You have no LDAP account @' + d.domain + ' yet: add it under Account, My API keys (bind user ' + sg.bind_hint + ' and its password).') }),
             el('button', { type: 'button', class: 'primary', text: 'Use for a new query', onclick: () => {
                 fill(null);
-                f.name.value = sg.name; f.server.value = sg.server || (d.servers[0] ? d.servers[0].uri : ''); f.base_dn.value = sg.base_dn;
+                // the server stays empty: the run takes the first domain controller of the domain that works
+                f.name.value = sg.name; f.domain.value = d.domain; f.server.value = ''; f.base_dn.value = sg.base_dn;
                 f.bind_user.value = sg.bind_user || ''; f.bind_user.placeholder = sg.bind_hint; f.attribute.value = sg.attribute;
                 (sg.bind_user ? f.users : f.bind_user).focus();
                 message('filled in - check it, add the users / group, then Save query');
@@ -863,7 +869,7 @@ async function ldapTab(base, pid, p, owner, versions) {
             const v = verSel();
             const noAccount = !info.accounts.includes(q.bind_user.toLowerCase());
             const act = el('select', { 'aria-label': 'show or remove' }, el('option', { value: 'show', text: 'show missing users' }), el('option', { value: 'remove', text: 'remove missing users (result = new version)' }));
-            return el('tr', {}, el('td', { text: q.name }), el('td', { text: q.mode }), el('td', { text: q.server }), el('td', { class: 'wrap', text: q.base_dn }),
+            return el('tr', {}, el('td', { text: q.name }), el('td', { text: q.mode }), el('td', { class: 'wrap', text: q.auto ? 'automatic: ' + q.domain + (q.ldaps ? ' (LDAPS)' : ' (LDAP)') : q.server }), el('td', { class: 'wrap', text: q.base_dn }),
                 el('td', { class: 'wrap', text: q.mode === 'group-members' ? q.group : q.users.join(', ') }),
                 el('td', {}, el('div', { class: 'row' },
                     !why && noAccount ? el('span', { class: 'error', text: 'no LDAP account ' + q.bind_user + ' (My API keys)' }) : null,

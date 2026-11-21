@@ -645,6 +645,25 @@ eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, count( 
 eq( call( 'POST', $P . '/runs/' . ( $r[1]['jid'] ?? '' ) . '/save' )[0], 201, 'rule users remove: the result configuration as a new version' );
 eq( array( call( 'POST', $P . '/configs/' . $cid . '/ldap/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap-users/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => 'nope' ) )[0] ),
     array( 404, 404, 400 ), 'LDAP runs: query without a version, rule check with a version, only own queries' );
+// automatic server: no fixed server, the domain - pan-os-php takes the first domain controller from DNS that works
+eq( call( 'POST', 'ldap', array( 'server' => '' ) + $lq )[0], 400, 'LDAP query: without a server the domain is needed' );
+$r = call( 'POST', 'ldap', array( 'name' => 'auto', 'server' => '', 'domain' => 'Example.com' ) + $lq );
+$aq = $r[1]['qid'] ?? '';
+eq( array( $r[0], $r[1]['auto'] ?? null, $r[1]['domain'] ?? null, $r[1]['ldaps'] ?? null ), array( 201, TRUE, 'example.com', TRUE ), 'LDAP query: automatic server for the domain' );
+@unlink( $bin . '/ldap.log' );
+$r = waitRun( $P . '/runs/' . ( call( 'POST', $P . '/ldap/runs', array( 'qid' => $aq ) )[1]['jid'] ?? '' ) );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, array_values( preg_grep( '/^(ldapServer|domain)=/', $ll[0][3] ?? array() ) ), in_array( 'x-ldap-target=auto:example.com', $r[1]['args'] ?? array(), TRUE ) ),
+    array( 'done', array( 'ldapServer=auto', 'domain=example.com' ), TRUE ), 'LDAP run, automatic: ldapServer=auto domain=<domain>' );
+@unlink( $bin . '/ldap.log' );
+call( 'PUT', 'ldap/' . $aq, array( 'name' => 'auto', 'server' => '', 'domain' => 'example.com', 'ldaps' => FALSE ) + $lq );
+$r = waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/ldap-users/runs', array( 'qid' => $aq ) )[1]['jid'] ?? '' ) );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, current( preg_grep( '/^actions=/', $ll[0][3] ?? array() ) ) ),
+    array( 'done', 'actions=user-check-ldap:show,alice@example.com,auto-ldap%example.com,OU=Users;DC=example;DC=com,sAMAccountName,false' ), 'rule users, automatic: auto-ldap%<domain> (LDAP)' );
+$r = call( 'PUT', 'ldap/' . $aq, array( 'name' => 'auto', 'server' => '', 'domain' => 'corp.other.org' ) + $lq );
+eq( array( $r[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => $aq ) )[0] ), array( 200, 403 ), 'LDAP run, automatic: refused when the allow list does not cover the domain' );
+
 // help for the first query: the LDAP servers of a domain (DNS SRV) and the base DN - no key, no password
 eq( array( call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'no domain' ) )[0], call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'corp.other.org' ) )[0] ),
     array( 400, 403 ), 'LDAP servers: domain checked; a domain the allow list does not cover is refused' );
@@ -664,6 +683,7 @@ eq( array( array_column( $d['servers'] ?? array(), 'refused', 'host' ) === array
     'LDAP servers: what the network rules allow per server; suggestion: the allowed server that answered, its base DN, my LDAP account of the domain' );
 eq( array( call( 'GET', $P . '/runs/' . $ljid . '/ldap-servers' )[0], call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'example.com', 'ldaps' => FALSE ) )[1]['args'] ?? null ),
     array( 400, array( 'x-ldap-discover-target=example.com', 'mode=discover', 'domain=example.com', 'out=%JOB%/ldap.json', 'ldaps=no' ) ), 'LDAP servers: only for a search run; ldaps=no' );
+call( 'DELETE', 'ldap/' . $aq );
 eq( array( call( 'DELETE', 'ldap/' . $qid )[0], count( call( 'GET', 'ldap' )[1]['queries'] ?? array( 1 ) ) ), array( 200, 0 ), 'LDAP query deleted' );
 
 // stats / playbook runs never get a network

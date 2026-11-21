@@ -28,10 +28,13 @@ In the tab **LDAP**, *Not sure about server and base DN? Find them from the doma
    Only servers in the domain (`<host>.<domain>`) are asked.
 
 The result lists the servers with what the network rules allow now. **Use for a new query** fills in the form: the
-allowed server that answered, its base DN, your LDAP account of the domain as bind user (`<you>@<domain>` - add it
+domain with the automatic server (no fixed one - if a domain controller is not available, the next one is taken), the
+base DN, your LDAP account of the domain as bind user (`<you>@<domain>` - add it
 under *My API keys* first) and `sAMAccountName`; you add the users or the group and save it.
 
-Needed: network for runs and for the project, and the hosts of the domain on the allow list (`*.example.local`).
+Needed: network for runs and for the project, and the hosts of the domain on the allow list (`*.example.local`) -
+the same for queries with the automatic server. A refused login stops at once (the same password on the next domain
+controller would only lock the account).
 Internal names: the runs use the DNS of the computer the viewer runs on. If it does not know the AD domain (e.g. the
 viewer machine is not in it, or Docker falls back to public DNS servers), set the DNS servers of the domain in `.env`
 next to `panosphp-viewer`: `VIEWER_RUN_DNS=10.0.0.10,10.0.0.11`, then `./panosphp-viewer restart`.
@@ -44,7 +47,9 @@ A query is **yours** - nobody else sees it, also no administrator. It holds:
 
 | Field | |
 |---|---|
-| Server | `ldaps://dc1.example.com:636` (or `ldap://…`) |
+| Domain | the AD domain, e.g. `example.local` |
+| Server | **empty = automatic** (recommended): the domain controllers of the domain from DNS, in their order - the first one that works is used; a server that can not be reached or has no working LDAPS is skipped. Or a fixed server `ldaps://dc1.example.com:636` (or `ldap://…`) |
+| LDAPS | with the automatic server: LDAPS on port 636 (default) or LDAP on 389 |
 | Bind user | one of your LDAP accounts: `alice@example.com` (UPN) or `EXAMPLE\alice` |
 | Base DN | where to search: `OU=Users,DC=example,DC=com` |
 | User attribute | the attribute the user names are in (default `sAMAccountName`) |
@@ -78,6 +83,7 @@ server, bind user, base DN and attribute of the query:
 pan-os-php type=ldap-query mode=validation ldapServer=ldaps://dc1.example.com:636 ldapUser=alice@example.com \
     dn="OU=Users,DC=example,DC=com" users=bob,carol out=ldap.json csv=ldap.csv
 pan-os-php type=ldap-query mode=common-groups ... users=bob,carol transitive=yes
+pan-os-php type=ldap-query mode=validation ldapServer=auto domain=example.local [ldaps=no] ldapUser=alice@example.local dn=... users=bob
 pan-os-php type=ldap-query mode=group-members ... group=VPN-Users
 ```
 
@@ -85,4 +91,4 @@ The password: key store entry `ldap_user<ldapUser>`, e.g. `ldap_useralice@exampl
 missing; `pan-os-php type=key-manager add=ldap_useralice@example.com apikey=<password>`). The same for the rule
 actions `user-check-ldap` and the scripts of `utils/develop/ldap`. Entry names are read in lower case; a bind user can
 not contain spaces, `:`, `%` or `/`. `dn` may use `;` instead of `,`. In `user-check-ldap` the server can be given as `ldaps%dc1.example.com%636` (`:` and `/` can not be used in the
-arguments of an action).
+arguments of an action), or as `auto` / `auto-ldap` (the domain from the `DC=` parts of `dn`) or `auto%example.local`.
