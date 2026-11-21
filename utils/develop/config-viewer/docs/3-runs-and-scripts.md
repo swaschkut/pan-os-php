@@ -20,8 +20,7 @@ Everything of the page is also reachable as REST API under `api.php/…`.
 - With user and password: log in, then the session cookie and the CSRF token (example script
   `examples/viewer-playbook-run.sh`: project, upload, playbook run, download).
 - With an **API token** (no password in the script): one project, read or write, valid for some days.
-  In the page: project → **API tokens**. On the command line:
-  `./panosphp-viewer token <user> <project> [read|write] [days]`. Scripts send `Authorization: Bearer <token>`.
+  In the page: project → **API tokens** (not on the command line). Scripts send `Authorization: Bearer <token>`.
 
 A token is shown only once. It never has administrator rights and works only for its project - to create a project
-from a script, log in with user and password, or `./panosphp-viewer project add <user> <name>`.
+from a script, log in with user and password.

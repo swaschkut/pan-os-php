@@ -99,15 +99,13 @@ cd utils/develop/config-viewer          # or the unpacked air-gap bundle
 | `status` | containers, address, licence and plug-ins |
 | `logs [web\|service\|jobs\|proxy]` | the last lines of the log |
 | `setup` | the questions again (port, HTTPS, name, certificate: own CA / own files / Let's Encrypt) |
-| `user add <name> [admin]` / `user list` / `user delete <name>` | users without a browser; the password is shown once |
-| `password <user>` | a new password, shown once |
-| `projects <user>` / `project add <user> <name>` | projects of a user / a new project (prints its id) |
-| `token <user> <project> [read\|write] [days]` / `token list <user> <project>` | API token for scripts, shown once |
+| `user add <name> admin` | the first administrator without a browser (password shown once) - only while there is none |
+| `user list` / `projects <user>` / `token list <user> <project>` | look only |
 | `license <file>` / `license` | install a licence / show it |
 | `plugin <file.ppp>` / `plugin` | add a licensed plug-in package to `plugins/` / list them |
 | `update` | newer images (`images.tar.gz` next to the script = air gap, else from Docker Hub), restart |
 
-**First administrator:** a new installation has no user. `start` (and `status`) show a one-time code; the login page offers "create the administrator" with it. Without a browser: `./panosphp-viewer user add <name> admin`. Installations without questions: `VIEWER_ADMIN_USER` + `VIEWER_ADMIN_PASSWORD` at the first start. The login page also shows the help pages of `docs/*.md` (Markdown, no login needed - nothing secret belongs there).
+**First administrator:** a new installation has no user. `start` (and `status`) show a one-time code; the login page offers "create the administrator" with it. Without a browser: `./panosphp-viewer user add <name> admin`. Installations without questions: `VIEWER_ADMIN_USER` + `VIEWER_ADMIN_PASSWORD` at the first start. After that, **users, passwords, projects and API tokens are changed in the browser only** (admin: Account → Users, with **New password**; tokens: project → API tokens): `bin/user.php` (`add`, `password`, `delete`) and `bin/token.php` (`project-add`, `create`, `delete`) refuse once there is an administrator, so whoever can run commands on the computer can not reset a password or make himself an administrator. Done and refused command line changes go into the audit log (method `CLI`) and are shown once to every administrator after the next login. Whoever can use Docker on the computer can still read the volume - that is the real border. Keep two administrators: when the only one forgets the password, only a new start without the data is left. The login page also shows the help pages of `docs/*.md` (Markdown, no login needed - nothing secret belongs there).
 
 The answers are kept in `.env` next to the script (readable only for the user; the environment wins, as with docker compose, so `VIEWER_HTTPS=yes VIEWER_DOMAIN=viewer.example.com ./panosphp-viewer setup` needs no questions). Plug-ins are in `plugins/` next to the script. `bin/license.php` is the command line for the licence inside the web container (`install <file|->`, `show`, `remove`).
 
@@ -167,7 +165,7 @@ Terminal 1 – data directory, first user, service:
 ```bash
 cd utils/develop/config-viewer
 export PANOSPHP_VIEWER_DATA=$HOME/pan-os-php-viewer-data    # outside the web root; path ≤ 60 characters
-php bin/user.php add alice admin                            # once; asks for the password (10+ characters)
+php bin/user.php add alice admin                            # once - the first administrator; asks for the password (10+ characters)
 php bin/service.php                                         # stays in the foreground, prints "running"
 php bin/jobs.php                                            # third terminal (or background): runs (stats)
 ```
@@ -187,8 +185,8 @@ recovery copy first.
 Do not rely on the default data directory (`<parent of the repository>/pan-os-php-viewer-data`): the path must not
 be longer than 60 characters (limit of unix socket paths), and it must be outside the web root.
 
-More users: as admin in the UI (Account → Users), or `php bin/user.php add <name>`; also `password <name>`,
-`delete <name>` (deletes the projects the user owns), `list`.
+More users and new passwords: as admin in the UI (Account → Users). `bin/user.php` changes users only while there is
+no administrator (`add`, `password`, `delete`); `list` always.
 
 Behind Apache / nginx: publish only this folder (or the repository) over HTTPS, set `PANOSPHP_VIEWER_DATA` for the web
 server **and** the service, run the service as the web server user. With TLS at a reverse proxy set
@@ -262,12 +260,13 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 
 | Route | Method | Permission | Function |
 |---|---|---|---|
-| `login` | POST | – | body `user`, `password` → `user`, `admin`, `csrf` |
+| `login` | POST | – | body `user`, `password` → `user`, `admin`, `csrf`, `notices` (admin: command line use since the last login) |
 | `logout` | POST | login | ends the session |
 | `me` | GET | login | `user`, `admin`, `csrf` |
 | `password` | POST | login | body `old`, `new` |
 | `meta` | GET | login | offered types with their actions (arguments, help) and filters, rule types, profile types |
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
+| `users/<name>/password` | POST | admin | a new password for the user, made by the viewer → `password` (shown once) |
 | `users/<name>` | DELETE | admin | delete a user and the projects the user owns |
 | `audit` | GET | admin | audit log, newest first; query `user`, `before` (id), `limit` (1–1000) |
 | `projects/<pid>/audit` | GET | owner | audit log of the project |

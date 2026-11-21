@@ -20,7 +20,8 @@
 
 /**
  * config-viewer: a new installation - help pages without login, the first administrator with the one-time code,
- * users / projects / API tokens on the command line (bin/user.php, bin/token.php).
+ * users / projects / API tokens on the command line (bin/user.php, bin/token.php): only while there is no administrator;
+ * afterwards refused, in the audit log and shown to the administrators after the login; new password in the browser.
  *   php tests/test_config_viewer_first_admin.php
  */
 $viewer = dirname( __FILE__ ) . '/../utils/develop/config-viewer';
@@ -111,27 +112,72 @@ proc_terminate( $p );
 exec( 'rm -rf ' . escapeshellarg( $data2 ) );
 $port = $port0;
 
-// ---- users, projects, API tokens on the command line
-eq( cli( array( $viewer . '/bin/user.php', 'add', 'anna' ), array( 'VIEWER_PASSWORD' => 'anna-secret-12' ) )[0], 0, 'user add on the command line' );
-list( $c, $pid ) = cli( array( $viewer . '/bin/token.php', 'project-add', 'anna', 'Firewall A' ) );
-eq( array( $c, (bool)preg_match( '/^[0-9a-f]{32}$/', $pid ) ), array( 0, TRUE ), 'project-add: prints the id' );
-list( $c, $out ) = cli( array( $viewer . '/bin/token.php', 'projects', 'anna' ) );
-eq( $out, $pid . '  owner  Firewall A', 'projects of a user' );
-list( $c, $out ) = cli( array( $viewer . '/bin/token.php', 'create', 'anna', 'firewall a', 'write', '7', 'nightly script' ) );
-$tok = preg_match( '/token \(shown only now\): (pvt_\S+)/', $out, $m ) ? $m[1] : '';
-eq( array( $c, strlen( $tok ) > 40, strpos( $out, 'permission write' ) !== FALSE ), array( 0, TRUE, TRUE ), 'token create: by project name, shown once' );
+// ---- the command line after the first setup: changes refused, logged, shown to the administrators
+$refused = function( array $args, array $extra = array() ) use ( $viewer ) {
+    list( $c, , $err ) = cli( array_merge( array( $viewer . '/bin/' . $args[0] ), array_slice( $args, 1 ) ), $extra );
+    return array( $c, strpos( $err, 'refused: this viewer has an administrator' ) !== FALSE );
+};
+eq( $refused( array( 'user.php', 'add', 'eve', 'admin' ), array( 'VIEWER_PASSWORD' => 'eve-secret-123' ) ), array( 1, TRUE ), 'there is an administrator: user add refused' );
+eq( $refused( array( 'user.php', 'password', 'boss' ), array( 'VIEWER_PASSWORD' => 'eve-secret-123' ) ), array( 1, TRUE ), 'password of the administrator: refused' );
+eq( $refused( array( 'user.php', 'delete', 'boss' ) ), array( 1, TRUE ), 'user delete: refused' );
+eq( $refused( array( 'token.php', 'project-add', 'boss', 'X' ) ), array( 1, TRUE ), 'project add: refused' );
+eq( $refused( array( 'token.php', 'create', 'boss', 'X' ) ), array( 1, TRUE ), 'token create: refused' );
+eq( cli( array( $viewer . '/bin/user.php', 'list' ) ), array( 0, 'boss (admin)', '' ), 'user list: still works' );
+eq( call( 'GET', 'setup' )[1]['first_admin'] ?? null, FALSE, 'nothing changed: still one administrator, no second setup' );
+
+// the administrator sees it once after the next login
 $cookie = '';
-$r = call( 'GET', 'projects/' . $pid . '/configs', null, array( 'Authorization: Bearer ' . $tok ) );
-eq( array( $r[0], $r[1]['configs'] ?? null ), array( 200, array() ), 'the token works for its project' );
-eq( call( 'GET', 'users', null, array( 'Authorization: Bearer ' . $tok ) )[0], 404, 'the token has no admin rights' );
-list( $c, $out ) = cli( array( $viewer . '/bin/token.php', 'list', 'anna', $pid ) );
-eq( array( $c, strpos( $out, 'nightly script' ) !== FALSE, strpos( $out, substr( $tok, 21 ) ) ), array( 0, TRUE, FALSE ), 'token list: without the secret' );
-$tid = preg_match( '/^(\S+)\s/', $out, $m ) ? $m[1] : '';
-eq( cli( array( $viewer . '/bin/token.php', 'delete', 'anna', $pid, $tid ) )[0], 0, 'token delete' );
-eq( call( 'GET', 'projects/' . $pid . '/configs', null, array( 'Authorization: Bearer ' . $tok ) )[0], 401, 'a deleted token does not work' );
-list( $c, , $err ) = cli( array( $viewer . '/bin/token.php', 'create', 'boss', 'Firewall A' ) );
-eq( array( $c, $err ), array( 1, 'error: no project "Firewall A" of this user' ), 'token create: only for projects of the user' );
-eq( cli( array( $viewer . '/bin/token.php', 'create', 'nobody', 'x' ) )[2], 'error: unknown user: nobody', 'token create: unknown user' );
+$r = call( 'POST', 'login', array( 'user' => 'boss', 'password' => 'boss-secret-12' ) );
+$n = $r[1]['notices'] ?? array();
+eq( array( $r[0], array_column( $n, 'what' ), array_unique( array_column( $n, 'refused' ) ), $n[0]['detail']['user'] ?? null ),
+    array( 200, array( 'user add', 'password', 'user delete', 'project add', 'token create' ), array( TRUE ), 'eve' ), 'login: the administrator is told about the refused tries' );
+$cookie = '';
+$r = call( 'POST', 'login', array( 'user' => 'boss', 'password' => 'boss-secret-12' ) );
+$csrf = array( 'X-CSRF-Token: ' . ( $r[1]['csrf'] ?? '' ) );
+eq( $r[1]['notices'] ?? null, array(), 'login: shown only once' );
+$cliRows = array_values( array_filter( call( 'GET', 'audit?limit=50' )[1]['audit'] ?? array(), function( $x ) { return ( $x['method'] ?? '' ) === 'CLI'; } ) );
+eq( array( count( $cliRows ), $cliRows[0]['status'] ?? null, $cliRows[0]['user'] ?? null ), array( 5, 403, '(command line)' ), 'audit log: the refused tries, method CLI' );
+
+// a new password in the browser instead
+eq( call( 'POST', 'users', array( 'user' => 'anna', 'password' => 'anna-secret-12' ), $csrf )[0], 201, 'admin: user in the browser' );
+$r = call( 'POST', 'users/anna/password', null, $csrf );
+$annaPw = $r[1]['password'] ?? '';
+eq( array( $r[0], strlen( $annaPw ) ), array( 200, 20 ), 'admin: new password for a user, shown once' );
+eq( call( 'POST', 'users/nobody/password', null, $csrf )[0], 404, 'new password: unknown user' );
+eq( call( 'POST', 'users/anna/password' )[0], 403, 'new password: needs the CSRF token' );
+$cookie = '';
+eq( call( 'POST', 'login', array( 'user' => 'anna', 'password' => 'anna-secret-12' ) )[0], 401, 'the old password of the user does not work any more' );
+$r = call( 'POST', 'login', array( 'user' => 'anna', 'password' => $annaPw ) );
+eq( array( $r[0], $r[1]['notices'] ?? null ), array( 200, array() ), 'the new one works; a user who is no administrator gets no notices' );
+eq( call( 'POST', 'users/boss/password', null, array( 'X-CSRF-Token: ' . $r[1]['csrf'] ) )[0], 404, 'new password: only an administrator' );
+
+// ---- the first setup on the command line (a fresh installation): changes work until there is an administrator
+$data3 = $data . '-3';
+mkdir( $data3, 0700 );
+$e3 = array( 'PANOSPHP_VIEWER_DATA' => $data3 );
+eq( cli( array( $viewer . '/bin/user.php', 'add', 'anna' ), $e3 + array( 'VIEWER_PASSWORD' => 'anna-secret-12' ) )[0], 0, 'setup: user add on the command line' );
+eq( (bool)preg_match( '/^[A-HJ-NP-Z2-9-]{19}$/', cli( array( $viewer . '/bin/user.php', 'first-code' ), $e3 )[1] ), TRUE, 'setup: a user without admin rights - still a new installation' );
+list( $c, $pid ) = cli( array( $viewer . '/bin/token.php', 'project-add', 'anna', 'Firewall A' ), $e3 );
+eq( array( $c, (bool)preg_match( '/^[0-9a-f]{32}$/', $pid ) ), array( 0, TRUE ), 'setup: project add' );
+list( $c, $out ) = cli( array( $viewer . '/bin/token.php', 'create', 'anna', 'firewall a', 'write', '7', 'nightly script' ), $e3 );
+$tid = preg_match( '/id ([0-9a-f]+), permission write/', $out, $m ) ? $m[1] : '';
+eq( array( $c, (bool)preg_match( '/token \(shown only now\): pvt_\S{40,}/', $out ), $tid !== '' ), array( 0, TRUE, TRUE ), 'setup: token create by project name, shown once' );
+eq( cli( array( $viewer . '/bin/token.php', 'create', 'nobody', 'x' ), $e3 )[2], 'error: unknown user: nobody', 'setup: token create - unknown user' );
+eq( cli( array( $viewer . '/bin/user.php', 'add', 'root', 'admin' ), $e3 + array( 'VIEWER_PASSWORD' => 'root-secret-12' ) )[0], 0, 'setup: the first administrator on the command line' );
+eq( cli( array( $viewer . '/bin/user.php', 'first-code' ), $e3 )[1], '', 'one-time code: nothing once there is an administrator' );
+eq( $refused( array( 'token.php', 'delete', 'anna', $pid, $tid ), $e3 ), array( 1, TRUE ), 'after the setup: token delete refused' );
+eq( $refused( array( 'user.php', 'password', 'root' ), $e3 + array( 'VIEWER_PASSWORD' => 'x-secret-1234' ) ), array( 1, TRUE ), 'after the setup: password refused' );
+list( $c, $out ) = cli( array( $viewer . '/bin/token.php', 'list', 'anna', $pid ), $e3 );
+eq( array( $c, strpos( $out, 'nightly script' ) !== FALSE ), array( 0, TRUE ), 'after the setup: token list still works (never the secret)' );
+eq( cli( array( $viewer . '/bin/token.php', 'projects', 'anna' ), $e3 )[1], $pid . '  owner  Firewall A', 'after the setup: projects still work' );
+putenv( 'PANOSPHP_VIEWER_DATA=' . $data3 );
+require_once $viewer . '/lib/ViewerApp.php';
+$app3 = new ViewerApp( $data3 );
+$n = $app3->cliNotices( $app3->userByName( 'root' ) );
+eq( array_map( function( $x ) { return $x['what'] . ( $x['refused'] ? ' refused' : '' ); }, $n ),
+    array( 'user add', 'project add', 'token create', 'user add', 'token delete refused', 'password refused' ), 'setup: the administrator also sees what was done in the setup' );
+eq( $app3->cliNotices( $app3->userByName( 'anna' ) ), array(), 'notices: administrators only' );
+exec( 'rm -rf ' . escapeshellarg( $data3 ) );
 
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 foreach( $failed as $m )

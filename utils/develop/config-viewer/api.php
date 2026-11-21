@@ -20,7 +20,7 @@
 /**
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
  *   POST login, POST logout, GET me, POST password, GET meta
- *   GET|POST users, DELETE users/<name>, GET audit                        (admin)
+ *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
  *   GET projects/<pid>/audit                                              (owner)
  *   GET|POST projects, GET|DELETE projects/<pid>
  *   GET|PUT projects/<pid>/members, DELETE projects/<pid>/members/<name>
@@ -140,7 +140,8 @@ try
         $u = $app->login( $b['user'] ?? null, $b['password'] ?? null, viewerClientAddr() );
         session_regenerate_id( TRUE );
         $_SESSION = array( 'uid' => (int)$u['id'], 'csrf' => bin2hex( random_bytes( 32 ) ), 'since' => time(), 'seen' => time() );
-        viewerOut( array( 'user' => $u['name'], 'admin' => (bool)$u['is_admin'], 'csrf' => $_SESSION['csrf'] ) );
+        // administrators: what was done or tried on the command line since they last logged in
+        viewerOut( array( 'user' => $u['name'], 'admin' => (bool)$u['is_admin'], 'csrf' => $_SESSION['csrf'], 'notices' => $app->cliNotices( $u ) ) );
     }
 
     // ---- everything else: logged in user, taken from the DB on every request
@@ -232,6 +233,9 @@ try
             $b = viewerBody();
             viewerOut( $app->userCreate( $b['user'] ?? null, $b['password'] ?? null, !empty( $b['admin'] ) ), 201 );
         }
+        // a new password for a user (made by the viewer, shown once to the administrator)
+        if( $method === 'POST' && count( $route ) == 3 && $route[2] === 'password' )
+            viewerOut( array( 'user' => $route[1], 'password' => $app->userNewPassword( $route[1] ) ) );
         if( $method === 'DELETE' && count( $route ) == 2 )
         {
             if( strcasecmp( $route[1], $user['name'] ) === 0 )

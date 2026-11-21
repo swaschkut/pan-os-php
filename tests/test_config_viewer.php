@@ -77,7 +77,8 @@ $pkRel = testPack( $plugins, 'pack', '1.0', 'test-pack', $pkFiles );
 // ---- users, server
 $env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins,
     'PANOSPHP_LICENSE_TEST_KEYS' => testTrustedJson( $licKeys ) );
-foreach( array( 'alice' => 'alice-secret-1 admin', 'bob' => 'bob-secret-12', 'carol' => 'carol-secret-3' ) as $name => $spec )
+// the command line makes users only until there is an administrator: alice (admin) last
+foreach( array( 'bob' => 'bob-secret-12', 'carol' => 'carol-secret-3', 'alice' => 'alice-secret-1 admin' ) as $name => $spec )
 {
     $parts = explode( ' ', $spec );
     $p = proc_open( array( PHP_BINARY, $viewer . '/bin/user.php', 'add', $name, $parts[1] ?? '' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null,

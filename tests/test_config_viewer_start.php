@@ -128,6 +128,10 @@ $code = preg_match( '/\n\s+([A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){3})\n/', $out,
 eq( array( strpos( $out, 'config viewer: http://127.0.0.1:8080/' ) !== FALSE, $code !== null, trim( (string)@file_get_contents( $data . '/first-admin.code' ) ) === $code ),
     array( TRUE, TRUE, TRUE ), 'start (new installation): address and the one-time code for the first administrator' );
 eq( array_unique( file( $log . '.workdir', FILE_IGNORE_NEW_LINES ) ), array( '/tools/pan-os-php/utils/develop/config-viewer' ), 'commands in the container run in the folder of the viewer' );
+// the first setup: users on the command line until there is an administrator
+list( $c, $out ) = pv( array( 'user', 'add', 'anna' ) );
+eq( array( $c, (bool)preg_match( '/user anna created - password: [A-Za-z0-9]{20}/', $out ) ), array( 0, TRUE ), 'user add (setup): normal user' );
+eq( pv( array( 'user', 'add', 'x;y' ) )[0] !== 0, TRUE, 'user add: name checked' );
 // the administrator on the command line (without a browser)
 list( $code2, $out ) = pv( array( 'user', 'add', 'admin', 'admin' ) );
 $firstPw = preg_match( '/user admin created \(administrator\) - password: ([A-Za-z0-9]{20})/', $out, $m ) ? $m[1] : null;
@@ -148,27 +152,28 @@ eq( array( $code !== 0, strpos( $out, 'no cert.pem / key.pem' ) !== FALSE, env( 
 unlink( $dir . '/.env' );
 pv( array( 'setup' ) );
 
-// ---- password: a new one, shown once, that works
-list( $code, $out, $calls ) = pv( array( 'password' ) );
-$pw = preg_match( '/new password of admin: ([A-Za-z0-9]{20})/', $out, $m ) ? $m[1] : null;
-eq( array( $code, $pw !== null, strpos( implode( "\n", $calls ), 'VIEWER_PASSWORD=' ) !== FALSE ), array( 0, TRUE, TRUE ), 'password: set through the web container' );
+// ---- after the setup: no changes on the command line (users, passwords, projects, tokens: in the browser)
+list( $code, $out, $calls ) = pv( array( 'password', 'admin' ) );
+eq( array( $code !== 0, strpos( $out, 'not on the command line' ) !== FALSE, strpos( implode( "\n", $calls ), 'VIEWER_PASSWORD=' ) ), array( TRUE, TRUE, FALSE ),
+    'password: not on the command line, nothing sent to the container' );
+list( $code, $out ) = pv( array( 'user', 'add', 'eve', 'admin' ) );
+eq( array( $code !== 0, strpos( $out, 'refused: this viewer has an administrator' ) !== FALSE, strpos( $out, 'password:' ) ), array( TRUE, TRUE, FALSE ),
+    'user add after the setup: refused by the viewer, no password shown' );
+foreach( array( array( 'user', 'delete', 'anna' ), array( 'project', 'add', 'anna', 'FW1' ), array( 'token', 'anna', 'FW1', 'read', '5' ), array( 'token', 'delete', 'anna', 'FW1', 'x' ) ) as $a )
+    eq( array( pv( $a )[0] !== 0, strpos( pv( $a )[1], 'not on the command line' ) !== FALSE ), array( TRUE, TRUE ), implode( ' ', array_slice( $a, 0, 2 ) ) . ': not on the command line' );
 putenv( 'PANOSPHP_VIEWER_DATA=' . $data );
 require_once $viewer . '/lib/ViewerApp.php';
 $app = new ViewerApp( $data );
 $ok = function( $u, $p ) use ( $app ) { try { $app->login( $u, $p, '127.0.0.1' ); return TRUE; } catch( Exception $e ) { return FALSE; } };
-eq( array( $ok( 'admin', $pw ), $ok( 'admin', $firstPw ) ), array( TRUE, FALSE ), 'password: the new one works, the old one not' );
-// users, projects, tokens through the script
-list( $c, $out ) = pv( array( 'user', 'add', 'anna' ) );
-eq( array( $c, (bool)preg_match( '/user anna created - password: [A-Za-z0-9]{20}/', $out ) ), array( 0, TRUE ), 'user add: normal user' );
-eq( (bool)preg_match( '/admin.*\n.*anna|anna[\s\S]*admin/', pv( array( 'user', 'list' ) )[1] ), TRUE, 'user list' );
-eq( pv( array( 'user', 'add', 'x;y' ) )[0] !== 0, TRUE, 'user add: name checked' );
-list( $c, $pid ) = pv( array( 'project', 'add', 'anna', 'FW1' ) );
-eq( array( $c, (bool)preg_match( '/^[0-9a-f]{32}$/', trim( $pid ) ) ), array( 0, TRUE ), 'project add' );
-list( $c, $out ) = pv( array( 'token', 'anna', 'FW1', 'read', '5' ) );
-eq( array( $c, (bool)preg_match( '/token \(shown only now\): pvt_/', $out ) ), array( 0, TRUE ), 'token: made for a project of the user' );
-eq( strpos( pv( array( 'token', 'list', 'anna', 'FW1' ) )[1], 'command line' ) !== FALSE, TRUE, 'token list' );
-eq( trim( pv( array( 'projects', 'anna' ) )[1] ), trim( $pid ) . '  owner  FW1', 'projects of a user' );
-eq( pv( array( 'password', 'bad name;x' ) )[0] !== 0, TRUE, 'password: user name checked' );
+eq( array( $ok( 'admin', $firstPw ), $app->userByName( 'eve' ) ), array( TRUE, null ), 'nothing changed: the password of the administrator works, no new administrator' );
+// looking works: users, projects, tokens (made in the browser - here directly)
+$anna = $app->userByName( 'anna' );
+$p = $app->projectCreate( $anna, 'FW1' );
+$app->tokenCreate( $anna, $p['pid'], 'browser token', 'read', 5 );
+eq( (bool)preg_match( '/admin \(admin\)\s+anna/', pv( array( 'user', 'list' ) )[1] ), TRUE, 'user list' );
+eq( trim( pv( array( 'projects', 'anna' ) )[1] ), $p['pid'] . '  owner  FW1', 'projects of a user' );
+eq( strpos( pv( array( 'token', 'list', 'anna', 'FW1' ) )[1], 'browser token' ) !== FALSE, TRUE, 'token list' );
+eq( count( $app->cliNotices( $app->userByName( 'admin' ) ) ) > 0, TRUE, 'the refused tries are shown to the administrator' );
 
 // ---- plug-in and licence
 $k = testLicenceKeys();

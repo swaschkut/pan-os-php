@@ -3,7 +3,8 @@
 ## Users
 
 Administrators manage users under **Account → Users (admin)**: name, password, and whether the user is an
-administrator. On the command line: `./panosphp-viewer user add <name> [admin]`, `user list`, `user delete <name>`.
+administrator, and **New password** for a user who forgot it (shown once). Not on the command line: there, only
+`./panosphp-viewer user list`, and `user add <name> admin` for the very first administrator.
 
 An administrator manages users, the licence and plug-ins. What a user sees in a project is set in the project.
 

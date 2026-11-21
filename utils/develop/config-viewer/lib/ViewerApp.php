@@ -173,6 +173,10 @@ class ViewerApp
             $this->db->exec( 'ALTER TABLE members ADD COLUMN types TEXT' );
         if( !in_array( 'scope', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE members ADD COLUMN scope TEXT' );
+        // command line use an administrator has seen (shown once after the login: cliNotices)
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(users)' )->fetchAll(), 'name' );
+        if( !in_array( 'cli_seen', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE users ADD COLUMN cli_seen INTEGER NOT NULL DEFAULT 0' );
     }
 
     private function q( string $sql, array $args = array() ): PDOStatement
@@ -216,15 +220,76 @@ class ViewerApp
 
     // ------------------------------------------------------------------ first administrator (a new installation)
 
-    /** a new installation: no user yet - the page offers to create the first administrator */
+    public function adminExists(): bool
+    {
+        return (bool)$this->q( 'SELECT 1 FROM users WHERE is_admin = 1 LIMIT 1' )->fetch();
+    }
+
+    /** a new installation: no administrator yet - the page offers to create the first one */
     public function firstAdminNeeded(): bool
     {
-        return !$this->q( 'SELECT 1 FROM users LIMIT 1' )->fetch();
+        return !$this->adminExists();
+    }
+
+    // ------------------------------------------------------------------ command line (bin/user.php, bin/token.php)
+
+    const CLI_REFUSED = 'refused: this viewer has an administrator - users, passwords and API tokens are managed in the browser by an administrator (Account)';
+
+    /**
+     * The command line may change users, passwords, projects and tokens only while there is no administrator (the
+     * first setup). Afterwards everything is done in the browser by an administrator - whoever can run commands on
+     * the computer can not reset passwords or make himself an administrator. A refused try goes into the audit log and
+     * is shown to the administrators after their next login.
+     */
+    public function cliChange( string $what, array $detail = array() ): void
+    {
+        if( $this->adminExists() )
+        {
+            $this->auditWrite( '(command line)', null, 'local', null, 'CLI', 'cli/' . $what, 403, $detail );
+            throw new ViewerException( self::CLI_REFUSED, 403 );
+        }
+    }
+
+    /** a change on the command line that was done (audit log; shown to the administrators after their next login) */
+    public function cliDone( string $what, array $detail = array() ): void
+    {
+        $this->auditWrite( '(command line)', null, 'local', null, 'CLI', 'cli/' . $what, 200, $detail );
+    }
+
+    /** command line use since the administrator saw it last (refused tries and changes); afterwards marked as seen */
+    public function cliNotices( array $user ): array
+    {
+        if( empty( $user['is_admin'] ) )
+            return array();
+        $rows = $this->q( "SELECT id, ts, route, status, detail FROM audit WHERE method = 'CLI' AND id > ? ORDER BY id DESC LIMIT 50",
+            array( (int)( $user['cli_seen'] ?? 0 ) ) )->fetchAll();
+        if( count( $rows ) === 0 )
+            return array();
+        $this->q( 'UPDATE users SET cli_seen = ? WHERE id = ?', array( (int)$rows[0]['id'], (int)$user['id'] ) );
+        $out = array();
+        foreach( array_reverse( $rows ) as $r )
+            $out[] = array( 'ts' => (int)$r['ts'], 'what' => substr( $r['route'], 4 ), 'refused' => (int)$r['status'] !== 200,
+                'detail' => $r['detail'] !== null ? json_decode( $r['detail'], TRUE ) : null );
+        return $out;
+    }
+
+    /** an administrator gives a user a new password (made here, returned once) */
+    public function userNewPassword( string $name ): string
+    {
+        $u = $this->userByName( $name );
+        if( $u === null )
+            throw new ViewerException( 'not found', 404 );
+        $abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        $pw = '';
+        for( $i = 0; $i < 20; $i++ )
+            $pw .= $abc[random_int( 0, strlen( $abc ) - 1 )];
+        $this->userSetPassword( (int)$u['id'], $pw );
+        return $pw;
     }
 
     /**
      * the one-time code that creating the first administrator needs (data directory: first-admin.code). Made when it
-     * is asked for the first time; null when there are users. Shown on the computer the viewer runs on only
+     * is asked for the first time; null when there is an administrator. Shown on the computer the viewer runs on only
      * (panosphp-viewer start / bin/user.php first-code) - whoever reaches the page first can not take it over.
      */
     public function firstAdminCode(): ?string

@@ -1,7 +1,9 @@
 <?php
 /**
- * config-viewer: projects and API tokens on the command line (for scripts; same as the page: project, API tokens).
- * Runs as the given user - with that user's permissions.
+ * config-viewer: projects and API tokens on the command line. Runs as the given user - with that user's permissions.
+ * Listing works always; project-add / create / delete only while there is no administrator (the first setup) -
+ * afterwards API tokens are made in the browser (project, API tokens), a try here is refused, logged and shown to
+ * the administrators.
  *
  *   php bin/token.php projects <user>                                     projects of the user (id, permission, name)
  *   php bin/token.php project-add <user> <name>                           new project of the user; prints its id
@@ -50,14 +52,18 @@ try
     }
     elseif( $cmd === 'project-add' && isset( $argv[3] ) )
     {
+        $app->cliChange( 'project add', array( 'user' => $argv[2], 'name' => $argv[3] ) );
         $p = $app->projectCreate( needUser( $app, $argv[2] ), $argv[3] );
+        $app->cliDone( 'project add', array( 'user' => $argv[2], 'name' => $argv[3] ) );
         print $p['pid'] . "\n";
     }
     elseif( $cmd === 'create' && isset( $argv[3] ) )
     {
+        $app->cliChange( 'token create', array( 'user' => $argv[2], 'name' => $argv[3] ) );
         $u = needUser( $app, $argv[2] );
         $days = isset( $argv[5] ) ? (int)$argv[5] : 30;
         $t = $app->tokenCreate( $u, projectId( $app, $u, $argv[3] ), $argv[6] ?? 'command line ' . gmdate( 'Y-m-d' ), $argv[4] ?? 'read', $days );
+        $app->cliDone( 'token create', array( 'user' => $argv[2], 'name' => $argv[3], 'role' => $t['role'], 'days' => $days ) );
         printf( "token (shown only now): %s\n  id %s, permission %s, valid until %s\n", $t['token'], $t['tid'], $t['role'], gmdate( 'Y-m-d', $t['expires'] ) );
     }
     elseif( $cmd === 'list' && isset( $argv[3] ) )
@@ -69,8 +75,10 @@ try
     }
     elseif( $cmd === 'delete' && isset( $argv[4] ) )
     {
+        $app->cliChange( 'token delete', array( 'user' => $argv[2], 'name' => $argv[3] ) );
         $u = needUser( $app, $argv[2] );
         $app->tokenDelete( $u, projectId( $app, $u, $argv[3] ), $argv[4] );
+        $app->cliDone( 'token delete', array( 'user' => $argv[2], 'name' => $argv[3] ) );
         print "token deleted\n";
     }
     else

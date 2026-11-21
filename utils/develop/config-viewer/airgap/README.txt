@@ -12,15 +12,16 @@ Install / update
                                 or Let's Encrypt (internet needed)
   First start: a one-time code is shown - open the address and create the administrator with it (or without a
   browser: ./panosphp-viewer user add <name> admin).
+  After that, users, passwords and API tokens are managed in the browser by an administrator only - not on the
+  command line. Keep a second administrator: when the only one forgets the password, the data can not be reached
+  any more (only a new start: delete the volume panosphp-viewer-data).
   Update: unpack the newer bundle into the same folder, ./install.sh again. The data stays (volume panosphp-viewer-data).
 
 Every day
     ./panosphp-viewer status             running? address, licence, plug-ins
     ./panosphp-viewer stop | start | restart
     ./panosphp-viewer logs [web|service|jobs|proxy]
-    ./panosphp-viewer password <user>    new password (forgotten / lost), shown once
-    ./panosphp-viewer user add <name> [admin] | user list | user delete <name>
-    ./panosphp-viewer token <user> <project> [read|write] [days]     API token for scripts, shown once
+    ./panosphp-viewer user list          users (changes: in the browser, Account - by an administrator)
     ./panosphp-viewer setup              answer the questions again, then ./panosphp-viewer restart
 
 Licensed plug-ins (e.g. migration)

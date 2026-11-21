@@ -57,3 +57,6 @@ p.error { color: #b42318; }
 .md pre { background: #f6f8fa; padding: 8px 10px; border-radius: 6px; overflow-x: auto; }
 .md code { font-family: monospace; font-size: 12.5px; }
 .md table { margin: 6px 0 10px; }
+.card.notice { background: #e8f4ec; border-color: #b9dcc5; }
+.card.notice.warn { background: #fdecea; border-color: #f1b8b2; }
+.card.notice.warn h2 { color: var(--warn); }

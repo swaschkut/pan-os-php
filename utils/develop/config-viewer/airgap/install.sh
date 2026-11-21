@@ -17,9 +17,9 @@ if [ -n "$want" ] && [ "$have" != "linux/unknown" ] && [ "$want" != "$have" ]; t
     echo "This bundle is for $want, this Docker runs $have - ask for the matching bundle." >&2; exit 1
 fi
 
-# images from images.tar.gz, settings (questions on the first time), start, address and first password
+# images from images.tar.gz, settings (questions on the first time), start, address and the one-time code
 chmod +x ./panosphp-viewer
 ./panosphp-viewer update
 ./panosphp-viewer start
 echo
-echo "Later: ./panosphp-viewer status | stop | start | license <file> | plugin <file.ppp> | password | help"
+echo "Later: ./panosphp-viewer status | stop | start | license <file> | plugin <file.ppp> | help"

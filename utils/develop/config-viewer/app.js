@@ -152,7 +152,7 @@ async function showLogin() {
             pass.value = '';
             await entered(r);
         }); } }, el('h2', { text: 'Log in' }), field('User', user), field('Password', pass), el('button', { class: 'primary', type: 'submit', text: 'Log in' }),
-            el('p', { class: 'muted', text: 'Forgot the password? An administrator sets a new one under Account, or on the computer the viewer runs on: ./panosphp-viewer password <user>' }));
+            el('p', { class: 'muted', text: 'Forgot the password? An administrator gives you a new one (Account, Users).' }));
     }
     const docs = await docsCard().catch(() => null);
     main(el('div', { class: 'loginpage' }, form, docs));
@@ -164,6 +164,18 @@ async function entered(r) {
     document.getElementById('who').textContent = r.user + (r.admin ? ' (admin)' : '');
     if (!state.meta) state.meta = await api('GET', 'meta');
     await showProjects();
+    if (r.notices && r.notices.length) cliNoticeCard(r.notices);
+}
+// administrators: use of the command line since the last login - a refused try can mean someone tried to get in
+function cliNoticeCard(list) {
+    const refused = list.some(n => n.refused);
+    const what = n => n.what + (n.detail && n.detail.user ? ' ' + n.detail.user : '') + (n.detail && n.detail.admin ? ' (admin)' : '');
+    const card = el('div', { class: 'card notice' + (refused ? ' warn' : '') }, el('h2', { text: refused ? 'Refused on the command line since your last login' : 'Done on the command line since your last login' }),
+        el('p', { class: 'muted', text: refused ? 'Someone on the computer the viewer runs on tried to change users, passwords or tokens. This is only allowed in the browser. Details: Account, audit log.' : 'Shown once. Details: Account, audit log.' }),
+        table(['When', 'Command', 'Result'], list.map(n => el('tr', {}, el('td', { text: fmtTime(n.ts) }), el('td', { text: what(n) }), el('td', { text: n.refused ? 'refused' : 'done' })))),
+        el('button', { type: 'button', text: 'OK', onclick: () => card.remove() }));
+    const m = document.getElementById('main');
+    m.insertBefore(card, m.firstChild);
 }
 async function showAccount() {
     const oldPw = el('input', { type: 'password', autocomplete: 'current-password', required: true });
@@ -186,10 +198,16 @@ async function showAccount() {
             }); } }, field('User name', name), field('Initial password', pw), field('Admin', adm), el('button', { class: 'primary', type: 'submit', text: 'Create user' })),
             el('table', { class: 'plain' }, el('thead', {}, el('tr', {}, el('th', { text: 'User' }), el('th', { text: 'Admin' }), el('th', { text: 'Created' }), el('th', {}))),
                 el('tbody', {}, users.map(u => el('tr', {}, el('td', { text: u.name }), el('td', { text: u.admin ? 'yes' : '' }), el('td', { text: fmtTime(u.created) }),
-                    el('td', {}, u.name === state.user ? null : el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
-                        if (!confirm('Delete user "' + u.name + '" and all projects this user owns?')) return;
-                        await api('DELETE', 'users/' + encodeURIComponent(u.name)); await showAccount();
-                    }) }))))))));
+                    el('td', {}, u.name === state.user ? null : el('div', { class: 'row' },
+                        el('button', { type: 'button', text: 'New password', onclick: (ev) => run(async () => {
+                            if (!confirm('Give "' + u.name + '" a new password? The old one stops working.')) return;
+                            const r = await api('POST', 'users/' + encodeURIComponent(u.name) + '/password');
+                            ev.target.replaceWith(el('span', {}, el('span', { class: 'muted', text: 'new password (shown only now): ' }), el('code', { text: r.password })));
+                        }) }),
+                        el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                            if (!confirm('Delete user "' + u.name + '" and all projects this user owns?')) return;
+                            await api('DELETE', 'users/' + encodeURIComponent(u.name)); await showAccount();
+                        }) })))))))));
     }
     if (state.admin) {
         const pl = (await api('GET', 'meta')).plugins || { plugins: [], errors: {} };
