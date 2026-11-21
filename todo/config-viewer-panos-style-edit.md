@@ -173,9 +173,95 @@ repeatable, documented change.
   type or the location = no access (not in the menu, not in the location select, the API refuses). Nothing more
   fine-grained (no per field rights).
 
+* **Menu: Objects, Policies, Network, Device - for Panorama and for a firewall** (Sven, 2026-11-21). Panorama: Objects
+  / Policies with a device group (or shared) as location, Network / Device with a template / template stack; firewall:
+  Objects / Policies per vsys (or shared), Network / Device of the firewall. SCM: the same with folders / snippets.
+  Steps 1-4 build Objects / Policies; Network / Device follow (the field → action table for them is still to make).
+
+## Changes with git, on object level (Sven, 2026-11-21)
+
+Idea (from about 2021; only rudimentary in the project today: `git-php/` and `git=` in UTIL.php, which commits the
+whole file - not reused): source XML → changes → everything documented in git → changes can be taken back. The
+problem with git on the whole XML file: two changes to different objects that stand close together conflict, a small
+difference in formatting gives huge diffs, and the revert of one change fails as soon as something near it changed
+later. **Solution: git on objects instead of the file.**
+
+### Objects as entries of the repository
+
+* Every pan-os-php object has its own XML node (`$obj->xmlroot`, kept up to date by the setters) - so one object = one
+  entry: path = location (`PH::getLocationString`, from the owner of its store) + type + name, rules by their UUID:
+
+  ```
+  shared/address/web01.xml
+  device-group/DG-Berlin/address/web01.xml          (same name, other location = other entry)
+  device-group/DG-Berlin/pre-rulebase/security/rules/<uuid>.xml
+  device-group/DG-Berlin/pre-rulebase/security/order   (only the order of the rule UUIDs)
+  template/T1/...                                       (Network / Device, later)
+  _rest.xml                                             (everything not split yet)
+  ```
+* **Canonical XML per object**: one field per line, fixed order and indentation; lists whose order does not matter
+  (group members, tags, source / destination of a rule) sorted - two people adding different tags change different
+  lines. The rule order is its own entry (`order`), so changing a rule and moving rules do not conflict.
+* A rename is a move of the entry plus the changed references (groups, rules) in the same commit - the pan-os-php
+  action changes them anyway.
+
+### No files: a bare repository fed from the DOM
+
+git needs no working tree - it is an object database (blobs, trees, commits). One **bare repository per project** in
+the volume (git is in the image), written with the plumbing commands:
+
+| Step | git (plumbing) |
+|---|---|
+| store the XML of an object | `git hash-object -w --stdin` → blob id |
+| tree with the changed paths | `git update-index --index-info` with a temporary index (`GIT_INDEX_FILE`), `git write-tree` |
+| commit with filter / action | `git commit-tree <tree> -p <before>`, `git update-ref` |
+| read an object of a state | `git cat-file -p <commit>:<path>` |
+| merge / revert in memory | `git merge-tree --write-tree` (revert: `--merge-base <commit>`) → new tree or the conflicts |
+
+* The worker of the viewer holds the loaded configuration as DOM already: it runs the action as today, serializes
+  **only the objects that changed**, writes them as blobs and makes a commit - no whole XML, no file, no working tree
+  per change.
+* Taking a state back (revert, merge): replace only the nodes of the objects concerned (`importNode` +
+  `replaceChild`) and load these objects again. The whole XML is only written when needed (download, a run, "save as
+  version").
+* The first commit of a project version: the split of the uploaded / imported XML.
+
+### What it gives
+
+* **Change list = `git log`**: each change in the viewer is one commit; its message carries the change as trailers -
+  `Type:`, `Location:`, `Filter:`, `Action:`, `User:` - the playbook export is built from them. A multi-edit is one
+  commit over many object entries.
+* **Undo of one change = `git revert <commit>`**: touches only the entries of that commit; a conflict only when a
+  later commit changed the same object - a real, small conflict (offer: revert the later one too, or choose per field).
+* **Versions** = commits / tags; the diff of two versions = the list of changed objects (`type=diff` stays for the
+  set commands).
+* **Import from a device** on its own branch, merged with the local changes - shows what changed on the device since
+  (drift) and keeps the own changes.
+* **Several people**: a branch per user, merged when saved as a version - conflicts only per object, and per field.
+
+### Merge per field
+
+* An own merge driver for object entries (`.gitattributes`: `*.xml merge=panos`): pan-os-php merges base / mine /
+  theirs field by field; set fields: additions of both sides united, removals taken out. A conflict is left only when
+  both set **the same field** differently - the viewer shows "mine or theirs" for this field.
+
+### Limits and checks
+
+* Split / join is real work: start with shared and device group objects, then security / NAT rules; templates
+  (Network / Device) stay in `_rest.xml` as one entry until split.
+* A revert / merge can be logically wrong without a git conflict (an object is back, a rule that referred to it is
+  deleted meanwhile): after each revert / merge pan-os-php loads and checks (references, dangling members).
+* Test: split + join of a configuration = the canonical XML of the original (round trip), for Panorama, firewall, SCM.
+
+### To check first
+
+1. **Which objects did an action change?** Not only the matches of the filter (a rename changes the groups and rules
+   that refer to it). Safest: a hash per object before / after the action; better in the long run: a "dirty" mark in
+   the setters of pan-os-php. Measure with large configurations.
+2. **Merge driver without a working tree**: does `git merge-tree` in a bare repository use a merge driver of
+   `.gitattributes` (newer git: `--attr-source`)? If not: the viewer merges per field itself and uses git for storage,
+   history and diff only.
+
 ## Open questions
 
-* Undo of one field change: today only "Discard changes" of the whole version - an undo per line of the change list
-  would need the reverse action (`tag-add` ↔ `tag-remove`, …) or a replay of the list without that line.
-* Order of the menu for Panorama: device group objects and template / template stack (network, device) as in PAN-OS
-  (two separate trees) - with steps 1-4 only Objects / Policies.
+* (none open at the moment - undo: see "Changes with git"; the menu: see the decisions)
