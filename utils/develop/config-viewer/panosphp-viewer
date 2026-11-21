@@ -125,8 +125,12 @@ cmd="${1:-help}"
 case "$cmd" in
 start)
     need_docker
-    configured || setup
+    first=no
+    configured || { setup; first=yes; }
     mkdir -p "$PLUGINS"
+    # the first time: the current images (an older pan-os-php image on this computer would be used otherwise);
+    # an air-gap bundle brings its images in images.tar.gz (install.sh loads them first)
+    if [ "$first" = yes ] && [ ! -f "$HERE/images.tar.gz" ]; then compose pull; fi
     compose up -d
     say ""
     say "config viewer: $(url)"
@@ -135,6 +139,9 @@ start)
         if [ -n "$pw" ]; then say "$pw"; else say "  (log in with your user; forgot the password: ./panosphp-viewer password)"; fi
     else
         say "  the web part does not answer yet - ./panosphp-viewer logs web"
+        if compose logs web 2>/dev/null | grep -q 'start.sh: No such file'; then
+            say "  the pan-os-php image on this computer is too old for the viewer: ./panosphp-viewer update"
+        fi
     fi
     ;;
 stop)

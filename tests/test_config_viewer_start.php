@@ -124,6 +124,10 @@ eq( array( $code, env( 'VIEWER_HTTPS' ), env( 'VIEWER_PORT' ), env( 'VIEWER_PLUG
     array( 0, 'no', '8080', $dir . '/plugins', 'example/pan-os-php:bundle', TRUE ), 'start (first time): settings written with defaults, image of the bundle kept, plug-in folder made' );
 eq( decoct( fileperms( $dir . '/.env' ) & 0777 ), '600', 'start: .env only for this user' );
 eq( in_array( 'compose -f docker-compose.yml up -d', $calls, TRUE ), TRUE, 'start: compose up with the main file only' );
+eq( array_search( 'compose -f docker-compose.yml pull', $calls, TRUE ) < array_search( 'compose -f docker-compose.yml up -d', $calls, TRUE )
+    && array_search( 'compose -f docker-compose.yml pull', $calls, TRUE ) !== FALSE, TRUE, 'start (first time): the current images are pulled first' );
+list( , , $calls ) = pv( array( 'start' ) );
+eq( preg_grep( '/ pull$/', $calls ), array(), 'start (later): no pull' );
 eq( array( strpos( $out, 'config viewer: http://127.0.0.1:8080/' ) !== FALSE, strpos( $out, 'password: 0123456789abcdef01234567' ) !== FALSE ), array( TRUE, TRUE ), 'start: address and first password shown' );
 
 // ---- setup with HTTPS from the environment, start uses both files
