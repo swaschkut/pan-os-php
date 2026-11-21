@@ -114,7 +114,24 @@ try
     $route = array_values( array_filter( explode( '/', (string)( $_SERVER['PATH_INFO'] ?? '' ) ), 'strlen' ) );
     $r0 = $route[0] ?? '';
 
-    // ---- login: the only route without a session
+    // ---- without a session: help pages, the first administrator of a new installation, login
+    if( $r0 === 'docs' && $method === 'GET' && count( $route ) <= 2 )
+        viewerOut( count( $route ) === 1 ? array( 'docs' => ViewerApp::docsList() ) : ViewerApp::docsGet( $route[1] ) );
+    if( $r0 === 'setup' && count( $route ) === 1 )
+    {
+        if( $method === 'GET' )
+            viewerOut( array( 'first_admin' => $app->firstAdminNeeded() ) );
+        if( $method === 'POST' )
+        {
+            $b = viewerBody();
+            $viewerAudit['user'] = is_string( $b['user'] ?? null ) ? $b['user'] : null;
+            $viewerAudit['body'] = array();
+            $u = $app->firstAdminCreate( $b['code'] ?? null, $b['user'] ?? null, $b['password'] ?? null, viewerClientAddr() );
+            session_regenerate_id( TRUE );
+            $_SESSION = array( 'uid' => (int)$u['id'], 'csrf' => bin2hex( random_bytes( 32 ) ), 'since' => time(), 'seen' => time() );
+            viewerOut( array( 'user' => $u['name'], 'admin' => TRUE, 'csrf' => $_SESSION['csrf'] ), 201 );
+        }
+    }
     if( $r0 === 'login' && $method === 'POST' )
     {
         $b = viewerBody();

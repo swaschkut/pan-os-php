@@ -10,14 +10,17 @@ Install / update
     2) other computers too      HTTPS with a name (DNS must point to this computer; ports 443 and 80);
                                 certificate: own certificate authority of the viewer, your own cert.pem + key.pem,
                                 or Let's Encrypt (internet needed)
-  First start: the user "admin" and its password are shown once - change it under Account.
+  First start: a one-time code is shown - open the address and create the administrator with it (or without a
+  browser: ./panosphp-viewer user add <name> admin).
   Update: unpack the newer bundle into the same folder, ./install.sh again. The data stays (volume panosphp-viewer-data).
 
 Every day
     ./panosphp-viewer status             running? address, licence, plug-ins
     ./panosphp-viewer stop | start | restart
     ./panosphp-viewer logs [web|service|jobs|proxy]
-    ./panosphp-viewer password [user]    new password (forgotten / lost), shown once
+    ./panosphp-viewer password <user>    new password (forgotten / lost), shown once
+    ./panosphp-viewer user add <name> [admin] | user list | user delete <name>
+    ./panosphp-viewer token <user> <project> [read|write] [days]     API token for scripts, shown once
     ./panosphp-viewer setup              answer the questions again, then ./panosphp-viewer restart
 
 Licensed plug-ins (e.g. migration)

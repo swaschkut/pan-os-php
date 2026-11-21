@@ -99,10 +99,15 @@ cd utils/develop/config-viewer          # or the unpacked air-gap bundle
 | `status` | containers, address, licence and plug-ins |
 | `logs [web\|service\|jobs\|proxy]` | the last lines of the log |
 | `setup` | the questions again (port, HTTPS, name, certificate: own CA / own files / Let's Encrypt) |
-| `password [user]` | a new password (default user admin), shown once |
+| `user add <name> [admin]` / `user list` / `user delete <name>` | users without a browser; the password is shown once |
+| `password <user>` | a new password, shown once |
+| `projects <user>` / `project add <user> <name>` | projects of a user / a new project (prints its id) |
+| `token <user> <project> [read\|write] [days]` / `token list <user> <project>` | API token for scripts, shown once |
 | `license <file>` / `license` | install a licence / show it |
 | `plugin <file.ppp>` / `plugin` | add a licensed plug-in package to `plugins/` / list them |
 | `update` | newer images (`images.tar.gz` next to the script = air gap, else from Docker Hub), restart |
+
+**First administrator:** a new installation has no user. `start` (and `status`) show a one-time code; the login page offers "create the administrator" with it. Without a browser: `./panosphp-viewer user add <name> admin`. Installations without questions: `VIEWER_ADMIN_USER` + `VIEWER_ADMIN_PASSWORD` at the first start. The login page also shows the help pages of `docs/*.md` (Markdown, no login needed - nothing secret belongs there).
 
 The answers are kept in `.env` next to the script (readable only for the user; the environment wins, as with docker compose, so `VIEWER_HTTPS=yes VIEWER_DOMAIN=viewer.example.com ./panosphp-viewer setup` needs no questions). Plug-ins are in `plugins/` next to the script. `bin/license.php` is the command line for the licence inside the web container (`install <file|->`, `show`, `remove`).
 
@@ -114,10 +119,10 @@ Needs Docker with `docker compose` and the pan-os-php image (`swaschkut/pan-os-p
 
 ```bash
 docker compose -f docker-compose.yml up -d
-docker compose -f docker-compose.yml logs web     # first start: user "admin" and its password
+docker compose -f docker-compose.yml exec -w /tools/pan-os-php/utils/develop/config-viewer web php bin/user.php first-code   # first start: the one-time code
 ```
 
-Browser: `http://127.0.0.1:8080/` → log in → change the password under Account → create a project → upload a configuration.
+Browser: `http://127.0.0.1:8080/` → create the administrator with the one-time code (first start) → create a project → upload a configuration.
 
 * Three containers from the one image: `web`, `service` (workers) and `jobs` (job runner). Runs (`stats`, `playbook`) get their own container each - see "One container per run".
 * Data (database, versions, result files) is in the volume `panosphp-viewer-data`. `... down` stops everything and keeps the data, `... down -v` deletes it. New image: `... pull`, then `... up -d`.

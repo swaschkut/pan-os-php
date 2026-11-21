@@ -52,16 +52,111 @@ function leave() { clearTimers(); state.user = null; state.csrf = null; state.ca
 function main(...nodes) { clearTimers(); const m = document.getElementById('main'); m.replaceChildren(...nodes.flat()); }
 
 // ---------------------------------------------------------------- login / account
-function showLogin() {
+// ---------------------------------------------------------------- help pages (Markdown, shipped in docs/)
+// A small Markdown renderer: headings, paragraphs, lists, code blocks, tables, **bold**, `code`, links.
+// Everything becomes DOM nodes with textContent - nothing of a page is taken as HTML.
+function mdInline(text) {
+    const out = [];
+    const re = /(\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\))/g;
+    let last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+        if (m.index > last) out.push(document.createTextNode(text.slice(last, m.index)));
+        if (m[2] !== undefined) out.push(el('strong', { text: m[2] }));
+        else if (m[3] !== undefined) out.push(el('code', { text: m[3] }));
+        else {
+            const href = m[5];
+            // other help pages open here, web addresses in a new tab, anything else stays text
+            if (/^[a-z0-9-]+\.md$/.test(href)) out.push(el('a', { href: '#', text: m[4], onclick: (ev) => { ev.preventDefault(); run(() => showDoc(href.slice(0, -3))); } }));
+            else if (/^https:\/\//.test(href)) out.push(el('a', { href, text: m[4], target: '_blank', rel: 'noopener noreferrer' }));
+            else out.push(document.createTextNode(m[4]));
+        }
+        last = re.lastIndex;
+    }
+    if (last < text.length) out.push(document.createTextNode(text.slice(last)));
+    return out;
+}
+function markdown(md) {
+    const root = el('div', { class: 'md' });
+    const lines = md.replace(/\r/g, '').split('\n');
+    let i = 0;
+    while (i < lines.length) {
+        const line = lines[i];
+        if (/^```/.test(line)) {
+            const code = [];
+            for (i++; i < lines.length && !/^```/.test(lines[i]); i++) code.push(lines[i]);
+            root.append(el('pre', {}, el('code', { text: code.join('\n') })));
+            i++; continue;
+        }
+        const h = /^(#{1,4})\s+(.*)$/.exec(line);
+        if (h) { root.append(el('h' + Math.min(6, h[1].length + 1), {}, mdInline(h[2]))); i++; continue; }
+        if (/^\s*\|/.test(line)) {
+            const rows = [];
+            for (; i < lines.length && /^\s*\|/.test(lines[i]); i++)
+                if (!/^\s*\|[\s:|-]+\|\s*$/.test(lines[i])) rows.push(lines[i].trim().replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, '|')));
+            root.append(el('table', { class: 'plain' }, rows.map((r, n) => el('tr', {}, r.map(c => el(n === 0 ? 'th' : 'td', {}, mdInline(c)))))));
+            continue;
+        }
+        if (/^\s*([-*]|\d+\.)\s+/.test(line)) {
+            const ordered = /^\s*\d+\./.test(line);
+            const list = el(ordered ? 'ol' : 'ul', {});
+            for (; i < lines.length && /^\s*([-*]|\d+\.)\s+/.test(lines[i]); i++)
+                list.append(el('li', {}, mdInline(lines[i].replace(/^\s*([-*]|\d+\.)\s+/, ''))));
+            root.append(list);
+            continue;
+        }
+        if (line.trim() === '') { i++; continue; }
+        const para = [];
+        for (; i < lines.length && lines[i].trim() !== '' && !/^(#{1,4}\s|```|\s*\||\s*([-*]|\d+\.)\s+)/.test(lines[i]); i++) para.push(lines[i].trim());
+        root.append(el('p', {}, mdInline(para.join(' '))));
+    }
+    return root;
+}
+async function docsCard(current) {
+    const list = (await api('GET', 'docs')).docs;
+    const body = el('div', {});
+    const card = el('div', { class: 'card docs' }, el('h2', { text: 'Help' }),
+        el('div', { class: 'row' }, Object.entries(list).map(([name, title]) => el('button', { class: 'link', type: 'button', text: title, onclick: () => run(() => showDoc(name)) }))), body);
+    const name = current || Object.keys(list)[0];
+    if (name) body.replaceChildren(markdown((await api('GET', 'docs/' + name)).markdown));
+    return card;
+}
+async function showDoc(name) {
+    const card = await docsCard(name);
+    const old = document.querySelector('.card.docs');
+    if (old) old.replaceWith(card); else main(card);
+}
+
+async function showLogin() {
+    const setup = await api('GET', 'setup').catch(() => ({ first_admin: false }));
     const user = el('input', { name: 'user', autocomplete: 'username', required: true });
-    const pass = el('input', { name: 'password', type: 'password', autocomplete: 'current-password', required: true });
-    const form = el('form', { class: 'card login', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
-        const r = await api('POST', 'login', { user: user.value, password: pass.value });
-        pass.value = '';
-        await entered(r);
-    }); } }, el('h2', { text: 'Log in' }), field('User', user), field('Password', pass), el('button', { class: 'primary', type: 'submit', text: 'Log in' }));
-    main(form);
-    user.focus();
+    const pass = el('input', { name: 'password', type: 'password', autocomplete: setup.first_admin ? 'new-password' : 'current-password', required: true, minlength: setup.first_admin ? 10 : 1 });
+    let form;
+    if (setup.first_admin) {
+        // a new installation: the first administrator, with the one-time code from ./panosphp-viewer start
+        const code = el('input', { name: 'code', autocomplete: 'off', required: true, placeholder: 'XXXX-XXXX-XXXX-XXXX', spellcheck: false });
+        const pass2 = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: 10 });
+        user.value = 'admin';
+        form = el('form', { class: 'card login', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            if (pass.value !== pass2.value) throw new Error('the two passwords differ');
+            const r = await api('POST', 'setup', { code: code.value, user: user.value, password: pass.value });
+            pass.value = pass2.value = '';
+            message('administrator ' + r.user + ' created');
+            await entered(r);
+        }); } }, el('h2', { text: 'New installation: create the administrator' }),
+            el('p', { class: 'muted', text: 'The one-time code is shown on the computer the viewer runs on by ./panosphp-viewer start (or ./panosphp-viewer status).' }),
+            field('One-time code', code), field('User name', user), field('Password (10+ characters)', pass), field('Password again', pass2),
+            el('button', { class: 'primary', type: 'submit', text: 'Create administrator' }));
+    } else {
+        form = el('form', { class: 'card login', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            const r = await api('POST', 'login', { user: user.value, password: pass.value });
+            pass.value = '';
+            await entered(r);
+        }); } }, el('h2', { text: 'Log in' }), field('User', user), field('Password', pass), el('button', { class: 'primary', type: 'submit', text: 'Log in' }),
+            el('p', { class: 'muted', text: 'Forgot the password? An administrator sets a new one under Account, or on the computer the viewer runs on: ./panosphp-viewer password <user>' }));
+    }
+    const docs = await docsCard().catch(() => null);
+    main(el('div', { class: 'loginpage' }, form, docs));
+    (setup.first_admin ? form.querySelector('input[name=code]') : user).focus();
 }
 async function entered(r) {
     state.user = r.user; state.admin = r.admin; state.csrf = r.csrf;

@@ -17,17 +17,14 @@ if [ "$(id -u)" = "0" ]; then export HOME="$(getent passwd "$RUNAS" | cut -d: -f
 
 case "${1:-web}" in
 web)
-    # first start: one admin user. Password from VIEWER_ADMIN_PASSWORD, otherwise a random one - shown once in the log.
-    if [ "$(id -u)" = "0" ]; then
+    # first start: the first administrator is made in the browser with a one-time code (./panosphp-viewer start shows
+    # it). For installations without questions: VIEWER_ADMIN_USER + VIEWER_ADMIN_PASSWORD make it right away.
+    if [ "$(id -u)" = "0" ] && [ -n "${VIEWER_ADMIN_PASSWORD:-}" ]; then
         users="$(setpriv --reuid "$RUNAS" --regid "$RUNAS" --clear-groups php bin/user.php list)"
         if [ -z "$users" ]; then
             name="${VIEWER_ADMIN_USER:-admin}"
-            pw="${VIEWER_ADMIN_PASSWORD:-}"
-            shown=""
-            if [ -z "$pw" ]; then pw="$(php -r 'echo bin2hex(random_bytes(12));')"; shown="$pw"; fi
-            VIEWER_PASSWORD="$pw" setpriv --reuid "$RUNAS" --regid "$RUNAS" --clear-groups php bin/user.php add "$name" admin >/dev/null
-            echo "config-viewer: first start - user \"$name\" created."
-            if [ -n "$shown" ]; then echo "config-viewer: password: $shown   (shown only now - change it under Account)"; fi
+            VIEWER_PASSWORD="$VIEWER_ADMIN_PASSWORD" setpriv --reuid "$RUNAS" --regid "$RUNAS" --clear-groups php bin/user.php add "$name" admin >/dev/null
+            echo "config-viewer: first start - administrator \"$name\" created with VIEWER_ADMIN_PASSWORD"
         fi
     fi
     echo "config-viewer: web part on port 8080"

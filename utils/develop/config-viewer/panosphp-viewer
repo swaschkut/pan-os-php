@@ -4,7 +4,10 @@
 #   ./panosphp-viewer start              first time: asks a few questions (port, HTTPS), then starts
 #   ./panosphp-viewer stop | restart | status | logs [web|service|jobs|proxy]
 #   ./panosphp-viewer setup              answer the questions again (port, HTTPS, certificate)
+#   ./panosphp-viewer user add <name> [admin] | user list | user delete <name>
 #   ./panosphp-viewer password [user]    new password for a user (default admin), shown once
+#   ./panosphp-viewer token <user> <project> [read|write] [days]   API token for scripts (shown once);
+#                        token list <user> <project> | projects <user> | project add <user> <name>
 #   ./panosphp-viewer license <file>     install a licence;  license  shows the installed one
 #   ./panosphp-viewer plugin <file.ppp>  add a licensed plug-in;  plugin  lists them
 #   ./panosphp-viewer update             newer images (images.tar.gz next to this script, else from Docker Hub), restart
@@ -104,8 +107,24 @@ url() {
     if [ "$(setting VIEWER_HTTPS)" = "yes" ]; then echo "https://$(setting VIEWER_DOMAIN)/"; else echo "http://127.0.0.1:$(setting VIEWER_PORT)/"; fi
 }
 
-# a command in the web container, as the user the viewer runs as
-in_web() { compose exec -T -u ubuntu web "$@"; }
+# a command in the web container, as the user the viewer runs as, in the folder of the viewer in the image
+VIEWER_IN_IMAGE=/tools/pan-os-php/utils/develop/config-viewer
+in_web() { compose exec -T -u ubuntu -w "$VIEWER_IN_IMAGE" web "$@"; }
+
+new_password() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20 || true; }
+
+# a new installation: the one-time code for the first administrator (nothing when there are users)
+first_admin() {
+    local code
+    code="$(in_web php bin/user.php first-code 2>/dev/null | tr -d '\r' | tail -1)"
+    if [ -n "$code" ]; then
+        say "  first start - create the administrator in the browser with this one-time code:"
+        say ""
+        say "      $code"
+        say ""
+        say "  (or here: ./panosphp-viewer user add <name> admin)"
+    fi
+}
 
 wait_web() {
     local i
@@ -116,9 +135,6 @@ wait_web() {
     return 1
 }
 
-first_password() {
-    compose logs web 2>/dev/null | sed -n 's/.*config-viewer: \(first start.*\|password: .*\)$/  \1/p' | tail -2
-}
 
 cmd="${1:-help}"
 [ $# -gt 0 ] && shift
@@ -135,8 +151,8 @@ start)
     say ""
     say "config viewer: $(url)"
     if wait_web; then
-        pw="$(first_password)"
-        if [ -n "$pw" ]; then say "$pw"; else say "  (log in with your user; forgot the password: ./panosphp-viewer password)"; fi
+        code="$(first_admin)"
+        if [ -n "$code" ]; then say "$code"; else say "  (log in with your user; forgot the password: ./panosphp-viewer password <user>)"; fi
     else
         say "  the web part does not answer yet - ./panosphp-viewer logs web"
         if compose logs web 2>/dev/null | grep -q 'start.sh: No such file'; then
@@ -154,6 +170,7 @@ status)
     say ""
     say "address: $(url)"
     in_web php bin/license.php show 2>/dev/null || say "(not running)"
+    first_admin
     ;;
 logs)
     need_docker; compose logs --tail 200 "$@" ;;
@@ -165,10 +182,47 @@ password)
     need_docker
     user="${1:-admin}"
     [[ "$user" =~ ^[A-Za-z0-9._@-]{1,64}$ ]] || fail "user name?"
-    pw="$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20 || true)"
-    compose exec -T -u ubuntu -e VIEWER_PASSWORD="$pw" web php bin/user.php password "$user" >/dev/null
+    pw="$(new_password)"
+    compose exec -T -u ubuntu -w "$VIEWER_IN_IMAGE" -e VIEWER_PASSWORD="$pw" web php bin/user.php password "$user" >/dev/null
     say "new password of $user: $pw   (shown only now - change it under Account)"
     ;;
+user|users)
+    need_docker
+    case "${1:-list}" in
+        list) in_web php bin/user.php list ;;
+        add)
+            name="${2:-}"; [[ "$name" =~ ^[A-Za-z0-9._@-]{1,64}$ ]] || fail "user add <name> [admin]"
+            [ -z "${3:-}" ] || [ "$3" = admin ] || fail "user add <name> [admin]"
+            pw="$(new_password)"
+            compose exec -T -u ubuntu -w "$VIEWER_IN_IMAGE" -e VIEWER_PASSWORD="$pw" web php bin/user.php add "$name" ${3:+admin} >/dev/null
+            say "user $name created${3:+ (administrator)} - password: $pw   (shown only now - change it under Account)" ;;
+        delete)
+            name="${2:-}"; [[ "$name" =~ ^[A-Za-z0-9._@-]{1,64}$ ]] || fail "user delete <name>"
+            in_web php bin/user.php delete "$name" ;;
+        *) fail "user add <name> [admin] | user list | user delete <name>" ;;
+    esac
+    ;;
+token|tokens)
+    need_docker
+    if [ "${1:-}" = list ]; then
+        [ $# -ge 3 ] || fail "token list <user> <project>"
+        in_web php bin/token.php list "$2" "$3"
+    elif [ "${1:-}" = delete ]; then
+        [ $# -ge 4 ] || fail "token delete <user> <project> <token id>"
+        in_web php bin/token.php delete "$2" "$3" "$4"
+    else
+        [ $# -ge 2 ] || fail "token <user> <project> [read|write] [days] [label]"
+        in_web php bin/token.php create "$@"
+    fi
+    ;;
+projects)
+    need_docker
+    [ $# -ge 1 ] || fail "projects <user>"
+    in_web php bin/token.php projects "$1" ;;
+project)
+    need_docker
+    [ "${1:-}" = add ] && [ $# -ge 3 ] || fail "project add <user> <name>"
+    in_web php bin/token.php project-add "$2" "$3" ;;
 license|licence)
     need_docker
     if [ $# -eq 0 ]; then in_web php bin/license.php show; exit 0; fi
@@ -202,7 +256,7 @@ update)
     say "config viewer: $(url)"
     ;;
 help|-h|--help)
-    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' ;;
+    sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' ;;
 *)
     fail "unknown command: $cmd (./panosphp-viewer help)" ;;
 esac

@@ -6,6 +6,7 @@
  *   php bin/user.php password <name>
  *   php bin/user.php delete <name>          also deletes the projects the user owns
  *   php bin/user.php list
+ *   php bin/user.php first-code             a new installation (no user yet): the one-time code for the first administrator
  */
 if( PHP_SAPI !== 'cli' )
 {
@@ -49,6 +50,13 @@ try
         $app->userDelete( $name );
         print "user '" . $name . "' and the projects of this user deleted\n";
     }
+    elseif( $cmd === 'first-code' )
+    {
+        // nothing when there are users already
+        $code = $app->firstAdminCode();
+        if( $code !== null )
+            print $code . "\n";
+    }
     elseif( $cmd === 'list' )
     {
         foreach( $app->userList() as $u )
@@ -56,7 +64,7 @@ try
     }
     else
     {
-        fwrite( STDERR, "usage: php user.php add <name> [admin] | password <name> | delete <name> | list\n  data directory: " . $app->dataDir . "\n" );
+        fwrite( STDERR, "usage: php user.php add <name> [admin] | password <name> | delete <name> | list | first-code\n  data directory: " . $app->dataDir . "\n" );
         exit( 2 );
     }
 }

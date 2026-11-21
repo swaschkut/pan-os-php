@@ -48,3 +48,12 @@ td.wrap { white-space: normal; overflow-wrap: anywhere; }
 
 textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; }
 p.error { color: #b42318; }
+
+.loginpage { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.loginpage .login { flex: 0 1 380px; margin: 0; }
+.loginpage .card { margin-top: 0; }
+.loginpage .docs { flex: 1 1 480px; max-width: 900px; }
+.md h2, .md h3, .md h4, .md h5 { margin: 14px 0 6px; }
+.md pre { background: #f6f8fa; padding: 8px 10px; border-radius: 6px; overflow-x: auto; }
+.md code { font-family: monospace; font-size: 12.5px; }
+.md table { margin: 6px 0 10px; }

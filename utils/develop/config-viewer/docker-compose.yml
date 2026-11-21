@@ -1,7 +1,7 @@
 # pan-os-php config viewer (prototype) - everything with one command (needs only this file and the image):
 #
 #   docker compose -f docker-compose.yml up -d
-#   docker compose -f docker-compose.yml logs web      # first start: user "admin" and its password
+#   (or simply: ./panosphp-viewer start - shows the one-time code for the first administrator)
 #
 # then http://127.0.0.1:8080/ on this computer. Stop: ... down   (the data stays in the volume; "down -v" deletes it)
 # New version of the image: ... pull  and  ... up -d

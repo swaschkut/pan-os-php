@@ -214,6 +214,87 @@ class ViewerApp
         return array( 'name' => $name, 'admin' => $admin );
     }
 
+    // ------------------------------------------------------------------ first administrator (a new installation)
+
+    /** a new installation: no user yet - the page offers to create the first administrator */
+    public function firstAdminNeeded(): bool
+    {
+        return !$this->q( 'SELECT 1 FROM users LIMIT 1' )->fetch();
+    }
+
+    /**
+     * the one-time code that creating the first administrator needs (data directory: first-admin.code). Made when it
+     * is asked for the first time; null when there are users. Shown on the computer the viewer runs on only
+     * (panosphp-viewer start / bin/user.php first-code) - whoever reaches the page first can not take it over.
+     */
+    public function firstAdminCode(): ?string
+    {
+        $file = $this->dataDir . '/first-admin.code';
+        if( !$this->firstAdminNeeded() )
+        {
+            @unlink( $file );
+            return null;
+        }
+        $code = trim( (string)@file_get_contents( $file ) );
+        if( !preg_match( '/^[A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){3}$/', $code ) )
+        {
+            $abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            $code = '';
+            for( $i = 0; $i < 16; $i++ )
+                $code .= ( $i && $i % 4 === 0 ? '-' : '' ) . $abc[random_int( 0, strlen( $abc ) - 1 )];
+            $old = umask( 0177 );
+            file_put_contents( $file, $code . "\n" );
+            umask( $old );
+        }
+        return $code;
+    }
+
+    /** create the first administrator with the one-time code; afterwards the code is gone */
+    public function firstAdminCreate( $code, $name, $password, string $ip ): array
+    {
+        $this->q( 'DELETE FROM login_fail WHERE ts < ?', array( time() - self::LOGIN_WINDOW ) );
+        if( (int)$this->q( "SELECT COUNT(*) AS c FROM login_fail WHERE name = '#first-admin'" )->fetch()['c'] >= self::LOGIN_MAX_FAILS )
+            throw new ViewerException( 'too many wrong codes - try again later', 429 );
+        if( !$this->firstAdminNeeded() )
+            throw new ViewerException( 'there is an administrator already - log in', 409 );
+        $want = (string)$this->firstAdminCode();
+        $given = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', is_string( $code ) ? $code : '' ) );
+        if( $want === '' || !hash_equals( str_replace( '-', '', $want ), $given ) )
+        {
+            $this->q( 'INSERT INTO login_fail (name, ip, ts) VALUES (?,?,?)', array( '#first-admin', $ip, time() ) );
+            throw new ViewerException( 'the code is wrong - it is shown by ./panosphp-viewer start on the computer the viewer runs on', 403 );
+        }
+        $this->userCreate( $name, $password, TRUE );
+        @unlink( $this->dataDir . '/first-admin.code' );
+        $this->q( "DELETE FROM login_fail WHERE name = '#first-admin'" );
+        return $this->userByName( self::checkUserName( $name ) );
+    }
+
+    // ------------------------------------------------------------------ help pages (Markdown, shown next to the login)
+
+    /** the help pages of the viewer: docs/*.md (shipped with the viewer, no secrets) - name => title */
+    public static function docsList(): array
+    {
+        $out = array();
+        foreach( glob( dirname( __FILE__, 2 ) . '/docs/*.md' ) ?: array() as $f )
+        {
+            $name = basename( $f, '.md' );
+            if( !preg_match( '/^[a-z0-9][a-z0-9-]{0,60}$/', $name ) )
+                continue;
+            $first = (string)fgets( fopen( $f, 'r' ) );
+            $out[$name] = preg_match( '/^#\s+(.+)$/', trim( $first ), $m ) ? trim( $m[1] ) : $name;
+        }
+        uksort( $out, function( $a, $b ) { return strnatcmp( $a, $b ); } );
+        return $out;
+    }
+
+    public static function docsGet( $name ): array
+    {
+        if( !is_string( $name ) || !preg_match( '/^[a-z0-9][a-z0-9-]{0,60}$/', $name ) || !is_file( dirname( __FILE__, 2 ) . '/docs/' . $name . '.md' ) )
+            throw new ViewerException( 'not found', 404 );
+        return array( 'name' => $name, 'title' => self::docsList()[$name] ?? $name, 'markdown' => (string)file_get_contents( dirname( __FILE__, 2 ) . '/docs/' . $name . '.md' ) );
+    }
+
     public function userSetPassword( int $userId, $password ): void
     {
         $this->q( 'UPDATE users SET pass = ? WHERE id = ?', array( password_hash( self::checkPassword( $password ), PASSWORD_DEFAULT ), $userId ) );

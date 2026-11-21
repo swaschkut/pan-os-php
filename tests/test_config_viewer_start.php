@@ -68,7 +68,7 @@ if( ( $a[1] ?? '' ) === 'version' ) exit( 0 );
 $i = 1;
 while( isset( $a[$i] ) && $a[$i] === '-f' ) $i += 2;
 $sub = $a[$i] ?? '';
-if( $sub === 'logs' ) { echo "web-1  | config-viewer: first start - user \"admin\" created.\nweb-1  | config-viewer: password: 0123456789abcdef01234567   (shown only now - change it under Account)\n"; exit( 0 ); }
+if( $sub === 'logs' ) { echo "web-1  | config-viewer: web part on port 8080\n"; exit( 0 ); }
 if( $sub === 'exec' )
 {
     $env = array( 'PATH' => getenv( 'PATH' ), 'PANOSPHP_VIEWER_DATA' => getenv( 'FAKE_DATA' ), 'PANOSPHP_LICENSE_TEST_KEYS' => (string)getenv( 'PANOSPHP_LICENSE_TEST_KEYS' ),
@@ -77,6 +77,7 @@ if( $sub === 'exec' )
     {
         if( $a[$j] === '-T' ) continue;
         if( $a[$j] === '-u' ) { $j++; continue; }
+        if( $a[$j] === '-w' ) { file_put_contents( getenv( 'FAKE_LOG' ) . '.workdir', $a[++$j] . "\n", FILE_APPEND ); continue; }
         if( $a[$j] === '-e' ) { $kv = explode( '=', $a[++$j], 2 ); $env[$kv[0]] = $kv[1]; continue; }
         if( $a[$j] === 'web' ) break;
     }
@@ -111,11 +112,6 @@ function env( string $k ): string
     return preg_match( '/^' . $k . '="?([^"\n]*)"?$/m', (string)@file_get_contents( $dir . '/.env' ), $m ) ? $m[1] : '?';
 }
 
-// an admin user in the data directory of the test (as the web part makes it at the first start)
-$p = proc_open( array( PHP_BINARY, $viewer . '/bin/user.php', 'add', 'admin', 'admin' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null,
-    array( 'PATH' => getenv( 'PATH' ), 'PANOSPHP_VIEWER_DATA' => $data, 'VIEWER_PASSWORD' => 'first-password-1' ) );
-stream_get_contents( $pipes[1] );
-proc_close( $p );
 
 // ---- start: first time, no terminal -> defaults (the .env of a bundle holds only the image)
 file_put_contents( $dir . '/.env', "VIEWER_IMAGE=example/pan-os-php:bundle\n" );
@@ -128,7 +124,16 @@ eq( array_search( 'compose -f docker-compose.yml pull', $calls, TRUE ) < array_s
     && array_search( 'compose -f docker-compose.yml pull', $calls, TRUE ) !== FALSE, TRUE, 'start (first time): the current images are pulled first' );
 list( , , $calls ) = pv( array( 'start' ) );
 eq( preg_grep( '/ pull$/', $calls ), array(), 'start (later): no pull' );
-eq( array( strpos( $out, 'config viewer: http://127.0.0.1:8080/' ) !== FALSE, strpos( $out, 'password: 0123456789abcdef01234567' ) !== FALSE ), array( TRUE, TRUE ), 'start: address and first password shown' );
+$code = preg_match( '/\n\s+([A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){3})\n/', $out, $m ) ? $m[1] : null;
+eq( array( strpos( $out, 'config viewer: http://127.0.0.1:8080/' ) !== FALSE, $code !== null, trim( (string)@file_get_contents( $data . '/first-admin.code' ) ) === $code ),
+    array( TRUE, TRUE, TRUE ), 'start (new installation): address and the one-time code for the first administrator' );
+eq( array_unique( file( $log . '.workdir', FILE_IGNORE_NEW_LINES ) ), array( '/tools/pan-os-php/utils/develop/config-viewer' ), 'commands in the container run in the folder of the viewer' );
+// the administrator on the command line (without a browser)
+list( $code2, $out ) = pv( array( 'user', 'add', 'admin', 'admin' ) );
+$firstPw = preg_match( '/user admin created \(administrator\) - password: ([A-Za-z0-9]{20})/', $out, $m ) ? $m[1] : null;
+eq( array( $code2, $firstPw !== null, file_exists( $data . '/first-admin.code' ) ), array( 0, TRUE, TRUE ), 'user add admin: administrator with a password shown once' );
+list( , $out ) = pv( array( 'status' ) );
+eq( strpos( $out, 'one-time code' ), FALSE, 'status: no one-time code once there is a user' );
 
 // ---- setup with HTTPS from the environment, start uses both files
 list( $code, $out ) = pv( array( 'setup' ), array( 'VIEWER_HTTPS' => 'yes', 'VIEWER_DOMAIN' => 'viewer.example.com' ) );
@@ -151,7 +156,18 @@ putenv( 'PANOSPHP_VIEWER_DATA=' . $data );
 require_once $viewer . '/lib/ViewerApp.php';
 $app = new ViewerApp( $data );
 $ok = function( $u, $p ) use ( $app ) { try { $app->login( $u, $p, '127.0.0.1' ); return TRUE; } catch( Exception $e ) { return FALSE; } };
-eq( array( $ok( 'admin', $pw ), $ok( 'admin', 'first-password-1' ) ), array( TRUE, FALSE ), 'password: the new one works, the old one not' );
+eq( array( $ok( 'admin', $pw ), $ok( 'admin', $firstPw ) ), array( TRUE, FALSE ), 'password: the new one works, the old one not' );
+// users, projects, tokens through the script
+list( $c, $out ) = pv( array( 'user', 'add', 'anna' ) );
+eq( array( $c, (bool)preg_match( '/user anna created - password: [A-Za-z0-9]{20}/', $out ) ), array( 0, TRUE ), 'user add: normal user' );
+eq( (bool)preg_match( '/admin.*\n.*anna|anna[\s\S]*admin/', pv( array( 'user', 'list' ) )[1] ), TRUE, 'user list' );
+eq( pv( array( 'user', 'add', 'x;y' ) )[0] !== 0, TRUE, 'user add: name checked' );
+list( $c, $pid ) = pv( array( 'project', 'add', 'anna', 'FW1' ) );
+eq( array( $c, (bool)preg_match( '/^[0-9a-f]{32}$/', trim( $pid ) ) ), array( 0, TRUE ), 'project add' );
+list( $c, $out ) = pv( array( 'token', 'anna', 'FW1', 'read', '5' ) );
+eq( array( $c, (bool)preg_match( '/token \(shown only now\): pvt_/', $out ) ), array( 0, TRUE ), 'token: made for a project of the user' );
+eq( strpos( pv( array( 'token', 'list', 'anna', 'FW1' ) )[1], 'command line' ) !== FALSE, TRUE, 'token list' );
+eq( trim( pv( array( 'projects', 'anna' ) )[1] ), trim( $pid ) . '  owner  FW1', 'projects of a user' );
 eq( pv( array( 'password', 'bad name;x' ) )[0] !== 0, TRUE, 'password: user name checked' );
 
 // ---- plug-in and licence
