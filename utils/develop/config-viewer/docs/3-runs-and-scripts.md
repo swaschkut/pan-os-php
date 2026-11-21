@@ -139,7 +139,12 @@ A merger run works on a copy of the version like every run; the version stays. *
 tables with a text filter: the summary, **Merged** (kept ← removed, with location and value / key; for rules: the
 kept rule, the rules merged into it, its main fields after the merge) and **Not merged** with the **reason** (and the
 deny rule that stopped a rule merge). **Result as new version** takes the merged configuration. Downloads: the HTML of
-pan-os-php (`exportCSV`: merged / skipped), the JSON, run.log.
+pan-os-php (`exportCSV`: merged / skipped), the JSON, run.log. In **Not merged** and in the copies of a finding the values are
+shown with what differs **marked** (e.g. `23.99.160.140/`**27** against `23.99.160.140/`**31**; a part that is missing
+in one copy is marked ∅). Copies with the same name and value in locations that do not see each other (sibling device
+groups) are listed with the reason when the merger does not merge them (it would create the object in their common
+parent - needs allowMergingWithUpperLevel and a DupAlgorithm that creates, not Identical); the merger-possible-report
+shows them as **merge-into-parent** with the common parent.
 
 The tables come from `exportJSON=merger.json` of pan-os-php - the same data the HTML of `exportCSV=` is made of (one
 code path, `utils/lib/MergerReport.php`); on the command line: `pan-os-php type=object-merger … exportjson=report.json`,

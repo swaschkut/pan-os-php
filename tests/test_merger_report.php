@@ -58,6 +58,28 @@ list( $rc, $o ) = $run( 'type=merger-possible-report in=' . escapeshellarg( $pan
 $ok( strpos( (string)@file_get_contents( $dir . '/pr.html' ), '<th>merge</th>' ) !== FALSE && strpos( (string)@file_get_contents( $dir . '/pr.html' ), '<td>conflict</td>' ) !== FALSE,
     'merger-possible-report: the HTML shows the same status' );
 
+// ---- copies with the same name and value in sibling device groups (do not see each other)
+$sib = $repo . '/tests/input/merger/siblings-panorama.xml';
+$om = function( $opts ) use ( $run, $sib, $dir ) {
+    @unlink( $dir . '/sib.json' );
+    $run( 'type=object-merger in=' . escapeshellarg( $sib ) . ' out=sib.xml objecttype=address location=any exportjson=sib.json ' . $opts );
+    return json_decode( (string)@file_get_contents( $dir . '/sib.json' ), TRUE );
+};
+$j = $om( '' );
+$ok( count( $j['merged'] ) === 0 && strpos( $j['skipped'][0]['reason'][0] ?? '', "common parent 'shared': needs allowMergingWithUpperLevel" ) !== FALSE && ( $j['skipped'][0]['key'] ?? '' ) === 'name: web01',
+    'object-merger: sibling copies without allowMergingWithUpperLevel - not merged, with the reason (before: nothing said)' );
+$j = $om( 'allowmergingwithupperlevel DupAlgorithm=Identical' );
+$ok( count( $j['merged'] ) === 0 && strpos( $j['skipped'][0]['reason'][0] ?? '', "DupAlgorithm 'identical' does not create the object in the common parent 'shared'" ) !== FALSE,
+    'object-merger: sibling copies with DupAlgorithm Identical - not merged, with the reason' );
+$j = $om( 'allowmergingwithupperlevel' );
+$ok( ( $j['merged'][0]['kept']['location'] ?? '' ) === 'shared' && count( $j['merged'][0]['removed'] ?? array() ) === 2 && count( $j['skipped'] ) === 0,
+    'object-merger: sibling copies with allowMergingWithUpperLevel - created in the common parent, both removed' );
+$run( 'type=merger-possible-report in=' . escapeshellarg( $sib ) . ' objecttype=address mergecheck exportjson=sibpr.json' );
+$j = json_decode( (string)@file_get_contents( $dir . '/sibpr.json' ), TRUE );
+$f = $j['findings'][0] ?? array();
+$ok( ( $f['status'] ?? '' ) === 'merge-into-parent' && ( $f['parent'] ?? '' ) === 'shared' && ( $f['intoParent'] ?? null ) === array( 'DG-B:web01' ) && ( $j['summary']['address']['merge-into-parent'] ?? 0 ) === 1,
+    'merger-possible-report: sibling copies - status merge-into-parent with the common parent (before: not-checked)' );
+
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

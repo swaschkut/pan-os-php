@@ -158,3 +158,5 @@ details.extracols { align-self: flex-end; }
 details.extracols > summary { cursor: pointer; }
 details.extracols .checks { margin-top: .3em; }
 td.mergersettings { white-space: pre-line; font-family: var(--mono, monospace); font-size: 12px; }
+mark.diff { background: #ffe08a; color: inherit; padding: 0 1px; border-radius: 2px; }
+mark.diff.gone { background: #f6c2c2; }

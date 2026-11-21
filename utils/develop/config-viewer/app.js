@@ -1029,9 +1029,28 @@ async function mergerTab(base, pid, canWrite, versions) {
     return card;
 }
 
+// a cell of a merger report: text, or a node (values with their differences marked)
+function cellText(c) { return typeof c === 'string' ? c : c.textContent; }
+/** the text b with what differs from a marked: the common start and end plain, the middle as <mark> */
+function diffMark(a, b) {
+    a = a || ''; b = b || '';
+    let pre = 0;
+    while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
+    let suf = 0;
+    while (suf < a.length - pre && suf < b.length - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++;
+    const mid = b.slice(pre, b.length - suf);
+    return el('span', {}, b.slice(0, pre), mid ? el('mark', { class: 'diff', text: mid }) : (a.length > b.length ? el('mark', { class: 'diff gone', text: '∅', title: 'missing here: ' + a.slice(pre, a.length - suf) }) : null), b.slice(b.length - suf));
+}
+/** lines "prefix + value" where each value is marked against the value of another line */
+function diffLines(items, other) {
+    const box = el('span', {});
+    items.forEach((it, i) => { if (i) box.append(el('br')); box.append(it.prefix, it.value !== other ? diffMark(other, it.value) : it.value); });
+    return box;
+}
+
 // merger-possible-report: status of a finding (pan-os-php MERGERPOSSIBLEREPORT) - the problems first
 const MERGE_PROBLEM = ['conflict', 'would-change-policy', 'not-checked'];
-const MERGE_ORDER = ['conflict', 'would-change-policy', 'not-checked', 'merge-ok', 'unchecked'];
+const MERGE_ORDER = ['conflict', 'would-change-policy', 'not-checked', 'merge-into-parent', 'merge-ok', 'unchecked'];
 
 /** the settings a merger run ran with: its pan-os-php arguments without the files of the run */
 function mergerSettings(r) {
@@ -1056,6 +1075,7 @@ async function showMergerReport(base, r, out) {
         el('option', { value: 'problem', text: 'can NOT be merged (conflict, would change policy, not checked)' }),
         el('option', { value: 'merge-ok', text: 'can be merged (merge ok)' }), el('option', { value: 'conflict', text: 'conflict: same name, other value' }),
         el('option', { value: 'would-change-policy', text: 'would change the policy' }), el('option', { value: 'not-checked', text: 'not checked: kept copy not visible there' }),
+        el('option', { value: 'merge-into-parent', text: 'merge into the common parent (allowMergingWithUpperLevel)' }),
         el('option', { value: 'unchecked', text: 'no merge check (type without / mergecheck off)' }));
     const section = (title, head, rows) => {
         const body = el('tbody', {});
@@ -1071,11 +1091,11 @@ async function showMergerReport(base, r, out) {
             const q = filterBox.value.trim().toLowerCase(), t = typeSel.value, st = statusSel.value;
             const shown = rows.filter(cells => (!t || typeCol < 0 || cells[typeCol] === t)
                 && (!st || statusCol < 0 || (st === 'problem' ? MERGE_PROBLEM.includes(cells[statusCol]) : cells[statusCol] === st))
-                && (!q || cells.join(' ').toLowerCase().includes(q)));
+                && (!q || cells.map(cellText).join(' ').toLowerCase().includes(q)));
             count.textContent = ' (' + shown.length + (shown.length !== rows.length ? ' of ' + rows.length : '') + ')';
             // a long list: the first 500 rows, the rest on request (no row is left out without saying so)
             body.replaceChildren(...shown.slice(0, limit).map(cells => el('tr', { class: statusCol >= 0 && MERGE_PROBLEM.includes(cells[statusCol]) ? 'warnrow' : '' },
-                cells.map(c => el('td', { class: 'wrap', text: c })))));
+                cells.map(c => typeof c === 'string' ? el('td', { class: 'wrap', text: c }) : el('td', { class: 'wrap' }, c.cloneNode(true))))));
             more.hidden = shown.length <= limit;
             more.textContent = 'show all ' + shown.length + ' rows (' + (shown.length - limit) + ' more)';
         };
@@ -1089,15 +1109,21 @@ async function showMergerReport(base, r, out) {
     const folds = [];
     let parts = [];
     if (rep.type === 'merger-possible-report') {
-        parts.push(section('Summary', ['object type', 'objects', 'same name + value', 'same name, other value', 'overlapping', 'same value, other names', 'merge ok', 'would change policy'],
-            Object.entries(rep.summary || {}).map(([t, s]) => [t, s.objects, s['same-name-same-value'], s['same-name-different-value'], s['overlapping-conflicts'], s['same-value-different-names'], rep.mergecheck ? s['merge-ok'] : '', rep.mergecheck ? s['merge-blocked'] : ''].map(val))));
+        parts.push(section('Summary', ['object type', 'objects', 'same name + value', 'same name, other value', 'overlapping', 'same value, other names', 'merge ok', 'merge into parent', 'would change policy'],
+            Object.entries(rep.summary || {}).map(([t, s]) => [t, s.objects, s['same-name-same-value'], s['same-name-different-value'], s['overlapping-conflicts'], s['same-value-different-names'], rep.mergecheck ? s['merge-ok'] : '', rep.mergecheck ? (s['merge-into-parent'] || 0) : '', rep.mergecheck ? s['merge-blocked'] : ''].map(val))));
+        // copies "location:name=value": the values marked against the first copy (what differs in a conflict)
+        const copiesCell = (copies) => {
+            const items = copies.map(c => { const i = c.indexOf('='); return i < 0 ? { prefix: c, value: '' } : { prefix: c.slice(0, i + 1), value: c.slice(i + 1) }; });
+            return items.length > 1 && items.some(it => it.value !== items[0].value) ? diffLines(items, items[0].value) : copies.join('\n');
+        };
         // the ones that can NOT be merged first (conflict, would change the policy, not checked), then by type
         const rank = (x) => { const i = MERGE_ORDER.indexOf(x.status || 'unchecked'); return i < 0 ? MERGE_ORDER.length : i; };
         const findings = (rep.findings || []).slice().sort((a, b) => rank(a) - rank(b) || String(a.type).localeCompare(String(b.type)));
         parts.push(section('Findings', ['object type', 'merge', 'finding', 'name(s)', 'overlapping', 'kept copy', 'can not be merged (copy: reason)', 'copies (location:name=value)'],
-            findings.map(x => [x.type, x.status || 'unchecked', x.kind, x.key, x.overlap, x.keep || '',
+            findings.map(x => [x.type, x.status || 'unchecked', x.kind, x.key, x.overlap,
+                (x.keep || '') + (x.parent ? '\n→ copy in the common parent ' + x.parent + ' (object-merger allowMergingWithUpperLevel): ' + (x.intoParent || []).join(', ') : ''),
                 (x.blocked || []).map(b => b.copy + ': ' + b.reason).concat((x.notChecked || []).map(n => n + ': not checked - kept copy not visible there')).join('\n'),
-                (x.copies || []).join('\n')].map(val))));
+                copiesCell(x.copies || [])].map(c => c !== null && typeof c === 'object' && c.nodeType ? c : val(c)))));
     } else if (rep.type === 'rule-merger') {
         const s = rep.summary || {};
         parts.push(el('p', { text: (s.merged || 0) + ' rule(s) kept with ' + (s.removed || 0) + ' merged into them; ' + (s.skipped || 0) + ' not merged (with the reason)' }));
@@ -1111,8 +1137,14 @@ async function showMergerReport(base, r, out) {
         parts.push(section('Summary', ['object type', 'kept (merged)', 'removed', 'not merged'], sum.map(([t, x]) => [t, x.merged, x.removed, x.skipped].map(val))));
         parts.push(section('Merged', ['object type', 'value / key', 'kept', 'removed (replaced by the kept one)'],
             (rep.merged || []).map(m => [m.objecttype, m.key, ref(m.kept), m.removed.map(ref).join('\n')])));
+        // the values (detail: {value:…}, {prot:…}{dport:…}) of kept and not merged copies: the differences marked
+        const head = (x) => x ? (x.location ? x.location + ': ' : '') + x.name + ' ' : '';
         parts.push(section('Not merged', ['object type', 'value / key', 'kept', 'not merged with', 'reason'],
-            (rep.skipped || []).map(m => [m.objecttype, m.key, ref(m.kept), m.notMergedWith.map(ref).join('\n'), (m.reason || []).map(x => x.trim()).join('\n')])));
+            (rep.skipped || []).map(m => {
+                const kd = m.kept ? m.kept.detail || '' : '', od = (m.notMergedWith[0] || {}).detail || '';
+                return [m.objecttype, m.key, m.kept ? diffLines([{ prefix: head(m.kept), value: kd }], od) : '',
+                    diffLines(m.notMergedWith.map(x => ({ prefix: head(x), value: x.detail || '' })), kd), (m.reason || []).map(x => x.trim()).join('\n')];
+            })));
     }
     filterBox.addEventListener('input', () => sections.forEach(d => d()));
     statusSel.addEventListener('change', () => sections.forEach(d => d()));

@@ -575,6 +575,127 @@ trait MergerEngine
             PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$tmpCount}' (removed {$countRemoved} {$pluralTxt})\n" );
 
         }
+
+        // copies with the same name and value left in locations that do not see each other: why (exportCSV / JSON)
+        $this->reportSiblingCopies( $spec['storeProp'], $spec['listObjects'], $spec['eligible'] ?? null,
+            isset( $spec['createAllowed'] ) ? (bool)$spec['createAllowed']() : TRUE );
+    }
+
+    /**
+     * After a merger run: objects with the same name and the same content that stay in locations that do not see each
+     * other (sibling device groups, two vsys, sibling folders) - the merger does not say anything about them otherwise.
+     * A merge needs the object in their common parent: created there only with allowMergingWithUpperLevel, a DupAlgorithm
+     * that creates (not Identical) and the parent among the locations of the run. Each such set becomes a skipped entry
+     * with the reason (exportCSV, exportJSON, the "Not merged" table of the config viewer).
+     */
+    private function reportSiblingCopies( string $storeProp, callable $listObjects, ?callable $eligible, bool $createAllowed ): void
+    {
+        $byName = array();
+        $processed = array();
+        foreach( $this->location_array as $tmp_location )
+        {
+            $store = $tmp_location['store'] ?? null;
+            if( !is_object( $store ) || !isset( $store->owner ) )
+                continue;
+            $loc = $store->owner;
+            $processed[] = $loc;
+            foreach( $listObjects( $store ) as $object )
+            {
+                if( !is_object( $object ) || $object->owner !== $store || !isset( $object->xmlroot ) || !$object->xmlroot instanceof DOMElement )
+                    continue;
+                if( $eligible !== null && !$eligible( $object ) )
+                    continue;
+                $byName[$object->name()][] = array( 'object' => $object, 'loc' => $loc );
+            }
+        }
+        foreach( $byName as $name => $copies )
+        {
+            if( count( $copies ) < 2 )
+                continue;
+            // the same content: the XML of the object without its name
+            $byValue = array();
+            foreach( $copies as $c )
+            {
+                $x = $c['object']->xmlroot->cloneNode( TRUE );
+                $x->removeAttribute( 'name' );
+                $x->removeAttribute( 'uuid' );
+                $byValue[$x->C14N()][] = $c;
+            }
+            foreach( $byValue as $same )
+            {
+                if( count( $same ) < 2 )
+                    continue;
+                // only when two copies do not see each other (no copy is in an ancestor of the other)
+                $siblings = FALSE;
+                foreach( $same as $a )
+                    foreach( $same as $b )
+                        if( $a['loc'] !== $b['loc'] && !in_array( $a['loc'], self::locationChainUp( $b['loc'] ), TRUE ) && !in_array( $b['loc'], self::locationChainUp( $a['loc'] ), TRUE ) )
+                            $siblings = TRUE;
+                if( !$siblings )
+                    continue;
+                $index = 'name: ' . $name;
+                if( isset( $this->deletedObjects[$this->mergeIndexPrefix . $index] ) || isset( $this->skippedObjects[$this->mergeIndexPrefix . $index] ) )
+                    continue;
+                $parent = self::commonParentLocation( array_column( $same, 'loc' ) );
+                $parentName = $parent === null ? '-' : self::locationLabel( $parent );
+                $where = implode( ', ', array_map( function( $c ) { return self::locationLabel( $c['loc'] ); }, $same ) );
+                if( !$this->upperLevelSearch )
+                    $reason = "same name and value in locations that do not see each other ({$where}) - a merge creates the object in their common parent '{$parentName}': needs allowMergingWithUpperLevel";
+                elseif( !$createAllowed )
+                    $reason = "same name and value in locations that do not see each other ({$where}) - DupAlgorithm '{$this->dupAlg}' does not create the object in the common parent '{$parentName}': use a DupAlgorithm that does (the default of the type)";
+                elseif( $parent === null || !in_array( $parent, $processed, TRUE ) )
+                    $reason = "same name and value in locations that do not see each other ({$where}) - their common parent '{$parentName}' is not a location of this run (location=any or the parent)";
+                else
+                    $reason = "same name and value in locations that do not see each other ({$where}) - not merged into the common parent '{$parentName}' (see the run log: e.g. a different object of that name below it)";
+                PH::print_stdout( "    - NOT MERGED '{$name}': " . $reason );
+                $first = $same[0]['object'];
+                foreach( array_slice( $same, 1 ) as $c )
+                    self::skippedObject( $index, $first, $c['object'], $reason );
+            }
+        }
+    }
+
+    /** the locations above a location: device group → parent device groups → shared; vsys → shared; folder → parent folders */
+    private static function locationChainUp( $loc ): array
+    {
+        $chain = array();
+        for( $i = 0; $i < 50 && $loc !== null; $i++ )
+        {
+            if( $loc instanceof DeviceGroup )
+                $loc = $loc->parentDeviceGroup !== null ? $loc->parentDeviceGroup : $loc->owner;
+            elseif( $loc instanceof VirtualSystem )
+                $loc = $loc->owner;
+            elseif( $loc instanceof Container || $loc instanceof DeviceCloud || $loc instanceof DeviceOnPrem )
+                $loc = isset( $loc->parentContainer ) ? $loc->parentContainer : null;
+            else
+                $loc = null;
+            if( $loc !== null )
+                $chain[] = $loc;
+        }
+        return $chain;
+    }
+
+    /** the nearest location above all of them (null: none, e.g. snippets) */
+    private static function commonParentLocation( array $locs )
+    {
+        $first = self::locationChainUp( $locs[0] );
+        foreach( $first as $candidate )
+        {
+            $all = TRUE;
+            foreach( array_slice( $locs, 1 ) as $l )
+                if( !in_array( $candidate, self::locationChainUp( $l ), TRUE ) )
+                    $all = FALSE;
+            if( $all )
+                return $candidate;
+        }
+        return null;
+    }
+
+    private static function locationLabel( $loc ): string
+    {
+        if( $loc instanceof PanoramaConf || $loc instanceof PANConf )
+            return 'shared';
+        return method_exists( $loc, 'name' ) ? (string)$loc->name() : '?';
     }
 
     // ------------------------------------------------------------------------------------------
@@ -2333,6 +2454,9 @@ trait MergerEngine
             $tmpCount = $g['countGroups']( $store );
             PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$tmpCount}' (removed {$countRemoved} groups)\n" );
         }
+
+        // groups with the same name and members left in locations that do not see each other: why
+        $this->reportSiblingCopies( $g['storeProp'], $g['listGroups'], null, $this->dupAlg !== 'identical' );
     }
 
     /** the object is a group of the merged type (spec hook 'isGroup', default $object->isGroup()) */

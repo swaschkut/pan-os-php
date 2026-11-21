@@ -507,7 +507,7 @@ class MERGERPOSSIBLEREPORT extends MERGER
         }
 
         $sum = array( 'objects' => count($entries), 'same-name-same-value' => 0, 'same-name-different-value' => 0,
-            'overlapping-conflicts' => 0, 'same-value-different-names' => 0, 'merge-ok' => 0, 'merge-blocked' => 0 );
+            'overlapping-conflicts' => 0, 'same-value-different-names' => 0, 'merge-ok' => 0, 'merge-blocked' => 0, 'merge-into-parent' => 0 );
 
         PH::print_stdout();
         PH::print_stdout( "######################## objecttype: {$type} ({$sum['objects']} objects) ########################" );
@@ -567,7 +567,8 @@ class MERGERPOSSIBLEREPORT extends MERGER
 
         // the merge check as data (status, kept copy, the copies that can not be merged and why) and as text (HTML, log)
         $check = '';
-        $result = array( 'status' => $kind === 'same name, different value' ? 'conflict' : 'unchecked', 'keep' => '', 'ok' => 0, 'blocked' => array(), 'notChecked' => array() );
+        $result = array( 'status' => $kind === 'same name, different value' ? 'conflict' : 'unchecked', 'keep' => '', 'ok' => 0, 'blocked' => array(), 'notChecked' => array(),
+            'intoParent' => array(), 'parent' => '' );
         if( $this->mergeCheck && isset($def['safety']) && $kind !== 'same name, different value' )
         {
             $result = $this->mergeCheckResult( $idx, $entries, $def, $sum );
@@ -578,8 +579,10 @@ class MERGERPOSSIBLEREPORT extends MERGER
 
         $this->findings[] = array( 'type' => $type, 'kind' => $kind, 'key' => $key, 'overlap' => $overlap ? 'yes' : '',
             'copies' => $copies, 'check' => $check,
-            // status: merge-ok | would-change-policy | not-checked (kept copy not visible) | conflict (same name, other value) | unchecked (no mergecheck)
-            'status' => $result['status'], 'keep' => $result['keep'], 'blocked' => $result['blocked'], 'notChecked' => $result['notChecked'] );
+            // status: merge-ok | merge-into-parent (copies that do not see each other: a copy in their common parent 'parent')
+            //         | would-change-policy | not-checked (kept copy not visible, no common parent) | conflict (same name, other value) | unchecked (no mergecheck)
+            'status' => $result['status'], 'keep' => $result['keep'], 'blocked' => $result['blocked'], 'notChecked' => $result['notChecked'],
+            'intoParent' => $result['intoParent'] ?? array(), 'parent' => $result['parent'] ?? '' );
     }
 
     /** MergeSafety: replace every copy by the copy in the highest location */
@@ -609,12 +612,112 @@ class MERGERPOSSIBLEREPORT extends MERGER
             else
                 $blocked[] = array( 'copy' => $entries[$i]['label'] . ':' . $entries[$i]['name'], 'reason' => (string)$reason );
         }
+        // copies the kept one is not visible from (sibling device groups, two vsys, sibling folders): the object-merger
+        // merges them by creating the object in their common parent (allowMergingWithUpperLevel) - checked here
+        $parent = null;
+        $intoParent = array();
+        if( count($notVisible) > 0 )
+        {
+            $parent = $this->commonParent( array_map( function( $i ) use ( $entries ) { return $entries[$i]['loc']; }, $idx ) );
+            if( $parent !== null )
+            {
+                $reasons = $this->parentBlocks( $parent, $entries[$keep], $idx, $entries, $def );
+                if( count($reasons) > 0 )
+                    foreach( $reasons as $r )
+                        $blocked[] = array( 'copy' => $this->locationName( $parent ) . ':' . $entries[$keep]['name'], 'reason' => $r );
+                else
+                {
+                    $intoParent = $notVisible;
+                    $notVisible = array();
+                }
+            }
+        }
         $sum['merge-ok'] += $ok;
         $sum['merge-blocked'] += count($blocked);
+        $sum['merge-into-parent'] = ( $sum['merge-into-parent'] ?? 0 ) + ( count($intoParent) > 0 ? 1 : 0 );
 
-        $status = count($blocked) > 0 ? 'would-change-policy' : ( count($notVisible) > 0 ? 'not-checked' : 'merge-ok' );
+        $status = count($blocked) > 0 ? 'would-change-policy' : ( count($notVisible) > 0 ? 'not-checked' : ( count($intoParent) > 0 ? 'merge-into-parent' : 'merge-ok' ) );
         return array( 'status' => $status, 'keep' => $entries[$keep]['label'] . ':' . $entries[$keep]['name'], 'ok' => $ok,
-            'blocked' => $blocked, 'notChecked' => $notVisible );
+            'blocked' => $blocked, 'notChecked' => $notVisible, 'intoParent' => $intoParent,
+            'parent' => $parent !== null && count($intoParent) > 0 ? $this->locationName( $parent ) : '' );
+    }
+
+    /** the locations above a location: device group → parents → shared; vsys → shared; folder → parent folders */
+    private function chainUp( $loc )
+    {
+        $chain = array();
+        for( $i = 0; $i < 50 && $loc !== null; $i++ )
+        {
+            if( $loc instanceof DeviceGroup )
+                $loc = $loc->parentDeviceGroup !== null ? $loc->parentDeviceGroup : $loc->owner;
+            elseif( $loc instanceof VirtualSystem )
+                $loc = $loc->owner;
+            elseif( $loc instanceof Container || $loc instanceof DeviceCloud || $loc instanceof DeviceOnPrem )
+                $loc = isset( $loc->parentContainer ) ? $loc->parentContainer : null;
+            else
+                $loc = null;
+            if( $loc !== null )
+                $chain[] = $loc;
+        }
+        return $chain;
+    }
+
+    /** the nearest location above all of them; null: none (snippets, templates) */
+    private function commonParent( array $locs )
+    {
+        $locs = array_values( array_unique( $locs, SORT_REGULAR ) );
+        $cands = array_merge( array( $locs[0] ), $this->chainUp( $locs[0] ) );
+        foreach( $cands as $c )
+        {
+            $all = TRUE;
+            foreach( $locs as $l )
+                if( $l !== $c && !in_array( $c, $this->chainUp( $l ), TRUE ) )
+                    $all = FALSE;
+            if( $all )
+                return $c;
+        }
+        return null;
+    }
+
+    private function locationName( $loc )
+    {
+        if( $loc instanceof PanoramaConf || $loc instanceof PANConf )
+            return 'shared';
+        return method_exists( $loc, 'name' ) ? (string)$loc->name() : '?';
+    }
+
+    /**
+     * what blocks a copy of the kept object in the common parent: an object of that name with another value in the
+     * parent; with ancestor-objects-take-precedence (Panorama): an object of that name with another value in a device
+     * group below the parent (the parent's object would win there)
+     */
+    private function parentBlocks( $parent, array $keepEntry, array $idx, array $entries, array $def )
+    {
+        $reasons = array();
+        $prop = $def['store'];
+        $name = $keepEntry['name'];
+        $valueOf = function( $object, $loc ) use ( $def ) {
+            return $def['value']( $object, array( 'label' => $this->locationName( $loc ), 'loc' => $loc ) );
+        };
+        if( isset($parent->$prop) && is_object($parent->$prop) )
+        {
+            $o = $parent->$prop->find( $name, null, FALSE );
+            if( is_object($o) && $o->owner === $parent->$prop && $valueOf( $o, $parent ) !== $keepEntry['value'] )
+                $reasons[] = "the common parent '" . $this->locationName( $parent ) . "' has '" . $name . "' with another value";
+        }
+        if( $this->pan->isPanorama() && !empty($this->pan->_ancestorObjectsTakePrecedence) )
+        {
+            $copies = array_map( function( $i ) use ( $entries ) { return $entries[$i]['loc']; }, $idx );
+            foreach( $this->pan->getDeviceGroups() as $dg )
+            {
+                if( in_array( $dg, $copies, TRUE ) || !in_array( $parent, $this->chainUp( $dg ), TRUE ) || !isset($dg->$prop) )
+                    continue;
+                $o = $dg->$prop->find( $name, null, FALSE );
+                if( is_object($o) && $o->owner === $dg->$prop && $valueOf( $o, $dg ) !== $keepEntry['value'] )
+                    $reasons[] = "ancestor-objects-take-precedence: the copy in '" . $this->locationName( $parent ) . "' would replace '" . $dg->name() . ":" . $name . "' (another value)";
+            }
+        }
+        return $reasons;
     }
 
     /** the merge check as one line (log, HTML) */
@@ -624,6 +727,8 @@ class MERGERPOSSIBLEREPORT extends MERGER
         if( count($r['blocked']) > 0 )
             $text .= ", " . count($r['blocked']) . " would change the policy: "
                 . implode('; ', array_map( function( $b ) { return $b['copy'] . ' (' . $b['reason'] . ')'; }, $r['blocked'] ));
+        if( count($r['intoParent'] ?? array()) > 0 )
+            $text .= ", merge into the common parent '" . $r['parent'] . "' (object-merger allowMergingWithUpperLevel creates it there): " . implode('; ', $r['intoParent']);
         if( count($r['notChecked']) > 0 )
             $text .= ", not checked (kept copy not visible there, needs a copy in a common parent): " . implode('; ', $r['notChecked']);
         return $text;
@@ -670,10 +775,11 @@ class MERGERPOSSIBLEREPORT extends MERGER
         $esc = function( $t ) { return htmlspecialchars( (string)$t, ENT_QUOTES ); };
         $html = "<html><head><meta charset=\"utf-8\"><title>merger-possible-report</title>"
             . "<style>body{font-family:sans-serif;font-size:13px}table{border-collapse:collapse}td,th{border:1px solid #999;padding:3px 6px;vertical-align:top}th{background:#eee}</style></head><body>";
-        $html .= "<h2>Summary</h2><table><tr><th>object type</th><th>objects</th><th>same name, same value</th><th>same name, different value</th><th>overlapping</th><th>same value, different names</th><th>merge ok</th><th>would change policy</th></tr>";
+        $html .= "<h2>Summary</h2><table><tr><th>object type</th><th>objects</th><th>same name, same value</th><th>same name, different value</th><th>overlapping</th><th>same value, different names</th><th>merge ok</th><th>merge into parent</th><th>would change policy</th></tr>";
         foreach( $this->summary as $type => $s )
             $html .= "<tr><td>" . $esc($type) . "</td><td>{$s['objects']}</td><td>{$s['same-name-same-value']}</td><td>{$s['same-name-different-value']}</td><td>{$s['overlapping-conflicts']}</td><td>{$s['same-value-different-names']}</td><td>"
                 . ( $this->mergeCheck && isset($this->reportTypes[$type]['safety']) ? $s['merge-ok'] : '' ) . "</td><td>"
+                . ( $this->mergeCheck && isset($this->reportTypes[$type]['safety']) ? ( $s['merge-into-parent'] ?? 0 ) : '' ) . "</td><td>"
                 . ( $this->mergeCheck && isset($this->reportTypes[$type]['safety']) ? $s['merge-blocked'] : '' ) . "</td></tr>";
         $html .= "</table><h2>Findings</h2><table><tr><th>object type</th><th>merge</th><th>finding</th><th>name / names</th><th>overlapping</th><th>copies (location:name=value)</th><th>merge check</th></tr>";
         foreach( $this->findings as $f )
