@@ -57,6 +57,7 @@ UTIL:
 * config-viewer | merger reports: button "Explain" at a row the effective-policy check refused - before / after side by side with the differences marked, the resolution per level, the cause in words (copy of a lower level shadows, name does not resolve, group would contain itself / be empty), links to the objects in the version of the run
 
 BUGFIX:
+* type=merger-possible-report mergecheck | fatal error 'Call to undefined method Address::isDynamic()' when the common parent (e.g. shared) has the name of an address group as an address (or the other way round) - now a block with the reason "the common parent has '<name>' as address"
 * SCM export after first production run / IAM patch
 * class SecurityProfileStore | bugfix for predefined URL
 * SCM based validation spyware / dns -> for spyware.dns now correct return n/a

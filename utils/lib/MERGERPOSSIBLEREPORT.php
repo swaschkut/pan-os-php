@@ -697,14 +697,26 @@ class MERGERPOSSIBLEREPORT extends MERGER
         $reasons = array();
         $prop = $def['store'];
         $name = $keepEntry['name'];
-        $valueOf = function( $object, $loc ) use ( $def ) {
+        // the stores hold several kinds under one name space (address / address group, service / service group): an
+        // object of the other kind with that name is a conflict too - its value is not compared (the value function
+        // of one kind does not take the other: Address::isDynamic())
+        $kindOf = function( $object ) use ( $def ) {
+            return get_class( $object ) . ( $def['eligible'] !== null && !$def['eligible']( $object ) ? ':other' : '' );
+        };
+        $keepKind = $kindOf( $keepEntry['object'] );
+        $valueOf = function( $object, $loc ) use ( $def, $kindOf, $keepKind ) {
+            if( $kindOf( $object ) !== $keepKind )
+                return "\0other-kind:" . get_class( $object );
             return $def['value']( $object, array( 'label' => $this->locationName( $loc ), 'loc' => $loc ) );
+        };
+        $what = function( $object ) use ( $kindOf, $keepKind ) {
+            return $kindOf( $object ) !== $keepKind ? "as " . strtolower( get_class( $object ) ) : "with another value";
         };
         if( isset($parent->$prop) && is_object($parent->$prop) )
         {
             $o = $parent->$prop->find( $name, null, FALSE );
             if( is_object($o) && $o->owner === $parent->$prop && $valueOf( $o, $parent ) !== $keepEntry['value'] )
-                $reasons[] = "the common parent '" . $this->locationName( $parent ) . "' has '" . $name . "' with another value";
+                $reasons[] = "the common parent '" . $this->locationName( $parent ) . "' has '" . $name . "' " . $what( $o );
         }
         if( $this->pan->isPanorama() && !empty($this->pan->_ancestorObjectsTakePrecedence) )
         {
@@ -715,7 +727,7 @@ class MERGERPOSSIBLEREPORT extends MERGER
                     continue;
                 $o = $dg->$prop->find( $name, null, FALSE );
                 if( is_object($o) && $o->owner === $dg->$prop && $valueOf( $o, $dg ) !== $keepEntry['value'] )
-                    $reasons[] = "ancestor-objects-take-precedence: the copy in '" . $this->locationName( $parent ) . "' would replace '" . $dg->name() . ":" . $name . "' (another value)";
+                    $reasons[] = "ancestor-objects-take-precedence: the copy in '" . $this->locationName( $parent ) . "' would replace '" . $dg->name() . ":" . $name . "' (" . ( $what( $o ) === 'with another value' ? 'another value' : $what( $o ) ) . ")";
             }
         }
         return $reasons;

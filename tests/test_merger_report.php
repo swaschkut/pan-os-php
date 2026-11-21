@@ -110,6 +110,15 @@ foreach( $j['findings'] ?? array() as $f )
         $bl[] = $b;
 $ok( count( $bl ) > 0 && isset( $bl[0]['detail']['before']['resolution'], $bl[0]['detail']['after']['content'] ), 'merger-possible-report: a blocked copy carries the MergeSafety detail' );
 
+// ---- merger-possible-report: the common parent has the name as an object of the other kind (address group in the
+// device groups, address in shared) - a conflict, not a fatal error (before: Address::isDynamic())
+$kd = $repo . '/tests/input/merger/parent-other-kind-panorama.xml';
+list( $rc, $o ) = $run( 'type=merger-possible-report in=' . escapeshellarg( $kd ) . ' objecttype=addressgroup,address mergecheck exportjson=kd.json' );
+$j = json_decode( (string)@file_get_contents( $dir . '/kd.json' ), TRUE );
+$g = array_values( array_filter( $j['findings'] ?? array(), function( $f ) { return $f['type'] === 'addressgroup'; } ) )[0] ?? array();
+$ok( $rc === 0 && strpos( $o, 'Fatal' ) === FALSE && ( $g['status'] ?? '' ) === 'would-change-policy' && strpos( $g['blocked'][0]['reason'] ?? '', "has 'SRV' as address" ) !== FALSE,
+    'merger-possible-report: name in the common parent as another object kind - blocked with the reason, no fatal error' );
+
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

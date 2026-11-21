@@ -1,0 +1,21 @@
+<config version="10.1.0">
+  <mgt-config/>
+  <shared>
+    <address><entry name="SRV"><ip-netmask>10.7.7.7</ip-netmask></entry></address>
+  </shared>
+  <devices><entry name="localhost.localdomain">
+    <device-group>
+      <entry name="DG-A">
+        <address><entry name="h1"><ip-netmask>10.1.1.1</ip-netmask></entry></address>
+        <address-group><entry name="SRV"><static><member>h1</member></static></entry></address-group>
+      </entry>
+      <entry name="DG-B">
+        <address><entry name="h1"><ip-netmask>10.1.1.1</ip-netmask></entry></address>
+        <address-group><entry name="SRV"><static><member>h1</member></static></entry></address-group>
+      </entry>
+    </device-group>
+  </entry></devices>
+  <readonly><devices><entry name="localhost.localdomain"><device-group>
+    <entry name="DG-A"><id>11</id></entry><entry name="DG-B"><id>12</id></entry>
+  </device-group></entry></devices></readonly>
+</config>
