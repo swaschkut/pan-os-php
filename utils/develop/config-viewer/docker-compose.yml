@@ -73,6 +73,8 @@ services:
       PANOSPHP_VIEWER_JOB_TIMEOUT: "${VIEWER_RUN_TIMEOUT:-3600}"
       # the network of an import step (download from a firewall / Panorama / SCM - only when an administrator allows it)
       PANOSPHP_VIEWER_CONTAINER_NETWORK: "${VIEWER_RUN_NETWORK:-bridge}"
+      # DNS servers of such a step, e.g. the AD domain controllers for internal names (LDAP: find the servers of a domain)
+      PANOSPHP_VIEWER_CONTAINER_DNS: "${VIEWER_RUN_DNS:-}"
       # the same folder as the Docker of the host sees it (a run of a plug-in gets its folder read-only)
       PANOSPHP_VIEWER_CONTAINER_PLUGINS: "${VIEWER_PLUGINS_DIR:-}"
 

@@ -469,6 +469,9 @@ try
             // the result configuration of a playbook run as a new version of the project
             if( $n == 5 && $method === 'POST' && $route[4] === 'save' )
                 viewerOut( $app->jobSaveConfig( $user, $pid, $route[3], viewerBody()['project'] ?? null ), 201 );
+            // the servers an LDAP search found, with what the network rules allow, and a suggestion for a query
+            if( $n == 5 && $method === 'GET' && $route[4] === 'ldap-servers' )
+                viewerOut( $app->ldapDiscoverResult( $user, $pid, $route[3] ) );
             // a failed SCM import: only the conversion again, from the export the run has downloaded
             if( $n == 5 && $method === 'POST' && $route[4] === 'convert' )
                 viewerOut( $app->jobConvert( $user, $pid, $route[3] ), 202 );

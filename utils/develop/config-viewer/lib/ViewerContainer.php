@@ -43,6 +43,8 @@
 class ViewerContainer
 {
     public string $program, $image, $data, $tool, $memory, $cpus, $user, $label, $plugins, $network;
+    /** @var string[] DNS servers of a run with network (empty: the ones of the runtime) */
+    public array $dns = array();
 
     /** null when PANOSPHP_VIEWER_CONTAINER is not set */
     public static function fromEnv( string $dataDir ): ?ViewerContainer
@@ -70,6 +72,14 @@ class ViewerContainer
         $c->network = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_NETWORK' ) ?: 'bridge' );
         if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/', $c->network ) || in_array( strtolower( $c->network ), array( 'host', 'none' ), TRUE ) )
             throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_NETWORK: the name of a network (not host / none)' );
+        // DNS servers of a run with network (internal names: AD domain controllers, firewalls) - otherwise the runtime
+        // decides (Docker: the resolver of the host, or 8.8.8.8 when the host has only a local one like systemd-resolved)
+        foreach( preg_split( '/[\s,]+/', trim( (string)getenv( 'PANOSPHP_VIEWER_CONTAINER_DNS' ) ), -1, PREG_SPLIT_NO_EMPTY ) as $ip )
+        {
+            if( filter_var( $ip, FILTER_VALIDATE_IP ) === FALSE )
+                throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_DNS: IP addresses of DNS servers (' . $ip . ')' );
+            $c->dns[] = $ip;
+        }
         $c->cpus = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_CPUS' ) ?: '2' );
         $c->user = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_USER' ) ?: ( function_exists( 'posix_getuid' ) ? posix_getuid() . ':' . posix_getgid() : '' ) );
         if( !preg_match( '#^/[A-Za-z0-9._/-]+\.php$#', $c->tool ) || !preg_match( '/^[0-9]+[bkmg]?$/', $c->memory ) || !preg_match( '/^[0-9]+(\.[0-9]+)?$/', $c->cpus )
@@ -117,6 +127,9 @@ class ViewerContainer
             '--mount', $this->mount( 'projects/' . $job['pid'], '/project', TRUE ),
             '--mount', $this->mount( 'projects/' . $job['pid'] . '/jobs/' . $job['jid'], '/job', FALSE ),
             '--workdir', '/job', '--env', 'HOME=/job', '--env', 'TMPDIR=/job', '--env', 'PANOSPHP_LOG_DIR=/job/log' );
+        if( !empty( $job['network'] ) )
+            foreach( $this->dns as $ip )
+                array_push( $cmd, '--dns', $ip );
         // a run type of a plug-in that needs its files: the folder of the plug-in read-only at /plugin (a plug-in shipped in
         // the image is there already)
         if( !empty( $job['pluginPackage'] ) )

@@ -41,7 +41,8 @@ function q( array $args, &$out = null ): array
     // an argument of the test replaces the one given here
     $names = array_map( function( $a ) { return strtolower( strstr( $a, '=', TRUE ) ?: $a ); }, $args );
     $cmd = array_values( array_filter( $cmd, function( $a ) use ( $names ) { return strpos( $a, '=' ) === FALSE || !in_array( strtolower( strstr( $a, '=', TRUE ) ), $names, TRUE ); } ) );
-    $p = proc_open( array_merge( $cmd, $args ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, $home, array( 'HOME' => $home, 'PATH' => getenv( 'PATH' ), 'LDAP_FAKE_LOG' => $log ) );
+    global $srv;
+    $p = proc_open( array_merge( $cmd, $args ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, $home, array( 'HOME' => $home, 'PATH' => getenv( 'PATH' ), 'LDAP_FAKE_LOG' => $log, 'LDAP_FAKE_SRV' => json_encode( $srv ) ) );
     $out = stream_get_contents( $pipes[1] ) . stream_get_contents( $pipes[2] );
     proc_close( $p );
     return json_decode( (string)@file_get_contents( $home . '/r.json' ), TRUE ) ?: array();
@@ -78,6 +79,27 @@ foreach( array( array( 'mode=drop' ), array( 'mode=validation' ), array( 'mode=g
     $r = q( $bad, $o );
     eq( array( $r, strpos( $o, 'ERROR' ) !== FALSE ), array( array(), TRUE ), 'arguments checked: ' . implode( ' ', $bad ) );
 }
+// mode=discover: the domain controllers from DNS SRV, the base DN from the RootDSE of the first that answers (no login)
+$srv = array( '_ldap._tcp.dc._msdcs.example.com' => array( array( 'target' => 'dc2.example.com', 'pri' => 0, 'weight' => 100, 'port' => 389 ),
+    array( 'target' => 'dc1.example.com', 'pri' => 0, 'weight' => 50, 'port' => 389 ), array( 'target' => 'evil.other.org', 'pri' => 0, 'weight' => 200, 'port' => 389 ) ) );
+@unlink( $log );
+$r = q( array( 'mode=discover', 'domain=Example.com' ), $o );
+$fl = file( $log, FILE_IGNORE_NEW_LINES ) ?: array();
+eq( array( array_column( $r['servers'] ?? array(), 'uri' ), $r['source'] ?? null, $r['rootDse']['server'] ?? null, $r['suggestion'] ?? null ),
+    array( array( 'ldaps://evil.other.org:636', 'ldaps://dc2.example.com:636', 'ldaps://dc1.example.com:636' ), '_ldap._tcp.dc._msdcs.example.com', 'ldaps://dc1.example.com:636',
+        array( 'server' => 'ldaps://dc1.example.com:636', 'base_dn' => 'DC=example,DC=com', 'base_from' => 'rootdse', 'bind_user' => '@example.com' ) ),
+    'discover: SRV of the domain controllers (priority / weight), RootDSE of the first that answers, base DN from it' );
+eq( array_values( preg_grep( '/^(rootdse|bind)/', $fl ) ), array( 'rootdse ldaps://dc2.example.com:636', 'rootdse ldaps://dc1.example.com:636' ),
+    'discover: no login, a server outside the domain is not asked' );
+$srv = array( '_ldap._tcp.example.com' => array( array( 'target' => 'dc1.example.com.', 'pri' => 0, 'weight' => 0, 'port' => 3268 ) ) );
+$r = q( array( 'mode=discover', 'domain=example.com', 'ldaps=no' ) );
+eq( array( array_column( $r['servers'] ?? array(), 'uri' ), $r['source'] ?? null ), array( array( 'ldap://dc1.example.com:3268' ), '_ldap._tcp.example.com' ), 'discover: _ldap._tcp.<domain> as the second choice, ldaps=no: ldap:// with the SRV port' );
+$srv = array();
+$r = q( array( 'mode=discover', 'domain=corp.example.org' ) );
+eq( array( array_column( $r['servers'] ?? array(), 'uri' ), array_key_exists( 'rootDse', $r ) ? $r['rootDse'] : 'x', $r['suggestion']['base_dn'] ?? null, $r['suggestion']['base_from'] ?? null ),
+    array( array( 'ldaps://corp.example.org:636' ), null, 'DC=corp,DC=example,DC=org', 'domain' ), 'discover: no SRV - the domain name, base DN from the domain name when nobody answers' );
+q( array( 'mode=discover', 'domain=no domain' ), $o );
+eq( strpos( $o, 'domain: the DNS name' ) !== FALSE, TRUE, 'discover: the domain checked' );
 file_put_contents( $home . '/.panconfkeystore', "ldap-password:bind-geheim\nldap_useralice@example.com:wrong\n" );
 q( array( 'mode=validation', 'users=bob' ), $o );
 eq( strpos( $o, 'LDAP bind failed' ) !== FALSE, TRUE, 'a wrong password: bind failed' );

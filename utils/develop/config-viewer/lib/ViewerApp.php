@@ -1036,6 +1036,47 @@ class ViewerApp
         return self::ldapQueryPublic( $this->q( 'SELECT * FROM ldap_queries WHERE qid = ?', array( $qid ) )->fetch() );
     }
 
+    /**
+     * the result of an ldap-discover run of the project, with whether the network rules allow each server now
+     * ('allowed' / 'refused') - the suggestion for a new query takes the first allowed one
+     */
+    public function ldapDiscoverResult( array $user, $pid, $jid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        $j = $this->jobRow( $p, $jid );
+        if( $j['type'] !== 'ldap-discover' || $j['state'] !== 'done' )
+            throw new ViewerException( 'not a finished search for LDAP servers', 400 );
+        $r = json_decode( (string)@file_get_contents( $this->jobDir( $p, $j['jid'] ) . '/ldap.json' ), TRUE );
+        if( !is_array( $r ) || !isset( $r['servers'] ) || !is_array( $r['servers'] ) )
+            throw new ViewerException( 'the run has no result (see run.log)', 400 );
+        $first = null;
+        $servers = array();
+        foreach( $r['servers'] as $s )
+        {
+            if( !is_array( $s ) || !is_string( $s['uri'] ?? null ) || !preg_match( '#^ldaps?://([a-z0-9.-]+)(:[0-9]{1,5})?$#', $s['uri'], $m ) )
+                continue;
+            $why = $this->networkRefusal( 'panos', $m[1] );
+            $servers[] = array( 'uri' => $s['uri'], 'host' => $m[1], 'priority' => (int)( $s['priority'] ?? 0 ), 'weight' => (int)( $s['weight'] ?? 0 ),
+                'answered' => ( $r['rootDse']['server'] ?? null ) === $s['uri'], 'refused' => $why );
+            if( $why === null && $first === null )
+                $first = $s['uri'];
+        }
+        // the server that answered first, if allowed; else the first allowed one
+        $answered = $r['rootDse']['server'] ?? null;
+        foreach( $servers as $s )
+            if( $s['uri'] === $answered && $s['refused'] === null )
+                $first = $answered;
+        $mine = $this->q( "SELECT target FROM user_keys WHERE user_id = ? AND kind = 'ldap' ORDER BY target", array( $user['id'] ) )->fetchAll( PDO::FETCH_COLUMN );
+        $domain = (string)( $r['domain'] ?? '' );
+        $bind = null;
+        foreach( $mine as $a )
+            if( $domain !== '' && substr( $a, -strlen( '@' . $domain ) ) === '@' . $domain )
+                $bind = $bind ?? $a;
+        return array( 'domain' => $domain, 'servers' => $servers, 'rootDse' => is_array( $r['rootDse'] ?? null ) ? $r['rootDse'] : null,
+            'suggestion' => array( 'name' => $domain, 'server' => $first, 'base_dn' => (string)( $r['suggestion']['base_dn'] ?? '' ),
+                'base_from' => (string)( $r['suggestion']['base_from'] ?? '' ), 'bind_user' => $bind, 'bind_hint' => '<user>@' . $domain, 'attribute' => 'sAMAccountName' ) );
+    }
+
     public function ldapQueryDelete( array $user, $qid ): void
     {
         if( isset( $user['token'] ) || $this->q( 'DELETE FROM ldap_queries WHERE qid = ? AND user_id = ?', array( (string)$qid, $user['id'] ) )->rowCount() === 0 )
@@ -1138,7 +1179,7 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users' );
+    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover' );
     /** where type=maxmind-update downloads from (must be on the allow list of the administrator) */
     const MAXMIND_HOST = 'download.maxmind.com';
     /** the project of the installation-wide runs (App-ID / MaxMind of the administrator): not listed, only administrators */
@@ -1326,7 +1367,7 @@ class ViewerApp
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
         // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
-        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap' ), TRUE );
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover' ), TRUE );
         // the project of the installation-wide runs has only App-ID / MaxMind runs; MaxMind is installation-wide only
         if( ( $p['pid'] === self::SYSTEM_PID && !in_array( $type, array( 'appid', 'geoip' ), TRUE ) ) || ( $type === 'geoip' && $p['pid'] !== self::SYSTEM_PID ) )
             throw new ViewerException( 'not found', 404 );
@@ -1358,6 +1399,27 @@ class ViewerApp
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+        }
+        if( $type === 'ldap-discover' )
+        {
+            // help for a first LDAP query: the domain controllers of an AD domain (DNS SRV) and the base DN (RootDSE of
+            // the first that answers - anonymous, no password, no key). Network as for an import; the allow list must
+            // cover the hosts of the domain (e.g. *.example.local) - only servers in the domain are asked.
+            $this->projectGet( $user, $pid, 'write' );
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $domain = strtolower( trim( (string)( $in['domain'] ?? '' ) ) );
+            if( strlen( $domain ) > 253 || !preg_match( '/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$/', $domain ) )
+                throw new ViewerException( 'domain: the DNS name of the AD domain, e.g. example.local', 400 );
+            if( !$this->networkGet()['enabled'] )
+                throw new ViewerException( (string)$this->networkRefusal( 'panos', 'dc.' . $domain ), 403 );
+            if( empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+            if( $this->networkRefusal( 'panos', $domain ) !== null && ( $why = $this->networkRefusal( 'panos', 'dc.' . $domain ) ) !== null )
+                throw new ViewerException( $why . ' - the administrator puts *.' . $domain . ' on the allow list', 403 );
+            $args = array( 'x-ldap-discover-target=' . $domain, 'mode=discover', 'domain=' . $domain, 'out=%JOB%/ldap.json' );
+            if( isset( $in['ldaps'] ) && ( $in['ldaps'] === FALSE || $in['ldaps'] === 'no' || $in['ldaps'] === 'false' ) )
+                $args[] = 'ldaps=no';
         }
         if( $type === 'ldap' || $type === 'ldap-users' )
         {
@@ -2014,7 +2076,7 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap' ), TRUE ) ) && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover' ), TRUE ) ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
         // App-ID database / MaxMind data of the installation or of the project: for every run (not for the runs that
@@ -2052,7 +2114,7 @@ class ViewerApp
         // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
         // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
         $steps = null;
-        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users' ), TRUE ) )
+        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover' ), TRUE ) )
         {
             try
             {
@@ -2120,6 +2182,17 @@ class ViewerApp
             return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
                 'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
         };
+        // help for the first LDAP query (no key): the network rules again, then type=ldap-query mode=discover
+        if( $type === 'ldap-discover' )
+        {
+            $p = $this->q( 'SELECT network FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
+            $domain = (string)( $x['target'] ?? '' );
+            if( !$p || empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project' );
+            if( $this->networkRefusal( 'panos', $domain ) !== null && ( $why = $this->networkRefusal( 'panos', 'dc.' . $domain ) ) !== null )
+                throw new ViewerException( $why );
+            return array( $step( 'ldap-query', array_values( array_filter( $args, function( $a ) { return strpos( $a, 'x-' ) !== 0; } ) ), TRUE ) );
+        }
         // a failed SCM import converted again (jobConvert): only the offline step, on the export the run has
         if( $type === 'import' && ( $x['resume'] ?? '' ) === 'convert' )
         {
@@ -2410,7 +2483,7 @@ class ViewerApp
         if( $changed === 0 )
             return;
         $j = $this->q( 'SELECT j.*, p.pid FROM jobs j JOIN projects p ON p.id = j.project_id WHERE j.id = ?', array( $id ) )->fetch();
-        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users' ), TRUE ) )
+        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover' ), TRUE ) )
             $this->importFinish( $j );
     }
 
@@ -2437,7 +2510,7 @@ class ViewerApp
                 file_put_contents( $dir . '/run.log', $clean );
         }
         // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove)
-        if( $j['type'] === 'ldap' || $j['type'] === 'ldap-users' )
+        if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover' ), TRUE ) )
             return;
         // App-ID database / MaxMind data: in place for the installation (project of the installation) or the project
         if( $j['type'] === 'appid' || $j['type'] === 'geoip' )
@@ -2522,7 +2595,7 @@ class ViewerApp
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
         'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath',
-        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action' );
+        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action', 'domain' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void

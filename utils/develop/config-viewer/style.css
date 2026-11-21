@@ -91,3 +91,5 @@ span.row[hidden] { display: none; }
 .editorbar .spacer { flex: 1; }
 iframe.editorframe { flex: 1; border: 0; width: 100%; }
 tr.warnrow td { background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent); }
+details.help { margin: 8px 0; padding: 6px 10px; border: 1px dashed var(--line); border-radius: 6px; }
+details.help summary { cursor: pointer; font-weight: 600; }

@@ -51,13 +51,22 @@ class LDAPQUERY__
             PH::print_stdout( "pan-os-php type=ldap-query mode=" . implode('|', self::MODES) . " ldapServer=<uri> ldapUser=<bind user> dn=<base DN>"
                 . " [filtercriteria=sAMAccountName] [users=a,b,c] [group=NAME] [transitive=yes] [out=<file.json>] [csv=<file.csv>]" );
             PH::print_stdout( "  the password: key store entry ldap_user<bind user> (.panconfkeystore), e.g. ldap_useralice@example.com:<password>" );
+            PH::print_stdout( "pan-os-php type=ldap-query mode=discover domain=<AD domain> [ldaps=no] [out=<file.json>]" );
+            PH::print_stdout( "  the LDAP servers of the domain (DNS SRV) and the base DN (RootDSE of the first server that answers, no login)" );
             return;
         }
         if( !function_exists('ldap_connect') )
             derr( "the PHP extension ldap is missing", null, FALSE );
         $mode = isset($args['mode']) ? (string)$args['mode'] : '';
+        if( $mode === 'discover' )
+        {
+            $this->result = $this->discover( $args );
+            if( isset($args['out']) && is_string($args['out']) && $args['out'] !== '' )
+                file_put_contents( $args['out'], json_encode( $this->result, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE ) );
+            return;
+        }
         if( !in_array($mode, self::MODES, TRUE) )
-            derr( "mode: one of " . implode(', ', self::MODES), null, FALSE );
+            derr( "mode: one of " . implode(', ', self::MODES) . ", discover", null, FALSE );
         foreach( array( 'ldapserver', 'ldapuser', 'dn' ) as $need )
             if( !isset($args[$need]) || !is_string($args[$need]) || $args[$need] === '' )
                 derr( "argument '" . $need . "' is missing", null, FALSE );
@@ -105,6 +114,92 @@ class LDAPQUERY__
             file_put_contents( $args['out'], json_encode( $this->result, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE ) );
         if( isset($args['csv']) && is_string($args['csv']) && $args['csv'] !== '' )
             $this->writeCsv( $args['csv'], $this->result['rows'] ?? array() );
+    }
+
+    /**
+     * mode=discover domain=<AD domain>: help for the first query - the domain controllers from DNS (SRV
+     * _ldap._tcp.dc._msdcs.<domain>, else _ldap._tcp.<domain>; ordered by priority / weight; none: the domain name
+     * itself) and the base DN from the RootDSE of the first server that answers (anonymous read, no password;
+     * defaultNamingContext - else DC=… from the domain). Only servers in the domain (<host>.<domain>) are asked.
+     */
+    private function discover( array $args ): array
+    {
+        $domain = strtolower( trim( (string)( $args['domain'] ?? '' ) ) );
+        if( !preg_match( '/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$/', $domain ) )
+            derr( "domain: the DNS name of the AD domain, e.g. example.local", null, FALSE );
+        $ldaps = !isset($args['ldaps']) || !in_array( strtolower( (string)$args['ldaps'] ), array( 'no', 'n', '0', 'false' ), TRUE );
+        $servers = array();
+        $source = null;
+        foreach( array( '_ldap._tcp.dc._msdcs.' . $domain, '_ldap._tcp.' . $domain ) as $name )
+        {
+            PH::print_stdout( "DNS SRV " . $name . " ..." );
+            $records = function_exists( 'panosphp_test_dns_srv' ) ? panosphp_test_dns_srv( $name ) : @dns_get_record( $name, DNS_SRV );
+            foreach( is_array( $records ) ? $records : array() as $r )
+            {
+                $host = strtolower( rtrim( (string)( $r['target'] ?? '' ), '.' ) );
+                if( $host === '' || isset( $servers[$host] ) )
+                    continue;
+                $servers[$host] = array( 'host' => $host, 'priority' => (int)( $r['pri'] ?? 0 ), 'weight' => (int)( $r['weight'] ?? 0 ),
+                    'uri' => $ldaps ? 'ldaps://' . $host . ':636' : 'ldap://' . $host . ':' . (int)( $r['port'] ?? 389 ), 'inDomain' => substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain );
+            }
+            if( count( $servers ) > 0 )
+            {
+                $source = $name;
+                break;
+            }
+        }
+        if( count( $servers ) === 0 )
+        {
+            PH::print_stdout( "  no SRV records - the domain name itself is taken (in AD it points to the domain controllers)" );
+            $servers[$domain] = array( 'host' => $domain, 'priority' => 0, 'weight' => 0, 'uri' => ( $ldaps ? 'ldaps://' : 'ldap://' ) . $domain . ( $ldaps ? ':636' : ':389' ), 'inDomain' => TRUE );
+        }
+        $servers = array_values( $servers );
+        usort( $servers, function( $a, $b ) { return array( $a['priority'], -$a['weight'], $a['host'] ) <=> array( $b['priority'], -$b['weight'], $b['host'] ); } );
+        foreach( $servers as $s )
+            PH::print_stdout( "  - " . $s['uri'] . " (priority " . $s['priority'] . ", weight " . $s['weight'] . ")" . ( $s['inDomain'] ? "" : " - not in the domain, not asked" ) );
+
+        // RootDSE of the first server that answers (at most 3 are tried)
+        putenv('LDAPTLS_REQCERT=allow');
+        $rootDse = null;
+        $tried = 0;
+        foreach( $servers as $s )
+        {
+            if( !$s['inDomain'] || $tried >= 3 )
+                continue;
+            $tried++;
+            PH::print_stdout( "RootDSE of " . $s['uri'] . " ..." );
+            $c = @ldap_connect( $s['uri'] );
+            if( !$c )
+                continue;
+            ldap_set_option( $c, LDAP_OPT_PROTOCOL_VERSION, 3 );
+            ldap_set_option( $c, LDAP_OPT_REFERRALS, 0 );
+            ldap_set_option( $c, LDAP_OPT_NETWORK_TIMEOUT, 5 );
+            $r = @ldap_read( $c, '', '(objectClass=*)', array( 'defaultNamingContext', 'rootDomainNamingContext', 'dnsHostName', 'namingContexts' ) );
+            if( !$r )
+            {
+                PH::print_stdout( "  no answer: " . ldap_error( $c ) );
+                @ldap_unbind( $c );
+                continue;
+            }
+            $e = ldap_get_entries( $c, $r );
+            @ldap_unbind( $c );
+            $contexts = array();
+            for( $i = 0; $i < ( $e[0]['namingcontexts']['count'] ?? 0 ); $i++ )
+                $contexts[] = $e[0]['namingcontexts'][$i];
+            $rootDse = array( 'server' => $s['uri'], 'defaultNamingContext' => $e[0]['defaultnamingcontext'][0] ?? null,
+                'rootDomainNamingContext' => $e[0]['rootdomainnamingcontext'][0] ?? null, 'dnsHostName' => $e[0]['dnshostname'][0] ?? null, 'namingContexts' => $contexts );
+            PH::print_stdout( "  base DN: " . ( $rootDse['defaultNamingContext'] ?? '-' ) );
+            break;
+        }
+        $fallback = 'DC=' . implode( ',DC=', explode( '.', $domain ) );
+        $base = $rootDse['defaultNamingContext'] ?? $fallback;
+        if( $rootDse === null )
+            PH::print_stdout( "no server answered - base DN from the domain name: " . $fallback );
+        PH::print_stdout();
+        PH::print_stdout( "Suggestion: server " . ( $rootDse['server'] ?? $servers[0]['uri'] ) . ", base DN " . $base . ", bind user <you>@" . $domain );
+        return array( 'mode' => 'discover', 'domain' => $domain, 'time' => date('c'), 'source' => $source, 'servers' => $servers, 'rootDse' => $rootDse,
+            'suggestion' => array( 'server' => $rootDse['server'] ?? $servers[0]['uri'], 'base_dn' => $base, 'base_from' => $rootDse !== null ? 'rootdse' : 'domain',
+                'bind_user' => '@' . $domain ) );
     }
 
     private static function esc( string $v ): string

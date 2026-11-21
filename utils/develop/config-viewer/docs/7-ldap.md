@@ -17,6 +17,27 @@ the security rules still exist?
    `run.log`). The old entry `ldap-password` (password only) is not used for LDAP any more.
 3. **Write permission** in the project.
 
+## Not sure about server and base DN?
+
+In the tab **LDAP**, *Not sure about server and base DN? Find them from the domain name*: enter the AD domain (e.g.
+`example.local`) → **Find servers**. The run asks
+
+1. the DNS for the domain controllers (SRV records `_ldap._tcp.dc._msdcs.<domain>`, else `_ldap._tcp.<domain>`;
+   none: the domain name itself), ordered by priority / weight - with LDAPS port 636 (or LDAP when *LDAPS* is off),
+2. the first one that answers for its RootDSE - anonymous, no password: the **base DN** (`defaultNamingContext`).
+   Only servers in the domain (`<host>.<domain>`) are asked.
+
+The result lists the servers with what the network rules allow now. **Use for a new query** fills in the form: the
+allowed server that answered, its base DN, your LDAP account of the domain as bind user (`<you>@<domain>` - add it
+under *My API keys* first) and `sAMAccountName`; you add the users or the group and save it.
+
+Needed: network for runs and for the project, and the hosts of the domain on the allow list (`*.example.local`).
+Internal names: the runs use the DNS of the computer the viewer runs on. If it does not know the AD domain (e.g. the
+viewer machine is not in it, or Docker falls back to public DNS servers), set the DNS servers of the domain in `.env`
+next to `panosphp-viewer`: `VIEWER_RUN_DNS=10.0.0.10,10.0.0.11`, then `./panosphp-viewer restart`.
+
+Command line: `pan-os-php type=ldap-query mode=discover domain=example.local [ldaps=no] [out=servers.json]`.
+
 ## Saved queries
 
 A query is **yours** - nobody else sees it, also no administrator. It holds:
@@ -39,7 +60,8 @@ What a query asks (pan-os-php `type=ldap-query mode=…`, the scripts of `utils/
 | `group-members` | the members of a group (CN or sAMAccountName) | status and expiry, soonest expiry first |
 
 **Run** starts it; the result is shown in the tab (*Show result*: a table, rows of missing / disabled / expired
-accounts marked) and is kept as `ldap.json` / `ldap.csv` with the run (**Runs and project files**).
+accounts marked) and is kept as `ldap.json` / `ldap.csv` with the run (**Runs and project files**). Every finished run
+- also a failed one - has its `run.log` linked under *My LDAP runs*.
 
 ## Check the users of the rules of a version
 

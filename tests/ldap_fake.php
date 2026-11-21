@@ -112,9 +112,29 @@ function ldap_search( $c, $base, $filter, $attrs = array() )
 }
 function ldap_read( $c, $dn, $filter, $attrs = array() )
 {
+    // RootDSE (anonymous): only dc1 answers
+    if( $dn === '' )
+    {
+        ldapFakeLog( 'rootdse ' . $c->uri );
+        if( strpos( $c->uri, 'dc1.example.com' ) === FALSE )
+        {
+            $c->error = "Can't contact LDAP server";
+            return FALSE;
+        }
+        return ldapFakeEntries( array( array( 'dn' => '', 'defaultnamingcontext' => array( 'DC=example,DC=com' ), 'rootdomainnamingcontext' => array( 'DC=example,DC=com' ),
+            'dnshostname' => array( 'dc1.example.com' ), 'namingcontexts' => array( 'DC=example,DC=com', 'CN=Configuration,DC=example,DC=com' ) ) ), array() );
+    }
     foreach( ldapFakeDir() as $e )
         if( strcasecmp( $e['dn'], $dn ) === 0 )
             return ldapFakeEntries( array( $e ), $attrs );
     return FALSE;
 }
 function ldap_get_entries( $c, $r ) { return $r; }
+
+/** DNS SRV for type=ldap-query mode=discover (LDAP_FAKE_SRV: JSON name => records) */
+function panosphp_test_dns_srv( $name )
+{
+    $all = json_decode( (string)getenv( 'LDAP_FAKE_SRV' ), TRUE ) ?: array();
+    ldapFakeLog( 'srv ' . $name );
+    return $all[$name] ?? array();
+}

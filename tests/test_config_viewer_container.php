@@ -39,7 +39,7 @@ function eq( $actual, $expected, $msg )
 function withEnv( array $env, callable $fn )
 {
     $all = array( 'PANOSPHP_VIEWER_CONTAINER', 'PANOSPHP_VIEWER_CONTAINER_IMAGE', 'PANOSPHP_VIEWER_CONTAINER_DATA', 'PANOSPHP_VIEWER_CONTAINER_TOOL',
-        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS', 'PANOSPHP_VIEWER_CONTAINER_NETWORK' );
+        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS', 'PANOSPHP_VIEWER_CONTAINER_NETWORK', 'PANOSPHP_VIEWER_CONTAINER_DNS' );
     foreach( $all as $k )
         putenv( isset( $env[$k] ) ? $k . '=' . $env[$k] : $k );
     try { return $fn(); }
@@ -100,6 +100,13 @@ eq( array( in_array( 'type=bind,src=/srv/plugins/migration.ppp,dst=/plugins/migr
     array( TRUE, TRUE, TRUE, TRUE, FALSE ), 'encrypted plug-in: package file, licence, files of the plug-in from ppp:// - no folder of clear text' );
 eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pp ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'licence' => "x\n--privileged" ) + $pp ); } ), 0, 6 ),
     'error:', 'encrypted plug-in: a licence value that is no licence block is refused' );
+// DNS servers (VIEWER_RUN_DNS): only for a step with network
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DNS' => '10.0.0.10, 10.0.0.11' ), function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'network' => TRUE ) + $job ); } );
+$dns = array(); foreach( $cmd as $i => $o ) if( $o === '--dns' ) $dns[] = $cmd[$i + 1];
+$cmd2 = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DNS' => '10.0.0.10' ), function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
+eq( array( $dns, in_array( '--dns', $cmd2, TRUE ), array_search( '--dns', $cmd, TRUE ) < array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE ),
+    substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DNS' => '10.0.0.10 --privileged' ), function() { ViewerContainer::fromEnv( '/data' ); return 'x'; } ), 0, 6 ) ),
+    array( array( '10.0.0.10', '10.0.0.11' ), FALSE, TRUE, 'error:' ), 'DNS servers: --dns for a step with network only, before the image, only IP addresses' );
 eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/../etc' ), function() { ViewerContainer::fromEnv( '/data' ); return 'x'; } ), 0, 6 ), 'error:', 'refused setting: plug-in folder with ..' );
 $cmd = withEnv( array( 'PANOSPHP_VIEWER_CONTAINER' => 'podman' ) + $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
 eq( $cmd[0], 'podman', 'podman: same call' );
@@ -177,6 +184,13 @@ if( $tool0 === 'ldap-query' || $ldapRule )
     {
         if( strpos( $x, 'out=' ) === 0 && $ldapRule )
             copy( substr( (string)current( preg_grep( '/^in=/', $rest ) ), 3 ), substr( $x, 4 ) );
+        elseif( strpos( $x, 'out=' ) === 0 && in_array( 'mode=discover', $rest, TRUE ) )
+            file_put_contents( substr( $x, 4 ), json_encode( array( 'mode' => 'discover', 'domain' => 'example.com', 'servers' => array(
+                array( 'uri' => 'ldaps://bad.example.com:636', 'host' => 'bad.example.com', 'priority' => 0, 'weight' => 100 ),
+                array( 'uri' => 'ldaps://dc1.example.com:636', 'host' => 'dc1.example.com', 'priority' => 0, 'weight' => 50 ),
+                array( 'uri' => 'ldaps://dc9.other.org:636', 'host' => 'dc9.other.org', 'priority' => 0, 'weight' => 10 ) ),
+                'rootDse' => array( 'server' => 'ldaps://dc1.example.com:636', 'defaultNamingContext' => 'DC=example,DC=com' ),
+                'suggestion' => array( 'server' => 'ldaps://dc1.example.com:636', 'base_dn' => 'DC=example,DC=com', 'base_from' => 'rootdse', 'bind_user' => '@example.com' ) ) ) );
         elseif( strpos( $x, 'out=' ) === 0 )
             file_put_contents( substr( $x, 4 ), json_encode( array( 'mode' => 'validation', 'rows' => array( array( 'user' => 'alice', 'found' => TRUE, 'status' => 'active' ), array( 'user' => 'gone', 'found' => FALSE ) ), 'missing' => 1 ) ) );
         if( strpos( $x, 'csv=' ) === 0 )
@@ -631,6 +645,25 @@ eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, count( 
 eq( call( 'POST', $P . '/runs/' . ( $r[1]['jid'] ?? '' ) . '/save' )[0], 201, 'rule users remove: the result configuration as a new version' );
 eq( array( call( 'POST', $P . '/configs/' . $cid . '/ldap/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap-users/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => 'nope' ) )[0] ),
     array( 404, 404, 400 ), 'LDAP runs: query without a version, rule check with a version, only own queries' );
+// help for the first query: the LDAP servers of a domain (DNS SRV) and the base DN - no key, no password
+eq( array( call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'no domain' ) )[0], call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'corp.other.org' ) )[0] ),
+    array( 400, 403 ), 'LDAP servers: domain checked; a domain the allow list does not cover is refused' );
+@unlink( $bin . '/ldap.log' );
+$r = call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'Example.com' ) );
+$djid = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $djid );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, $ll[0][2] ?? null, $ll[0][3] ?? null ),
+    array( 'done', 'ldap-query', 'bridge', '', array( 'mode=discover', 'domain=example.com', 'out=' . $data . '/projects/' . $pid . '/jobs/' . $djid . '/ldap.json' ) ),
+    'LDAP servers: type=ldap-query mode=discover, network, no key store' );
+$d = call( 'GET', $P . '/runs/' . $djid . '/ldap-servers' )[1];
+eq( array( array_column( $d['servers'] ?? array(), 'refused', 'host' ) === array( 'bad.example.com' => $d['servers'][0]['refused'] ?? 'x', 'dc1.example.com' => null, 'dc9.other.org' => $d['servers'][2]['refused'] ?? 'x' ),
+    is_string( $d['servers'][0]['refused'] ?? null ), is_string( $d['servers'][2]['refused'] ?? null ), $d['suggestion'] ?? null ),
+    array( TRUE, TRUE, TRUE, array( 'name' => 'example.com', 'server' => 'ldaps://dc1.example.com:636', 'base_dn' => 'DC=example,DC=com', 'base_from' => 'rootdse',
+        'bind_user' => 'alice@example.com', 'bind_hint' => '<user>@example.com', 'attribute' => 'sAMAccountName' ) ),
+    'LDAP servers: what the network rules allow per server; suggestion: the allowed server that answered, its base DN, my LDAP account of the domain' );
+eq( array( call( 'GET', $P . '/runs/' . $ljid . '/ldap-servers' )[0], call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'example.com', 'ldaps' => FALSE ) )[1]['args'] ?? null ),
+    array( 400, array( 'x-ldap-discover-target=example.com', 'mode=discover', 'domain=example.com', 'out=%JOB%/ldap.json', 'ldaps=no' ) ), 'LDAP servers: only for a search run; ldaps=no' );
 eq( array( call( 'DELETE', 'ldap/' . $qid )[0], count( call( 'GET', 'ldap' )[1]['queries'] ?? array( 1 ) ) ), array( 200, 0 ), 'LDAP query deleted' );
 
 // stats / playbook runs never get a network
