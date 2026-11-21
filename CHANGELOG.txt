@@ -28,6 +28,25 @@ UTIL:
 * type=securityprofile | introduce actions=alert-only-set/best-practice-set
 * extend todo with config anonymize skript | bring in first version
 * alpha-ldl-like-firewall change behaviour to FW
+* PANOSPHP_PREDEFINED_XML / PANOSPHP_GEOIP_DIR | App-ID database (predefined.xml) and MaxMind data from another place than the image (PH::predefinedXmlPath() / PH::geoipPath())
+* type=download-predefined | argument predefined-out=<file> - the predefined content of the device saved there
+* type=maxmind-update | argument maxmind-zip=<file> - MaxMind GeoLite2 from a downloaded zip (air gap)
+* type=ldap-query | introduction - the LDAP tools of utils/develop/ldap without questions: mode=validation / user-groups / common-groups / group-members, mode=discover domain=<AD domain> (domain controllers via DNS SRV, base DN from RootDSE)
+* type=ldap-query / type=rule actions=user-check-ldap | ldapServer=auto - the first domain controller of the domain (DNS) that answers; LDAPS
+* key store | LDAP password per bind user: entry ldap_user<bind user> (pa_key-manager add=ldap_user<user>); PanAPIConnector::isNamedEntry() for all named entries
+* type=rule actions=snat-set / snat-remove / dnat-remove | introduction - source translation dynamic-ip-and-port (addresses or interface), dynamic-ip, static-ip (bi-directional); destination translation removed
+* type=rule actions=dnat-set | translated port (1-65535)
+* class NatRule | introduce setSourceNat()
+* type=address / service actions=description-append, type=tag actions=comments-add | aliases $$comma$$ $$forwardslash$$ $$colon$$ $$pipe$$ $$newline$$ $$space$$ (PH::textAliases())
+* type=tag actions=name-rename | introduction ($$current.name$$, $$location$$; references follow)
+* type=config-split | introduction - a configuration as one file per object and back (mode=split / join / check) - class ConfigObjectSplit
+* class ConfigObjectMerge | introduction - three-way merge of one object per field (members as a set; git merge driver of the config viewer)
+* type=object-merger / xyz-merger / rule-merger / merger-possible-report | argument exportJSON=<file.json> - the report as data (merged, skipped with the reason, summary / findings); shadow-json: key merger-report; the HTML of exportCSV is made from the same data (class MergerReport)
+* type=rule-merger exportCSV | skipped rules: new row "reason" (why not merged: placed before, deny rule, filter, negation, application-default, mergeAdjacentOnly); the row of the deny rule is named "deny rule"
+* class RuleCallContext | introduce ruleFieldValue() - the field values of a rule as data, same logic as ruleFieldHtmlExport()
+* config-viewer | PAN-OS like menu, object / rule windows (every field one action), multi-edit, playbook export, Network / Device windows, NAT translations, DNS Rules / Threat Rules under Other, LDAP tab, import from devices (read only), App-ID / MaxMind, run limits, one-file installation
+* config-viewer | history on object level with git (a commit per change, undo of one change, merge per field, XML and history in the object window)
+* config-viewer | tab Merger - object-merger / rule-merger / merger-possible-report as runs, the reports as tables
 
 BUGFIX:
 * SCM export after first production run / IAM patch
@@ -40,6 +59,9 @@ BUGFIX:
 * bugfix related to IPv6 with Route to Zone relationship
 * class URLProfile | ip-user log-severity - extend validation
 * spyware | local-deep-learning - alert-only-set enable any type
+* class PanAPIConnector | key store: hosts with "tsg_id" were compared wrongly (strpos needle was TRUE) - every host with a "1" was stored untested
+* class PanSCMAPIConnector | SCM description sent as a list (array) - TypeError in setDescription(); now its lines as text (scmText())
+* LDAP queries | a warning of an ldap_* function no longer ends the script (myErrorHandler)
 
 
 2.1.62 (20261121)
