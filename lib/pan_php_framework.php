@@ -160,6 +160,7 @@ require_once $basedir . '/misc-classes/trait/ObjectWithDescription.php';
 require_once $basedir . '/misc-classes/trait/PathableName.php';
 require_once $basedir . '/misc-classes/DH.php';
 require_once $basedir . '/misc-classes/PH.php';
+require_once $basedir . '/misc-classes/ConfigObjectSplit.php';
 
 require_once $basedir . '/misc-classes/RQuery.php';
 require_once $basedir . '/misc-classes/RQueryContext.php';

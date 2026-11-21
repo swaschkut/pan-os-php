@@ -2258,6 +2258,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "config-split": {
+        "name": "config-split",
+        "action": [],
+        "filter": []
+    },
     "custom-report": {
         "name": "custom-report",
         "action": [],

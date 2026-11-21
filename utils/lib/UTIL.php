@@ -76,6 +76,7 @@ require_once(dirname(__FILE__)."/CONFIG_COMMIT__.php");
 
 require_once dirname(__FILE__)."/MAXMIND__.php";
 require_once dirname(__FILE__)."/LDAPQUERY__.php";
+require_once dirname(__FILE__)."/CONFIGSPLIT__.php";
 require_once dirname(__FILE__)."/PLAYBOOK__.php";
 require_once dirname(__FILE__)."/PLAYBOOK_VALIDATION__.php";
 require_once dirname(__FILE__)."/UTIL_GET_ACTION_FILTER.php";

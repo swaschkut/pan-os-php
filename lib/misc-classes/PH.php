@@ -2379,6 +2379,7 @@ class PH
         "playbook-validation",
         "maxmind-update",
         "ldap-query",
+        "config-split",
         "util_get-action-filter",
         "software-remove",
         "traffic-log",
@@ -2417,6 +2418,7 @@ class PH
     public static $in_exclude = array(
         "maxmind-update",
         "ldap-query",
+        "config-split",
         "util_get-action-filter",
         "protocoll-number-download",
         "gcp"
@@ -2430,6 +2432,7 @@ class PH
         "bpa-generator",
         "maxmind-update",
         "ldap-query",
+        "config-split",
         "util_get-action-filter",
         "software-remove",
         "software-download",
@@ -2606,6 +2609,13 @@ class PH
             PH::resetCliArgs( $argv );
             PH::processCliArgs();
             $util = new LDAPQUERY__( );
+        }
+        elseif( $type == "config-split" )
+        {
+            // one entry per object (git on object level); in= / out= are a file or a folder: pan-os-php.php has emptied PH::$args
+            PH::resetCliArgs( $argv );
+            PH::processCliArgs();
+            $util = new CONFIGSPLIT__( );
         }
         elseif( $type == "protocoll-number-download" )
             $util = new PROTOCOLL_NUMBERS__( );

@@ -30,7 +30,7 @@ Status: **in progress** (Sven, 2026-11-21).
 
 ### Still open (list of Sven, 2026-11-21)
 
-* git on object level (see below)
+* git on object level (see below): step 1 (split / join) built 2026-11-21; next: step 2 (a commit per change in the worker)
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
 * **the XML snippet of each object** - in the object window: the XML of exactly this object (`$obj->xmlroot`), read
   only (later: the entry of the object in git)
@@ -290,12 +290,37 @@ the volume (git is in the image), written with the plumbing commands:
   deleted meanwhile): after each revert / merge pan-os-php loads and checks (references, dangling members).
 * Test: split + join of a configuration = the canonical XML of the original (round trip), for Panorama, firewall, SCM.
 
+### Step 1 built (2026-11-21): split and join
+
+* `lib/misc-classes/ConfigObjectSplit.php`: `split( DOMDocument )` → `array( path => text )`, `join( array )` →
+  `DOMDocument`, `canonical( node )`. CLI: `pan-os-php type=config-split in=<config.xml> out=<folder>`,
+  `mode=join in=<folder> out=<config.xml>`, `mode=check in=<config.xml>`.
+* Path = the XML path from `<config>` (element names and the names of the entries), e.g.
+  `devices/localhost.localdomain/device-group/DG-Berlin/address/web01.xml`, `shared/address/web01.xml`; rules by their
+  UUID (without one: by name). Locations: `/config/shared` and every entry of a device group, vsys, SCM snippet,
+  container (folder), device. Stores: address, address-group, service, service-group, tag, schedule, external-list,
+  region, application, application-group, application-filter, dynamic-user-group, profile-group, profiles/*,
+  threats/*, log-settings/profiles, (pre-|post-)rulebase/*/rules. Templates, network, device: in `_rest.xml`.
+* **Different from the plan above**: every store has an `_order` (one key per line) - also the objects, so the
+  configuration comes back in its own order (no sorting); the member lists in an object are not sorted either (the
+  field-wise merge driver unites them, see below). `_order` of objects: merge = union later.
+* A store with anything else than named `<entry>` elements (a comment, an unnamed child) stays whole in `_rest.xml`.
+  Names in paths: `%` `/` control characters and a leading `.` as `%XX`; the same name twice in a store: `~2`.
+* Tested (`tests/test_config_split.php`): round trip (split + join = the same configuration up to the whitespace
+  between elements) for the Panorama / SCM configurations of `tests/input` and a synthetic firewall; join with a
+  changed, deleted, added entry, moved rules, a store added after the split; refused: a location that is not there,
+  an entry that is no XML. Large synthetic Panorama (60 001 objects, 20 device groups): split 1.1 s, join 1.4 s,
+  96 MB. A git repository accepts all paths (spaces, `%XX`).
+
 ### To check first
 
 1. **Which objects did an action change?** Not only the matches of the filter (a rename changes the groups and rules
    that refer to it). Safest: a hash per object before / after the action; better in the long run: a "dirty" mark in
    the setters of pan-os-php. Measure with large configurations.
-2. **Merge driver without a working tree**: does `git merge-tree` in a bare repository use a merge driver of
+2. ~~**Merge driver without a working tree**~~ - **yes** (tested 2026-11-21, git 2.43 as in the image):
+   `git --attr-source=<commit> merge-tree --write-tree <a> <b>` in a bare repository calls the merge driver of
+   `.gitattributes` (`*.xml merge=panos`, `merge.panos.driver` in the repository config). Without it two changes of
+   different fields in neighbouring lines of one object conflict (line merge). Original question: does `git merge-tree` in a bare repository use a merge driver of
    `.gitattributes` (newer git: `--attr-source`)? If not: the viewer merges per field itself and uses git for storage,
    history and diff only.
 
