@@ -38,6 +38,14 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   show the template (column and window); a change names it.
 - **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
   window). Nothing is written until **Save as new version**; **Discard changes** drops them all.
+- **History on object level** (git, being built - 2026-11-21 step 2): every project has a git repository
+  (`history.git` in its folder, no working tree) with one entry per object (`shared/address/web01.xml`, rules by their
+  UUID, the rest of the configuration as `_rest.xml`). The first load of a version is its first commit; every change
+  is one commit with exactly the objects it changed (a rename: the object, its order and every object that refers to
+  it) and the change as its message (`Type:`, `Location:`, `Filter:`, `Action:`, `User:`). Save as new version: the
+  new version is the state of the last commit; discard: the commits are dropped. Not in the page yet (undo of one
+  change, history of an object: next steps); `PANOSPHP_VIEWER_GIT=0` switches it off. The repository holds the
+  configuration like its version files (same protection, deleted with the project).
 - **Multi-edit …** (at a change of one object in the list of unsaved changes): the same action on more objects. The
   window suggests what they could have in common - taken from the changed object: name begins with …, same value,
   same type, a tag, no groups / groups only, unused; for rules: zone / address / application / service has … or is

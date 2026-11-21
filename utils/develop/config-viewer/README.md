@@ -230,6 +230,7 @@ server **and** the service, run the service as the web server user. With TLS at 
 | `PANOSPHP_VIEWER_DATA` | `<parent of the repository>/pan-os-php-viewer-data` | data directory (SQLite DB, projects, sockets); path ≤ 60 characters |
 | `PANOSPHP_VIEWER_AUTOSAVE_MIN` | 5 | recovery copy of unsaved changes (service) |
 | `PANOSPHP_VIEWER_IDLE_MIN` | 60 | a worker without requests stops (service) |
+| `PANOSPHP_VIEWER_GIT` | (on) | `0`: no history on object level (`<project>/history.git`, one commit per change); without git in the image it is off by itself (service) |
 | `PANOSPHP_VIEWER_SESSION_IDLE_MIN` | 120 | login session idle timeout |
 | `PANOSPHP_VIEWER_MAX_UPLOAD_MB` | 200 | upload limit (also `upload_max_filesize` / `post_max_size` of PHP) |
 | `PANOSPHP_VIEWER_LOAD_TIMEOUT` | 600 | seconds to wait for the first load of a version |

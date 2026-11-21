@@ -95,7 +95,9 @@ function viewerLog( $text )
 function viewerStatus()
 {
     $s = $GLOBALS['viewerState'];
-    return array( 'dirty' => $s['dirty'], 'changes' => $s['changes'], 'saved' => $s['saved'], 'autosaved' => $s['autosaved'], 'loaded' => $s['loaded'] );
+    $h = $GLOBALS['viewerHistory'] ?? array();
+    return array( 'dirty' => $s['dirty'], 'changes' => $s['changes'], 'saved' => $s['saved'], 'autosaved' => $s['autosaved'], 'loaded' => $s['loaded'],
+        'history' => array( 'on' => isset( $h['git'] ), 'head' => $h['head'] ?? null, 'commits' => $h['commits'] ?? 0, 'error' => $h['error'] ?? null ) );
 }
 
 /**
@@ -224,6 +226,99 @@ function viewerReferences( $type, array $args, $name )
             $out[] = array( 'location' => is_string( $loc ) ? $loc : null, 'class' => get_class( $o ), 'references' => $refs );
         }
     return $out;
+}
+
+// ---- history on object level (git step 2, lib/ViewerGit.php): one commit per change on refs/viewer/work/<version>
+
+/** the repository of the project and the first commit of the loaded version (when it has none yet) */
+function viewerHistoryStart( string $configFile ): void
+{
+    $GLOBALS['viewerHistory'] = array( 'commits' => 0 );
+    $h = &$GLOBALS['viewerHistory'];
+    if( getenv( 'PANOSPHP_VIEWER_GIT' ) === '0' )
+    {
+        $h['error'] = 'switched off (PANOSPHP_VIEWER_GIT=0)';
+        return;
+    }
+    try
+    {
+        $git = new ViewerGit( dirname( $configFile ) . '/history.git' );
+        if( !$git->ready() )
+        {
+            $h['error'] = 'git is not available';
+            return;
+        }
+        $key = basename( $configFile, '.xml' );
+        $t = microtime( TRUE );
+        $state = ConfigObjectSplit::state( UTIL::$sharedConfig['pan']->xmldoc );
+        $head = $git->ref( 'refs/viewer/versions/' . $key );
+        if( $head === null )
+            $head = $git->commit( 'refs/viewer/versions/' . $key, null, ConfigObjectSplit::files( $state ), array(),
+                "version " . $key . "\n\nVersion: " . $key . "\n", 'config-viewer', time(), TRUE );
+        // a loaded version starts without unsaved changes: its work ref begins at the version again
+        $git->setRef( 'refs/viewer/work/' . $key, $head );
+        $h += array( 'git' => $git, 'key' => $key, 'head' => $head, 'state' => $state );
+        viewerLog( sprintf( 'history: %s, %d objects, %.2f s', substr( $head, 0, 12 ), count( $state['entries'] ), microtime( TRUE ) - $t ) );
+    }
+    catch( Throwable $e )
+    {
+        $h = array( 'commits' => 0, 'error' => $e->getMessage() );
+        viewerLog( 'history: ' . $e->getMessage() );
+    }
+}
+
+/** after a change on the memory: the objects that differ as one commit (the change as its message) */
+function viewerHistoryCommit( $note ): void
+{
+    $h = &$GLOBALS['viewerHistory'];
+    if( !isset( $h['git'] ) )
+        return;
+    try
+    {
+        $state = ConfigObjectSplit::state( UTIL::$sharedConfig['pan']->xmldoc );
+        $c = ConfigObjectSplit::changes( $h['state'], $state );
+        $user = is_array( $note ) ? (string)( $note['user'] ?? '' ) : '';
+        $time = is_array( $note ) && is_int( $note['time'] ?? null ) ? $note['time'] : time();
+        $h['head'] = $h['git']->commit( 'refs/viewer/work/' . $h['key'], $h['head'], $c['put'], $c['delete'], ViewerGit::message( $note ), $user, $time );
+        $h['state'] = $state;
+        $h['commits']++;
+    }
+    catch( Throwable $e )
+    {
+        // the history can not follow any more: switched off for this worker, the changes themselves go on
+        viewerLog( 'history: ' . $e->getMessage() );
+        $h = array( 'commits' => $h['commits'] ?? 0, 'error' => 'stopped: ' . $e->getMessage() );
+    }
+}
+
+/** saved as a new version: it is the state of the last commit */
+function viewerHistorySaved( string $newFile ): void
+{
+    $h = &$GLOBALS['viewerHistory'];
+    if( !isset( $h['git'] ) )
+        return;
+    try
+    {
+        $key = basename( $newFile, '.xml' );
+        $h['git']->setRef( 'refs/viewer/versions/' . $key, $h['head'] );
+        $h['git']->setRef( 'refs/viewer/work/' . $key, $h['head'] );
+        $h['git']->deleteRef( 'refs/viewer/work/' . $h['key'] );
+        $h['key'] = $key;
+        $h['commits'] = 0;
+    }
+    catch( Throwable $e )
+    {
+        viewerLog( 'history: ' . $e->getMessage() );
+        $h = array( 'commits' => 0, 'error' => 'stopped: ' . $e->getMessage() );
+    }
+}
+
+/** the unsaved changes discarded */
+function viewerHistoryDiscard(): void
+{
+    $h = $GLOBALS['viewerHistory'] ?? array();
+    if( isset( $h['git'] ) )
+        try { $h['git']->deleteRef( 'refs/viewer/work/' . $h['key'] ); } catch( Throwable $e ) { }
 }
 
 function viewerWrite( $path )
@@ -373,6 +468,7 @@ register_shutdown_function( function() use ( $sockFile, $pidFile, $autosaveFile 
 $repo = dirname( __FILE__ ) . '/../../../..';
 require_once $repo . '/lib/pan_php_framework.php';
 require_once $repo . '/utils/lib/UTIL.php';
+require_once dirname( __FILE__ ) . '/../lib/ViewerGit.php';
 
 // ---- load once
 $doc = new DOMDocument();
@@ -389,6 +485,7 @@ if( !$first['ok'] || UTIL::$sharedConfig['pan'] === null )
     viewerLog( 'configuration can not be loaded: ' . ( $first['error'] ?? '' ) );
     exit( 6 );
 }
+viewerHistoryStart( $configFile );
 
 viewerUnlink( $sockFile );
 $old = umask( 0177 );
@@ -488,6 +585,7 @@ while( TRUE )
     elseif( $cmd['cmd'] === 'close' )
     {
         $GLOBALS['viewerState']['dirty'] = FALSE; // discard
+        viewerHistoryDiscard();
         viewerUnlink( $autosaveFile );
         viewerSend( $conn, array( 'ok' => TRUE ) );
         exit( 0 );
@@ -552,6 +650,7 @@ while( TRUE )
             else
                 $note = substr( (string)$note, 0, 500 );
             $GLOBALS['viewerState']['changes'][] = $note;
+            viewerHistoryCommit( $note );
         }
         viewerSend( $conn, $r + array( 'status' => viewerStatus() ) );
     }
@@ -575,6 +674,7 @@ while( TRUE )
                 $GLOBALS['viewerState']['changes'] = array();
                 $GLOBALS['viewerState']['saved'] = time();
                 viewerUnlink( $autosaveFile );
+                viewerHistorySaved( $file );
                 $configFile = $file;
                 viewerSend( $conn, array( 'ok' => TRUE, 'saved' => TRUE, 'changes' => $changes, 'status' => viewerStatus() ) );
             }

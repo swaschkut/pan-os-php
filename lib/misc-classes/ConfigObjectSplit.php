@@ -69,36 +69,78 @@ class ConfigObjectSplit
         self::stripBlanks( $copy->documentElement );
 
         $files = array();
-        foreach( self::locations( $copy->documentElement ) as $loc )
-            foreach( self::stores( $loc ) as $store )
+        foreach( self::collect( $copy ) as $dir => $store )
+        {
+            foreach( $store['entries'] as $key => $e )
             {
-                if( !self::splittable( $store ) )
-                    continue;
-                $dir = self::path( $store );
-                $order = array();
-                $entries = array();
-                foreach( $store->childNodes as $c )
-                    if( $c->nodeType === XML_ELEMENT_NODE )
-                        $entries[] = $c;
-                foreach( $entries as $e )
-                {
-                    $key = self::key( $e );
-                    if( isset($files[$dir . '/' . $key . '.xml']) )
-                    {
-                        $i = 2;
-                        while( isset($files[$dir . '/' . $key . '~' . $i . '.xml']) )
-                            $i++;
-                        $key .= '~' . $i;
-                    }
-                    $files[$dir . '/' . $key . '.xml'] = self::canonical( $e );
-                    $order[] = $key;
-                    $store->removeChild( $e );
-                }
-                $files[$dir . '/' . self::ORDER] = implode( "\n", $order ) . "\n";
+                $files[$dir . '/' . $key . '.xml'] = self::canonical( $e );
+                $store['node']->removeChild( $e );
             }
+            $files[$dir . '/' . self::ORDER] = self::orderText( $store['entries'] );
+        }
         $files[self::REST] = self::canonical( $copy );
         ksort( $files, SORT_STRING );
         return $files;
+    }
+
+    /**
+     * The state of a configuration in memory (the DOM pan-os-php works on; not changed): a hash of every entry as it
+     * is in the DOM now, the order of each store and a hash of the rest - cheap enough to take after every change.
+     * changes( $before, $after ) gives the entries of the repository that differ (canonical text, like split()).
+     *
+     * @return array( 'entries' => path => array( 'hash' => md5, 'node' => DOMElement ), 'orders' => path => text,
+     *                'rest' => md5, 'doc' => DOMDocument )
+     */
+    public static function state( DOMDocument $doc ): array
+    {
+        $state = array( 'entries' => array(), 'orders' => array(), 'rest' => '', 'doc' => $doc );
+        $stores = self::collect( $doc );
+        foreach( $stores as $dir => $store )
+        {
+            foreach( $store['entries'] as $key => $e )
+                $state['entries'][$dir . '/' . $key . '.xml'] = array( 'hash' => md5( $doc->saveXML( $e ) ), 'node' => $e );
+            $state['orders'][$dir . '/' . self::ORDER] = self::orderText( $store['entries'] );
+        }
+        $state['rest'] = md5( self::withoutEntries( $doc, $stores, function() use ( $doc ) { return $doc->saveXML(); } ) );
+        return $state;
+    }
+
+    /**
+     * the entries of the repository that differ between two states: array( 'put' => path => text, 'delete' => paths )
+     * ('put' as split() would write them; an entry whose text did not change only by its whitespace is also in it -
+     * git keeps the same blob then)
+     */
+    public static function changes( array $before, array $after ): array
+    {
+        $put = array();
+        $delete = array();
+        foreach( $after['entries'] as $path => $e )
+            if( !isset( $before['entries'][$path] ) || $before['entries'][$path]['hash'] !== $e['hash'] )
+                $put[$path] = self::canonical( $e['node'] );
+        foreach( $before['entries'] as $path => $e )
+            if( !isset( $after['entries'][$path] ) )
+                $delete[] = $path;
+        foreach( $after['orders'] as $path => $text )
+            if( ( $before['orders'][$path] ?? null ) !== $text )
+                $put[$path] = $text;
+        foreach( $before['orders'] as $path => $text )
+            if( !isset( $after['orders'][$path] ) )
+                $delete[] = $path;
+        if( $before['rest'] !== $after['rest'] )
+        {
+            $doc = $after['doc'];
+            $put[self::REST] = self::withoutEntries( $doc, self::collect( $doc ), function() use ( $doc ) { return self::canonical( $doc ); } );
+        }
+        ksort( $put, SORT_STRING );
+        sort( $delete, SORT_STRING );
+        return array( 'put' => $put, 'delete' => $delete );
+    }
+
+    /** all files of a state, as split() gives them (the first commit of a version from the DOM in memory) */
+    public static function files( array $state ): array
+    {
+        $empty = array( 'entries' => array(), 'orders' => array(), 'rest' => '' );
+        return self::changes( $empty, $state )['put'];
     }
 
     /**
@@ -186,6 +228,68 @@ class ConfigObjectSplit
 
     // ------------------------------------------------------------------------------------------------------------
 
+    /**
+     * the stores to split of a configuration: dir => array( 'node' => store, 'entries' => key => entry )
+     * (the same for a DOM as pan-os-php loaded it - whitespace between the elements - and for the copy of split())
+     */
+    private static function collect( DOMDocument $doc ): array
+    {
+        $list = array();
+        foreach( self::locations( $doc->documentElement ) as $loc )
+            foreach( self::stores( $loc ) as $store )
+            {
+                if( !self::splittable( $store ) )
+                    continue;
+                $entries = array();
+                foreach( $store->childNodes as $c )
+                    if( $c instanceof DOMElement )
+                    {
+                        $key = self::key( $c );
+                        if( isset( $entries[$key] ) )
+                        {
+                            $i = 2;
+                            while( isset( $entries[$key . '~' . $i] ) )
+                                $i++;
+                            $key .= '~' . $i;
+                        }
+                        $entries[$key] = $c;
+                    }
+                $list[self::path( $store )] = array( 'node' => $store, 'entries' => $entries );
+            }
+        return $list;
+    }
+
+    private static function orderText( array $entries ): string
+    {
+        return implode( "\n", array_keys( $entries ) ) . "\n";
+    }
+
+    /**
+     * $fn while the children of the split stores are out of the document (they are put back in their order, the
+     * same nodes - pan-os-php keeps its references to them)
+     */
+    private static function withoutEntries( DOMDocument $doc, array $stores, callable $fn )
+    {
+        $out = array();
+        foreach( $stores as $dir => $store )
+        {
+            $kids = array();
+            while( $store['node']->firstChild !== null )
+                $kids[] = $store['node']->removeChild( $store['node']->firstChild );
+            $out[$dir] = $kids;
+        }
+        try
+        {
+            return $fn();
+        }
+        finally
+        {
+            foreach( $stores as $dir => $store )
+                foreach( $out[$dir] as $k )
+                    $store['node']->appendChild( $k );
+        }
+    }
+
     /** the key of an entry in its store: a rule by its UUID (when it has one), every other entry by its name */
     private static function key( DOMElement $e ): string
     {
@@ -242,15 +346,21 @@ class ConfigObjectSplit
         return $list;
     }
 
-    /** only named <entry> elements in it (after stripBlanks: no whitespace left) */
+    /** only named <entry> elements in it (and whitespace between them) */
     private static function splittable( DOMElement $store ): bool
     {
         if( !$store->hasChildNodes() )
             return FALSE;
+        $any = FALSE;
         foreach( $store->childNodes as $c )
+        {
+            if( $c->nodeType === XML_TEXT_NODE && trim( $c->nodeValue, " \t\r\n" ) === '' )
+                continue;
             if( !$c instanceof DOMElement || $c->nodeName !== 'entry' || !$c->hasAttribute( 'name' ) )
                 return FALSE;
-        return TRUE;
+            $any = TRUE;
+        }
+        return $any;
     }
 
     /** whitespace-only text between elements out (an element with element children); text of a leaf element stays */

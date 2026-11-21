@@ -30,7 +30,7 @@ Status: **in progress** (Sven, 2026-11-21).
 
 ### Still open (list of Sven, 2026-11-21)
 
-* git on object level (see below): step 1 (split / join) built 2026-11-21; next: step 2 (a commit per change in the worker)
+* git on object level (see below): step 1 (split / join) and step 2 (a commit per change in the worker) built 2026-11-21; next: step 3 (undo of one change)
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
 * **the XML snippet of each object** - in the object window: the XML of exactly this object (`$obj->xmlroot`), read
   only (later: the entry of the object in git)
@@ -312,9 +312,31 @@ the volume (git is in the image), written with the plumbing commands:
   an entry that is no XML. Large synthetic Panorama (60 001 objects, 20 device groups): split 1.1 s, join 1.4 s,
   96 MB. A git repository accepts all paths (spaces, `%XX`).
 
+### Step 2 built (2026-11-21): a commit per change
+
+* `utils/develop/config-viewer/lib/ViewerGit.php`: bare repository `<project>/history.git` (created on the first
+  load; no hooks, `gc.auto 0`), written with `git fast-import` only (one process per commit, no index, no files).
+  Refs: `refs/viewer/versions/<version file>` (the first commit: `ConfigObjectSplit::files()` of the DOM after the
+  load of pan-os-php), `refs/viewer/work/<version file>` (the unsaved changes, one commit each).
+* Worker (`bin/worker.php`): after the real run of a change `ConfigObjectSplit::state()` of the DOM, `changes()`
+  against the state before → `put` / `delete` → one commit; message = one line + trailers (`Type:`, `Location:`,
+  `Template:`, `Ruletype:`, `Filter:`, `Action:`, `Field:`, `User:`), committer = the user, time = the change.
+  Save: `versions/<new>` = the last commit, the work ref moves; discard: the work ref is deleted. Status of the worker:
+  `history` (on, head, commits, error). A git error stops the history of this worker only (logged), never a change.
+* **Which objects did an action change** (to check 1): a hash of every entry as it is in the DOM (`saveXML` + md5,
+  the split stores emptied for the rest) before / after - no change in pan-os-php needed. Measured with 60 001
+  objects: state 0.27 s; first commit 2.2 s; one change 0.35 s (1 entry); a multi-edit of 2 500 objects 0.5 s;
+  repository 6.9 MB.
+* Tested (`tests/test_config_viewer.php` 9b): a commit per change on the first commit of the version; trailers and
+  user; a description change = exactly `shared/address/shared-host1.xml`; a tag rename = tag D + A, `tag/_order`, the
+  address that refers to it; **the tree of the saved version = the split of the saved file, every object**.
+* Not yet: a version recovered from the autosave file (worker stopped) starts a new history (its first commit is the
+  recovered state, without the commits before); a version made by a run (playbook, plug-in) the same. The page shows
+  nothing of the history yet.
+
 ### To check first
 
-1. **Which objects did an action change?** Not only the matches of the filter (a rename changes the groups and rules
+1. ~~**Which objects did an action change?**~~ - solved in step 2 (hash per entry before / after, see above). Not only the matches of the filter (a rename changes the groups and rules
    that refer to it). Safest: a hash per object before / after the action; better in the long run: a "dirty" mark in
    the setters of pan-os-php. Measure with large configurations.
 2. ~~**Merge driver without a working tree**~~ - **yes** (tested 2026-11-21, git 2.43 as in the image):

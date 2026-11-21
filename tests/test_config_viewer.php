@@ -377,6 +377,47 @@ $vl = array_column( $alice->call( 'GET', $P . '/configs' )[1]['configs'] ?? arra
 $r = $alice->call( 'GET', $C2 . '/playbook?source=version' );
 eq( array( $vl[$cid2] ?? null, $vl[$cid] ?? null, status( $r ), count( $r[1]['command'] ?? array() ) >= 6 ), array( TRUE, FALSE, 200, TRUE ), 'playbook of a version saved from changes (the list offers it)' );
 
+// ---- 9b. history on object level (git step 2): a commit per change, the saved version = the state of the last commit
+require_once $viewer . '/lib/ViewerGit.php';
+require_once $here . '/../lib/misc-classes/ConfigObjectSplit.php';
+$hg = new ViewerGit( $data . '/projects/' . $pid . '/history.git' );
+$gitOut = function( $args ) use ( $hg ) {
+    exec( 'GIT_DIR=' . escapeshellarg( $hg->dir() ) . ' git ' . $args . ' 2>&1', $o, $rc );
+    return $rc === 0 ? $o : array();
+};
+$refs = $gitOut( 'for-each-ref ' . escapeshellarg( '--format=%(refname)' ) . ' refs/viewer' );
+$saved = null; $first = null;
+foreach( glob( $data . '/projects/' . $pid . '/*.xml' ) as $f )
+{
+    $k = basename( $f, '.xml' );
+    $n = count( $hg->log( 'refs/viewer/versions/' . $k, 1000 ) );
+    if( $n > 1 ) $saved = $k; elseif( $n === 1 ) $first = $k;
+}
+eq( array( is_dir( $hg->dir() ), $first !== null, $saved !== null, in_array( 'refs/viewer/work/' . $saved, $refs, TRUE ), in_array( 'refs/viewer/work/' . $first, $refs, TRUE ) ),
+    array( TRUE, TRUE, TRUE, TRUE, FALSE ), 'history: a repository per project, a ref per version; the work ref moved to the saved version' );
+$log = $hg->log( 'refs/viewer/versions/' . (string)$saved, 1000 );
+$pbSteps = count( $alice->call( 'GET', $C2 . '/playbook?source=version' )[1]['command'] ?? array() );
+eq( array( count( $log ) - 1, end( $log )['subject'] ?? null ), array( $pbSteps, 'version ' . $first ), 'history: one commit per change, on the first commit of the version it was made on' );
+$by = function( $action ) use ( $log ) { foreach( $log as $c ) if( ( $c['change']['actions'] ?? '' ) === $action ) return $c; return null; };
+$c1 = $by( 'description-append:VIEWERTEST' );
+eq( array( $c1['user'] ?? null, $c1['change']['type'] ?? null, $c1['change']['location'] ?? null, $c1['change']['filter'] ?? null, $c1 ? $hg->changed( $c1['commit'] ) : null ),
+    array( 'bob', 'address', 'shared', '(name eq shared-host1)', array( 'shared/address/shared-host1.xml' => 'M' ) ), 'history: the commit of a change - trailers, user, exactly the changed object' );
+$c2 = $by( 'name-rename:test1-renamed' );
+$TD = 'devices/localhost.localdomain/device-group/testDG/';
+eq( $c2 ? $hg->changed( $c2['commit'] ) : null, array( $TD . 'address/test-addr1.xml' => 'M', $TD . 'tag/_order' => 'M', $TD . 'tag/test1-renamed.xml' => 'A', $TD . 'tag/test1.xml' => 'D' ),
+    'history: a tag rename - the tag moved, its order, the address that refers to it' );
+$tree = array();
+foreach( $gitOut( 'ls-tree -r refs/viewer/versions/' . $saved ) as $l )
+    if( preg_match( '/^\d+ blob ([0-9a-f]+)\t(.*)$/', $l, $m ) )
+        $tree[$m[2]] = $m[1];
+$sd = new DOMDocument(); $sd->load( $data . '/projects/' . $pid . '/' . $saved . '.xml' );
+$want = array();
+foreach( ConfigObjectSplit::split( $sd ) as $p => $t )
+    $want[$p] = sha1( 'blob ' . strlen( $t ) . "\0" . $t );
+ksort( $tree, SORT_STRING );
+$diff = array_merge( array_keys( array_diff_assoc( $tree, $want ) ), array_keys( array_diff_assoc( $want, $tree ) ) );
+eq( array( count( $tree ) > 50, array_values( array_unique( $diff ) ) ), array( TRUE, array() ), 'history: the tree of the saved version = the split of the saved file (every object)' );
+
 // ---- 10. a stopped worker with unsaved changes: recovered as a version
 $bob->call( 'POST', $C2 . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host2)', 'actions' => 'description-append:RECOVERME' ) );
 foreach( glob( $data . '/projects/' . $pid . '/work/*.pid' ) as $f )

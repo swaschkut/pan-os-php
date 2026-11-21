@@ -120,6 +120,30 @@ $err = ''; try { ConfigObjectSplit::join( $bad ); } catch( Exception $e ) { $err
 $ok( strpos( $err, 'no valid XML' ) !== FALSE, 'join: an entry that is no XML is refused' );
 $ok( $d->saveXML() === $xml( $fw )->saveXML(), 'split does not change the document it gets' );
 
+// ---- state / changes: the DOM in memory (as pan-os-php loaded it, with its whitespace) gives the same entries
+foreach( glob( $repo . '/tests/input/*.xml' ) as $f )
+{
+    $dd = new DOMDocument(); $dd->load( $f );
+    $ok( ConfigObjectSplit::files( ConfigObjectSplit::state( $dd ) ) === ConfigObjectSplit::split( $dd ), 'state = split: ' . basename( $f ) );
+}
+$d = $xml( $fw );
+$before = ConfigObjectSplit::state( $d );
+$ok( ConfigObjectSplit::changes( $before, ConfigObjectSplit::state( $d ) ) === array( 'put' => array(), 'delete' => array() ), 'changes: nothing changed, nothing to write' );
+$x = new DOMXPath( $d );
+$x->query( '//vsys/entry/address/entry[@name="a-first"]/ip-netmask' )->item( 0 )->nodeValue = '10.5.5.5';         // changed
+$e = $x->query( '//vsys/entry/address/entry[@name="z-last"]' )->item( 0 ); $e->setAttribute( 'name', 'z-renamed' );  // renamed
+$r1 = $x->query( '//rulebase/security/rules/entry[@name="r1"]' )->item( 0 ); $r1->parentNode->insertBefore( $r1, $r1->parentNode->firstChild ); // moved
+$x->query( '//devices/entry/network' )->item( 0 )->appendChild( $d->createElement( 'dns-proxy' ) );               // the rest
+$c = ConfigObjectSplit::changes( $before, ConfigObjectSplit::state( $d ) );
+$ok( array_keys( $c['put'] ) === array( '_rest.xml', $V . 'address/_order', $V . 'address/a-first.xml', $V . 'address/z-renamed.xml', $V . 'rulebase/security/rules/_order' )
+    && $c['delete'] === array( $V . 'address/z-last.xml' ), 'changes: changed, renamed (new + deleted), moved (order), the rest' );
+$apply = $files = ConfigObjectSplit::split( $xml( $fw ) );
+foreach( $c['put'] as $p => $t ) $apply[$p] = $t;
+foreach( $c['delete'] as $p ) unset( $apply[$p] );
+ksort( $apply, SORT_STRING );
+$ok( $apply === ConfigObjectSplit::split( $d ), 'changes applied to the split before = the split after' );
+$ok( $d->saveXML() === ConfigObjectSplit::state( $d )['doc']->saveXML() && $x->query( '//vsys/entry/address/entry' )->length === 6, 'state: the DOM is the same afterwards (entries back in place)' );
+
 // ---- type=config-split (CLI)
 $tmp = sys_get_temp_dir() . '/cfgsplit-' . getmypid();
 @mkdir( $tmp );
@@ -154,7 +178,8 @@ if( in_array( 'big', $argv, TRUE ) )
     $big = $xml( '<config version="11.1.0"><shared><tag><entry name="t1"/></tag></shared><devices><entry name="localhost.localdomain"><device-group>' . $dgs . '</device-group></entry></devices></config>' );
     $t = microtime( TRUE ); $files = ConfigObjectSplit::split( $big ); $ts = microtime( TRUE ) - $t;
     $t = microtime( TRUE ); $j = ConfigObjectSplit::join( $files ); $tj = microtime( TRUE ) - $t;
-    $ok( ConfigObjectSplit::canonical( $big ) === ConfigObjectSplit::canonical( $j ), sprintf( 'large Panorama: %d objects, split %.2f s, join %.2f s, memory %d MB', $n + 1, $ts, $tj, memory_get_peak_usage( TRUE ) >> 20 ) );
+    $t = microtime( TRUE ); $st = ConfigObjectSplit::state( $big ); $tst = microtime( TRUE ) - $t;
+    $ok( ConfigObjectSplit::canonical( $big ) === ConfigObjectSplit::canonical( $j ), sprintf( 'large Panorama: %d objects, split %.2f s, join %.2f s, state %.2f s, memory %d MB', $n + 1, $ts, $tj, $tst, memory_get_peak_usage( TRUE ) >> 20 ) );
 }
 
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
