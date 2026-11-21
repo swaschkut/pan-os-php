@@ -47,6 +47,9 @@ UTIL:
 * config-viewer | PAN-OS like menu, object / rule windows (every field one action), multi-edit, playbook export, Network / Device windows, NAT translations, DNS Rules / Threat Rules under Other, LDAP tab, import from devices (read only), App-ID / MaxMind, run limits, one-file installation
 * config-viewer | history on object level with git (a commit per change, undo of one change, merge per field, XML and history in the object window)
 * config-viewer | tab Merger - object-merger / rule-merger / merger-possible-report as runs, the reports as tables
+* type=merger-possible-report | status per finding (conflict / would-change-policy / not-checked / merge-ok / unchecked), kept copy and the blocked copies with the reason as data; exportCSV: new column "merge"
+* actions=exportToExcel / exportToHtml (all types) | shadow-json: the export table also as data (key export-table) - class ExportToHtmlHelper::tableData()
+* config-viewer | merger reports: parts can be folded, filter per object type, "can NOT be merged" first; list: Extra columns (additional fields of exportToExcel)
 
 BUGFIX:
 * SCM export after first production run / IAM patch

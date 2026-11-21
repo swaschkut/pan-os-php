@@ -57,6 +57,11 @@ class ExportToHtmlHelper
      */
     public static function buildHtmlExport(string $headers, string $lines, string $extraJs = ''): string
     {
+        // the same table as data for the JSON output (shadow-json: "export-table") - e.g. the config viewer shows
+        // the additional fields of exportToExcel as columns of its list, from this one code path
+        if( class_exists( 'PH', FALSE ) && PH::$shadow_json )
+            PH::$JSON_OUT['export-table'] = self::tableData( $headers, $lines );
+
         $htmlDir = self::htmlDir();
 
         $content = file_get_contents($htmlDir . 'export-template.html');
@@ -75,6 +80,49 @@ class ExportToHtmlHelper
         $content = str_replace('%JSCONTENT%', $jscontent, $content);
 
         return $content;
+    }
+
+    /**
+     * the table of an export as data: array( 'columns' => header texts, 'rows' => list of cells; a cell with several
+     * lines (<br />) is a list of strings ) - from the HTML the export actions build
+     */
+    public static function tableData(string $headers, string $lines): array
+    {
+        $doc = new DOMDocument();
+        $prev = libxml_use_internal_errors( TRUE );
+        $doc->loadHTML( '<?xml encoding="UTF-8"?><html><body><table><thead><tr>' . $headers . '</tr></thead><tbody>' . $lines . '</tbody></table></body></html>',
+            LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_PARSEHUGE );
+        libxml_clear_errors();
+        libxml_use_internal_errors( $prev );
+        $columns = array();
+        foreach( $doc->getElementsByTagName( 'th' ) as $th )
+            $columns[] = trim( $th->textContent );
+        $rows = array();
+        foreach( $doc->getElementsByTagName( 'tbody' )->item( 0 )->childNodes ?? array() as $tr )
+        {
+            if( !$tr instanceof DOMElement || $tr->nodeName !== 'tr' )
+                continue;
+            $cells = array();
+            foreach( $tr->childNodes as $td )
+            {
+                if( !$td instanceof DOMElement || ( $td->nodeName !== 'td' && $td->nodeName !== 'th' ) )
+                    continue;
+                // lines of a cell (<br />) as a list
+                $parts = array( '' );
+                foreach( $td->childNodes as $n )
+                {
+                    if( $n instanceof DOMElement && $n->nodeName === 'br' )
+                        $parts[] = '';
+                    else
+                        $parts[count( $parts ) - 1] .= $n->textContent;
+                }
+                $parts = array_map( 'trim', $parts );
+                $cells[] = count( $parts ) > 1 ? array_values( array_filter( $parts, 'strlen' ) ) : $parts[0];
+            }
+            if( $cells )
+                $rows[] = $cells;
+        }
+        return array( 'columns' => $columns, 'rows' => $rows );
     }
 
     /**

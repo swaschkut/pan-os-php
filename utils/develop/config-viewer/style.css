@@ -152,3 +152,8 @@ table.mergertable td { white-space: pre-line; vertical-align: top; }
 details.mergersection { margin: .6em 0; }
 details.mergersection > summary { cursor: pointer; list-style: revert; }
 details.mergersection > summary h4 { display: inline; margin: 0; }
+
+/* list: extra columns of exportToExcel */
+details.extracols { align-self: flex-end; }
+details.extracols > summary { cursor: pointer; }
+details.extracols .checks { margin-top: .3em; }

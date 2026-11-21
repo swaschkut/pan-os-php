@@ -1344,6 +1344,23 @@ async function showViewer(config, preset) {
     const filterBox = suggest(filter, (text, pos) => filterSuggest(state.meta.types[type.value].filters || {}, text, pos));
     const quick = el('input', { placeholder: 'text in any column', oninput: () => { view.quick = quick.value.toLowerCase(); view.page = 1; draw(); } });
     const spField = field('Profile type', sptype);
+    // "Extra columns": additional fields of pan-os-php exportToExcel of the type (NestedMembers, ResolveIP, rule
+    // summaries, best practice, …) - computed on the server when ticked and shown as columns of the list (per type)
+    state.extraCols = state.extraCols || {};
+    const extraBox = el('details', { class: 'extracols' });
+    function drawExtra() {
+        const cols = (state.meta.types[type.value] || {}).columns || [];
+        const key = type.value;
+        const chosen = state.extraCols[key] || [];
+        extraBox.hidden = cols.length === 0;
+        const boxes = cols.map(c => el('input', { type: 'checkbox', value: c, checked: chosen.includes(c) }));
+        const apply = () => run(async () => { state.extraCols[key] = boxes.filter(b => b.checked).map(b => b.value); drawExtra(); await load(false); });
+        boxes.forEach(b => b.addEventListener('change', apply));
+        extraBox.replaceChildren(el('summary', { text: 'Extra columns' + (chosen.length ? ' (' + chosen.length + ')' : '') }),
+            el('div', { class: 'checks' }, boxes.map(b => el('label', {}, b, ' ' + b.value)),
+                el('button', { type: 'button', class: 'small', text: 'none', onclick: () => { boxes.forEach(b => { b.checked = false; }); apply(); } })),
+            el('p', { class: 'muted', text: 'pan-os-php exportToExcel - additional fields, computed for the objects of the list (slower for many objects)' }));
+    }
     const heading = el('h3', { class: 'vheading' });
     const info = el('span', { class: 'muted' });
     const tableWrap = el('div', { class: 'tablewrap' });
@@ -1362,6 +1379,7 @@ async function showViewer(config, preset) {
 
     function typeChanged() {
         spField.hidden = type.value !== 'securityprofile';
+        drawExtra();
         heading.textContent = cur.section + ' › ' + cur.label;
         action.value = '';
         actionChanged();
@@ -1372,6 +1390,8 @@ async function showViewer(config, preset) {
         const q = new URLSearchParams({ type: type.value, location: location.value || 'any', filter: f });
         if (type.value === 'rule') q.set('ruletype', ruletype.value);
         if (type.value === 'securityprofile') q.set('securityprofiletype', sptype.value);
+        const extra = (state.extraCols || {})[type.value] || [];
+        if (extra.length) q.set('columns', extra.join('|'));
         return q;
     }
     function setStatus(s) {
@@ -2003,7 +2023,7 @@ async function showViewer(config, preset) {
                 field('Location', location), spField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
                 el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
             heading,
-            el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), info),
+            el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),
             tableWrap, pager, changesCard, changeBox)));
     drawMenu();
     typeChanged();

@@ -483,6 +483,22 @@ eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => $i1 + 1 ) ) ), 
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
 $bob->call( 'POST', $C2 . '/discard' );
 
+// ---- 9d. extra columns of the list: additional fields of exportToExcel (the same code as the HTML export)
+$meta = $alice->call( 'GET', 'meta' )[1]['types'] ?? array();
+eq( array( $meta['address']['columns'] ?? null, in_array( 'WhereUsed', $meta['tag']['columns'] ?? array( 'WhereUsed' ), TRUE ), in_array( 'PSKcleartext', $meta['ike-gateway']['columns'] ?? array(), TRUE ),
+    in_array( 'ResolveAddressSummary', $meta['rule']['columns'] ?? array(), TRUE ) ),
+    array( array( 'ResolveIP', 'NestedMembers' ), FALSE, FALSE, TRUE ), 'extra columns: the additional fields of exportToExcel per type (no references, no secret, no live device)' );
+$r = $bob->call( 'GET', $C2 . '/objects?type=address&location=any&columns=' . urlencode( 'NestedMembers|ResolveIP' ) );
+$dyn = array_values( array_filter( $r[1]['rows'] ?? array(), function( $x ) { return ( $x['name'] ?? '' ) === 'test-dynamic'; } ) )[0] ?? array();
+eq( array( status( $r ), in_array( 'nested members', $r[1]['columns'] ?? array(), TRUE ), in_array( 'ip resolution', $r[1]['columns'] ?? array(), TRUE ), $dyn['nested members'] ?? null,
+    in_array( 'Memberscount', $r[1]['columns'] ?? array(), TRUE ) ),
+    array( 200, TRUE, TRUE, array( 'shared-host1', 'shared-host2' ), FALSE ), 'extra columns: NestedMembers / ResolveIP as columns of the list, only the added ones' );
+eq( array( status( $bob->call( 'GET', $C2 . '/objects?type=address&location=any&columns=WhereUsed' ) ), status( $bob->call( 'GET', $C2 . '/objects?type=address&location=any&columns=x' ) ) ),
+    array( 400, 400 ), 'extra columns: only the offered ones' );
+$r = $bob->call( 'GET', $C2 . '/objects?type=rule&ruletype=security&location=any&columns=ResolveAddressSummary' );
+eq( array( status( $r ), in_array( 'src_resolved_sum', $r[1]['columns'] ?? array(), TRUE ), in_array( 'action', array_slice( $r[1]['columns'] ?? array(), -6 ), TRUE ) ), array( 200, TRUE, FALSE ),
+    'extra columns: rule summaries (only the columns the field adds)' );
+
 // ---- 10. a stopped worker with unsaved changes: recovered as a version
 $bob->call( 'POST', $C2 . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host2)', 'actions' => 'description-append:RECOVERME' ) );
 foreach( glob( $data . '/projects/' . $pid . '/work/*.pid' ) as $f )

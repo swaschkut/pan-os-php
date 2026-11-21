@@ -40,6 +40,9 @@ Counted from [action-classes.json](action-classes.json), class `change`.
 
 ### 1.3 More
 
+* ~~extra columns of exportToExcel in the list~~ built 2026-11-21 (Extra columns: NestedMembers, ResolveIP, rule
+  summaries, best practice, …); open: the extra columns also in the object window
+
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
 * **search text in the whole XML** (as `type=xpath`): exact / contains / regex; element names, values or attributes
   (`name=`); limited to a location / template; the hits with their XPath and a link to the object window

@@ -12,6 +12,13 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
 - **pan-os-php filter**: type and the page suggests - first the fields of the type (`name`, `object`, `value`, …),
   then their operators (`eq`, `regex`, `contains`, `is.unused`, …) with an example and whether a value is needed;
   after a term `and (` / `or (`. Arrow keys + Enter (or Tab) take a suggestion.
+- **Extra columns** (types whose pan-os-php `exportToExcel` has additional fields): tick e.g. *NestedMembers*,
+  *ResolveIP* (addresses, groups, zones, interfaces, …), *ResolveSRV* (services), the summaries / *BestPractice* /
+  *Visibility* / *Adoption* (rules), *TotalUse* / *URLmembers* (profiles) - they are computed on the server for the
+  objects of the list and shown as columns of the list (only the columns the field adds). The same code as
+  `actions=exportToExcel:file.html,<fields>` on the command line: pan-os-php gives the export table also as data
+  (`shadow-json`: `export-table`). Not offered: *WhereUsed* / *UsedInLocation* (the list has its References), what needs
+  a live device (*HitCount*, *ApplicationSeen*) and secrets (*PSKcleartext*). API: `…/objects?…&columns=A|B`.
 - **Object window**: click an address, address group, service, service group or tag - it opens over the list (as the
   edit dialog of PAN-OS) with its fields. A field is applied **when you leave it after a change** (or press Enter) -
   as **one pan-os-php action on exactly this object** (its location, filter `(name eq …)`): e.g. the description →

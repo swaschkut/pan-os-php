@@ -3097,7 +3097,7 @@ class ViewerApp
             $filters = self::filterMeta( (array)$j[$type]['filter'] );
             // 'references': the type has displayreferences - the page offers "References" per object
             $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => FALSE, 'resource' => self::resourceName( $type ),
-                'references' => isset( $j[$type]['action']['displayreferences'] ) );
+                'references' => isset( $j[$type]['action']['displayreferences'] ), 'columns' => self::exportColumns( $j[$type] ) );
         }
         // every other type that shows objects (action 'display'): read only, until its actions are in a reviewed allow list
         foreach( $j as $type => $def )
@@ -3121,7 +3121,7 @@ class ViewerApp
                 }
             ksort( $actions );
             $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => count( $actions ) == 0, 'resource' => self::resourceName( $type ),
-                'references' => isset( $def['action']['displayreferences'] ) );
+                'references' => isset( $def['action']['displayreferences'] ), 'columns' => self::exportColumns( $def ) );
         }
         $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES,
             'resources' => array_map( function( $t ) { return array( 'type' => $t, 'model' => 'scm-v1' ); }, self::SCM_RESOURCES ) );
@@ -3144,6 +3144,69 @@ class ViewerApp
             if( $m['resource'] === $resource )
                 return $type;
         return null;
+    }
+
+    /**
+     * the additional fields of exportToExcel of a type that the list can show as columns ("Extra columns"): the
+     * choices of its argument additionalFields - not the references (WhereUsed, UsedInLocation: the list has its
+     * References), not what needs a live device (HitCount, ApplicationSeen) and never a secret (PSKcleartext)
+     */
+    const EXPORT_COLUMNS_NOT = array( 'WhereUsed', 'UsedInLocation', 'HitCount', 'ApplicationSeen', 'PSKcleartext' );
+
+    private static function exportColumns( array $def ): array
+    {
+        $choices = $def['action']['exporttoexcel']['args']['additionalFields']['choices'] ?? array();
+        return array_values( array_filter( is_array( $choices ) ? $choices : array(), function( $c ) {
+            return is_string( $c ) && preg_match( '/^[A-Za-z][A-Za-z0-9-]{0,60}$/', $c ) && !in_array( $c, self::EXPORT_COLUMNS_NOT, TRUE );
+        } ) );
+    }
+
+    /**
+     * the extra columns of a list: exportToExcel of pan-os-php with these additional fields (its table as data,
+     * shadow-json "export-table" - the same code as the HTML export), the columns it adds compared to an export without
+     * them, matched to the rows by location and name
+     */
+    private function exportExtraColumns( array $files, string $type, array $args, array $columns, array $rows ): array
+    {
+        $read = function( string $actionArgs, ?string $filter ) use ( $files, $type, $args ) {
+            $a = $args;
+            if( $filter !== null )
+                foreach( $a as $i => $x )
+                    if( strpos( $x, 'filter=' ) === 0 )
+                        unset( $a[$i] );
+            if( $filter !== null )
+                $a[] = 'filter=' . $filter;
+            // the export file is not used ('/' is written '//' in an action argument)
+            $r = $this->workerCall( $files, array( 'cmd' => 'read', 'type' => $type, 'args' => array_merge( array_values( $a ), array( 'actions=exportToExcel://dev//null' . $actionArgs ) ) ) );
+            return is_array( $r['json']['export-table'] ?? null ) ? $r['json']['export-table'] : array( 'columns' => array(), 'rows' => array() );
+        };
+        $base = $read( '', '(name eq x-config-viewer-no-object)' )['columns'];
+        $full = $read( ',' . implode( '|', $columns ), null );
+        $extra = array();
+        foreach( $full['columns'] as $i => $col )
+            if( !in_array( $col, $base, TRUE ) )
+                $extra[$i] = $col;
+        $iLoc = array_search( 'location', $full['columns'], TRUE );
+        $iName = array_search( 'name', $full['columns'], TRUE );
+        if( !$extra || $iLoc === FALSE || $iName === FALSE )
+            return array( 'rows' => $rows, 'columns' => array() );
+        $by = array();
+        foreach( $full['rows'] as $cells )
+        {
+            $k = ( is_string( $cells[$iLoc] ?? null ) ? $cells[$iLoc] : '' ) . '|' . ( is_string( $cells[$iName] ?? null ) ? $cells[$iName] : '' );
+            if( !isset( $by[$k] ) )
+                $by[$k] = $cells;
+        }
+        $names = array();
+        foreach( $extra as $i => $col )
+            $names[$i] = isset( $rows[0] ) && array_key_exists( $col, $rows[0] ) ? '+' . $col : $col;
+        foreach( $rows as $n => $row )
+        {
+            $cells = $by[( $row['location'] ?? '' ) . '|' . ( $row['name'] ?? '' )] ?? null;
+            foreach( $extra as $i => $col )
+                $rows[$n][$names[$i]] = $cells !== null ? ( $cells[$i] ?? '' ) : null;
+        }
+        return array( 'rows' => $rows, 'columns' => array_values( $names ) );
     }
 
     /** validates the query of a read / change request and returns the pan-os-php arguments (without in / out / actions) */
@@ -3467,6 +3530,18 @@ class ViewerApp
                 $nested ? array( 'x-xml' ) : array(),
                 $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array(), $nested );
+        // "Extra columns" of the list: additional fields of exportToExcel (e.g. NestedMembers, ResolveIP), by name
+        $extra = $in['columns'] ?? '';
+        if( $extra !== '' && $extra !== null && $max !== PHP_INT_MAX )
+        {
+            $want = is_array( $extra ) ? $extra : explode( '|', (string)$extra );
+            $allowed = $this->meta()['types'][$type]['columns'] ?? array();
+            foreach( $want as $w )
+                if( !is_string( $w ) || !in_array( $w, $allowed, TRUE ) )
+                    throw new ViewerException( 'columns: ' . ( $allowed ? implode( ', ', $allowed ) : 'none for type ' . $type ), 400 );
+            if( $want )
+                $rows = $this->exportExtraColumns( $this->session( $p, $c, $user ), $type, array_merge( $args, $this->bpArg( $p, $in ) ), array_values( array_unique( $want ) ), $rows )['rows'];
+        }
         if( $refcount && is_array( $r['refcounts'] ?? null ) )
             foreach( $rows as $i => $row )
             {
