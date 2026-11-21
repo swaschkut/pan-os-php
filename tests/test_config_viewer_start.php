@@ -190,6 +190,39 @@ list( , , $calls ) = pv( array( 'update' ) );
 eq( array( in_array( 'load', $calls, TRUE ), preg_grep( '/ pull$/', $calls ) ), array( TRUE, array() ), 'update with images.tar.gz (air gap): load, no pull' );
 eq( pv( array( 'start' ), array( 'PATH' => '/usr/bin:/bin', 'DOCKER' => '/nonexistent/docker' ) )[0] !== 0, TRUE, 'no Docker: a clear error' );
 
+// ---- install-viewer.sh: one file for a computer with internet (downloads from a file:// address here)
+function inst( string $cwd, array $args, array $env = array() ): array
+{
+    global $viewer, $baseEnv, $log;
+    @unlink( $log );
+    $p = proc_open( array_merge( array( 'bash', realpath( $viewer ) . '/install-viewer.sh' ), $args ), array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ),
+        $pipes, $cwd, $env + array( 'PANOSPHP_VIEWER_BASE_URL' => 'file://' . realpath( $viewer ) ) + $baseEnv );
+    $out = stream_get_contents( $pipes[1] ) . stream_get_contents( $pipes[2] );
+    $code = proc_close( $p );
+    $calls = array_map( function( $l ) { return implode( ' ', json_decode( $l, TRUE ) ); }, file_exists( $log ) ? file( $log, FILE_IGNORE_NEW_LINES ) : array() );
+    return array( $code, $out, $calls );
+}
+$site = $tmp . '/site';
+mkdir( $site );
+list( $code, $out, $calls ) = inst( $site, array() );
+$inst = $site . '/panosphp-viewer';
+eq( array( $code, is_executable( $inst . '/panosphp-viewer' ), is_file( $inst . '/docker-compose.yml' ), is_file( $inst . '/docker-compose.https.yml' ), is_file( $inst . '/docker/Caddyfile' ), is_dir( $inst . '/plugins' ) ),
+    array( 0, TRUE, TRUE, TRUE, TRUE, TRUE ), 'install-viewer: folder with script, compose files, Caddyfile, plugins/' );
+$envText = (string)file_get_contents( $inst . '/.env' );
+eq( array( strpos( $envText, 'VIEWER_IMAGE=swaschkut/pan-os-php:alpha' ) !== FALSE, strpos( $envText, 'VIEWER_PORT=8080' ) !== FALSE, decoct( fileperms( $inst . '/.env' ) & 0777 ) ),
+    array( TRUE, TRUE, '600' ), 'install-viewer: settings of the first start, image of the channel' );
+eq( array( in_array( 'compose -f docker-compose.yml pull', $calls, TRUE ), in_array( 'compose -f docker-compose.yml up -d', $calls, TRUE ) ), array( TRUE, TRUE ), 'install-viewer: pulls the images and starts' );
+file_put_contents( $inst . '/plugins/x.ppp', 'keep' );
+list( $code, $out, $calls ) = inst( $site, array() );
+eq( array( $code, (string)file_get_contents( $inst . '/.env' ) === $envText, is_file( $inst . '/plugins/x.ppp' ), in_array( 'compose -f docker-compose.yml pull', $calls, TRUE ) ),
+    array( 0, TRUE, TRUE, TRUE ), 'install-viewer again (update): settings and plug-ins stay, images pulled' );
+list( $code, $out ) = inst( $site, array( 'other' ), array( 'PANOSPHP_CHANNEL' => 'main' ) );
+eq( array( $code, strpos( (string)@file_get_contents( $site . '/other/.env' ), 'VIEWER_IMAGE=swaschkut/pan-os-php:latest' ) !== FALSE ), array( 0, TRUE ), 'install-viewer: channel main uses the image latest, own folder' );
+$before = md5_file( $inst . '/panosphp-viewer' );
+list( $code, $out ) = inst( $site, array(), array( 'PANOSPHP_VIEWER_BASE_URL' => 'file:///nonexistent' ) );
+eq( array( $code !== 0, strpos( $out, 'download failed' ) !== FALSE, md5_file( $inst . '/panosphp-viewer' ) === $before ), array( TRUE, TRUE, TRUE ), 'install-viewer: a failed download changes nothing' );
+eq( inst( $site, array(), array( 'PANOSPHP_CHANNEL' => 'x' ) )[0] !== 0, TRUE, 'install-viewer: unknown channel refused' );
+
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 foreach( $failed as $m )
     print " - " . $m . "\n";

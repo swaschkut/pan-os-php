@@ -78,7 +78,15 @@ exists (adding a member); sessions are PHP file sessions.
 
 ## Start it: ./panosphp-viewer
 
-The simple way - one script next to the compose files, for Sven and for customers:
+**For customers - one command** (computer with internet and Docker; nothing else to download):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/swaschkut/pan-os-php/alpha/utils/develop/config-viewer/install-viewer.sh | bash
+```
+
+`install-viewer.sh` makes the folder `panosphp-viewer`, downloads the start script and the compose files into it and runs `./panosphp-viewer start` (the questions come up in the terminal also through the pipe). Run the same command again to update: files and images are renewed, settings (`.env`), plug-ins and data stay. `PANOSPHP_CHANNEL=beta|dev|main` takes the files of that branch and the matching image (`beta`, `develop`, `latest`); a folder name as argument: `… | bash -s -- /opt/panosphp-viewer`. Without internet: the air-gap bundle.
+
+The script itself - next to the compose files, for Sven and for customers:
 
 ```bash
 cd utils/develop/config-viewer          # or the unpacked air-gap bundle
