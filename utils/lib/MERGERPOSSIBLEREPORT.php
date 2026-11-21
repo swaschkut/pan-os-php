@@ -61,6 +61,8 @@ class MERGERPOSSIBLEREPORT extends MERGER
             'shortHelp' => "for address / service / their groups / EDL / applications (custom, filter, group) / schedule / log forwarding and decryption profiles / security profiles / security profile groups: check with the effective-policy check whether a merge into the copy in the highest location would change what a firewall receives (slower)");
         $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCSV',
             'shortHelp' => 'write the findings as HTML table', 'argDesc' => 'report.html');
+        $this->supportedArguments['exportjson'] = array('niceName' => 'exportJSON',
+            'shortHelp' => 'the same findings and summary as JSON', 'argDesc' => 'report.json');
 
         $this->prepareSupportedArgumentsArray();
         PH::processCliArgs();
@@ -106,6 +108,10 @@ class MERGERPOSSIBLEREPORT extends MERGER
 
         if( $this->exportcsv )
             $this->exportReportHtml();
+        // the same findings / summary as data (exportJSON= / shadow-json)
+        if( PH::$shadow_json || MergerReport::fileArgument() !== null )
+            MergerReport::write( array( 'type' => 'merger-possible-report', 'mergecheck' => $this->mergeCheck, 'summary' => $this->summary,
+                'findings' => $this->findings ), MergerReport::fileArgument() );
     }
 
     // ------------------------------------------------------------------------------------------

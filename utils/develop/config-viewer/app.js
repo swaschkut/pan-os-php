@@ -649,7 +649,7 @@ async function showProject(pid) {
                                 if (openFiles.has(r.jid)) openFiles.delete(r.jid); else openFiles.add(r.jid);
                                 await drawRuns();
                             }) }), ' ',
-                            canWrite && (r.type === 'playbook' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
+                            canWrite && (r.type === 'playbook' || r.type === 'object-merger' || r.type === 'rule-merger' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
                                 const to = ev.target.parentNode.querySelector('select').value;
                                 await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
                                 await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
@@ -716,6 +716,8 @@ async function showProject(pid) {
     // entry ldap_user<user>); and the check of the users of the security rules of a version (user-check-ldap)
     let ldapCard = null;
     if (canWrite && !limited) ldapCard = await ldapTab(base, pid, p, owner, configs.configs);
+    // ---- Merger: object-merger / rule-merger / merger-possible-report as runs, their report as tables
+    const mergerCard = !limited && configs.configs.length ? await mergerTab(base, pid, canWrite, configs.configs) : null;
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
@@ -725,6 +727,7 @@ async function showProject(pid) {
         }) }) : null), projectTabs(pid, [
             ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard, appidCard]],
             ['runs', 'Runs and project files', [runsCard, filesCard]],
+            mergerCard ? ['merger', 'Merger', [mergerCard]] : null,
             ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now
@@ -916,6 +919,144 @@ async function ldapTab(base, pid, p, owner, versions) {
         el('p', { class: 'muted', text: 'Ask the LDAP / Active Directory with your own account: do the users still exist (cleanup), which groups does a user have, which groups do several users share, who is in a group. The queries are yours (nobody else sees them); the password of the bind user is your LDAP account under My API keys (key store entry ldap_user<user>). The server must be allowed by the administrator (network allow list). "Check the users of the rules" looks up the users of the security rules of a version (pan-os-php user-check-ldap); the run log shows the missing ones, "remove" also makes a result configuration without them.' }),
         why ? el('p', { class: 'muted', text: why }) : null, discover, accounts, form, queries, runList ? el('h3', { text: 'My LDAP runs' }) : null, runList, out);
     return card;
+}
+
+// ---------------------------------------------------------------- Merger tab of a project
+// object-merger / rule-merger (result configuration = Result as new version) and merger-possible-report (only a report)
+// run like every run on a copy of the version; pan-os-php writes the report as data (exportJSON=merger.json - the same
+// data as the HTML of exportCSV, which is offered as download); the tables are made from merger.json
+const MERGER_OBJECTTYPES = ['tag', 'address', 'service', 'edl', 'region', 'application-custom', 'application-filter', 'addressgroup', 'servicegroup',
+    'application-group', 'custom-url-category', 'schedule', 'log-profile', 'decryption-profile', 'hip-object', 'hip-profile', 'securityprofile', 'securityprofilegroup'];
+const MERGER_DUP = ['', 'SameAddress', 'Identical', 'WhereUsed', 'SameDstSrcPorts', 'SamePorts', 'SameMembers', 'SameIP4Mapping', 'SamePortMapping', 'SameColor', 'SameName', 'SameValue'];
+const RULEMERGER_METHODS = ['matchFromToSrcDstApp', 'matchFromToSrcDstSvc', 'matchFromToSrcSvcApp', 'matchFromToDstSvcApp', 'matchFromSrcDstSvcApp', 'matchToSrcDstSvcApp', 'matchToDstSvcApp', 'matchFromSrcSvcApp', 'identical'];
+const RULEMERGER_ADDITIONAL = ['tag', 'secprof', 'user', 'urlcategory', 'target', 'logsetting', 'schedule'];
+const MERGER_TYPES = { 'object-merger': 'object-merger', 'rule-merger': 'rule-merger', 'merger-possible-report': 'merger-possible-report (report only)' };
+
+async function mergerTab(base, pid, canWrite, versions) {
+    const card = el('div', { class: 'card' });
+    const out = el('div', {});
+    const redraw = async () => { card.replaceWith(await mergerTab(base, pid, canWrite, versions)); };
+    const types = canWrite ? Object.keys(MERGER_TYPES) : ['merger-possible-report'];
+    const mType = el('select', { 'aria-label': 'merger' }, types.map(t => el('option', { value: t, text: MERGER_TYPES[t] })));
+    const mVersion = el('select', { 'aria-label': 'version' }, versions.map(c => el('option', { value: c.cid, text: c.name + ' (' + fmtTime(c.created) + ')' })));
+    const multi = (list, size) => el('select', { multiple: true, size: size || 6 }, list.map(x => el('option', { value: x, text: x })));
+    const f = {
+        objecttype: multi(MERGER_OBJECTTYPES, 8), location: el('input', { value: 'any', autocomplete: 'off', spellcheck: false }),
+        rlocation: el('input', { value: 'any', autocomplete: 'off', spellcheck: false }),
+        dup: el('select', {}, MERGER_DUP.map(x => el('option', { value: x, text: x || 'default of the type' }))),
+        pick: el('input', { placeholder: '(name regex /^H-/)', autocomplete: 'off', spellcheck: false }),
+        exclude: el('input', { placeholder: '(name regex /^tmp/)', autocomplete: 'off', spellcheck: false }),
+        limit: el('input', { type: 'number', min: 0, placeholder: 'no limit' }), upper: el('input', { type: 'checkbox' }),
+        method: el('select', {}, RULEMERGER_METHODS.map(x => el('option', { value: x, text: x }))),
+        rulebase: el('select', {}, el('option', { value: 'pre', text: 'pre rules (Panorama)' }), el('option', { value: 'post', text: 'post rules (Panorama)' })),
+        deny: el('input', { type: 'checkbox' }), stopDeny: el('input', { type: 'checkbox', checked: true }), adjacent: el('input', { type: 'checkbox' }),
+        filter: el('input', { placeholder: '(from has trust)', autocomplete: 'off', spellcheck: false }), additional: multi(RULEMERGER_ADDITIONAL, 4),
+        reportTypes: el('input', { value: 'any', placeholder: 'any or address,service,…', autocomplete: 'off', spellcheck: false }), mergecheck: el('input', { type: 'checkbox', checked: true }),
+    };
+    const groups = {
+        'object-merger': el('div', { class: 'row' }, field('Object types (none = any)', f.objecttype), field('Location', f.location), field('DupAlgorithm', f.dup),
+            field('pickFilter', f.pick), field('excludeFilter', f.exclude), field('mergeCountLimit', f.limit), field('allowMergingWithUpperLevel', f.upper)),
+        'rule-merger': el('div', { class: 'row' }, field('Location', f.rlocation), field('Method', f.method), field('Rule base', f.rulebase), field('mergeDenyRules', f.deny),
+            field('stopMergingIfDenySeen', f.stopDeny), field('mergeAdjacentOnly', f.adjacent), field('filter', f.filter), field('additionalMatch', f.additional)),
+        'merger-possible-report': el('div', { class: 'row' }, field('Object types', f.reportTypes), field('mergecheck (would the merge change what a firewall receives)', f.mergecheck)),
+    };
+    const opts = el('div', {});
+    const typeChanged = () => {
+        opts.replaceChildren(groups[mType.value]);
+    };
+    mType.addEventListener('change', typeChanged); typeChanged();
+    const selected = (sel) => Array.from(sel.selectedOptions).map(o => o.value);
+    const form = el('form', { onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        const t = mType.value, body = {};
+        if (t === 'object-merger') {
+            Object.assign(body, { objecttype: selected(f.objecttype).join(',') || 'any', location: f.location.value.trim() || 'any', allowmergingwithupperlevel: f.upper.checked });
+            if (f.dup.value) body.dupalgorithm = f.dup.value;
+            if (f.pick.value.trim()) body.pickfilter = f.pick.value.trim();
+            if (f.exclude.value.trim()) body.excludefilter = f.exclude.value.trim();
+            if (f.limit.value !== '') body.mergecountlimit = f.limit.value;
+        } else if (t === 'rule-merger') {
+            Object.assign(body, { location: f.rlocation.value.trim() || 'any', method: f.method.value, rulebase: f.rulebase.value, mergedenyrules: f.deny.checked,
+                stopmergingifdenyseen: f.stopDeny.checked, mergeadjacentonly: f.adjacent.checked, additionalmatch: selected(f.additional) });
+            if (f.filter.value.trim()) body.filter = f.filter.value.trim();
+        } else Object.assign(body, { objecttype: f.reportTypes.value.trim() || 'any', mergecheck: f.mergecheck.checked });
+        await api('POST', base + '/configs/' + mVersion.value + '/' + t + '/runs', body);
+        message(t + ' queued'); await redraw();
+    }); } }, el('div', { class: 'row' }, field('Merger', mType), field('Version', mVersion)), opts, el('button', { class: 'primary', type: 'submit', text: 'Start' }));
+
+    const runs = (await api('GET', base + '/runs')).runs.filter(r => MERGER_TYPES[r.type]);
+    const fileLink = (r, name, text) => el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/' + name, target: '_blank', rel: 'noopener', text: text || name });
+    const runList = runs.length === 0 ? el('p', { class: 'muted', text: 'No merger runs yet.' }) :
+        table(['Merger', 'Version', 'State', 'Started', ''], runs.slice(0, 30).map(r => el('tr', {},
+            el('td', { text: r.type }), el('td', { text: (versions.find(c => c.cid === r.cid) || { name: '-' }).name }),
+            el('td', { class: 'wrap' }, el('span', { class: 'badge' + (r.state === 'queued' || r.state === 'running' ? ' dirty' : ''), text: r.state }), r.error ? el('span', { class: 'muted', text: ' ' + r.error }) : null),
+            el('td', { text: fmtTime(r.started) }),
+            el('td', {}, el('div', { class: 'row' },
+                r.state === 'done' ? el('button', { type: 'button', class: 'primary', text: 'Show report', onclick: () => run(() => showMergerReport(base, r, out)) }) : null,
+                r.state === 'done' && canWrite && r.type !== 'merger-possible-report' ? el('button', { type: 'button', text: 'Result as new version', onclick: () => run(async () => {
+                    if (!confirm('Save the result configuration of this ' + r.type + ' run as a new version? The version it ran on stays.')) return;
+                    await api('POST', base + '/runs/' + r.jid + '/save', {}); await showProject(pid); message('the result of the merger is a new version');
+                }) }) : null,
+                r.state === 'done' ? fileLink(r, 'merger.html', 'HTML') : null,
+                r.state === 'done' && r.type !== 'merger-possible-report' ? fileLink(r, 'skipped-merger.html', 'HTML skipped') : null,
+                r.state === 'done' ? fileLink(r, 'merger.json', 'JSON') : null,
+                r.state === 'done' || r.state === 'failed' || r.state === 'cancelled' ? fileLink(r, 'run.log') : null,
+                r.state === 'queued' || r.state === 'running' ? el('button', { type: 'button', text: 'Refresh', onclick: () => run(redraw) }) : null)))));
+    card.append(el('h2', { text: 'Merger' }),
+        el('p', { class: 'muted', text: 'pan-os-php object-merger / rule-merger on a copy of a version: the report shows what can be merged (kept ← removed) and what was not merged, with the reason. The version itself stays - "Result as new version" takes the merged configuration. merger-possible-report only reports duplicates (and with mergecheck whether a merge would change what a firewall receives).' }),
+        form, el('h3', { text: 'Merger runs' }), runList, out);
+    const open = runs.find(r => r.state === 'queued' || r.state === 'running');
+    if (open) state.pendingTimers = (state.pendingTimers || []).concat([setTimeout(() => { if (card.isConnected) redraw().catch(() => {}); }, 4000)]);
+    return card;
+}
+
+/** the report of a merger run (merger.json) as tables, with a text filter */
+async function showMergerReport(base, r, out) {
+    const res = await fetch(API + '/' + base + '/runs/' + r.jid + '/files/merger.json', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('the run has no report (merger.json) - see run.log');
+    const rep = await res.json();
+    const ref = (x) => x ? (x.location ? x.location + ': ' : '') + x.name + (x.detail ? ' ' + x.detail : '') : '';
+    const val = (v) => Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v));
+    const filterBox = el('input', { placeholder: 'filter the rows (text)', autocomplete: 'off', spellcheck: false, 'aria-label': 'filter' });
+    const sections = [];
+    // one table: head, rows (array of cell texts); filtered by the text box
+    const section = (title, head, rows) => {
+        const body = el('tbody', {});
+        const count = el('span', { class: 'muted' });
+        const draw = () => {
+            const q = filterBox.value.trim().toLowerCase();
+            const shown = rows.filter(cells => !q || cells.join(' ').toLowerCase().includes(q));
+            count.textContent = ' (' + shown.length + (shown.length !== rows.length ? ' of ' + rows.length : '') + ')';
+            body.replaceChildren(...shown.slice(0, 2000).map(cells => el('tr', {}, cells.map(c => el('td', { class: 'wrap', text: c })))));
+        };
+        sections.push(draw);
+        return el('div', {}, el('h4', {}, title, count), rows.length === 0 ? el('p', { class: 'muted', text: 'none' }) : el('table', { class: 'plain mergertable' }, el('thead', {}, el('tr', {}, head.map(h => el('th', { text: h })))), body));
+    };
+    let parts = [];
+    if (rep.type === 'merger-possible-report') {
+        parts.push(section('Summary', ['object type', 'objects', 'same name + value', 'same name, other value', 'overlapping', 'same value, other names', 'merge ok', 'would change policy'],
+            Object.entries(rep.summary || {}).map(([t, s]) => [t, s.objects, s['same-name-same-value'], s['same-name-different-value'], s['overlapping-conflicts'], s['same-value-different-names'], rep.mergecheck ? s['merge-ok'] : '', rep.mergecheck ? s['merge-blocked'] : ''].map(val))));
+        parts.push(section('Findings', ['object type', 'finding', 'name(s)', 'overlapping', 'copies (location:name=value)', 'merge check'],
+            (rep.findings || []).map(x => [x.type, x.kind, x.key, x.overlap, (x.copies || []).join('\n'), x.check].map(val))));
+    } else if (rep.type === 'rule-merger') {
+        const s = rep.summary || {};
+        parts.push(el('p', { text: (s.merged || 0) + ' rule(s) kept with ' + (s.removed || 0) + ' merged into them; ' + (s.skipped || 0) + ' not merged (with the reason)' }));
+        const main = (f) => ['from', 'to', 'source', 'destination', 'service', 'application', 'action'].map(k => k + ': ' + val((f || {})[k])).join('\n');
+        parts.push(section('Merged', ['rule (kept)', 'location', 'rule base', 'merged into it', 'after the merge'],
+            (rep.merged || []).map(m => [m.rule, m.location, m.rulebase, m.removed.map(x => x.name).join('\n'), main(m.after)])));
+        parts.push(section('Not merged', ['rule', 'location', 'rule base', 'not merged with', 'reason', 'deny rule'],
+            (rep.skipped || []).flatMap(x => (x.notMergedWith.length ? x.notMergedWith : [{ name: '', reason: '' }]).map(n => [x.rule, x.location, x.rulebase, n.name, n.reason, x.denyRules.map(d => d.name).join(', ')]))));
+    } else {
+        const sum = Object.entries(rep.summary || {});
+        parts.push(section('Summary', ['object type', 'kept (merged)', 'removed', 'not merged'], sum.map(([t, x]) => [t, x.merged, x.removed, x.skipped].map(val))));
+        parts.push(section('Merged', ['object type', 'value / key', 'kept', 'removed (replaced by the kept one)'],
+            (rep.merged || []).map(m => [m.objecttype, m.key, ref(m.kept), m.removed.map(ref).join('\n')])));
+        parts.push(section('Not merged', ['object type', 'value / key', 'kept', 'not merged with', 'reason'],
+            (rep.skipped || []).map(m => [m.objecttype, m.key, ref(m.kept), m.notMergedWith.map(ref).join('\n'), (m.reason || []).map(x => x.trim()).join('\n')])));
+    }
+    filterBox.addEventListener('input', () => sections.forEach(d => d()));
+    out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }), field('Filter', filterBox), ...parts);
+    sections.forEach(d => d());
+    out.scrollIntoView();
 }
 
 // ---------------------------------------------------------------- the change list as a pan-os-php playbook

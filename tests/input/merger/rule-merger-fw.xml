@@ -1,0 +1,13 @@
+<config version="10.1.0" urldb="paloaltonetworks">
+  <shared/><devices><entry name="localhost.localdomain"><vsys><entry name="vsys1">
+    <zone><entry name="trust"><network><layer3/></network></entry><entry name="untrust"><network><layer3/></network></entry></zone>
+    <address><entry name="h1"><ip-netmask>10.0.0.1</ip-netmask></entry><entry name="h2"><ip-netmask>10.0.0.2</ip-netmask></entry></address>
+    <service><entry name="tcp-81"><protocol><tcp><port>81</port></tcp></protocol></entry><entry name="tcp-82"><protocol><tcp><port>82</port></tcp></protocol></entry><entry name="tcp-83"><protocol><tcp><port>83</port></tcp></protocol></entry></service>
+    <rulebase><security><rules>
+      <entry name="r1"><from><member>trust</member></from><to><member>untrust</member></to><source><member>h1</member></source><destination><member>h2</member></destination><source-user><member>any</member></source-user><category><member>any</member></category><application><member>any</member></application><service><member>tcp-81</member></service><action>allow</action></entry>
+      <entry name="r2"><from><member>trust</member></from><to><member>untrust</member></to><source><member>h1</member></source><destination><member>h2</member></destination><source-user><member>any</member></source-user><category><member>any</member></category><application><member>any</member></application><service><member>tcp-82</member></service><action>allow</action></entry>
+      <entry name="deny1"><from><member>trust</member></from><to><member>untrust</member></to><source><member>h1</member></source><destination><member>any</member></destination><source-user><member>any</member></source-user><category><member>any</member></category><application><member>any</member></application><service><member>tcp-83</member></service><action>deny</action></entry>
+      <entry name="r3"><from><member>trust</member></from><to><member>untrust</member></to><source><member>h1</member></source><destination><member>h2</member></destination><source-user><member>any</member></source-user><category><member>any</member></category><application><member>any</member></application><service><member>tcp-83</member></service><action>allow</action></entry>
+    </rules></security></rulebase>
+  </entry></vsys></entry></devices>
+</config>

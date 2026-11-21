@@ -967,6 +967,45 @@ eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: d
 eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
 eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );
 
+// ---- 12m. Merger tab: object-merger / rule-merger / merger-possible-report runs, the report as data (merger.json)
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Merger' ) );
+$J = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $J . '/configs', null, array( 'm.xml', $xml ) );
+$JC = $J . '/configs/' . $r[1]['cid'];
+eq( status( $alice->call( 'POST', $JC . '/object-merger/runs', array( 'objecttype' => 'address,nosuchtype' ) ) ), 400, 'merger: objecttype checked' );
+eq( status( $alice->call( 'POST', $JC . '/object-merger/runs', array( 'dupalgorithm' => 'Whatever' ) ) ), 400, 'merger: DupAlgorithm checked' );
+eq( status( $alice->call( 'POST', $JC . '/object-merger/runs', array( 'pickfilter' => 'x; rm -rf /' ) ) ), 400, 'merger: a filter must be a pan-os-php filter' );
+eq( status( $alice->call( 'POST', $JC . '/rule-merger/runs', array( 'method' => 'x' ) ) ), 400, 'rule-merger: method checked' );
+$r = $alice->call( 'POST', $JC . '/object-merger/runs', array( 'objecttype' => 'address,service', 'location' => 'any', 'allowmergingwithupperlevel' => TRUE, 'out' => '/tmp/x', 'in' => '/etc/passwd' ) );
+eq( array( status( $r ), $r[1]['args'] ?? null ), array( 202, array( 'location=any', 'out=%JOB%/out.xml', 'objecttype=address,service', 'allowMergingWithUpperLevel', 'exportjson=merger.json', 'exportcsv=merger.html' ) ),
+    'merger: object-merger queued with the checked arguments only' );
+$mrun = $J . '/runs/' . $r[1]['jid'];
+$r = waitRun( $alice, $mrun );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( $r[1]['state'] ?? null, in_array( 'merger.json', $names, TRUE ), in_array( 'merger.html', $names, TRUE ), in_array( 'skipped-merger.html', $names, TRUE ), in_array( 'out.xml', $names, TRUE ) ),
+    array( 'done', TRUE, TRUE, TRUE, TRUE ), 'merger: report as JSON and HTML, result configuration' );
+$mj = $alice->call( 'GET', $mrun . '/files/merger.json' )[1];
+$mj = is_string( $mj ) ? json_decode( $mj, TRUE ) : $mj;
+$m0 = $mj['merged'][0] ?? array();
+eq( array( $mj['type'] ?? null, isset( $mj['summary']['address'], $mj['summary']['service'] ), $m0['objecttype'] ?? null, isset( $m0['kept']['location'], $m0['kept']['name'] ), count( $m0['removed'] ?? array() ) > 0,
+    count( array_filter( $mj['skipped'] ?? array(), function( $x ) { return count( $x['reason'] ?? array() ) > 0; } ) ) > 0 ),
+    array( 'object-merger', TRUE, 'address', TRUE, TRUE, TRUE ), 'merger: merged (kept, removed) and skipped with the reason per object type' );
+$before = count( $alice->call( 'GET', $J . '/configs' )[1]['configs'] ?? array() );
+eq( array( status( $alice->call( 'POST', $mrun . '/save', array() ) ), count( $alice->call( 'GET', $J . '/configs' )[1]['configs'] ?? array() ) ), array( 201, $before + 1 ), 'merger: result as new version' );
+$r = $alice->call( 'POST', $JC . '/rule-merger/runs', array( 'location' => 'any', 'method' => 'matchFromToSrcDstApp', 'rulebase' => 'pre', 'stopmergingifdenyseen' => TRUE, 'additionalmatch' => array( 'tag' ) ) );
+eq( $r[1]['args'] ?? null, array( 'location=any', 'out=%JOB%/out.xml', 'method=matchFromToSrcDstApp', 'panoramaPreRules', 'stopMergingIfDenySeen=yes', 'additionalMatch=tag', 'exportjson=merger.json', 'exportcsv=merger.html' ), 'rule-merger: arguments' );
+$r = waitRun( $alice, $J . '/runs/' . $r[1]['jid'] );
+$rj = $alice->call( 'GET', $J . '/runs/' . $r[1]['jid'] . '/files/merger.json' )[1];
+$rj = is_string( $rj ) ? json_decode( $rj, TRUE ) : $rj;
+eq( array( $r[1]['state'] ?? null, $rj['type'] ?? null, isset( $rj['summary']['merged'], $rj['merged'], $rj['skipped'] ) ), array( 'done', 'rule-merger', TRUE ), 'rule-merger: done, report as data' );
+$r = $alice->call( 'POST', $JC . '/merger-possible-report/runs', array( 'objecttype' => 'address', 'mergecheck' => TRUE ) );
+$r = waitRun( $alice, $J . '/runs/' . $r[1]['jid'] );
+$pj = $alice->call( 'GET', $J . '/runs/' . $r[1]['jid'] . '/files/merger.json' )[1];
+$pj = is_string( $pj ) ? json_decode( $pj, TRUE ) : $pj;
+eq( array( $r[1]['state'] ?? null, $pj['type'] ?? null, isset( $pj['summary']['address'] ), count( $pj['findings'] ?? array() ) > 0, status( $alice->call( 'POST', $J . '/runs/' . $r[1]['jid'] . '/save', array() ) ) ),
+    array( 'done', 'merger-possible-report', TRUE, TRUE, 409 ), 'merger-possible-report: findings and summary, no result configuration' );
+eq( status( $alice->call( 'DELETE', $J ) ), 200, 'merger project deleted' );
+
 // ---- 12c. allow list per action (action-classes.json)
 $chk = proc_open( array( PHP_BINARY, $viewer . '/bin/action-classes.php', 'check' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes );
 stream_get_contents( $pipes[1] );

@@ -1224,7 +1224,17 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover' );
+    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover',
+        'object-merger', 'rule-merger', 'merger-possible-report' );
+    /** the mergers of the Merger tab: their arguments (checked here, the merger checks their combination again) */
+    const MERGER_OBJECTTYPES = array( 'tag', 'address', 'service', 'edl', 'region', 'application-custom', 'application-filter', 'addressgroup',
+        'servicegroup', 'application-group', 'custom-url-category', 'schedule', 'log-profile', 'decryption-profile', 'hip-object', 'hip-profile',
+        'securityprofile', 'securityprofilegroup' );
+    const MERGER_DUPALGORITHMS = array( 'SameAddress', 'Identical', 'WhereUsed', 'SameDstSrcPorts', 'SamePorts', 'SameMembers', 'SameIP4Mapping',
+        'SamePortMapping', 'SameColor', 'SameName', 'SameValue' );
+    const RULEMERGER_METHODS = array( 'matchFromToSrcDstApp', 'matchFromToSrcDstSvc', 'matchFromToSrcSvcApp', 'matchFromToDstSvcApp',
+        'matchFromSrcDstSvcApp', 'matchToSrcDstSvcApp', 'matchToDstSvcApp', 'matchFromSrcSvcApp', 'identical' );
+    const RULEMERGER_ADDITIONAL = array( 'tag', 'secprof', 'user', 'urlcategory', 'target', 'logsetting', 'schedule' );
     /** where type=maxmind-update downloads from (must be on the allow list of the administrator) */
     const MAXMIND_HOST = 'download.maxmind.com';
     /** the project of the installation-wide runs (App-ID / MaxMind of the administrator): not listed, only administrators */
@@ -1554,6 +1564,8 @@ class ViewerApp
                 throw new ViewerException( $why, 403 );
             $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $host );
         }
+        if( in_array( $type, array( 'object-merger', 'rule-merger', 'merger-possible-report' ), TRUE ) )
+            $args = $this->mergerArgs( $user, $pid, $type, $in );
         if( $type === 'stats' )
         {
             $location = $in['location'] ?? 'any';
@@ -1634,6 +1646,100 @@ class ViewerApp
         $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created) VALUES (?,?,?,?,?,?,?,?)',
             array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time() ) );
         return $this->jobGet( $user, $pid, $jid );
+    }
+
+    /**
+     * the arguments of a merger run (Merger tab): object-merger / rule-merger on a copy of the version - the result
+     * configuration out.xml (Result as new version), the report as exportJSON (merger.json: the tables of the page) and
+     * exportCSV (merger.html, skipped-merger.html: download); merger-possible-report only reports (read). Every value
+     * from a fixed list or checked; filters are pan-os-php filters (one argument each, no shell).
+     */
+    private function mergerArgs( array $user, $pid, string $type, array $in ): array
+    {
+        if( $type !== 'merger-possible-report' )
+            $this->projectGet( $user, $pid, 'write' );
+        $bool = function( $k ) use ( $in ) { $v = $in[$k] ?? FALSE; return $v === TRUE || $v === 'yes' || $v === 'true' || $v === 1 || $v === '1'; };
+        $location = $in['location'] ?? 'any';
+        if( $location === '' || $location === null )
+            $location = 'any';
+        if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.\-]{1,63}(,[A-Za-z0-9 _.\-]{1,63}){0,49}$/', $location ) )
+            throw new ViewerException( 'location: any, or location names (, separated) with letters, digits, space and . _ -', 400 );
+        $filter = function( $k ) use ( $in ) {
+            $v = $in[$k] ?? '';
+            if( $v === '' || $v === null )
+                return null;
+            if( !is_string( $v ) || strlen( $v ) > 2000 || preg_match( '/[\x00-\x1F\x7F]/', $v ) || !preg_match( '/^[!(]/', trim( $v ) ) )
+                throw new ViewerException( $k . ': a pan-os-php filter, e.g. (name regex /^H-/)', 400 );
+            return trim( $v );
+        };
+        $types = function( array $allowed ) use ( $in ) {
+            $v = $in['objecttype'] ?? 'any';
+            $list = is_array( $v ) ? $v : explode( ',', (string)$v );
+            $list = array_values( array_unique( array_filter( array_map( 'trim', $list ), 'strlen' ) ) );
+            if( count( $list ) === 0 || in_array( 'any', $list, TRUE ) )
+                return 'any';
+            foreach( $list as $t )
+                if( !in_array( $t, $allowed, TRUE ) && !( $allowed === array() && preg_match( '/^[a-z0-9-]{1,60}$/', $t ) ) )
+                    throw new ViewerException( 'objecttype: any or ' . implode( ', ', $allowed ), 400 );
+            return implode( ',', $list );
+        };
+        $report = array( 'exportjson=merger.json', 'exportcsv=merger.html' );
+        if( $type === 'merger-possible-report' )
+        {
+            // the report types of pan-os-php (address, service, …, securityprofile-<type>): checked by the report
+            // over all locations (the report has no location choice)
+            $args = array( 'objecttype=' . $types( array() ) );
+            if( $bool( 'mergecheck' ) )
+                $args[] = 'mergecheck';
+            return array_merge( $args, $report );
+        }
+        $args = array( 'location=' . $location, 'out=%JOB%/out.xml' );
+        if( $type === 'object-merger' )
+        {
+            $args[] = 'objecttype=' . $types( self::MERGER_OBJECTTYPES );
+            $dup = $in['dupalgorithm'] ?? '';
+            if( $dup !== '' && $dup !== null )
+            {
+                if( !in_array( $dup, self::MERGER_DUPALGORITHMS, TRUE ) )
+                    throw new ViewerException( 'DupAlgorithm: ' . implode( ', ', self::MERGER_DUPALGORITHMS ), 400 );
+                $args[] = 'DupAlgorithm=' . $dup;
+            }
+            $limit = $in['mergecountlimit'] ?? '';
+            if( $limit !== '' && $limit !== null )
+            {
+                if( !preg_match( '/^[0-9]{1,6}$/', (string)$limit ) )
+                    throw new ViewerException( 'mergecountlimit: a number', 400 );
+                $args[] = 'mergecountlimit=' . (int)$limit;
+            }
+            foreach( array( 'pickfilter' => 'pickFilter', 'excludefilter' => 'excludeFilter' ) as $k => $name )
+                if( ( $f = $filter( $k ) ) !== null )
+                    $args[] = $name . '=' . $f;
+            if( $bool( 'allowmergingwithupperlevel' ) )
+                $args[] = 'allowMergingWithUpperLevel';
+            return array_merge( $args, $report );
+        }
+        // rule-merger
+        $method = $in['method'] ?? 'matchFromToSrcDstApp';
+        if( !in_array( $method, self::RULEMERGER_METHODS, TRUE ) )
+            throw new ViewerException( 'method: ' . implode( ', ', self::RULEMERGER_METHODS ), 400 );
+        $args[] = 'method=' . $method;
+        $rb = $in['rulebase'] ?? 'pre';
+        if( !in_array( $rb, array( 'pre', 'post' ), TRUE ) )
+            throw new ViewerException( 'rulebase: pre or post (Panorama)', 400 );
+        $args[] = $rb === 'post' ? 'panoramaPostRules' : 'panoramaPreRules';
+        foreach( array( 'mergedenyrules' => 'mergeDenyRules', 'stopmergingifdenyseen' => 'stopMergingIfDenySeen', 'mergeadjacentonly' => 'mergeAdjacentOnly' ) as $k => $name )
+            if( isset( $in[$k] ) )
+                $args[] = $name . '=' . ( $bool( $k ) ? 'yes' : 'no' );
+        if( ( $f = $filter( 'filter' ) ) !== null )
+            $args[] = 'filter=' . $f;
+        $add = $in['additionalmatch'] ?? array();
+        $add = is_array( $add ) ? $add : array_filter( explode( ',', (string)$add ), 'strlen' );
+        foreach( $add as $a )
+            if( !in_array( $a, self::RULEMERGER_ADDITIONAL, TRUE ) )
+                throw new ViewerException( 'additionalMatch: ' . implode( ', ', self::RULEMERGER_ADDITIONAL ), 400 );
+        if( count( $add ) )
+            $args[] = 'additionalMatch=' . implode( ',', array_values( array_unique( $add ) ) );
+        return array_merge( $args, $report );
     }
 
     /**
@@ -1776,7 +1882,7 @@ class ViewerApp
             self::needUnlimited( $target, 'a new version' );
         }
         // playbook runs write out.xml; a run type of a plug-in names its result configuration
-        $result = in_array( $j['type'], array( 'playbook', 'ldap-users' ), TRUE ) ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
+        $result = in_array( $j['type'], array( 'playbook', 'ldap-users', 'object-merger', 'rule-merger' ), TRUE ) ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
         $out = $this->jobDir( $p, $j['jid'] ) . '/' . ( $result ?? 'out.xml' );
         if( $j['state'] !== 'done' || $result === null || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
             throw new ViewerException( 'this run has no result configuration', 409 );

@@ -82,8 +82,8 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
 
 ## Runs
 
-A run works on a copy of one version in its own folder and container (no network). The project page has three tabs:
-**Configuration versions**, **Runs and project files**, **Members, API tokens, audit log**. Under **Runs**:
+A run works on a copy of one version in its own folder and container (no network). The project page has the tabs
+**Configuration versions**, **Runs and project files**, **Merger** (see below), **LDAP**, **Members, API tokens, audit log**. Under **Runs**:
 
 | Run | What it does |
 |---|---|
@@ -117,6 +117,31 @@ viewer runs on: `VIEWER_RUN_MEMORY=4g` in `.env` next to `panosphp-viewer` (defa
 
 When a run is done: **Result files** to download (e.g. `out.xml`, `set-commands.txt`, `run.log`), and
 **Result as new version** - in this project or in another one.
+
+## Merger
+
+Tab **Merger** of a project (members without a limit to types / locations):
+
+* **object-merger** (`type=object-merger`): object types (none = any), location, DupAlgorithm, pickFilter,
+  excludeFilter, mergeCountLimit, allowMergingWithUpperLevel - write permission
+* **rule-merger** (`type=rule-merger`): location, method, pre / post rules (Panorama), mergeDenyRules,
+  stopMergingIfDenySeen, mergeAdjacentOnly, filter, additionalMatch - write permission
+* **merger-possible-report** (`type=merger-possible-report`): object types, mergecheck - only a report, read permission
+
+A merger run works on a copy of the version like every run; the version stays. **Show report** draws the report as
+tables with a text filter: the summary, **Merged** (kept ← removed, with location and value / key; for rules: the
+kept rule, the rules merged into it, its main fields after the merge) and **Not merged** with the **reason** (and the
+deny rule that stopped a rule merge). **Result as new version** takes the merged configuration. Downloads: the HTML of
+pan-os-php (`exportCSV`: merged / skipped), the JSON, run.log.
+
+The tables come from `exportJSON=merger.json` of pan-os-php - the same data the HTML of `exportCSV=` is made of (one
+code path, `utils/lib/MergerReport.php`); on the command line: `pan-os-php type=object-merger … exportjson=report.json`,
+or `shadow-json` (key `merger-report`). Applying a merge to the loaded version (one change, one commit, undo): later.
+
+API: `POST …/configs/<cid>/object-merger/runs` (body: `objecttype`, `location`, `dupalgorithm`, `pickfilter`,
+`excludefilter`, `mergecountlimit`, `allowmergingwithupperlevel`), `…/rule-merger/runs` (`location`, `method`,
+`rulebase` pre / post, `mergedenyrules`, `stopmergingifdenyseen`, `mergeadjacentonly`, `filter`, `additionalmatch`),
+`…/merger-possible-report/runs` (`objecttype`, `mergecheck`); the report: `GET …/runs/<jid>/files/merger.json`.
 
 ## Scripts (API)
 

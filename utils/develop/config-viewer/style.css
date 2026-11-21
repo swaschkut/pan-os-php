@@ -137,3 +137,6 @@ li.undo { color: var(--muted, #666); }
 pre.objxml { max-height: 320px; overflow: auto; font-size: 12px; background: var(--code-bg, #f5f5f5); padding: .5em; white-space: pre; }
 ul.objhist { list-style: none; padding-left: 0; margin: .3em 0; }
 ul.objhist li { margin: .15em 0; }
+
+/* merger report: multi-line cells */
+table.mergertable td { white-space: pre-line; vertical-align: top; }

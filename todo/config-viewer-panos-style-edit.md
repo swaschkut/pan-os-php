@@ -37,11 +37,20 @@ Status: **in progress** (Sven, 2026-11-21).
   exact / contains / regex, element names or values, attributes (`name=`), limited to a location / template; the hits
   with their XPath and a link to the object (window) where there is one
 * more network / device types editable as soon as their actions are reviewed (action-classes.json `reviewed`)
-* **object-merger in the viewer** (Sven, 2026-11-21) - see "Object merger in the viewer" below
+* **object-merger in the viewer** (Sven, 2026-11-21) - step 1 built (tab Merger, reports as tables); open: apply to the loaded version - see "Object merger in the viewer" below
 * **what can not be changed in the windows yet** - see "Not editable in the windows" below (missing pan-os-php
   actions vs. windows not built)
 
-### Object merger in the viewer (open, 2026-11-21)
+### Object merger in the viewer (2026-11-21)
+
+**Step 1 built:** tab **Merger** of a project - object-merger, rule-merger, merger-possible-report as runs (arguments
+from fixed lists / checked filters, `ViewerApp::mergerArgs()`); pan-os-php writes the report as data
+(`exportJSON=` / `shadow-json`, `utils/lib/MergerReport.php`), the HTML of `exportCSV=` is made from the same data (one
+code path: object merger from `deletedObjects` / `skippedObjects`; rule merger stores field values -
+`RuleCallContext::ruleFieldValue()`, the same field logic as `ruleFieldHtmlExport()` - and the reason of every rule it
+did not merge; HTML of the command line unchanged except a new "reason" row in the skipped rules). Tests:
+`tests/test_merger_report.php`, `tests/test_config_viewer.php` 12m. Open: apply to the loaded version (below).
+
 
 * Today the viewer offers no merger: playbook steps `*-merger` are refused (`playbookCheck`), there is no run type for
   `type=object-merger`, and the change window has no merge.

@@ -45,14 +45,15 @@ Counted from [action-classes.json](action-classes.json), class `change`.
   (`name=`); limited to a location / template; the hits with their XPath and a link to the object window
 * more network / device types editable as soon as their actions are reviewed (`action-classes.json` `reviewed`)
 
-### 1.4 object-merger in the viewer
+### 1.4 object-merger / rule-merger in the viewer
 
-* today no merger: playbook steps `*-merger` are refused, no run type for `type=object-merger`
-* wanted: preview (which objects into which - report of the merger / `merger-possible-report`), then apply as one
-  change; in the git history one commit with every merged / removed object and every reference - undone as a whole
-* arguments (`objecttype`, `location`, `pickfilter`, `excludefilter`, `allowmergingwithupperlevel`,
-  `mergecountlimit`, `DupAlgorithm`, …) as fields with the values of the merger only; a member limited to locations
-  only inside them (no upper level)
+* ~~step 1~~ built 2026-11-21: tab **Merger** - object-merger, rule-merger, merger-possible-report as runs on a copy;
+  the report as tables (merged, not merged with the reason) from `exportJSON` (pan-os-php `MergerReport`, the same
+  data as the HTML of `exportCSV`); result as new version
+* open: **apply to the loaded version** - the merger in the worker on the memory as one change: one commit with every
+  merged / removed object and every reference, undone as a whole (git step 3)
+* open: members limited to locations (today the tab needs the whole configuration, like every run)
+* open: playbook steps `*-merger` (refused today)
 * pan-os-php: the single `xyz-merger` types deprecated in favour of `type=object-merger`
   ([todo/merger-deprecate-single-types.md](../../../todo/merger-deprecate-single-types.md), planned)
 
