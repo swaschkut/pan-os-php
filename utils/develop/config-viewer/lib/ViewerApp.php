@@ -1747,7 +1747,9 @@ class ViewerApp
             }
             ksort( $actions );
             $filters = self::filterMeta( (array)$j[$type]['filter'] );
-            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => FALSE, 'resource' => self::resourceName( $type ) );
+            // 'references': the type has displayreferences - the page offers "References" per object
+            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => FALSE, 'resource' => self::resourceName( $type ),
+                'references' => isset( $j[$type]['action']['displayreferences'] ) );
         }
         // every other type that shows objects (action 'display'): read only, until its actions are in a reviewed allow list
         foreach( $j as $type => $def )
@@ -1770,7 +1772,8 @@ class ViewerApp
                     $actions[(string)$name] = $args;
                 }
             ksort( $actions );
-            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => count( $actions ) == 0, 'resource' => self::resourceName( $type ) );
+            $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => count( $actions ) == 0, 'resource' => self::resourceName( $type ),
+                'references' => isset( $def['action']['displayreferences'] ) );
         }
         $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES,
             'resources' => array_map( function( $t ) { return array( 'type' => $t, 'model' => 'scm-v1' ); }, self::SCM_RESOURCES ) );
@@ -2105,6 +2108,48 @@ class ViewerApp
                 $columns[$k] = TRUE;
         return array( 'total' => count( $rows ), 'truncated' => count( $rows ) > $max, 'columns' => array_keys( $columns ),
             'rows' => array_slice( $rows, 0, $max ), 'status' => $r['status'] ?? null );
+    }
+
+    /**
+     * Who uses an object: GET …/configs/<cid>/references?type=&location=&name= (+ ruletype / securityprofiletype as for a
+     * read). Every object of that name in the location, with the objects that reference it (type, location, name, rule
+     * type / pre-post, fields). A member limited to types / locations sees only references inside them (the others are
+     * counted as 'hidden').
+     */
+    public function references( array $user, $pid, $cid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        $name = $in['name'] ?? null;
+        if( !is_string( $name ) || $name === '' || strlen( $name ) > 300 || preg_match( '/[\x00-\x1F\x7F]/', $name ) )
+            throw new ViewerException( 'name: the name of the object', 400 );
+        $args = $this->queryArgs( array( 'filter' => '' ) + $in, $p );
+        $type = substr( array_shift( $args ), 5 );
+        if( empty( $this->meta()['types'][$type]['references'] ) )
+            throw new ViewerException( 'type ' . $type . ' has no references', 400 );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'references', 'type' => $type, 'args' => $args, 'name' => $name ), 300 );
+        if( empty( $r['ok'] ) )
+            throw new ViewerException( is_string( $r['error'] ?? null ) ? $this->hidePaths( $r['error'] ) : 'the references could not be read', 500 );
+        $objects = array();
+        foreach( is_array( $r['objects'] ?? null ) ? $r['objects'] : array() as $o )
+        {
+            $refs = array();
+            $hidden = 0;
+            foreach( is_array( $o['references'] ?? null ) ? $o['references'] : array() as $ref )
+            {
+                $t = $ref['type'] ?? null;
+                if( ( $p['types'] !== null && !in_array( $t, $p['types'], TRUE ) ) || ( $p['scope'] !== null && !in_array( $ref['location'] ?? null, $p['scope'], TRUE ) ) )
+                {
+                    $hidden++;
+                    continue;
+                }
+                // a reference the page can open: a type the viewer shows
+                $ref['open'] = $t !== null && isset( $this->meta()['types'][$t] ) && is_string( $ref['location'] ?? null );
+                $refs[] = $ref;
+            }
+            $objects[] = array( 'location' => $o['location'] ?? null, 'class' => $o['class'] ?? null, 'references' => $refs, 'hidden' => $hidden );
+        }
+        return array( 'type' => $type, 'name' => $name, 'objects' => $objects );
     }
 
     /**

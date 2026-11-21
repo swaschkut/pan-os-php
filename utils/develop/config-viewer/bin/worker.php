@@ -21,6 +21,7 @@
  * config-viewer worker: loads ONE configuration once and keeps it in memory (UTIL::$sharedConfig). Started by
  * bin/service.php on request of ViewerApp::session(), never by a user. Requests arrive on a unix socket inside the project folder, one JSON line
  * per connection:
+ *   references type, args, name -> who uses the objects of that name (in a forked child)
  *   locations                 -> the locations of the loaded configuration (device groups / vsys / containers, snippets)
  *   read    type, args        -> runs in a forked child (a failing run / exit() can not hurt the loaded configuration)
  *   change  type, args, note  -> tried in a forked child first; only when that worked it runs on the real memory
@@ -130,6 +131,92 @@ function viewerLocations()
         return array( 'config' => 'scm', 'locations' => $out );
     }
     return array( 'config' => 'unknown', 'locations' => $out );
+}
+
+/** the viewer type (and rule type / profile type) of a pan-os-php object, null for others (interface, vsys, …) */
+function viewerTypeOf( $o )
+{
+    static $rules = array( 'SecurityRule' => 'security', 'NatRule' => 'nat', 'DecryptionRule' => 'decryption', 'AppOverrideRule' => 'appoverride',
+        'CaptivePortalRule' => 'captiveportal', 'AuthenticationRule' => 'authentication', 'PbfRule' => 'pbf', 'QoSRule' => 'qos', 'DoSRule' => 'dos',
+        'TunnelInspectionRule' => 'tunnelinspection', 'DefaultSecurityRule' => 'defaultsecurity', 'NetworkPacketBrokerRule' => 'networkpacketbroker',
+        'SDWanRule' => 'sdwan' );
+    static $profiles = array( 'URLProfile' => 'url-filtering', 'AntiVirusProfile' => 'virus', 'VirusAndWildfireProfile' => 'virus',
+        'VulnerabilityProfile' => 'vulnerability', 'AntiSpywareProfile' => 'spyware', 'FileBlockingProfile' => 'file-blocking',
+        'DataFilteringProfile' => 'data-filtering', 'WildfireProfile' => 'wildfire-analysis', 'customURLProfile' => 'custom-url-category',
+        'DNSSecurityProfile' => 'dns-security', 'SaasSecurityProfile' => 'saas-security' );
+    static $plain = array( 'Address' => 'address', 'AddressGroup' => 'address', 'Region' => 'address', 'Service' => 'service', 'ServiceGroup' => 'service',
+        'Tag' => 'tag', 'Zone' => 'zone', 'Schedule' => 'schedule', 'SecurityProfileGroup' => 'securityprofilegroup', 'App' => 'application',
+        'AppGroup' => 'application', 'AppFilter' => 'application', 'AppCustom' => 'application', 'EDL' => 'edl', 'LogProfile' => 'log-profile' );
+    $c = get_class( $o );
+    if( isset( $rules[$c] ) )
+        return array( 'type' => 'rule', 'ruletype' => $rules[$c] );
+    if( isset( $profiles[$c] ) )
+        return array( 'type' => 'securityprofile', 'securityprofiletype' => $profiles[$c] );
+    if( isset( $plain[$c] ) )
+        return array( 'type' => $plain[$c] );
+    return null;
+}
+
+/**
+ * who uses the objects named $name of a type (in the location of $args): every object found, with its references -
+ * the referencing object (type, rule type, location, name, pre / post) and the field (source, destination, member, …)
+ */
+function viewerReferences( $type, array $args, $name )
+{
+    global $configFile;
+    // the run only selects the objects of the location (no object has this name, so nothing is shown)
+    $argv = array_merge( array( 'config-viewer', 'in=' . $configFile, 'shadow-json' ), $args, array( 'actions=display', 'filter=(name eq config-viewer-load)' ) );
+    PH::resetCliArgs( $argv );
+    PH::$JSON_OUT = array();
+    PH::$JSON_TMP = array();
+    PH::$JSON_OUTlog = '';
+    ob_start();
+    $util = PH::callPANOSPHP( $type, $argv, count( $argv ), 'config-viewer' );
+    ob_end_clean();
+    $out = array();
+    foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
+        foreach( is_array( $set['objects'] ?? null ) ? $set['objects'] : array() as $o )
+        {
+            if( !is_object( $o ) || !method_exists( $o, 'name' ) || $o->name() !== $name )
+                continue;
+            $refs = array();
+            foreach( isset( $o->refrules ) && is_array( $o->refrules ) ? $o->refrules : array() as $ref )
+            {
+                // from the reference up to the object that uses it: a rule / group / profile group …; a "…Container" on
+                // the way is the field (AddressRuleContainer:source)
+                $field = null;
+                $user = null;
+                $first = null;
+                for( $x = $ref, $i = 0; is_object( $x ) && $i < 8; $x = $x->owner ?? null, $i++ )
+                {
+                    if( $first === null && method_exists( $x, 'name' ) && !preg_match( '/Store$/', get_class( $x ) ) )
+                        $first = $x;
+                    if( $field === null && preg_match( '/Container$/', get_class( $x ) ) && method_exists( $x, 'name' ) && is_string( $x->name() ) && $x->name() !== '' )
+                        $field = $x->name();
+                    if( viewerTypeOf( $x ) !== null )
+                    {
+                        $user = $x;
+                        break;
+                    }
+                }
+                $user = $user ?? $first;
+                if( !is_object( $user ) )
+                    continue;
+                $t = viewerTypeOf( $user );
+                $loc = PH::getLocationString( $user );
+                $row = array( 'type' => $t['type'] ?? null, 'ruletype' => $t['ruletype'] ?? null, 'securityprofiletype' => $t['securityprofiletype'] ?? null,
+                    'location' => is_string( $loc ) ? $loc : null, 'name' => method_exists( $user, 'name' ) ? (string)$user->name() : '', 'class' => get_class( $user ),
+                    'rulebase' => method_exists( $user, 'isPostRule' ) && $t !== null && $t['type'] === 'rule' ? ( $user->isPostRule() ? 'post' : 'pre' ) : null );
+                $key = $row['class'] . '|' . $row['location'] . '|' . $row['name'];
+                if( !isset( $refs[$key] ) )
+                    $refs[$key] = $row + array( 'fields' => array() );
+                if( $field !== null && !in_array( $field, $refs[$key]['fields'], TRUE ) )
+                    $refs[$key]['fields'][] = $field;
+            }
+            $loc = PH::getLocationString( $o );
+            $out[] = array( 'location' => is_string( $loc ) ? $loc : null, 'class' => get_class( $o ), 'references' => array_values( $refs ) );
+        }
+    return $out;
 }
 
 function viewerWrite( $path )
@@ -341,6 +428,36 @@ while( TRUE )
 
     if( $cmd['cmd'] === 'status' )
         viewerSend( $conn, array( 'ok' => TRUE, 'status' => viewerStatus() ) );
+    elseif( $cmd['cmd'] === 'references' )
+    {
+        // in a child, like a read: whatever pan-os-php does on the way can not hurt the loaded configuration
+        $name = isset( $cmd['name'] ) && is_string( $cmd['name'] ) ? $cmd['name'] : '';
+        $child = pcntl_fork();
+        if( $child === 0 )
+        {
+            fclose( $server );
+            $GLOBALS['viewerIsChild'] = TRUE;
+            pcntl_alarm( 300 );
+            $sent = FALSE;
+            register_shutdown_function( function() use ( $conn, &$sent ) {
+                while( ob_get_level() > 0 )
+                    ob_end_clean();
+                if( !$sent )
+                    viewerSend( $conn, array( 'ok' => FALSE, 'error' => 'the references could not be read' ) );
+                posix_kill( getmypid(), SIGKILL );
+            } );
+            try { $r = array( 'ok' => TRUE, 'objects' => viewerReferences( $type, $args, $name ) ); }
+            catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'references: ' . $e->getMessage() ); }
+            while( ob_get_level() > 0 )
+                ob_end_clean();
+            viewerSend( $conn, $r );
+            $sent = TRUE;
+            exit( 0 );
+        }
+        viewerQuiet( function() use ( $conn ) { fclose( $conn ); } );
+        if( $child < 0 )
+            viewerLog( 'fork failed' );
+    }
     elseif( $cmd['cmd'] === 'locations' )
     {
         try { $r = array( 'ok' => TRUE ) + viewerLocations(); } catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'locations: ' . $e->getMessage() ); }

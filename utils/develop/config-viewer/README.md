@@ -279,6 +279,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `projects/<pid>/configs` | GET / POST | read / write | versions / upload (multipart field `config`) |
 | `projects/<pid>/configs/<cid>` | DELETE | write | delete a version |
 | `…/<cid>/download` | GET | read | the XML file |
+| `…/<cid>/references` | GET | read | who uses an object (pan-os-php `displayreferences`): query `type` (one with `references` in `meta`), `location`, `name` (+ `ruletype` / `securityprofiletype`) → `objects` (every object of that name: `location`, `class`, `references`: `type`, `ruletype`, `securityprofiletype`, `location`, `name`, `class`, `rulebase`, `fields`, `open`; `hidden`: users outside the types / locations of a limited member) |
 | `…/<cid>/locations` | GET | read | locations of the version (loads it): `config` (`panorama` / `firewall` / `scm`), `any`, `locations` (`name`, `kind`: `shared`, `device-group`, `vsys`, `shared-gateway`, `container`, `snippet`); limited members: only theirs, `any` false |
 | `…/<cid>/<resource>` | GET | read | REST per type, e.g. `addresses`, `rules`, `security-profiles` (names: `meta` → `resource`). Query `location`, `filter`, `ruletype`, `securityprofiletype`, `limit` (1–5000, default 1000), `offset` → `type`, `model`, `total`, `offset`, `limit`, `items` |
 | `…/<cid>/<resource>/<name>` | GET | read | the object(s) with this name (all locations, or `?location=`); `404` when there is none |

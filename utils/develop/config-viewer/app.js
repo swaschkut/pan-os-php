@@ -158,12 +158,15 @@ async function showLogin() {
     main(el('div', { class: 'loginpage' }, form, docs));
     (setup.first_admin ? form.querySelector('input[name=code]') : user).focus();
 }
-async function entered(r) {
+async function entered(r, deep) {
     state.user = r.user; state.admin = r.admin; state.csrf = r.csrf;
     document.getElementById('nav').hidden = false;
     document.getElementById('who').textContent = r.user + (r.admin ? ' (admin)' : '');
     if (!state.meta) state.meta = await api('GET', 'meta');
-    await showProjects();
+    // a link into a version (reference "Open"): no project list first
+    if (deep) return;
+    // a link into a version, opened before the login: there after the login
+    if (!(window.location.hash.length > 1 && await openFromHash())) await showProjects();
     if (r.notices && r.notices.length) cliNoticeCard(r.notices);
 }
 // administrators: use of the command line since the last login - a refused try can mean someone tried to get in
@@ -585,10 +588,11 @@ function filterSuggest(filters, text, pos) {
 }
 
 // ---------------------------------------------------------------- viewer / editor
-async function showViewer(config) {
+// preset (a link "Open" of a reference, in a new window): type, ruletype, securityprofiletype, location, filter
+async function showViewer(config, preset) {
     const p = state.project, pid = p.pid, canWrite = p.role !== 'read';
     state.config = config; state.cache.clear();
-    const view = { rows: [], columns: [], sort: null, desc: false, page: 1, size: 50, quick: '' };
+    const view = { rows: [], columns: [], sort: null, desc: false, page: 1, size: 50, quick: '', refs: new Map() };
     const base = () => 'projects/' + pid + '/configs/' + state.config.cid;
 
     // access limited to some types: only these; limited to locations: start with the first one
@@ -665,10 +669,42 @@ async function showViewer(config) {
         }
         setStatus(data.status ? Object.assign({ loaded: true }, data.status) : lastStatus);
         view.rows = data.rows; view.columns = data.columns; view.page = 1;
+        view.query = key; view.type = type.value; view.refs.clear();
         if (!view.columns.includes(view.sort)) view.sort = null;
         loadLocations();
         info.textContent = data.total + ' objects' + (data.truncated ? ' (first ' + data.rows.length + ' shown)' : '') + (fromCache ? ' - from browser cache' : ' - ' + data.ms + ' ms');
         draw();
+    }
+    // ---- references of one object (actions=displayreferences): below its row; "Open" shows the user in a new window
+    async function toggleRefs(r, key) {
+        if (view.refs.has(key)) { view.refs.delete(key); draw(); return; }
+        view.refs.set(key, null); draw();
+        const q = new URLSearchParams(view.query);
+        q.set('name', r.name);
+        if (r.location) q.set('location', r.location);
+        q.delete('filter');
+        try { view.refs.set(key, await api('GET', base() + '/references?' + q.toString())); }
+        catch (e) { view.refs.set(key, { error: e.message }); }
+        if (view.refs.has(key)) draw();
+    }
+    function openLink(ref) {
+        const h = new URLSearchParams({ p: pid, c: state.config.cid, type: ref.type, location: ref.location, filter: '(name eq ' + ref.name + ')' });
+        if (ref.ruletype) h.set('ruletype', ref.ruletype);
+        if (ref.securityprofiletype) h.set('securityprofiletype', ref.securityprofiletype);
+        return window.location.pathname + '#' + h.toString();
+    }
+    function refsBox(d) {
+        if (d === null) return el('div', { class: 'refs muted', text: 'reading the references ...' });
+        if (d.error) return el('div', { class: 'refs error', text: d.error });
+        if (!d.objects.length) return el('div', { class: 'refs muted', text: 'object not found' });
+        return el('div', { class: 'refs' }, d.objects.map(o => el('div', {},
+            el('div', { class: 'muted', text: (d.objects.length > 1 ? o.location + ': ' : '') + (o.references.length ? 'used by ' + o.references.length + ':' : 'not used (no references)')
+                + (o.hidden ? ' - ' + o.hidden + ' more outside your types / locations' : '') }),
+            o.references.length ? table(['Used by', 'Location', 'Name', 'Where', ''], o.references.map(ref => el('tr', {},
+                el('td', { text: ref.type ? ref.type + (ref.ruletype ? ' (' + ref.ruletype + ')' : '') + (ref.securityprofiletype ? ' (' + ref.securityprofiletype + ')' : '') : ref.class }),
+                el('td', { text: ref.location || '' }), el('td', { text: ref.name }),
+                el('td', { text: [ref.rulebase ? ref.rulebase + ' rule' : null, ...(ref.fields || [])].filter(x => x).join(', ') }),
+                el('td', {}, ref.open ? el('a', { href: openLink(ref), target: '_blank', rel: 'noopener', text: 'Open ↗', title: 'show this ' + ref.type + ' in a new window' }) : null)))) : null)));
     }
     function cell(v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v)); }
     function draw() {
@@ -685,8 +721,15 @@ async function showViewer(config) {
             el('thead', {}, el('tr', {}, view.columns.map(c => el('th', { text: c + (view.sort === c ? (view.desc ? ' ▼' : ' ▲') : ''), onclick: () => {
                 if (view.sort === c) view.desc = !view.desc; else { view.sort = c; view.desc = false; }
                 draw();
-            } })))),
-            el('tbody', {}, slice.map(r => el('tr', {}, view.columns.map(c => { const t = cell(r[c]); return el('td', { text: t, title: t.length > 40 ? t : null }); }))))));
+            } })), state.meta.types[view.type] && state.meta.types[view.type].references ? el('th', {}) : null)),
+            el('tbody', {}, slice.flatMap(r => {
+                const withRefs = state.meta.types[view.type] && state.meta.types[view.type].references && typeof r.name === 'string' && r.name !== '';
+                const key = (r.location || '') + '|' + r.name;
+                const row = el('tr', {}, view.columns.map(c => { const t = cell(r[c]); return el('td', { text: t, title: t.length > 40 ? t : null }); }),
+                    withRefs ? el('td', { class: 'refcell' }, el('button', { type: 'button', class: 'small', text: view.refs.has(key) ? 'Hide references' : 'References',
+                        title: 'where this object is used (pan-os-php actions=displayreferences)', onclick: () => run(() => toggleRefs(r, key)) })) : null);
+                return view.refs.has(key) ? [row, el('tr', { class: 'refrow' }, el('td', { colspan: view.columns.length + 1 }, refsBox(view.refs.get(key))))] : [row];
+            }))));
         pager.replaceChildren(
             el('button', { type: 'button', text: '‹ Previous', disabled: view.page <= 1, onclick: () => { view.page--; draw(); } }),
             el('span', { text: 'page ' + view.page + ' of ' + pages + (view.quick ? ' - ' + rows.length + ' match the quick filter' : '') }),
@@ -750,6 +793,16 @@ async function showViewer(config) {
         el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), info),
         tableWrap, pager, changeBox);
     typeChanged();
+    if (preset) {
+        if (preset.type && state.meta.types[preset.type] && types.includes(preset.type)) { type.value = preset.type; typeChanged(); }
+        if (preset.ruletype) ruletype.value = preset.ruletype;
+        if (preset.securityprofiletype) sptype.value = preset.securityprofiletype;
+        if (preset.location) {
+            if (![...location.options].some(o => o.value === preset.location)) location.append(el('option', { value: preset.location, text: preset.location }));
+            location.value = preset.location;
+        }
+        if (preset.filter) filter.value = preset.filter;
+    }
 
     // status of the loaded configuration + auto save
     state.timers.push(setInterval(() => { api('GET', base() + '/status').then(setStatus).catch(() => {}); }, 30000));
@@ -774,6 +827,22 @@ window.addEventListener('beforeunload', (ev) => {
 document.getElementById('nav-projects').addEventListener('click', () => run(showProjects));
 document.getElementById('nav-account').addEventListener('click', () => run(showAccount));
 document.getElementById('logout').addEventListener('click', () => run(async () => { await api('POST', 'logout'); leave(); showLogin(); }));
+// a link "Open" of a reference: #p=<project>&c=<version>&type=…&location=…&filter=… opens that version with this list
+async function openFromHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (!h.get('p') || !h.get('c')) return false;
+    history.replaceState(null, '', location.pathname);
+    const p = await api('GET', 'projects/' + encodeURIComponent(h.get('p')));
+    const c = (await api('GET', 'projects/' + p.pid + '/configs')).configs.find(x => x.cid === h.get('c'));
+    if (!c) throw new Error('this version does not exist any more');
+    state.project = p;
+    await showViewer(c, Object.fromEntries(['type', 'ruletype', 'securityprofiletype', 'location', 'filter'].map(k => [k, h.get(k)])));
+    return true;
+}
 run(async () => {
-    try { await entered(await api('GET', 'me')); } catch (e) { showLogin(); }
+    let me;
+    try { me = await api('GET', 'me'); } catch (e) { showLogin(); return; }
+    const deep = location.hash.length > 1;
+    await entered(me, deep);
+    if (deep) await openFromHash();
 });

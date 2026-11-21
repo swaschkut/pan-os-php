@@ -351,6 +351,22 @@ $nf = $meta['address']['filters'] ?? array();
 eq( array( $nf['name']['eq'] ?? null, $nf['object']['is.unused']['arg'] ?? null, isset( $nf['name']['is.in.file'] ), isset( $nf['value']['ip4.match.exact.from.file'] ) ),
     array( array( 'arg' => TRUE, 'example' => '(name eq new test 1)', 'help' => 'returns TRUE if object name matches the one specified in argument' ), FALSE, FALSE, FALSE ),
     'meta: filters with operators - needs a value, example, help; no operators that read a file' );
+// who uses an object (actions=displayreferences): the page shows it below the object and opens the user
+eq( array( $meta['address']['references'] ?? null, $meta['service']['references'] ?? null, $meta['rule']['references'] ?? null ), array( TRUE, TRUE, FALSE ),
+    'meta: which types have references' );
+$r = $alice->call( 'GET', $RC . '/references?type=address&location=any&name=' . rawurlencode( 'new test 2' ) );
+$byLoc = array_column( $r[1]['objects'] ?? array(), null, 'location' );
+$refs = array_column( $byLoc['shared']['references'] ?? array(), null, 'name' );
+eq( array( status( $r ), array_keys( $byLoc ), count( $refs ), $refs['shared post rule 1'] ?? null ),
+    array( 200, array( 'shared', 'Datacenter-Firewalls' ), 6, array( 'type' => 'rule', 'ruletype' => 'security', 'securityprofiletype' => null, 'location' => 'shared',
+        'name' => 'shared post rule 1', 'class' => 'SecurityRule', 'rulebase' => 'post', 'fields' => array( 'source' ), 'open' => TRUE ) ),
+    'references: every object of the name, its users with type, rule type, location, pre / post, field' );
+eq( array( $refs['test']['ruletype'] ?? null, $refs['test']['location'] ?? null, $refs['test']['fields'] ?? null, $refs['group-with-duplicate-child']['type'] ?? null ),
+    array( 'nat', 'DE-Berlin Office', array( 'source', 'destination', 'snathosts' ), 'address' ), 'references: NAT rule in a device group with all its fields, an address group' );
+$r = $alice->call( 'GET', $RC . '/references?type=address&location=shared&name=nothing-like-this' );
+eq( array( status( $r ), $r[1]['objects'] ?? null ), array( 200, array() ), 'references: an unknown name - no object' );
+eq( status( $alice->call( 'GET', $RC . '/references?type=rule&location=any&name=x' ) ), 400, 'references: a type without references' );
+eq( status( $alice->call( 'GET', $RC . '/references?type=address&location=any' ) ), 400, 'references: the name is needed' );
 $r = $alice->call( 'GET', $RC . '/addresses?model=display-v0' );
 eq( array( status( $r ), $r[1]['type'] ?? null, $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['model'] ?? null ), array( 200, 'address', 27, 27, 'display-v0' ), 'REST: GET addresses, display-v0 (objects and groups)' );
 eq( isset( $r[1]['items'][0]['model'] ), FALSE, 'REST: display-v0 items carry no model field' );
@@ -455,6 +471,11 @@ eq( status( $alice->call( 'PUT', $R . '/members', array( 'user' => 'bob', 'role'
 eq( status( $bob->call( 'GET', $RC . '/addresses?location=shared' ) ), 200, 'REST limited: granted' );
 $r = $bob->call( 'GET', $RC . '/locations' );
 eq( array( status( $r ), $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ) ), array( 200, FALSE, array( 'shared' ) ), 'locations limited: only the granted ones, no any' );
+$r = $bob->call( 'GET', $RC . '/references?type=address&location=shared&name=' . rawurlencode( 'new test 2' ) );
+$o = $r[1]['objects'][0] ?? array();
+eq( array( status( $r ), array_column( $o['references'] ?? array(), 'name' ), $o['hidden'] ?? null ), array( 200, array( 'group-with-duplicate-child' ), 5 ),
+    'references limited: only inside the types / locations of the member, the others counted' );
+eq( status( $bob->call( 'GET', $RC . '/references?type=address&name=x' ) ), 403, 'references limited: a location is needed' );
 eq( status( $bob->call( 'GET', $RC . '/addresses' ) ), 403, 'REST limited: location needed' );
 eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1' ) ), 403, 'REST limited: one object without location' );
 eq( status( $bob->call( 'GET', $RC . '/addresses/shared-host1?location=shared' ) ), 200, 'REST limited: one object in the scope' );

@@ -10,6 +10,10 @@ Open a version, choose the **type** (address, rule, …) and press **Show**.
   then their operators (`eq`, `regex`, `contains`, `is.unused`, …) with an example and whether a value is needed;
   after a term `and (` / `or (`. Arrow keys + Enter (or Tab) take a suggestion.
 - **Action** (change the listed objects): type part of the name; the suggestions show the arguments of each action.
+- **References** (button at the end of a row - address, service, tag, zone, schedule, security profile (group), …):
+  who uses this object, right below it: the rules (with rule type, pre / post and the field, e.g. `source`), groups and
+  profile groups, with their location. **Open ↗** shows the user in a new window - same version, its type, location
+  and `(name eq …)` already set. A member limited to types / locations sees only the users inside them.
 
 
 ## Runs
