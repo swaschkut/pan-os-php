@@ -1000,17 +1000,87 @@ function filterSuggest(filters, text, pos) {
 
 // ---------------------------------------------------------------- viewer / editor
 // preset (a link "Open" of a reference, in a new window): type, ruletype, securityprofiletype, location, filter
+// ---------------------------------------------------------------- the menu of the viewer (as in PAN-OS)
+// an entry: a pan-os-php type (+ rule type, + a filter of its own); 'window': the object opens in the object window
+const VIEWER_MENU_SECTIONS = ['Objects', 'Policies', 'Network', 'Device', 'Other'];
+const VIEWER_MENU = [
+    ['Objects', 'addresses', 'Addresses', 'address', { filter: '!(object is.group)', window: 'address', one: 'Address' }],
+    ['Objects', 'address-groups', 'Address Groups', 'address', { filter: '(object is.group)', window: 'addressgroup', one: 'Address Group' }],
+    ['Objects', 'services', 'Services', 'service', { filter: '!(object is.group)', window: 'service', one: 'Service' }],
+    ['Objects', 'service-groups', 'Service Groups', 'service', { filter: '(object is.group)', window: 'servicegroup', one: 'Service Group' }],
+    ['Objects', 'tags', 'Tags', 'tag', { window: 'tag', one: 'Tag' }],
+    ['Objects', 'applications', 'Applications', 'application'],
+    ['Objects', 'edls', 'External Dynamic Lists', 'edl'],
+    ['Objects', 'schedules', 'Schedules', 'schedule'],
+    ['Objects', 'security-profiles', 'Security Profiles', 'securityprofile'],
+    ['Objects', 'security-profile-groups', 'Security Profile Groups', 'securityprofilegroup'],
+    ['Objects', 'log-forwarding', 'Log Forwarding', 'log-profile'],
+    ['Objects', 'threats', 'Threats', 'threat'],
+    ['Policies', 'rule-security', 'Security', 'rule', { ruletype: 'security' }],
+    ['Policies', 'rule-nat', 'NAT', 'rule', { ruletype: 'nat' }],
+    ['Policies', 'rule-qos', 'QoS', 'rule', { ruletype: 'qos' }],
+    ['Policies', 'rule-pbf', 'Policy Based Forwarding', 'rule', { ruletype: 'pbf' }],
+    ['Policies', 'rule-decryption', 'Decryption', 'rule', { ruletype: 'decryption' }],
+    ['Policies', 'rule-networkpacketbroker', 'Network Packet Broker', 'rule', { ruletype: 'networkpacketbroker' }],
+    ['Policies', 'rule-tunnelinspection', 'Tunnel Inspection', 'rule', { ruletype: 'tunnelinspection' }],
+    ['Policies', 'rule-appoverride', 'Application Override', 'rule', { ruletype: 'appoverride' }],
+    ['Policies', 'rule-authentication', 'Authentication', 'rule', { ruletype: 'authentication' }],
+    ['Policies', 'rule-dos', 'DoS Protection', 'rule', { ruletype: 'dos' }],
+    ['Policies', 'rule-sdwan', 'SD-WAN', 'rule', { ruletype: 'sdwan' }],
+    ['Policies', 'rule-captiveportal', 'Captive Portal', 'rule', { ruletype: 'captiveportal' }],
+    ['Policies', 'rule-defaultsecurity', 'Default Security Rules', 'rule', { ruletype: 'defaultsecurity' }],
+    ['Policies', 'dns-rules', 'DNS Security Rules', 'dns-rule'],
+    ['Network', 'zones', 'Zones', 'zone'],
+    ['Network', 'interfaces', 'Interfaces', 'interface'],
+    ['Network', 'virtual-wires', 'Virtual Wires', 'virtualwire'],
+    ['Network', 'routing', 'Virtual Routers / Routing', 'routing'],
+    ['Network', 'static-routes', 'Static Routes', 'static-route'],
+    ['Network', 'ike-gateways', 'IKE Gateways', 'ike-gateway'],
+    ['Network', 'ipsec-tunnels', 'IPSec Tunnels', 'ipsec-tunnel'],
+    ['Network', 'gre-tunnels', 'GRE Tunnels', 'gre-tunnel'],
+    ['Network', 'dhcp', 'DHCP', 'dhcp'],
+    ['Network', 'gp-portals', 'GlobalProtect Portals', 'gp-portal'],
+    ['Network', 'gp-gateways', 'GlobalProtect Gateways', 'gp-gateway'],
+    ['Network', 'gp-gateway-tunnels', 'GlobalProtect Gateway Tunnels', 'gpgateway-tunnel'],
+    ['Network', 'ike-profiles', 'IKE Crypto Profiles', 'ike-profile'],
+    ['Network', 'ipsec-profiles', 'IPSec Crypto Profiles', 'ipsec-profile'],
+    ['Network', 'interface-mgmt-profiles', 'Interface Management Profiles', 'interface-management-profile'],
+    ['Network', 'zone-protection-profiles', 'Zone Protection Profiles', 'zone-protection-profile'],
+    ['Device', 'devices', 'Devices', 'device'],
+    ['Device', 'certificates', 'Certificates', 'certificate'],
+    ['Device', 'certificate-profiles', 'Certificate Profiles', 'certificate-profile'],
+    ['Device', 'ssl-tls-profiles', 'SSL/TLS Service Profiles', 'ssl-tls-service-profile'],
+];
+/** the entries the user can open: types of the meta (and of a limited access); every other type of the meta under "Other" */
+function viewerMenu(types) {
+    const list = VIEWER_MENU.filter(m => types.includes(m[3])).map(m => Object.assign({ section: m[0], id: m[1], label: m[2], type: m[3] }, m[4] || {}));
+    for (const t of types) if (!VIEWER_MENU.some(m => m[3] === t)) list.push({ section: 'Other', id: 'type-' + t, label: t, type: t });
+    return list;
+}
+
 async function showViewer(config, preset) {
     const p = state.project, pid = p.pid, canWrite = p.role !== 'read';
     state.config = config; state.cache.clear();
     const view = { rows: [], columns: [], sort: null, desc: false, page: 1, size: 50, quick: '', refs: new Map() };
     const base = () => 'projects/' + pid + '/configs/' + state.config.cid;
 
-    // access limited to some types: only these; limited to locations: start with the first one
+    // the menu on the left as in PAN-OS (Objects, Policies, Network, Device): an entry = a pan-os-php type (+ rule type / a
+    // filter of its own); access limited to some types: only their entries
     const types = (p.types || Object.keys(state.meta.types)).filter(t => state.meta.types[t]);
-    const type = el('select', {}, types.map(t => el('option', { value: t, text: t })));
-    const ruletype = el('select', {}, state.meta.ruletypes.map(t => el('option', { value: t, text: t })));
-    ruletype.value = 'security';
+    const entries = viewerMenu(types);
+    state.viewerEntry = state.viewerEntry || {};
+    let cur = entries.find(e => e.id === state.viewerEntry[pid]) || entries[0];
+    const type = { get value() { return cur.type; } };
+    const ruletype = { get value() { return cur.ruletype || 'security'; } };
+    const menu = el('nav', { class: 'vmenu', 'aria-label': 'object types' });
+    function drawMenu() {
+        menu.replaceChildren(...VIEWER_MENU_SECTIONS.map(sec => {
+            const list = entries.filter(e => e.section === sec);
+            return list.length === 0 ? null : el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: sec }),
+                list.map(e => el('button', { type: 'button', class: 'ventry' + (e.id === cur.id ? ' on' : ''), text: e.label, title: e.type + (e.ruletype ? ' / ' + e.ruletype : '') + (e.filter ? ' - ' + e.filter : ''),
+                    onclick: () => run(async () => { if (e.id === cur.id && !cur.noBase) return; cur = e; state.viewerEntry[pid] = e.id; filter.value = ''; typeChanged(); drawMenu(); await load(false); }) })));
+        }).filter(x => x));
+    }
     const sptype = el('select', {}, state.meta.securityprofiletypes.map(t => el('option', { value: t, text: t })));
     // locations: 'any' and those of the version (Panorama: shared + device groups, firewall: shared + vsys, SCM: containers +
     // snippets), known once the version is loaded; a member limited to locations gets only those
@@ -1030,7 +1100,8 @@ async function showViewer(config, preset) {
     const filter = el('input', { placeholder: '(name contains web) and (object is.unused) - type for fields and operators', maxlength: 2000, autocomplete: 'off', spellcheck: false });
     const filterBox = suggest(filter, (text, pos) => filterSuggest(state.meta.types[type.value].filters || {}, text, pos));
     const quick = el('input', { placeholder: 'text in any column', oninput: () => { view.quick = quick.value.toLowerCase(); view.page = 1; draw(); } });
-    const rtField = field('Rule type', ruletype), spField = field('Profile type', sptype);
+    const spField = field('Profile type', sptype);
+    const heading = el('h3', { class: 'vheading' });
     const info = el('span', { class: 'muted' });
     const tableWrap = el('div', { class: 'tablewrap' });
     const pager = el('div', { class: 'pager' });
@@ -1047,12 +1118,15 @@ async function showViewer(config, preset) {
     let lastStatus = null;
 
     function typeChanged() {
-        rtField.hidden = type.value !== 'rule'; spField.hidden = type.value !== 'securityprofile';
+        spField.hidden = type.value !== 'securityprofile';
+        heading.textContent = cur.section + ' › ' + cur.label;
         action.value = '';
         actionChanged();
     }
     function query() {
-        const q = new URLSearchParams({ type: type.value, location: location.value || 'any', filter: filter.value.trim() });
+        // the filter of the menu entry (e.g. address groups: (object is.group)) and the one typed
+        const own = filter.value.trim(), f = cur.filter && !cur.noBase ? (own ? '(' + cur.filter + ') and (' + own + ')' : cur.filter) : own;
+        const q = new URLSearchParams({ type: type.value, location: location.value || 'any', filter: f });
         if (type.value === 'rule') q.set('ruletype', ruletype.value);
         if (type.value === 'securityprofile') q.set('securityprofiletype', sptype.value);
         return q;
@@ -1065,7 +1139,10 @@ async function showViewer(config, preset) {
         status.className = 'badge' + (s.dirty ? ' dirty' : '');
         saveBtn.disabled = !(canWrite && s.dirty); discardBtn.disabled = !(canWrite && s.dirty);
         autosaveInfo.textContent = s.autosaved ? 'recovery copy written ' + fmtTime(s.autosaved) : '';
-        changeList.replaceChildren(...(s.changes || []).map(c => el('li', { text: c })));
+        changeList.replaceChildren(...(s.changes || []).map(c => typeof c === 'string' ? el('li', { text: c }) :
+            el('li', {}, el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + (c.user || '') + ' - ' }), el('code', { text: c.type + (c.ruletype ? '/' + c.ruletype : '') }), ' ',
+                el('span', { text: (c.location || 'any') + (c.filter ? ' ' + c.filter : '') + ' → ' }), el('code', { text: c.actions || '' }),
+                c.field ? el('span', { class: 'muted', text: ' (field ' + c.field + ')' }) : null)));
     }
     async function load(force) {
         const key = query().toString();
@@ -1079,7 +1156,8 @@ async function showViewer(config, preset) {
             state.cache.set(key, data);
         }
         setStatus(data.status ? Object.assign({ loaded: true }, data.status) : lastStatus);
-        view.rows = data.rows; view.columns = data.columns; view.page = 1;
+        // the store of an object (AddressStore, …) says nothing in a list of one menu entry
+        view.rows = data.rows; view.columns = data.columns.filter(c => c !== 'store'); view.page = 1;
         view.query = key; view.type = type.value; view.refs.clear();
         if (!view.columns.includes(view.sort)) view.sort = null;
         loadLocations();
@@ -1141,7 +1219,9 @@ async function showViewer(config, preset) {
                 const refButton = () => r.refcount === 0 ? el('span', { class: 'muted', text: '0', title: 'not used' })
                     : el('button', { type: 'button', class: 'small refbtn' + (view.refs.has(key) ? ' on' : ''), text: (typeof r.refcount === 'number' ? r.refcount : '?') + (view.refs.has(key) ? ' ▾' : ' ▸'),
                         title: (view.refs.has(key) ? 'hide' : 'show') + ' where this object is used (pan-os-php displayreferences)', onclick: () => run(() => toggleRefs(r, key)) });
-                const row = el('tr', {}, view.columns.map(c => {
+                // an object of a type with an object window: a click opens it (as the edit dialog of PAN-OS)
+                const win = cur.window && typeof r.name === 'string' && r.name !== '' && r.location;
+                const row = el('tr', win ? { class: 'clickable', title: 'open ' + r.name, onclick: (ev) => { if (ev.target.closest('button, a')) return; run(() => openObject(r)); } } : {}, view.columns.map(c => {
                     if (c === 'refcount' && refs) return el('td', { class: 'refcell' }, refButton());
                     const t = cell(r[c]); return el('td', { text: t, title: t.length > 40 ? t : null });
                 }), refs && !view.columns.includes('refcount') ? el('td', { class: 'refcell' }, refButton()) : null);
@@ -1162,6 +1242,148 @@ async function showViewer(config, preset) {
         setStatus(Object.assign({ loaded: true }, r.status));
     }
 
+    // ---- object window (overlay, as the edit dialog of PAN-OS): each field is applied when it is left after a change -
+    // as one pan-os-php action on exactly this object (location of the object, filter (name eq …)); see
+    // todo/config-viewer-panos-style-edit.md
+    function actArg(v) {
+        // pan-os-php: "," separates the arguments, ":" the action from its arguments, "/" the actions ("//" = a "/")
+        if (/[,:\x00-\x1f]/.test(v)) throw new Error('"," and ":" can not be used in a value here (they separate the arguments of a pan-os-php action)');
+        return v.replace(/\//g, '//');
+    }
+    function windowFields(kind, row, m) {
+        m = m || {};
+        const name = { key: 'name', label: 'Name', kind: 'text', value: row.name, needs: ['name-rename'], rename: true,
+            act: (o, n) => { if (n === '') throw new Error('a name is needed'); return 'name-rename:' + actArg(n); } };
+        const desc = { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-delete', 'description-append'],
+            act: (o, n) => n === '' ? 'description-delete' : (o === '' ? '' : 'description-delete/') + 'description-append:' + actArg(n) };
+        const tags = { key: 'tag', label: 'Tags', kind: 'list', value: Array.isArray(m.tag) ? m.tag : [], needs: ['tag-add'], needsRemove: ['tag-remove'],
+            add: t => 'tag-add:' + actArg(t), remove: t => 'tag-remove:' + actArg(t) };
+        const loc = { key: 'location', label: 'Location', kind: 'ro', value: row.location };
+        if (kind === 'address')
+            return [name, { key: 'type', label: 'Type', kind: 'ro', value: row.type },
+                row.type === 'ip-netmask' ? { key: 'value', label: 'Value', kind: 'text', value: row.value || '', needs: ['value-replace'],
+                    act: (o, n) => { if (n === '') throw new Error('a value is needed'); return 'value-replace:' + actArg(o) + ',' + actArg(n); } }
+                    : { key: 'value', label: 'Value', kind: 'ro', value: row.value || '', note: 'only an ip-netmask value can be changed (pan-os-php value-replace)' },
+                desc, tags, loc];
+        if (kind === 'addressgroup')
+            return [name, { key: 'type', label: 'Type', kind: 'ro', value: row.type },
+                Array.isArray(m.static) ? { key: 'members', label: 'Members', kind: 'list', value: m.static, needs: ['add-member'], add: x => 'add-member:' + actArg(x),
+                    note: 'removing a member: no pan-os-php action yet' }
+                    : { key: 'filter', label: 'Dynamic filter', kind: 'ro', value: row.filter || '', note: 'no pan-os-php action to change it yet' },
+                desc, tags, loc];
+        if (kind === 'service') {
+            const timeout = (key, label, action, def) => ({ key, label, kind: 'text', value: row[key] || '', needs: [action], placeholder: 'default ' + def + ' (= inherit)',
+                act: (o, n) => { if (n === '') throw new Error('empty: use "Inherit all timeouts"'); if (!/^[0-9]+$/.test(n)) throw new Error('seconds (digits)'); return action + ':' + n; } });
+            return [name, { key: 'value', label: 'Protocol / port', kind: 'ro', value: row.value || '', note: 'no pan-os-php action to change it yet' },
+                desc, tags,
+                { key: 'sourceport', label: 'Source port', kind: 'text', value: row.sourceport || '', needs: ['sourceport-set', 'sourceport-delete'],
+                    act: (o, n) => n === '' ? 'sourceport-delete' : 'sourceport-set:' + actArg(n) },
+                timeout('timeout', 'Timeout', 'timeout-set', 3600), timeout('halfclosetimeout', 'Half-close timeout', 'timeout-halfclose-set', 120),
+                timeout('timewaittimeout', 'Time-wait timeout', 'timeout-timewait-set', 15),
+                { key: 'timeouts', label: '', kind: 'button', text: 'Inherit all timeouts', needs: ['timeout-inherit'], act: () => 'timeout-inherit' }, loc];
+        }
+        if (kind === 'servicegroup')
+            return [name, { key: 'members', label: 'Members', kind: 'ro', value: (Array.isArray(m.members) ? m.members : []).join(', '), note: 'no pan-os-php action to change members of a service group yet' },
+                tags, loc];
+        if (kind === 'tag') {
+            const cs = (state.meta.types.tag.actions['color-set'] || [])[0];
+            return [{ key: 'name', label: 'Name', kind: 'ro', value: row.name, note: 'renaming a tag: no pan-os-php action yet' },
+                { key: 'color', label: 'Color', kind: 'select', value: row.color || 'none', choices: cs && cs.choices ? cs.choices : [], needs: ['color-set'], act: (o, n) => 'color-set:' + actArg(n) },
+                { key: 'comments', label: 'Comments', kind: 'text', value: row.comments || '', needs: ['comments-delete', 'comments-add'],
+                    act: (o, n) => n === '' ? 'comments-delete' : (o === '' ? '' : 'comments-delete/') + 'comments-add:' + actArg(n) }, loc];
+        }
+        return [name, loc];
+    }
+    async function fetchObject(name, loc) {
+        const q = new URLSearchParams({ type: cur.type, location: loc, name });
+        if (cur.type === 'rule') q.set('ruletype', ruletype.value);
+        return api('GET', base() + '/object?' + q.toString());
+    }
+    async function openObject(r) {
+        let obj = await fetchObject(r.name, r.location);
+        const offered = state.meta.types[cur.type].actions || {};
+        const done = {}, errors = {};
+        const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': cur.label + ' ' + r.name });
+        const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
+        const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+        let changed = false;
+        function close() { document.removeEventListener('keydown', onKey); overlay.remove(); if (changed) run(() => load(true)); }
+        async function apply(f, actions) {
+            const body = { type: cur.type, location: obj.row.location, filter: '(name eq ' + obj.row.name + ')', actions, field: f.key };
+            if (cur.type === 'rule') body.ruletype = ruletype.value;
+            const res = await api('POST', base() + '/change', body);
+            setStatus(Object.assign({ loaded: true }, res.status));
+            state.cache.clear(); changed = true;
+            done[f.key] = actions;
+            return res;
+        }
+        async function change(f, newValue) {
+            delete errors[f.key];
+            if (newValue === String(f.value)) { render(); return; }
+            try {
+                const actions = f.act(String(f.value), newValue);
+                if (!actions) return;
+                await apply(f, actions);
+                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location);
+            } catch (e) { errors[f.key] = e.message; }
+            render();
+        }
+        async function listChange(f, actions) {
+            delete errors[f.key];
+            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location); } catch (e) { errors[f.key] = e.message; }
+            render();
+        }
+        function control(f) {
+            const can = canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]);
+            if (f.kind === 'ro' || !can)
+                return el('span', { class: 'objro', text: Array.isArray(f.value) ? f.value.join(', ') : String(f.value === undefined ? '' : f.value) });
+            if (f.kind === 'text') {
+                const i = el('input', { value: f.value, autocomplete: 'off', spellcheck: false, 'aria-label': f.label, placeholder: f.placeholder || null });
+                // applied when the field is left after a change (or Enter) - one action, no common OK
+                i.addEventListener('change', () => run(() => change(f, i.value.trim())));
+                i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                return i;
+            }
+            if (f.kind === 'select') {
+                const sel = el('select', { 'aria-label': f.label }, (f.choices.includes(f.value) ? f.choices : [f.value, ...f.choices]).map(c => el('option', { value: c, text: c })));
+                sel.value = f.value;
+                sel.addEventListener('change', () => run(() => change(f, sel.value)));
+                return sel;
+            }
+            if (f.kind === 'button')
+                return el('button', { type: 'button', text: f.text, onclick: () => run(() => listChange(f, f.act())) });
+            // list: the members with ✕ (if there is an action to remove), a field to add one
+            const canRemove = f.remove && (f.needsRemove || []).every(a => offered[a]);
+            const add = el('input', { placeholder: 'add …', autocomplete: 'off', spellcheck: false, 'aria-label': 'add to ' + f.label });
+            add.addEventListener('change', () => { const v = add.value.trim(); if (v) run(async () => { try { await listChange(f, f.add(v)); } catch (e) { errors[f.key] = e.message; render(); } }); });
+            add.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); add.blur(); } });
+            return el('div', { class: 'chips' }, f.value.map(v => el('span', { class: 'chip' }, v,
+                canRemove ? el('button', { type: 'button', class: 'chipx', text: '✕', title: 'remove ' + v, 'aria-label': 'remove ' + v, onclick: () => run(async () => {
+                    try { await listChange(f, f.remove(v)); } catch (e) { errors[f.key] = e.message; render(); } }) }) : null)), add);
+        }
+        function render() {
+            const fields = windowFields(cur.window, obj.row, obj.model);
+            box.replaceChildren(
+                el('div', { class: 'objhead' }, el('h3', { text: (cur.one || cur.label) + ': ' + obj.row.name }), el('span', { class: 'badge', text: obj.row.location }),
+                    el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+                el('table', { class: 'objfields' }, el('tbody', {}, fields.map(f => {
+                    const can = canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]);
+                    return el('tr', {}, el('th', { text: f.label }), el('td', {}, control(f),
+                        errors[f.key] ? el('div', { class: 'error', text: errors[f.key] }) : null,
+                        done[f.key] ? el('div', { class: 'muted objact' }, '✓ ', el('code', { text: done[f.key] })) : null,
+                        f.note && (f.kind === 'ro' || f.kind === 'list' || !can) ? el('div', { class: 'muted', text: f.note }) : null,
+                        !canWrite || f.kind === 'ro' || can ? null : el('div', { class: 'muted', text: 'read only: no pan-os-php action for it here (' + (f.needs || []).filter(a => !offered[a]).join(', ') + ')' })));
+                }))),
+                el('p', { class: 'muted', text: canWrite ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
+                el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
+        }
+        render();
+        document.addEventListener('keydown', onKey);
+        document.body.append(overlay);
+        const first = box.querySelector('input, select');
+        if (first) first.focus();
+    }
+
     // change box
     // the action: type to find it (actions of the type that may run here, from util_action_filter.json)
     const action = el('input', { placeholder: 'type to find an action', autocomplete: 'off', spellcheck: false, onchange: () => actionChanged(), oninput: () => actionChanged() });
@@ -1180,8 +1402,8 @@ async function showViewer(config, preset) {
         actionArg.placeholder = args.map(a => a.name).join(',');
         argHelp.textContent = args.map(a => a.name + (a.help ? ': ' + a.help : '')).join(' | ');
     }
-    const changeBox = canWrite ? el('div', { class: 'card' }, el('h3', { text: 'Change the objects of the current list' }),
-        el('p', { class: 'muted', text: 'The action runs on all objects that match type, location and the pan-os-php filter above (not the quick filter). It changes the loaded configuration in memory only - nothing is written until you save.' }),
+    const changeBox = canWrite ? el('details', { class: 'card' }, el('summary', { text: 'Multi-edit: run a pan-os-php action on all objects of the list' }),
+        el('p', { class: 'muted', text: 'The action runs on all objects that match the menu entry, location and the pan-os-php filter above (not the quick filter). It changes the loaded configuration in memory only - nothing is written until you save.' }),
         el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
             if (!action.value) throw new Error('choose an action');
             if (!state.meta.types[type.value].actions[action.value]) throw new Error('"' + action.value + '" is no action of ' + type.value + ' here - type part of the name to find one');
@@ -1194,25 +1416,32 @@ async function showViewer(config, preset) {
             message('action done on ' + r.processed + ' object(s) - not saved yet');
             await load(true);
         }); } }, field('Action', actionBox), el('label', { class: 'grow' }, 'Arguments (comma separated)', actionArg), el('button', { class: 'primary', type: 'submit', text: 'Run on loaded configuration' })),
-        argHelp, el('h3', { text: 'Unsaved changes' }), changeList, log) : null;
+        argHelp, log) : null;
+    const changesCard = el('div', { class: 'card' }, el('h3', { text: 'Unsaved changes' }), el('p', { class: 'muted', text: 'Every change is one pan-os-php action (filter + action) on the loaded configuration - in the object window one per field.' }), changeList);
 
     const title = el('h2', { text: 'Version of ' + fmtTime(config.created) + ' - ' + config.name });
-    type.addEventListener('change', () => { typeChanged(); filter.value = ''; });
     main(el('div', { class: 'row' }, el('button', { type: 'button', text: '‹ ' + p.name, onclick: () => run(async () => {
             if (lastStatus && lastStatus.dirty && !confirm('There are unsaved changes. They stay in the loaded configuration on the server (recovery copy), but are not a version yet. Leave?')) return;
             await showProject(pid);
         }) }), title),
         el('div', { class: 'statusbar' }, status, autosaveInfo, el('span', { class: 'spacer' }),
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
-        el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-            field('Type', type), rtField, spField, field('Location', location), el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
-            el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
-        el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), info),
-        tableWrap, pager, changeBox);
+        el('div', { class: 'viewer' }, menu, el('div', { class: 'vmain' },
+            el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
+                field('Location', location), spField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
+                el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
+            heading,
+            el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), info),
+            tableWrap, pager, changesCard, changeBox)));
+    drawMenu();
     typeChanged();
     if (preset) {
-        if (preset.type && state.meta.types[preset.type] && types.includes(preset.type)) { type.value = preset.type; typeChanged(); }
-        if (preset.ruletype) ruletype.value = preset.ruletype;
+        // a link from the references: the entry of the type (and rule type) - without the filter of the entry (an address
+        // group is in the list of the addresses then)
+        if (preset.type && types.includes(preset.type)) {
+            const e = entries.find(x => x.type === preset.type && (preset.type !== 'rule' || x.ruletype === (preset.ruletype || 'security'))) || entries.find(x => x.type === preset.type);
+            if (e) { cur = Object.assign({}, e, { noBase: !!e.filter }); typeChanged(); drawMenu(); }
+        }
         if (preset.securityprofiletype) sptype.value = preset.securityprofiletype;
         if (preset.location) {
             if (![...location.options].some(o => o.value === preset.location)) location.append(el('option', { value: preset.location, text: preset.location }));

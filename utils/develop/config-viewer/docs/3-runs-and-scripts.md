@@ -2,14 +2,27 @@
 
 ## Looking at a version
 
-Open a version, choose the **type** (address, rule, …) and press **Show**.
+Open a version: as in the web interface of Panorama / a firewall, the **menu on the left** has *Objects* (Addresses,
+Address Groups, Services, Service Groups, Tags, Applications, …), *Policies* (Security, NAT, … - one entry per rule
+type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); types without an entry of their own are under
+*Other*. An entry shows its objects at once.
 
 - **Location**: *any* or one location of this configuration - Panorama: *shared* and every device group; firewall:
   *shared* and every vsys; SCM: every folder (container) and snippet. A member limited to locations sees only those.
 - **pan-os-php filter**: type and the page suggests - first the fields of the type (`name`, `object`, `value`, …),
   then their operators (`eq`, `regex`, `contains`, `is.unused`, …) with an example and whether a value is needed;
   after a term `and (` / `or (`. Arrow keys + Enter (or Tab) take a suggestion.
-- **Action** (change the listed objects): type part of the name; the suggestions show the arguments of each action.
+- **Object window**: click an address, address group, service, service group or tag - it opens over the list (as the
+  edit dialog of PAN-OS) with its fields. A field is applied **when you leave it after a change** (or press Enter) -
+  as **one pan-os-php action on exactly this object** (its location, filter `(name eq …)`): e.g. the description →
+  `description-delete/description-append:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, the value of an ip-netmask →
+  `value-replace:…`, the name → `name-rename:…`, a member → `add-member:…`, the color of a tag → `color-set:…`. Under the
+  field the action is shown (✓). A field without a pan-os-php action for it is read only (and says why). `,` and `:`
+  can not be used in a value (they separate the arguments of an action). Security rules follow.
+- **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
+  window). Nothing is written until **Save as new version**; **Discard changes** drops them all.
+- **Multi-edit** (below the list): one action on all objects of the list (menu entry + location + filter) - type part
+  of the name; the suggestions show the arguments of each action.
 - **refcount** (address, service, tag, zone, schedule, security profile (group), …): how many objects use this one.
   Click the number to see them right below the object (0: not used, nothing to click): the rules (with rule type, pre / post and the field, e.g. `source`), groups and
   profile groups, with their location. **Open ↗** shows the user in a new window - same version, its type, location

@@ -514,6 +514,9 @@ try
                 viewerOut( $app->objects( $user, $pid, $cid, $_GET ) );
             if( $n == 5 && $method === 'GET' && $op === 'references' )
                 viewerOut( $app->references( $user, $pid, $cid, $_GET ) );
+            // one object for the object window (fields + structured model)
+            if( $n == 5 && $method === 'GET' && $op === 'object' )
+                viewerOut( $app->objectGet( $user, $pid, $cid, $_GET ) );
             if( $n == 5 && $method === 'GET' && $op === 'locations' )
                 viewerOut( $app->locations( $user, $pid, $cid ) );
             if( $n == 5 && $method === 'GET' && $op === 'status' )

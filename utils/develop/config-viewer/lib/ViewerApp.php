@@ -94,6 +94,12 @@ class ViewerApp
 
     /** actions that read / write other files or reach other systems are not offered by the prototype */
     const ACTION_DENY_NAME = '/^export|^upload-|-fastapi$|reverse-dns|^decommission$|from-file|-edl-/';
+    /**
+     * actions of the class 'network' that are offered when their arguments can not reach the network: type => action =>
+     * pattern the actions argument must NOT match. address name-rename: only the alias $$reverse-dns$$ does a DNS lookup
+     * (gethostbyaddr) - a plain new name (the object window) does not.
+     */
+    const ACTION_GUARDED = array( 'address' => array( 'name-rename' => '/\$\$reverse-dns\$\$/i' ) );
     const ACTION_DENY_ARG = '/(?<!pro)file|path|folder/i';
 
     const LOGIN_MAX_FAILS = 5;
@@ -2644,7 +2650,7 @@ class ViewerApp
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
         'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath',
-        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action', 'domain' );
+        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action', 'domain', 'field' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void
@@ -2950,9 +2956,10 @@ class ViewerApp
             {
                 if( $name === 'display' || preg_match( self::ACTION_DENY_NAME, $name ) )
                     continue;
-                // allow list per action: only actions that change the configuration in memory (or only show it)
+                // allow list per action: only actions that change the configuration in memory (or only show it) - and the
+                // guarded ones (ACTION_GUARDED: checked in actionsArg)
                 $class = $this->actionClass( $type, (string)$name );
-                if( $class === null || !in_array( $class['class'], array( 'read', 'change' ), TRUE ) )
+                if( ( $class === null || !in_array( $class['class'], array( 'read', 'change' ), TRUE ) ) && !isset( self::ACTION_GUARDED[$type][(string)$name] ) )
                     continue;
                 $args = array();
                 $deny = FALSE;
@@ -2961,7 +2968,9 @@ class ViewerApp
                     if( preg_match( self::ACTION_DENY_ARG, (string)$argName ) )
                         $deny = TRUE;
                     $args[] = array( 'name' => (string)$argName, 'default' => isset( $arg['default'] ) && is_scalar( $arg['default'] ) ? (string)$arg['default'] : '',
-                        'help' => isset( $arg['help'] ) && is_string( $arg['help'] ) ? $arg['help'] : '' );
+                        'help' => isset( $arg['help'] ) && is_string( $arg['help'] ) ? $arg['help'] : '' )
+                        // the values an argument can have (e.g. the colors of color-set): a select in the object window
+                        + ( isset( $arg['choices'] ) && is_array( $arg['choices'] ) ? array( 'choices' => array_values( array_map( 'strval', array_filter( $arg['choices'], 'is_scalar' ) ) ) ) : array() );
                 }
                 if( !$deny )
                     $actions[$name] = $args;
@@ -3087,6 +3096,8 @@ class ViewerApp
             $name = strtolower( trim( explode( ':', $one )[0] ) );
             if( !isset( $offered[$name] ) )
                 throw new ViewerException( 'action "' . substr( $name, 0, 60 ) . '" is not available here for type ' . $type, 400 );
+            if( isset( self::ACTION_GUARDED[$type][$name] ) && preg_match( self::ACTION_GUARDED[$type][$name], $one ) )
+                throw new ViewerException( 'action "' . $name . '": this argument would reach the network (e.g. $$reverse-dns$$) - not allowed here', 400 );
             // an action that moves / copies objects to another location would act outside the scope
             if( $project['scope'] !== null && preg_match( '/move|copy|clone|replace-by|merge/', $name ) )
                 throw new ViewerException( 'not allowed: action "' . substr( $name, 0, 60 ) . '" can act outside your locations', 403 );
@@ -3440,6 +3451,30 @@ class ViewerApp
             'offset' => (int)$offset, 'limit' => (int)$limit, 'items' => array_slice( $items, (int)$offset, (int)$limit ), 'status' => $r['status'] );
     }
 
+    /**
+     * one object for the object window: GET …/configs/<cid>/object?type=&location=&name= (+ ruletype /
+     * securityprofiletype) - its fields as the table shows them ('row') and its structured form ('model', the scm-v1
+     * item of the library: values, members, tags as lists)
+     */
+    public function objectGet( array $user, $pid, $cid, array $in ): array
+    {
+        $name = $in['name'] ?? null;
+        if( !is_string( $name ) || $name === '' || strlen( $name ) > 300 || preg_match( '/[\x00-\x1F\x7F()]/', $name ) || trim( $name ) !== $name )
+            throw new ViewerException( 'name: the name of the object (no brackets)', 400 );
+        $location = $in['location'] ?? '';
+        if( !is_string( $location ) || $location === '' || $location === 'any' )
+            throw new ViewerException( 'location: the location of the object', 400 );
+        $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + $in, PHP_INT_MAX );
+        foreach( $r['rows'] as $row )
+            if( ( $row['name'] ?? null ) === $name && ( $row['location'] ?? null ) === $location )
+            {
+                $model = is_array( $row['model']['item'] ?? null ) ? $row['model']['item'] : null;
+                unset( $row['model'] );
+                return array( 'row' => $row, 'model' => $model, 'status' => $r['status'] );
+            }
+        throw new ViewerException( 'not found', 404 );
+    }
+
     /** change: runs actions on the configuration in memory. Nothing is written until save(). */
     public function change( array $user, $pid, $cid, array $in ): array
     {
@@ -3449,7 +3484,14 @@ class ViewerApp
         $type = substr( array_shift( $args ), 5 );
         $args[] = $this->actionsArg( $type, $in['actions'] ?? null, $p );
         $bpArg = $this->bpArg( $p, $in );
-        $note = 'type=' . $type . ' ' . implode( ' ', $args ) . ' [' . $user['name'] . ']';
+        // the change as data (change list of the page; later: the trailers of a git commit) - see
+        // todo/config-viewer-panos-style-edit.md
+        $note = array( 'time' => time(), 'user' => (string)$user['name'], 'type' => $type, 'args' => $args );
+        foreach( $args as $a )
+            if( preg_match( '/^(location|filter|actions|ruletype|securityprofiletype)=(.*)$/s', $a, $m ) )
+                $note[$m[1]] = $m[2];
+        if( isset( $in['field'] ) && is_string( $in['field'] ) && preg_match( '/^[a-z][a-z0-9_-]{0,40}$/', $in['field'] ) )
+            $note['field'] = $in['field'];
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'change', 'type' => $type, 'args' => array_merge( $args, $bpArg ), 'note' => $note ) );
         return array( 'processed' => count( self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() ) ),
             'log' => isset( $r['json']['log'] ) && is_string( $r['json']['log'] ) ? substr( $this->hidePaths( $r['json']['log'] ), 0, 200000 ) : '',
@@ -3510,11 +3552,19 @@ class ViewerApp
             throw new ViewerException( 'saving did not write a configuration', 500 );
         }
         @chmod( $target, 0600 );
-        $note = implode( "\n", array_map( 'strval', (array)( $r['changes'] ?? array() ) ) );
+        $note = implode( "\n", array_map( array( self::class, 'changeText' ), (array)( $r['changes'] ?? array() ) ) );
         $new = $this->configInsert( $p, $user, $c['name'], $file, (int)$c['id'], substr( $note, 0, 4000 ) );
         $newId = (int)$this->q( 'SELECT id FROM configs WHERE cid = ?', array( $new['cid'] ) )->fetch()['id'];
         $this->q( 'UPDATE sessions SET config_id = ? WHERE project_id = ? AND config_id = ?', array( $newId, $p['id'], $c['id'] ) );
         return array( 'saved' => TRUE, 'cid' => $new['cid'], 'status' => $r['status'] ?? null );
+    }
+
+    /** one line of the change list as text (the note of a saved version): a change is data now, older ones text */
+    public static function changeText( $c ): string
+    {
+        if( !is_array( $c ) )
+            return (string)$c;
+        return 'type=' . ( $c['type'] ?? '?' ) . ' ' . implode( ' ', array_map( 'strval', (array)( $c['args'] ?? array() ) ) ) . ' [' . ( $c['user'] ?? '?' ) . ']';
     }
 
     /** discard: stops the loaded configuration without saving */

@@ -538,7 +538,20 @@ while( TRUE )
             if( !$GLOBALS['viewerState']['dirty'] )
                 $lastAutosave = time();
             $GLOBALS['viewerState']['dirty'] = TRUE;
-            $GLOBALS['viewerState']['changes'][] = isset( $cmd['note'] ) && is_string( $cmd['note'] ) ? substr( $cmd['note'], 0, 500 ) : $type;
+            // the change as data (ViewerApp::change): time, user, type, location, filter, actions, field; text from older viewers
+            $note = $cmd['note'] ?? $type;
+            if( is_array( $note ) )
+            {
+                $clean = array();
+                foreach( array( 'time', 'user', 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'field' ) as $k )
+                    if( isset( $note[$k] ) && is_scalar( $note[$k] ) )
+                        $clean[$k] = is_string( $note[$k] ) ? substr( $note[$k], 0, 2000 ) : $note[$k];
+                $clean['args'] = array_slice( array_map( function( $a ) { return substr( (string)$a, 0, 2000 ); }, array_filter( (array)( $note['args'] ?? array() ), 'is_scalar' ) ), 0, 10 );
+                $note = $clean;
+            }
+            else
+                $note = substr( (string)$note, 0, 500 );
+            $GLOBALS['viewerState']['changes'][] = $note;
         }
         viewerSend( $conn, $r + array( 'status' => viewerStatus() ) );
     }

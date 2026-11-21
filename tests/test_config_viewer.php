@@ -270,6 +270,24 @@ eq( $r[1]['status']['dirty'] ?? null, TRUE, 'unsaved change is reported' );
 $r = $alice->call( 'GET', $C . '/objects?type=address&location=shared&filter=' . urlencode( '(name eq shared-host1)' ) );
 eq( $r[1]['rows'][0]['description'] ?? null, 'VIEWERTEST', 'the change is visible in the loaded configuration (also for alice)' );
 eq( strpos( file_get_contents( $stored[0] ), 'VIEWERTEST' ), FALSE, 'the file of the version is not touched by a change' );
+// the change list: every change as data (time, user, type, location, filter, actions, field) - the object window
+$ch = end( $r[1]['status']['changes'] );
+eq( array( is_array( $ch ), $ch['user'] ?? null, $ch['type'] ?? null, $ch['location'] ?? null, $ch['actions'] ?? null, is_int( $ch['time'] ?? null ) ),
+    array( TRUE, 'bob', 'address', 'shared', 'description-append:VIEWERTEST', TRUE ), 'change list: the change as data' );
+// the object window: one object with its fields and its structured model
+$r = $bob->call( 'GET', $C . '/object?type=address&location=shared&name=shared-host1' );
+eq( array( status( $r ), $r[1]['row']['name'] ?? null, $r[1]['row']['description'] ?? null, $r[1]['model']['ip_netmask'] ?? null, $r[1]['model']['tag'] ?? null, isset( $r[1]['row']['model'] ) ),
+    array( 200, 'shared-host1', 'VIEWERTEST', '1.2.2.3/32', array( 'grp.shared-group1' ), FALSE ), 'object window: one object, fields and model' );
+eq( array( status( $bob->call( 'GET', $C . '/object?type=address&location=shared&name=nope' ) ), status( $bob->call( 'GET', $C . '/object?type=address&location=any&name=shared-host1' ) ),
+    status( $bob->call( 'GET', $C . '/object?type=address&location=shared&name=' . urlencode( 'a) or (name regex /./' ) ) ) ), array( 404, 400, 400 ),
+    'object window: not found; a location is needed; no brackets in the name' );
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'Datacenter-Firewalls', 'filter' => '(name eq new test 1)', 'actions' => 'tag-add:tag-that-does-not-exist', 'field' => 'tag' ) );
+eq( status( $r ), 400, 'object window: a name with spaces in the filter, a failing action is an error' );
+// address name-rename: offered (its class is "network" only because of $$reverse-dns$$) - that alias is refused
+eq( isset( $alice->call( 'GET', 'meta' )[1]['types']['address']['actions']['name-rename'] ), TRUE, 'meta: address name-rename offered (guarded)' );
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host2)', 'actions' => 'name-rename:$$reverse-dns$$' ) );
+eq( array( status( $r ), strpos( $r[1]['error'] ?? '', 'reach the network' ) !== FALSE ), array( 400, TRUE ), 'name-rename with $$reverse-dns$$ refused' );
+eq( ( $alice->call( 'GET', 'meta' )[1]['types']['tag']['actions']['color-set'][0]['choices'] ?? array() )[1] ?? null, 'red', 'meta: the choices of an argument (color-set)' );
 eq( count( glob( $data . '/projects/' . $pid . '/*.xml' ) ), 1, 'no new file before save' );
 eq( status( $bob->call( 'DELETE', $P ) ), 403, 'bob (write) can not delete the project' );
 

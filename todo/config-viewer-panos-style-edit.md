@@ -1,6 +1,14 @@
 # config-viewer: PAN-OS-like viewer, object window, single edit → filter + action → multi-edit
 
-Status: **open** - idea and design (Sven, 2026-11-21). Nothing of it is built yet.
+Status: **in progress** (Sven, 2026-11-21).
+
+* **Built (2026-11-21)**: steps 1 and 2 - menu on the left (Objects, Policies, Network, Device, Other; no type select),
+  location on top; object window (overlay) for addresses, address groups, services, service groups, tags - each field
+  applied on leaving it after a change, as one action on this object; change list as data (`time`, `user`, `type`,
+  `location`, `filter`, `actions`, `field` - later the trailers of a git commit). `…/configs/<cid>/object` for one
+  object. Address `name-rename` is offered although its class is "network" (only `$$reverse-dns$$` reaches the
+  network - that argument is refused: `ACTION_GUARDED`). Not yet: security rules in the window (next), multi-edit with
+  filter suggestions, Network / Device windows, git.
 
 ## Goal
 
