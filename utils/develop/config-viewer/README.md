@@ -313,6 +313,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `projects/<pid>/runs` | GET | read, whole configuration | the last 200 runs |
 | `projects/<pid>/runs/<jid>` | GET / DELETE | read / who started it or write | `state` (`queued`, `running`, `done`, `failed`, `cancelled`), `files` / cancel an open run, delete a finished one with its files |
 | `projects/<pid>/runs/<jid>/files/<name>` | GET | read, whole configuration | one result file (e.g. `json/debugAPI_string.json`, `run.log`) |
+| `…/<cid>/playbook` | GET | read | the change list as a pan-os-php playbook: `source=unsaved` (the unsaved changes of the loaded version) or `version` (the changes the version was saved from; `configs` lists `playbook: true` for these) → `header-comment`, `command` (one step per change: `comment`, `type`, `location`, `ruletype`, `filter`, `actions`) |
 | `…/<cid>/object` | GET | read | one object for the object window: query `type`, `location` (of the object, not `any`), `name` (+ `ruletype` / `securityprofiletype`) → `row` (the fields of the list), `model` (scm-v1 item: values, members, tags as lists) |
 | `…/<cid>/objects` | GET | read | query `type`, `location`, `filter`, `ruletype`, `securityprofiletype` → `total`, `columns`, `rows`, `status` (`changes`: the unsaved changes, each `time`, `user`, `type`, `location`, `filter`, `actions`, `field`); starts the worker if needed |
 | `…/<cid>/status` | GET | read | `loaded`, `dirty`, `changes`, `saved`, `autosaved` (does not start a worker) |

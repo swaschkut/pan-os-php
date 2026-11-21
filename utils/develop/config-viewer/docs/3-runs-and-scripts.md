@@ -35,6 +35,11 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   changed object itself is left out (it can be ticked back). **Apply** runs the action on all matches - one more line
   of the change list (*multi-edit*). The action can be changed before; a rename of many objects needs a formula
   (`$$current.name$$-old`).
+- **Export as playbook …** (below the unsaved changes): the change list as a pan-os-php playbook - one step per
+  change (type, location, rule type, filter, actions, a comment with time, user, field / multi-edit). Save it as a
+  playbook file of the project (then it can be run on another version under *Runs*, or changed in the playbook editor)
+  or download it (`pan-os-php type=playbook in=… out=… json=<file>`). A version saved from changes of the viewer keeps
+  them: **Playbook** next to it in *Configuration versions*.
 - **Run a pan-os-php action on all objects of the list** (below): one action on all objects of the list (menu entry +
   location + filter) - type part of the name; the suggestions show the arguments of each action.
 - **refcount** (address, service, tag, zone, schedule, security profile (group), …): how many objects use this one.

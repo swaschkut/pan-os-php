@@ -304,6 +304,16 @@ $ch = end( $r[1]['status']['changes'] );
 $m = $bob->call( 'GET', $C . '/objects?type=address&location=any&filter=' . urlencode( '(description regex /MULTI/)' ) )[1]['rows'] ?? array();
 eq( array( status( $r ), ( $r[1]['processed'] ?? 0 ) >= 3 && ( $r[1]['processed'] ?? 0 ) === count( $m ), $ch['field'] ?? null, in_array( 'new test 1', array_column( $m, 'name' ), TRUE ) ), array( 200, TRUE, 'multi-edit', FALSE ),
     'multi-edit: one change on all matches (not the object itself), noted as multi-edit' );
+// the change list as a playbook: one step per change (type, location, rule type, filter, actions, comment)
+$r = $bob->call( 'GET', $C . '/playbook?source=unsaved' );
+$steps = $r[1]['command'] ?? array();
+$last = end( $steps );
+eq( array( status( $r ), count( $steps ) >= 6, $last['type'] ?? null, $last['location'] ?? null, $last['filter'] ?? null, $last['actions'] ?? null, strpos( $last['comment'] ?? '', 'multi-edit' ) !== FALSE,
+    isset( $r[1]['header-comment'] ) ), array( 200, TRUE, 'address', 'location=any', 'filter=!(object is.group) and (value string.eq 1.1.1.1) and !(name eq new test 1)', 'actions=description-delete/description-append:MULTI', TRUE, TRUE ),
+    'playbook of the unsaved changes' );
+$rs = array_values( array_filter( $steps, function( $x ) { return ( $x['type'] ?? '' ) === 'rule'; } ) );
+eq( $rs[0]['ruletype'] ?? null, 'ruletype=security', 'playbook: the rule type of a rule step' );
+eq( array( status( $bob->call( 'GET', $C . '/playbook?source=version' ) ), status( $bob->call( 'GET', $C . '/playbook?source=x' ) ) ), array( 400, 400 ), 'playbook: an uploaded version has no changes; source checked' );
 eq( count( glob( $data . '/projects/' . $pid . '/*.xml' ) ), 1, 'no new file before save' );
 eq( status( $bob->call( 'DELETE', $P ) ), 403, 'bob (write) can not delete the project' );
 
@@ -318,6 +328,9 @@ eq( strpos( (string)$alice->call( 'GET', $C . '/download' )[1], 'VIEWERTEST' ), 
 $list = $alice->call( 'GET', $P . '/configs' )[1]['configs'];
 eq( count( $list ) === 2 && $list[0]['parent'] === $cid && strpos( $list[0]['note'], 'description-append:VIEWERTEST [bob]' ) !== FALSE, TRUE, 'version history: parent, action and user' );
 eq( $bob->call( 'POST', $C2 . '/save' )[1]['saved'] ?? null, FALSE, 'save without changes writes nothing' );
+$vl = array_column( $alice->call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), 'playbook', 'cid' );
+$r = $alice->call( 'GET', $C2 . '/playbook?source=version' );
+eq( array( $vl[$cid2] ?? null, $vl[$cid] ?? null, status( $r ), count( $r[1]['command'] ?? array() ) >= 6 ), array( TRUE, FALSE, 200, TRUE ), 'playbook of a version saved from changes (the list offers it)' );
 
 // ---- 10. a stopped worker with unsaved changes: recovered as a version
 $bob->call( 'POST', $C2 . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host2)', 'actions' => 'description-append:RECOVERME' ) );

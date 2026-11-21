@@ -439,6 +439,9 @@ async function showProject(pid) {
             el('td', {}, el('button', { class: 'link', type: 'button', text: c.name, onclick: () => run(() => showViewer(c)) })),
             el('td', { text: fmtTime(c.created) }), el('td', { text: c.created_by || '' }), el('td', { text: fmtSize(c.size) }), el('td', { class: 'wrap', text: c.note }),
             el('td', {}, limited ? null : el('a', { href: API + '/' + base + '/configs/' + c.cid + '/download', text: 'Download' }), ' ',
+                // a version saved from changes of the viewer: its changes as a pan-os-php playbook
+                c.playbook && !limited ? el('button', { type: 'button', text: 'Playbook', title: 'the changes this version was saved from, as a pan-os-php playbook',
+                    onclick: () => run(() => exportPlaybook(pid, c.cid, 'version', canWrite)) }) : null, ' ',
                 canWrite && !limited ? el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
                     if (!confirm('Delete this version? Unsaved changes on it are lost.')) return;
                     await api('DELETE', base + '/configs/' + c.cid); await showProject(pid);
@@ -913,6 +916,39 @@ async function ldapTab(base, pid, p, owner, versions) {
         el('p', { class: 'muted', text: 'Ask the LDAP / Active Directory with your own account: do the users still exist (cleanup), which groups does a user have, which groups do several users share, who is in a group. The queries are yours (nobody else sees them); the password of the bind user is your LDAP account under My API keys (key store entry ldap_user<user>). The server must be allowed by the administrator (network allow list). "Check the users of the rules" looks up the users of the security rules of a version (pan-os-php user-check-ldap); the run log shows the missing ones, "remove" also makes a result configuration without them.' }),
         why ? el('p', { class: 'muted', text: why }) : null, discover, accounts, form, queries, runList ? el('h3', { text: 'My LDAP runs' }) : null, runList, out);
     return card;
+}
+
+// ---------------------------------------------------------------- the change list as a pan-os-php playbook
+// source 'unsaved': the unsaved changes of the loaded version; 'version': the changes a saved version was made of.
+// One step per change (type, location, filter, actions, comment). Save it as a playbook file of the project (runs,
+// playbook editor) or download it.
+async function exportPlaybook(pid, cid, source, canWrite) {
+    const pb = await api('GET', 'projects/' + pid + '/configs/' + cid + '/playbook?source=' + source);
+    const json = JSON.stringify(pb, null, 2);
+    const d = new Date(), pad = n => String(n).padStart(2, '0');
+    const fileName = el('input', { value: 'changes-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.json', maxlength: 120 });
+    const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'playbook' });
+    const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
+    const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+    function close() { document.removeEventListener('keydown', onKey); overlay.remove(); }
+    const blobUrl = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    box.append(el('div', { class: 'objhead' }, el('h3', { text: 'Playbook: ' + pb.command.length + ' step' + (pb.command.length === 1 ? '' : 's') }),
+            el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+        el('p', { class: 'muted', text: 'pan-os-php type=playbook runs the steps one after the other - on another version, another configuration or the command line (pan-os-php type=playbook in=… out=… json=<file>). A step with (name eq …) changes that one object; a multi-edit step its filter.' }),
+        el('pre', { class: 'log', text: json }),
+        el('div', { class: 'row' },
+            canWrite ? field('Name of the project file', fileName) : null,
+            canWrite ? el('button', { class: 'primary', type: 'button', text: 'Save as playbook file of the project', onclick: () => run(async () => {
+                let name = fileName.value.trim(); if (!name) throw new Error('a name is needed');
+                if (!/\.json$/i.test(name)) name += '.json';
+                const fd = new FormData(); fd.append('file', new Blob([json], { type: 'application/json' }), name);
+                await api('POST', 'projects/' + pid + '/files?kind=playbook', fd);
+                close(); message('saved as the playbook file ' + name + ' (Runs and project files)');
+            }) }) : null,
+            el('a', { href: blobUrl, download: fileName.value, text: 'Download', onclick: (ev) => { ev.currentTarget.download = fileName.value.trim() || 'changes.json'; } }),
+            el('button', { type: 'button', text: 'Close', onclick: close })));
+    document.addEventListener('keydown', onKey);
+    document.body.append(overlay);
 }
 
 // ---------------------------------------------------------------- tabs of a project (the chosen one is kept per project)
@@ -1597,7 +1633,9 @@ async function showViewer(config, preset) {
             await load(true);
         }); } }, field('Action', actionBox), el('label', { class: 'grow' }, 'Arguments (comma separated)', actionArg), el('button', { class: 'primary', type: 'submit', text: 'Run on loaded configuration' })),
         argHelp, log) : null;
-    const changesCard = el('div', { class: 'card' }, el('h3', { text: 'Unsaved changes' }), el('p', { class: 'muted', text: 'Every change is one pan-os-php action (filter + action) on the loaded configuration - in the object window one per field.' }), changeList);
+    const changesCard = el('div', { class: 'card' }, el('h3', { text: 'Unsaved changes' }), el('p', { class: 'muted', text: 'Every change is one pan-os-php action (filter + action) on the loaded configuration - in the object window one per field.' }), changeList,
+        el('div', { class: 'row' }, el('button', { type: 'button', text: 'Export as playbook …', title: 'the unsaved changes as a pan-os-php playbook (type=playbook): to run on another version or configuration',
+            onclick: () => run(() => exportPlaybook(pid, state.config.cid, 'unsaved', canWrite)) })));
 
     const title = el('h2', { text: 'Version of ' + fmtTime(config.created) + ' - ' + config.name });
     main(el('div', { class: 'row' }, el('button', { type: 'button', text: '‹ ' + p.name, onclick: () => run(async () => {

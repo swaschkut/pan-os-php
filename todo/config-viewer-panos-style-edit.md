@@ -14,8 +14,11 @@ Status: **in progress** (Sven, 2026-11-21).
   `snat-set-interface` not in the window yet). Step 3 (2026-11-21): multi-edit - "Multi-edit …" at a change of one object: filter
   suggestions from the object (filter fields of the meta only), location, own filter, the number of matches and their
   names live, apply = one change with the wider filter (field `multi-edit`); the object itself left out by default; a
-  rename needs a `$$` formula. Not yet: Network / Device windows, NAT translations in the window, playbook export,
-  git.
+  rename needs a `$$` formula. Playbook export (2026-11-21): "Export as playbook …" (unsaved changes) and
+  "Playbook" at a version saved from changes (column `configs.changes`: the change list as JSON); one step per change
+  with a comment; checked like an uploaded playbook; save as a project file or download. Tested: the playbook of the
+  changes, run on the original version, gives the same changes. Not yet: Network / Device windows, NAT translations in
+  the window, git.
 
 ## Goal
 

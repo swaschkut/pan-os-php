@@ -514,6 +514,9 @@ try
                 viewerOut( $app->objects( $user, $pid, $cid, $_GET ) );
             if( $n == 5 && $method === 'GET' && $op === 'references' )
                 viewerOut( $app->references( $user, $pid, $cid, $_GET ) );
+            // the change list as a pan-os-php playbook (?source=unsaved / version)
+            if( $n == 5 && $method === 'GET' && $op === 'playbook' )
+                viewerOut( $app->playbook( $user, $pid, $cid, (string)( $_GET['source'] ?? 'unsaved' ) ) );
             // one object for the object window (fields + structured model)
             if( $n == 5 && $method === 'GET' && $op === 'object' )
                 viewerOut( $app->objectGet( $user, $pid, $cid, $_GET ) );

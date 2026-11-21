@@ -202,6 +202,10 @@ class ViewerApp
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, server TEXT NOT NULL, bind_user TEXT NOT NULL,
             base_dn TEXT NOT NULL, attribute TEXT NOT NULL, mode TEXT NOT NULL, users TEXT NOT NULL, grp TEXT NOT NULL, transitive INTEGER NOT NULL,
             created INTEGER NOT NULL, updated INTEGER NOT NULL)' );
+        // the changes a saved version was made of (the change list as data, JSON) - for the playbook of a version
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(configs)' )->fetchAll(), 'name' );
+        if( !in_array( 'changes', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE configs ADD COLUMN changes TEXT' );
         // the server of a query: given, or automatic (server '') - the domain controllers of 'domain' from DNS
         $cols = array_column( $this->db->query( 'PRAGMA table_info(ldap_queries)' )->fetchAll(), 'name' );
         if( !in_array( 'domain', $cols, TRUE ) )
@@ -2789,9 +2793,16 @@ class ViewerApp
     public function configList( array $user, $pid ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
-        return $this->q( 'SELECT c.cid, c.name, c.size, c.note, c.created, u.name AS created_by, pc.cid AS parent
+        $rows = $this->q( 'SELECT c.cid, c.name, c.size, c.note, c.created, u.name AS created_by, pc.cid AS parent, c.changes
             FROM configs c LEFT JOIN users u ON u.id = c.created_by LEFT JOIN configs pc ON pc.id = c.parent_id
             WHERE c.project_id = ? ORDER BY c.id DESC', array( $p['id'] ) )->fetchAll();
+        // 'playbook': the version was saved from changes of the viewer - they can be exported as a playbook
+        foreach( $rows as $i => $r )
+        {
+            $rows[$i]['playbook'] = count( self::playbookSteps( (array)json_decode( (string)$r['changes'], TRUE ) ) ) > 0;
+            unset( $rows[$i]['changes'] );
+        }
+        return $rows;
     }
 
     /** @return array config row incl. absolute 'path'; the config must belong to the project */
@@ -3554,9 +3565,57 @@ class ViewerApp
         @chmod( $target, 0600 );
         $note = implode( "\n", array_map( array( self::class, 'changeText' ), (array)( $r['changes'] ?? array() ) ) );
         $new = $this->configInsert( $p, $user, $c['name'], $file, (int)$c['id'], substr( $note, 0, 4000 ) );
+        $this->q( 'UPDATE configs SET changes = ? WHERE cid = ?', array( json_encode( array_values( (array)( $r['changes'] ?? array() ) ) ), $new['cid'] ) );
         $newId = (int)$this->q( 'SELECT id FROM configs WHERE cid = ?', array( $new['cid'] ) )->fetch()['id'];
         $this->q( 'UPDATE sessions SET config_id = ? WHERE project_id = ? AND config_id = ?', array( $newId, $p['id'], $c['id'] ) );
         return array( 'saved' => TRUE, 'cid' => $new['cid'], 'status' => $r['status'] ?? null );
+    }
+
+    /** one step of a playbook per change of the change list (changes as data only; older text lines are skipped) */
+    public static function playbookSteps( array $changes ): array
+    {
+        $steps = array();
+        foreach( $changes as $c )
+        {
+            if( !is_array( $c ) || !is_string( $c['type'] ?? null ) || !is_string( $c['actions'] ?? null ) || $c['actions'] === '' )
+                continue;
+            $step = array( 'comment' => trim( ( isset( $c['time'] ) ? date( 'Y-m-d H:i T', (int)$c['time'] ) : '' ) . ' ' . (string)( $c['user'] ?? '' )
+                . ( isset( $c['field'] ) ? ( $c['field'] === 'multi-edit' ? ' - multi-edit' : ' - field ' . $c['field'] ) : '' ) ), 'type' => $c['type'] );
+            foreach( array( 'location', 'ruletype', 'securityprofiletype', 'filter' ) as $k )
+                if( isset( $c[$k] ) && is_string( $c[$k] ) && $c[$k] !== '' )
+                    $step[$k] = $k . '=' . $c[$k];
+            $step['actions'] = 'actions=' . $c['actions'];
+            $steps[] = $step;
+        }
+        return $steps;
+    }
+
+    /**
+     * the change list as a pan-os-php playbook (type=playbook): GET …/configs/<cid>/playbook?source=unsaved (the
+     * unsaved changes of the loaded version) or source=version (the changes this version was saved from). One step per
+     * change: type, location, rule type, filter, actions - and a comment (when, who, field).
+     */
+    public function playbook( array $user, $pid, $cid, string $source ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        if( $source === 'version' )
+            $changes = (array)json_decode( (string)( $this->q( 'SELECT changes FROM configs WHERE id = ?', array( $c['id'] ) )->fetch()['changes'] ?? '' ), TRUE );
+        elseif( $source === 'unsaved' )
+        {
+            $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'status' ) );
+            $changes = (array)( $r['status']['changes'] ?? array() );
+        }
+        else
+            throw new ViewerException( 'source: unsaved or version', 400 );
+        $steps = self::playbookSteps( $changes );
+        if( count( $steps ) === 0 )
+            throw new ViewerException( $source === 'version' ? 'this version was not saved from changes of the viewer' : 'no changes', 400 );
+        $pb = array( 'header-comment' => 'changes of the config viewer - project "' . $p['name'] . '", ' . ( $source === 'version' ? 'version ' : 'unsaved changes of version ' )
+            . $c['name'] . ' (' . date( 'Y-m-d H:i T', (int)$c['created'] ) . '); exported ' . date( 'Y-m-d H:i T' ) . ' by ' . $user['name'], 'command' => $steps );
+        // what the viewer would refuse to run is not exported
+        $this->playbookCheck( $pb );
+        return $pb;
     }
 
     /** one line of the change list as text (the note of a saved version): a change is data now, older ones text */
