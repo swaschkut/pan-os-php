@@ -96,6 +96,61 @@ function jobsKill( $proc, ?string $jid = null ): void
     proc_close( $proc );
 }
 
+/**
+ * starts step $n of a run (most runs have one step; an import two for SCM). Only a step with 'network' gets a network
+ * (in a container: PANOSPHP_VIEWER_CONTAINER_NETWORK, default bridge); every other one none. null: not started (finished
+ * as failed).
+ */
+function jobsStart( array $job, int $n )
+{
+    global $app, $container, $tool;
+    $step = $job['steps'][$n];
+    $job = array_merge( $job, array( 'tool' => $step['tool'], 'args' => $step['args'], 'rawArgs' => $step['rawArgs'], 'network' => !empty( $step['network'] ) ) );
+    // only the first step reads the version (in=); a later step works on what the first one wrote
+    if( $n > 0 )
+    {
+        $job['config'] = null;
+        $job['file'] = null;
+    }
+    $log = $job['dir'] . '/run.log';
+    // the log of pan-os-php (tool-log.txt) goes to the folder of the run, not into the installation
+    $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'], 'PANOSPHP_LOG_DIR' => $job['dir'] . '/log' );
+    // what a run type of a plug-in sets (checked names: PANOSPHP_…, not PANOSPHP_VIEWER_…)
+    $env += $job['env'];
+    // tests only: the extra licence keys of the test (lib/misc-classes/PluginLicense.php)
+    if( getenv( 'PANOSPHP_LICENSE_TEST_KEYS' ) )
+        $env['PANOSPHP_LICENSE_TEST_KEYS'] = (string)getenv( 'PANOSPHP_LICENSE_TEST_KEYS' );
+    if( $container !== null )
+    {
+        try
+        {
+            $cmd = $container->runCommand( $job );
+        }
+        catch( Exception $e )
+        {
+            $app->runnerFinish( $job['id'], 'failed', 'the run could not be started: ' . substr( $e->getMessage(), 0, 200 ) );
+            return null;
+        }
+        foreach( array_keys( $job['env'] ) as $k )
+            unset( $env[$k] );
+        // the client of the runtime: where the runtime is (DOCKER_HOST, rootless podman), nothing of the job
+        foreach( array( 'DOCKER_HOST', 'DOCKER_CONFIG', 'CONTAINER_HOST', 'XDG_RUNTIME_DIR' ) as $k )
+            if( getenv( $k ) !== FALSE )
+                $env[$k] = (string)getenv( $k );
+        $env['HOME'] = (string)( getenv( 'HOME' ) ?: '/' );
+        unset( $env['TMPDIR'], $env['PANOSPHP_LOG_DIR'] );
+    }
+    else
+        $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['tool'] ), $job['config'] !== null ? array( 'in=' . $job['config'] ) : array(), $job['args'] );
+    $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, $n > 0 ? 'a' : 'w' ), 2 => array( 'redirect', 1 ) ), $pipes, $job['dir'], $env );
+    if( !is_resource( $proc ) )
+    {
+        $app->runnerFinish( $job['id'], 'failed', 'the run could not be started' );
+        return null;
+    }
+    return $proc;
+}
+
 while( !$stop )
 {
     // finished, cancelled, deleted or too long
@@ -108,6 +163,20 @@ while( !$stop )
             $code = proc_close( $r['proc'] );
             // proc_get_status reports the exit code only once; proc_close gives it when the status had none (-1)
             $exit = $st['exitcode'] !== -1 ? (int)$st['exitcode'] : (int)$code;
+            // a run with more steps (import: download, then offline conversion): the next one, same folder and log
+            $next = $r['step'] + 1;
+            if( $exit === 0 && empty( $st['signaled'] ) && $next < count( $r['job']['steps'] ) && $state === 'running' )
+            {
+                $proc = jobsStart( $r['job'], $next );
+                if( $proc !== null )
+                {
+                    $running[$id]['proc'] = $proc;
+                    $running[$id]['step'] = $next;
+                }
+                else
+                    unset( $running[$id] );
+                continue;
+            }
             if( $exit === 0 && empty( $st['signaled'] ) )
                 $app->runnerFinish( $id, 'done' );
             else
@@ -138,43 +207,10 @@ while( !$stop )
 
     while( count( $running ) < $parallel && ( $job = $app->runnerTake() ) !== null )
     {
-        $log = $job['dir'] . '/run.log';
-        // the log of pan-os-php (tool-log.txt) goes to the folder of the run, not into the installation
-        $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'], 'PANOSPHP_LOG_DIR' => $job['dir'] . '/log' );
-        // what a run type of a plug-in sets (checked names: PANOSPHP_…, not PANOSPHP_VIEWER_…)
-        $env += $job['env'];
-        // tests only: the extra licence keys of the test (lib/misc-classes/PluginLicense.php)
-        if( getenv( 'PANOSPHP_LICENSE_TEST_KEYS' ) )
-            $env['PANOSPHP_LICENSE_TEST_KEYS'] = (string)getenv( 'PANOSPHP_LICENSE_TEST_KEYS' );
-        if( $container !== null )
-        {
-            try
-            {
-                $cmd = $container->runCommand( $job );
-            }
-            catch( Exception $e )
-            {
-                $app->runnerFinish( $job['id'], 'failed', 'the run could not be started: ' . substr( $e->getMessage(), 0, 200 ) );
-                continue;
-            }
-            foreach( array_keys( $job['env'] ) as $k )
-                unset( $env[$k] );
-            // the client of the runtime: where the runtime is (DOCKER_HOST, rootless podman), nothing of the job
-            foreach( array( 'DOCKER_HOST', 'DOCKER_CONFIG', 'CONTAINER_HOST', 'XDG_RUNTIME_DIR' ) as $k )
-                if( getenv( $k ) !== FALSE )
-                    $env[$k] = (string)getenv( $k );
-            $env['HOME'] = (string)( getenv( 'HOME' ) ?: '/' );
-            unset( $env['TMPDIR'], $env['PANOSPHP_LOG_DIR'] );
-        }
-        else
-            $cmd = array_merge( array( PHP_BINARY, $tool, 'type=' . $job['tool'] ), $job['config'] !== null ? array( 'in=' . $job['config'] ) : array(), $job['args'] );
-        $proc = proc_open( $cmd, array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', $log, 'w' ), 2 => array( 'redirect', 1 ) ), $pipes, $job['dir'], $env );
-        if( !is_resource( $proc ) )
-        {
-            $app->runnerFinish( $job['id'], 'failed', 'the run could not be started' );
+        $proc = jobsStart( $job, 0 );
+        if( $proc === null )
             continue;
-        }
-        $running[$job['id']] = array( 'proc' => $proc, 'started' => time(), 'dir' => $job['dir'], 'jid' => $job['jid'] );
+        $running[$job['id']] = array( 'proc' => $proc, 'started' => time(), 'dir' => $job['dir'], 'jid' => $job['jid'], 'job' => $job, 'step' => 0 );
     }
     usleep( 250000 );
 }

@@ -35,13 +35,14 @@
  *                                     Default: PANOSPHP_VIEWER_DATA as the job runner sees it (job runner on the host).
  *   PANOSPHP_VIEWER_CONTAINER_TOOL    pan-os-php.php in the image (default /tools/pan-os-php/utils/pan-os-php.php)
  *   PANOSPHP_VIEWER_CONTAINER_MEMORY  default 2g      PANOSPHP_VIEWER_CONTAINER_CPUS  default 2
+ *   PANOSPHP_VIEWER_CONTAINER_NETWORK default bridge  only for a step that may reach the network (import)
  *   PANOSPHP_VIEWER_CONTAINER_USER    uid:gid in the container (default: the one of the job runner)
  *   PANOSPHP_VIEWER_CONTAINER_PLUGINS absolute path on the host of the runtime of the folder that holds plug-ins which
  *                                     are not in the image (a run of such a plug-in gets its folder read-only at /plugin)
  */
 class ViewerContainer
 {
-    public string $program, $image, $data, $tool, $memory, $cpus, $user, $label, $plugins;
+    public string $program, $image, $data, $tool, $memory, $cpus, $user, $label, $plugins, $network;
 
     /** null when PANOSPHP_VIEWER_CONTAINER is not set */
     public static function fromEnv( string $dataDir ): ?ViewerContainer
@@ -65,6 +66,10 @@ class ViewerContainer
             throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS must be an absolute path' );
         $c->tool = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_TOOL' ) ?: '/tools/pan-os-php/utils/pan-os-php.php' );
         $c->memory = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_MEMORY' ) ?: '2g' );
+        // the network of a run that may reach the network (import): a docker / podman network name
+        $c->network = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_NETWORK' ) ?: 'bridge' );
+        if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/', $c->network ) || in_array( strtolower( $c->network ), array( 'host', 'none' ), TRUE ) )
+            throw new Exception( 'PANOSPHP_VIEWER_CONTAINER_NETWORK: the name of a network (not host / none)' );
         $c->cpus = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_CPUS' ) ?: '2' );
         $c->user = (string)( getenv( 'PANOSPHP_VIEWER_CONTAINER_USER' ) ?: ( function_exists( 'posix_getuid' ) ? posix_getuid() . ':' . posix_getgid() : '' ) );
         if( !preg_match( '#^/[A-Za-z0-9._/-]+\.php$#', $c->tool ) || !preg_match( '/^[0-9]+[bkmg]?$/', $c->memory ) || !preg_match( '/^[0-9]+(\.[0-9]+)?$/', $c->cpus )
@@ -105,7 +110,8 @@ class ViewerContainer
             $args[] = str_replace( array( '%FILES%', '%JOB%', '%PROJECT%' ), array( '/project/files', '/job', '/project' ), $a );
 
         $cmd = array( $this->program, 'run', '--rm', '--name', self::name( $job['jid'] ), '--label', $this->label,
-            '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+            // a network only for a step that must reach a firewall / Panorama / SCM (import; allowed by the administrator)
+            '--network', !empty( $job['network'] ) ? $this->network : 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
             '--pids-limit', '256', '--memory', $this->memory, '--cpus', $this->cpus,
             '--tmpfs', '/tmp:rw,noexec,nosuid,size=256m',
             '--mount', $this->mount( 'projects/' . $job['pid'], '/project', TRUE ),

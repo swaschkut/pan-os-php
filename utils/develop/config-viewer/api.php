@@ -20,6 +20,7 @@
 /**
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
  *   POST login, POST logout, GET me, POST password, GET meta, GET playbooks, GET playbooks?all=1 + PUT playbooks (admin)
+ *   GET|POST keys, DELETE keys/<kid> (own API keys), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
  *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
  *   GET projects/<pid>/audit                                              (owner)
  *   GET|POST projects, GET|DELETE projects/<pid>
@@ -157,7 +158,7 @@ try
         $user['is_admin'] = 0;
         $csrf = null;
         $viewerAudit['token'] = $user['token']['tid'];
-        if( in_array( $r0, array( 'logout', 'password', 'users', 'license' ), TRUE ) )
+        if( in_array( $r0, array( 'logout', 'password', 'users', 'license', 'keys', 'network' ), TRUE ) )
             throw new ViewerException( 'not found', 404 );
     }
     else
@@ -262,6 +263,30 @@ try
         }
     }
 
+    // network for runs (administrator): on / off, allow list, deny list
+    if( $r0 === 'network' && count( $route ) === 1 )
+    {
+        if( !$admin )
+            throw new ViewerException( 'not found', 404 );
+        if( $method === 'GET' )
+            viewerOut( $app->networkGet() );
+        if( $method === 'PUT' )
+            viewerOut( $app->networkSet( viewerBody() ) );
+    }
+    // the API keys of the user (personal; the secret is never sent back)
+    if( $r0 === 'keys' )
+    {
+        if( $method === 'GET' && count( $route ) === 1 )
+            viewerOut( array( 'keys' => $app->keyList( $user ), 'kinds' => ViewerApp::KEY_KINDS, 'network' => $app->networkGet()['enabled'] ) );
+        if( $method === 'POST' && count( $route ) === 1 )
+            viewerOut( $app->keyAdd( $user, viewerBody() ), 201 );
+        if( $method === 'DELETE' && count( $route ) === 2 )
+        {
+            $app->keyDelete( $user, $route[1] );
+            viewerOut( array( 'ok' => TRUE ) );
+        }
+    }
+
     if( $r0 === 'projects' )
     {
         $n = count( $route );
@@ -278,7 +303,10 @@ try
         if( $n == 1 && $method === 'POST' )
             viewerOut( ViewerApp::projectPublic( $app->projectCreate( $user, viewerBody()['name'] ?? null ) ), 201 );
         if( $n == 2 && $method === 'GET' )
-            viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) );
+            viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) + array( 'network_global' => $app->networkGet()['enabled'] ) );
+        // network for the runs of this project (owner; works only while the administrator allows network)
+        if( $n == 3 && $sub === 'network' && $method === 'PUT' )
+            viewerOut( $app->projectNetworkSet( $user, $pid, viewerBody()['enabled'] ?? FALSE ) );
         if( $n == 2 && $method === 'DELETE' )
         {
             $app->projectDelete( $user, $pid );

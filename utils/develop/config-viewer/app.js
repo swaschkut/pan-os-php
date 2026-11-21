@@ -189,6 +189,42 @@ async function showAccount() {
         message('password changed');
     }); } }, el('h2', { text: 'Change password' }), el('div', { class: 'row' }, field('Current password', oldPw), field('New password (10+ characters)', newPw),
         el('button', { class: 'primary', type: 'submit', text: 'Change' })))];
+    // ---- my API keys (personal: only I use them, for imports in my projects; the secret is never shown again)
+    {
+        const ks = await api('GET', 'keys');
+        const kKind = el('select', {}, Object.entries(ks.kinds).map(([k, t]) => el('option', { value: k, text: t })));
+        const kTarget = el('input', { required: true, autocomplete: 'off', spellcheck: false });
+        const kLabel = el('input', { autocomplete: 'off', maxlength: 80, placeholder: 'optional' });
+        const kKey = el('input', { type: 'password', autocomplete: 'new-password' });
+        const kId = el('input', { autocomplete: 'off', spellcheck: false }), kSecret = el('input', { type: 'password', autocomplete: 'new-password' });
+        const fPanos = [field('API key', kKey)], fScm = [field('Client id', kId), field('Client secret', kSecret)];
+        const targetField = field('Host name / IP address', kTarget);
+        const kindChanged = () => {
+            const scm = kKind.value === 'scm';
+            fPanos.forEach(x => { x.hidden = scm; }); fScm.forEach(x => { x.hidden = !scm; });
+            kKey.required = !scm; kId.required = kSecret.required = scm;
+            targetField.firstChild.textContent = scm ? 'TSG id of the tenant' : 'Host name / IP address';
+        };
+        kKind.addEventListener('change', kindChanged); kindChanged();
+        nodes.push(el('div', { class: 'card' }, el('h2', { text: 'My API keys' }),
+            el('p', { class: 'muted', text: 'Your own keys for importing configurations from a firewall, Panorama or an SCM tenant into your projects. Only you can use them - nobody else, also no administrator. After saving, a key is never shown again (only its last 4 characters); it stays until you delete it.' + (ks.network ? '' : ' Network for runs is off at the moment (administrator).') }),
+            el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                const body = { kind: kKind.value, target: kTarget.value.trim(), label: kLabel.value.trim() };
+                if (kKind.value === 'scm') { body.client_id = kId.value.trim(); body.client_secret = kSecret.value; } else body.key = kKey.value.trim();
+                await api('POST', 'keys', body);
+                kKey.value = kSecret.value = kId.value = '';
+                await showAccount(); message('API key saved');
+            }); } }, field('Kind', kKind), targetField, field('Label', kLabel), ...fPanos, ...fScm, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
+            ks.keys.length === 0 ? el('p', { class: 'muted', text: 'No API keys.' }) :
+            table(['Kind', 'Target', 'Label', 'Key', 'Saved', 'Last used', 'Usable now', ''], ks.keys.map(k => el('tr', {},
+                el('td', { text: k.kind === 'scm' ? 'SCM' : 'PAN-OS' }), el('td', { text: k.kind === 'scm' ? 'TSG ' + k.target : k.target }), el('td', { text: k.label }),
+                el('td', { text: k.hint }), el('td', { text: fmtTime(k.created) }), el('td', { text: fmtTime(k.last_used) }),
+                el('td', { class: 'wrap' }, k.refused ? el('span', { class: 'muted', text: k.refused }) : el('span', { class: 'badge', text: 'yes' })),
+                el('td', {}, el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                    if (!confirm('Delete the API key for ' + k.target + '?')) return;
+                    await api('DELETE', 'keys/' + k.kid); await showAccount();
+                }) })))))));
+    }
     if (state.admin) {
         const users = (await api('GET', 'users')).users;
         const name = el('input', { required: true, autocomplete: 'off' });
@@ -235,6 +271,20 @@ async function showAccount() {
                     if (!confirm('Remove the licence? Licensed plug-ins are locked afterwards.')) return;
                     await api('DELETE', 'license'); await showAccount();
                 }) }) : null))));
+        // network for runs: only imports use it (download a configuration); off by default; allow / deny lists
+        const net = await api('GET', 'network');
+        const nOn = el('input', { type: 'checkbox', checked: net.enabled });
+        const nAllow = el('textarea', { rows: 4, spellcheck: false, placeholder: 'one per line: fw1.example.com, *.example.com, 10.1.1.1, 10.0.0.0/8, tsg:1234567890, tsg:*, *' });
+        const nDeny = el('textarea', { rows: 4, spellcheck: false, placeholder: 'one per line - wins over the allow list' });
+        nAllow.value = net.allow.join('\n'); nDeny.value = net.deny.join('\n');
+        nodes.push(el('form', { class: 'card', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            await api('PUT', 'network', { enabled: nOn.checked, allow: nAllow.value, deny: nDeny.value });
+            message('network for runs saved'); await showAccount();
+        }); } }, el('h2', { text: 'Network for runs (admin)' }),
+            el('p', { class: 'muted', text: 'Runs have no network. With this on, an import may download a configuration (read only) from a firewall / Panorama (XML API) or an SCM tenant - with the API key of the user who starts it, in a project whose owner turned network on. Nothing is written to a device. A target must be on the allow list and not on the deny list; an empty allow list allows nothing.' }),
+            el('div', { class: 'row' }, field('Network for runs (imports)', nOn)),
+            el('div', { class: 'row' }, el('label', { class: 'grow' }, 'Allow list', nAllow), el('label', { class: 'grow' }, 'Deny list', nDeny)),
+            el('button', { class: 'primary', type: 'submit', text: 'Save' })));
         nodes.push(el('div', { class: 'card' }, el('h2', { text: 'Plug-ins (admin)' }),
             pl.plugins.length === 0 && errs.length === 0 ? el('p', { class: 'muted', text: 'No plug-ins installed.' }) :
             table(['Plug-in', 'Version', 'Feature', 'Form', 'State'], [
@@ -323,6 +373,33 @@ async function showProject(pid) {
                     if (!confirm('Delete this version? Unsaved changes on it are lost.')) return;
                     await api('DELETE', base + '/configs/' + c.cid); await showProject(pid);
                 }) }) : null)))));
+
+    // ---- import from a firewall / Panorama / SCM tenant (download only, with my own API key) -> a new version
+    let importCard = null;
+    if (canWrite && !limited) {
+        const my = await api('GET', 'keys').catch(() => ({ keys: [] }));
+        const usable = my.keys.filter(k => !k.refused);
+        const iKey = el('select', {}, usable.map(k => el('option', { value: k.kid, text: (k.kind === 'scm' ? 'SCM TSG ' : '') + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
+        const iSource = el('select', {}, el('option', { value: 'candidate', text: 'candidate configuration' }), el('option', { value: 'running', text: 'running configuration' }));
+        const sourceField = field('Configuration', iSource);
+        const keyChanged = () => { const k = usable.find(x => x.kid === iKey.value); sourceField.hidden = !k || k.kind === 'scm'; };
+        iKey.addEventListener('change', keyChanged); keyChanged();
+        const netOn = el('input', { type: 'checkbox', checked: p.network, disabled: !owner, onchange: (ev) => run(async () => {
+            await api('PUT', base + '/network', { enabled: ev.target.checked }); await showProject(pid);
+        }) });
+        const why = !p.network_global ? 'Network for runs is off (an administrator turns it on under Account).'
+            : !p.network ? 'Network is off for this project' + (owner ? ' - turn it on above.' : ' (the owner turns it on).')
+            : usable.length === 0 ? 'You have no API key that may be used now - add one under Account, My API keys (and check the allow list of the administrator).' : null;
+        importCard = el('div', { class: 'card' }, el('h2', { text: 'Import from a device' }),
+            el('p', { class: 'muted', text: 'Downloads the configuration of a firewall / Panorama (XML API) or an SCM tenant - read only, nothing is written to the device - with your own API key. The result becomes a new version (see Runs and project files for the run).' }),
+            el('div', { class: 'row' }, field('Network for this project' + (owner ? '' : ' (owner)'), netOn)),
+            why ? el('p', { class: 'muted', text: why }) :
+            el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                const k = usable.find(x => x.kid === iKey.value);
+                await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : { kid: iKey.value });
+                message('import queued - it becomes a new version when it is done (Runs and project files)');
+            }); } }, field('From (my API key)', iKey), sourceField, el('button', { class: 'primary', type: 'submit', text: 'Import' })));
+    }
 
     // ---- members with their grants (types, locations)
     const mUser = el('input', { required: true, autocomplete: 'off' });
@@ -460,7 +537,8 @@ async function showProject(pid) {
             runsBody.replaceChildren(runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
-                    const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
+                    const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')
+                            : !r.cid ? '-' : (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
                         el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
                             r.error ? el('span', { class: r.reason === 'memory' ? 'error' : 'muted', text: ' ' + (r.reason === 'memory' ? r.error.replace(/^out of memory: /, '') : r.error) }) : null),
                         el('td', { text: r.user || '' }), el('td', { text: fmtTime(r.started) }), el('td', { text: fmtTime(r.finished) }),
@@ -534,7 +612,7 @@ async function showProject(pid) {
             if (!confirm('Delete project "' + p.name + '" with all configurations?')) return;
             await api('DELETE', base); await showProjects();
         }) }) : null), projectTabs(pid, [
-            ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions]],
+            ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard]],
             ['runs', 'Runs and project files', [runsCard, filesCard]],
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now

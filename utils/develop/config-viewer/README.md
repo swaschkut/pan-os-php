@@ -266,6 +266,11 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `password` | POST | login | body `old`, `new` |
 | `meta` | GET | login | offered types with their actions (arguments, help) and filters (field → operator → `arg`, `example`, `help`; from `utils/lib/util_action_filter.json`), rule types, profile types |
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
+| `network` | GET / PUT | admin | network for runs (imports): `enabled`, `allow`, `deny` (lists: host, `*.domain`, IP, network, `tsg:<id>`, `*`; deny wins, empty allow list = nothing) |
+| `keys` | GET / POST | login (no token) | own API keys (personal): list (`kid`, `kind`, `target`, `label`, `hint` = last 4 characters, `refused` = why not usable now) / store (`kind` `panos`: `target` host, `key`; `scm`: `target` TSG, `client_id`, `client_secret`) - the secret is never sent back |
+| `keys/<kid>` | DELETE | login | delete an own key |
+| `projects/<pid>/network` | PUT | owner | network for the runs of the project (`enabled`); works only while the administrator allows it |
+| `projects/<pid>/import/runs` | POST | write | import from a device with an own key: `kid`, `source` (`candidate` / `running`, PAN-OS) → a new version when done; see `docs/6-import-from-devices.md` |
 | `users/<name>/password` | POST | admin | a new password for the user, made by the viewer → `password` (shown once) |
 | `users/<name>` | DELETE | admin | delete a user and the projects the user owns |
 | `audit` | GET | admin | audit log, newest first; query `user`, `before` (id), `limit` (1–1000) |

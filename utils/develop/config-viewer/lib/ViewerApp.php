@@ -175,6 +175,16 @@ class ViewerApp
             $this->db->exec( 'ALTER TABLE members ADD COLUMN types TEXT' );
         if( !in_array( 'scope', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE members ADD COLUMN scope TEXT' );
+        // network for runs (import from a firewall / Panorama / SCM): the project switch of the owner - it works only while
+        // an administrator allows network for runs (settings 'network')
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(projects)' )->fetchAll(), 'name' );
+        if( !in_array( 'network', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN network INTEGER NOT NULL DEFAULT 0' );
+        // API keys of a user (personal: only this user uses them, in any of the user's projects); the secret encrypted
+        // with the key of the installation (keys.secret in the data directory), never sent back
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS user_keys (id INTEGER PRIMARY KEY, kid TEXT NOT NULL UNIQUE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, kind TEXT NOT NULL, target TEXT NOT NULL, label TEXT NOT NULL,
+            secret TEXT NOT NULL, hint TEXT NOT NULL, created INTEGER NOT NULL, last_used INTEGER, UNIQUE (user_id, kind, target))' );
         // why a run failed: memory (killed / out of memory), timeout, error
         $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
         if( !in_array( 'reason', $cols, TRUE ) )
@@ -530,7 +540,236 @@ class ViewerApp
     public static function projectPublic( array $p ): array
     {
         return array( 'pid' => $p['pid'], 'name' => $p['name'], 'owner' => $p['owner'], 'role' => $p['role'], 'created' => (int)$p['created'],
-            'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null );
+            'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null, 'network' => !empty( $p['network'] ) );
+    }
+
+    // ------------------------------------------------------------------ network for runs, API keys of a user, import
+
+    const KEY_KINDS = array( 'panos' => 'PAN-OS firewall / Panorama (XML API key)', 'scm' => 'Strata Cloud Manager tenant (client id + secret)' );
+
+    /**
+     * Network for runs (administrator): off by default. 'allow' / 'deny': one entry per line - a host name, *.domain,
+     * an IP address, a network (10.0.0.0/8), tsg:<id> / tsg:* for SCM tenants, * for everything. A target is allowed
+     * when it matches 'allow' and does not match 'deny' (deny wins; an empty allow list allows nothing).
+     */
+    public function networkGet(): array
+    {
+        $row = $this->q( "SELECT value FROM settings WHERE name = 'network'" )->fetch();
+        $n = $row ? json_decode( $row['value'], TRUE ) : null;
+        return array( 'enabled' => !empty( $n['enabled'] ), 'allow' => array_values( (array)( $n['allow'] ?? array() ) ), 'deny' => array_values( (array)( $n['deny'] ?? array() ) ) );
+    }
+
+    public function networkSet( array $in ): array
+    {
+        $lists = array();
+        foreach( array( 'allow', 'deny' ) as $k )
+        {
+            $v = $in[$k] ?? array();
+            if( is_string( $v ) )
+                $v = preg_split( '/[\r\n,]+/', $v );
+            if( !is_array( $v ) )
+                throw new ViewerException( $k . ': a list of hosts / networks', 400 );
+            $lists[$k] = array();
+            foreach( $v as $e )
+            {
+                $e = strtolower( trim( (string)$e ) );
+                if( $e === '' )
+                    continue;
+                if( !self::networkPattern( $e ) )
+                    throw new ViewerException( $k . ': "' . substr( $e, 0, 80 ) . '" is no host, *.domain, IP address, network (a.b.c.d/n), tsg:<id> or *', 400 );
+                $lists[$k][] = $e;
+            }
+            $lists[$k] = array_values( array_unique( $lists[$k] ) );
+        }
+        $n = array( 'enabled' => !empty( $in['enabled'] ) && $in['enabled'] !== 'false', 'allow' => $lists['allow'], 'deny' => $lists['deny'] );
+        $this->q( "INSERT INTO settings (name, value) VALUES ('network', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", array( json_encode( $n ) ) );
+        return $n;
+    }
+
+    private static function networkPattern( string $e ): bool
+    {
+        return $e === '*' || $e === 'tsg:*' || preg_match( '/^tsg:[0-9]{1,20}$/', $e ) || filter_var( $e, FILTER_VALIDATE_IP ) !== FALSE
+            || ( preg_match( '#^([0-9a-f:.]+)/([0-9]{1,3})$#', $e, $m ) && filter_var( $m[1], FILTER_VALIDATE_IP ) !== FALSE )
+            || preg_match( '/^(\*\.)?[a-z0-9]([a-z0-9-]{0,62}\.)*[a-z0-9-]{1,63}$/', $e );
+    }
+
+    private static function ipInNet( string $ip, string $net ): bool
+    {
+        list( $base, $bits ) = explode( '/', $net );
+        $a = @inet_pton( $ip );
+        $b = @inet_pton( $base );
+        if( $a === FALSE || $b === FALSE || strlen( $a ) !== strlen( $b ) )
+            return FALSE;
+        $bits = (int)$bits;
+        if( $bits > strlen( $a ) * 8 )
+            return FALSE;
+        $bytes = intdiv( $bits, 8 );
+        if( substr( $a, 0, $bytes ) !== substr( $b, 0, $bytes ) )
+            return FALSE;
+        if( $bits % 8 === 0 )
+            return TRUE;
+        $mask = chr( ( 0xff << ( 8 - $bits % 8 ) ) & 0xff );
+        return ( $a[$bytes] & $mask ) === ( $b[$bytes] & $mask );
+    }
+
+    /** does one entry of a list match the target (kind panos: host / IP; scm: TSG id)? $ips: the addresses of a host name */
+    private static function networkMatch( string $e, string $kind, string $target, array $ips ): bool
+    {
+        if( $e === '*' )
+            return TRUE;
+        if( $kind === 'scm' )
+            return $e === 'tsg:*' || $e === 'tsg:' . $target;
+        if( strpos( $e, 'tsg:' ) === 0 )
+            return FALSE;
+        if( strpos( $e, '/' ) !== FALSE )
+        {
+            $cand = filter_var( $target, FILTER_VALIDATE_IP ) !== FALSE ? array( $target ) : $ips;
+            foreach( $cand as $ip )
+                if( self::ipInNet( $ip, $e ) )
+                    return TRUE;
+            return FALSE;
+        }
+        if( strpos( $e, '*.' ) === 0 )
+            return substr( $target, -strlen( $e ) + 1 ) === substr( $e, 1 ) && strlen( $target ) > strlen( $e ) - 1;
+        if( $e === $target )
+            return TRUE;
+        // an IP entry and a host name that resolves to it
+        return filter_var( $e, FILTER_VALIDATE_IP ) !== FALSE && in_array( $e, $ips, TRUE );
+    }
+
+    /** may runs reach this target? null = yes, else the reason why not */
+    public function networkRefusal( string $kind, string $target ): ?string
+    {
+        $n = $this->networkGet();
+        if( !$n['enabled'] )
+            return 'network for runs is off (an administrator turns it on: Account, Network for runs)';
+        $target = strtolower( $target );
+        $ips = array();
+        if( $kind === 'panos' && filter_var( $target, FILTER_VALIDATE_IP ) === FALSE )
+        {
+            $needIps = FALSE;
+            foreach( array_merge( $n['allow'], $n['deny'] ) as $e )
+                $needIps = $needIps || strpos( $e, '/' ) !== FALSE || filter_var( $e, FILTER_VALIDATE_IP ) !== FALSE;
+            if( $needIps )
+                $ips = @gethostbynamel( $target ) ?: array();
+        }
+        foreach( $n['deny'] as $e )
+            if( self::networkMatch( $e, $kind, $target, $ips ) )
+                return $target . ' is on the deny list of the administrator';
+        foreach( $n['allow'] as $e )
+            if( self::networkMatch( $e, $kind, $target, $ips ) )
+                return null;
+        return $target . ' is not on the allow list of the administrator';
+    }
+
+    /** the owner turns network for the runs of the project on / off (works only while the administrator allows it) */
+    public function projectNetworkSet( array $user, $pid, $enabled ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'owner' );
+        $this->q( 'UPDATE projects SET network = ? WHERE id = ?', array( !empty( $enabled ) && $enabled !== 'false' ? 1 : 0, $p['id'] ) );
+        return self::projectPublic( $this->projectGet( $user, $pid, 'owner' ) );
+    }
+
+    /** the key of the installation for the secrets of the API keys (data directory, readable only by the viewer) */
+    private function secretKey(): string
+    {
+        $f = $this->dataDir . '/keys.secret';
+        $k = @file_get_contents( $f );
+        if( !is_string( $k ) || strlen( $k ) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES )
+        {
+            $k = random_bytes( SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
+            $old = umask( 0177 );
+            $tmp = $f . '.' . getmypid();
+            file_put_contents( $tmp, $k );
+            umask( $old );
+            // two requests at the same time: the first file wins
+            if( !@link( $tmp, $f ) )
+                $k = (string)file_get_contents( $f );
+            @unlink( $tmp );
+        }
+        return $k;
+    }
+
+    private function seal( string $plain ): string
+    {
+        $nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+        return base64_encode( $nonce . sodium_crypto_secretbox( $plain, $nonce, $this->secretKey() ) );
+    }
+
+    private function unseal( string $sealed ): ?string
+    {
+        $raw = base64_decode( $sealed, TRUE );
+        if( $raw === FALSE || strlen( $raw ) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES )
+            return null;
+        $p = sodium_crypto_secretbox_open( substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), $this->secretKey() );
+        return $p === FALSE ? null : $p;
+    }
+
+    private static function keyTarget( string $kind, $target ): string
+    {
+        $t = is_string( $target ) ? strtolower( trim( $target ) ) : '';
+        if( $kind === 'scm' )
+        {
+            if( !preg_match( '/^[0-9]{1,20}$/', $t ) )
+                throw new ViewerException( 'target: the TSG id of the tenant (digits)', 400 );
+            return $t;
+        }
+        if( filter_var( $t, FILTER_VALIDATE_IP ) === FALSE && !preg_match( '/^[a-z0-9]([a-z0-9-]{0,62}\.)*[a-z0-9-]{1,63}$/', $t ) )
+            throw new ViewerException( 'target: host name or IP address of the firewall / Panorama', 400 );
+        return $t;
+    }
+
+    /** the API keys of the user - never the secret, only its last 4 characters; 'refused': why a run can not use it now */
+    public function keyList( array $user ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $out = array();
+        foreach( $this->q( 'SELECT kid, kind, target, label, hint, created, last_used FROM user_keys WHERE user_id = ? ORDER BY kind, target', array( $user['id'] ) )->fetchAll() as $k )
+            $out[] = array( 'kid' => $k['kid'], 'kind' => $k['kind'], 'target' => $k['target'], 'label' => $k['label'], 'hint' => '…' . $k['hint'],
+                'created' => (int)$k['created'], 'last_used' => $k['last_used'] !== null ? (int)$k['last_used'] : null, 'refused' => $this->networkRefusal( $k['kind'], $k['target'] ) );
+        return $out;
+    }
+
+    /** a new API key of the user (or a new secret for the same target): panos - key; scm - client_id + client_secret */
+    public function keyAdd( array $user, array $in ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $kind = $in['kind'] ?? '';
+        if( !is_string( $kind ) || !isset( self::KEY_KINDS[$kind] ) )
+            throw new ViewerException( 'kind: panos or scm', 400 );
+        $target = self::keyTarget( $kind, $in['target'] ?? null );
+        $label = trim( (string)( $in['label'] ?? '' ) );
+        $label = $label === '' ? $target : self::checkLabel( $label, 'label' );
+        // the key store line of pan-os-php: <host>:<key> (a PAN-OS key may have a ":" itself), tsg_id<TSG>:<id>%<secret>
+        $ok = function( $v, $what, $colon = FALSE ) {
+            if( !is_string( $v ) || strlen( $v ) < 8 || strlen( $v ) > 4000 || preg_match( $colon ? '/[\x00-\x20\x7F%]/' : '/[\x00-\x20\x7F:%]/', $v ) )
+                throw new ViewerException( $what . ': 8-4000 characters, no spaces, no "%"' . ( $colon ? '' : ' or ":"' ), 400 );
+            return $v;
+        };
+        if( $kind === 'panos' )
+            $secret = $ok( $in['key'] ?? null, 'key', TRUE );
+        else
+            $secret = $ok( $in['client_id'] ?? null, 'client_id' ) . '%' . $ok( $in['client_secret'] ?? null, 'client_secret' );
+        $hint = substr( $secret, -4 );
+        $kid = self::randomId( 8 );
+        $this->q( 'INSERT INTO user_keys (kid, user_id, kind, target, label, secret, hint, created) VALUES (?,?,?,?,?,?,?,?)
+            ON CONFLICT(user_id, kind, target) DO UPDATE SET secret = excluded.secret, hint = excluded.hint, label = excluded.label, created = excluded.created',
+            array( $kid, $user['id'], $kind, $target, $label, $this->seal( $secret ), $hint, time() ) );
+        foreach( $this->keyList( $user ) as $k )
+            if( $k['kind'] === $kind && $k['target'] === $target )
+                return $k;
+        throw new ViewerException( 'key not stored', 500 );
+    }
+
+    public function keyDelete( array $user, $kid ): void
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $r = $this->q( 'DELETE FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)$kid, $user['id'] ) );
+        if( $r->rowCount() === 0 )
+            throw new ViewerException( 'not found', 404 );
     }
 
     /** TRUE when the grant of the user on the project is limited to some types or to some locations */
@@ -620,7 +859,7 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats', 'playbook', 'diff' );
+    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import' );
     const JOB_QUEUE_MAX = 20;          // queued + running jobs per project
     const JOB_FILE_MAX = 104857600;    // largest result file that can be downloaded
 
@@ -803,13 +1042,37 @@ class ViewerApp
         $plugin = $this->pluginRuns()[$type] ?? null;
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
-        // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file)
-        $noVersion = $plugin !== null && $plugin['input'] === 'none';
+        // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || $type === 'import';
         if( $noVersion !== ( $cid === null ) )
             throw new ViewerException( 'not found', 404 );
         $c = $noVersion ? array( 'id' => 0 ) : $this->configGet( $p, $cid );
 
         $args = array();
+        if( $type === 'import' )
+        {
+            // the configuration of a firewall / Panorama (XML API) or an SCM tenant, read only, with an API key of this
+            // user; becomes a new version. Needs: network for runs (administrator), network of this project (owner),
+            // the target allowed by the lists of the administrator, write permission.
+            $this->projectGet( $user, $pid, 'write' );
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
+            if( !$k )
+                throw new ViewerException( 'kid: one of your API keys (Account, My API keys)', 400 );
+            // the order of the reasons: installation, project, target
+            if( !$this->networkGet()['enabled'] )
+                throw new ViewerException( (string)$this->networkRefusal( $k['kind'], $k['target'] ), 403 );
+            if( empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+            if( ( $why = $this->networkRefusal( $k['kind'], $k['target'] ) ) !== null )
+                throw new ViewerException( $why, 403 );
+            $source = $in['source'] ?? 'candidate';
+            if( !in_array( $source, array( 'candidate', 'running' ), TRUE ) || ( $k['kind'] === 'scm' && $source !== 'candidate' ) )
+                throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
+            // only references here - the runner builds the steps and the key store of the run when it starts
+            $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+        }
         if( $type === 'stats' )
         {
             $location = $in['location'] ?? 'any';
@@ -918,7 +1181,8 @@ class ViewerApp
         {
             $it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ) );
             foreach( $it as $f )
-                if( $f->isFile() && !$f->isLink() )
+                // never a hidden file (the key store of an import: .panconfkeystore)
+                if( $f->isFile() && !$f->isLink() && !preg_match( '#(^|/)\.#', substr( $f->getPathname(), strlen( $dir ) + 1 ) ) )
                     $files[] = array( 'name' => substr( $f->getPathname(), strlen( $dir ) + 1 ), 'size' => $f->getSize() );
             usort( $files, function( $a, $b ) { return strcmp( $a['name'], $b['name'] ); } );
         }
@@ -972,6 +1236,8 @@ class ViewerApp
         if( in_array( $j['state'], array( 'queued', 'running' ), TRUE ) )
         {
             $this->q( "UPDATE jobs SET state = 'cancelled', finished = ? WHERE id = ? AND state IN ('queued','running')", array( time(), $j['id'] ) );
+            // an import: its key store goes at once (the job runner stops the run)
+            @unlink( $this->jobDir( $p, $j['jid'] ) . '/.panconfkeystore' );
             return;
         }
         $this->q( 'DELETE FROM jobs WHERE id = ?', array( $j['id'] ) );
@@ -1351,7 +1617,7 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || $j['type'] === 'import' ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
         if( ( !$noVersion && ( $config === null || !is_file( $config ) ) ) || !in_array( $j['type'], $this->jobTypes(), TRUE ) || !is_array( $args ) || !preg_match( '/^[0-9a-f]{32}$/', $j['jid'] ) )
@@ -1383,6 +1649,23 @@ class ViewerApp
             }
             $args[$i] = str_replace( array( '%FILES%', '%JOB%', '%PROJECT%' ), array( $dir . '/files', $jobDir, $dir ), $a );
         }
+        // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
+        // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
+        $steps = null;
+        if( $j['type'] === 'import' )
+        {
+            try
+            {
+                $steps = $this->importSteps( $j, $args, $jobDir );
+            }
+            catch( ViewerException $e )
+            {
+                $this->runnerFinish( (int)$j['id'], 'failed', $e->getMessage() );
+                return $this->runnerTake();
+            }
+            $args = $steps[0]['args'];
+            $rawArgs = $steps[0]['rawArgs'];
+        }
         // pid / jid / file / rawArgs: for a run in a container (ViewerContainer), where the folders have other paths
         // 'tool': the pan-os-php type that runs - for a run type of a plug-in the one it names
         // environment a run type of a plug-in asks for: %PLUGIN% is the folder of the plug-in (in a container: where it is mounted)
@@ -1408,7 +1691,9 @@ class ViewerApp
         return array( 'env' => $env, 'rawEnv' => $pr['env'] ?? array(), 'plugin' => $pr['plugin'] ?? null, 'pluginBuiltin' => $pr['builtin'] ?? FALSE,
             'pluginPackage' => $package, 'licence' => $licenceText,
             'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noIn ? null : $config,
-            'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noIn ? null : $j['file'], 'rawArgs' => $rawArgs );
+            'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noIn ? null : $j['file'], 'rawArgs' => $rawArgs,
+            // steps of a run with more than one pan-os-php call (import); 'network': only this step reaches the network
+            'steps' => $steps ?? array( array( 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'rawArgs' => $rawArgs, 'network' => FALSE ) ) );
     }
 
     /** 'running' (still wanted), 'cancelled', or null when the job / project was deleted */
@@ -1418,12 +1703,103 @@ class ViewerApp
         return $r ? $r['state'] : null;
     }
 
+    /**
+     * the steps of an import: PAN-OS - type=upload in=api://<host>[/running-config] out=out.xml (downloads only);
+     * SCM - type=scm-export in=scm-api://<TSG> (read only) and, offline, type=scm-export-xml -> out.xml.
+     * Writes the key store of the run (HOME of the run): only the entry of this target.
+     */
+    private function importSteps( array $j, array $args, string $jobDir ): array
+    {
+        $x = array();
+        foreach( $args as $a )
+            if( preg_match( '/^x-import-(key|target|source)=(.*)$/', $a, $m ) )
+                $x[$m[1]] = $m[2];
+        $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
+        if( !$k )
+            throw new ViewerException( 'the API key of the run does not exist any more' );
+        $p = $this->q( 'SELECT network FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
+        if( !$p || empty( $p['network'] ) )
+            throw new ViewerException( 'network is off for this project' );
+        if( ( $why = $this->networkRefusal( $k['kind'], $k['target'] ) ) !== null )
+            throw new ViewerException( $why );
+        $secret = $this->unseal( $k['secret'] );
+        if( $secret === null )
+            throw new ViewerException( 'the API key can not be read (key of the installation changed?) - store it again' );
+        $line = $k['kind'] === 'scm' ? 'tsg_id' . $k['target'] . ':' . $secret : $k['target'] . ':' . $secret;
+        $store = $jobDir . '/.panconfkeystore';
+        $old = umask( 0077 );
+        $ok = file_put_contents( $store, $line . "\n" ) !== FALSE;
+        umask( $old );
+        if( !$ok )
+            throw new ViewerException( 'the key store of the run can not be written' );
+        $this->q( 'UPDATE user_keys SET last_used = ? WHERE id = ?', array( time(), $k['id'] ) );
+        $step = function( string $tool, array $raw, bool $network ) use ( $jobDir ) {
+            return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network,
+                'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
+        };
+        if( $k['kind'] === 'panos' )
+            return array( $step( 'upload', array( 'in=api://' . $k['target'] . ( ( $x['source'] ?? '' ) === 'running' ? '/running-config' : '' ), 'out=%JOB%/out.xml' ), TRUE ) );
+        return array(
+            $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config', 'outdir=%JOB%/scm-export', 'config-internal=no' ), TRUE ),
+            $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $k['target'], 'out=%JOB%/out.xml' ), FALSE ) );
+    }
+
     /** $reason of a failed run: 'memory' (killed - out of memory), 'timeout', 'error' */
     public function runnerFinish( int $id, string $state, ?string $error = null, ?string $reason = null ): void
     {
         if( $state === 'failed' && $reason === null )
             $reason = 'error';
-        $this->q( "UPDATE jobs SET state = ?, finished = ?, error = ?, reason = ? WHERE id = ? AND state = 'running'", array( $state, time(), $error, $reason, $id ) );
+        $changed = $this->q( "UPDATE jobs SET state = ?, finished = ?, error = ?, reason = ? WHERE id = ? AND state = 'running'", array( $state, time(), $error, $reason, $id ) )->rowCount();
+        if( $changed === 0 )
+            return;
+        $j = $this->q( 'SELECT j.*, p.pid FROM jobs j JOIN projects p ON p.id = j.project_id WHERE j.id = ?', array( $id ) )->fetch();
+        if( $j && $j['type'] === 'import' )
+            $this->importFinish( $j );
+    }
+
+    /**
+     * the end of an import: the key store of the run goes (the key itself stays with the user), secrets are taken out
+     * of run.log, and a downloaded configuration becomes a new version of the project
+     */
+    private function importFinish( array $j ): void
+    {
+        $dir = $this->dataDir . '/projects/' . $j['pid'] . '/jobs/' . $j['jid'];
+        $store = $dir . '/.panconfkeystore';
+        $secret = null;
+        if( is_file( $store ) )
+        {
+            $line = trim( (string)file_get_contents( $store ) );
+            $secret = substr( $line, strpos( $line, ':' ) + 1 );
+            @unlink( $store );
+        }
+        if( $secret !== null && $secret !== '' && is_file( $dir . '/run.log' ) )
+        {
+            $log = (string)file_get_contents( $dir . '/run.log' );
+            $clean = str_replace( array_filter( array_merge( array( $secret ), explode( '%', $secret ) ), function( $s ) { return strlen( $s ) >= 8; } ), '********', $log );
+            if( $clean !== $log )
+                file_put_contents( $dir . '/run.log', $clean );
+        }
+        $out = $dir . '/out.xml';
+        if( $j['state'] !== 'done' || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
+        {
+            if( $j['state'] === 'done' )
+                $this->q( "UPDATE jobs SET state = 'failed', error = ?, reason = 'error' WHERE id = ?", array( 'no configuration was downloaded (see run.log)', $j['id'] ) );
+            return;
+        }
+        $target = '';
+        foreach( (array)json_decode( $j['args'], TRUE ) as $a )
+            if( is_string( $a ) && strpos( $a, 'x-import-target=' ) === 0 )
+                $target = substr( $a, 16 );
+        $p = $this->q( 'SELECT p.*, o.name AS owner FROM projects p JOIN users o ON o.id = p.owner_id WHERE p.pid = ?', array( $j['pid'] ) )->fetch();
+        $u = $this->userById( (int)$j['user_id'] );
+        if( !$p || !$u )
+            return;
+        $file = self::randomId() . '.xml';
+        if( !copy( $out, $this->projectDir( $p['pid'] ) . '/' . $file ) )
+            return;
+        @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
+        list( $kind, $host ) = array_pad( explode( ':', $target, 2 ), 2, '' );
+        $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target );
     }
 
     /**
@@ -1447,13 +1823,17 @@ class ViewerApp
     public function runnerReset(): void
     {
         $this->q( "UPDATE jobs SET state = 'failed', finished = ?, error = 'the job runner was stopped', reason = 'error' WHERE state = 'running'", array( time() ) );
+        // key stores of imports that were running
+        foreach( glob( $this->dataDir . '/projects/*/jobs/*/.panconfkeystore' ) ?: array() as $f )
+            @unlink( $f );
     }
 
     // ------------------------------------------------------------------ audit log
 
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
-        'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath' );
+        'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath',
+        'kid', 'source', 'target', 'allow', 'deny' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void

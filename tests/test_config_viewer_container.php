@@ -39,7 +39,7 @@ function eq( $actual, $expected, $msg )
 function withEnv( array $env, callable $fn )
 {
     $all = array( 'PANOSPHP_VIEWER_CONTAINER', 'PANOSPHP_VIEWER_CONTAINER_IMAGE', 'PANOSPHP_VIEWER_CONTAINER_DATA', 'PANOSPHP_VIEWER_CONTAINER_TOOL',
-        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' );
+        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS', 'PANOSPHP_VIEWER_CONTAINER_NETWORK' );
     foreach( $all as $k )
         putenv( isset( $env[$k] ) ? $k . '=' . $env[$k] : $k );
     try { return $fn(); }
@@ -107,7 +107,7 @@ foreach( array( 'pid' => '../../etc', 'jid' => 'x', 'file' => '../viewer.sqlite'
     eq( substr( (string)withEnv( $base, function() use ( $job, $k, $v ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( $k => $v ) + $job ); } ), 0, 6 ), 'error:', 'refused: ' . $k . ' = ' . $v );
 foreach( array( array( 'PANOSPHP_VIEWER_CONTAINER' => 'sh' ), array( 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => '' ), array( 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => '--privileged' ),
     array( 'PANOSPHP_VIEWER_CONTAINER_DATA' => '/data/../etc' ), array( 'PANOSPHP_VIEWER_CONTAINER_DATA' => 'vol,readonly=false' ), array( 'PANOSPHP_VIEWER_CONTAINER_MEMORY' => 'all' ),
-    array( 'PANOSPHP_VIEWER_CONTAINER_USER' => 'root' ) ) as $bad )
+    array( 'PANOSPHP_VIEWER_CONTAINER_USER' => 'root' ), array( 'PANOSPHP_VIEWER_CONTAINER_NETWORK' => 'host' ), array( 'PANOSPHP_VIEWER_CONTAINER_NETWORK' => 'a b' ) ) as $bad )
     eq( substr( (string)withEnv( $bad + $base, function() { ViewerContainer::fromEnv( '/data' ); return 'accepted'; } ), 0, 6 ), 'error:', 'refused setting: ' . json_encode( $bad ) );
 
 // ---- 2. the flow with a stand-in "docker"
@@ -142,6 +142,26 @@ foreach( $a as $i => $o )
 foreach( $rest as $i => $r )
     $rest[$i] = preg_replace_callback( '#(?<==|^)/(project|job)(?=/|$)#', function( $m ) use ( $map ) { return $map['/' . $m[1]]; }, $r );
 file_put_contents( __DIR__ . '/' . $name . '.pid', getmypid() );
+// an import step (download / conversion): no device here - note network and key store, write the result, print the key
+// (the viewer must take it out of run.log)
+$tool0 = '';
+foreach( $rest as $x )
+    if( strpos( $x, 'type=' ) === 0 )
+        $tool0 = substr( $x, 5 );
+if( in_array( $tool0, array( 'upload', 'scm-export', 'scm-export-xml' ), TRUE ) )
+{
+    $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
+    file_put_contents( __DIR__ . '/import.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
+    print "connecting with key " . trim( substr( $ks, strpos( $ks, ':' ) + 1 ) ) . "\n";
+    foreach( $rest as $x )
+    {
+        if( strpos( $x, 'out=' ) === 0 )
+            copy( __DIR__ . '/import-' . $tool0 . '.xml', substr( $x, 4 ) );
+        if( strpos( $x, 'outdir=' ) === 0 )
+            @mkdir( substr( $x, 7 ) . '/1234567890/20261121', 0777, TRUE );
+    }
+    exit( 0 );
+}
 // a container the kernel stops for its memory limit ends with 137 (SIGKILL); a run with this marker plays that
 if( in_array( 'memorythreshold=999936', $a, TRUE ) )
 {
@@ -159,6 +179,8 @@ FAKE
 );
 chmod( $bin . '/docker', 0755 );
 file_put_contents( $bin . '/tool', $repo . '/utils/pan-os-php.php' );
+copy( $repo . '/tests/input/panorama-10.0-merger.xml', $bin . '/import-upload.xml' );
+copy( $repo . '/tests/input/SCM-import.xml', $bin . '/import-scm-export-xml.xml' );
 
 $env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => $bin . ':' . getenv('PATH') );
 $p = proc_open( array( PHP_BINARY, $viewer . '/bin/user.php', 'add', 'alice' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null, $env + array( 'VIEWER_PASSWORD' => 'alice-secret-1' ) );
@@ -318,6 +340,86 @@ $fpid = (int)@file_get_contents( $bin . '/panosphp-run-' . $jid3 . '.pid' );
 usleep( 300000 );
 eq( $fpid > 0 && !posix_kill( $fpid, 0 ), TRUE, 'cancel: the run does not go on' );
 eq( in_array( array( 'ps', '--all', '--quiet', '--filter', 'label=panosphp-viewer=' . substr( hash( 'sha256', $data ), 0, 16 ) ), calls(), TRUE ), TRUE, 'start of the job runner: looks for containers left over' );
+
+// ---- import from a device: personal API keys, network only when allowed (administrator + owner), download only
+$app = new ViewerApp( $data );
+$app->userCreate( 'root', 'root-secret-123', TRUE );
+$app->userCreate( 'bob', 'bob-secret-1234' );
+$aliceCookie = $cookie; $aliceCsrf = $csrf;
+$as = function( string $u, string $pw ) use ( &$cookie, &$csrf ) { $cookie = ''; $csrf = null; $csrf = call( 'POST', 'login', array( 'user' => $u, 'password' => $pw ) )[1]['csrf'] ?? null; };
+$secret = 'LUFRPT1-geheim-0815:abcd';
+$r = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'FW1.example.com', 'key' => $secret ) );
+$kid = $r[1]['kid'] ?? '';
+eq( array( $r[0], $r[1]['target'] ?? null, $r[1]['hint'] ?? null, strpos( json_encode( $r[1] ), 'geheim' ) ), array( 201, 'fw1.example.com', '…abcd', FALSE ), 'my API key: stored, only its end shown' );
+eq( strpos( json_encode( call( 'GET', 'keys' )[1] ), 'geheim' ), FALSE, 'my API keys: the secret never comes back' );
+$db = new PDO( 'sqlite:' . $data . '/viewer.sqlite' );
+eq( array( strpos( (string)$db->query( 'SELECT secret FROM user_keys' )->fetchColumn(), 'geheim' ), strpos( (string)file_get_contents( $data . '/viewer.sqlite' ), 'geheim' ), decoct( fileperms( $data . '/keys.secret' ) & 0777 ) ),
+    array( FALSE, FALSE, '600' ), 'my API key: encrypted in the database, key of the installation only for the viewer' );
+eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array() ) ), 'geheim' ), FALSE, 'my API key: not in the audit log' );
+foreach( array( array( 'kind' => 'panos', 'target' => 'a b', 'key' => $secret ), array( 'kind' => 'panos', 'target' => 'fw', 'key' => 'short' ),
+    array( 'kind' => 'scm', 'target' => 'fw1', 'client_id' => 'id-12345678', 'client_secret' => 'sec-12345678' ), array( 'kind' => 'x', 'target' => 'fw' ) ) as $bad )
+    eq( call( 'POST', 'keys', $bad )[0], 400, 'my API key: checked (' . json_encode( array_diff_key( $bad, array( 'key' => 1, 'client_secret' => 1 ) ) ) . ')' );
+$imp = function( array $body ) use ( $P ) { return call( 'POST', $P . '/import/runs', $body ); };
+$r = $imp( array( 'kid' => $kid ) );
+eq( array( $r[0], strpos( $r[1]['error'] ?? '', 'network for runs is off' ) !== FALSE ), array( 403, TRUE ), 'import: refused while network for runs is off (default)' );
+eq( call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => '*' ) )[0], 404, 'network for runs: only an administrator' );
+$as( 'root', 'root-secret-123' );
+eq( call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => 'no host!' ) )[0], 400, 'network: entries checked' );
+$r = call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8", 'deny' => 'bad.example.com' ) );
+eq( array( $r[0], $r[1] ), array( 200, array( 'enabled' => TRUE, 'allow' => array( '*.example.com', 'tsg:1234567890', '10.0.0.0/8' ), 'deny' => array( 'bad.example.com' ) ) ), 'network: on, allow list, deny list' );
+eq( array( $app->networkRefusal( 'panos', '10.1.2.3' ), $app->networkRefusal( 'panos', '11.1.2.3' ) !== null, $app->networkRefusal( 'panos', 'example.com' ) !== null,
+    $app->networkRefusal( 'scm', '1234567890' ), $app->networkRefusal( 'scm', '99' ) !== null ), array( null, TRUE, TRUE, null, TRUE ), 'network: network / *.domain / tsg entries' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+$r = $imp( array( 'kid' => $kid ) );
+eq( array( $r[0], strpos( $r[1]['error'] ?? '', 'network is off for this project' ) !== FALSE ), array( 403, TRUE ), 'import: refused while the project has no network' );
+eq( array( call( 'PUT', $P . '/network', array( 'enabled' => TRUE ) )[1]['network'] ?? null, call( 'GET', $P )[1]['network_global'] ?? null ), array( TRUE, TRUE ), 'project network: the owner turns it on' );
+$r = $imp( array( 'kid' => $kid, 'source' => 'running' ) );
+$ijid = $r[1]['jid'] ?? '';
+eq( array( $r[0], $r[1]['args'] ?? null ), array( 202, array( 'x-import-key=' . $kid, 'x-import-target=panos:fw1.example.com', 'x-import-source=running' ) ), 'import: queued, only references in the run (no key)' );
+$r = waitRun( $P . '/runs/' . $ijid );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$log = (string)call( 'GET', $P . '/runs/' . $ijid . '/files/run.log' )[1];
+$vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), null, 'name' );
+eq( array( $r[1]['state'] ?? null, $il[0][0] ?? null, $il[0][1] ?? null, $il[0][2] ?? null, $il[0][3] ?? null ),
+    array( 'done', 'upload', 'bridge', 'fw1.example.com:' . $secret . "\n", array( 'in=api://fw1.example.com/running-config', 'out=' . $data . '/projects/' . $pid . '/jobs/' . $ijid . '/out.xml' ) ),
+    'import PAN-OS: type=upload in=api://<host>/running-config (download only), network, key store with only this key' );
+eq( array( file_exists( $data . '/projects/' . $pid . '/jobs/' . $ijid . '/.panconfkeystore' ), strpos( $log, 'geheim' ), strpos( $log, '********' ) !== FALSE,
+    in_array( '.panconfkeystore', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( FALSE, FALSE, TRUE, FALSE ), 'import: key store gone after the run, key taken out of run.log' );
+eq( array( isset( $vers['fw1.example.com.xml'] ), strpos( $vers['fw1.example.com.xml']['note'] ?? '', 'import run' ) === 0 ), array( TRUE, TRUE ), 'import: the configuration is a new version' );
+$k = array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' );
+eq( array( isset( $k[$kid] ), ( $k[$kid]['last_used'] ?? 0 ) > 0 ), array( TRUE, TRUE ), 'import: the key stays with the user (last used set)' );
+// deny list, not on the allow list, another user's key, read permission
+$bad = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'bad.example.com', 'key' => $secret ) )[1];
+$other = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'fw.other.org', 'key' => $secret ) )[1];
+eq( array( strpos( (string)$bad['refused'], 'deny list' ) !== FALSE, $imp( array( 'kid' => $bad['kid'] ) )[0], $imp( array( 'kid' => $other['kid'] ) )[0] ), array( TRUE, 403, 403 ), 'import: deny list wins, a host not on the allow list is refused' );
+call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
+$as( 'bob', 'bob-secret-1234' );
+eq( $imp( array( 'kid' => $kid ) )[0], 400, 'import: only with an own key - not with the key of another user' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
+$as( 'bob', 'bob-secret-1234' );
+$bk = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'fw2.example.com', 'key' => $secret ) )[1]['kid'] ?? '';
+eq( $imp( array( 'kid' => $bk ) )[0], 403, 'import: not with read permission' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+// SCM: export with network, then the conversion without
+$r = call( 'POST', 'keys', array( 'kind' => 'scm', 'target' => '1234567890', 'client_id' => 'sa-client@1234567890.iam', 'client_secret' => 'scm-geheim-4711' ) );
+$skid = $r[1]['kid'] ?? '';
+eq( $imp( array( 'kid' => $skid, 'source' => 'running' ) )[0], 400, 'import SCM: no running / candidate choice' );
+@unlink( $bin . '/import.log' );
+$r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $skid ) )[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), null, 'name' );
+eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, $il[0][3][0] ?? null, isset( $vers['scm-1234567890.xml'] ) ),
+    array( 'done', array( 'scm-export', 'scm-export-xml' ), array( 'bridge', 'none' ), 'tsg_id1234567890:sa-client@1234567890.iam%scm-geheim-4711' . "\n", 'in=scm-api://1234567890', TRUE ),
+    'import SCM: scm-export with network (read only), scm-export-xml without, new version' );
+// stats / playbook runs never get a network
+eq( count( array_filter( calls(), function( $c ) { return $c[0] === 'run' && $c[array_search( '--network', $c ) + 1] !== 'none' && !in_array( 'type=upload', $c, TRUE ) && !in_array( 'type=scm-export', $c, TRUE ); } ) ), 0,
+    'all other runs: --network none' );
+$as( 'root', 'root-secret-123' );
+call( 'PUT', 'network', array( 'enabled' => FALSE, 'allow' => '*' ) );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+eq( array( $imp( array( 'kid' => $kid ) )[0], strpos( (string)( array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' )[$kid]['refused'] ?? '' ), 'off' ) !== FALSE ),
+    array( 403, TRUE ), 'network off again: no import, the keys say why' );
 
 print "\n" . $checks . " checks, " . count($failed) . " failed\n";
 if( count($failed) )
