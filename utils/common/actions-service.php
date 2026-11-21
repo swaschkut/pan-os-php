@@ -1448,7 +1448,7 @@ ServiceCallContext::$supportedActions[] = array(
         if( $description != "" )
             $textToAppend = " ";
 
-        $newName = $context->arguments['stringFormula'];
+        $newName = PH::textAliases( $context->arguments['stringFormula'] );
 
         if( strpos($newName, '$$current.name$$') !== FALSE )
         {
@@ -1485,7 +1485,8 @@ ServiceCallContext::$supportedActions[] = array(
             'default' => '*nodefault*',
             'help' =>
                 "This string is used to compose a name. You can use the following aliases :\n" .
-                "  - \$\$current.name\$\$ : current name of the object\n")
+                "  - \$\$current.name\$\$ : current name of the object\n" .
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=description-append:\$\$comma\$\$word1'\n")
     ),
     'help' => ''
 );

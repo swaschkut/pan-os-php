@@ -314,6 +314,20 @@ list( $st, $o ) = $nat( 'dnat-set:static,shared-host2,8443' );
 eq( array( $st, $o['translated_address'] ?? null, (string)( $o['translated_port'] ?? '' ) ), array( 200, 'shared-host2', '8443' ), 'NAT: destination translation with a port' );
 list( $st, $o ) = $nat( 'dnat-remove/snat-remove' );
 eq( array( $st, isset( $o['translated_address'] ), isset( $o['source_translation'] ) ), array( 200, FALSE, FALSE ), 'NAT: both translations removed' );
+// aliases in the descriptions of addresses / services and the comments of tags (PH::textAliases), tag name-rename
+$obj = function( $type, $loc, $name ) use ( $bob, $C ) {
+    return $bob->call( 'GET', $C . '/object?type=' . $type . '&location=' . urlencode( $loc ) . '&name=' . urlencode( $name ) );
+};
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'service', 'location' => 'shared', 'filter' => '(name eq shrd-sv1)', 'actions' => 'description-delete/description-append:a$$comma$$ b$$colon$$ c$$forwardslash$$d' ) );
+$o = $obj( 'service', 'shared', 'shrd-sv1' );
+eq( array( status( $r ), $o[1]['row']['description'] ?? null ), array( 200, 'a, b: c/d' ), 'service description with the aliases , : /' );
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'tag', 'location' => 'testDG', 'filter' => '(name eq test1)', 'actions' => 'comments-add:x$$comma$$y$$colon$$z' ) );
+$o = $obj( 'tag', 'testDG', 'test1' );
+eq( array( status( $r ), $o[1]['row']['comments'] ?? null ), array( 200, 'x,y:z' ), 'tag comments with the aliases' );
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'tag', 'location' => 'testDG', 'filter' => '(name eq test1)', 'actions' => 'name-rename:test1-renamed' ) );
+$a = $obj( 'address', 'testDG', 'test-addr1' );
+eq( array( status( $r ), status( $obj( 'tag', 'testDG', 'test1-renamed' ) ), status( $obj( 'tag', 'testDG', 'test1' ) ), $a[1]['model']['tag'] ?? null ),
+    array( 200, 200, 404, array( 'test1-renamed' ) ), 'tag name-rename: the tag and its references renamed' );
 // multi-edit: the same action with a wider filter (suggestions of the page: !, and, string.eq) - one line of the change list
 $r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'any', 'filter' => '!(object is.group) and (value string.eq 1.1.1.1) and !(name eq new test 1)',
     'actions' => 'description-delete/description-append:MULTI', 'field' => 'multi-edit' ) );

@@ -16,9 +16,11 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   edit dialog of PAN-OS) with its fields. A field is applied **when you leave it after a change** (or press Enter) -
   as **one pan-os-php action on exactly this object** (its location, filter `(name eq …)`): e.g. the description →
   `description-delete/description-append:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, the value of an ip-netmask →
-  `value-replace:…`, the name → `name-rename:…`, a member → `add-member:…`, the color of a tag → `color-set:…`. Under the
-  field the action is shown (✓). A field without a pan-os-php action for it is read only (and says why). `,` and `:`
-  can not be used in a value (they separate the arguments of an action).
+  `value-replace:…`, the name → `name-rename:…` (tags too), a member → `add-member:…`, the color of a tag →
+  `color-set:…`, its comments → `comments-delete/comments-add:…`. Under the field the action is shown (✓). A field
+  without a pan-os-php action for it is read only (and says why). Descriptions and tag comments may contain `,` `:`
+  `/` `|` (written as the pan-os-php aliases `$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`); in every other
+  value `,` and `:` can not be used (they separate the arguments of an action).
 - **Rule window** (every entry under *Policies*: Security, NAT, QoS, PBF, Decryption, …): the fields the rule has -
   name, description (`,` `:` `/` allowed: pan-os-php aliases), tags, disabled, move (to the top / bottom, before /
   after a rule), source / destination zone, address, negate, user, application, service (each: add, ✕ remove, *set to

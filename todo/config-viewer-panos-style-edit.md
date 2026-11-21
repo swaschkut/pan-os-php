@@ -13,7 +13,10 @@ Status: **in progress** (Sven, 2026-11-21).
   `description-replace-character:<old>,<new>`. Shown only: URL category. NAT translations (2026-11-21): source
   and destination translation in the rule window - new pan-os-php actions `snat-set:<type>,<addr|addr>,<interface>,
   <bidirectional>`, `snat-remove`, `dnat-remove`, `dnat-set` with the port; not yet: persistent dynamic IP, DNAT
-  distribution, the interface IP as an object (written as value). DNS Rules under *Other* next to Threat Rules. Step 3 (2026-11-21): multi-edit - "Multi-edit …" at a change of one object: filter
+  distribution, the interface IP as an object (written as value). DNS Rules under *Other* next to Threat Rules. Aliases and tag rename (2026-11-21): `PH::textAliases()`
+  (`$$comma$$`, `$$forwardslash$$`, `$$colon$$`, `$$pipe$$`, `$$newline$$`, `$$space$$`) in `description-append` of
+  addresses and services and in `comments-add` of tags; new tag action `name-rename` (`$$current.name$$`,
+  `$$location$$`, the references follow); in the window: tag name editable, descriptions / comments with `,` `:` `/`. Step 3 (2026-11-21): multi-edit - "Multi-edit …" at a change of one object: filter
   suggestions from the object (filter fields of the meta only), location, own filter, the number of matches and their
   names live, apply = one change with the wider filter (field `multi-edit`); the object itself left out by default; a
   rename needs a `$$` formula. Playbook export (2026-11-21): "Export as playbook …" (unsaved changes) and
@@ -28,8 +31,6 @@ Status: **in progress** (Sven, 2026-11-21).
 ### Still open (list of Sven, 2026-11-21)
 
 * git on object level (see below)
-* aliases (`$$comma$$`, `$$colon$$`, `$$forwardslash$$`, …) for the descriptions of addresses and services in
-  pan-os-php (as for rules) - today `,` and `:` can not be used there
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
 * **the XML snippet of each object** - in the object window: the XML of exactly this object (`$obj->xmlroot`), read
   only (later: the entry of the object in git)
@@ -183,7 +184,7 @@ repeatable, documented change.
 3. Multi-edit: filter suggestions from the object, number of matches, apply.
 4. Security rules in the window (the actions are almost complete), then NAT.
 5. Missing actions in pan-os-php (marked **open** above): `description-set` (address, service, rule), `value-set` /
-   type change (address), `protocol-set` / `dstport-set` (service), `remove-member` (groups), `name-rename` (tag),
+   type change (address), `protocol-set` / `dstport-set` (service), `remove-member` (groups), ~~`name-rename` (tag)~~ (built 2026-11-21),
    URL category (rule) - useful on the command line too.
 6. Playbook export of the change list.
 

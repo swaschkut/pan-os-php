@@ -1297,7 +1297,7 @@ async function showViewer(config, preset) {
         const name = { key: 'name', label: 'Name', kind: 'text', value: row.name, needs: ['name-rename'], rename: true,
             act: (o, n) => { if (n === '') throw new Error('a name is needed'); return 'name-rename:' + actArg(n); } };
         const desc = { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-delete', 'description-append'],
-            act: (o, n) => n === '' ? 'description-delete' : (o === '' ? '' : 'description-delete/') + 'description-append:' + actArg(n) };
+            act: (o, n) => n === '' ? 'description-delete' : (o === '' ? '' : 'description-delete/') + 'description-append:' + ruleText(n) };
         const tags = { key: 'tag', label: 'Tags', kind: 'list', value: Array.isArray(m.tag) ? m.tag : [], needs: ['tag-add'], needsRemove: ['tag-remove'],
             add: t => 'tag-add:' + actArg(t), remove: t => 'tag-remove:' + actArg(t) };
         const loc = { key: 'location', label: 'Location', kind: 'ro', value: row.location };
@@ -1352,16 +1352,16 @@ async function showViewer(config, preset) {
         }
         if (kind === 'tag') {
             const cs = (state.meta.types.tag.actions['color-set'] || [])[0];
-            return [{ key: 'name', label: 'Name', kind: 'ro', value: row.name, note: 'renaming a tag: no pan-os-php action yet' },
+            return [name,
                 { key: 'color', label: 'Color', kind: 'select', value: row.color || 'none', choices: cs && cs.choices ? cs.choices : [], needs: ['color-set'], act: (o, n) => 'color-set:' + actArg(n) },
                 { key: 'comments', label: 'Comments', kind: 'text', value: row.comments || '', needs: ['comments-delete', 'comments-add'],
-                    act: (o, n) => n === '' ? 'comments-delete' : (o === '' ? '' : 'comments-delete/') + 'comments-add:' + actArg(n) }, loc];
+                    act: (o, n) => n === '' ? 'comments-delete' : (o === '' ? '' : 'comments-delete/') + 'comments-add:' + ruleText(n) }, loc];
         }
         return [name, loc];
     }
     // a rule (every rule type): the fields its model has; list fields as add / remove (+ "any"), single values as -set
     function ruleText(v) {
-        // description of a rule: pan-os-php replaces these aliases (description-append, description-replace-character)
+        // a description (rule, address, service) or tag comments: pan-os-php replaces these aliases (PH::textAliases)
         if (/[\x00-\x1f]/.test(v)) throw new Error('no line breaks here');
         return v.replace(/\$\$/g, '$ $').replace(/,/g, '$$$$comma$$$$').replace(/\//g, '$$$$forwardslash$$$$').replace(/:/g, '$$$$colon$$$$').replace(/\|/g, '$$$$pipe$$$$');
     }

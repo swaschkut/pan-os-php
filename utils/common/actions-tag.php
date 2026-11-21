@@ -74,6 +74,69 @@ TagCallContext::$supportedActions['deleteforce'] = array_merge(TagCallContext::$
     )
 );
 
+TagCallContext::$supportedActions['name-rename'] = array(
+    'name' => 'name-Rename',
+    'MainFunction' => function (TagCallContext $context) {
+        $object = $context->object;
+
+        if( $object->isTmp() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $newName = PH::textAliases( $context->arguments['stringFormula'] );
+        $newName = str_replace( '$$current.name$$', $object->name(), $newName );
+        if( strpos( $newName, '$$location$$' ) !== FALSE )
+        {
+            $location_class = $object->owner->owner;
+            $location = ( get_class( $location_class ) == 'PanoramaConf' || get_class( $location_class ) == 'PANConf' ) ? 'shared' : $location_class->name();
+            $newName = str_replace( '$$location$$', $location, $newName );
+        }
+
+        if( $newName === '' || $object->name() == $newName )
+        {
+            $string = $newName === '' ? "the new name is empty" : "new name and old name are the same";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( strlen( $newName ) > 127 )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie( $object->owner->owner );
+        if( $rootObject->isPanorama() && $object->owner->find( $newName, null, FALSE ) !== null ||
+            $rootObject->isFirewall() && $object->owner->find( $newName, null, TRUE ) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        // the references (rules, objects) follow the new name: Tag::setName
+        if( $context->isAPI )
+            $object->API_setName( $newName );
+        else
+            $object->setName( $newName );
+    },
+    'args' => array( 'stringFormula' => array(
+        'type' => 'string',
+        'default' => '*nodefault*',
+        'help' =>
+            "This string is used to compose a name. You can use the following aliases :\n" .
+            "  - \$\$current.name\$\$ : current name of the object\n" .
+            "  - \$\$location\$\$ : name of the location where this object is based\n" .
+            "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$space\$\$\n"
+        )
+    ),
+);
 TagCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',
     'MainFunction' => function (TagCallContext $context) {
@@ -412,7 +475,7 @@ TagCallContext::$supportedActions['color-set'] = array(
 TagCallContext::$supportedActions['comments-add'] = array(
     'name' => 'Comments-add',
     'MainFunction' => function (TagCallContext $context) {
-        $comments = $context->arguments['comments'];
+        $comments = PH::textAliases( $context->arguments['comments'] );
 
         $object = $context->object;
 
@@ -422,7 +485,8 @@ TagCallContext::$supportedActions['comments-add'] = array(
             $object->addComments($comments);
 
     },
-    'args' => array('comments' => array('type' => 'string', 'default' => '*nodefault*')
+    'args' => array('comments' => array('type' => 'string', 'default' => '*nodefault*',
+        'help' => "possible aliases: \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=comments-add:a\$\$comma\$\$b'")
     ),
 );
 TagCallContext::$supportedActions['comments-delete'] = array(

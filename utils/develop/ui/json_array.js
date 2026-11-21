@@ -161,7 +161,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=description-append:$$comma$$word1'\n"
                     }
                 },
                 "help": ""
@@ -12285,7 +12285,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=description-append:$$comma$$word1'\n"
                     }
                 },
                 "help": ""
@@ -13520,7 +13520,8 @@ var subjectObject =
                 "args": {
                     "comments": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "possible aliases: $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=comments-add:a$$comma$$b'"
                     }
                 }
             },
@@ -13660,6 +13661,17 @@ var subjectObject =
                     "suffix": {
                         "type": "string",
                         "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-rename": {
+                "name": "name-Rename",
+                "MainFunction": {},
+                "args": {
+                    "stringFormula": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$location$$ : name of the location where this object is based\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$space$$\n"
                     }
                 }
             },

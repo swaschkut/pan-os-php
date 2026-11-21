@@ -2703,6 +2703,18 @@ class PH
         return $util;
     }
 
+    /**
+     * the aliases of an action argument for characters that can not be written in it
+     * ("," separates the arguments, ":" the action from them, "/" the actions):
+     * $$comma$$ $$forwardslash$$ $$colon$$ $$pipe$$ $$newline$$ $$space$$
+     */
+    public static function textAliases( string $text ): string
+    {
+        return str_replace(
+            array( '$$comma$$', '$$forwardslash$$', '$$colon$$', '$$pipe$$', '$$newline$$', '$$space$$' ),
+            array( ',', '/', ':', '|', "\n", ' ' ), $text );
+    }
+
     public static function find_string_between($line, $needle1, $needle2 = "--END--")
     {
         $needle_length = strlen($needle1);
