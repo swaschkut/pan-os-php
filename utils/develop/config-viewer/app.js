@@ -1036,7 +1036,8 @@ async function showMergerReport(base, r, out) {
         const body = el('tbody', {});
         const count = el('span', { class: 'muted' });
         const typeCol = head[0] === 'object type' ? 0 : -1;
-        if (typeCol === 0) rows.forEach(cells => { if (cells[0]) typesSeen.add(cells[0]); });
+        // the choice offers only the types that have rows outside the summary (findings, merged, not merged)
+        if (typeCol === 0 && title !== 'Summary') rows.forEach(cells => { if (cells[0]) typesSeen.add(cells[0]); });
         const draw = () => {
             const q = filterBox.value.trim().toLowerCase(), t = typeSel.value;
             const shown = rows.filter(cells => (!t || typeCol < 0 || cells[typeCol] === t) && (!q || cells.join(' ').toLowerCase().includes(q)));
@@ -1077,7 +1078,7 @@ async function showMergerReport(base, r, out) {
     typeSel.addEventListener('change', () => sections.forEach(d => d()));
     [...typesSeen].sort().forEach(t => typeSel.append(el('option', { value: t, text: t })));
     out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }),
-        el('div', { class: 'row' }, typesSeen.size > 1 ? field('Object type', typeSel) : null, field('Filter', filterBox),
+        el('div', { class: 'row' }, typesSeen.size > 0 ? field('Object type', typeSel) : null, field('Filter', filterBox),
             el('button', { type: 'button', class: 'small', text: 'Fold all', onclick: () => folds.forEach(d => { d.open = false; }) }),
             el('button', { type: 'button', class: 'small', text: 'Unfold all', onclick: () => folds.forEach(d => { d.open = true; }) })), ...parts);
     sections.forEach(d => d());
