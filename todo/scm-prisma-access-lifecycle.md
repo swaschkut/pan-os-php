@@ -224,6 +224,35 @@ export), callable from the CLI and from the web page.
 | F | **apply** the design JSON to a tenant | needs the tested write path (NEXT_STEPS 7.1 steps 1–3) | deployed design |
 | G | **maturity report** – A + compare design ↔ export + BP checks + score | builds on A, D, F | recurring report |
 
+## 6b. Licences of the Prisma Access tenant (wish of Sven, 2026-11-21) - needed for the as-built report
+
+**Today:** the as-built report (`type=scm-report`, `SCMPrismaAccessReport`) has the table *Subscriptions* (CSP
+account ID, TSG, instance name, subscription and add-ons) filled with "not in export" - only the TSG is known; the
+export (`scm-export`, [README_pa_export.md](../utils/develop/sase/scm/README_pa_export.md)) says "license allocation -
+not covered". The units in use come from the export already (remote networks: bandwidth allocations / `license_type`).
+
+**Wanted:** read the licences of the tenant with the service account of the export (key store `tsg_id<TSG>`, read
+only) and put them into the report:
+
+* **source** (pan.dev, Strata Cloud Manager - shared services): *Subscription Service* API
+  (https://pan.dev/scm/api/subscription/subscription-api/) - the subscriptions / licences of the TSG (product,
+  add-ons, quantity / units, start / end); *Tenancy Service* (https://pan.dev/scm/api/tenancy/tenancy-api/) - name /
+  instance of the TSG, parent / children (MSP); to check: where the **CSP account ID** comes from, and which call gives
+  the **licensed units** of Mobile Users / Remote Networks / Service Connections (Prisma Access) and their use
+* **export:** a new area (e.g. `subscription`) of `scm-export`: `config/0x_subscriptions.json` (+ tenancy), keys /
+  auth codes redacted like the devices; HTTP 401 / 403 / 404 (role without the right, product not licensed) = noted in
+  the manifest, not an error (as Prisma Browser / IAM today)
+* **report:** the table *Subscriptions* filled (CSP account, TSG, instance, subscriptions and add-ons, units, end
+  date); section 1 *Summary* "licences / units"; findings: units in use vs. licensed (e.g. RN bandwidth allocated over
+  the licence, MU count), licence ending within 90 days
+* **compare / sync:** licences are information only (never changed by `scm-pa-change` / `scm-pa-sync`)
+* **viewer:** comes with the SCM import of a project (the export area); later shown with the APIs of pan.dev
+  ([config-viewer-pandev-api.md](config-viewer-pandev-api.md))
+
+Open: the role the service account needs for the Subscription Service; MSP tenants (licences of the parent vs. the
+child TSG); is the licence of a tenant readable through the public API at all for every product (else: checklist item
+"licences" stays manual).
+
 ## 7. Open points / to clarify
 
 1. ~~TRD template~~ – received (Word); templates and block libraries kept in the claude.ai project, not in the repository (4.3).
