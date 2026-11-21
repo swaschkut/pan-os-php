@@ -57,6 +57,13 @@ class LDAPQUERY__
         }
         if( !function_exists('ldap_connect') )
             derr( "the PHP extension ldap is missing", null, FALSE );
+        // a warning of an ldap_* function (no answer, no such object, bind failed) is an answer here, not the end of the
+        // script (pan-os-php: myErrorHandler dies on every warning, also with @) - each call checks its result
+        set_error_handler( function( $no, $str, $file = '', $line = 0 ) {
+            if( strpos( (string)$str, 'ldap_' ) === 0 )
+                return TRUE;
+            return function_exists( 'myErrorHandler' ) ? myErrorHandler( $no, $str, $file, $line ) : FALSE;
+        } );
         $mode = isset($args['mode']) ? (string)$args['mode'] : '';
         if( $mode === 'discover' )
         {
@@ -88,6 +95,8 @@ class LDAPQUERY__
         // internal LDAPS with an own certificate authority (as the scripts of utils/develop/ldap)
         putenv('LDAPTLS_REQCERT=allow');
         PH::print_stdout( "Connecting to LDAP server: " . $args['ldapserver'] . " ..." );
+        // name and port first: "Can't contact LDAP server" of the LDAP library says neither which one nor why
+        self::reach( $args['ldapserver'], TRUE );
         $this->conn = @ldap_connect( $args['ldapserver'] );
         if( !$this->conn )
             derr( "could not parse the LDAP server URI", null, FALSE );
@@ -95,7 +104,20 @@ class LDAPQUERY__
         ldap_set_option( $this->conn, LDAP_OPT_REFERRALS, 0 );
         ldap_set_option( $this->conn, LDAP_OPT_NETWORK_TIMEOUT, 15 );
         if( !@ldap_bind( $this->conn, $args['ldapuser'], $password ) )
-            derr( "LDAP bind failed as '" . $args['ldapuser'] . "': " . ldap_error( $this->conn ), null, FALSE );
+        {
+            $err = ldap_error( $this->conn );
+            $diag = '';
+            if( defined( 'LDAP_OPT_DIAGNOSTIC_MESSAGE' ) && @ldap_get_option( $this->conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $d ) && is_string( $d ) && $d !== '' )
+                $diag = ' (' . $d . ')';
+            $hint = '';
+            if( stripos( $err, "can't contact" ) !== FALSE )
+                // name and port were reachable (reach): the TLS handshake of LDAPS failed
+                $hint = " - the server answers on the port, but the TLS handshake of LDAPS failed (certificate, TLS version)"
+                    . "; try ldap://<host>:389 to check the account, or ask for the LDAPS setup of the domain controller";
+            elseif( stripos( $err, 'invalid credentials' ) !== FALSE )
+                $hint = " - wrong password or user (key store entry " . PanAPIConnector::ldapUserEntry( $args['ldapuser'] ) . "), or the account is locked / expired";
+            derr( "LDAP bind failed as '" . $args['ldapuser'] . "': " . $err . $diag . $hint, null, FALSE );
+        }
         PH::print_stdout( "LDAP bind successful (" . $args['ldapuser'] . ")" );
         PH::print_stdout();
 
@@ -168,6 +190,8 @@ class LDAPQUERY__
                 continue;
             $tried++;
             PH::print_stdout( "RootDSE of " . $s['uri'] . " ..." );
+            if( self::reach( $s['uri'], FALSE ) !== null )
+                continue;
             $c = @ldap_connect( $s['uri'] );
             if( !$c )
                 continue;
@@ -200,6 +224,55 @@ class LDAPQUERY__
         return array( 'mode' => 'discover', 'domain' => $domain, 'time' => date('c'), 'source' => $source, 'servers' => $servers, 'rootDse' => $rootDse,
             'suggestion' => array( 'server' => $rootDse['server'] ?? $servers[0]['uri'], 'base_dn' => $base, 'base_from' => $rootDse !== null ? 'rootdse' : 'domain',
                 'bind_user' => '@' . $domain ) );
+    }
+
+    /**
+     * can the LDAP server be reached: the name in DNS (with the DNS servers of this run), then a TCP connection to the
+     * port. $fatal: stop with what failed and what helps; else the reason as a string (null = reachable).
+     */
+    public static function reach( string $uri, bool $fatal )
+    {
+        if( !preg_match( '#^(ldaps?)://([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?$#i', $uri, $m ) )
+            return $fatal ? derr( "ldapServer: ldap://host[:port] or ldaps://host[:port]", null, FALSE ) : 'not an LDAP URI';
+        $host = $m[2];
+        $port = isset( $m[3] ) && $m[3] !== '' ? (int)$m[3] : ( strtolower( $m[1] ) === 'ldaps' ? 636 : 389 );
+        if( function_exists( 'panosphp_test_reach' ) )
+            $r = panosphp_test_reach( $host, $port );
+        else
+        {
+            $ips = filter_var( $host, FILTER_VALIDATE_IP ) !== FALSE ? array( $host ) : ( @gethostbynamel( $host ) ?: array() );
+            $tcp = null;
+            if( count( $ips ) > 0 )
+            {
+                $old = set_error_handler( function() { return TRUE; } );
+                $f = @fsockopen( $ips[0], $port, $errno, $errstr, 5 );
+                set_error_handler( $old );
+                $tcp = $f ? TRUE : trim( (string)$errstr ) . ( $errno ? ' (' . $errno . ')' : '' );
+                if( $f )
+                    fclose( $f );
+            }
+            $r = array( 'ips' => $ips, 'tcp' => $tcp );
+        }
+        $dns = array();
+        foreach( @file( '/etc/resolv.conf', FILE_IGNORE_NEW_LINES ) ?: array() as $l )
+            if( preg_match( '/^\s*nameserver\s+(\S+)/', $l, $x ) )
+                $dns[] = $x[1];
+        $dnsText = count( $dns ) ? implode( ', ', $dns ) : 'unknown';
+        if( count( $r['ips'] ) === 0 )
+            $why = "DNS: the name " . $host . " is not known to the DNS servers of this run (" . $dnsText . ")"
+                . " - with the config viewer: VIEWER_RUN_DNS=<DNS servers of the domain> in .env; or give the server as IP address";
+        elseif( $r['tcp'] !== TRUE )
+            $why = "TCP: " . $host . " (" . implode( ', ', $r['ips'] ) . ") port " . $port . " not reachable: " . $r['tcp']
+                . " - firewall / VPN / routing between the docker network and the server, or LDAPS not enabled on it";
+        else
+        {
+            PH::print_stdout( "  " . $host . " = " . implode( ', ', $r['ips'] ) . ", port " . $port . " reachable (DNS servers: " . $dnsText . ")" );
+            return null;
+        }
+        if( $fatal )
+            derr( "LDAP server " . $uri . " can not be reached - " . $why, null, FALSE );
+        PH::print_stdout( "  " . $why );
+        return $why;
     }
 
     private static function esc( string $v ): string

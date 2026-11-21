@@ -86,9 +86,17 @@ function ldap_set_option( $c, $o, $v ) { return TRUE; }
 function ldap_bind( $c, $u = null, $p = null )
 {
     ldapFakeLog( 'bind ' . $c->uri . ' ' . $u . ' ' . $p . ' reqcert=' . getenv( 'LDAPTLS_REQCERT' ) );
+    // a real ldap_bind() warns when it fails (pan-os-php: myErrorHandler dies on warnings) - the same here
+    if( strpos( $c->uri, 'tls.example.com' ) !== FALSE )
+    {
+        $c->error = "Can't contact LDAP server";
+        trigger_error( "ldap_bind(): Unable to bind to server: Can't contact LDAP server", E_USER_WARNING );
+        return FALSE;
+    }
     if( $p === 'bind-geheim' )
         return TRUE;
     $c->error = 'Invalid credentials';
+    trigger_error( "ldap_bind(): Unable to bind to server: Invalid credentials", E_USER_WARNING );
     return FALSE;
 }
 function ldap_error( $c ) { return $c->error; }
@@ -137,4 +145,15 @@ function panosphp_test_dns_srv( $name )
     $all = json_decode( (string)getenv( 'LDAP_FAKE_SRV' ), TRUE ) ?: array();
     ldapFakeLog( 'srv ' . $name );
     return $all[$name] ?? array();
+}
+
+/** name / port of an LDAP server (LDAPQUERY__::reach): nohost.* is not in DNS, closed.* has the port closed */
+function panosphp_test_reach( $host, $port )
+{
+    ldapFakeLog( 'reach ' . $host . ':' . $port );
+    if( strpos( $host, 'nohost.' ) === 0 )
+        return array( 'ips' => array(), 'tcp' => null );
+    if( strpos( $host, 'closed.' ) === 0 )
+        return array( 'ips' => array( '10.9.9.9' ), 'tcp' => 'Connection refused (111)' );
+    return array( 'ips' => array( '10.1.1.1' ), 'tcp' => TRUE );
 }

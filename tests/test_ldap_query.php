@@ -102,7 +102,15 @@ q( array( 'mode=discover', 'domain=no domain' ), $o );
 eq( strpos( $o, 'domain: the DNS name' ) !== FALSE, TRUE, 'discover: the domain checked' );
 file_put_contents( $home . '/.panconfkeystore', "ldap-password:bind-geheim\nldap_useralice@example.com:wrong\n" );
 q( array( 'mode=validation', 'users=bob' ), $o );
-eq( strpos( $o, 'LDAP bind failed' ) !== FALSE, TRUE, 'a wrong password: bind failed' );
+eq( array( strpos( $o, 'LDAP bind failed' ) !== FALSE, strpos( $o, 'wrong password or user (key store entry ldap_useralice@example.com)' ) !== FALSE, strpos( $o, 'Died on user notice' ) ),
+    array( TRUE, TRUE, FALSE ), 'a wrong password: bind failed, with the key store entry to check (not "died on warning")' );
+file_put_contents( $home . '/.panconfkeystore', "ldap_useralice@example.com:bind-geheim\n" );
+foreach( array( 'nohost.example.com' => 'DNS: the name nohost.example.com is not known', 'closed.example.com' => 'TCP: closed.example.com (10.9.9.9) port 636 not reachable: Connection refused',
+    'tls.example.com' => 'the TLS handshake of LDAPS failed' ) as $h => $want )
+{
+    q( array( 'mode=validation', 'users=bob', 'ldapServer=ldaps://' . $h . ':636' ), $o );
+    eq( array( strpos( $o, $want ) !== FALSE, strpos( $o, 'Died on user notice' ) ), array( TRUE, FALSE ), 'server ' . $h . ': says why (' . $want . ')' );
+}
 q( array( 'mode=validation', 'users=bob', 'ldapUser=al:ice' ), $o );
 eq( strpos( $o, "no spaces, ':'" ) !== FALSE, TRUE, 'a bind user with ":" can not be an entry name' );
 
