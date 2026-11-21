@@ -23,6 +23,8 @@ function el(tag, props, ...children) {
     return e;
 }
 function field(label, input) { return el('label', {}, label, input); }
+// a group of inputs (checkboxes) with a title - no <label> around it (a click on the title would tick the first box)
+function groupField(title, box) { return el('div', { class: 'groupfield' }, el('span', { class: 'grouptitle', text: title }), box); }
 function message(text, kind) {
     const m = document.getElementById('message');
     m.hidden = !text;
@@ -939,9 +941,17 @@ async function mergerTab(base, pid, canWrite, versions) {
     const types = canWrite ? Object.keys(MERGER_TYPES) : ['merger-possible-report'];
     const mType = el('select', { 'aria-label': 'merger' }, types.map(t => el('option', { value: t, text: MERGER_TYPES[t] })));
     const mVersion = el('select', { 'aria-label': 'version' }, versions.map(c => el('option', { value: c.cid, text: c.name + ' (' + fmtTime(c.created) + ')' })));
-    const multi = (list, size) => el('select', { multiple: true, size: size || 6 }, list.map(x => el('option', { value: x, text: x })));
+    // a choice of several values as checkboxes (a multiple select can not be emptied again without Ctrl): nothing
+    // ticked = nothing chosen; "none" clears them
+    const multi = (list) => {
+        const boxes = list.map(x => el('input', { type: 'checkbox', value: x }));
+        const box = el('div', { class: 'checks' }, boxes.map(b => el('label', {}, b, ' ' + b.value)),
+            el('button', { type: 'button', class: 'small', text: 'none', onclick: () => boxes.forEach(b => { b.checked = false; }) }));
+        box.values = () => boxes.filter(b => b.checked).map(b => b.value);
+        return box;
+    };
     const f = {
-        objecttype: multi(MERGER_OBJECTTYPES, 8), location: el('input', { value: 'any', autocomplete: 'off', spellcheck: false }),
+        objecttype: multi(MERGER_OBJECTTYPES), location: el('input', { value: 'any', autocomplete: 'off', spellcheck: false }),
         rlocation: el('input', { value: 'any', autocomplete: 'off', spellcheck: false }),
         dup: el('select', {}, MERGER_DUP.map(x => el('option', { value: x, text: x || 'default of the type' }))),
         pick: el('input', { placeholder: '(name regex /^H-/)', autocomplete: 'off', spellcheck: false }),
@@ -950,14 +960,14 @@ async function mergerTab(base, pid, canWrite, versions) {
         method: el('select', {}, RULEMERGER_METHODS.map(x => el('option', { value: x, text: x }))),
         rulebase: el('select', {}, el('option', { value: 'pre', text: 'pre rules (Panorama)' }), el('option', { value: 'post', text: 'post rules (Panorama)' })),
         deny: el('input', { type: 'checkbox' }), stopDeny: el('input', { type: 'checkbox', checked: true }), adjacent: el('input', { type: 'checkbox' }),
-        filter: el('input', { placeholder: '(from has trust)', autocomplete: 'off', spellcheck: false }), additional: multi(RULEMERGER_ADDITIONAL, 4),
+        filter: el('input', { placeholder: '(from has trust)', autocomplete: 'off', spellcheck: false }), additional: multi(RULEMERGER_ADDITIONAL),
         reportTypes: el('input', { value: 'any', placeholder: 'any or address,service,…', autocomplete: 'off', spellcheck: false }), mergecheck: el('input', { type: 'checkbox', checked: true }),
     };
     const groups = {
-        'object-merger': el('div', { class: 'row' }, field('Object types (none = any)', f.objecttype), field('Location', f.location), field('DupAlgorithm', f.dup),
+        'object-merger': el('div', { class: 'row' }, groupField('Object types (none ticked = any)', f.objecttype), field('Location', f.location), field('DupAlgorithm', f.dup),
             field('pickFilter', f.pick), field('excludeFilter', f.exclude), field('mergeCountLimit', f.limit), field('allowMergingWithUpperLevel', f.upper)),
         'rule-merger': el('div', { class: 'row' }, field('Location', f.rlocation), field('Method', f.method), field('Rule base', f.rulebase), field('mergeDenyRules', f.deny),
-            field('stopMergingIfDenySeen', f.stopDeny), field('mergeAdjacentOnly', f.adjacent), field('filter', f.filter), field('additionalMatch', f.additional)),
+            field('stopMergingIfDenySeen', f.stopDeny), field('mergeAdjacentOnly', f.adjacent), field('filter', f.filter), groupField('additionalMatch (none ticked = none)', f.additional)),
         'merger-possible-report': el('div', { class: 'row' }, field('Object types', f.reportTypes), field('mergecheck (would the merge change what a firewall receives)', f.mergecheck)),
     };
     const opts = el('div', {});
@@ -965,7 +975,7 @@ async function mergerTab(base, pid, canWrite, versions) {
         opts.replaceChildren(groups[mType.value]);
     };
     mType.addEventListener('change', typeChanged); typeChanged();
-    const selected = (sel) => Array.from(sel.selectedOptions).map(o => o.value);
+    const selected = (box) => box.values();
     const form = el('form', { onsubmit: (ev) => { ev.preventDefault(); run(async () => {
         const t = mType.value, body = {};
         if (t === 'object-merger') {

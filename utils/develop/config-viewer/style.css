@@ -140,3 +140,10 @@ ul.objhist li { margin: .15em 0; }
 
 /* merger report: multi-line cells */
 table.mergertable td { white-space: pre-line; vertical-align: top; }
+
+/* several values as checkboxes (Merger: object types, additionalMatch) */
+.checks { display: flex; flex-wrap: wrap; gap: .2em 1em; max-width: 46em; align-items: center; }
+.checks label { display: inline-flex; flex-direction: row; align-items: center; gap: .25em; font-weight: normal; white-space: nowrap; margin: 0; }
+.checks input[type=checkbox] { width: auto; }
+.groupfield { display: flex; flex-direction: column; gap: .25em; }
+.groupfield .grouptitle { font-size: .85em; color: var(--muted, #555); }
