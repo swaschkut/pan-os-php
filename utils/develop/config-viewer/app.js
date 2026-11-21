@@ -300,6 +300,39 @@ async function showAccount() {
             el('div', { class: 'row' }, field('Network for runs (imports)', nOn)),
             el('div', { class: 'row' }, el('label', { class: 'grow' }, 'Allow list', nAllow), el('label', { class: 'grow' }, 'Deny list', nDeny)),
             el('button', { class: 'primary', type: 'submit', text: 'Save' })));
+        // App-ID database and MaxMind data of the installation: download (own key, network rules) or upload (air gap)
+        const cen = await api('GET', 'central');
+        const myKeys = (await api('GET', 'keys')).keys;
+        const fwKeys = myKeys.filter(k => k.kind === 'panos'), mmKey = myKeys.find(k => k.kind === 'named' && k.target === 'maxmind-licensekey');
+        const aKey = el('select', {}, fwKeys.map(k => el('option', { value: k.kid, text: k.target })));
+        const aFile = el('input', { type: 'file', accept: '.xml', required: true }), gFile = el('input', { type: 'file', accept: '.zip', required: true });
+        const runsOf = (type) => cen.runs.filter(r => r.type === type).slice(0, 3);
+        const runLine = (r) => el('div', { class: 'muted' }, 'last run ' + fmtTime(r.created) + ': ', el('span', { class: 'badge' + (r.state === 'failed' ? ' oom' : ''), text: r.state }),
+            r.error ? ' ' + r.error : '', ' ', r.state === 'done' || r.state === 'failed' ? el('a', { href: API + '/projects/' + cen.pid + '/runs/' + r.jid + '/files/run.log', text: 'run.log' }) : null);
+        const meta = (m) => m ? (m.version ? 'version ' + m.version + ' - ' : '') + (m.countries ? m.countries + ' countries - ' : '') + m.source + ', ' + m.user + ', ' + fmtTime(m.time) : null;
+        const reload = async (msg) => { await showAccount(); if (msg) message(msg); };
+        nodes.push(el('div', { class: 'card' }, el('h2', { text: 'App-ID and MaxMind (admin)' }),
+            el('p', { class: 'muted', text: 'Data every run and every opened version uses. Download needs network for runs and the host on the allow list (MaxMind: download.maxmind.com); without internet: upload the file. Opened versions use new data after they are opened again.' }),
+            el('h3', { text: 'App-ID database (predefined.xml)' }),
+            el('p', { text: cen.appid ? 'installation: ' + meta(cen.appid) : 'the one of the image: version ' + (cen.image.version || '?') }),
+            el('div', { class: 'row' },
+                fwKeys.length ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => { await api('POST', 'central/appid/runs', { kid: aKey.value }); await reload('App-ID download queued'); }); } },
+                    field('From a firewall (my API key)', aKey), el('button', { type: 'submit', text: 'Download' })) : el('span', { class: 'muted', text: 'Download: add an API key of a firewall under My API keys.' }),
+                el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                    const fd = new FormData(); fd.append('file', aFile.files[0]); message('uploading ...'); await api('POST', 'central/appid', fd); await reload('App-ID database installed');
+                }); } }, field('Upload predefined.xml', aFile), el('button', { type: 'submit', text: 'Upload' })),
+                cen.appid ? el('button', { class: 'danger', type: 'button', text: 'Back to the image', onclick: () => run(async () => { await api('DELETE', 'central/appid'); await reload(); }) }) : null),
+            runsOf('appid').length ? runLine(runsOf('appid')[0]) : null,
+            el('h3', { text: 'MaxMind GeoLite2 (countries of IP addresses)' }),
+            el('p', { text: cen.geoip ? 'installation: ' + meta(cen.geoip) : 'the data of the image' }),
+            el('div', { class: 'row' },
+                mmKey ? el('button', { type: 'button', text: 'Download (my maxmind-licensekey)', onclick: () => run(async () => { await api('POST', 'central/geoip/runs', { kid: mmKey.kid }); await reload('MaxMind download queued'); }) })
+                    : el('span', { class: 'muted', text: 'Download: add the entry maxmind-licensekey under My API keys.' }),
+                el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                    const fd = new FormData(); fd.append('file', gFile.files[0]); message('uploading ...'); await api('POST', 'central/geoip', fd); await reload('MaxMind zip queued');
+                }); } }, field('Upload GeoLite2-Country-CSV zip', gFile), el('button', { type: 'submit', text: 'Upload' })),
+                cen.geoip ? el('button', { class: 'danger', type: 'button', text: 'Back to the image', onclick: () => run(async () => { await api('DELETE', 'central/geoip'); await reload(); }) }) : null),
+            runsOf('geoip').length ? runLine(runsOf('geoip')[0]) : null));
         nodes.push(el('div', { class: 'card' }, el('h2', { text: 'Plug-ins (admin)' }),
             pl.plugins.length === 0 && errs.length === 0 ? el('p', { class: 'muted', text: 'No plug-ins installed.' }) :
             table(['Plug-in', 'Version', 'Feature', 'Form', 'State'], [
@@ -414,6 +447,27 @@ async function showProject(pid) {
                 await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : { kid: iKey.value });
                 message('import queued - it becomes a new version when it is done (Runs and project files)');
             }); } }, field('From (my API key)', iKey), sourceField, el('button', { class: 'primary', type: 'submit', text: 'Import' })));
+    }
+
+    // ---- App-ID database of the project (its own, else the one of the installation)
+    let appidCard = null;
+    if (!limited) {
+        const ai = await api('GET', base + '/appid');
+        const pFile = el('input', { type: 'file', accept: '.xml', required: true });
+        const my = canWrite ? (await api('GET', 'keys').catch(() => ({ keys: [] }))).keys.filter(k => k.kind === 'panos' && !k.refused) : [];
+        const pKey = el('select', {}, my.map(k => el('option', { value: k.kid, text: k.target })));
+        appidCard = el('div', { class: 'card' }, el('h2', { text: 'App-ID database' }),
+            el('p', { text: (ai.from === 'project' ? 'own of this project' : ai.from === 'installation' ? 'the one of the installation' : 'the one of the image') + ': version ' + ((ai.meta && ai.meta.version) || '?')
+                + (ai.meta && ai.meta.source && ai.from === 'project' ? ' (' + ai.meta.source + ', ' + ai.meta.user + ', ' + fmtTime(ai.meta.time) + ')' : '') }),
+            canWrite ? el('div', { class: 'row' },
+                p.network && my.length ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                    await api('POST', base + '/appid/runs', { kid: pKey.value }); message('App-ID download queued - Runs and project files');
+                }); } }, field('From a firewall (my API key)', pKey), el('button', { type: 'submit', text: 'Download' }))
+                    : el('span', { class: 'muted', text: !p.network ? 'Download from a firewall: network for this project is off (Import from a device).' : 'Download from a firewall: an own API key of a firewall is needed (Account, My API keys).' }),
+                el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                    const fd = new FormData(); fd.append('file', pFile.files[0]); message('uploading ...'); await api('POST', base + '/appid', fd); await showProject(pid); message('App-ID database of the project installed');
+                }); } }, field('Upload predefined.xml', pFile), el('button', { type: 'submit', text: 'Upload' })),
+                ai.from === 'project' ? el('button', { class: 'danger', type: 'button', text: 'Use the one of the installation', onclick: () => run(async () => { await api('DELETE', base + '/appid'); await showProject(pid); }) }) : null) : null);
     }
 
     // ---- members with their grants (types, locations)
@@ -552,7 +606,8 @@ async function showProject(pid) {
             runsBody.replaceChildren(runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
-                    const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')
+                    const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
+                            : r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')
                             : !r.cid ? '-' : (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
                         el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
                             r.error ? el('span', { class: r.reason === 'memory' ? 'error' : 'muted', text: ' ' + (r.reason === 'memory' ? r.error.replace(/^out of memory: /, '') : r.error) }) : null),
@@ -627,7 +682,7 @@ async function showProject(pid) {
             if (!confirm('Delete project "' + p.name + '" with all configurations?')) return;
             await api('DELETE', base); await showProjects();
         }) }) : null), projectTabs(pid, [
-            ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard]],
+            ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard, appidCard]],
             ['runs', 'Runs and project files', [runsCard, filesCard]],
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now

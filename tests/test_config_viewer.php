@@ -94,7 +94,7 @@ $jobs = proc_open( array( PHP_BINARY, $viewer . '/bin/jobs.php' ), $null, $pipes
 $sock = stream_socket_server( 'tcp://127.0.0.1:0' );
 $port = (int)substr( strrchr( stream_socket_get_name( $sock, FALSE ), ':' ), 1 );
 fclose( $sock );
-$server = proc_open( array( PHP_BINARY, '-S', '127.0.0.1:' . $port, '-t', $viewer ), array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', '/dev/null', 'w' ),
+$server = proc_open( array( PHP_BINARY, '-d', 'upload_max_filesize=200M', '-d', 'post_max_size=210M', '-S', '127.0.0.1:' . $port, '-t', $viewer ), array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', '/dev/null', 'w' ),
     2 => array( 'file', '/dev/null', 'w' ) ), $pipes, $viewer, $env + array( 'PHP_CLI_SERVER_WORKERS' => '4' ) );
 $base = 'http://127.0.0.1:' . $port . '/';
 for( $i = 0; $i < 50 && @file_get_contents( $base . 'index.html' ) === FALSE; $i++ )
@@ -728,6 +728,30 @@ eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 2 ) ), array( 20
     'diff: only a part (XPath), without the rule order check' );
 waitRun( $alice, $PB . '/runs/' . ( $r[1]['jid'] ?? '' ) );
 $alice->call( 'DELETE', $PB . '/configs/' . $other );
+
+// App-ID database of the installation (administrator upload): the viewer (worker) uses it - here with one more application
+$pre = new DOMDocument();
+$pre->load( $here . '/../lib/object-classes/predefined.xml', LIBXML_PARSEHUGE );
+$xp = new DOMXPath( $pre );
+$app0 = $xp->query( '/predefined/application/entry' )->item( 0 );
+$copy = $app0->cloneNode( TRUE );
+$copy->setAttribute( 'name', 'zz-viewer-test-app' );
+$app0->parentNode->appendChild( $copy );
+$xp->query( '/predefined/application-version' )->item( 0 )->nodeValue = '9998-9998';
+$preFile = $data . '-predefined.xml';
+$pre->save( $preFile );
+unset( $pre, $xp );
+eq( status( $bob->call( 'POST', 'central/appid', null, array( 'predefined.xml', file_get_contents( $preFile ), 'file' ) ) ), 404, 'installation App-ID: not for a user' );
+$r = $alice->call( 'POST', 'central/appid', null, array( 'predefined.xml', file_get_contents( $preFile ), 'file' ) );
+eq( array( status( $r ), $r[1]['version'] ?? null, $alice->call( 'GET', 'central' )[1]['appid']['version'] ?? null ), array( 200, '9998-9998', '9998-9998' ), 'installation App-ID: upload (air gap), version shown' );
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'AppID' ) );
+$AP = 'projects/' . $r[1]['pid'];
+$APC = $AP . '/configs/' . ( $alice->call( 'POST', $AP . '/configs', null, array( 'a.xml', $xml ) )[1]['cid'] ?? '' );
+$r = $alice->call( 'GET', $APC . '/objects?type=application&location=shared&filter=' . rawurlencode( '(name eq zz-viewer-test-app)' ) );
+eq( array( status( $r ), $r[1]['total'] ?? null, $alice->call( 'GET', $AP . '/appid' )[1]['from'] ?? null ), array( 200, 1, 'installation' ), 'installation App-ID: the viewer uses it (an application only it has)' );
+$alice->call( 'DELETE', 'central/appid' );
+$alice->call( 'DELETE', $AP );
+@unlink( $preFile );
 eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: deleted' );
 eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
 eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );

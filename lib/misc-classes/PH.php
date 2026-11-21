@@ -603,9 +603,34 @@ class PH
      * $sections === null or another $filename: the whole file, parsed on every call, as before.
      * The returned document is read-only for the callers.
      */
+    /**
+     * predefined.xml (App-ID, threats, regions, …): lib/object-classes/predefined.xml, or the file named by the
+     * environment variable PANOSPHP_PREDEFINED_XML (e.g. a newer App-ID database kept outside the installation - the
+     * config viewer sets it for its runs). type=download-predefined writes it there too.
+     */
+    public static function predefinedXmlPath(): string
+    {
+        $env = getenv('PANOSPHP_PREDEFINED_XML');
+        if( is_string($env) && $env !== '' )
+            return $env;
+        return dirname(__FILE__) . '/../object-classes/predefined.xml';
+    }
+
+    /**
+     * folder of the MaxMind GeoLite2 data (data/RegionCCipv4.json, data/RegionCCipv6.json): lib/resources/geoip, or the
+     * folder named by PANOSPHP_GEOIP_DIR. type=maxmind-update writes it there too.
+     */
+    public static function geoipPath(): string
+    {
+        $env = getenv('PANOSPHP_GEOIP_DIR');
+        if( is_string($env) && $env !== '' )
+            return rtrim($env, '/');
+        return dirname(__FILE__) . '/../resources/geoip';
+    }
+
     public static function getPredefinedXmlDoc( $filename = null, $sections = null ): DOMDocument
     {
-        $default = dirname(__FILE__) . '/../object-classes/predefined.xml';
+        $default = self::predefinedXmlPath();
         if( $filename === null )
             $filename = $default;
 
@@ -638,7 +663,7 @@ class PH
     public static function eachPredefinedEntry( array $path, callable $callback, $expand = TRUE, $filename = null ): bool
     {
         if( $filename === null )
-            $filename = dirname(__FILE__) . '/../object-classes/predefined.xml';
+            $filename = self::predefinedXmlPath();
 
         $reader = new XMLReader();
         if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
@@ -2565,7 +2590,12 @@ class PH
 
 
         elseif( $type == "maxmind-update" )
+        {
+            // its arguments (maxmind-licensekey=, maxmind-zip=): pan-os-php.php has emptied PH::$args before
+            PH::resetCliArgs( $argv );
+            PH::processCliArgs();
             $util = new MAXMIND__( );
+        }
 
         elseif( $type == "protocoll-number-download" )
             $util = new PROTOCOLL_NUMBERS__( );

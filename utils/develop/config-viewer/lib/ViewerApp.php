@@ -126,6 +126,8 @@ class ViewerApp
         $this->refreshPlugins();
         @mkdir( $this->dataDir . '/projects', 0700, TRUE );
         @mkdir( $this->dataDir . '/run', 0700, TRUE );
+        // data of the installation for every run: App-ID database (predefined.xml), MaxMind GeoLite2 (geoip/data)
+        @mkdir( $this->dataDir . '/central', 0700, TRUE );
         if( strlen( $this->dataDir ) > 60 )
             throw new ViewerException( 'the path of the data directory is too long (60 characters at most)', 500 );
         $this->db = new PDO( 'sqlite:' . $this->dataDir . '/viewer.sqlite' );
@@ -477,7 +479,7 @@ class ViewerApp
                 CASE WHEN p.owner_id = :u THEN \'owner\' ELSE m.role END AS role
             FROM projects p JOIN users o ON o.id = p.owner_id
             LEFT JOIN members m ON m.project_id = p.id AND m.user_id = :u
-            WHERE p.owner_id = :u OR m.user_id = :u ORDER BY p.name', array( ':u' => $user['id'] ) )->fetchAll();
+            WHERE ( p.owner_id = :u OR m.user_id = :u ) AND p.pid != :s ORDER BY p.name', array( ':u' => $user['id'], ':s' => self::SYSTEM_PID ) )->fetchAll();
         if( isset( $user['token'] ) )
         {
             $out = array();
@@ -504,7 +506,12 @@ class ViewerApp
         if( is_string( $pid ) && preg_match( '/^[0-9a-f]{32}$/', $pid ) )
             $p = $this->q( 'SELECT p.*, o.name AS owner FROM projects p JOIN users o ON o.id = p.owner_id WHERE p.pid = ?', array( $pid ) )->fetch();
         $role = null;
-        if( $p )
+        // the project of the installation-wide runs: every administrator (never with an API token)
+        if( $p && $p['pid'] === self::SYSTEM_PID )
+            $p = !empty( $user['is_admin'] ) && !isset( $user['token'] ) ? $p : FALSE;
+        if( $p && $p['pid'] === self::SYSTEM_PID )
+            $role = 'owner';
+        elseif( $p )
         {
             if( (int)$p['owner_id'] === (int)$user['id'] )
                 $role = 'owner';
@@ -1001,7 +1008,11 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import' );
+    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip' );
+    /** where type=maxmind-update downloads from (must be on the allow list of the administrator) */
+    const MAXMIND_HOST = 'download.maxmind.com';
+    /** the project of the installation-wide runs (App-ID / MaxMind of the administrator): not listed, only administrators */
+    const SYSTEM_PID = '00000000000000000000000000000000';
     const JOB_QUEUE_MAX = 20;          // queued + running jobs per project
     const JOB_FILE_MAX = 104857600;    // largest result file that can be downloaded
 
@@ -1185,7 +1196,10 @@ class ViewerApp
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
         // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
-        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || $type === 'import';
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip' ), TRUE );
+        // the project of the installation-wide runs has only App-ID / MaxMind runs; MaxMind is installation-wide only
+        if( ( $p['pid'] === self::SYSTEM_PID && !in_array( $type, array( 'appid', 'geoip' ), TRUE ) ) || ( $type === 'geoip' && $p['pid'] !== self::SYSTEM_PID ) )
+            throw new ViewerException( 'not found', 404 );
         if( $noVersion !== ( $cid === null ) )
             throw new ViewerException( 'not found', 404 );
         $c = $noVersion ? array( 'id' => 0 ) : $this->configGet( $p, $cid );
@@ -1214,6 +1228,29 @@ class ViewerApp
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+        }
+        if( $type === 'appid' || $type === 'geoip' )
+        {
+            // App-ID database from a firewall / Panorama (type=download-predefined, read only): for the installation
+            // (administrator, project of the installation) or for one project (write); MaxMind GeoLite2 (installation):
+            // download with the maxmind-licensekey of the administrator, or an uploaded zip (geoipUpload)
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $central = $p['pid'] === self::SYSTEM_PID;
+            if( !$central )
+                $this->projectGet( $user, $pid, 'write' );
+            $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
+            $want = $type === 'appid' ? 'panos' : 'named';
+            if( !$k || $k['kind'] !== $want || ( $type === 'geoip' && $k['target'] !== 'maxmind-licensekey' ) )
+                throw new ViewerException( 'kid: ' . ( $type === 'appid' ? 'one of your API keys of a firewall / Panorama' : 'your maxmind-licensekey' ) . ' (Account, My API keys)', 400 );
+            $host = $type === 'appid' ? $k['target'] : self::MAXMIND_HOST;
+            if( !$this->networkGet()['enabled'] )
+                throw new ViewerException( (string)$this->networkRefusal( 'panos', $host ), 403 );
+            if( !$central && empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+            if( ( $why = $this->networkRefusal( 'panos', $host ) ) !== null )
+                throw new ViewerException( $why, 403 );
+            $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $host );
         }
         if( $type === 'stats' )
         {
@@ -1759,9 +1796,12 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || $j['type'] === 'import' ) && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip' ), TRUE ) ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
+        // App-ID database / MaxMind data of the installation or of the project: for every run (not for the runs that
+        // fetch them) - %CENTRAL% / %PROJECT% / %JOB% become the folders of the run (ViewerContainer: /central, …)
+        $dataEnv = in_array( $j['type'], array( 'appid', 'geoip' ), TRUE ) ? array() : $this->dataEnv( $j['pid'] );
         if( ( !$noVersion && ( $config === null || !is_file( $config ) ) ) || !in_array( $j['type'], $this->jobTypes(), TRUE ) || !is_array( $args ) || !preg_match( '/^[0-9a-f]{32}$/', $j['jid'] ) )
         {
             $this->runnerFinish( (int)$j['id'], 'failed', 'the configuration version does not exist any more' );
@@ -1794,7 +1834,7 @@ class ViewerApp
         // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
         // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
         $steps = null;
-        if( $j['type'] === 'import' )
+        if( in_array( $j['type'], array( 'import', 'appid', 'geoip' ), TRUE ) )
         {
             try
             {
@@ -1835,7 +1875,8 @@ class ViewerApp
             'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noIn ? null : $config,
             'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noIn ? null : $j['file'], 'rawArgs' => $rawArgs,
             // steps of a run with more than one pan-os-php call (import); 'network': only this step reaches the network
-            'steps' => $steps ?? array( array( 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'rawArgs' => $rawArgs, 'network' => FALSE ) ) );
+            'steps' => $steps ?? array( array( 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'rawArgs' => $rawArgs, 'network' => FALSE,
+                'rawEnv' => $dataEnv, 'env' => $this->resolveEnv( $dataEnv, $j['pid'], $jobDir ) ) ) );
     }
 
     /** 'running' (still wanted), 'cancelled', or null when the job / project was deleted */
@@ -1852,17 +1893,31 @@ class ViewerApp
      */
     private function importSteps( array $j, array $args, string $jobDir ): array
     {
+        $type = $j['type'];
         $x = array();
         foreach( $args as $a )
-            if( preg_match( '/^x-import-(key|target|source)=(.*)$/', $a, $m ) )
+            if( preg_match( '/^x-[a-z]+-(key|target|source|zip)=(.*)$/', $a, $m ) )
                 $x[$m[1]] = $m[2];
+        $step = function( string $tool, array $raw, bool $network, array $rawEnv = array() ) use ( $jobDir, $j ) {
+            return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
+                'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
+        };
+        // MaxMind from an uploaded zip: no key, no network
+        if( $type === 'geoip' && isset( $x['zip'] ) )
+        {
+            if( !is_file( $jobDir . '/GeoLite2-Country-CSV-upload.zip' ) )
+                throw new ViewerException( 'the uploaded zip is not there any more' );
+            return array( $step( 'maxmind-update', array( 'maxmind-zip=%JOB%/GeoLite2-Country-CSV-upload.zip' ), FALSE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
+        }
+        $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ) )[$type];
         $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
-        if( !$k || !in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ) )
+        if( !$k || !in_array( $k['kind'], $kinds, TRUE ) )
             throw new ViewerException( 'the API key of the run does not exist any more' );
         $p = $this->q( 'SELECT network FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
-        if( !$p || empty( $p['network'] ) )
+        if( $j['pid'] !== self::SYSTEM_PID && ( !$p || empty( $p['network'] ) ) )
             throw new ViewerException( 'network is off for this project' );
-        if( ( $why = $this->networkRefusal( $k['kind'], $k['target'] ) ) !== null )
+        $host = $type === 'geoip' ? self::MAXMIND_HOST : $k['target'];
+        if( ( $why = $this->networkRefusal( $type === 'geoip' ? 'panos' : $k['kind'], $host ) ) !== null )
             throw new ViewerException( $why );
         $secret = $this->unseal( $k['secret'] );
         if( $secret === null )
@@ -1875,15 +1930,234 @@ class ViewerApp
         if( !$ok )
             throw new ViewerException( 'the key store of the run can not be written' );
         $this->q( 'UPDATE user_keys SET last_used = ? WHERE id = ?', array( time(), $k['id'] ) );
-        $step = function( string $tool, array $raw, bool $network ) use ( $jobDir ) {
-            return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network,
-                'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
-        };
+        if( $type === 'appid' )
+            return array( $step( 'download-predefined', array( 'in=api://' . $k['target'], 'predefined-out=%JOB%/predefined.xml' ), TRUE ) );
+        if( $type === 'geoip' )
+            return array( $step( 'maxmind-update', array(), TRUE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
         if( $k['kind'] === 'panos' )
             return array( $step( 'upload', array( 'in=api://' . $k['target'] . ( ( $x['source'] ?? '' ) === 'running' ? '/running-config' : '' ), 'out=%JOB%/out.xml' ), TRUE ) );
         return array(
             $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config', 'outdir=%JOB%/scm-export', 'config-internal=no' ), TRUE ),
             $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $k['target'], 'out=%JOB%/out.xml' ), FALSE ) );
+    }
+
+    // ------------------------------------------------------------------ App-ID database / MaxMind data
+
+    /**
+     * environment of a run of project $pid for the App-ID database and MaxMind data (pan-os-php: PANOSPHP_PREDEFINED_XML,
+     * PANOSPHP_GEOIP_DIR): the App-ID database of the project, else the one of the installation; MaxMind of the
+     * installation. Nothing set = the data shipped in the image.
+     */
+    private function dataEnv( string $pid ): array
+    {
+        $env = array();
+        if( is_file( $this->dataDir . '/projects/' . $pid . '/predefined.xml' ) )
+            $env['PANOSPHP_PREDEFINED_XML'] = '%PROJECT%/predefined.xml';
+        elseif( is_file( $this->dataDir . '/central/predefined.xml' ) )
+            $env['PANOSPHP_PREDEFINED_XML'] = '%CENTRAL%/predefined.xml';
+        if( is_file( $this->dataDir . '/central/geoip/data/RegionCCipv4.json' ) )
+            $env['PANOSPHP_GEOIP_DIR'] = '%CENTRAL%/geoip';
+        return $env;
+    }
+
+    /** %JOB% / %PROJECT% / %CENTRAL% of an environment of a run as paths of this computer (run without a container) */
+    private function resolveEnv( array $env, string $pid, string $jobDir ): array
+    {
+        foreach( $env as $k => $v )
+            $env[$k] = str_replace( array( '%JOB%', '%PROJECT%', '%CENTRAL%' ), array( $jobDir, $this->dataDir . '/projects/' . $pid, $this->dataDir . '/central' ), $v );
+        return $env;
+    }
+
+    /** the App-ID version of a predefined.xml (<predefined><application-version>), null when it is no predefined.xml */
+    private static function predefinedVersion( string $file ): ?string
+    {
+        $r = new XMLReader();
+        if( !is_file( $file ) || !@$r->open( $file, null, LIBXML_NONET | LIBXML_PARSEHUGE ) )
+            return null;
+        $version = null;
+        $depth = 0;
+        while( @$r->read() )
+        {
+            if( $r->nodeType == XMLReader::DOC_TYPE )
+                break;
+            if( $r->nodeType != XMLReader::ELEMENT )
+                continue;
+            if( $r->depth === 0 && $r->name !== 'predefined' )
+                break;
+            if( $r->depth === 1 && $r->name === 'application-version' )
+            {
+                $version = trim( (string)$r->readString() );
+                break;
+            }
+        }
+        $r->close();
+        return $version !== null && preg_match( '/^[0-9]{1,6}-[0-9]{1,6}$/', $version ) ? $version : null;
+    }
+
+    private function dataMeta( string $file ): ?array
+    {
+        $m = json_decode( (string)@file_get_contents( $file ), TRUE );
+        return is_array( $m ) ? $m : null;
+    }
+
+    /** puts a predefined.xml in place (installation: central/, project: projects/<pid>/) with its description */
+    private function appidInstall( string $from, string $targetDir, string $source, string $user ): array
+    {
+        $version = self::predefinedVersion( $from );
+        if( $version === null )
+            throw new ViewerException( 'no App-ID database: a predefined.xml (<predefined> with <application-version>) is needed', 400 );
+        $tmp = $targetDir . '/predefined.xml.' . getmypid() . '.tmp';
+        if( !copy( $from, $tmp ) )
+            throw new ViewerException( 'the App-ID database can not be stored', 500 );
+        @chmod( $tmp, 0600 );
+        if( is_file( $targetDir . '/predefined.xml' ) )
+            @rename( $targetDir . '/predefined.xml', $targetDir . '/predefined.prev.xml' );
+        rename( $tmp, $targetDir . '/predefined.xml' );
+        $meta = array( 'version' => $version, 'source' => $source, 'user' => $user, 'time' => time(), 'size' => filesize( $targetDir . '/predefined.xml' ) );
+        file_put_contents( $targetDir . '/predefined.json', json_encode( $meta ) );
+        return $meta;
+    }
+
+    /** MaxMind data from the folder of a run (geoip/data/RegionCCipv4.json, …) into central/geoip */
+    private function geoipInstall( string $fromDir, string $source, string $user ): array
+    {
+        $files = array();
+        foreach( array( 'RegionCCipv4.json', 'RegionCCipv6.json' ) as $f )
+        {
+            $c = @file_get_contents( $fromDir . '/data/' . $f );
+            if( !is_string( $c ) || !is_array( json_decode( $c, TRUE ) ) )
+                throw new ViewerException( 'the MaxMind data was not created (see run.log)' );
+            $files[$f] = $c;
+        }
+        $dir = $this->dataDir . '/central/geoip';
+        $tmp = $dir . '.' . getmypid() . '.tmp';
+        self::rmTree( $tmp );
+        mkdir( $tmp . '/data', 0700, TRUE );
+        foreach( $files as $f => $c )
+            file_put_contents( $tmp . '/data/' . $f, $c );
+        $meta = array( 'source' => $source, 'user' => $user, 'time' => time(), 'countries' => count( (array)json_decode( $files['RegionCCipv4.json'], TRUE ) ) );
+        file_put_contents( $tmp . '/geoip.json', json_encode( $meta ) );
+        self::rmTree( $dir . '.prev' );
+        if( is_dir( $dir ) )
+            rename( $dir, $dir . '.prev' );
+        rename( $tmp, $dir );
+        return $meta;
+    }
+
+    /** App-ID of the image (lib/object-classes/predefined.xml) */
+    private function imageAppidVersion(): ?string
+    {
+        return self::predefinedVersion( $this->repoDir . '/lib/object-classes/predefined.xml' );
+    }
+
+    /** the App-ID database / MaxMind data of the installation (administrator) and their runs */
+    public function centralInfo( array $user ): array
+    {
+        if( empty( $user['is_admin'] ) || isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $c = $this->dataDir . '/central';
+        $runs = array();
+        $sys = $this->q( 'SELECT id FROM projects WHERE pid = ?', array( self::SYSTEM_PID ) )->fetch();
+        if( $sys )
+            $runs = $this->jobList( $user, self::SYSTEM_PID );
+        return array( 'pid' => self::SYSTEM_PID, 'image' => array( 'version' => $this->imageAppidVersion() ),
+            'appid' => is_file( $c . '/predefined.xml' ) ? $this->dataMeta( $c . '/predefined.json' ) : null,
+            'geoip' => is_file( $c . '/geoip/data/RegionCCipv4.json' ) ? $this->dataMeta( $c . '/geoip/geoip.json' ) : null,
+            'runs' => $runs );
+    }
+
+    /** the project of the installation-wide runs (made on first use, owned by the first administrator who needs it) */
+    public function systemProject( array $user ): array
+    {
+        if( empty( $user['is_admin'] ) || isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        if( !$this->q( 'SELECT 1 FROM projects WHERE pid = ?', array( self::SYSTEM_PID ) )->fetch() )
+        {
+            $this->q( 'INSERT INTO projects (pid, name, owner_id, created) VALUES (?,?,?,?)', array( self::SYSTEM_PID, '#installation', $user['id'], time() ) );
+            @mkdir( $this->projectDir( self::SYSTEM_PID ), 0700, TRUE );
+        }
+        return $this->projectGet( $user, self::SYSTEM_PID, 'owner' );
+    }
+
+    /** an uploaded App-ID database (predefined.xml): installation ($pid null, administrator) or project (write) */
+    public function appidUpload( array $user, ?string $pid, ?array $upload ): array
+    {
+        if( $pid === null )
+        {
+            if( empty( $user['is_admin'] ) || isset( $user['token'] ) )
+                throw new ViewerException( 'not found', 404 );
+            $dir = $this->dataDir . '/central';
+        }
+        else
+        {
+            $p = $this->projectGet( $user, $pid, 'write' );
+            self::needUnlimited( $p, 'the App-ID database' );
+            $dir = $this->projectDir( $p['pid'] );
+        }
+        if( $upload === null || ( $upload['error'] ?? 1 ) !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
+            throw new ViewerException( 'file: a predefined.xml', 400 );
+        return $this->appidInstall( $upload['tmp_name'], $dir, 'upload ' . substr( basename( (string)( $upload['name'] ?? '' ) ), 0, 80 ), $user['name'] );
+    }
+
+    /** back to the App-ID database of the image (installation) / of the installation (project) */
+    public function appidReset( array $user, ?string $pid ): void
+    {
+        if( $pid === null )
+        {
+            if( empty( $user['is_admin'] ) || isset( $user['token'] ) )
+                throw new ViewerException( 'not found', 404 );
+            $dir = $this->dataDir . '/central';
+        }
+        else
+            $dir = $this->projectDir( $this->projectGet( $user, $pid, 'write' )['pid'] );
+        foreach( array( 'predefined.xml', 'predefined.json', 'predefined.prev.xml' ) as $f )
+            @unlink( $dir . '/' . $f );
+    }
+
+    /** the App-ID database a project uses: its own, the one of the installation, or the one of the image */
+    public function appidInfo( array $user, string $pid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $own = $this->projectDir( $p['pid'] ) . '/predefined.xml';
+        $central = $this->dataDir . '/central/predefined.xml';
+        if( is_file( $own ) )
+            return array( 'from' => 'project', 'meta' => $this->dataMeta( $this->projectDir( $p['pid'] ) . '/predefined.json' ) );
+        if( is_file( $central ) )
+            return array( 'from' => 'installation', 'meta' => $this->dataMeta( $this->dataDir . '/central/predefined.json' ) );
+        return array( 'from' => 'image', 'meta' => array( 'version' => $this->imageAppidVersion() ) );
+    }
+
+    /** MaxMind data from an uploaded GeoLite2-Country-CSV zip (air gap): a run without network makes the data */
+    public function geoipUpload( array $user, ?array $upload ): array
+    {
+        $p = $this->systemProject( $user );
+        if( $upload === null || ( $upload['error'] ?? 1 ) !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
+            throw new ViewerException( 'file: the GeoLite2-Country-CSV zip of MaxMind', 400 );
+        $zip = new ZipArchive();
+        $ok = $zip->open( $upload['tmp_name'] ) === TRUE;
+        $names = array();
+        for( $i = 0; $ok && $i < $zip->numFiles; $i++ )
+            $names[] = (string)$zip->getNameIndex( $i );
+        if( $ok )
+            $zip->close();
+        if( !$ok || count( preg_grep( '#^GeoLite2-Country-CSV_[0-9]{8}/GeoLite2-Country-Blocks-IPv4\.csv$#', $names ) ) !== 1
+            || count( preg_grep( '#(^/|\.\./|^\.\.)#', $names ) ) > 0 )
+            throw new ViewerException( 'file: the GeoLite2-Country-CSV zip of MaxMind (folder GeoLite2-Country-CSV_<date> with the CSV files)', 400 );
+        $jid = self::randomId();
+        $dir = $this->jobDir( $p, $jid );
+        mkdir( $dir, 0700, TRUE );
+        move_uploaded_file( $upload['tmp_name'], $dir . '/GeoLite2-Country-CSV-upload.zip' );
+        $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created) VALUES (?,?,?,?,?,?,?,?)',
+            array( $jid, $p['id'], 0, $user['id'], 'geoip', json_encode( array( 'x-geoip-zip=upload' ) ), 'queued', time() ) );
+        return $this->jobGet( $user, self::SYSTEM_PID, $jid );
+    }
+
+    public function geoipReset( array $user ): void
+    {
+        if( empty( $user['is_admin'] ) || isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        self::rmTree( $this->dataDir . '/central/geoip' );
+        self::rmTree( $this->dataDir . '/central/geoip.prev' );
     }
 
     /** $reason of a failed run: 'memory' (killed - out of memory), 'timeout', 'error' */
@@ -1895,7 +2169,7 @@ class ViewerApp
         if( $changed === 0 )
             return;
         $j = $this->q( 'SELECT j.*, p.pid FROM jobs j JOIN projects p ON p.id = j.project_id WHERE j.id = ?', array( $id ) )->fetch();
-        if( $j && $j['type'] === 'import' )
+        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip' ), TRUE ) )
             $this->importFinish( $j );
     }
 
@@ -1920,6 +2194,35 @@ class ViewerApp
             $clean = str_replace( array_filter( array_merge( array( $secret ), explode( '%', $secret ) ), function( $s ) { return strlen( $s ) >= 8; } ), '********', $log );
             if( $clean !== $log )
                 file_put_contents( $dir . '/run.log', $clean );
+        }
+        // App-ID database / MaxMind data: in place for the installation (project of the installation) or the project
+        if( $j['type'] === 'appid' || $j['type'] === 'geoip' )
+        {
+            if( $j['state'] !== 'done' )
+                return;
+            $u = $this->userById( (int)$j['user_id'] );
+            $target = '';
+            foreach( (array)json_decode( $j['args'], TRUE ) as $a )
+                if( is_string( $a ) && preg_match( '/^x-[a-z]+-(target|zip)=(.*)$/', $a, $m ) )
+                    $target = $m[1] === 'zip' ? 'uploaded zip' : $m[2];
+            try
+            {
+                $f = $dir . '/predefined.xml';
+                if( $j['type'] === 'appid' && ( !is_file( $f ) || is_link( $f ) ) )
+                    throw new ViewerException( 'no App-ID database was downloaded (see run.log)' );
+                if( $j['type'] === 'appid' )
+                    $this->appidInstall( $f, $j['pid'] === self::SYSTEM_PID ? $this->dataDir . '/central' : $this->projectDir( $j['pid'] ), 'run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target, $u['name'] ?? '?' );
+                else
+                    $this->geoipInstall( $dir . '/geoip', 'run ' . substr( $j['jid'], 0, 8 ) . ' (' . ( $target === 'uploaded zip' ? 'uploaded zip' : $target ) . ')', $u['name'] ?? '?' );
+                // the large files of the run are not kept twice
+                @unlink( $f );
+                @unlink( $dir . '/GeoLite2-Country-CSV-upload.zip' );
+            }
+            catch( ViewerException $e )
+            {
+                $this->q( "UPDATE jobs SET state = 'failed', error = ?, reason = 'error' WHERE id = ?", array( $e->getMessage(), $j['id'] ) );
+            }
+            return;
         }
         $out = $dir . '/out.xml';
         if( $j['state'] !== 'done' || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )

@@ -360,7 +360,7 @@ class XMLISSUE extends UTIL
         
         //REGION objects
 
-        $filename = dirname(__FILE__) . '/../../lib/object-classes/predefined.xml';
+        $filename = PH::predefinedXmlPath();
 
         $xmlDoc_region = new DOMDocument();
         $xmlDoc_region->load($filename, XML_PARSE_BIG_LINES);

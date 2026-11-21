@@ -149,6 +149,18 @@ class ViewerContainer
                 if( preg_match( '/^PANOSPHP_[A-Z0-9_]{1,40}$/', (string)$k ) && strpos( (string)$k, 'PANOSPHP_VIEWER_' ) !== 0 )
                     array_push( $cmd, '--env', $k . '=' . str_replace( '%PLUGIN%', $where, (string)$v ) );
         }
+        // App-ID database / MaxMind data (PANOSPHP_PREDEFINED_XML, PANOSPHP_GEOIP_DIR): the data of the installation
+        // read-only at /central, of the project in /project; a run that fetches them writes into /job
+        $central = FALSE;
+        foreach( $job['runEnv'] ?? array() as $k => $v )
+        {
+            if( !in_array( $k, array( 'PANOSPHP_PREDEFINED_XML', 'PANOSPHP_GEOIP_DIR' ), TRUE ) || !preg_match( '#^%(JOB|PROJECT|CENTRAL)%/[a-z0-9._/-]{1,80}$#', (string)$v ) || strpos( (string)$v, '..' ) !== FALSE )
+                throw new Exception( 'container: invalid environment of the run' );
+            $central = $central || strpos( (string)$v, '%CENTRAL%' ) === 0;
+            array_push( $cmd, '--env', $k . '=' . str_replace( array( '%JOB%', '%PROJECT%', '%CENTRAL%' ), array( '/job', '/project', '/central' ), (string)$v ) );
+        }
+        if( $central )
+            array_push( $cmd, '--mount', $this->mount( 'central', '/central', TRUE ) );
         if( $this->user !== '' )
             array_push( $cmd, '--user', $this->user );
         array_push( $cmd, '--entrypoint', 'php', $this->image, $this->tool, 'type=' . ( $job['tool'] ?? $job['type'] ) );

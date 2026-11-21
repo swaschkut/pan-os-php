@@ -268,6 +268,10 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
 | `network` | GET / PUT | admin | network for runs (imports): `enabled`, `allow`, `deny` (lists: host, `*.domain`, IP, network, `tsg:<id>`, `*`; deny wins, empty allow list = nothing) |
 | `keys` | GET / POST | login (no token) | own API keys (personal): list (`kid`, `kind`, `target`, `label`, `hint` = last 4 characters, `refused` = why not usable now) / store (`kind` `panos`: `target` host, `key`; `scm`: `target` TSG, `client_id`, `client_secret`) - the secret is never sent back |
+| `central` | GET | admin | App-ID database / MaxMind data of the installation (`appid`, `geoip`: version / countries, source, user, time; `image`: App-ID of the image) and their runs (`pid` = the project of the installation, runs under `projects/<pid>/runs`) |
+| `central/appid/runs`, `central/geoip/runs` | POST | admin | download with an own key (`kid`: firewall key / `maxmind-licensekey` entry); network rules as for imports, no project switch |
+| `central/appid`, `central/geoip` | POST / DELETE | admin | upload (multipart `file`: `predefined.xml` / GeoLite2-Country-CSV zip - converted by a run without network) / back to the image |
+| `projects/<pid>/appid` | GET / POST / DELETE | read / write / write | App-ID database the project uses (`from`: project / installation / image) / upload an own one / back to the installation; download: `POST projects/<pid>/appid/runs` (`kid`) |
 | `keys/import` | POST | login (no token) | take over an existing `.panconfkeystore` (multipart field `keystore`, or JSON `keystore` = its text): `<host>[%port]`, `tsg_id<TSG>`, `egressip_tsg_id<TSG>`, `ldap-password`, `bpa-apikey`, `license-apikey`, `maxmind-licensekey`, `gcp-mysql-password`, other names → `imported` (kind, target), `skipped` (line, reason) |
 | `keys/<kid>` | DELETE | login | delete an own key |
 | `projects/<pid>/network` | PUT | owner | network for the runs of the project (`enabled`); works only while the administrator allows it |
@@ -370,6 +374,13 @@ The memory one run may use is the limit of its container - compose: `VIEWER_RUN_
 `./panosphp-viewer status` and `restart` show the limits the job runner really has (and name a `docker-compose.yml` that is
 too old for them). Setting them in the browser: idea, [todo/config-viewer-run-limits.md](../../../todo/config-viewer-run-limits.md). With Docker Desktop the VM needs
 more memory than that (Settings → Resources).
+
+**App-ID database and MaxMind data.** pan-os-php reads `PANOSPHP_PREDEFINED_XML` (instead of
+`lib/object-classes/predefined.xml`) and `PANOSPHP_GEOIP_DIR` (instead of `lib/resources/geoip`). The viewer keeps its
+own in the data directory (`central/predefined.xml`, `central/geoip/`, `projects/<pid>/predefined.xml`) and sets them for
+every run (container: `/central` read-only, `/project`) and every worker (the service, from the folders, never from the
+request); the image stays as it is. `type=download-predefined predefined-out=<file>` and `type=maxmind-update
+maxmind-zip=<zip>` (new) make them.
 
 **Why a run failed** (`reason` of a run): `memory` - the run was killed for memory (exit code 137 / signal 9, a killed
 playbook subprocess step, or PHP's `memory_limit` in `run.log`); the page shows **out of memory** with the limit per run;

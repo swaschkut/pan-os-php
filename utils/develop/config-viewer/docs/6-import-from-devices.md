@@ -43,3 +43,19 @@ What runs:
 
 Only the download step gets a network; every other run (and the conversion step) has none. The run gets a key store
 with only this one key; it is removed when the run ends, and the key is taken out of `run.log`.
+
+## App-ID database and MaxMind data
+
+Every run and every opened version uses the **App-ID database** (`predefined.xml`: applications, threats, regions) and
+the **MaxMind GeoLite2** data (countries of IP addresses). By default the ones shipped in the image.
+
+- **Installation** (administrator, **Account → App-ID and MaxMind**):
+  - App-ID: **Download** from a firewall with an own API key (`type=download-predefined`, read only), or **Upload** a
+    `predefined.xml` (air gap); **Back to the image**.
+  - MaxMind: **Download** with the own `maxmind-licensekey` entry (needs `download.maxmind.com` on the allow list), or
+    **Upload** the `GeoLite2-Country-CSV` zip of MaxMind (air gap - converted without network).
+- **Project** (write permission, tab **Configuration versions → App-ID database**): an own App-ID database, e.g. the
+  one of the firewall the project is about - download (network of the project, own key) or upload. It wins over the
+  one of the installation.
+
+Opened versions use new data after they are opened again.

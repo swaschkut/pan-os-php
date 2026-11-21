@@ -21,6 +21,7 @@
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
  *   POST login, POST logout, GET me, POST password, GET meta, GET playbooks, GET playbooks?all=1 + PUT playbooks (admin)
  *   GET|POST keys, DELETE keys/<kid> (own API keys), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
+ *   GET central, POST central/appid|geoip[/runs], DELETE central/appid|geoip (admin); GET|POST|DELETE projects/<pid>/appid, POST projects/<pid>/appid/runs
  *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
  *   GET projects/<pid>/audit                                              (owner)
  *   GET|POST projects, GET|DELETE projects/<pid>
@@ -273,6 +274,33 @@ try
         if( $method === 'PUT' )
             viewerOut( $app->networkSet( viewerBody() ) );
     }
+    // App-ID database and MaxMind data of the installation (administrator): state, download runs, upload (air gap), reset
+    if( $r0 === 'central' )
+    {
+        $n = count( $route );
+        $what = $route[1] ?? '';
+        if( $method === 'GET' && $n === 1 )
+            viewerOut( $app->centralInfo( $user ) );
+        if( in_array( $what, array( 'appid', 'geoip' ), TRUE ) )
+        {
+            if( $n === 3 && $route[2] === 'runs' && $method === 'POST' )
+            {
+                $app->systemProject( $user );
+                viewerOut( $app->jobCreate( $user, ViewerApp::SYSTEM_PID, null, $what, viewerBody() ), 202 );
+            }
+            if( $n === 2 && $method === 'POST' )
+                viewerOut( $what === 'appid' ? $app->appidUpload( $user, null, $_FILES['file'] ?? null ) : $app->geoipUpload( $user, $_FILES['file'] ?? null ), $what === 'appid' ? 200 : 202 );
+            if( $n === 2 && $method === 'DELETE' )
+            {
+                if( $what === 'appid' )
+                    $app->appidReset( $user, null );
+                else
+                    $app->geoipReset( $user );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+        }
+        throw new ViewerException( 'not found', 404 );
+    }
     // the API keys of the user (personal; the secret is never sent back)
     if( $r0 === 'keys' )
     {
@@ -302,6 +330,22 @@ try
         $cid = $route[3] ?? null;
         $op = $route[4] ?? null;
         $viewerAudit['pid'] = is_string( $pid ) ? $pid : null;
+        // the project of the installation-wide runs: only its runs (administrators; Account, App-ID and MaxMind)
+        if( $pid === ViewerApp::SYSTEM_PID && $sub !== 'runs' )
+            throw new ViewerException( 'not found', 404 );
+        // the App-ID database of the project: which one it uses, upload, back to the one of the installation
+        if( $sub === 'appid' && $n === 3 )
+        {
+            if( $method === 'GET' )
+                viewerOut( $app->appidInfo( $user, $pid ) );
+            if( $method === 'POST' )
+                viewerOut( $app->appidUpload( $user, $pid, $_FILES['file'] ?? null ) );
+            if( $method === 'DELETE' )
+            {
+                $app->appidReset( $user, $pid );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+        }
         if( $sub === 'audit' && $n == 3 && $method === 'GET' )
             viewerOut( array( 'audit' => $app->auditList( $user, $pid, $_GET ) ) );
 

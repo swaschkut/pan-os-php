@@ -2687,7 +2687,7 @@ DeviceCallContext::$supportedActions['geoIP-check'] = array(
             derr("not a valid IP: " . $prefix);
 
 
-        $filepath = dirname(__FILE__)."/../../lib/resources/geoip/data/";
+        $filepath = PH::geoipPath()."/data/";
         $file = $filepath."RegionCC" . $filename . ".json";
         if ( !file_exists($file) )
         {

@@ -36,6 +36,17 @@
 * imports use `panos` / `scm`; the other entries are stored for the runs that need them (open: which runs get which
   entries - G below)
 
+## Built (step 2, 2026-11-21): App-ID database and MaxMind data
+
+Decisions (Sven): App-ID - administrator for the installation and per project; MaxMind - administrator; both also as an
+upload (air gap).
+
+* pan-os-php: `PH::predefinedXmlPath()` (`PANOSPHP_PREDEFINED_XML`), `PH::geoipPath()` (`PANOSPHP_GEOIP_DIR`) in every
+  place that read the fixed paths; `type=download-predefined predefined-out=<file>`; `type=maxmind-update
+  maxmind-zip=<zip>` (and its arguments are read at all now - `maxmind-licensekey=` was never seen before)
+* viewer: `central/` in the data directory; runs of the installation in a project that is not listed (only
+  administrators, only its runs); run types `appid` / `geoip`; every other run and every worker gets the data
+
 ## Open
 
 | # | Topic | Notes |

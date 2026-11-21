@@ -148,6 +148,24 @@ $tool0 = '';
 foreach( $rest as $x )
     if( strpos( $x, 'type=' ) === 0 )
         $tool0 = substr( $x, 5 );
+// the environment of the run (--env): App-ID database / MaxMind data, paths of the container -> folders here
+$envs = array();
+foreach( $a as $i => $o )
+    if( $o === '--env' && preg_match( '/^(PANOSPHP_PREDEFINED_XML|PANOSPHP_GEOIP_DIR)=(.*)$/', $a[$i + 1], $m ) )
+        $envs[$m[1]] = $m[2];
+if( count( $envs ) )
+    file_put_contents( __DIR__ . '/env.log', json_encode( array( $tool0, $envs, preg_grep( '#dst=/central#', $a ) ) ) . "\n", FILE_APPEND );
+foreach( $envs as $k => $v )
+    putenv( $k . '=' . preg_replace_callback( '#^/(project|job)(?=/|$)#', function( $m ) use ( $map ) { return $map['/' . $m[1]]; }, $v ) );
+if( $tool0 === 'download-predefined' )
+{
+    $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
+    file_put_contents( __DIR__ . '/import.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
+    foreach( $rest as $x )
+        if( strpos( $x, 'predefined-out=' ) === 0 )
+            copy( __DIR__ . '/predefined-device.xml', substr( $x, 15 ) );
+    exit( 0 );
+}
 if( in_array( $tool0, array( 'upload', 'scm-export', 'scm-export-xml' ), TRUE ) )
 {
     $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
@@ -181,6 +199,7 @@ chmod( $bin . '/docker', 0755 );
 file_put_contents( $bin . '/tool', $repo . '/utils/pan-os-php.php' );
 copy( $repo . '/tests/input/panorama-10.0-merger.xml', $bin . '/import-upload.xml' );
 copy( $repo . '/tests/input/SCM-import.xml', $bin . '/import-scm-export-xml.xml' );
+file_put_contents( $bin . '/predefined-device.xml', '<predefined><application-version>9999-9999</application-version><application/></predefined>' );
 
 $env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => $bin . ':' . getenv('PATH') );
 $p = proc_open( array( PHP_BINARY, $viewer . '/bin/user.php', 'add', 'alice' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null, $env + array( 'VIEWER_PASSWORD' => 'alice-secret-1' ) );
@@ -434,9 +453,71 @@ foreach( array( array( 'kind' => 'named', 'target' => 'foo', 'key' => 'x' ), arr
     array( 'kind' => 'named', 'target' => 'ldap-password', 'key' => "zwei\nzeilen" ) ) as $bad )
     eq( call( 'POST', 'keys', $bad )[0], 400, 'key checked: ' . json_encode( array_diff_key( $bad, array( 'key' => 1 ) ) ) );
 
+// ---- App-ID database and MaxMind data: installation (administrator) and project
+$as( 'root', 'root-secret-123' );
+call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\ndownload.maxmind.com", 'deny' => 'bad.example.com' ) );
+$r = call( 'GET', 'central' );
+eq( array( $r[0], array_key_exists( 'appid', $r[1] ) ? $r[1]['appid'] : 'x', array_key_exists( 'geoip', $r[1] ) ? $r[1]['geoip'] : 'x', (bool)preg_match( '/^[0-9]+-[0-9]+$/', (string)( $r[1]['image']['version'] ?? '' ) ) ), array( 200, null, null, TRUE ),
+    'installation: App-ID of the image, nothing of its own yet' );
+$rk = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'appid.example.com', 'key' => 'LUFRPT1-root-4711' ) )[1]['kid'] ?? '';
+$r = call( 'POST', 'central/appid/runs', array( 'kid' => $rk ) );
+eq( $r[0], 202, 'installation App-ID: download run of the administrator (own key)' );
+@unlink( $bin . '/import.log' );
+$r = waitRun( 'projects/' . ViewerApp::SYSTEM_PID . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$c = call( 'GET', 'central' )[1];
+eq( array( $r[1]['state'] ?? null, $il[0][0] ?? null, $il[0][1] ?? null, $il[0][3][0] ?? null, $c['appid']['version'] ?? null, file_exists( $data . '/central/predefined.xml' ) ),
+    array( 'done', 'download-predefined', 'bridge', 'in=api://appid.example.com', '9999-9999', TRUE ), 'installation App-ID: type=download-predefined predefined-out=, with network; in place, version shown' );
+eq( array( call( 'GET', 'projects/' . ViewerApp::SYSTEM_PID )[0], in_array( ViewerApp::SYSTEM_PID, array_column( call( 'GET', 'projects' )[1]['projects'] ?? array(), 'pid' ), TRUE ) ),
+    array( 404, FALSE ), 'the project of the installation is not a project to open or list' );
+// MaxMind from an uploaded zip (air gap): the real pan-os-php run, without network
+$zipFile = $bin . '/geo.zip';
+$z = new ZipArchive(); $z->open( $zipFile, ZipArchive::CREATE );
+$z->addFromString( 'GeoLite2-Country-CSV_20261121/GeoLite2-Country-Locations-en.csv', "geoname_id,locale_code,continent_code,continent_name,country_iso_code,country_name,is_in_european_union\n2921044,en,EU,Europe,DE,Germany,1\n" );
+$z->addFromString( 'GeoLite2-Country-CSV_20261121/GeoLite2-Country-Blocks-IPv4.csv', "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,is_anycast\n2.16.0.0/13,2921044,2921044,,0,0,\n" );
+$z->addFromString( 'GeoLite2-Country-CSV_20261121/GeoLite2-Country-Blocks-IPv6.csv', "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,is_anycast\n2a00:1:2::/48,2921044,2921044,,0,0,\n" );
+$z->close();
+eq( call( 'POST', 'central/geoip', null, array( 'x.zip', 'not a zip', 'file' ) )[0], 400, 'MaxMind upload: only the GeoLite2-Country-CSV zip' );
+@unlink( $bin . '/env.log' );
+$r = call( 'POST', 'central/geoip', null, array( 'GeoLite2-Country-CSV.zip', file_get_contents( $zipFile ), 'file' ) );
+$r = waitRun( 'projects/' . ViewerApp::SYSTEM_PID . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$c = call( 'GET', 'central' )[1];
+$run = array_values( array_filter( calls(), function( $x ) { return $x[0] === 'run' && in_array( 'type=maxmind-update', $x, TRUE ); } ) );
+eq( array( $r[1]['state'] ?? null, $c['geoip']['countries'] ?? null, json_decode( (string)@file_get_contents( $data . '/central/geoip/data/RegionCCipv4.json' ), TRUE ),
+    end( $run )[array_search( '--network', end( $run ) ) + 1] ?? null ),
+    array( 'done', 1, array( 'DE' => array( '2.16.0.0-2.23.255.255' ) ), 'none' ), 'MaxMind from an uploaded zip: real run without network, data in place' );
+eq( array( call( 'POST', 'central/geoip/runs', array( 'kid' => $rk ) )[0] ), array( 400 ), 'MaxMind download: only with the maxmind-licensekey entry' );
+$mk = call( 'POST', 'keys', array( 'kind' => 'named', 'target' => 'maxmind-licensekey', 'key' => 'mm-key-4711' ) )[1]['kid'] ?? '';
+$r = call( 'POST', 'central/geoip/runs', array( 'kid' => $mk ) );
+$r2 = waitRun( 'projects/' . ViewerApp::SYSTEM_PID . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$run = array_values( array_filter( calls(), function( $x ) { return $x[0] === 'run' && in_array( 'type=maxmind-update', $x, TRUE ); } ) );
+eq( array( $r[0], end( $run )[array_search( '--network', end( $run ) ) + 1] ?? null ), array( 202, 'bridge' ), 'MaxMind download: with the licence key, network (download.maxmind.com on the allow list)' );
+// every other run: the data of the installation, read only at /central
+@unlink( $bin . '/env.log' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() )[1]['jid'] ?? '' ) );
+$el = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/env.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $el[0][1] ?? null, count( $el[0][2] ?? array() ) === 1 && strpos( implode( '', $el[0][2] ), 'readonly' ) !== FALSE ),
+    array( array( 'PANOSPHP_PREDEFINED_XML' => '/central/predefined.xml', 'PANOSPHP_GEOIP_DIR' => '/central/geoip' ), TRUE ), 'runs: App-ID and MaxMind of the installation, /central read only' );
+// App-ID of the project (write): upload or download; it wins over the one of the installation
+eq( call( 'GET', $P . '/appid' )[1]['from'] ?? null, 'installation', 'project: uses the App-ID of the installation' );
+eq( call( 'POST', $P . '/appid', null, array( 'p.xml', '<config/>', 'file' ) )[0], 400, 'project App-ID upload: only a predefined.xml' );
+$r = call( 'POST', $P . '/appid', null, array( 'predefined.xml', '<predefined><application-version>8888-1234</application-version></predefined>', 'file' ) );
+eq( array( $r[0], $r[1]['version'] ?? null, call( 'GET', $P . '/appid' )[1]['from'] ?? null ), array( 200, '8888-1234', 'project' ), 'project App-ID: uploaded, the project uses it' );
+@unlink( $bin . '/env.log' );
+waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() )[1]['jid'] ?? '' ) );
+$el = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/env.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( $el[0][1]['PANOSPHP_PREDEFINED_XML'] ?? null, '/project/predefined.xml', 'runs of the project: its own App-ID database' );
+$r = call( 'POST', $P . '/appid/runs', array( 'kid' => $kid ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, call( 'GET', $P . '/appid' )[1]['meta']['version'] ?? null ), array( 'done', '9999-9999' ), 'project App-ID: downloaded from a firewall with the own key' );
+eq( call( 'DELETE', $P . '/appid' )[0] === 200 && ( call( 'GET', $P . '/appid' )[1]['from'] ?? null ) === 'installation', TRUE, 'project App-ID: back to the one of the installation' );
+eq( call( 'POST', 'central/appid', null, array( 'predefined.xml', '<predefined><application-version>1-1</application-version></predefined>', 'file' ) )[0], 404, 'installation App-ID: only an administrator' );
+
 // stats / playbook runs never get a network
-eq( count( array_filter( calls(), function( $c ) { return $c[0] === 'run' && $c[array_search( '--network', $c ) + 1] !== 'none' && !in_array( 'type=upload', $c, TRUE ) && !in_array( 'type=scm-export', $c, TRUE ); } ) ), 0,
-    'all other runs: --network none' );
+eq( count( array_filter( calls(), function( $c ) { return $c[0] === 'run' && $c[array_search( '--network', $c ) + 1] !== 'none' && !in_array( 'type=upload', $c, TRUE ) && !in_array( 'type=scm-export', $c, TRUE )
+    && !in_array( 'type=download-predefined', $c, TRUE ) && !in_array( 'type=maxmind-update', $c, TRUE ); } ) ), 0,
+    'all other runs: --network none (only import, App-ID and MaxMind downloads get one)' );
 $as( 'root', 'root-secret-123' );
 call( 'PUT', 'network', array( 'enabled' => FALSE, 'allow' => '*' ) );
 $cookie = $aliceCookie; $csrf = $aliceCsrf;

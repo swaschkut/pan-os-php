@@ -973,7 +973,7 @@ class SCMImporter
         if( $this->predefinedDoc === null )
         {
             $this->predefinedDoc = new DOMDocument();
-            $this->predefinedDoc->load(dirname(__FILE__) . "/../object-classes/predefined.xml", XML_PARSE_BIG_LINES);
+            $this->predefinedDoc->load(PH::predefinedXmlPath(), XML_PARSE_BIG_LINES);
         }
         $xp = new DOMXPath($this->predefinedDoc);
         foreach( $xp->query("//" . $type . "/entry[@name=" . $this->xpathLiteral($name) . "]") as $n )

@@ -122,7 +122,7 @@ class ConfigAnonymizer
     private function loadPredefined( $file )
     {
         if( $file === null )
-            $file = dirname(__FILE__) . '/../../lib/object-classes/predefined.xml';
+            $file = PH::predefinedXmlPath();
         if( !is_file($file) )
             return;
         $doc = new DOMDocument();

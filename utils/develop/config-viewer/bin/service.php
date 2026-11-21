@@ -183,6 +183,19 @@ while( TRUE )
         $work = dirname( $worker['pid'] );
         putenv( 'HOME=' . $work );
         putenv( 'TMPDIR=' . $work );
+        // the App-ID database of the project, else of the installation; MaxMind of the installation (pan-os-php reads
+        // PANOSPHP_PREDEFINED_XML / PANOSPHP_GEOIP_DIR) - from the folders of the data directory, never from the request
+        $projectDir = dirname( $worker['config'] );
+        if( is_file( $projectDir . '/predefined.xml' ) )
+            putenv( 'PANOSPHP_PREDEFINED_XML=' . $projectDir . '/predefined.xml' );
+        elseif( is_file( $dataDir . '/central/predefined.xml' ) )
+            putenv( 'PANOSPHP_PREDEFINED_XML=' . $dataDir . '/central/predefined.xml' );
+        else
+            putenv( 'PANOSPHP_PREDEFINED_XML' );
+        if( is_file( $dataDir . '/central/geoip/data/RegionCCipv4.json' ) )
+            putenv( 'PANOSPHP_GEOIP_DIR=' . $dataDir . '/central/geoip' );
+        else
+            putenv( 'PANOSPHP_GEOIP_DIR' );
         chdir( $work );
         $viewerWorker = $worker + array( 'autosaveMin' => $autosaveMin, 'idleMin' => $idleMin );
         require dirname(__FILE__) . '/worker.php';

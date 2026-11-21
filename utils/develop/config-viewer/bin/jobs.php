@@ -105,7 +105,8 @@ function jobsStart( array $job, int $n )
 {
     global $app, $container, $tool;
     $step = $job['steps'][$n];
-    $job = array_merge( $job, array( 'tool' => $step['tool'], 'args' => $step['args'], 'rawArgs' => $step['rawArgs'], 'network' => !empty( $step['network'] ) ) );
+    $job = array_merge( $job, array( 'tool' => $step['tool'], 'args' => $step['args'], 'rawArgs' => $step['rawArgs'], 'network' => !empty( $step['network'] ),
+        'runEnv' => $step['rawEnv'] ?? array() ) );
     // only the first step reads the version (in=); a later step works on what the first one wrote
     if( $n > 0 )
     {
@@ -117,6 +118,8 @@ function jobsStart( array $job, int $n )
     $env = array( 'PATH' => (string)getenv( 'PATH' ), 'HOME' => $job['dir'], 'TMPDIR' => $job['dir'], 'PANOSPHP_LOG_DIR' => $job['dir'] . '/log' );
     // what a run type of a plug-in sets (checked names: PANOSPHP_…, not PANOSPHP_VIEWER_…)
     $env += $job['env'];
+    // App-ID database / MaxMind data of the installation or the project (PANOSPHP_PREDEFINED_XML, PANOSPHP_GEOIP_DIR)
+    $env = ( $step['env'] ?? array() ) + $env;
     // tests only: the extra licence keys of the test (lib/misc-classes/PluginLicense.php)
     if( getenv( 'PANOSPHP_LICENSE_TEST_KEYS' ) )
         $env['PANOSPHP_LICENSE_TEST_KEYS'] = (string)getenv( 'PANOSPHP_LICENSE_TEST_KEYS' );
