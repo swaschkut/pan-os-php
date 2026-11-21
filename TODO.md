@@ -20,6 +20,7 @@ under development.
 | SCM | gap remediation: visibility / best practice fixes as reviewable API change files | draft for discussion | [todo/scm-gap-remediation.md](todo/scm-gap-remediation.md) |
 | SCM / Prisma Access | lifecycle from requirements to maturity report | draft; steps A + B as first version (`type=scm-report`) | [todo/scm-prisma-access-lifecycle.md](todo/scm-prisma-access-lifecycle.md) |
 | SCM / Prisma Access | **licences of the Prisma Access tenant** for the as-built report: Subscription Service / Tenancy API of SCM with the service account (read only) - new area of `scm-export`, table *Subscriptions* (today "not in export") and units in use vs. licensed in `type=scm-report` | wish 2026-11-21, not built | [todo/scm-prisma-access-lifecycle.md](todo/scm-prisma-access-lifecycle.md) (6b) |
+| AppID migration | `type=appid-toolbox` (phases p1-marker … p6-cleaner, process of the PDF in `appid-toolbox/doc/`): **phase 4 (review) is manual** - automated support: review list as data / Excel (rules grouped by the same applications, NTBR reasons), suggestions per NTBR tag (categories / containers / application filter for tooManyApps, ports / IPs → App-Override for unknown apps, hit count for unused, dependencies, application-default check), decisions applied as actions / playbook (`p4-review`, `p4-apply`); config viewer tab AppID migration, offline log import | wish 2026-11-21, documented, not built | [todo/appid-toolbox.md](todo/appid-toolbox.md) |
 | SCM / Prisma Access | `scm_pa_export.php`: next steps, verification against a live tenant | open: live verification | [todo/scm-pa-export-next-steps.md](todo/scm-pa-export-next-steps.md) |
 | SCM | API coverage: single scripts (pan.dev endpoints) vs. integrated `scm-*` types – superseded scripts, endpoints not integrated (config versions / jobs list, snippet audit logs, shared snippets, trusted tenants, deployment sites, fetch-scm-config, AIOps BPA) | inventory, decisions open | [todo/scm-api-coverage.md](todo/scm-api-coverage.md) |
 | master key | script: input configuration + custom master key → output with **all** secrets re-encrypted with the default master key (generic old key → new key); based on `PanosCrypto`; also for panorama-move 7a (`master-key=rekey` instead of removing the fields) | implemented: `type=master-key` – display (flags `hashes`, `cleartext`), `actions=rekey` (level 1), `actions=scrub` (lab copy); open: lab verification of scrub / rekey, panorama-move `master-key=rekey`, small cleanups (see file) | [todo/master-key-rekey.md](todo/master-key-rekey.md) |
@@ -96,6 +97,8 @@ under development.
   an IPv6 address cannot be passed, e.g. `actions=find-zone-from-ip:2001:db8::1`
 
 ### appid-toolbox
+
+Process, phase 4 (manual review) with automated support, config viewer: [todo/appid-toolbox.md](todo/appid-toolbox.md). Small items:
 
 - `location=` argument help not available / if `location=` is not used, load config and display available DG / vsys
 - p1 with rule filter
