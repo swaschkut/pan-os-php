@@ -4,7 +4,7 @@ Web UI on top of pan-os-php: upload a PAN-OS / Panorama XML configuration, look 
 change them with pan-os-php actions and save the result as a new version – with users, projects and project members.
 
 **Prototype.** It is a separate area next to `utils/api/v1/tool.php` (which is unchanged and has no authentication).
-Background and open points: [todo/ui-config-in-browser.md](../../../todo/ui-config-in-browser.md).
+Open points of the viewer, all in one list: [TODO.md](TODO.md). Background: [todo/ui-config-in-browser.md](../../../todo/ui-config-in-browser.md).
 
 ## How it works
 
