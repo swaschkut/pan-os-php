@@ -1,0 +1,30 @@
+diff --git a/utils/develop/config-viewer/app.js b/utils/develop/config-viewer/app.js
+index 1ea6bb8d..681e3810 100644
+--- a/utils/develop/config-viewer/app.js
++++ b/utils/develop/config-viewer/app.js
+@@ -1010,7 +1010,16 @@ async function mergerTab(base, pid, canWrite, versions) {
+                 r.state === 'done' && r.type !== 'merger-possible-report' ? fileLink(r, 'skipped-merger.html', 'HTML skipped') : null,
+                 r.state === 'done' ? fileLink(r, 'merger.json', 'JSON') : null,
+                 r.state === 'done' || r.state === 'failed' || r.state === 'cancelled' ? fileLink(r, 'run.log') : null,
+-                r.state === 'queued' || r.state === 'running' ? el('button', { type: 'button', text: 'Refresh', onclick: () => run(redraw) }) : null)))));
++                r.state === 'queued' || r.state === 'running' ? el('button', { type: 'button', text: 'Refresh', onclick: () => run(redraw) }) : null,
++                // a finished run: deleted with its files (report, result configuration, run.log); an open one: cancelled
++                canWrite || r.user === state.user ? el('button', { type: 'button', class: 'danger', text: r.state === 'queued' || r.state === 'running' ? 'Cancel' : 'Delete',
++                    onclick: () => run(async () => {
++                        const open = r.state === 'queued' || r.state === 'running';
++                        if (!confirm(open ? 'Cancel this ' + r.type + ' run?' : 'Delete this ' + r.type + ' run with its report and result configuration? A version saved from it stays.')) return;
++                        await api('DELETE', base + '/runs/' + r.jid);
++                        if (out.dataset.jid === r.jid) out.replaceChildren();
++                        message(open ? 'run cancelled' : 'run deleted'); await redraw();
++                    }) }) : null)))));
+     card.append(el('h2', { text: 'Merger' }),
+         el('p', { class: 'muted', text: 'pan-os-php object-merger / rule-merger on a copy of a version: the report shows what can be merged (kept ← removed) and what was not merged, with the reason. The version itself stays - "Result as new version" takes the merged configuration. merger-possible-report only reports duplicates (and with mergecheck whether a merge would change what a firewall receives).' }),
+         form, el('h3', { text: 'Merger runs' }), runList, out);
+@@ -1077,6 +1086,7 @@ async function showMergerReport(base, r, out) {
+     filterBox.addEventListener('input', () => sections.forEach(d => d()));
+     typeSel.addEventListener('change', () => sections.forEach(d => d()));
+     [...typesSeen].sort().forEach(t => typeSel.append(el('option', { value: t, text: t })));
++    out.dataset.jid = r.jid;
+     out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }),
+         el('div', { class: 'row' }, typesSeen.size > 0 ? field('Object type', typeSel) : null, field('Filter', filterBox),
+             el('button', { type: 'button', class: 'small', text: 'Fold all', onclick: () => folds.forEach(d => { d.open = false; }) }),

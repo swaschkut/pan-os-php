@@ -565,18 +565,25 @@ class MERGERPOSSIBLEREPORT extends MERGER
             $copies[] = $e['label'] . ':' . $e['name'] . '=' . $this->shortValue( $e['value'] ) . ( $e['info'] !== '' ? ' (' . trim($e['info']) . ')' : '' );
         }
 
+        // the merge check as data (status, kept copy, the copies that can not be merged and why) and as text (HTML, log)
         $check = '';
+        $result = array( 'status' => $kind === 'same name, different value' ? 'conflict' : 'unchecked', 'keep' => '', 'ok' => 0, 'blocked' => array(), 'notChecked' => array() );
         if( $this->mergeCheck && isset($def['safety']) && $kind !== 'same name, different value' )
-            $check = $this->mergeCheckText( $idx, $entries, $def, $sum );
+        {
+            $result = $this->mergeCheckResult( $idx, $entries, $def, $sum );
+            $check = $this->mergeCheckText( $result );
+        }
 
         PH::print_stdout( "   * [{$kind}]" . ( $overlap ? " [overlapping]" : "" ) . " '{$key}': " . implode(' | ', $copies) . ( $check !== '' ? " -> " . $check : "" ) );
 
         $this->findings[] = array( 'type' => $type, 'kind' => $kind, 'key' => $key, 'overlap' => $overlap ? 'yes' : '',
-            'copies' => $copies, 'check' => $check );
+            'copies' => $copies, 'check' => $check,
+            // status: merge-ok | would-change-policy | not-checked (kept copy not visible) | conflict (same name, other value) | unchecked (no mergecheck)
+            'status' => $result['status'], 'keep' => $result['keep'], 'blocked' => $result['blocked'], 'notChecked' => $result['notChecked'] );
     }
 
     /** MergeSafety: replace every copy by the copy in the highest location */
-    private function mergeCheckText( array $idx, array $entries, array $def, array &$sum )
+    private function mergeCheckResult( array $idx, array $entries, array $def, array &$sum )
     {
         $keep = null;
         foreach( $idx as $i )
@@ -600,16 +607,25 @@ class MERGERPOSSIBLEREPORT extends MERGER
             if( $reason === null )
                 $ok++;
             else
-                $blocked[] = $entries[$i]['label'] . ':' . $entries[$i]['name'] . ' (' . $reason . ')';
+                $blocked[] = array( 'copy' => $entries[$i]['label'] . ':' . $entries[$i]['name'], 'reason' => (string)$reason );
         }
         $sum['merge-ok'] += $ok;
         $sum['merge-blocked'] += count($blocked);
 
-        $text = "keep " . $entries[$keep]['label'] . ':' . $entries[$keep]['name'] . ", " . $ok . " ok";
-        if( count($blocked) > 0 )
-            $text .= ", " . count($blocked) . " would change the policy: " . implode('; ', $blocked);
-        if( count($notVisible) > 0 )
-            $text .= ", not checked (kept copy not visible there, needs a copy in a common parent): " . implode('; ', $notVisible);
+        $status = count($blocked) > 0 ? 'would-change-policy' : ( count($notVisible) > 0 ? 'not-checked' : 'merge-ok' );
+        return array( 'status' => $status, 'keep' => $entries[$keep]['label'] . ':' . $entries[$keep]['name'], 'ok' => $ok,
+            'blocked' => $blocked, 'notChecked' => $notVisible );
+    }
+
+    /** the merge check as one line (log, HTML) */
+    private function mergeCheckText( array $r )
+    {
+        $text = "keep " . $r['keep'] . ", " . $r['ok'] . " ok";
+        if( count($r['blocked']) > 0 )
+            $text .= ", " . count($r['blocked']) . " would change the policy: "
+                . implode('; ', array_map( function( $b ) { return $b['copy'] . ' (' . $b['reason'] . ')'; }, $r['blocked'] ));
+        if( count($r['notChecked']) > 0 )
+            $text .= ", not checked (kept copy not visible there, needs a copy in a common parent): " . implode('; ', $r['notChecked']);
         return $text;
     }
 
@@ -659,9 +675,9 @@ class MERGERPOSSIBLEREPORT extends MERGER
             $html .= "<tr><td>" . $esc($type) . "</td><td>{$s['objects']}</td><td>{$s['same-name-same-value']}</td><td>{$s['same-name-different-value']}</td><td>{$s['overlapping-conflicts']}</td><td>{$s['same-value-different-names']}</td><td>"
                 . ( $this->mergeCheck && isset($this->reportTypes[$type]['safety']) ? $s['merge-ok'] : '' ) . "</td><td>"
                 . ( $this->mergeCheck && isset($this->reportTypes[$type]['safety']) ? $s['merge-blocked'] : '' ) . "</td></tr>";
-        $html .= "</table><h2>Findings</h2><table><tr><th>object type</th><th>finding</th><th>name / names</th><th>overlapping</th><th>copies (location:name=value)</th><th>merge check</th></tr>";
+        $html .= "</table><h2>Findings</h2><table><tr><th>object type</th><th>merge</th><th>finding</th><th>name / names</th><th>overlapping</th><th>copies (location:name=value)</th><th>merge check</th></tr>";
         foreach( $this->findings as $f )
-            $html .= "<tr><td>" . $esc($f['type']) . "</td><td>" . $esc($f['kind']) . "</td><td>" . $esc($f['key']) . "</td><td>" . $esc($f['overlap']) . "</td><td>"
+            $html .= "<tr><td>" . $esc($f['type']) . "</td><td>" . $esc($f['status']) . "</td><td>" . $esc($f['kind']) . "</td><td>" . $esc($f['key']) . "</td><td>" . $esc($f['overlap']) . "</td><td>"
                 . implode('<br>', array_map($esc, $f['copies'])) . "</td><td>" . $esc($f['check']) . "</td></tr>";
         $html .= "</table></body></html>";
 

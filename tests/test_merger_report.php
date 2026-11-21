@@ -49,6 +49,14 @@ $ok( strpos( (string)file_get_contents( $dir . '/skipped-rm.html' ), 'not matchi
 list( $rc, $o ) = $run( 'type=merger-possible-report in=' . escapeshellarg( $pan ) . ' objecttype=address mergecheck exportjson=pr.json' );
 $j = json_decode( (string)@file_get_contents( $dir . '/pr.json' ), TRUE );
 $ok( $rc === 0 && $j['type'] === 'merger-possible-report' && isset( $j['summary']['address'] ) && count( $j['findings'] ) > 0 && isset( $j['findings'][0]['copies'] ), 'merger-possible-report: summary and findings' );
+$st = array_count_values( array_column( $j['findings'], 'status' ) );
+$conf = array_values( array_filter( $j['findings'], function( $f ) { return $f['kind'] === 'same name, different value'; } ) );
+$okf = array_values( array_filter( $j['findings'], function( $f ) { return $f['status'] === 'merge-ok'; } ) );
+$ok( isset( $st['conflict'], $st['merge-ok'] ) && ( $conf[0]['status'] ?? '' ) === 'conflict' && ( $okf[0]['keep'] ?? '' ) !== '' && is_array( $okf[0]['blocked'] ?? null ),
+    'merger-possible-report: status per finding (conflict, merge-ok, …), the kept copy, the blocked copies with the reason' );
+list( $rc, $o ) = $run( 'type=merger-possible-report in=' . escapeshellarg( $pan ) . ' objecttype=address mergecheck exportcsv=pr.html' );
+$ok( strpos( (string)@file_get_contents( $dir . '/pr.html' ), '<th>merge</th>' ) !== FALSE && strpos( (string)@file_get_contents( $dir . '/pr.html' ), '<td>conflict</td>' ) !== FALSE,
+    'merger-possible-report: the HTML shows the same status' );
 
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";

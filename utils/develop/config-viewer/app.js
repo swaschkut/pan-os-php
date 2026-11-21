@@ -1010,7 +1010,16 @@ async function mergerTab(base, pid, canWrite, versions) {
                 r.state === 'done' && r.type !== 'merger-possible-report' ? fileLink(r, 'skipped-merger.html', 'HTML skipped') : null,
                 r.state === 'done' ? fileLink(r, 'merger.json', 'JSON') : null,
                 r.state === 'done' || r.state === 'failed' || r.state === 'cancelled' ? fileLink(r, 'run.log') : null,
-                r.state === 'queued' || r.state === 'running' ? el('button', { type: 'button', text: 'Refresh', onclick: () => run(redraw) }) : null)))));
+                r.state === 'queued' || r.state === 'running' ? el('button', { type: 'button', text: 'Refresh', onclick: () => run(redraw) }) : null,
+                // a finished run: deleted with its files (report, result configuration, run.log); an open one: cancelled
+                canWrite || r.user === state.user ? el('button', { type: 'button', class: 'danger', text: r.state === 'queued' || r.state === 'running' ? 'Cancel' : 'Delete',
+                    onclick: () => run(async () => {
+                        const open = r.state === 'queued' || r.state === 'running';
+                        if (!confirm(open ? 'Cancel this ' + r.type + ' run?' : 'Delete this ' + r.type + ' run with its report and result configuration? A version saved from it stays.')) return;
+                        await api('DELETE', base + '/runs/' + r.jid);
+                        if (out.dataset.jid === r.jid) out.replaceChildren();
+                        message(open ? 'run cancelled' : 'run deleted'); await redraw();
+                    }) }) : null)))));
     card.append(el('h2', { text: 'Merger' }),
         el('p', { class: 'muted', text: 'pan-os-php object-merger / rule-merger on a copy of a version: the report shows what can be merged (kept ← removed) and what was not merged, with the reason. The version itself stays - "Result as new version" takes the merged configuration. merger-possible-report only reports duplicates (and with mergecheck whether a merge would change what a firewall receives).' }),
         form, el('h3', { text: 'Merger runs' }), runList, out);
@@ -1018,6 +1027,10 @@ async function mergerTab(base, pid, canWrite, versions) {
     if (open) state.pendingTimers = (state.pendingTimers || []).concat([setTimeout(() => { if (card.isConnected) redraw().catch(() => {}); }, 4000)]);
     return card;
 }
+
+// merger-possible-report: status of a finding (pan-os-php MERGERPOSSIBLEREPORT) - the problems first
+const MERGE_PROBLEM = ['conflict', 'would-change-policy', 'not-checked'];
+const MERGE_ORDER = ['conflict', 'would-change-policy', 'not-checked', 'merge-ok', 'unchecked'];
 
 /** the report of a merger run (merger.json) as tables, with a text filter */
 async function showMergerReport(base, r, out) {
@@ -1032,22 +1045,38 @@ async function showMergerReport(base, r, out) {
     // the object type of the rows (first column 'object type' of a part): one choice for all parts
     const typeSel = el('select', { 'aria-label': 'object type' }, el('option', { value: '', text: 'all object types' }));
     const typesSeen = new Set();
+    // merger-possible-report: can the copies be merged (status of the merge check of pan-os-php)
+    const statusSel = el('select', { 'aria-label': 'merge status' }, el('option', { value: '', text: 'all findings' }),
+        el('option', { value: 'problem', text: 'can NOT be merged (conflict, would change policy, not checked)' }),
+        el('option', { value: 'merge-ok', text: 'can be merged (merge ok)' }), el('option', { value: 'conflict', text: 'conflict: same name, other value' }),
+        el('option', { value: 'would-change-policy', text: 'would change the policy' }), el('option', { value: 'not-checked', text: 'not checked: kept copy not visible there' }),
+        el('option', { value: 'unchecked', text: 'no merge check (type without / mergecheck off)' }));
     const section = (title, head, rows) => {
         const body = el('tbody', {});
         const count = el('span', { class: 'muted' });
         const typeCol = head[0] === 'object type' ? 0 : -1;
         // the choice offers only the types that have rows outside the summary (findings, merged, not merged)
         if (typeCol === 0 && title !== 'Summary') rows.forEach(cells => { if (cells[0]) typesSeen.add(cells[0]); });
+        // a column 'merge' (merger-possible-report): filtered by the choice "can / can not be merged"
+        const statusCol = head.indexOf('merge');
+        let limit = 500;
+        const more = el('button', { type: 'button', class: 'small', onclick: () => { limit = Infinity; draw(); } });
         const draw = () => {
-            const q = filterBox.value.trim().toLowerCase(), t = typeSel.value;
-            const shown = rows.filter(cells => (!t || typeCol < 0 || cells[typeCol] === t) && (!q || cells.join(' ').toLowerCase().includes(q)));
+            const q = filterBox.value.trim().toLowerCase(), t = typeSel.value, st = statusSel.value;
+            const shown = rows.filter(cells => (!t || typeCol < 0 || cells[typeCol] === t)
+                && (!st || statusCol < 0 || (st === 'problem' ? MERGE_PROBLEM.includes(cells[statusCol]) : cells[statusCol] === st))
+                && (!q || cells.join(' ').toLowerCase().includes(q)));
             count.textContent = ' (' + shown.length + (shown.length !== rows.length ? ' of ' + rows.length : '') + ')';
-            body.replaceChildren(...shown.slice(0, 2000).map(cells => el('tr', {}, cells.map(c => el('td', { class: 'wrap', text: c })))));
+            // a long list: the first 500 rows, the rest on request (no row is left out without saying so)
+            body.replaceChildren(...shown.slice(0, limit).map(cells => el('tr', { class: statusCol >= 0 && MERGE_PROBLEM.includes(cells[statusCol]) ? 'warnrow' : '' },
+                cells.map(c => el('td', { class: 'wrap', text: c })))));
+            more.hidden = shown.length <= limit;
+            more.textContent = 'show all ' + shown.length + ' rows (' + (shown.length - limit) + ' more)';
         };
         sections.push(draw);
         // every part can be folded: only its title (with the number of rows) stays
         const d = el('details', { class: 'mergersection', open: true }, el('summary', {}, el('h4', {}, title, count)),
-            rows.length === 0 ? el('p', { class: 'muted', text: 'none' }) : el('table', { class: 'plain mergertable' }, el('thead', {}, el('tr', {}, head.map(h => el('th', { text: h })))), body));
+            rows.length === 0 ? el('p', { class: 'muted', text: 'none' }) : el('table', { class: 'plain mergertable' }, el('thead', {}, el('tr', {}, head.map(h => el('th', { text: h })))), body), more);
         folds.push(d);
         return d;
     };
@@ -1056,8 +1085,13 @@ async function showMergerReport(base, r, out) {
     if (rep.type === 'merger-possible-report') {
         parts.push(section('Summary', ['object type', 'objects', 'same name + value', 'same name, other value', 'overlapping', 'same value, other names', 'merge ok', 'would change policy'],
             Object.entries(rep.summary || {}).map(([t, s]) => [t, s.objects, s['same-name-same-value'], s['same-name-different-value'], s['overlapping-conflicts'], s['same-value-different-names'], rep.mergecheck ? s['merge-ok'] : '', rep.mergecheck ? s['merge-blocked'] : ''].map(val))));
-        parts.push(section('Findings', ['object type', 'finding', 'name(s)', 'overlapping', 'copies (location:name=value)', 'merge check'],
-            (rep.findings || []).map(x => [x.type, x.kind, x.key, x.overlap, (x.copies || []).join('\n'), x.check].map(val))));
+        // the ones that can NOT be merged first (conflict, would change the policy, not checked), then by type
+        const rank = (x) => { const i = MERGE_ORDER.indexOf(x.status || 'unchecked'); return i < 0 ? MERGE_ORDER.length : i; };
+        const findings = (rep.findings || []).slice().sort((a, b) => rank(a) - rank(b) || String(a.type).localeCompare(String(b.type)));
+        parts.push(section('Findings', ['object type', 'merge', 'finding', 'name(s)', 'overlapping', 'kept copy', 'can not be merged (copy: reason)', 'copies (location:name=value)'],
+            findings.map(x => [x.type, x.status || 'unchecked', x.kind, x.key, x.overlap, x.keep || '',
+                (x.blocked || []).map(b => b.copy + ': ' + b.reason).concat((x.notChecked || []).map(n => n + ': not checked - kept copy not visible there')).join('\n'),
+                (x.copies || []).join('\n')].map(val))));
     } else if (rep.type === 'rule-merger') {
         const s = rep.summary || {};
         parts.push(el('p', { text: (s.merged || 0) + ' rule(s) kept with ' + (s.removed || 0) + ' merged into them; ' + (s.skipped || 0) + ' not merged (with the reason)' }));
@@ -1075,10 +1109,13 @@ async function showMergerReport(base, r, out) {
             (rep.skipped || []).map(m => [m.objecttype, m.key, ref(m.kept), m.notMergedWith.map(ref).join('\n'), (m.reason || []).map(x => x.trim()).join('\n')])));
     }
     filterBox.addEventListener('input', () => sections.forEach(d => d()));
+    statusSel.addEventListener('change', () => sections.forEach(d => d()));
     typeSel.addEventListener('change', () => sections.forEach(d => d()));
     [...typesSeen].sort().forEach(t => typeSel.append(el('option', { value: t, text: t })));
+    out.dataset.jid = r.jid;
     out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }),
-        el('div', { class: 'row' }, typesSeen.size > 0 ? field('Object type', typeSel) : null, field('Filter', filterBox),
+        el('div', { class: 'row' }, typesSeen.size > 0 ? field('Object type', typeSel) : null,
+            rep.type === 'merger-possible-report' ? field('Merge', statusSel) : null, field('Filter', filterBox),
             el('button', { type: 'button', class: 'small', text: 'Fold all', onclick: () => folds.forEach(d => { d.open = false; }) }),
             el('button', { type: 'button', class: 'small', text: 'Unfold all', onclick: () => folds.forEach(d => { d.open = true; }) })), ...parts);
     sections.forEach(d => d());
