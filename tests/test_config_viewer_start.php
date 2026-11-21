@@ -80,6 +80,8 @@ if( $sub === 'exec' )
         if( $a[$j] === '-w' ) { file_put_contents( getenv( 'FAKE_LOG' ) . '.workdir', $a[++$j] . "\n", FILE_APPEND ); continue; }
         if( $a[$j] === '-e' ) { $kv = explode( '=', $a[++$j], 2 ); $env[$kv[0]] = $kv[1]; continue; }
         if( $a[$j] === 'web' ) break;
+        // the job runner: its environment as docker-compose.yml + .env give it (FAKE_JOBS_ENV)
+        if( $a[$j] === 'jobs' ) { $env = json_decode( (string)getenv( 'FAKE_JOBS_ENV' ), TRUE ) + $env; break; }
     }
     $cmd = array_slice( $a, $j + 1 );
     if( $cmd[0] === 'php' ) $cmd[0] = PHP_BINARY;
@@ -158,6 +160,18 @@ eq( array( $code, env( 'VIEWER_RUN_MEMORY' ), strpos( (string)file_get_contents(
     'setup: VIEWER_RUN_MEMORY kept, the other limits as comments' );
 list( $code, $out ) = pv( array( 'setup' ), array( 'VIEWER_RUN_MEMORY' => 'lots' ) );
 eq( array( $code !== 0, strpos( $out, 'VIEWER_RUN_MEMORY: not a valid value' ) !== FALSE, env( 'VIEWER_RUN_MEMORY' ) ), array( TRUE, TRUE, '6g' ), 'setup: a wrong limit is refused, the settings stay' );
+// a comment after the value, as people write it: compose drops it, the script too
+file_put_contents( $dir . '/.env', preg_replace( '/^VIEWER_RUN_MEMORY=.*$/m', 'VIEWER_RUN_MEMORY=6g      # Speicher pro Lauf', file_get_contents( $dir . '/.env' ) ) );
+list( $code ) = pv( array( 'setup' ) );
+eq( array( $code, env( 'VIEWER_RUN_MEMORY' ) ), array( 0, '6g' ), 'setup: VIEWER_RUN_MEMORY=6g with a comment after it is read as 6g' );
+$limits = function( array $jobsEnv ) { return pv( array( 'status' ), array( 'FAKE_JOBS_ENV' => json_encode( $jobsEnv ) ) )[1]; };
+eq( strpos( $limits( array( 'PANOSPHP_VIEWER_CONTAINER_MEMORY' => '6g', 'PANOSPHP_VIEWER_CONTAINER_CPUS' => '2', 'PANOSPHP_VIEWER_JOB_TIMEOUT' => '7200' ) ),
+    'limits per run: memory 6g, CPUs 2, time 7200s' ) !== FALSE, TRUE, 'status: the limits per run the job runner has' );
+$out = $limits( array() );
+eq( array( strpos( $out, 'docker-compose.yml here is older' ) !== FALSE, strpos( $out, 'run the installer again' ) !== FALSE ), array( TRUE, TRUE ),
+    'status: an old docker-compose.yml without the limits is named' );
+$out = $limits( array( 'PANOSPHP_VIEWER_CONTAINER_MEMORY' => '2g', 'PANOSPHP_VIEWER_CONTAINER_CPUS' => '2', 'PANOSPHP_VIEWER_JOB_TIMEOUT' => '3600' ) );
+eq( strpos( $out, '.env says VIEWER_RUN_MEMORY=6g - not in use yet' ) !== FALSE, TRUE, 'status: .env differs from what runs - restart' );
 
 // ---- after the setup: no changes on the command line (users, passwords, projects, tokens: in the browser)
 list( $code, $out, $calls ) = pv( array( 'password', 'admin' ) );

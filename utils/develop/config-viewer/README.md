@@ -359,7 +359,9 @@ result files. `POST …/runs/<jid>/save` takes `out.xml` as a new version.
 when the container uses more), `debugmemory` (true: memory use per step in `run.log`), `removestagefiles` (true). The
 page offers them under "Options for large configurations". What they do: [utils/api/v1/playbook/README.md](../../api/v1/playbook/README.md).
 The memory one run may use is the limit of its container - compose: `VIEWER_RUN_MEMORY` in `.env` (default `2g`; also
-`VIEWER_RUN_CPUS`, `VIEWER_RUN_TIMEOUT` in seconds), then `./panosphp-viewer restart`. With Docker Desktop the VM needs
+`VIEWER_RUN_CPUS`, `VIEWER_RUN_TIMEOUT` in seconds; a comment after the value is fine), then `./panosphp-viewer restart`;
+`./panosphp-viewer status` and `restart` show the limits the job runner really has (and name a `docker-compose.yml` that is
+too old for them). Setting them in the browser: idea, [todo/config-viewer-run-limits.md](../../../todo/config-viewer-run-limits.md). With Docker Desktop the VM needs
 more memory than that (Settings → Resources).
 
 **Why a run failed** (`reason` of a run): `memory` - the run was killed for memory (exit code 137 / signal 9, a killed

@@ -33,8 +33,30 @@ need_docker() {
 # "VIEWER_HTTPS=yes VIEWER_DOMAIN=x ./panosphp-viewer setup" works without questions, e.g. in an install script)
 setting() {
     local v="${!1:-}"
-    [ -z "$v" ] && [ -f "$ENV_FILE" ] && v="$(sed -n "s/^$1=//p" "$ENV_FILE" | tail -1 | sed 's/^"\(.*\)"$/\1/')"
+    if [ -z "$v" ] && [ -f "$ENV_FILE" ]; then
+        v="$(sed -n "s/^$1=//p" "$ENV_FILE" | tail -1)"
+        # "value" as it is; unquoted: a comment after a space (VIEWER_RUN_MEMORY=6g   # memory) and spaces go, as with compose
+        if [[ "$v" == \"*\" ]]; then v="${v:1:${#v}-2}"
+        else v="${v%%[[:space:]]#*}"; v="${v%"${v##*[![:space:]]}"}"; fi
+    fi
     printf '%s' "$v"
+}
+
+# the limits of one run as the job runner has them (from docker-compose.yml + .env), compared with .env
+run_limits() {
+    local got m c t want
+    got="$(compose exec -T jobs sh -c 'echo "${PANOSPHP_VIEWER_CONTAINER_MEMORY:-}|${PANOSPHP_VIEWER_CONTAINER_CPUS:-}|${PANOSPHP_VIEWER_JOB_TIMEOUT:-}"' 2>/dev/null | tr -d '\r' | tail -1)" || return 0
+    IFS='|' read -r m c t <<< "$got"
+    if [ -z "$m" ]; then
+        say "limits per run: 2g memory (default) - docker-compose.yml here is older than VIEWER_RUN_MEMORY:"
+        say "  run the installer again (it keeps .env and the data), then ./panosphp-viewer restart"
+        return 0
+    fi
+    say "limits per run: memory $m, CPUs $c, time ${t}s   (.env: VIEWER_RUN_MEMORY, VIEWER_RUN_CPUS, VIEWER_RUN_TIMEOUT)"
+    want="$(setting VIEWER_RUN_MEMORY)"
+    if [ -n "$want" ] && [ "$want" != "$m" ]; then
+        say "  .env says VIEWER_RUN_MEMORY=$want - not in use yet: ./panosphp-viewer restart"
+    fi
 }
 
 # settings made by setup (a bundle brings a .env with the image only)
@@ -181,13 +203,14 @@ start)
 stop)
     need_docker; compose down; say "stopped - the data stays (./panosphp-viewer start)" ;;
 restart)
-    need_docker; compose down; compose up -d; say "config viewer: $(url)" ;;
+    need_docker; compose down; compose up -d; say "config viewer: $(url)"; run_limits ;;
 status)
     need_docker
     compose ps
     say ""
     say "address: $(url)"
     in_web php bin/license.php show 2>/dev/null || say "(not running)"
+    run_limits
     first_admin
     ;;
 logs)

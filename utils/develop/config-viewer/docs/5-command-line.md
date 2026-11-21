@@ -23,7 +23,8 @@ himself an administrator. A try is refused, written into the audit log and shown
 next login.
 
 Large configurations: the memory of one run is `VIEWER_RUN_MEMORY` in `.env` (default `2g`, e.g. `VIEWER_RUN_MEMORY=6g`;
-also `VIEWER_RUN_CPUS`, `VIEWER_RUN_TIMEOUT` in seconds), then `./panosphp-viewer restart`.
+also `VIEWER_RUN_CPUS`, `VIEWER_RUN_TIMEOUT` in seconds), then `./panosphp-viewer restart`. `./panosphp-viewer status`
+shows the limits the viewer really uses.
 
 Settings are in `.env` next to the script, plug-ins in `plugins/`. All data (users, projects, versions, licence) is in
 the Docker volume `panosphp-viewer-data` - `stop` and `update` keep it.
