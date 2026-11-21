@@ -11,7 +11,10 @@ Status: **in progress** (Sven, 2026-11-21).
   type (Policies menu) - list fields add / remove / set any, -set fields, move; the description of a rule with the
   aliases of pan-os-php (`$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`) - set as
   `description-replace-character:<old>,<new>`. Shown only: URL category, NAT translations (`dnat-set`,
-  `snat-set-interface` not in the window yet). Not yet: multi-edit with filter suggestions, Network / Device windows,
+  `snat-set-interface` not in the window yet). Step 3 (2026-11-21): multi-edit - "Multi-edit …" at a change of one object: filter
+  suggestions from the object (filter fields of the meta only), location, own filter, the number of matches and their
+  names live, apply = one change with the wider filter (field `multi-edit`); the object itself left out by default; a
+  rename needs a `$$` formula. Not yet: Network / Device windows, NAT translations in the window, playbook export,
   git.
 
 ## Goal

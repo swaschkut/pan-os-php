@@ -297,6 +297,13 @@ foreach( array( 'description-append:a$$comma$$ b$$colon$$ c', 'src-add:shared-ho
 $r = $bob->call( 'GET', $C . '/object?type=rule&ruletype=security&location=shared&name=' . urlencode( 'shared pre rule 1' ) );
 eq( array( $r[1]['row']['description'] ?? null, $r[1]['model']['source'] ?? null, $r[1]['model']['action'] ?? null, $r[1]['row']['disabled'] ?? null ),
     array( 'a, b: c', array( 'shared-host2' ), 'deny', 'true' ), 'rule window: description (aliases), source, action, disabled changed' );
+// multi-edit: the same action with a wider filter (suggestions of the page: !, and, string.eq) - one line of the change list
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'any', 'filter' => '!(object is.group) and (value string.eq 1.1.1.1) and !(name eq new test 1)',
+    'actions' => 'description-delete/description-append:MULTI', 'field' => 'multi-edit' ) );
+$ch = end( $r[1]['status']['changes'] );
+$m = $bob->call( 'GET', $C . '/objects?type=address&location=any&filter=' . urlencode( '(description regex /MULTI/)' ) )[1]['rows'] ?? array();
+eq( array( status( $r ), ( $r[1]['processed'] ?? 0 ) >= 3 && ( $r[1]['processed'] ?? 0 ) === count( $m ), $ch['field'] ?? null, in_array( 'new test 1', array_column( $m, 'name' ), TRUE ) ), array( 200, TRUE, 'multi-edit', FALSE ),
+    'multi-edit: one change on all matches (not the object itself), noted as multi-edit' );
 eq( count( glob( $data . '/projects/' . $pid . '/*.xml' ) ), 1, 'no new file before save' );
 eq( status( $bob->call( 'DELETE', $P ) ), 403, 'bob (write) can not delete the project' );
 

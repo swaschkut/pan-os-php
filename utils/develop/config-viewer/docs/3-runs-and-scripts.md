@@ -27,8 +27,16 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   can not be renamed or moved.
 - **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
   window). Nothing is written until **Save as new version**; **Discard changes** drops them all.
-- **Multi-edit** (below the list): one action on all objects of the list (menu entry + location + filter) - type part
-  of the name; the suggestions show the arguments of each action.
+- **Multi-edit …** (at a change of one object in the list of unsaved changes): the same action on more objects. The
+  window suggests what they could have in common - taken from the changed object: name begins with …, same value,
+  same type, a tag, no groups / groups only, unused; for rules: zone / address / application / service has … or is
+  any, the action, pre / post rules, enabled / disabled. Tick them (they are joined with *and*), choose the location
+  (any or one), add a pan-os-php filter if needed - the **number of matches and their names** are shown at once. The
+  changed object itself is left out (it can be ticked back). **Apply** runs the action on all matches - one more line
+  of the change list (*multi-edit*). The action can be changed before; a rename of many objects needs a formula
+  (`$$current.name$$-old`).
+- **Run a pan-os-php action on all objects of the list** (below): one action on all objects of the list (menu entry +
+  location + filter) - type part of the name; the suggestions show the arguments of each action.
 - **refcount** (address, service, tag, zone, schedule, security profile (group), …): how many objects use this one.
   Click the number to see them right below the object (0: not used, nothing to click): the rules (with rule type, pre / post and the field, e.g. `source`), groups and
   profile groups, with their location. **Open ↗** shows the user in a new window - same version, its type, location

@@ -1142,7 +1142,10 @@ async function showViewer(config, preset) {
         changeList.replaceChildren(...(s.changes || []).map(c => typeof c === 'string' ? el('li', { text: c }) :
             el('li', {}, el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + (c.user || '') + ' - ' }), el('code', { text: c.type + (c.ruletype ? '/' + c.ruletype : '') }), ' ',
                 el('span', { text: (c.location || 'any') + (c.filter ? ' ' + c.filter : '') + ' → ' }), el('code', { text: c.actions || '' }),
-                c.field ? el('span', { class: 'muted', text: ' (field ' + c.field + ')' }) : null)));
+                c.field ? el('span', { class: 'muted', text: c.field === 'multi-edit' ? ' (multi-edit)' : ' (field ' + c.field + ')' }) : null,
+                // a change of one object: the same action on more objects (filter from the properties of the object)
+                canWrite && /^\(name eq .+\)$/.test(c.filter || '') && c.actions ? el('button', { type: 'button', class: 'small', text: 'Multi-edit …',
+                    title: 'the same action on more objects', onclick: () => run(() => openMultiEdit(c)) }) : null)));
     }
     async function load(force) {
         const key = query().toString();
@@ -1455,6 +1458,112 @@ async function showViewer(config, preset) {
         if (first) first.focus();
     }
 
+    // ---- multi-edit: a change of one object (a line of the change list) on more objects - filter suggestions from the
+    // properties of the object, the number of matches live, then the same action with the wider filter (one more line)
+    function filterSuggestions(type, rt, row, m, name) {
+        const f = (state.meta.types[type] || {}).filters || {};
+        const has = (field, op) => !!f[field] && (!op || f[field][op] !== undefined);
+        const out = [];
+        const add = (field, op, text, label, on) => { if (has(field, op)) out.push({ text, label, on: !!on }); };
+        const pre = (String(name).match(/^[A-Za-z]+/) || [''])[0];
+        if (pre && pre !== name) add('name', 'regex', '(name regex /^' + pre + '/)', 'name begins with "' + pre + '"');
+        if (type === 'address' || type === 'service') {
+            const grp = /group/i.test(String(row.type || ''));
+            add('object', 'is.group', grp ? '(object is.group)' : '!(object is.group)', grp ? 'groups only' : 'no groups', true);
+            if (!grp && row.value) add('value', 'string.eq', '(value string.eq ' + row.value + ')', 'same value ' + row.value);
+            if (type === 'address' && ['ip-netmask', 'ip-range', 'fqdn', 'ip-wildcard'].includes(row.type)) add('object', 'is.' + row.type, '(object is.' + row.type + ')', 'type ' + row.type);
+            if (type === 'service' && /^(tcp|udp)\//.test(row.value || '')) add('object', 'is.' + row.value.slice(0, 3), '(object is.' + row.value.slice(0, 3) + ')', row.value.slice(0, 3) + ' services');
+        }
+        if (type === 'tag' && row.color) add('color', 'eq', '(color eq ' + row.color + ')', 'color ' + row.color);
+        for (const t of (Array.isArray(m.tag) ? m.tag : [])) add('tag', 'has', '(tag has ' + t + ')', 'tag ' + t);
+        if (type !== 'rule') add('object', 'is.unused', '(object is.unused)', 'unused objects');
+        if (type === 'rule') {
+            const lists = [['from', 'from', 'source zone'], ['to', 'to', 'destination zone'], ['src', 'source', 'source'], ['dst', 'destination', 'destination'],
+                ['app', 'application', 'application'], ['service', 'service', 'service'], ['user', 'source_user', 'user']];
+            for (const [field, key, label] of lists) {
+                const v = Array.isArray(m[key]) ? m[key] : [];
+                if (v.length === 0 || v.includes('any')) add(field, 'is.any', '(' + field + ' is.any)', label + ' is any');
+                else for (const x of v.slice(0, 6)) add(field, 'has', '(' + field + ' has ' + x + ')', label + ' has ' + x);
+            }
+            if (m.action) add('action', 'is.' + m.action, '(action is.' + m.action + ')', 'action ' + m.action);
+            if (m.rulebase === 'pre' || m.rulebase === 'post') add('rule', 'is.' + m.rulebase + 'rule', '(rule is.' + m.rulebase + 'rule)', m.rulebase + ' rules');
+            add('rule', String(row.disabled) === 'true' ? 'is.disabled' : 'is.enabled', String(row.disabled) === 'true' ? '(rule is.disabled)' : '(rule is.enabled)', String(row.disabled) === 'true' ? 'disabled rules' : 'enabled rules');
+        }
+        return out;
+    }
+    async function openMultiEdit(c) {
+        const name = c.filter.slice(9, -1);
+        const q = new URLSearchParams({ type: c.type, location: c.location || '', name });
+        if (c.ruletype) q.set('ruletype', c.ruletype);
+        // the object as it is now (renamed by the change: not found - then only the generic suggestions)
+        const obj = await api('GET', base() + '/object?' + q.toString()).catch(() => ({ row: { name }, model: {} }));
+        const sugg = filterSuggestions(c.type, c.ruletype, obj.row, obj.model || {}, name);
+        const checks = sugg.map(x => { const i = el('input', { type: 'checkbox', checked: x.on }); i.addEventListener('change', () => recount()); return [x, i]; });
+        const without = el('input', { type: 'checkbox', checked: true }); without.addEventListener('change', () => recount());
+        const loc = el('select', {}, [...location.options].map(o => el('option', { value: o.value, text: o.text })));
+        if (![...loc.options].some(o => o.value === c.location)) loc.append(el('option', { value: c.location, text: c.location }));
+        loc.value = c.location; loc.addEventListener('change', () => recount());
+        const more = el('input', { placeholder: 'more pan-os-php filter (optional)', maxlength: 1500, autocomplete: 'off', spellcheck: false });
+        const moreBox = suggest(more, (text, pos) => filterSuggest((state.meta.types[c.type] || {}).filters || {}, text, pos));
+        more.addEventListener('change', () => recount());
+        const act = el('input', { value: c.actions, maxlength: 2000, autocomplete: 'off', spellcheck: false });
+        const result = el('div', { class: 'muted', text: '…' });
+        const applyBtn = el('button', { class: 'primary', type: 'button', text: 'Apply', disabled: true });
+        const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'multi-edit' });
+        const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
+        const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+        function close() { document.removeEventListener('keydown', onKey); overlay.remove(); }
+        function filterText() {
+            const parts = checks.filter(([, i]) => i.checked).map(([x]) => x.text);
+            if (without.checked) parts.push('!(name eq ' + name + ')');
+            if (more.value.trim()) parts.push('(' + more.value.trim() + ')');
+            return parts.join(' and ');
+        }
+        let seq = 0, matched = 0;
+        async function recount() {
+            const my = ++seq;
+            applyBtn.disabled = true; result.textContent = 'counting …';
+            const qq = new URLSearchParams({ type: c.type, location: loc.value || 'any', filter: filterText() });
+            if (c.ruletype) qq.set('ruletype', c.ruletype);
+            try {
+                const r = await api('GET', base() + '/objects?' + qq.toString());
+                if (my !== seq) return;
+                matched = r.total;
+                result.replaceChildren(el('strong', { text: r.total + ' object' + (r.total === 1 ? '' : 's') + ' match' }),
+                    r.total ? el('div', { class: 'chips' }, r.rows.slice(0, 60).map(x => el('span', { class: 'chip', text: (loc.value === 'any' ? x.location + ': ' : '') + x.name })),
+                        r.total > 60 ? el('span', { class: 'muted', text: '… ' + (r.total - 60) + ' more' }) : null) : null);
+                applyBtn.disabled = r.total === 0;
+            } catch (e) { if (my === seq) result.textContent = e.message; }
+        }
+        applyBtn.addEventListener('click', () => run(async () => {
+            const a = act.value.trim();
+            if (/^name-rename:/i.test(a) && !a.includes('$$')) throw new Error('renaming many objects needs a formula with $$current.name$$ (otherwise all get the same name)');
+            const f = filterText();
+            if (!confirm('Run "' + a + '" on ' + matched + ' object(s)?' + (f ? '' : '\nNo filter: all objects of this type in the location.'))) return;
+            const body = { type: c.type, location: loc.value || 'any', filter: f, actions: a, field: 'multi-edit' };
+            if (c.ruletype) body.ruletype = c.ruletype;
+            const r = await api('POST', base() + '/change', body);
+            setStatus(Object.assign({ loaded: true }, r.status));
+            state.cache.clear(); close();
+            message('multi-edit done on ' + r.processed + ' object(s) - not saved yet');
+            await load(true);
+        }));
+        box.append(el('div', { class: 'objhead' }, el('h3', { text: 'Multi-edit: ' + c.type + (c.ruletype ? ' / ' + c.ruletype : '') }),
+                el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+            el('p', { class: 'muted', text: 'The change on "' + name + '" - the same action on more objects. Choose what they have in common (taken from "' + name + '"), check the list, then apply.' }),
+            el('table', { class: 'objfields' }, el('tbody', {},
+                el('tr', {}, el('th', { text: 'Action' }), el('td', {}, act, el('div', { class: 'muted', text: 'the same on every object; a rename needs a formula ($$current.name$$-new)' }))),
+                el('tr', {}, el('th', { text: 'Location' }), el('td', {}, loc)),
+                el('tr', {}, el('th', { text: 'Objects that …' }), el('td', {}, sugg.length ? checks.map(([x, i]) => el('label', { class: 'check' }, i, ' ' + x.label + ' ', el('code', { class: 'muted', text: x.text }))) : el('span', { class: 'muted', text: 'no suggestions - use the filter below' }),
+                    el('label', { class: 'check' }, without, ' not "' + name + '" itself (already changed)'))),
+                el('tr', {}, el('th', { text: 'Filter' }), el('td', {}, moreBox)),
+                el('tr', {}, el('th', { text: 'Matches' }), el('td', {}, result)))),
+            el('div', { class: 'row' }, applyBtn, el('button', { type: 'button', text: 'Close', onclick: close })));
+        document.addEventListener('keydown', onKey);
+        document.body.append(overlay);
+        await recount();
+    }
+
     // change box
     // the action: type to find it (actions of the type that may run here, from util_action_filter.json)
     const action = el('input', { placeholder: 'type to find an action', autocomplete: 'off', spellcheck: false, onchange: () => actionChanged(), oninput: () => actionChanged() });
@@ -1473,7 +1582,7 @@ async function showViewer(config, preset) {
         actionArg.placeholder = args.map(a => a.name).join(',');
         argHelp.textContent = args.map(a => a.name + (a.help ? ': ' + a.help : '')).join(' | ');
     }
-    const changeBox = canWrite ? el('details', { class: 'card' }, el('summary', { text: 'Multi-edit: run a pan-os-php action on all objects of the list' }),
+    const changeBox = canWrite ? el('details', { class: 'card' }, el('summary', { text: 'Run a pan-os-php action on all objects of the list' }),
         el('p', { class: 'muted', text: 'The action runs on all objects that match the menu entry, location and the pan-os-php filter above (not the quick filter). It changes the loaded configuration in memory only - nothing is written until you save.' }),
         el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
             if (!action.value) throw new Error('choose an action');
