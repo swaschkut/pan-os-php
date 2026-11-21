@@ -1029,18 +1029,28 @@ async function showMergerReport(base, r, out) {
     const filterBox = el('input', { placeholder: 'filter the rows (text)', autocomplete: 'off', spellcheck: false, 'aria-label': 'filter' });
     const sections = [];
     // one table: head, rows (array of cell texts); filtered by the text box
+    // the object type of the rows (first column 'object type' of a part): one choice for all parts
+    const typeSel = el('select', { 'aria-label': 'object type' }, el('option', { value: '', text: 'all object types' }));
+    const typesSeen = new Set();
     const section = (title, head, rows) => {
         const body = el('tbody', {});
         const count = el('span', { class: 'muted' });
+        const typeCol = head[0] === 'object type' ? 0 : -1;
+        if (typeCol === 0) rows.forEach(cells => { if (cells[0]) typesSeen.add(cells[0]); });
         const draw = () => {
-            const q = filterBox.value.trim().toLowerCase();
-            const shown = rows.filter(cells => !q || cells.join(' ').toLowerCase().includes(q));
+            const q = filterBox.value.trim().toLowerCase(), t = typeSel.value;
+            const shown = rows.filter(cells => (!t || typeCol < 0 || cells[typeCol] === t) && (!q || cells.join(' ').toLowerCase().includes(q)));
             count.textContent = ' (' + shown.length + (shown.length !== rows.length ? ' of ' + rows.length : '') + ')';
             body.replaceChildren(...shown.slice(0, 2000).map(cells => el('tr', {}, cells.map(c => el('td', { class: 'wrap', text: c })))));
         };
         sections.push(draw);
-        return el('div', {}, el('h4', {}, title, count), rows.length === 0 ? el('p', { class: 'muted', text: 'none' }) : el('table', { class: 'plain mergertable' }, el('thead', {}, el('tr', {}, head.map(h => el('th', { text: h })))), body));
+        // every part can be folded: only its title (with the number of rows) stays
+        const d = el('details', { class: 'mergersection', open: true }, el('summary', {}, el('h4', {}, title, count)),
+            rows.length === 0 ? el('p', { class: 'muted', text: 'none' }) : el('table', { class: 'plain mergertable' }, el('thead', {}, el('tr', {}, head.map(h => el('th', { text: h })))), body));
+        folds.push(d);
+        return d;
     };
+    const folds = [];
     let parts = [];
     if (rep.type === 'merger-possible-report') {
         parts.push(section('Summary', ['object type', 'objects', 'same name + value', 'same name, other value', 'overlapping', 'same value, other names', 'merge ok', 'would change policy'],
@@ -1064,7 +1074,12 @@ async function showMergerReport(base, r, out) {
             (rep.skipped || []).map(m => [m.objecttype, m.key, ref(m.kept), m.notMergedWith.map(ref).join('\n'), (m.reason || []).map(x => x.trim()).join('\n')])));
     }
     filterBox.addEventListener('input', () => sections.forEach(d => d()));
-    out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }), field('Filter', filterBox), ...parts);
+    typeSel.addEventListener('change', () => sections.forEach(d => d()));
+    [...typesSeen].sort().forEach(t => typeSel.append(el('option', { value: t, text: t })));
+    out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }),
+        el('div', { class: 'row' }, typesSeen.size > 1 ? field('Object type', typeSel) : null, field('Filter', filterBox),
+            el('button', { type: 'button', class: 'small', text: 'Fold all', onclick: () => folds.forEach(d => { d.open = false; }) }),
+            el('button', { type: 'button', class: 'small', text: 'Unfold all', onclick: () => folds.forEach(d => { d.open = true; }) })), ...parts);
     sections.forEach(d => d());
     out.scrollIntoView();
 }

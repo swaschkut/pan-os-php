@@ -147,3 +147,8 @@ table.mergertable td { white-space: pre-line; vertical-align: top; }
 .checks input[type=checkbox] { width: auto; }
 .groupfield { display: flex; flex-direction: column; gap: .25em; }
 .groupfield .grouptitle { font-size: .85em; color: var(--muted, #555); }
+
+/* merger report: parts that fold to their title */
+details.mergersection { margin: .6em 0; }
+details.mergersection > summary { cursor: pointer; list-style: revert; }
+details.mergersection > summary h4 { display: inline; margin: 0; }
