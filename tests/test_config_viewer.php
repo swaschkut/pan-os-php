@@ -869,6 +869,33 @@ $r = $bob->call( 'POST', $P . '/configs', null, array( 'b.xml', $xml ) );
 eq( status( $bob->call( 'GET', $P . '/configs/' . $r[1]['cid'] . '/objects?type=tag' ) ), 200, 'bob reads in his own project' );
 $pids = array_map( function( $f ) { return (int)file_get_contents( $f ); }, glob( $data . '/projects/*/work/*.pid' ) );
 eq( count( $pids ) === 1 && posix_kill( $pids[0], 0 ), TRUE, 'one worker is running' );
+// a worker that dies (here: killed) - the service removes its files, the next request starts a new one; the web part
+// never looks at process ids (web and service may be separate containers)
+$pidFiles = glob( $data . '/projects/*/work/*.pid' );
+posix_kill( $pids[0], SIGKILL );
+for( $i = 0; $i < 50 && file_exists( $pidFiles[0] ); $i++ )
+    usleep( 100000 );
+eq( array( file_exists( $pidFiles[0] ), glob( $data . '/run/*.sock' ) ), array( FALSE, array() ), 'killed worker: the service removed its pid file and socket' );
+eq( status( $bob->call( 'GET', $P . '/configs/' . $r[1]['cid'] . '/objects?type=tag' ) ), 200, 'killed worker: the next request loads the version again' );
+for( $i = 0; $i < 50 && count( glob( $data . '/projects/*/work/*.pid' ) ) === 0; $i++ )
+    usleep( 100000 );
+$pids = array_map( function( $f ) { return (int)trim( (string)file_get_contents( $f ) ); }, glob( $data . '/projects/*/work/*.pid' ) );
+eq( count( $pids ) === 1 && $pids[0] > 1 && posix_kill( $pids[0], 0 ), TRUE, 'a new worker is running' );
+// a worker that does not end when it is closed: the web part asks the service to stop it (discard closes the worker)
+if( count( $pids ) !== 1 || $pids[0] <= 1 )
+{
+    fwrite( STDERR, "no worker process id - stop\n" . json_encode( $pids ) . "\n" . implode( "\n", $failed ) . "\n" . json_encode( glob( $data . "/projects/*/work/*" ) ) . "\n" );
+    proc_terminate( $service );
+    exit( 1 );
+}
+posix_kill( $pids[0], SIGSTOP );
+$t0 = microtime( TRUE );
+$bob->call( 'POST', $P . '/configs/' . $r[1]['cid'] . '/discard' );
+for( $i = 0; $i < 50 && posix_kill( $pids[0], 0 ); $i++ )
+    usleep( 100000 );
+eq( posix_kill( $pids[0], 0 ), FALSE, 'a worker that does not answer is stopped by the service' );
+eq( status( $bob->call( 'GET', $P . '/configs/' . $r[1]['cid'] . '/objects?type=tag' ) ), 200, 'and the version can be loaded again' );
+$pids = array_map( function( $f ) { return (int)file_get_contents( $f ); }, glob( $data . '/projects/*/work/*.pid' ) );
 proc_terminate( $service );
 for( $i = 0; $i < 50 && posix_kill( $pids[0], 0 ); $i++ )
     usleep( 100000 );

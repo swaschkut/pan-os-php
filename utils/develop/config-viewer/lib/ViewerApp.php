@@ -1578,10 +1578,27 @@ class ViewerApp
             'autosave' => $work . '/' . $sid . '.autosave.xml' );
     }
 
+    /**
+     * is the worker of a session alive and ready ? By its files only: the web part may run in another container than
+     * the service and its workers (no shared process ids). The worker writes its pid file at start and removes it with
+     * its socket when it ends; the service removes both when it has reaped the worker (also after a crash or a kill)
+     * and removes left-overs when it starts.
+     */
     private static function workerAlive( array $files ): bool
     {
-        $pid = (int)@file_get_contents( $files['pid'] );
-        return $pid > 1 && function_exists( 'posix_kill' ) && @posix_kill( $pid, 0 ) && file_exists( $files['sock'] );
+        return trim( (string)@file_get_contents( $files['pid'] ) ) !== '' && file_exists( $files['sock'] );
+    }
+
+    /** ask the service to stop a worker (only the service knows its process) */
+    private function serviceStop( array $files ): void
+    {
+        $service = @stream_socket_client( 'unix://' . $this->dataDir . '/service.sock', $errno, $errstr, 5 );
+        if( !$service )
+            return;
+        stream_set_timeout( $service, 10 );
+        fwrite( $service, json_encode( array( 'cmd' => 'stop', 'pid' => $files['pid'] ) ) . "\n" );
+        stream_get_contents( $service );
+        fclose( $service );
     }
 
     /** one request to the worker: one JSON line, answer until the worker closes the connection */
@@ -1589,7 +1606,12 @@ class ViewerApp
     {
         $conn = @stream_socket_client( 'unix://' . $files['sock'], $errno, $errstr, 5 );
         if( !$conn )
+        {
+            // nobody listens: the worker is gone (e.g. the service was restarted) - the next request starts a new one
+            @unlink( $files['sock'] );
+            @unlink( $files['pid'] );
             throw new ViewerException( 'the loaded configuration is not reachable - open the version again', 503 );
+        }
         stream_set_timeout( $conn, $timeout );
         fwrite( $conn, json_encode( $cmd ) . "\n" );
         $answer = stream_get_contents( $conn );
@@ -1638,13 +1660,15 @@ class ViewerApp
 
         $this->q( 'INSERT INTO sessions (sid, project_id, config_id, created) VALUES (?,?,?,?)', array( $sid, $project['id'], $config['id'], time() ) );
         $deadline = microtime( TRUE ) + max( 10, (int)( getenv( 'PANOSPHP_VIEWER_LOAD_TIMEOUT' ) ?: 600 ) );
+        $started = FALSE;
         while( microtime( TRUE ) < $deadline )
         {
             if( file_exists( $files['sock'] ) )
                 return $files;
-            // the worker ended while loading (a pid file without a process id yet is not an ended worker)
-            if( file_exists( $files['pid'] ) && trim( (string)@file_get_contents( $files['pid'] ) ) !== ''
-                && !self::workerAlive( array( 'pid' => $files['pid'], 'sock' => $files['pid'] ) ) )
+            // the worker ended while loading: its pid file was there and is gone (worker or service removed it)
+            if( trim( (string)@file_get_contents( $files['pid'] ) ) !== '' )
+                $started = TRUE;
+            elseif( $started )
                 break;
             usleep( 100000 );
         }
@@ -1679,11 +1703,11 @@ class ViewerApp
         if( self::workerAlive( $files ) )
         {
             try { $this->workerCall( $files, array( 'cmd' => 'close' ), 20 ); } catch( Exception $e ) { }
-            $pid = (int)@file_get_contents( $files['pid'] );
-            for( $i = 0; $i < 30 && $pid > 1 && @posix_kill( $pid, 0 ); $i++ )
+            // the worker removes its pid file when it ends; if it does not end, the service stops it
+            for( $i = 0; $i < 30 && file_exists( $files['pid'] ); $i++ )
                 usleep( 100000 );
-            if( $pid > 1 && @posix_kill( $pid, 0 ) )
-                @posix_kill( $pid, 9 );
+            if( file_exists( $files['pid'] ) )
+                $this->serviceStop( $files );
         }
         foreach( $files as $f )
             @unlink( $f );

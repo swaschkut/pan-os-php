@@ -116,7 +116,7 @@ Browser: `http://127.0.0.1:8080/` → log in → change the password under Accou
 * Other image / tag: `VIEWER_IMAGE=swaschkut/pan-os-php:develop`. Own build from the repository root: `docker build -t swaschkut/pan-os-php:alpha -f docker/Dockerfile .`
 * Own first user / port: `VIEWER_ADMIN_USER=sven VIEWER_ADMIN_PASSWORD='ten+ characters' VIEWER_PORT=9000 docker compose ... up -d` (the password is used at the first start only).
 * The page answers on this computer only (`127.0.0.1`), over HTTP, with the built-in web server of PHP. That fits one person on a notebook; for several people see HTTPS below.
-* Only `jobs` gets the Docker socket; `service` and `jobs` have no network. `service` shares the process ids of `web` (`pid: "service:web"`): the web part checks by process id whether a worker is alive - without it every version fails with "the configuration could not be loaded".
+* Only `jobs` gets the Docker socket; `service` and `jobs` have no network. The web part checks workers by their files only (pid file, socket), never by process id - `web` and `service` are separate containers; the service removes the files of a worker that has ended.
 * The containers start as root only to hand over the data volume and (jobs) the group of the Docker socket; the PHP processes run as the user `ubuntu` (`docker/start.sh`).
 
 ## HTTPS (several users, server)

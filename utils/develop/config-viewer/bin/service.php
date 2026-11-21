@@ -66,7 +66,12 @@ if( !$server )
     exit( 1 );
 }
 $servicePid = getmypid();
+// process id => files of the worker. Process ids stay in this process: the web part (maybe another container) only
+// sees the files - a worker is alive while its pid file exists; the service removes it when the worker has ended.
 $workers = array();
+// no worker can be alive when the service starts (they are its children): files of workers of an earlier run go
+foreach( array_merge( glob( $dataDir . '/projects/*/work/*.pid' ) ?: array(), glob( $dataDir . '/run/*.sock' ) ?: array() ) as $stale )
+    @unlink( $stale );
 register_shutdown_function( function() use ( $sockFile, $servicePid, &$workers ) {
     if( getmypid() !== $servicePid )
         return;
@@ -76,7 +81,19 @@ register_shutdown_function( function() use ( $sockFile, $servicePid, &$workers )
     if( file_exists( $sockFile ) )
         unlink( $sockFile );
 } );
+/** ended workers (also killed ones): pid file and socket go at once, so the web part sees the worker is gone */
+function serviceReap( array &$workers ): void
+{
+    while( ( $done = pcntl_waitpid( -1, $st, WNOHANG ) ) > 0 )
+    {
+        if( is_array( $workers[$done] ?? null ) )
+            foreach( array( 'pid', 'sock' ) as $k )
+                @unlink( $workers[$done][$k] );
+        unset( $workers[$done] );
+    }
+}
 pcntl_async_signals( TRUE );
+pcntl_signal( SIGCHLD, function() use ( &$workers ) { serviceReap( $workers ); } );
 foreach( array( SIGTERM, SIGINT ) as $sig )
     pcntl_signal( $sig, function() { exit( 0 ); } );
 fwrite( STDERR, "config-viewer service: running, data directory " . $dataDir . "\n" );
@@ -119,8 +136,7 @@ function serviceCheck( array $cmd, string $dataDir ): ?array
 
 while( TRUE )
 {
-    while( ( $done = pcntl_waitpid( -1, $st, WNOHANG ) ) > 0 )
-        unset( $workers[$done] );
+    serviceReap( $workers );
 
     $read = array( $server );
     $write = null;
@@ -132,6 +148,20 @@ while( TRUE )
         continue;
     stream_set_timeout( $conn, 5 );
     $cmd = json_decode( (string)fgets( $conn, 65536 ), TRUE );
+    // stop a worker that does not end by itself (the web part has no process ids): by its pid file
+    if( is_array( $cmd ) && ( $cmd['cmd'] ?? '' ) === 'stop' && is_string( $cmd['pid'] ?? null ) )
+    {
+        $hit = FALSE;
+        foreach( $workers as $wpid => $w )
+            if( is_array( $w ) && $w['pid'] === $cmd['pid'] )
+            {
+                posix_kill( $wpid, SIGKILL );
+                $hit = TRUE;
+            }
+        @fwrite( $conn, json_encode( array( 'ok' => $hit ) ) );
+        @fclose( $conn );
+        continue;
+    }
     $worker = is_array( $cmd ) && ( $cmd['cmd'] ?? '' ) === 'start' ? serviceCheck( $cmd, $dataDir ) : null;
     if( $worker === null )
     {
@@ -149,6 +179,7 @@ while( TRUE )
         fclose( $conn );
         pcntl_signal( SIGTERM, SIG_DFL );
         pcntl_signal( SIGINT, SIG_DFL );
+        pcntl_signal( SIGCHLD, SIG_DFL );
         $work = dirname( $worker['pid'] );
         putenv( 'HOME=' . $work );
         putenv( 'TMPDIR=' . $work );
@@ -158,7 +189,7 @@ while( TRUE )
         exit( 0 );
     }
     if( $child > 0 )
-        $workers[$child] = TRUE;
+        $workers[$child] = $worker;
     @fwrite( $conn, json_encode( array( 'ok' => $child > 0 ) ) );
     @fclose( $conn );
 }

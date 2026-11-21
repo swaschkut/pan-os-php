@@ -47,9 +47,6 @@ services:
     command: [ "service" ]
     depends_on: [ web ]
     network_mode: "none"
-    # the web part checks whether a worker (started by the service) is still alive by its process id:
-    # both must see the same processes
-    pid: "service:web"
     environment:
       PANOSPHP_VIEWER_DATA: "/data"
       PANOSPHP_VIEWER_PLUGINS: "/plugins"
