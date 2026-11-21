@@ -402,8 +402,7 @@ class EDLStore extends ObjStore
                     {
                         //Todo: check if object value is same; if same to not add ref
                         if( $location != "shared" )
-                            foreach( $o->refrules as $ref )
-                                $tmp_o->addReference( $ref );
+                            ObjStore::adoptNestedReferences( $this, $tmp_o, $o );
                     }
                 }
             }

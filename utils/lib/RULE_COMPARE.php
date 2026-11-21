@@ -37,10 +37,11 @@ class RULE_COMPARE extends UTIL
         $this->supportedArguments['file1'] = array('niceName' => 'File1', 'shortHelp' => 'original PAN-OS XML configuration file');
         $this->supportedArguments['file2'] = array('niceName' => 'File2', 'shortHelp' => 'manipulate/optimised former orginal PAN-OS XML configuration file');
 
+        $this->supportedArguments['resolvemode'] = array('niceName' => 'ResolveMode', 'shortHelp' => 'firewall (default): every rule is resolved for the firewalls of every device group / vsys it reaches, honouring same-name objects and ancestor-objects-take-precedence. rulelocation: previous behaviour, each rule resolved once at its own location', 'argDesc' => 'firewall|rulelocation');
         $this->supportedArguments['keepjsonfile1'] = array('niceName' => 'KeepJsonFile1', 'shortHelp' => 'do not delete JsonFile1 at end of script run');
         $this->supportedArguments['reusejsonfile1'] = array('niceName' => 'ReuseJsonFile1', 'shortHelp' => 'try to reuse an existing JsonFile1 which was not delete by a previous script run');
 
-        $this->usageMsg = PH::boldText('USAGE: ') . "php " . basename(__FILE__) . " file1=original.xml file2=change_config.xml [keepJSONfile1] [reuseJSONfile1] [generateRuleHTMLFile]";
+        $this->usageMsg = PH::boldText('USAGE: ') . "php " . basename(__FILE__) . " file1=original.xml file2=change_config.xml [resolveMode=firewall|rulelocation] [location=dg1,dg2] [keepJSONfile1] [reuseJSONfile1] [generateRuleHTMLFile]";
 
 
 
@@ -93,34 +94,55 @@ class RULE_COMPARE extends UTIL
         if( !file_exists($file2_name) )
             derr("cannot read configuration file '{$file2_name}''", null, FALSE);
 
-        ############################################################
-        if( !$reusejsonfile1 )
+        $resolveMode = 'firewall';
+        if( isset(PH::$args['resolvemode']) )
+            $resolveMode = strtolower(PH::$args['resolvemode']);
+        if( $resolveMode != 'firewall' && $resolveMode != 'rulelocation' )
+            derr("resolveMode='".$resolveMode."' not supported, use: firewall|rulelocation", null, FALSE);
+
+        $locationFilter = null;
+        if( isset(PH::$args['location']) && strtolower(PH::$args['location']) != 'any' )
+            $locationFilter = explode(',', PH::$args['location']);
+
+        if( $resolveMode == 'firewall' )
         {
-            $this->createJson( $file1_name, $json_file1_name);
+            PH::print_stdout( " - resolveMode=firewall: rules are resolved for the firewalls of every device group / vsys they reach" );
+            $file1 = null;
+            $file2 = null;
+            $array1 = $this->buildFirewallView( $file1_name, $locationFilter );
+            $array2 = $this->buildFirewallView( $file2_name, $locationFilter );
         }
         else
-            PH::print_stdout( "JSON file1 will be reuse" );
+        {
+            ############################################################
+            if( !$reusejsonfile1 )
+            {
+                $this->createJson( $file1_name, $json_file1_name);
+            }
+            else
+                PH::print_stdout( "JSON file1 will be reuse" );
 
 
-        ############################################################
-        $this->createJson( $file2_name, $json_file2_name);
+            ############################################################
+            $this->createJson( $file2_name, $json_file2_name);
 
-        ############################################################
-        #$file1 = file_get_contents($file1_name);
-        #$file2 = file_get_contents($file2_name);
+            ############################################################
+            #$file1 = file_get_contents($file1_name);
+            #$file2 = file_get_contents($file2_name);
 
-        if( !file_exists($json_file1_name) || filesize($json_file1_name) === 0 )
-            derr("cannot read JSON filename1 '{$json_file1_name}''", null, FALSE);
+            if( !file_exists($json_file1_name) || filesize($json_file1_name) === 0 )
+                derr("cannot read JSON filename1 '{$json_file1_name}''", null, FALSE);
 
-        PH::print_stdout("compare JSON filename1: " . $json_file1_name);
-        PH::print_stdout("with    JSON filename2: " . $json_file2_name);
+            PH::print_stdout("compare JSON filename1: " . $json_file1_name);
+            PH::print_stdout("with    JSON filename2: " . $json_file2_name);
 
 
-        $file1 = file_get_contents($json_file1_name);
-        $file2 = file_get_contents($json_file2_name);
+            $file1 = file_get_contents($json_file1_name);
+            $file2 = file_get_contents($json_file2_name);
 
-        $array1 = json_decode($file1, TRUE);
-        $array2 = json_decode($file2, TRUE);
+            $array1 = json_decode($file1, TRUE);
+            $array2 = json_decode($file2, TRUE);
+        }
 
 
         if( isset($array1['PANConf']) )
@@ -298,6 +320,95 @@ class RULE_COMPARE extends UTIL
         unset($file2);
         unset($array1);
         unset($array2);
+    }
+
+    /**
+     * Loads a configuration and resolves every security rule for the firewalls of every device group
+     * (Panorama) or vsys (firewall) it reaches: Shared + ancestor device groups + the device group itself.
+     * Names are resolved by RuleCallContext::AddressResolveSummaryNEW() / ServiceResolveSummary() in that
+     * location, i.e. with same-name objects and 'ancestor-objects-take-precedence' honoured.
+     * Result has the structure of the JSON written by the 'rulelocation' mode, so the comparison is shared;
+     * 'sub' is the device group / vsys whose firewalls are looked at, the rule key is "<rule location>/<pre|post>/<rule name>".
+     */
+    function buildFirewallView( $fileName, $locationFilter = null )
+    {
+        $xmlDoc = new DOMDocument();
+        if( !$xmlDoc->load($fileName, XML_PARSE_BIG_LINES) )
+            derr("error while reading xml config file '{$fileName}'", null, FALSE);
+
+        $vsysNodes = DH::findXPath('/config/devices/entry/vsys', $xmlDoc);
+        $isFirewall = ( $vsysNodes !== FALSE && $vsysNodes->length > 0 );
+
+        $pan = $isFirewall ? new PANConf() : new PanoramaConf();
+        PH::print_stdout( " - loading '{$fileName}' (" . get_class($pan) . ")" );
+        $pan->load_from_domxml($xmlDoc);
+
+        $confType = get_class($pan);
+        $result = array( $confType => array() );
+
+        $locations = $isFirewall ? $pan->getVirtualSystems() : $pan->getDeviceGroups();
+        foreach( $locations as $location )
+        {
+            if( $locationFilter !== null && !in_array($location->name(), $locationFilter, TRUE) )
+                continue;
+
+            // rule locations reaching these firewalls, top down
+            $ruleLevels = array();
+            if( $isFirewall )
+                $ruleLevels[] = $location;
+            else
+            {
+                $chain = array();
+                for( $dg = $location; $dg !== null; $dg = $dg->parentDeviceGroup )
+                    $chain[] = $dg;
+                $ruleLevels[] = $pan;
+                foreach( array_reverse($chain) as $dg )
+                    $ruleLevels[] = $dg;
+            }
+
+            $objects = array();
+            foreach( $ruleLevels as $level )
+            {
+                if( !isset($level->securityRules) || $level->securityRules === null )
+                    continue;
+
+                $levelName = ( $level instanceof PanoramaConf ) ? 'shared' : $level->name();
+                foreach( $level->securityRules->rules() as $rule )
+                {
+                    if( $isFirewall )
+                        $key = $rule->name();
+                    else
+                        $key = $levelName . '/' . ($rule->isPostRule() ? 'post' : 'pre') . '/' . $rule->name();
+
+                    $unresolved = array();
+                    $entry = array();
+                    $entry['src_resolved_sum']['resolved'] = RuleCallContext::AddressResolveSummaryNEW($rule, 'source', $unresolved, $location);
+                    $entry['dst_resolved_sum']['resolved'] = RuleCallContext::AddressResolveSummaryNEW($rule, 'destination', $unresolved, $location);
+                    $entry['srv_resolved_sum'] = RuleCallContext::ServiceResolveSummary($rule, $location);
+
+                    foreach( array('from', 'to') as $zoneField )
+                    {
+                        $zones = array();
+                        if( isset($rule->$zoneField) && $rule->$zoneField !== null )
+                        {
+                            if( $rule->$zoneField->isAny() )
+                                $zones[] = 'any';
+                            else
+                                foreach( $rule->$zoneField->getAll() as $zone )
+                                    $zones[] = $zone->name();
+                        }
+                        sort($zones);
+                        $entry[$zoneField] = $zones;
+                    }
+
+                    $objects[$key] = $entry;
+                }
+            }
+
+            $result[$confType][] = array( 'sub' => array( 'name' => $location->name(), 'object' => $objects ) );
+        }
+
+        return $result;
     }
 
     function array_diff_recursive($arr1, $arr2)

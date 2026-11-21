@@ -57,18 +57,35 @@ class PROFILEUTIL extends UTIL
         }
     }
 
+    /**
+     * profiletype => store property on PANConf / PanoramaConf / VirtualSystem / DeviceGroup / Container ...
+     */
+    static public $profileTypeStores = array(
+        'decryption' => 'DecryptionProfileStore',
+        'hip-objects' => 'HipObjectsProfileStore',
+        'hip-profiles' => 'HipProfilesProfileStore',
+    );
+
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $supportedSP = array('any','url-filtering','virus','vulnerability','spyware','file-blocking','data-filtering','wildfire-analysis','custom-url-category',
-            'dns-security','saas-security',
-            'predefined-url','predefined-url-filtering',
-            'predefined-virus','predefined-spyware',
-            'predefined-file-blocking',
-            'predefined-vulnerability',
-            'predefined-wildfire-analysis'
-        );
-        $this->supportedArguments['securityprofiletype'] = array('niceName' => 'ProfileType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: securityprofiletype=any  securityprofiletype=url-filtering, custom-url-category', 'argDesc' => 'any|url-filtering|virus|vulnerability|spyware|file-blocking|data-filtering|wildfire-analysis|custom-url-category|dns-security|saas-security|predefined-url|predefined-url-filtering|');
+        $this->supportedArguments['profiletype'] = array('niceName' => 'ProfileType', 'shortHelp' => 'specify which type(s) of profile to process (default is "any"). ie: profiletype=any  profiletype=decryption,hip-profiles', 'argDesc' => 'any|' . implode('|', array_keys(self::$profileTypeStores)));
+    }
+
+    /**
+     * add all stores of $sub matching the requested profiletype(s) to objectsToProcess
+     */
+    private function addProfileStores( $sub )
+    {
+        $any = array_search('any', $this->ProfileTypes) !== FALSE;
+        foreach( self::$profileTypeStores as $type => $storeProp )
+        {
+            if( !$any && array_search($type, $this->ProfileTypes) === FALSE )
+                continue;
+            if( !property_exists($sub, $storeProp) || $sub->$storeProp === null )
+                continue;
+            $this->objectsToProcess[] = array('store' => $sub->$storeProp, 'rules' => $sub->$storeProp->securityProfiles());
+        }
     }
 
     public function location_filter_object()
@@ -84,43 +101,8 @@ class PROFILEUTIL extends UTIL
                 #if( $location == 'shared' || $location == 'any' || $location == 'all' )
                 if( $location == 'shared' || $location == 'any' )
                 {
-                    /*
-                    //Todo: is there a need to display all predefined Profiles???
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-url', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->urlStore, 'rules' => $this->pan->urlStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-url-filtering', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->UrlFilteringPredefinedStore, 'rules' => $this->pan->UrlFilteringPredefinedStore->securityProfiles())
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-virus', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->AntiVirusPredefinedStore, 'rules' => $this->pan->AntiVirusPredefinedStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-vulnerability', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityPredefinedStore, 'rules' => $this->pan->VulnerabilityPredefinedStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-file-blocking', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->FileBlockingPredefinedStore, 'rules' => $this->pan->FileBlockingPredefinedStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-spyware', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywarePredefinedStore, 'rules' => $this->pan->AntiSpywarePredefinedStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('predefined-wildfire-analysis', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->WildfirePredefinedStore, 'rules' => $this->pan->WildfirePredefinedStore->securityProfiles());
-                    */
 
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('url-filtering', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->URLProfileStore, 'rules' => $this->pan->URLProfileStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('virus', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->AntiVirusProfileStore, 'rules' => $this->pan->AntiVirusProfileStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('vulnerability', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityProfileStore, 'rules' => $this->pan->VulnerabilityProfileStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('file-blocking', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->FileBlockingProfileStore, 'rules' => $this->pan->FileBlockingProfileStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('spyware', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywareProfileStore, 'rules' => $this->pan->AntiSpywareProfileStore->securityProfiles());
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('wildfire-analysis', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->WildfireProfileStore, 'rules' => $this->pan->WildfireProfileStore->securityProfiles());
-
-
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('data-filtering', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->DataFilteringProfileStore, 'rules' => $this->pan->DataFilteringProfileStore->securityProfiles());
-
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('custom-url-category', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->customURLProfileStore, 'rules' => $this->pan->customURLProfileStore->securityProfiles());
+                    $this->addProfileStores( $this->pan );
 
                     $locationFound = TRUE;
                 }
@@ -133,26 +115,8 @@ class PROFILEUTIL extends UTIL
                         if( ($location == 'any' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
                         {
                             //Todo: Validation needed,cmpare to rule no pre/post rule but check if something else needed
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('url-filtering', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->URLProfileStore, 'rules' => $sub->URLProfileStore->securityProfiles());
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('virus', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->AntiVirusProfileStore, 'rules' => $sub->AntiVirusProfileStore->securityProfiles());
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('vulnerability', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->VulnerabilityProfileStore, 'rules' => $sub->VulnerabilityProfileStore->securityProfiles());
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('file-blocking', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->FileBlockingProfileStore, 'rules' => $sub->FileBlockingProfileStore->securityProfiles());
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('spyware', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->AntiSpywareProfileStore, 'rules' => $sub->AntiSpywareProfileStore->securityProfiles());
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('wildfire-analysis', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->WildfireProfileStore, 'rules' => $sub->WildfireProfileStore->securityProfiles());
 
-
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('data-filtering', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->DataFilteringProfileStore, 'rules' => $sub->DataFilteringProfileStore->securityProfiles());
-
-
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('custom-url-category', $this->ProfileTypes) !== FALSE )
-                                $this->objectsToProcess[] = array('store' => $sub->customURLProfileStore, 'rules' => $sub->customURLProfileStore->securityProfiles());
+                            $this->addProfileStores( $sub );
 
                             $locationFound = TRUE;
                         }
@@ -162,42 +126,9 @@ class PROFILEUTIL extends UTIL
                         #if( ($location == 'any' || $location == 'all' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
                         if( ($location == 'any' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
                         {
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('url-filtering', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->URLProfileStore, 'rules' => $sub->URLProfileStore->securityProfiles());
-                            }
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('virus', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->AntiVirusProfileStore, 'rules' => $sub->AntiVirusProfileStore->securityProfiles());
-                            }
 
+                            $this->addProfileStores( $sub );
 
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('vulnerability', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->VulnerabilityProfileStore, 'rules' => $sub->VulnerabilityProfileStore->securityProfiles());
-                            }
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('file-blocking', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->FileBlockingProfileStore, 'rules' => $sub->FileBlockingProfileStore->securityProfiles());
-                            }
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('spyware', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->AntiSpywareProfileStore, 'rules' => $sub->AntiSpywareProfileStore->securityProfiles());
-                            }
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('wildfire-analysis', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->WildfireProfileStore, 'rules' => $sub->WildfireProfileStore->securityProfiles());
-                            }
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('data-filtering', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->DataFilteringProfileStore, 'rules' => $sub->DataFilteringProfileStore->securityProfiles());
-                            }
-
-
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('custom-url-category', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->customURLProfileStore, 'rules' => $sub->customURLProfileStore->securityProfiles());
-                            }
                             $locationFound = TRUE;
                         }
                     }
@@ -210,9 +141,7 @@ class PROFILEUTIL extends UTIL
                 #if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any' || $location == 'all') )
                 if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any' ) )
                 {
-                    if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                        $this->objectsToProcess[] = array('store' => $this->pan->DecryptionProfileStore, 'rules' => $this->pan->DecryptionProfileStore->securityProfiles());
-
+                    $this->addProfileStores( $this->pan );
 
                     $locationFound = TRUE;
                 }
@@ -238,28 +167,7 @@ class PROFILEUTIL extends UTIL
                 {
                     if( $location == 'any' || $location == $sub->name() )
                     {
-                        if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                        {
-                            $this->objectsToProcess[] = array('store' => $sub->DecryptionProfileStore, 'rules' => $sub->DecryptionProfileStore->securityProfiles());
-                        }
-
-                        //Panorama
-                        if( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
-                        {
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->DecryptionProfileStore, 'rules' => $sub->DecryptionProfileStore->securityProfiles());
-                            }
-                        }
-                        else
-                        {
-                            if( array_search('any', $this->ProfileTypes) !== FALSE || array_search('decryption', $this->ProfileTypes) !== FALSE )
-                            {
-                                $this->objectsToProcess[] = array('store' => $sub->DecryptionProfileStore, 'rules' => $sub->DecryptionProfileStore->securityProfiles());
-                            }
-                        }
-
-
+                        $this->addProfileStores( $sub );
 
                         $locationFound = TRUE;
                     }
@@ -278,7 +186,7 @@ class PROFILEUTIL extends UTIL
         //
         // Determine rule types
         //
-        $supportedProfileTypes = array('any', 'decryption');
+        $supportedProfileTypes = array_merge( array('any', 'all'), array_keys(self::$profileTypeStores) );
         
         if( !isset(PH::$args['profiletype']) )
         {
@@ -346,9 +254,6 @@ class PROFILEUTIL extends UTIL
             }
 
             PH::$JSON_TMP['sub']['store'] = get_class( $store );
-
-
-
 
             foreach( $rules as $rule )
             {

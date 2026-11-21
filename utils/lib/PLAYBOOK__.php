@@ -58,7 +58,6 @@ class PLAYBOOK__
 
 
         $in_exclude = array(
-            #'ironskillet-update',
             "maxmind-update",
             "util_get-action-filter",
             "protocoll-number-download",
@@ -71,7 +70,6 @@ class PLAYBOOK__
             'config-size',
             "xml-op-json",
             "bpa-generator",
-            #"ironskillet-update",
             "maxmind-update",
             "util_get-action-filter",
             "protocoll-number-download",

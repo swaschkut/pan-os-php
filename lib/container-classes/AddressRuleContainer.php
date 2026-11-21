@@ -734,6 +734,25 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
+     * Members as the firewalls of $location see them: every member is resolved again by name in
+     * $location (same-name copies and ancestor-objects-take-precedence honoured). The container is NOT changed.
+     */
+    public function membersForLocation( $location = null ): array
+    {
+        if( $location === null )
+            return $this->o;
+
+        $ret = array();
+        foreach( $this->o as $key => $member )
+        {
+            $resolved = PH::resolveNameForFirewalls('addressStore', $member->name(), $location);
+            $ret[$key] = ( $resolved !== null ) ? $resolved : $member;
+        }
+
+        return $ret;
+    }
+
+    /**
      * @param null $RuleReferenceLocation
      * @return IP4Map
      * @throws Exception
@@ -745,13 +764,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
         $mapObject = new IP4Map();
 
-        if( $RuleReferenceLocation !== null )
-        {
-            foreach( $this->o as $key => $member )
-                $this->o[$key] = $RuleReferenceLocation->addressStore->find($member->name());
-        }
-
-        foreach( $this->o as $member )
+        foreach( $this->membersForLocation($RuleReferenceLocation) as $member )
         {
             if( $member == null || get_class($member) === "EDL" )
                 continue;
@@ -803,13 +816,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
         $mapObject = new IP6Map();
 
-        if( $RuleReferenceLocation !== null )
-        {
-            foreach( $this->o as $key => $member )
-                $this->o[$key] = $RuleReferenceLocation->addressStore->find($member->name());
-        }
-
-        foreach( $this->o as $member )
+        foreach( $this->membersForLocation($RuleReferenceLocation) as $member )
         {
             if( $member == null || get_class($member) === "EDL" )
                 continue;

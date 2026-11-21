@@ -39,6 +39,16 @@ class RQuery
 
     static public $defaultFilters = array();
 
+    /**
+     * Registers one filter definition for several object types (see filters/filters-Common.php).
+     * @param string[] $types  object types, e.g. 'address', 'service', 'tag'
+     */
+    static public function registerFilter( array $types, string $field, string $operator, array $definition )
+    {
+        foreach( $types as $type )
+            self::$defaultFilters[$type][$field]['operators'][$operator] = $definition;
+    }
+
     static public $commonFilters = array();
 
     static public $mathOps = array('>' => '>', '<' => '<', '=' => '==', '==' => '==', '!=' => '!=', '<=' => '<=', '>=' => '>=');
@@ -114,6 +124,8 @@ class RQuery
             $this->contextObject = new DHCPRQueryContext($this);
         elseif( $this->objectType == 'certificate' )
             $this->contextObject = new CertificateRQueryContext($this);
+        elseif( $this->objectType == 'certificate-profile' )
+            $this->contextObject = new CertificateProfileRQueryContext($this);
         elseif( $this->objectType == 'static-route' )
             $this->contextObject = new StaticRouteRQueryContext($this);
         elseif( $this->objectType == 'threat-rule' )
@@ -143,6 +155,8 @@ class RQuery
             $this->contextObject = new InterfaceManagementProfileRQueryContext($this);
         elseif( $this->objectType == 'log-profile' )
             $this->contextObject = new LogProfileRQueryContext($this);
+        elseif( $this->objectType == 'profile' )
+            $this->contextObject = new ProfileRQueryContext($this);
 
         else
             derr("unsupported object type '$objectType'");
@@ -728,6 +742,7 @@ class RQuery
 }
 
 
+require_once 'filters/filters-Common.php';
 require_once 'filters/filters-Rule.php';
 require_once 'filters/filters-Address.php';
 require_once 'filters/filters-Service.php';
@@ -745,10 +760,12 @@ require_once 'filters/filters-EDL.php';
 require_once 'filters/filters-Device.php';
 require_once 'filters/filters-DHCP.php';
 require_once 'filters/filters-Certificate.php';
+require_once 'filters/filters-CertificateProfile.php';
 require_once 'filters/filters-Static-Route.php';
 require_once 'filters/filters-ThreatRule.php';
 require_once 'filters/filters-DNSRule.php';
 require_once 'filters/filters-GPGateway.php';
+require_once 'filters/filters-GPGatewaytunnel.php';
 require_once 'filters/filters-GPPortal.php';
 
 require_once 'filters/filters-IKEgateway.php';

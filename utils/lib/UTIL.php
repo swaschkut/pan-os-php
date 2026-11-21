@@ -30,6 +30,7 @@ require_once(dirname(__FILE__)."/NETWORKUTIL.php");
 require_once(dirname(__FILE__)."/PROFILEUTIL.php");
 
 require_once(dirname(__FILE__)."/MERGER.php");
+require_once(dirname(__FILE__)."/MERGERPOSSIBLEREPORT.php");
 require_once(dirname(__FILE__)."/RULEMERGER.php");
 
 
@@ -73,7 +74,6 @@ require_once dirname(__FILE__)."/MAXMIND__.php";
 require_once dirname(__FILE__)."/PLAYBOOK__.php";
 require_once dirname(__FILE__)."/PLAYBOOK_VALIDATION__.php";
 require_once dirname(__FILE__)."/UTIL_GET_ACTION_FILTER.php";
-#require_once dirname(__FILE__)."/IRONSKILLET_UPDATE__.php";
 
 require_once(dirname(__FILE__)."/PROTOCOLL_NUMBERS__.php");
 
@@ -360,8 +360,10 @@ class UTIL
                 $tmp_utilType = "service";
             elseif( $tmp_utilType == "tag-merger" )
                 $tmp_utilType = "tag";
-            elseif( $tmp_utilType == "custom-url-category-merger" )
+            elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                 $tmp_utilType = "securityprofile";
+            elseif( $tmp_utilType == "securityprofilegroup-merger" )
+                $tmp_utilType = "securityprofilegroup";
             elseif( $tmp_utilType == "rule-merger" )
                 $tmp_utilType = "rule";
 
@@ -455,6 +457,8 @@ class UTIL
             $tmp_array = &CertificateCallContext::$supportedActions;
         elseif( $this->utilType == 'ssl-tls-service-profile' )
             $tmp_array = &SSL_TLSServiceProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'certificate-profile' )
+            $tmp_array = &CertificateProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'static-route' )
             $tmp_array = &StaticRouteCallContext::$supportedActions;
 
@@ -601,6 +605,8 @@ class UTIL
                 CertificateCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'ssl-tls-service-profile' )
                 SSL_TLSServiceProfileCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'certificate-profile' )
+                CertificateProfileCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'log-profile' )
                 LogProfileCallContext::prepareSupportedActions();
 
@@ -620,8 +626,10 @@ class UTIL
                     $tmp_utilType = "service";
                 elseif( $tmp_utilType == "tag-merger" )
                     $tmp_utilType = "tag";
-                elseif( $tmp_utilType == "custom-url-category-merger" )
+                elseif( $tmp_utilType == "custom-url-category-merger" || $tmp_utilType == "securityprofile-merger" )
                     $tmp_utilType = "securityprofile";
+                elseif( $tmp_utilType == "securityprofilegroup-merger" )
+                    $tmp_utilType = "securityprofilegroup";
                 elseif( $tmp_utilType == "rule-merger" )
                     $tmp_utilType = "rule";
                 else
@@ -1428,6 +1436,8 @@ class UTIL
                 $context = new CertificateCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ssl-tls-service-profile' )
                 $context = new SSL_TLSServiceProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'certificate-profile' )
+                $context = new CertificateProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'static-route' )
                 $context = new StaticRouteCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-gateway' )

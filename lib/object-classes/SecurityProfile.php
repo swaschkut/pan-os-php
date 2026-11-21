@@ -119,7 +119,11 @@ class SecurityProfile
         if( !$typeFound )
         {
             if( !PH::$ignoreInvalidAddressObjects )
+            {
+                PH::$ignoreInvalidAddressObjects = TRUE;
                 derr('Object type not found or not supported for '.$node->nodeName.' object ' . $this->name . '. Please check your configuration file and fix it or invoke with argument "shadow-ignoreInvalidAddressObjects"', $xml);
+            }
+
 
             mwarning('Object type not found or not supported for '.$node->nodeName.' object ' . $this->name . ' but you manually did bypass this error', $xml);
             return FALSE;

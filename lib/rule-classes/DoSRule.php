@@ -24,6 +24,7 @@ class DoSRule extends RuleWithUserID
 {
     use NegatableRule;
     use RuleWithSchedule;
+    use RuleDirectReferences;
 
     protected $schedule = null;
 

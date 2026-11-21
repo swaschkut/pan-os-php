@@ -713,46 +713,46 @@ trait StatCollectorTrait
 
 
     public $stats_ruleTypes = [
-            'security rules'            => ['prop' => 'securityRules',           'stat' => 'gpreSecRules'],
-            'nat rules'                 => ['prop' => 'natRules',                'stat' => 'gpreNatRules'],
-            'qos rules'                 => ['prop' => 'qosRules',                'stat' => 'gpreQoSRules'],
-            'pbf rules'                 => ['prop' => 'pbfRules',                'stat' => 'gprePbfRules'],
-            'decryption rules'          => ['prop' => 'decryptionRules',         'stat' => 'gpreDecryptRules'],
-            'app-override rules'        => ['prop' => 'appOverrideRules',        'stat' => 'gpreAppOverrideRules'],
-            'capt-portal rules'         => ['prop' => 'captivePortalRules',      'stat' => 'gpreCPRules'],
-            'authentication rules'      => ['prop' => 'authenticationRules',     'stat' => 'gpreAuthRules'],
-            'dos rules'                 => ['prop' => 'dosRules',                'stat' => 'gpreDoSRules'],
-            'tunnel-inspection rules'   => ['prop' => 'tunnelInspectionRules',   'stat' => 'gpreTunnelInspectionRules'],
-            'default-security rules'    => ['prop' => 'defaultSecurityRules',    'stat' => 'gpreDefaultSecurityRules'],
-            'network-packet-broker rules' => ['prop' => 'networkPacketBrokerRules', 'stat' => 'gpreNetworkPacketBrokerRules'],
-            'sdwan rules'               => ['prop' => 'sdWanRules',               'stat' => 'gpreSDWanRules']
-        ];
+        'security rules'            => ['prop' => 'securityRules',           'stat' => 'gpreSecRules'],
+        'nat rules'                 => ['prop' => 'natRules',                'stat' => 'gpreNatRules'],
+        'qos rules'                 => ['prop' => 'qosRules',                'stat' => 'gpreQoSRules'],
+        'pbf rules'                 => ['prop' => 'pbfRules',                'stat' => 'gprePbfRules'],
+        'decryption rules'          => ['prop' => 'decryptionRules',         'stat' => 'gpreDecryptRules'],
+        'app-override rules'        => ['prop' => 'appOverrideRules',        'stat' => 'gpreAppOverrideRules'],
+        'capt-portal rules'         => ['prop' => 'captivePortalRules',      'stat' => 'gpreCPRules'],
+        'authentication rules'      => ['prop' => 'authenticationRules',     'stat' => 'gpreAuthRules'],
+        'dos rules'                 => ['prop' => 'dosRules',                'stat' => 'gpreDoSRules'],
+        'tunnel-inspection rules'   => ['prop' => 'tunnelInspectionRules',   'stat' => 'gpreTunnelInspectionRules'],
+        'default-security rules'    => ['prop' => 'defaultSecurityRules',    'stat' => 'gpreDefaultSecurityRules'],
+        'network-packet-broker rules' => ['prop' => 'networkPacketBrokerRules', 'stat' => 'gpreNetworkPacketBrokerRules'],
+        'sdwan rules'               => ['prop' => 'sdWanRules',               'stat' => 'gpreSDWanRules']
+    ];
     public $stats_profileMaps = [
-            'tag objects' => ['store' => 'tagStore', 'sum_total' => 'gTagCount', 'sum_unused' => 'gTagUnusedCount'],
-            'securityProfileGroup objects' => ['store' => 'securityProfileGroupStore'],
-            'Anti-Spyware objects' => ['store' => 'AntiSpywareProfileStore'],
-            'Vulnerability objects' => ['store' => 'VulnerabilityProfileStore'],
-            'URL objects' => ['store' => 'URLProfileStore'],
-            'custom URL objects' => ['store' => 'customURLProfileStore'],
-            'File-Blocking objects' => ['store' => 'FileBlockingProfileStore'],
-            'Data-Filtering objects' => ['store' => 'DataFilteringProfileStore'],
-            'Decryption objects' => ['store' => 'DecryptionProfileStore'],
-            'HipObject objects' => ['store' => 'HipObjectsProfileStore'],
-            'HipProfile objects' => ['store' => 'HipProfilesProfileStore'],
-            'GTP objects' => ['store' => 'GTPProfileStore'],
-            'SCEP objects' => ['store' => 'SCEPProfileStore'],
-            'PacketBroker objects' => ['store' => 'PacketBrokerProfileStore'],
-            'SDWanErrorCorrection objects' => ['store' => 'SDWanErrorCorrectionProfileStore'],
-            'SDWanPathQuality objects' => ['store' => 'SDWanPathQualityProfileStore'],
-            'SDWanSaasQuality objects' => ['store' => 'SDWanSaasQualityProfileStore'],
-            'SDWanTrafficDistribution objects' => ['store' => 'SDWanTrafficDistributionProfileStore'],
-            'DataObjects objects' => ['store' => 'DataObjectsProfileStore'],
-            'LogProfile objects' => ['store' => 'LogProfileStore', 'sum_total' => 'gLogProfileCount'],
-            'certificate objects' => ['store' => 'certificateStore', 'sum_total' => 'gCertificatCount'],
-            'SSL_TLSServiceProfile objects' => ['store' => 'SSL_TLSServiceProfileStore', 'sum_total' => 'gSSL_TLSServiceProfileCount']
-        ];
+        'tag objects' => ['store' => 'tagStore', 'sum_total' => 'gTagCount', 'sum_unused' => 'gTagUnusedCount'],
+        'securityProfileGroup objects' => ['store' => 'securityProfileGroupStore'],
+        'Anti-Spyware objects' => ['store' => 'AntiSpywareProfileStore'],
+        'Vulnerability objects' => ['store' => 'VulnerabilityProfileStore'],
+        'URL objects' => ['store' => 'URLProfileStore'],
+        'custom URL objects' => ['store' => 'customURLProfileStore'],
+        'File-Blocking objects' => ['store' => 'FileBlockingProfileStore'],
+        'Data-Filtering objects' => ['store' => 'DataFilteringProfileStore'],
+        'Decryption objects' => ['store' => 'DecryptionProfileStore'],
+        'HipObject objects' => ['store' => 'HipObjectsProfileStore'],
+        'HipProfile objects' => ['store' => 'HipProfilesProfileStore'],
+        'GTP objects' => ['store' => 'GTPProfileStore'],
+        'SCEP objects' => ['store' => 'SCEPProfileStore'],
+        'PacketBroker objects' => ['store' => 'PacketBrokerProfileStore'],
+        'SDWanErrorCorrection objects' => ['store' => 'SDWanErrorCorrectionProfileStore'],
+        'SDWanPathQuality objects' => ['store' => 'SDWanPathQualityProfileStore'],
+        'SDWanSaasQuality objects' => ['store' => 'SDWanSaasQualityProfileStore'],
+        'SDWanTrafficDistribution objects' => ['store' => 'SDWanTrafficDistributionProfileStore'],
+        'DataObjects objects' => ['store' => 'DataObjectsProfileStore'],
+        'LogProfile objects' => ['store' => 'LogProfileStore', 'sum_total' => 'gLogProfileCount'],
+        'certificate objects' => ['store' => 'certificateStore', 'sum_total' => 'gCertificatCount'],
+        'SSL_TLSServiceProfile objects' => ['store' => 'SSL_TLSServiceProfileStore', 'sum_total' => 'gSSL_TLSServiceProfileCount']
+    ];
 
-   public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false, $is_SCM = false): void
+    public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false, $is_SCM = false): void
     {
         $stdoutarray = array();
 
@@ -1094,17 +1094,25 @@ trait StatCollectorTrait
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
         $stdoutarray['wf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['wf visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.rules is.visibility" );
         $stdoutarray['wf visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf visibility rules na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.mica-engine is.visibility" );
         $stdoutarray['wf visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf visibility mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['wf best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.rules is.best-practice" );
         $stdoutarray['wf best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf best-practice rules na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.mica-engine is.best-practice" );
         $stdoutarray['wf best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf best-practice mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.adoption" );
         $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1125,20 +1133,32 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
         $stdoutarray['av visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['av visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.actions is.visibility" );
         $stdoutarray['av visibility actions'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['av visibility actions na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.mica-engine is.visibility" );
         $stdoutarray['av visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['av visibility mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
         $stdoutarray['av best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['av best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.actions is.best-practice" );
         $stdoutarray['av best-practice actions'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['av best-practice actions na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.mica-engine is.best-practice" );
         $stdoutarray['av best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['av best-practice mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.adoption" );
         $stdoutarray['av adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1146,20 +1166,32 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
         $stdoutarray['as visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['as visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
         $stdoutarray['as visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['as visibility rules na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.visibility" );
         $stdoutarray['as visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['as visibility mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['as best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.best-practice" );
         $stdoutarray['as best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['as best-practice rules na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.best-practice" );
         $stdoutarray['as best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['as best-practice mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.adoption" );
         $stdoutarray['as adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1167,20 +1199,32 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
         $stdoutarray['vp visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['vp visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.visibility" );
         $stdoutarray['vp visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['vp visibility rules na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.visibility" );
         $stdoutarray['vp visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['vp visibility mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['vp best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.best-practice" );
         $stdoutarray['vp best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['vp best-practice rules na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.best-practice" );
         $stdoutarray['vp best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['vp best-practice mica-engine na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.adoption" );
         $stdoutarray['vp adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1188,8 +1232,12 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.visibility" );
         $stdoutarray['fb visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['fb visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.best-practice" );
         $stdoutarray['fb best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['fb best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.adoption" );
         $stdoutarray['fb adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1197,14 +1245,20 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.visibility" );
         $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['data visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.adoption" );
         $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.visibility" );
         $stdoutarray['url-site-access visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['url-site-access visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.best-practice" );
         $stdoutarray['url-site-access best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['url-site-access best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.adoption" );
         $stdoutarray['url-site-access adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1212,8 +1266,12 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.visibility" );
         $stdoutarray['url-credential visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['url-credential visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.best-practice" );
         $stdoutarray['url-credential best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['url-credential best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.adoption" );
         $stdoutarray['url-credential adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1221,8 +1279,12 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.mica-engine is.visibility" );
         $stdoutarray['url-mica-engine visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['url-mica-engine visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.mica-engine is.best-practice" );
         $stdoutarray['url-mica-engine best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['url-mica-engine best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.mica-engine is.adoption" );
         $stdoutarray['url-mica-engine adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1230,8 +1292,12 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
         $stdoutarray['dns-list visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['dns-list visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.best-practice" );
         $stdoutarray['dns-list best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['dns-list best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.adoption" );
         $stdoutarray['dns-list adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1239,8 +1305,12 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.visibility" );
         $stdoutarray['dns-security visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $stdoutarray['dns-security visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.best-practice" );
         $stdoutarray['dns-security best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $stdoutarray['dns-security best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.adoption" );
         $stdoutarray['dns-security adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1250,9 +1320,12 @@ trait StatCollectorTrait
         {
             $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "avwf is.visibility" );
             $stdoutarray['avwf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+            $stdoutarray['avwf visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
             $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "avwf is.best-practice" );
             $stdoutarray['avwf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+            $stdoutarray['avwf best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
             $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "avwf is.adoption" );
             $stdoutarray['avwf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1260,9 +1333,12 @@ trait StatCollectorTrait
             /////////////
             $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dnssec is.visibility" );
             $stdoutarray['dnssec visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+            $stdoutarray['dnssec visibility na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
             $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dnssec is.best-practice" );
             $stdoutarray['dnssec best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+            $stdoutarray['dnssec best-practice na'] = $this->bp_na_count( $sub_ruleStore, $filter_array );
 
             $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dnssec is.adoption" );
             $stdoutarray['dnssec adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1278,6 +1354,187 @@ trait StatCollectorTrait
 
 
         return $stdoutarray;
+    }
+
+    /**
+     * Rules of a BP / visibility count whose profile is N/A for the check (the BP JSON lists nothing to check):
+     * the same query with '<field> is.visibility.na' / 'is.best-practice.na'. They are left out of the statistics.
+     */
+    public function bp_na_count( $sub_ruleStore, $filter_array ): int
+    {
+        if( !isset( $filter_array['subquery1'] ) || !preg_match( '/ is\.(visibility|best-practice)$/', $filter_array['subquery1'] ) )
+            return 0;
+        $filter_array['subquery1'] .= ".na";
+        return count( $sub_ruleStore->rules( $filter_array ) );
+    }
+
+    /**
+     * When a visibility / best-practice check is N/A for the whole scope, independent of the profiles in it.
+     * Then rules without a profile of the type must not turn the figure into 0%: the figure is N/A.
+     * Profile-dependent N/A (a single profile's check returns null) stays per rule, see bp_na_count().
+     *
+     * Every '<check> visibility' / '<check> best-practice' key of bp_calculation() needs an entry here
+     * (bp_calculation() warns about a missing one). Per check, one of:
+     *  'json'         => list of BP JSON paths; '{X}' is 'visibility' or 'bp'. N/A when every path is empty.
+     *                    The paths are those the profile checks test before they return null.
+     *                    A path can be array( 'path' => array( ... ), 'feature' => <key> ): where the PAN-OS
+     *                    version lacks that setting the path counts as empty.
+     *  'cloud-inline' => <BP JSON type>: N/A when <type> -> cloud-inline -> {X} lists no inline-policy-action
+     *                    (SecurityProfile2::cloud_inline_listed(), the test of cloud_inline_analysis_*()).
+     *  'any'          => list of other checks: the combined check is N/A when each of them is N/A (PH::bpCombine()).
+     * and optional:
+     *  'feature'      => key of SecurityProfile2::$bpFeatureMinVersion: where the PAN-OS version lacks the setting,
+     *                    N/A for visibility and best practice alike. The versions are kept there only, so the
+     *                    profile checks (filters, exports) and these figures agree.
+     */
+    public static function bp_check_definitions(): array
+    {
+        return array(
+            'wf rules' => array( 'json' => array( array( 'wildfire', 'rule', '{X}' ) ) ),
+            'wf mica-engine' => array( 'cloud-inline' => 'wildfire', 'feature' => 'wildfire-mica' ),
+            'wf' => array( 'any' => array( 'wf rules', 'wf mica-engine' ) ),
+
+            'av actions' => array( 'json' => array(
+                array( 'virus', 'rule', '{X}', 'action' ),
+                array( 'virus', 'rule', '{X}', 'wildfire-action' ),
+                array( 'path' => array( 'virus', 'rule', '{X}', 'mlav-action' ), 'feature' => 'mlav-action' ) ) ),
+            'av mica-engine' => array( 'cloud-inline' => 'virus', 'feature' => 'virus-mica' ),
+            'av' => array( 'any' => array( 'av actions', 'av mica-engine' ) ),
+
+            'as rules' => array( 'json' => array( array( 'spyware', 'rule', '{X}' ) ) ),
+            'as mica-engine' => array( 'cloud-inline' => 'spyware', 'feature' => 'spyware-mica' ),
+            'as' => array( 'any' => array( 'as rules', 'as mica-engine', 'dns-list', 'dns-security' ) ),
+
+            'vp rules' => array( 'json' => array( array( 'vulnerability', 'rule', '{X}' ) ) ),
+            'vp mica-engine' => array( 'cloud-inline' => 'vulnerability', 'feature' => 'vulnerability-mica' ),
+            'vp' => array( 'any' => array( 'vp rules', 'vp mica-engine' ) ),
+
+            'fb' => array( 'json' => array( array( 'file-blocking', 'rule', '{X}' ) ) ),
+            // Data Filtering has no check in any BP JSON file: visibility falls back to the adoption figure
+            // (see 'fallback-set' in bp_check_applies()); "data-filtering": { "visibility": false } switches it off
+            'data' => array( 'json' => array( array( 'data-filtering', '{X}' ) ), 'fallback-set' => array( 'visibility' ) ),
+
+            'url-site-access' => array( 'json' => array( array( 'url', 'site_access', '{X}' ) ) ),
+            'url-credential' => array( 'json' => array(
+                array( 'url', 'user_credential_submission', '{X}', 'category' ),
+                array( 'url', 'user_credential_submission', '{X}', 'tab', 'mode' ) ) ),
+            'url-mica-engine' => array( 'json' => array( array( 'url', 'mica-engine', '{X}' ) ), 'feature' => 'url-mica' ),
+
+            'dns-list' => array( 'json' => array( array( 'spyware', 'lists', '{X}', 'action' ) ) ),
+            'dns-security' => array( 'json' => array(
+                array( 'path' => array( 'spyware', 'dns', '{X}', 'action' ), 'feature' => 'spyware-dns' ),
+                array( 'path' => array( 'spyware', 'advanced-dns', '{X}', 'action' ), 'feature' => 'spyware-advanced-dns' ) ) ),
+
+            // SCM only
+            'avwf' => array( 'any' => array( 'av actions', 'av mica-engine', 'wf rules', 'wf mica-engine' ) ),
+            'dnssec' => array( 'any' => array( 'dns-list', 'dns-security' ) ),
+        );
+    }
+
+    /**
+     * FALSE when the visibility / best-practice check '$statKey' (e.g. 'url-mica-engine visibility') is N/A for
+     * the whole scope: the BP JSON lists nothing to check for it, or the PAN-OS version has no such setting.
+     * See bp_check_definitions(). Adoption and keys without a definition are not affected (TRUE).
+     */
+    public function bp_check_is_set( string $statKey ): bool
+    {
+        $parsed = self::bp_check_parse( $statKey );
+        if( $parsed === null )
+            return TRUE;
+
+        $version = ( isset( $this->version ) && is_numeric( $this->version ) ) ? intval( $this->version ) : 0;
+
+        return self::bp_check_applies( $parsed[0], $parsed[1], $version );
+    }
+
+    /**
+     * 'wf visibility mica-engine' -> array( 'wf mica-engine', 'visibility' ); 'url-mica-engine best-practice' ->
+     * array( 'url-mica-engine', 'bp' ). null: not a visibility / best-practice key (e.g. adoption).
+     */
+    public static function bp_check_parse( string $statKey ): ?array
+    {
+        if( !preg_match( '/^(\S+) (visibility|best-practice)(?: (.+))?$/', $statKey, $m ) )
+            return null;
+        $check = $m[1] . ( isset( $m[3] ) && $m[3] !== '' ? ' ' . $m[3] : '' );
+        return array( $check, $m[2] == 'visibility' ? 'visibility' : 'bp' );
+    }
+
+    /**
+     * @param string $check   key of bp_check_definitions(), e.g. 'wf mica-engine'
+     * @param string $section 'visibility' or 'bp'
+     * @param int $version    PAN-OS version of the scope (e.g. 112); 0: unknown, not tested
+     */
+    public static function bp_check_applies( string $check, string $section, int $version = 0, int $depth = 0 ): bool
+    {
+        $definitions = self::bp_check_definitions();
+        if( !isset( $definitions[$check] ) || $depth > 3 )
+            return TRUE;
+        $def = $definitions[$check];
+
+        if( isset( $def['feature'] ) && !SecurityProfile2::bpFeatureSupportedInVersion( $def['feature'], $version ) )
+            return FALSE;
+
+        if( isset( $def['any'] ) )
+        {
+            foreach( $def['any'] as $sub )
+                if( self::bp_check_applies( $sub, $section, $version, $depth + 1 ) )
+                    return TRUE;
+            return FALSE;
+        }
+
+        // without a BP JSON file nothing is customised: every check applies, as before
+        if( empty( PH::$shadow_bp_jsonfilename ) )
+            return TRUE;
+        $json = PH::getBPjsonFile();
+        if( !is_array( $json ) )
+            return TRUE;
+
+        if( isset( $def['cloud-inline'] ) )
+        {
+            $node = $json[$def['cloud-inline']]['cloud-inline'][$section] ?? null;
+            return is_array( $node ) && SecurityProfile2::cloud_inline_listed( $node );
+        }
+
+        if( isset( $def['json'] ) )
+        {
+            foreach( $def['json'] as $path )
+            {
+                if( isset( $path['path'] ) )
+                {
+                    if( isset( $path['feature'] ) && !SecurityProfile2::bpFeatureSupportedInVersion( $path['feature'], $version ) )
+                        continue;
+                    $path = $path['path'];
+                }
+                $node = $json;
+                foreach( $path as $key )
+                {
+                    if( $key === '{X}' )
+                        $key = $section;
+                    if( !is_array( $node ) || !isset( $node[$key] ) )
+                    {
+                        $node = null;
+                        break;
+                    }
+                    $node = $node[$key];
+                }
+                if( !empty( $node ) )
+                    return TRUE;
+            }
+
+            // nothing to check listed in the BP JSON: for the sections in 'fallback-set' the figure is still shown
+            // (adoption figure, as without a BP JSON file); only an explicit FALSE in the BP JSON turns it into N/A
+            if( isset( $def['fallback-set'] ) && in_array( $section, $def['fallback-set'] ) )
+            {
+                $explicit = null;
+                $first = $def['json'][0];
+                if( isset( $first[0] ) && isset( $json[$first[0]] ) && is_array( $json[$first[0]] ) )
+                    $explicit = $json[$first[0]][$section] ?? null;
+                return $explicit !== FALSE;
+            }
+            return FALSE;
+        }
+
+        return TRUE;
     }
 
     public function bp_calculation( &$stdoutarray, $is_SCM = false ): void
@@ -1386,9 +1643,33 @@ trait StatCollectorTrait
                 continue;
             }
 
-            $stdoutarray[$entry[0].' calc'] = $stdoutarray[$entry[0]]."/".$stdoutarray[$entry[1]];
-            if( $stdoutarray[$entry[1]] !== 0 )
-                $stdoutarray[$entry[0].' percentage'] = floor(( $stdoutarray[$entry[0]] / $stdoutarray[$entry[1]] ) * 100 );
+            // a new visibility / best-practice figure without a scope-wide N/A definition would read 0% where it is N/A
+            $parsed = self::bp_check_parse( $entry[0] );
+            if( $parsed !== null && !isset( self::bp_check_definitions()[$parsed[0]] ) )
+                mwarning( "BP statistics: '".$entry[0]."' has no entry in bp_check_definitions(), scope-wide N/A is not detected", null, FALSE );
+
+            // N/A for the whole scope (the BP JSON lists nothing to check, or the PAN-OS version has no such setting), never 0%
+            if( !$this->bp_check_is_set( $entry[0] ) )
+            {
+                $stdoutarray[$entry[0].' calc'] = "N/A";
+                $stdoutarray[$entry[0].' percentage'] = "N/A";
+                continue;
+            }
+
+            // rules whose profile is N/A for this check (nothing listed in the BP JSON) are not counted
+            $na = intval( $stdoutarray[$entry[0].' na'] ?? 0 );
+            $base = intval( $stdoutarray[$entry[1]] ) - $na;
+            if( $na > 0 && $base <= 0 )
+            {
+                // every rule N/A: no statement
+                $stdoutarray[$entry[0].' calc'] = "N/A";
+                $stdoutarray[$entry[0].' percentage'] = "N/A";
+                continue;
+            }
+
+            $stdoutarray[$entry[0].' calc'] = $stdoutarray[$entry[0]]."/".$base;
+            if( $base !== 0 )
+                $stdoutarray[$entry[0].' percentage'] = floor(( $stdoutarray[$entry[0]] / $base ) * 100 );
             else
                 $stdoutarray[$entry[0].' percentage'] = 0;
         }
@@ -1607,6 +1888,9 @@ trait StatCollectorTrait
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 
+        // a check N/A for every rule keeps its slice, with "N/A" as value (as the 'calc' / 'percentage' keys);
+        // only 'included-in-bpa' false removes a slice (PH::validateIncludedInBPA)
+
         return $percentageArray;
     }
 
@@ -1689,6 +1973,11 @@ trait StatCollectorTrait
             if( strpos($value['value'], "---") !== False )
             {
                 $string = $value['value'];
+            }
+            elseif( !is_numeric( $value['value'] ) )
+            {
+                // "N/A": no bar
+                $string = "";
             }
             else
             {

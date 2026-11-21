@@ -60,10 +60,19 @@ class URLProfile extends SecurityProfile2
     public $credential_mode = null;
     public $credential_log = null;
 
+    /** 'yes' / 'no' as PAN-OS applies it: from the XML, or the PAN-OS default (then also written into the XML); null: PAN-OS < 10.2 */
     public $local_inline_cat = null;
     public $cloud_inline_cat = null;
+    /** PAN-OS defaults of the inline categorization of a URL profile, applied where the XML has no element */
+    const LOCAL_INLINE_CAT_DEFAULT = 'no';
+    const CLOUD_INLINE_CAT_DEFAULT = 'no';
+    /** TRUE: the value above is the PAN-OS default, the original XML had no such element */
+    public $local_inline_cat_isDefault = false;
+    public $cloud_inline_cat_isDefault = false;
 
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
+
+    public $block_array_defined = array();
 
     /**
      * you should not need this one for normal use
@@ -91,6 +100,9 @@ class URLProfile extends SecurityProfile2
         }
 
         $this->name = $name;
+
+        //is it best to define different array per version???
+        $this->block_array_defined = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
     }
 
     /**
@@ -357,24 +369,31 @@ class URLProfile extends SecurityProfile2
                 $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
+        // an absent element takes its PAN-OS default (local: no, cloud: no), written into the XML so that the
+        // analysis (visibility / best practice) and the output show the value PAN-OS applies
+        $this->local_inline_cat_isDefault = false;
+        $this->cloud_inline_cat_isDefault = false;
+
         $tmp_local_inline_cat = DH::findFirstElement("local-inline-cat", $xml);
         if( $tmp_local_inline_cat != null )
             $this->local_inline_cat = $tmp_local_inline_cat->textContent;
-        elseif( $this->owner->owner->version >= 102  )
+        elseif( $this->bpFeatureSupported( 'url-mica' ) )
         {
             $tmp_local_inline_cat = DH::findFirstElementOrCreate("local-inline-cat", $xml);
-            $tmp_local_inline_cat->textContent = "no";
-            $this->local_inline_cat = $tmp_local_inline_cat->textContent;
+            $tmp_local_inline_cat->textContent = self::LOCAL_INLINE_CAT_DEFAULT;
+            $this->local_inline_cat = self::LOCAL_INLINE_CAT_DEFAULT;
+            $this->local_inline_cat_isDefault = true;
         }
 
         $tmp_cloud_inline_cat = DH::findFirstElement("cloud-inline-cat", $xml);
         if( $tmp_cloud_inline_cat != null )
             $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
-        elseif( $this->owner->owner->version >= 102  )
+        elseif( $this->bpFeatureSupported( 'url-mica' ) )
         {
             $tmp_cloud_inline_cat = DH::findFirstElementOrCreate("cloud-inline-cat", $xml);
-            $tmp_cloud_inline_cat->textContent = "no";
-            $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
+            $tmp_cloud_inline_cat->textContent = self::CLOUD_INLINE_CAT_DEFAULT;
+            $this->cloud_inline_cat = self::CLOUD_INLINE_CAT_DEFAULT;
+            $this->cloud_inline_cat_isDefault = true;
         }
 
         return TRUE;
@@ -413,9 +432,9 @@ class URLProfile extends SecurityProfile2
             PH::print_stdout(  "       - log-severity: " . $this->credential_log );
 
         if( $this->local_inline_cat !== null )
-            PH::print_stdout(  "       - local-inline-cat: " . $this->local_inline_cat );
+            PH::print_stdout(  "       - local-inline-cat: " . $this->local_inline_cat . ( $this->local_inline_cat_isDefault ? " (PAN-OS default)" : "" ) );
         if( $this->cloud_inline_cat !== null )
-            PH::print_stdout(  "       - cloud-inline-cat: " . $this->cloud_inline_cat );
+            PH::print_stdout(  "       - cloud-inline-cat: " . $this->cloud_inline_cat . ( $this->cloud_inline_cat_isDefault ? " (PAN-OS default)" : "" ) );
     }
 
     public function getAllow()
@@ -760,10 +779,10 @@ class URLProfile extends SecurityProfile2
     public function url_siteaccess_set_alertonly()
     {
         $allow_xmlnode = DH::findFirstElement("allow", $this->xmlroot);
-        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
         if( $allow_xmlnode !== False )
         {
-            foreach( $allow_xmlnode->childNodes as $allow_node )
+            // copy of the node list: removing from the live childNodes while iterating skipped every second member
+            foreach( iterator_to_array( $allow_xmlnode->childNodes ) as $allow_node )
             {
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
@@ -782,6 +801,7 @@ class URLProfile extends SecurityProfile2
                     continue;
 
                 $clone_node = $allow_node->cloneNode(true);
+                $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
                 $alert_xmlnode->appendChild($clone_node);
                 $allow_xmlnode->removeChild($allow_node);
 
@@ -809,11 +829,18 @@ class URLProfile extends SecurityProfile2
 
             $this->alert[] = $allow;
 
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-            $alert_xmlnode->appendChild($xmlElement);
+            $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
+            if( DH::findFirstElementByValue( 'member', $allow, $alert_xmlnode ) === null )
+            {
+                $xmlString = '<member>'.$allow.'</member>';
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $alert_xmlnode->appendChild($xmlElement);
+            }
         }
         $this->allow = array();
+
+        // no empty <alert/> / <allow/>: outputformatset would write an incomplete "set ... alert"
+        $this->url_removeEmptyActionNodes();
     }
 
     public function url_credential_set_alertonly()
@@ -822,7 +849,8 @@ class URLProfile extends SecurityProfile2
         $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
         if( $allow_credential_xmlnode !== False )
         {
-            foreach( $allow_credential_xmlnode->childNodes as $allow_node )
+            // copy of the node list: removing from the live childNodes while iterating skipped every second member
+            foreach( iterator_to_array( $allow_credential_xmlnode->childNodes ) as $allow_node )
             {
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
@@ -870,9 +898,47 @@ class URLProfile extends SecurityProfile2
             $xmlString = '<member>'.$allow.'</member>';
             $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
             $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-            $alert_credential_xmlnode->appendChild($xmlElement);
+            if( DH::findFirstElementByValue( 'member', $allow, $alert_credential_xmlnode ) === null )
+                $alert_credential_xmlnode->appendChild($xmlElement);
         }
         $this->allow_credential = array();
+
+        $this->url_removeEmptyActionNodes();
+    }
+
+    /**
+     * remove action lists without a member (site access and credential enforcement: allow, alert, block, continue,
+     * override) - an empty element gives an incomplete "set ... profiles url-filtering <name> alert" with
+     * outputformatset and is no valid configuration
+     * @return bool TRUE when something was removed
+     */
+    public function url_removeEmptyActionNodes(): bool
+    {
+        $removed = FALSE;
+        $parents = array( $this->xmlroot );
+        $credential = DH::findFirstElement( 'credential-enforcement', $this->xmlroot );
+        if( $credential !== FALSE )
+            $parents[] = $credential;
+        foreach( $parents as $parent )
+            foreach( $this->tmp_url_prof_array as $action )
+            {
+                $node = DH::findFirstElement( $action, $parent );
+                if( $node === FALSE )
+                    continue;
+                $hasMember = FALSE;
+                foreach( $node->childNodes as $c )
+                    if( $c->nodeType == XML_ELEMENT_NODE )
+                    {
+                        $hasMember = TRUE;
+                        break;
+                    }
+                if( !$hasMember )
+                {
+                    $parent->removeChild( $node );
+                    $removed = TRUE;
+                }
+            }
+        return $removed;
     }
 
     public function url_inline_cat_set( $bool = true )
@@ -881,13 +947,18 @@ class URLProfile extends SecurityProfile2
         if($bool)
             $bool_value = "yes";
 
-        if( $this->owner->owner->version >= 102 )
+        if( $this->bpFeatureSupported( 'url-mica' ) )
         {
+            // both elements are in the XML since loading (value or PAN-OS default)
             $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $this->xmlroot);
             $xmlnode->textContent = $bool_value;
+            $this->local_inline_cat = $bool_value;
+            $this->local_inline_cat_isDefault = false;
 
             $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $this->xmlroot);
             $xmlnode->textContent = $bool_value;
+            $this->cloud_inline_cat = $bool_value;
+            $this->cloud_inline_cat_isDefault = false;
         }
     }
 
@@ -998,8 +1069,9 @@ class URLProfile extends SecurityProfile2
             {
                 if( isset($details[$secprof_type][$array_type]['bp']))
                     $checkArray = $details[$secprof_type][$array_type]['bp'];
-                else
-                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
+                //URL mica-engine has no BP setting so not warning if customised
+                #else
+                    #mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
@@ -1211,9 +1283,12 @@ class URLProfile extends SecurityProfile2
         return TRUE;
     }
 
+    /** @return bool|null null: url -> site_access -> bp not listed in the JSON, not checked (N/A) */
     public function url_siteaccess_best_practice()
     {
         $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return null;
         $bestpractise = $this->check_siteaccess_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1222,9 +1297,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> site_access -> visibility not listed in the JSON, not checked (N/A) */
     public function url_siteaccess_visibility()
     {
         $check_array = $this->url_siteaccess_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array ) || !is_string( $check_array ) )
+            return null;
         $bestpractise = $this->check_siteaccess_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1234,9 +1312,12 @@ class URLProfile extends SecurityProfile2
     }
 
 
+    /** @return bool|null null: url -> user_credential_submission -> bp -> category not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_best_practice()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array['category'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1245,9 +1326,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> user_credential_submission -> bp -> tab -> mode not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_best_practice_tab()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array['tab']['mode'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_bp_tab_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1256,9 +1340,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> user_credential_submission -> visibility -> category not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_visibility()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array['category'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1267,9 +1354,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> user_credential_submission -> visibility -> tab -> mode not listed in the JSON, not checked (N/A) */
     public function url_usercredentialsubmission_visibility_tab()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array['tab']['mode'] ) )
+            return null;
         $bestpractise = $this->check_usercredentialsubmission_visibility_tab_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1278,9 +1368,12 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    /** @return bool|null null: url -> mica-engine -> visibility (PAN-OS >= 10.2) not listed in the JSON, not checked (N/A) */
     public function url_mica_engine_visibility()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "visibility", "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) || !$this->bpFeatureSupported( 'url-mica' ) )
+            return null;
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1288,9 +1381,12 @@ class URLProfile extends SecurityProfile2
         else
             return TRUE;
     }
+    /** @return bool|null null: url -> mica-engine -> bp (PAN-OS >= 10.2) not listed in the JSON, not checked (N/A) */
     public function url_mica_engine_best_practice()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "bp", "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) || !$this->bpFeatureSupported( 'url-mica' ) )
+            return null;
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -1301,26 +1397,12 @@ class URLProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->url_siteaccess_best_practice()
-            && $this->url_usercredentialsubmission_best_practice()
-            && $this->url_usercredentialsubmission_best_practice_tab()
-            && $this->url_mica_engine_best_practice()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_siteaccess_best_practice(), $this->url_usercredentialsubmission_best_practice(), $this->url_usercredentialsubmission_best_practice_tab(), $this->url_mica_engine_best_practice() ) );
     }
 
     public function is_visibility()
     {
-        if( $this->url_siteaccess_visibility()
-            && $this->url_usercredentialsubmission_visibility()
-            && $this->url_usercredentialsubmission_visibility_tab()
-            && $this->url_mica_engine_visibility()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_siteaccess_visibility(), $this->url_usercredentialsubmission_visibility(), $this->url_usercredentialsubmission_visibility_tab(), $this->url_mica_engine_visibility() ) );
     }
 
     public function is_adoption()
@@ -1331,20 +1413,16 @@ class URLProfile extends SecurityProfile2
             return false;
     }
 
+    /** @return bool|null null: not listed in the BP JSON (N/A) */
     public function site_access_is_best_practice()
     {
-        if( $this->url_siteaccess_best_practice() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_siteaccess_best_practice();
     }
 
+    /** @return bool|null null: not listed in the visibility JSON (N/A) */
     public function site_access_is_visibility()
     {
-        if( $this->url_siteaccess_visibility() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_siteaccess_visibility();
     }
 
     public function site_access_is_adoption()
@@ -1352,24 +1430,16 @@ class URLProfile extends SecurityProfile2
         return TRUE;
     }
 
+    /** @return bool|null null: neither category nor tab listed in the BP JSON (N/A) */
     public function credential_is_best_practice()
     {
-        if( $this->url_usercredentialsubmission_best_practice()
-            && $this->url_usercredentialsubmission_best_practice_tab()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_usercredentialsubmission_best_practice(), $this->url_usercredentialsubmission_best_practice_tab() ) );
     }
 
+    /** @return bool|null null: neither category nor tab listed in the visibility JSON (N/A) */
     public function credential_is_visibility()
     {
-        if( $this->url_usercredentialsubmission_visibility()
-            && $this->url_usercredentialsubmission_visibility_tab()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->url_usercredentialsubmission_visibility(), $this->url_usercredentialsubmission_visibility_tab() ) );
     }
 
     public function credential_is_adoption()
@@ -1379,20 +1449,16 @@ class URLProfile extends SecurityProfile2
         return False;
     }
 
+    /** @return bool|null null: not listed in the visibility JSON (N/A) */
     public function mica_engine_is_visibility()
     {
-        if( $this->url_mica_engine_visibility() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_mica_engine_visibility();
     }
 
+    /** @return bool|null null: not listed in the BP JSON (N/A) */
     public function mica_engine_is_bestpractice()
     {
-        if( $this->url_mica_engine_visibility() )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->url_mica_engine_best_practice();     // was the visibility check
     }
     public function mica_engine_is_adoption()
     {
@@ -1412,5 +1478,236 @@ class URLProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet URL filtering profiles
+     * (iron-skillet templates/panorama/snippets/profiles_url_filtering.xml):
+     * 'Outbound-URL', 'Alert-Only-URL', and 'Exception-URL' (same as Outbound) before iron-skillet 10.2.
+     *
+     * Every profile lists every URL category, in site access and in credential enforcement:
+     * the custom categories Block / Allow and every predefined category (see ironSkilletCategories()).
+     * The categories are the same for every version; they come with the dynamic updates, not with PAN-OS.
+     * - 8.1: top-level action block
+     * - 10.0, 10.1: ML URL engines (Phishing Detection, Javascript Exploit Detection)
+     * - 10.2 and later: HTTP header logging also in Alert-Only, local and cloud inline categorization
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'URL filtering profiles' ) ) === null )
+            return null;
+
+        $categories = self::ironSkilletCategories( $version );
+
+        //Todo: not working as static!!!!
+        //$this->block_array_defined
+
+        // blocked by Outbound-URL (and Exception-URL); every other category is alert
+        $block = array_values( array_intersect(
+            array( 'Block', 'command-and-control', 'compromised-website', 'grayware', 'malware', 'phishing', 'ransomware','scanning-activity' ),
+            $categories ) );
+        $alert = array_values( array_diff( $categories, $block ) );
+
+        $profiles = array(
+            'Outbound-URL' => 'block',
+            'Alert-Only-URL' => 'alert',
+        );
+        if( version_compare( $version, '10.2', '<' ) )
+            $profiles['Exception-URL'] = 'block';
+
+        $xml = '<root>';
+        foreach( $profiles as $name => $mode )
+        {
+            $isAlertOnly = ( $mode == 'alert' );
+
+            $xml .= '<entry name="' . $name . '"><credential-enforcement><mode><ip-user/></mode>'
+                . '<log-severity>' . ( $isAlertOnly ? 'medium' : 'high' ) . '</log-severity>'
+                . self::ironSkilletMembers( $isAlertOnly ? 'alert' : 'block', $categories )
+                . '</credential-enforcement>';
+
+            if( !$isAlertOnly || version_compare( $version, '10.2', '>=' ) )
+                $xml .= '<log-http-hdr-user-agent>yes</log-http-hdr-user-agent><log-http-hdr-referer>yes</log-http-hdr-referer>'
+                    . '<log-http-hdr-xff>yes</log-http-hdr-xff>';
+
+            if( $isAlertOnly )
+                $xml .= self::ironSkilletMembers( 'alert', $categories );
+            else
+                $xml .= self::ironSkilletMembers( 'alert', $alert ) . self::ironSkilletMembers( 'block', $block );
+
+            if( version_compare( $version, '9.1', '<' ) )
+                $xml .= '<action>block</action>';
+
+            if( version_compare( $version, '10.0', '>=' ) && version_compare( $version, '10.2', '<' ) )
+            {
+                $xml .= '<mlav-engine-urlbased-enabled>';
+                foreach( array( 'Phishing Detection', 'Javascript Exploit Detection' ) as $engine )
+                    $xml .= '<entry name="' . $engine . '"><mlav-policy-action>' . $mode . '</mlav-policy-action></entry>';
+                $xml .= '</mlav-engine-urlbased-enabled>';
+            }
+
+            if( version_compare( $version, '10.2', '>=' ) )
+                $xml .= '<local-inline-cat>yes</local-inline-cat><cloud-inline-cat>yes</cloud-inline-cat>';
+
+            $xml .= '</entry>';
+        }
+
+        return $xml . '</root>';
+    }
+
+    /**
+     * URL categories of the iron-skillet URL filtering profiles: the custom categories Block and Allow
+     * (created by sp_spg-create-*-bp), then every predefined URL category of predefined.xml
+     * (<pan-url-categories>), the same source pan-os-php reads the categories of a URL profile from.
+     *
+     * URL categories come with the dynamic updates, not with PAN-OS, so the list is the same for every version.
+     * An entry with 'minver' / 'maxver' in predefined.xml is listed only for the versions inside that range.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string[]
+     */
+    public static function ironSkilletCategories( $version )
+    {
+        $categories = array( 'Block', 'Allow' );
+
+        // "11.1" is lower than "11.1.0" for version_compare()
+        while( substr_count( $version, '.' ) < 2 )
+            $version .= '.0';
+
+        $xmlDoc = PH::getPredefinedXmlDoc( null, array( 'pan-url-categories' ) );
+        $root = DH::findXPathSingleEntryOrDie( '/predefined/pan-url-categories', $xmlDoc );
+
+        foreach( $root->childNodes as $entry )
+        {
+            if( $entry->nodeType != XML_ELEMENT_NODE || $entry->nodeName != 'entry' )
+                continue;
+
+            $minver = $entry->getAttribute( 'minver' );
+            if( $minver !== '' && version_compare( $version, $minver, '<' ) )
+                continue;
+            $maxver = $entry->getAttribute( 'maxver' );
+            if( $maxver !== '' && version_compare( $version, $maxver, '>' ) )
+                continue;
+
+            $categories[] = $entry->getAttribute( 'name' );
+        }
+
+        return $categories;
+    }
+
+    /**
+     * @param string $tag
+     * @param string[] $members
+     * @return string
+     */
+    private static function ironSkilletMembers( $tag, $members )
+    {
+        $xml = '<' . $tag . '>';
+        foreach( $members as $member )
+            $xml .= '<member>' . $member . '</member>';
+        return $xml . '</' . $tag . '>';
+    }
+
+    public function site_access_BestPracticeSet()
+    {
+        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
+
+        $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        if( isset($check_array[0]['type']) )
+            $block_categories = $check_array[0]['type'];
+        else
+            $block_categories = $this->block_array_defined;
+
+        $block_xmlnode = DH::findFirstElementOrCreate("block", $this->xmlroot);
+        foreach( $block_categories as $block_category )
+        {
+            if( !in_array( $block_category, $this->block ) )
+            {
+                if( in_array( $block_category, $this->alert ) )
+                {
+                    $key = array_search ($block_category, $this->alert);
+                    unset( $this->alert[$key] );
+                    $alert_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $alert_xmlnode );
+                    $alert_xmlnode->removeChild($alert_category_xmlnode);
+
+                    $this->block[$block_category] = $block_category;
+
+                    $xmlString = '<member>'.$block_category.'</member>';
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                    $block_xmlnode->appendChild($xmlElement);
+                }
+            }
+        }
+
+        //credential all from alert to block
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
+
+        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+        $block_credential_xmlnode = DH::findFirstElementOrCreate("block", $credential_xmlnode);
+
+        if( $alert_credential_xmlnode !== False )
+        {
+            foreach( $alert_credential_xmlnode->childNodes as $alert_node )
+            {
+                if( $alert_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $tmp_name = $alert_node->textContent;
+
+                $clone_node = $alert_node->cloneNode(true);
+                if( !in_array($tmp_name, $this->block_credential) )
+                {
+                    $block_credential_xmlnode->appendChild($clone_node);
+                    $this->block_credential[$tmp_name] = $tmp_name;
+                }
+
+                $alert_credential_xmlnode->removeChild($alert_node);
+
+
+                $key = array_search ($tmp_name, $this->allow_credential);
+                unset($this->alert_credential[$key]);
+            }
+            $credential_xmlnode->removeChild($alert_credential_xmlnode);
+        }
+
+
+        foreach( $this->alert_credential as $alert )
+        {
+            if( !in_array($alert, $this->block_credential) )
+            {
+                $this->block_credential[$alert] = $alert;
+
+                $xmlString = '<member>'.$alert.'</member>';
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $block_credential_xmlnode->appendChild($xmlElement);
+            }
+        }
+        $this->alert_credential = array();
+    }
+
+    public function AlertOnlySet(): void
+    {
+        $this->url_siteaccess_set_alertonly();
+
+        /////////////////
+        $this->url_credential_set_alertonly();
+
+        ////////////////////////////
+        $this->url_inline_cat_set(true);
+
+        ////////////
+        $this->url_credential_mode_alertonly();
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->AlertOnlySet();
+
+        $this->site_access_BestPracticeSet();
+
+        $this->url_removeEmptyActionNodes();
+    }
 }
 

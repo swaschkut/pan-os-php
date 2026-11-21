@@ -26,6 +26,10 @@ class EDL
     use PathableName;
     use XmlConvertible;
 
+    /** set by the mergers (type=object-merger) */
+    public $ancestor;
+    public $childancestor;
+
     /** @var EDLStore|null */
     public $owner = null;
 

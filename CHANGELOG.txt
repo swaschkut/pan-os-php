@@ -1,6 +1,79 @@
 CHANGELOG
 
-2.1.61
+2.1.62
+UTIL:
+* type=device actions=display / exportToExcel | template-stack templates in configuration order with priority (1 = highest), e.g. '1: GLOBAL-TPL [vsys1]' - before: exportToExcel printed the list reversed without priority
+* type=zone actions=exportToExcel | new columns zpp-template-stack / zpp-template - where the zone-protection-profile the firewall receives is defined
+* type=xml-issue | optimisation/extension to fix all duplicates, not only hardcoded xpath
+* introduce - ancestor-objects-take-precedence yes - unique validation for all objects | fixing all unused object filters
+* class PanoramaConf | if ancestor-objects-take-precedence yes -> recalculate references
+* type=device | introduce actions=display-ancestor-precedence-impact
+* introduce new filter regarding ancestor-objects-take-precedence | different object classes
+* delete wrong expired filters for EDL and profile
+* remove duplicate filters and start using filter-Common.php
+* filter location optimistation only one single part
+* threatRule Filter - correction of copy past issue
+* MERGER.php - introduce MERGERENGINE.php - combined for tag-/customer-url
+* MERGER | MERGERENGINE - address/service move to unique approach
+* type=xyz-merger | optimistation for MERGERENGINE combine multiple merger scripts
+* type=xyz-merger | different classes preparation for securityprofilegroup-merger
+* type=diff | move part to class XmlCompare
+* type=securityprofile-merger | introduction
+* type=securityprofilegroup-merger | introduction
+* type=merger-possible-report | introduction
+* class CertificateProfile | introduction
+* type=certificate-profile | introduction with actions/filter
+* type=object-merger | introduction
+* type=object-merger | extend for EDL
+* type=object-merger | extend with appcustomer/group/filter
+* type=object-merger | extend with custome-region
+* merger extend with all new SCM SP objects
+* type=merge-possible-report | extend for SCM
+* type=object-merger | extend for hip-object/-profile
+* type=profile | extend with hip-profile/-object
+* type=profile profiletype=hip-profile/-object | extend differnet classes to support these object, like common filter, refernceableObject
+* class AntiVirusProfile/AntiSpywareProfile/WildfireProfile/FileBlockingProfile/UrlFilteringProfile - move actions to methods
+* type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
+* type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
+* class URLProfile - BP Json has no longer URL mica BP checks, so do not mention it is a customised check
+* SP classes - change to single place for versioning
+
+BUGFIX:
+* type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
+* bugfix for filter missing GPGatewayTunnel / profile
+* type=profile | general bugfix to support profiletype argument | cleanup
+* type=rule-compare | bugfix related to ancestor-objects-take-precedence yes
+* MERGERENGINE - fix optimisation compare to origin to not crash
+* type=xml-issue | bugfix to keep the value without blank character at pre-/postfix
+* different classes nestedPointOfView - bugfix
+* class SecurityProfileStore | predefined - bugfix for SPG - SecRule - DefaultSecRule - if predefined objects are directly used
+* Zone - ZPP binding | bugfix to read ZPP from Template for a Zone defined in TStack
+* SCM relate optimisation - add missing Stores, advanced_routing
+* TemplateStack to Tempalte hierarchy and calculation
+* type=[ike/ipsec] | actions=exporttoexcel - show correct template name
+* class PanoramaConf | optimse XML reading without error out
+* class Address | avoid error out if an address object was not defined well - normally coming from 'set command' or XML API not finalised
+* type=rule actions=exporttohtml:rule.html,visibility|bestpractice | bugfix if found SP is not defined
+* class Vulnerability/Anti-Spyware | correction if BP JSON file has no visibility/best-practice setting
+* optimisation for all parts related to BP_JSON file - stats/exporttohtml
+* correction VP/Spyware BP - severity informational / low
+* sp_action_virus.php | bugfix for using $object instead of $this
+* bugfix to get N/A output correct running
+* type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
+* type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
+* [reverted] bugfix VP / Spyware - to set local-inline to enable with alert-only-set
+* url.alert-only-set-no-empty-alert-allow-members
+* ancestor-objects-take-precedence-rule-filters
+* spyware-local-deep-learning-is-never-written
+
+GENERAL:
+* global change from iron-skillet files to XML snippets available in specific object classes
+* remove all ironskilet files and implementation
+* class URLProfile | single path for all version as categories are coming form predefined
+* Device App-ID update to version: 9168-10332
+
+
+2.1.61 (20261108)
 UTIL:
 * type=rule | extend actions=exporttohtml with 'target_negated' and add filter=(target is.negated)'
 * type=rule | introduce 'filter=(target has.regex /SERIAL/ )'
@@ -36,6 +109,7 @@ BUGFIX:
 * class AntiSpyware-/VulnerabilityProfile and the relevant ThreatPolicy-/Spyware/Vulnerability - also actions-securityprofile | fix to cover new rules with existing name - CVE/Vendor-id
 * class ThreatPolicy-/Spyware/Vulnerability | if BP JSON file does not container severity check, fine continue
 * type=device actions=actions=zpp-create-alert-only-bp:true | bugfix to support devicetype=templatestack
+* xml-issue - fix to NOT remove any bgp related part - to avoid removing aspath-prepand - no clue if some more must not be removed
 * bugfix class StatCollectorTrait - wrong value for av Inline ML
 * class UTIL | related to outputformatset - Run the diff on the saved document, not on a third copy.
 * type=playbook - Stop the playbook at a failed step whose output the next step reads.

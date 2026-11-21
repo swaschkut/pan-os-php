@@ -147,7 +147,10 @@ class Address
         if( !$typeFound )
         {
             if( !PH::$ignoreInvalidAddressObjects )
-                derr('Object type not found or not supported for address object ' . $this->name . '. Please check your configuration file and fix it or invoke with argument "shadow-ignoreInvalidAddressObjects"', $xml, FALSE);
+            {
+                PH::$ignoreInvalidAddressObjects = TRUE;
+                #derr('Object type not found or not supported for address object ' . $this->name . '. Please check your configuration file and fix it or invoke with argument "shadow-ignoreInvalidAddressObjects"', $xml, FALSE);
+            }
 
             mwarning('Object type not found or not supported for address object ' . $this->name . ' but you manually did bypass this error', $xml, FALSE);
             return FALSE;

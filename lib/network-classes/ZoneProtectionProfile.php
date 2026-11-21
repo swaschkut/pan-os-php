@@ -771,4 +771,63 @@ class ZoneProtectionProfile
     <dh-group></dh-group>
     </entry>';
     */
+
+    /**
+     * Base XML of the iron-skillet zone protection profiles
+     * (iron-skillet templates/panorama/snippets/zone_protection_profile.xml):
+     * 'Recommended_Zone_Protection' and 'Alert_Only_Zone_Protection'.
+     *
+     * Built from the values below, so that every value is written once:
+     * - iron-skillet 10.0 to 11.0: scan entries 8001, 8002, 8003
+     * - iron-skillet 11.1 and later: also scan entry 8006
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'zone protection profiles' ) ) === null )
+            return null;
+
+        // scan entry => array( interval, threshold ), action alert
+        $scan = array(
+            '8001' => array( 2, 100 ),
+            '8002' => array( 10, 100 ),
+            '8003' => array( 2, 100 ),
+        );
+        if( version_compare( $version, '11.1', '>=' ) )
+            $scan['8006'] = array( 2, 4 );
+
+        $scanXml = '';
+        foreach( $scan as $name => $values )
+            $scanXml .= '<entry name="' . $name . '"><action><alert/></action>'
+                . '<interval>' . $values[0] . '</interval><threshold>' . $values[1] . '</threshold></entry>';
+
+        // flood: every type disabled; Recommended has RED thresholds for when it is enabled
+        $recommendedFlood = '';
+        foreach( array( 'tcp-syn', 'icmp', 'icmpv6', 'other-ip', 'udp' ) as $type )
+            $recommendedFlood .= '<' . $type . '><red><alarm-rate>10000</alarm-rate><activate-rate>10000</activate-rate>'
+                . '<maximal-rate>40000</maximal-rate></red><enable>no</enable></' . $type . '>';
+
+        $alertOnlyFlood = '';
+        foreach( array( 'tcp-syn', 'udp', 'icmp', 'icmpv6', 'other-ip' ) as $type )
+            $alertOnlyFlood .= '<' . $type . '><enable>no</enable></' . $type . '>';
+
+        return '<root>'
+            . '<entry name="Recommended_Zone_Protection">'
+            . '<flood>' . $recommendedFlood . '</flood>'
+            . '<scan>' . $scanXml . '</scan>'
+            . '<discard-ip-spoof>yes</discard-ip-spoof>'
+            . '<discard-malformed-option>yes</discard-malformed-option>'
+            . '<remove-tcp-timestamp>yes</remove-tcp-timestamp>'
+            . '<strip-tcp-fast-open-and-data>no</strip-tcp-fast-open-and-data>'
+            . '<strip-mptcp-option>global</strip-mptcp-option>'
+            . '</entry>'
+            . '<entry name="Alert_Only_Zone_Protection">'
+            . '<flood>' . $alertOnlyFlood . '</flood>'
+            . '<scan>' . $scanXml . '</scan>'
+            . '</entry>'
+            . '</root>';
+    }
 }

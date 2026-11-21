@@ -165,7 +165,7 @@ class LICENSE__
                 print "OK!\n";
             }
             else
-                derr('not supported yet');
+                derr('only online mode XML API: in=api:// is supported');
 
             //
 // Determine if PANOS or Panorama

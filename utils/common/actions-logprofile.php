@@ -425,6 +425,12 @@ LogProfileCallContext::$supportedActions['delete'] = array(
             PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
         }
+        if( $object->isUsedViaSameNameOverride() )
+        {
+            $string = "this object has no direct reference, but through a same-name object in another device-group level (Shared / ancestor / descendant) Panorama pushes this object and firewalls use it (use delete-Force to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
         if( $context->isAPI )
             $object->owner->API_removeLogProfile($object);
         else

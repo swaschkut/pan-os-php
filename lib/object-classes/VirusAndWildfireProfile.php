@@ -153,97 +153,28 @@ class VirusAndWildfireProfile extends SecurityProfile2
         $this->display_wildfire();
     }
 
-    public function is_best_practice(): bool
+    public function is_best_practice(): ?bool
     {
         //Todo - swaschkut 20260629
-        $bp = false;
-        if( $this->owner->owner->version >= 102 )
-        {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-            )
-                $bp = TRUE;
-            else
-                return FALSE;
-        }
-        else
-        {
-            if ($this->av_action_best_practice()
-                && $this->av_wildfireaction_best_practice()
-                && $this->av_mlavaction_best_practice()
-            )
-                $bp = TRUE;
-            else
-                return FALSE;
-        }
+        $results = array();
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion);
+        // cloud_inline_analysis_*() covers the AV inline ML and, where the version has it, the WildFire inline ML
+        $results = array_merge( $results, array( $this->av_action_best_practice(), $this->av_wildfireaction_best_practice(), $this->av_mlavaction_best_practice(), $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) ) );
+        $results = array_merge( $results, array( $this->wildfire_rules_best_practice() ) );
 
-        if( $this->owner->owner->version >= 112 )
-        {
-            if( $this->wildfire_rules_best_practice()
-                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-            )
-                $bp = TRUE;
-            else
-                return FALSE;
-        }
-        else
-        {
-            if( $this->wildfire_rules_best_practice() )
-                $bp = TRUE;
-            else
-                return FALSE;
-        }
-
-        return $bp;
+        return PH::bpCombine( $results );
     }
 
-    public function is_visibility(): bool
+    public function is_visibility(): ?bool
     {
-        $bp = false;
+        $results = array();
         //Todo - swaschkut 20260629
-        if( $this->owner->owner->version >= 102 )
-        {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-            )
-                $bp = true;
-            else
-                return FALSE;
-        }
-        else
-        {
-            if ($this->av_action_visibility()
-                && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_visibility()
-            )
-                $bp = true;
-            else
-                return FALSE;
-        }
+        // each part returns null where the PAN-OS version has no such setting (SecurityProfile2::$bpFeatureMinVersion);
+        // cloud_inline_analysis_*() covers the AV inline ML and, where the version has it, the WildFire inline ML
+        $results = array_merge( $results, array( $this->av_action_visibility(), $this->av_wildfireaction_visibility(), $this->av_mlavaction_visibility(), $this->cloud_inline_analysis_visibility($this->owner->bp_json_file) ) );
+        $results = array_merge( $results, array( $this->wildfire_rules_visibility() ) );
 
-        if( $this->owner->owner->version >= 112 )
-        {
-            if( $this->wildfire_rules_visibility()
-                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-            )
-                $bp = true;
-            else
-                return FALSE;
-        }
-        else
-        {
-            if( $this->wildfire_rules_visibility()
-            )
-                $bp = true;
-            else
-                return FALSE;
-        }
-
-        return $bp;
+        return PH::bpCombine( $results );
     }
 
     public function is_adoption(): bool
@@ -264,5 +195,51 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet profile 'Alert-Only-AVWF'
+     * (iron-skillet panos_v11.1 templates/panorama/snippets/profiles_virus_and_wildfire.xml):
+     * the antivirus part of 'Alert-Only-AV' and the WildFire rule 'Forward-All'.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, only "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'antivirus and WildFire profiles' ) ) === null )
+            return null;
+
+        return '<root><entry name="Alert-Only-AVWF">'
+            . AntiVirusProfile::ironSkilletContentXml( $version, 'alert' )
+            . '<rules>' . WildfireProfile::ironSkilletForwardAllRuleXml() . '</rules>'
+            . '</entry></root>';
+    }
+
+    public function AlertOnlySet(): void
+    {
+        $this->av_decoder_AlertOnlySet();
+
+        $this->av_inlineML_AlertOnlySet();
+
+        //////////
+        $this->wf_inlineML_AlertOnlySet();
+
+        $add_WF_alert = true;
+        $this->wf_rules_AlertOnlySet($add_WF_alert);
+    }
+
+    public function BestPracticeSet(): void
+    {
+        $this->av_decoder_BestPracticeSet();
+
+        $this->av_inlineML_BestPracticeSet();
+
+        ////////
+        $this->wf_inlineML_BestPracticeSet();
+
+        //nothing todo
+        //$this->wf_rules_BestPracticeSet();
+    }
 }
 

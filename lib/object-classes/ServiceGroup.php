@@ -601,6 +601,28 @@ class ServiceGroup
 
 
     /**
+     * Members as the firewalls of $location see them: every member is resolved again by name in
+     * $location (same-name copies and ancestor-objects-take-precedence honoured, see
+     * PH::resolveNameForFirewalls). The member list of the group is NOT changed.
+     * $location null: the members as loaded.
+     * @return Service[]|ServiceGroup[]
+     */
+    public function membersForLocation( $location = null ): array
+    {
+        if( $location === null )
+            return $this->members;
+
+        $ret = array();
+        foreach( $this->members as $key => $member )
+        {
+            $resolved = PH::resolveNameForFirewalls('serviceStore', $member->name(), $location);
+            $ret[$key] = ( $resolved !== null ) ? $resolved : $member;
+        }
+
+        return $ret;
+    }
+
+    /**
      * @return ServiceDstPortMapping
      */
     public function dstPortMapping( $memberArray = array(), $RuleReferenceLocation = null)
@@ -611,19 +633,11 @@ class ServiceGroup
         {
             $memberArray[ $this->name() ] = $this->name();
 
-            if( $RuleReferenceLocation !== null )
-            {
-                foreach( $this->members as $key => $member )
-                {
-                    $this->members[$key] = $RuleReferenceLocation->serviceStore->find($member->name());
-                }
-            }
-
-            foreach( $this->members as $member )
+            foreach( $this->membersForLocation($RuleReferenceLocation) as $member )
             {
                 if( $member->isTmpSrv() && $this->name() != 'service-http' && $this->name() != 'service-https' )
                     $mapping->unresolved[$member->name()] = $member;
-                $localMapping = $member->dstPortMapping($memberArray);
+                $localMapping = $member->dstPortMapping($memberArray, $RuleReferenceLocation);
                 $mapping->mergeWithMapping($localMapping);
             }
         }
@@ -668,13 +682,7 @@ class ServiceGroup
 
         $grpArray[$this->name()] = $this;
 
-        if( $RuleReferenceLocation !== null )
-        {
-            foreach( $this->members as $key => $member )
-                $this->members[$key] = $RuleReferenceLocation->serviceStore->find($member->name());
-        }
-
-        foreach( $this->members as $object )
+        foreach( $this->membersForLocation($RuleReferenceLocation) as $object )
         {
             #$serial = spl_object_hash($object);
             $serial = $object->name();

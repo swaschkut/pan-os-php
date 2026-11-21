@@ -143,8 +143,16 @@ class FileBlockingProfile extends SecurityProfile2
     }
 
 
+    /** @return bool|null null: file-blocking -> rule -> bp -> block -> filetype not listed in the BP JSON (N/A) */
     public function fileblocking_rules_best_practice()
     {
+        $checkBP_array = PH::getBPjsonFile()['file-blocking']['rule']['bp'] ?? array();
+        if( empty( $checkBP_array['block']['filetype'] ) || !is_array( $checkBP_array['block']['filetype'] ) )
+            return null;
+        // action / direction not listed: not checked
+        $bp_action = $checkBP_array['block']['action'] ?? null;
+        $bp_direction = $checkBP_array['block']['direction'] ?? null;
+
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
@@ -163,24 +171,22 @@ class FileBlockingProfile extends SecurityProfile2
             /// OLD
             ///
             ///
-            $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
-            $checkBP_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
             $this->fileblocking_rules_coverage();
 
             foreach( $checkBP_array['block']['filetype'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( $checkBP_array['block']['action'] !== $this->rule_coverage[$bp_array]['action']
-                        || $checkBP_array['block']['direction'] !== $this->rule_coverage[$bp_array]['direction']
+                    if( ( $bp_action !== null && $bp_action !== $this->rule_coverage[$bp_array]['action'] )
+                        || ( $bp_direction !== null && $bp_direction !== $this->rule_coverage[$bp_array]['direction'] )
                     )
                         return false;
                     else
                         $bp_set = true;
                 }
                 elseif( isset($this->rule_coverage['any'])
-                    && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action']
-                    && $checkBP_array['block']['direction'] === $this->rule_coverage['any']['direction']
+                    && ( $bp_action === null || $bp_action === $this->rule_coverage['any']['action'] )
+                    && ( $bp_direction === null || $bp_direction === $this->rule_coverage['any']['direction'] )
                 )
                 {
                     $bp_set = true;
@@ -190,15 +196,19 @@ class FileBlockingProfile extends SecurityProfile2
                     return false;
             }
 
-            if( !$this->fileblocking_rules_visibility() )
+            if( $this->fileblocking_rules_visibility() === FALSE )     // null: visibility not listed
                 return false;
 
         }
         return $bp_set;
     }
 
+    /** @return bool|null null: file-blocking -> rule -> visibility not listed in the visibility JSON (N/A) */
     public function fileblocking_rules_visibility()
     {
+        if( empty( PH::getBPjsonFile()['file-blocking']['rule']['visibility'] ) )
+            return null;
+
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
@@ -206,7 +216,7 @@ class FileBlockingProfile extends SecurityProfile2
             foreach( $this->rules_obj as $rulename => $rule )
             {
 
-                if( $rule->fileblocking_rule_visibility() )
+                if( $rule->fileblocking_rule_visibility() === TRUE )
                     return true;
             }
 
@@ -294,20 +304,12 @@ class FileBlockingProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->fileblocking_rules_best_practice()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->fileblocking_rules_best_practice() ) );
     }
 
     public function is_visibility()
     {
-        if( $this->fileblocking_rules_visibility()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        return PH::bpCombine( array( $this->fileblocking_rules_visibility() ) );
     }
 
     public function is_adoption()
@@ -320,5 +322,95 @@ class FileBlockingProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+
+    /**
+     * Base XML of the iron-skillet file blocking profiles
+     * (iron-skillet templates/panorama/snippets/profiles_file_blocking.xml):
+     * 'Outbound-FB', 'Inbound-FB', 'Internal-FB' (without dll), 'Alert-Only-FB'.
+     * The same for every version.
+     *
+     * @param string $version iron-skillet PAN-OS version folder, e.g. "11.1"
+     * @return string
+     */
+    public static function ironSkilletXml( $version )
+    {
+        // versions: PH::IRONSKILLET_VERSIONS / IRONSKILLET_SNIPPETS (newer PAN-OS: snippet of the newest version below)
+        if( ( $version = PH::ironSkilletVersion( $version, 'file blocking profiles' ) ) === null )
+            return null;
+
+        $blocked = array( '7z', 'bat', 'chm', 'class', 'cpl', 'dll', 'hlp', 'hta', 'jar', 'ocx', 'pif', 'scr', 'torrent', 'vbe', 'wsf' );
+        $blockedInternal = array_values( array_diff( $blocked, array( 'dll' ) ) );
+
+        // profile => rule name => array( file types, action )
+        $profiles = array(
+            'Outbound-FB' => array( 'Alert-All' => array( array( 'any' ), 'alert' ), 'Block' => array( $blocked, 'block' ) ),
+            'Inbound-FB' => array( 'Alert-All' => array( array( 'any' ), 'alert' ), 'Block' => array( $blocked, 'block' ) ),
+            'Internal-FB' => array( 'Alert-All' => array( array( 'any' ), 'alert' ), 'Block' => array( $blockedInternal, 'block' ) ),
+            'Alert-Only-FB' => array( 'Alert-Only' => array( array( 'any' ), 'alert' ) ),
+        );
+
+        $xml = '<root>';
+        foreach( $profiles as $name => $rules )
+        {
+            $xml .= '<entry name="' . $name . '"><rules>';
+            foreach( $rules as $ruleName => $rule )
+            {
+                $xml .= '<entry name="' . $ruleName . '"><application><member>any</member></application><file-type>';
+                foreach( $rule[0] as $fileType )
+                    $xml .= '<member>' . $fileType . '</member>';
+                $xml .= '</file-type><direction>both</direction><action>' . $rule[1] . '</action></entry>';
+            }
+            $xml .= '</rules></entry>';
+        }
+
+        return $xml . '</root>';
+    }
+
+
+    public function rules_AlertOnlySet(&$add_FB_alert)
+    {
+        foreach( $this->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyFileBlocking $rule */
+            if( $rule->action() == "alert"
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_FB_alert = false;
+                break;
+            }
+
+        }
+
+        if( $add_FB_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyFileBlocking( $tmp_name, $this);
+            $threadPolicy_obj->type = "ThreatPolicyFileBlocking";
+
+            $threadPolicy_obj->action = "alert";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $this->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $this );
+
+            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+        }
+    }
+    public function AlertOnlySet()
+    {
+
+    }
+
+    public function BestPractice()
+    {
+
+    }
 }
 
