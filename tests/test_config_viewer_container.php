@@ -166,6 +166,24 @@ if( $tool0 === 'download-predefined' )
             copy( __DIR__ . '/predefined-device.xml', substr( $x, 15 ) );
     exit( 0 );
 }
+// LDAP: no directory here - note network, key store and arguments; a result as type=ldap-query writes it
+$ldapRule = $tool0 === 'rule' && count( preg_grep( '/^actions=user-check-ldap:/', $rest ) ) > 0;
+if( $tool0 === 'ldap-query' || $ldapRule )
+{
+    $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
+    file_put_contents( __DIR__ . '/ldap.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
+    print "LDAP bind with " . trim( substr( $ks, strpos( $ks, ':' ) + 1 ) ) . "\n";
+    foreach( $rest as $x )
+    {
+        if( strpos( $x, 'out=' ) === 0 && $ldapRule )
+            copy( substr( (string)current( preg_grep( '/^in=/', $rest ) ), 3 ), substr( $x, 4 ) );
+        elseif( strpos( $x, 'out=' ) === 0 )
+            file_put_contents( substr( $x, 4 ), json_encode( array( 'mode' => 'validation', 'rows' => array( array( 'user' => 'alice', 'found' => TRUE, 'status' => 'active' ), array( 'user' => 'gone', 'found' => FALSE ) ), 'missing' => 1 ) ) );
+        if( strpos( $x, 'csv=' ) === 0 )
+            file_put_contents( substr( $x, 4 ), "user,found\nalice,yes\ngone,no\n" );
+    }
+    exit( 0 );
+}
 if( in_array( $tool0, array( 'upload', 'scm-export', 'scm-export-xml' ), TRUE ) )
 {
     $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
@@ -433,16 +451,16 @@ eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 
     'import SCM: scm-export with network (read only), scm-export-xml without, new version' );
 // an existing .panconfkeystore of a customer: every kind of entry pan-os-php knows, and unknown names as they are
 $ksText = "fw1.example.com%443:LUFRPT1-neu-0815:zweiter\r\nfw9.example.com%8443:LUFRPT9-port-4711\ntsg_id1234567890:sa-two@x.iam%scm-zwei-4711\negressip_tsg_id1234567890:egress-key-4711\n"
-    . "ldap-password:mein ldap passwort\nbpa-apikey:bpa-key-4711\n# a comment\n\ncustom-entry_1:wert-4711\nno colon here\nfw5.example.com:a:b:c\n";
+    . "ldap-password:altes passwort\nbpa-apikey:bpa-key-4711\n# a comment\n\ncustom-entry_1:wert-4711\nno colon here\nfw5.example.com:a:b:c\nldap_userAlice@Example.com:mein ldap passwort\n";
 $r = call( 'POST', 'keys/import', null, array( '.panconfkeystore', $ksText, 'keystore' ) );
 eq( array( $r[0], count( $r[1]['imported'] ?? array() ), array_column( $r[1]['skipped'] ?? array(), 'line' ), strpos( json_encode( $r[1] ), '4711' ), strpos( json_encode( $r[1] ), 'passwort' ) ),
-    array( 200, 7, array( 10, 11 ), FALSE, FALSE ), 'key store import: 7 entries, 2 lines skipped (line number and reason, never the content)' );
+    array( 200, 8, array( 10, 11 ), FALSE, FALSE ), 'key store import: 8 entries, 2 lines skipped (line number and reason, never the content)' );
 $all = array();
 foreach( call( 'GET', 'keys' )[1]['keys'] ?? array() as $k )
     $all[$k['kind'] . '|' . $k['target']] = $k;
-eq( array( $all['panos|fw9.example.com']['port'] ?? null, $all['panos|fw1.example.com']['hint'] ?? null, isset( $all['scm|1234567890'], $all['egressip|1234567890'], $all['named|ldap-password'], $all['named|bpa-apikey'], $all['other|custom-entry_1'] ),
+eq( array( $all['panos|fw9.example.com']['port'] ?? null, $all['panos|fw1.example.com']['hint'] ?? null, isset( $all['scm|1234567890'], $all['egressip|1234567890'], $all['named|ldap-password'], $all['named|bpa-apikey'], $all['other|custom-entry_1'], $all['ldap|alice@example.com'] ),
     $all['named|ldap-password']['import'] ?? null, array_key_exists( 'refused', $all['other|custom-entry_1'] ?? array() ) ? $all['other|custom-entry_1']['refused'] : 'x' ),
-    array( 8443, '…iter', TRUE, FALSE, null ), 'key store import: PAN-OS with port, a key with ":" replaces the old one, SCM, egress IP, named, other (stored, not for imports)' );
+    array( 8443, '…iter', TRUE, FALSE, null ), 'key store import: PAN-OS with port, a key with ":" replaces the old one, SCM, egress IP, named, other (stored, not for imports), LDAP account ldap_user<user> (lower case)' );
 eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array( 'limit' => 1000 ) ) ), 'passwort' ), FALSE, 'key store import: nothing of it in the audit log' );
 eq( $imp( array( 'kid' => $all['named|ldap-password']['kid'] ?? '' ) )[0], 400, 'import: not with a named entry' );
 @unlink( $bin . '/import.log' );
@@ -450,7 +468,8 @@ $r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $all['panos|fw9.example.co
 $il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
 eq( array( $r[1]['state'] ?? null, $il[0][2] ?? null ), array( 'done', "fw9.example.com%8443:LUFRPT9-port-4711\n" ), 'import with a port: the key store line host%port:key' );
 foreach( array( array( 'kind' => 'named', 'target' => 'foo', 'key' => 'x' ), array( 'kind' => 'other', 'target' => 'tsg_id1', 'key' => 'x' ), array( 'kind' => 'panos', 'target' => 'fw1.example.com', 'port' => '70000', 'key' => 'LUFRPT1-12345678' ),
-    array( 'kind' => 'named', 'target' => 'ldap-password', 'key' => "zwei\nzeilen" ) ) as $bad )
+    array( 'kind' => 'named', 'target' => 'ldap-password', 'key' => "zwei\nzeilen" ), array( 'kind' => 'ldap', 'target' => 'al ice', 'key' => 'x' ), array( 'kind' => 'ldap', 'target' => 'a:b', 'key' => 'x' ),
+    array( 'kind' => 'ldap', 'target' => 'CN=a,OU=b', 'key' => 'x' ) ) as $bad )
     eq( call( 'POST', 'keys', $bad )[0], 400, 'key checked: ' . json_encode( array_diff_key( $bad, array( 'key' => 1 ) ) ) );
 
 // ---- App-ID database and MaxMind data: installation (administrator) and project
@@ -514,9 +533,80 @@ eq( array( $r[1]['state'] ?? null, call( 'GET', $P . '/appid' )[1]['meta']['vers
 eq( call( 'DELETE', $P . '/appid' )[0] === 200 && ( call( 'GET', $P . '/appid' )[1]['from'] ?? null ) === 'installation', TRUE, 'project App-ID: back to the one of the installation' );
 eq( call( 'POST', 'central/appid', null, array( 'predefined.xml', '<predefined><application-version>1-1</application-version></predefined>', 'file' ) )[0], 404, 'installation App-ID: only an administrator' );
 
+// ---- my API keys: change the label (and port) after an import, optionally a new secret
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+$all = array();
+foreach( call( 'GET', 'keys' )[1]['keys'] ?? array() as $k )
+    $all[$k['kind'] . '|' . $k['target']] = $k;
+$fk = $all['panos|fw9.example.com'];
+$r = call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => 'Lab firewall 9', 'port' => '9443' ) );
+$after = array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' )[$fk['kid']] ?? array();
+eq( array( $r[0], $after['label'] ?? null, $after['port'] ?? null, $after['hint'] ?? null, $after['created'] ?? null ), array( 200, 'Lab firewall 9', 9443, $fk['hint'], $fk['created'] ),
+    'key edit: label and port changed, the secret stays' );
+$r = call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => 'Lab firewall 9', 'key' => 'LUFRPT9-neu-9999' ) );
+$after = array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' )[$fk['kid']] ?? array();
+eq( array( $r[0], $after['hint'] ?? null, $after['port'] ?? null, strpos( json_encode( $r[1] ), 'neu-9999' ) ), array( 200, '…9999', 9443, FALSE ), 'key edit: a new secret (same entry, never sent back)' );
+eq( array( call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => str_repeat( 'x', 81 ) ) )[0], call( 'PUT', 'keys/' . $fk['kid'], array( 'port' => '70000' ) )[0], call( 'PUT', 'keys/nope', array( 'label' => 'x' ) )[0] ),
+    array( 400, 400, 404 ), 'key edit: checked; unknown entry 404' );
+$as( 'root', 'root-secret-123' );
+eq( call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => 'mine now' ) )[0], 404, 'key edit: only the own entries (also not an administrator)' );
+eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array( 'limit' => 1000 ) ) ), 'neu-9999' ), FALSE, 'key edit: the secret is not in the audit log' );
+eq( call( 'GET', 'ldap' )[1]['queries'] ?? null, array(), 'LDAP queries: personal (root sees none of alice)' );
+
+// ---- LDAP: saved queries of the user, a run with the own LDAP account (key store entry ldap_user<bind user>)
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+$lq = array( 'name' => 'still there?', 'server' => 'ldaps://dc1.example.com:636', 'bind_user' => 'alice@example.com', 'base_dn' => 'OU=Users,DC=example,DC=com',
+    'attribute' => 'sAMAccountName', 'mode' => 'validation', 'users' => "alice\ngone" );
+foreach( array( array( 'server' => 'dc1.example.com' ), array( 'server' => 'ldaps://dc1.example.com:99999' ), array( 'mode' => 'drop' ), array( 'attribute' => 'a b' ),
+    array( 'bind_user' => 'CN=a,OU=b' ), array( 'name' => '' ), array( 'mode' => 'group-members', 'group' => '' ), array( 'mode' => 'user-groups', 'users' => '' ) ) as $bad )
+    eq( call( 'POST', 'ldap', $bad + $lq )[0], 400, 'LDAP query checked: ' . json_encode( $bad ) );
+$r = call( 'POST', 'ldap', $lq );
+$qid = $r[1]['qid'] ?? '';
+eq( array( $r[0], $r[1]['users'] ?? null, $r[1]['server'] ?? null ), array( 201, array( 'alice', 'gone' ), 'ldaps://dc1.example.com:636' ), 'LDAP query saved' );
+$l = call( 'GET', 'ldap' )[1];
+eq( array( count( $l['queries'] ?? array() ), $l['accounts'] ?? null, isset( $l['modes']['common-groups'] ) ), array( 1, array( 'alice@example.com' ), TRUE ), 'LDAP queries: mine, my LDAP accounts (key store import)' );
+$r = call( 'PUT', 'ldap/' . $qid, array( 'name' => 'cleanup' ) + $lq );
+eq( array( $r[0], $r[1]['name'] ?? null, call( 'PUT', 'ldap/nope', $lq )[0] ), array( 200, 'cleanup', 404 ), 'LDAP query changed; unknown 404' );
+@unlink( $bin . '/ldap.log' );
+$r = call( 'POST', $P . '/ldap/runs', array( 'qid' => $qid ) );
+$ljid = $r[1]['jid'] ?? '';
+eq( array( $r[0], strpos( json_encode( $r[1] ), 'passwort' ), $r[1]['args'][0] ?? null ), array( 202, FALSE, 'x-ldap-key=' . $all['ldap|alice@example.com']['kid'] ), 'LDAP run: queued with the account of the bind user, no password in it' );
+$r = waitRun( $P . '/runs/' . $ljid );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$jd = $data . '/projects/' . $pid . '/jobs/' . $ljid;
+eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, $ll[0][2] ?? null, $ll[0][3] ?? null ),
+    array( 'done', 'ldap-query', 'bridge', "ldap_useralice@example.com:mein ldap passwort\n", array( 'mode=validation', 'ldapServer=ldaps://dc1.example.com:636', 'ldapUser=alice@example.com',
+        'dn=OU=Users,DC=example,DC=com', 'filtercriteria=sAMAccountName', 'users=alice,gone', 'out=' . $jd . '/ldap.json', 'csv=' . $jd . '/ldap.csv' ) ),
+    'LDAP run: type=ldap-query, network, key store with only ldap_user<bind user>' );
+$log = (string)call( 'GET', $P . '/runs/' . $ljid . '/files/run.log' )[1];
+$res = call( 'GET', $P . '/runs/' . $ljid . '/files/ldap.json' )[1];
+$res = is_array( $res ) ? $res : json_decode( (string)$res, TRUE );
+eq( array( file_exists( $jd . '/.panconfkeystore' ), strpos( $log, 'passwort' ), $res['missing'] ?? null, array_column( $r[1]['files'] ?? array(), 'name' ) ),
+    array( FALSE, FALSE, 1, array( 'ldap.csv', 'ldap.json', 'run.log' ) ), 'LDAP run: key store gone, password not in run.log, the result as JSON / CSV' );
+foreach( array( 'bad.example.com' => 'deny list', 'ldap.other.org' => 'not on the allow list' ) as $h => $why )
+{
+    call( 'PUT', 'ldap/' . $qid, array( 'server' => 'ldap://' . $h ) + $lq );
+    eq( call( 'POST', $P . '/ldap/runs', array( 'qid' => $qid ) )[0], 403, 'LDAP run: refused, server on the ' . $why );
+}
+call( 'PUT', 'ldap/' . $qid, $lq );
+$r = call( 'PUT', 'ldap/' . $qid, array( 'bind_user' => 'bob@example.com' ) + $lq );
+eq( array( $r[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => $qid ) )[0] ), array( 200, 400 ), 'LDAP run: refused without an LDAP account of the bind user' );
+call( 'PUT', 'ldap/' . $qid, $lq );
+// the users of the security rules of a version: user-check-ldap (show / remove -> result configuration)
+@unlink( $bin . '/ldap.log' );
+$r = waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/ldap-users/runs', array( 'qid' => $qid, 'action' => 'remove' ) )[1]['jid'] ?? '' ) );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, count( preg_grep( '/^in=/', $ll[0][3] ?? array() ) ), current( preg_grep( '/^actions=/', $ll[0][3] ?? array() ) ), in_array( 'location=any', $ll[0][3] ?? array(), TRUE ) ),
+    array( 'done', 'rule', 'bridge', 1, 'actions=user-check-ldap:remove,alice@example.com,ldaps%dc1.example.com%636,OU=Users;DC=example;DC=com,sAMAccountName,false', TRUE ),
+    'rule users: type=rule actions=user-check-ldap with the query (server as ldaps%host%port, DN with ;), network' );
+eq( call( 'POST', $P . '/runs/' . ( $r[1]['jid'] ?? '' ) . '/save' )[0], 201, 'rule users remove: the result configuration as a new version' );
+eq( array( call( 'POST', $P . '/configs/' . $cid . '/ldap/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap-users/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => 'nope' ) )[0] ),
+    array( 404, 404, 400 ), 'LDAP runs: query without a version, rule check with a version, only own queries' );
+eq( array( call( 'DELETE', 'ldap/' . $qid )[0], count( call( 'GET', 'ldap' )[1]['queries'] ?? array( 1 ) ) ), array( 200, 0 ), 'LDAP query deleted' );
+
 // stats / playbook runs never get a network
 eq( count( array_filter( calls(), function( $c ) { return $c[0] === 'run' && $c[array_search( '--network', $c ) + 1] !== 'none' && !in_array( 'type=upload', $c, TRUE ) && !in_array( 'type=scm-export', $c, TRUE )
-    && !in_array( 'type=download-predefined', $c, TRUE ) && !in_array( 'type=maxmind-update', $c, TRUE ); } ) ), 0,
+    && !in_array( 'type=download-predefined', $c, TRUE ) && !in_array( 'type=maxmind-update', $c, TRUE ) && !in_array( 'type=ldap-query', $c, TRUE ) && !count( preg_grep( '/^actions=user-check-ldap:/', $c ) ); } ) ), 0,
     'all other runs: --network none (only import, App-ID and MaxMind downloads get one)' );
 $as( 'root', 'root-secret-123' );
 call( 'PUT', 'network', array( 'enabled' => FALSE, 'allow' => '*' ) );

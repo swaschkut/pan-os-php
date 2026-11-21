@@ -47,6 +47,23 @@ upload (air gap).
 * viewer: `central/` in the data directory; runs of the installation in a project that is not listed (only
   administrators, only its runs); run types `appid` / `geoip`; every other run and every worker gets the data
 
+### Built - step 3: LDAP (and keys editable)
+
+Decisions (Sven): the firewall administrator asks the LDAP with his own account - key store entry
+`ldap_user<bind user>:<password>` (bind user and password; the old `ldap-password` is not used for LDAP any more);
+group membership and the cleanup check (do the users still exist?); saved queries per user; the scripts of
+`utils/develop/ldap` without questions; an own tab.
+
+* pan-os-php: `type=ldap-query mode=validation|user-groups|common-groups|group-members` (`utils/lib/LDAPQUERY__.php`,
+  a copy of the logic of `utils/develop/ldap`, which stay as they are): all values as arguments, `ldap_escape` in the
+  filters, explicit server (no DNS SRV), `out=` JSON / `csv=`; `user-check-ldap` takes `ldaps%host[%port]`;
+  `PanAPIConnector::ldapUserEntry()` / `ldapPassword()` / `isNamedEntry()` - used by `ldap-query`, `user-check-ldap`,
+  `user-check-ldap_new`, `utils/develop/ldap/*`, `key-manager`
+* viewer: key kind `ldap` (LDAP account: bind user + password); table `ldap_queries` (per user), `GET|POST ldap`, `PUT|DELETE ldap/<qid>`; run types `ldap` (no version)
+  and `ldap-users` (a version: `type=rule actions=user-check-ldap`, `remove` → result configuration); network rules
+  as for an import (LDAP host on the allow list); project tab **LDAP**
+* `PUT keys/<kid>`: label / port, optionally a new secret; **Edit** in *My API keys*
+
 ## Open
 
 | # | Topic | Notes |
@@ -56,5 +73,5 @@ upload (air gap).
 | C | Firewall through Panorama (`api://<serial>@<panorama>`) | key of the Panorama, target serial; allow list on the Panorama host |
 | D | Key generation from user + password (`type=key-manager`) | needs network from the web part - today the user brings the API key |
 | E | Network limited to the targets | today: the container gets a normal network; the allow list is checked by the viewer, not by a firewall rule - a dedicated docker network with egress rules would be stronger |
-| G | Named entries in runs | e.g. `maxmind-licensekey` for a MaxMind update, `ldap-password` for LDAP runs, `bpa-apikey` for bpa-generator: the run gets only the entry it needs, like an import |
+| G | Named entries in runs | done for `maxmind-licensekey` (MaxMind) and `ldap_user<user>` (LDAP runs); open: e.g. `bpa-apikey` for bpa-generator - the run gets only the entry it needs, like an import |
 | F | Encryption of the key store | today the key of the installation lies in the volume (protects a copied database, not a copied volume) - see config-viewer-encryption.md |

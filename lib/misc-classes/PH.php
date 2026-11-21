@@ -2378,6 +2378,7 @@ class PH
         "playbook",
         "playbook-validation",
         "maxmind-update",
+        "ldap-query",
         "util_get-action-filter",
         "software-remove",
         "traffic-log",
@@ -2415,6 +2416,7 @@ class PH
 
     public static $in_exclude = array(
         "maxmind-update",
+        "ldap-query",
         "util_get-action-filter",
         "protocoll-number-download",
         "gcp"
@@ -2427,6 +2429,7 @@ class PH
         "xml-op-json",
         "bpa-generator",
         "maxmind-update",
+        "ldap-query",
         "util_get-action-filter",
         "software-remove",
         "software-download",
@@ -2597,6 +2600,13 @@ class PH
             $util = new MAXMIND__( );
         }
 
+        elseif( $type == "ldap-query" )
+        {
+            // the LDAP tools of utils/develop/ldap without questions; its arguments: pan-os-php.php has emptied PH::$args
+            PH::resetCliArgs( $argv );
+            PH::processCliArgs();
+            $util = new LDAPQUERY__( );
+        }
         elseif( $type == "protocoll-number-download" )
             $util = new PROTOCOLL_NUMBERS__( );
 

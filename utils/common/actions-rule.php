@@ -6391,17 +6391,22 @@ RuleCallContext::$supportedActions[] = Array(
             $ldapUser = $context->arguments['ldapUser'];
 
             //check if available via .panconfigkeystore
-            $connector = PanAPIConnector::findOrCreateConnectorFromHost( 'ldap-password' );
-            $ldapPassword = $connector->apikey;
+            $ldapPassword = PanAPIConnector::ldapPassword( $ldapUser );
 
             $ldapServer = $context->arguments['ldapServer'];
-
+            // ldaps%host[%port] / ldap%host[%port]: an LDAP URI in the arguments of an action (':' and '/' can not be used there)
+            if( preg_match( '/^(ldaps?)%([A-Za-z0-9.-]+)(?:%([0-9]{1,5}))?$/i', $ldapServer, $m ) )
+                $ldapServer = strtolower( $m[1] ) . '://' . $m[2] . ( isset( $m[3] ) && $m[3] !== '' ? ':' . $m[3] : '' );
+            // internal LDAPS with an own certificate authority (as utils/develop/ldap)
+            putenv('LDAPTLS_REQCERT=allow');
 
             $context->ldapconn = ldap_connect( $ldapServer )
             or die("Could not connect to LDAP server.");
 
             if ($context->ldapconn)
             {
+                ldap_set_option( $context->ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3 );
+                ldap_set_option( $context->ldapconn, LDAP_OPT_REFERRALS, 0 );
                 $context->ldapbind = ldap_bind($context->ldapconn, $ldapUser, $ldapPassword);
                 if( !$context->ldapbind )
                     derr( "LDAP connection not working", null, FALSE);
@@ -6548,7 +6553,7 @@ RuleCallContext::$supportedActions[] = Array(
         'ldapUser' => Array( 'type' => 'string', 'default' => '*nodefault*',
             'help' => "define LDAP user for authentication to server" ),
         'ldapServer' => Array( 'type' => 'string', 'default' => '*nodefault*',
-            'help' => "LDAP server fqdn / IP" ),
+            'help' => "LDAP server fqdn / IP, or ldaps%fqdn[%port] / ldap%fqdn[%port]" ),
         'dn' => Array( 'type' => 'string', 'default' => 'OU=TEST;DC=domain;DC=local',
             'help' => "full OU to an LDAP part, sparated with ';' - this is a specific setting" ),
         'filtercriteria' => Array( 'type' => 'string', 'default' => 'mailNickname',
@@ -6585,8 +6590,7 @@ RuleCallContext::$supportedActions[] = Array(
             $ldapUser = $context->arguments['ldapUser'];
 
             // Check if available via .panconfigkeystore
-            $connector = PanAPIConnector::findOrCreateConnectorFromHost( 'ldap-password' );
-            $ldapPassword = $connector->apikey;
+            $ldapPassword = PanAPIConnector::ldapPassword( $ldapUser );
 
             // --- LDAP SERVER DISCOVERY & CONNECTION LOGIC ---
             $ldapServers = array();

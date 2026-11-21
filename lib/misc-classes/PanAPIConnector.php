@@ -401,6 +401,33 @@ class PanAPIConnector
      * @param bool $hiddenPW
      * @return PanAPIConnector
      */
+    /** named entries of the key store: no device behind them (no connectivity check, no key generation) */
+    const NAMED_ENTRIES = array( 'bpa-apikey', 'license-apikey', 'ldap-password', 'maxmind-licensekey', 'gcp-mysql-password' );
+
+    static public function isNamedEntry( $host )
+    {
+        $host = strtolower( (string)$host );
+        return in_array( $host, self::NAMED_ENTRIES, TRUE ) || ( strpos( $host, 'ldap_user' ) === 0 && strlen( $host ) > 9 );
+    }
+
+    /**
+     * the key store entry of an LDAP bind user: ldap_user<user> (e.g. ldap_useralice@example.com) - the password of
+     * this user (as tsg_id<TSG> for SCM). The entry name is read in lower case.
+     */
+    static public function ldapUserEntry( $user )
+    {
+        $user = trim( (string)$user );
+        if( $user === '' || preg_match( '#[\x00-\x20\x7F:%/]#', $user ) )
+            derr( "LDAP bind user '" . $user . "': no spaces, ':', '%' or '/' (key store entry ldap_user<user>)", null, FALSE );
+        return 'ldap_user' . strtolower( $user );
+    }
+
+    /** the password of an LDAP bind user from the key store (entry ldap_user<user>; asked for and stored when missing) */
+    static public function ldapPassword( $user )
+    {
+        return (string)self::findOrCreateConnectorFromHost( self::ldapUserEntry( $user ) )->apikey;
+    }
+
     static public function findOrCreateConnectorFromHost($host, $apiKey = null, $promptForKey = TRUE, $checkConnectivity = TRUE, $hiddenPW = TRUE, $debugAPI = false, $cliUSER = null, $cliPW = null)
     {
         self::loadConnectorsFromUserHome();
@@ -427,8 +454,12 @@ class PanAPIConnector
 
         foreach( self::$savedConnectors as $connector )
         {
-            if( $connector->apihost == $host && ($port === null && $connector->port == 443 || $port !== null && $connector->port == $port) )
+            if( strtolower( (string)$connector->apihost ) == $host && ($port === null && $connector->port == 443 || $port !== null && $connector->port == $port) )
             {
+                // a named entry (LDAP password, BPA key, …): no device to ask
+                if( self::isNamedEntry( $host ) && $apiKey === null )
+                    return $connector;
+
                 $exceptionUse = PH::$useExceptions;
                 PH::$useExceptions = TRUE;
 
@@ -440,7 +471,7 @@ class PanAPIConnector
                 {
                     PH::$useExceptions = $exceptionUse;
 
-                    if( $host != "bpa-apikey" && $host != "license-apikey" && $host != "ldap-password" && $host != "maxmind-licensekey" && $host != "gcp-mysql-password" )
+                    if( !self::isNamedEntry( $host ) )
                     {
                         $wrongLogin = TRUE;
 
@@ -493,7 +524,7 @@ class PanAPIConnector
             }
 
 
-            if( strlen($apiKey) < 19 && !( $host == "bpa-apikey" || $host == "license-apikey" || $host == "ldap-password" || $host == "maxmind-licensekey" || $host == "gcp-mysql-password" ) )
+            if( strlen($apiKey) < 19 && !self::isNamedEntry( $host ) )
             {
                 $user = $apiKey;
 
@@ -557,7 +588,7 @@ class PanAPIConnector
                 $connector = new PanAPIConnector($host, $apiKey, 'panos', null, $port);
         }
 
-        if( $host == "bpa-apikey" || $host == "license-apikey" || $host == "ldap-password" || $host == "maxmind-licensekey" || strpos($host, "tsg_id" || $host == "gcp-mysql-password") !== FALSE )
+        if( self::isNamedEntry( $host ) || $host == "bpa-apikey" || $host == "license-apikey" || $host == "ldap-password" || $host == "maxmind-licensekey" || strpos($host, "tsg_id" || $host == "gcp-mysql-password") !== FALSE )
         {
             $checkConnectivity = false;
             self::$savedConnectors[] = $connector;

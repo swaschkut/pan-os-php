@@ -20,7 +20,7 @@
 /**
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
  *   POST login, POST logout, GET me, POST password, GET meta, GET playbooks, GET playbooks?all=1 + PUT playbooks (admin)
- *   GET|POST keys, DELETE keys/<kid> (own API keys), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
+ *   GET|POST keys, PUT|DELETE keys/<kid> (own API keys), GET|POST ldap, PUT|DELETE ldap/<qid> (own LDAP queries), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
  *   GET central, POST central/appid|geoip[/runs], DELETE central/appid|geoip (admin); GET|POST|DELETE projects/<pid>/appid, POST projects/<pid>/appid/runs
  *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
  *   GET projects/<pid>/audit                                              (owner)
@@ -159,7 +159,7 @@ try
         $user['is_admin'] = 0;
         $csrf = null;
         $viewerAudit['token'] = $user['token']['tid'];
-        if( in_array( $r0, array( 'logout', 'password', 'users', 'license', 'keys', 'network' ), TRUE ) )
+        if( in_array( $r0, array( 'logout', 'password', 'users', 'license', 'keys', 'network', 'ldap' ), TRUE ) )
             throw new ViewerException( 'not found', 404 );
     }
     else
@@ -323,9 +323,28 @@ try
         }
         if( $method === 'POST' && count( $route ) === 1 )
             viewerOut( $app->keyAdd( $user, viewerBody() ), 201 );
+        // change: the label (port), optionally a new secret
+        if( $method === 'PUT' && count( $route ) === 2 )
+            viewerOut( $app->keyUpdate( $user, $route[1], viewerBody() ) );
         if( $method === 'DELETE' && count( $route ) === 2 )
         {
             $app->keyDelete( $user, $route[1] );
+            viewerOut( array( 'ok' => TRUE ) );
+        }
+    }
+
+    // the saved LDAP queries of the user (personal)
+    if( $r0 === 'ldap' )
+    {
+        if( $method === 'GET' && count( $route ) === 1 )
+            viewerOut( $app->ldapQueries( $user ) );
+        if( $method === 'POST' && count( $route ) === 1 )
+            viewerOut( $app->ldapQuerySave( $user, null, viewerBody() ), 201 );
+        if( $method === 'PUT' && count( $route ) === 2 )
+            viewerOut( $app->ldapQuerySave( $user, (string)$route[1], viewerBody() ) );
+        if( $method === 'DELETE' && count( $route ) === 2 )
+        {
+            $app->ldapQueryDelete( $user, $route[1] );
             viewerOut( array( 'ok' => TRUE ) );
         }
     }

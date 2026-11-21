@@ -110,7 +110,7 @@ $ldapServer     = prompt("\nSelected LDAP Server URI", $defaultServer);
 $ldapUser       = prompt("Bind User (UPN or DN)", "svwaschkut@{$domain}");
 
 // Check if available via .panconfigkeystore
-$connector = PanAPIConnector::findOrCreateConnectorFromHost( 'ldap-password' );
+$connector = PanAPIConnector::findOrCreateConnectorFromHost( PanAPIConnector::ldapUserEntry( $ldapUser ) );
 $ldapPassword = $connector->apikey;
 #$ldapPassword   = promptPassword("Bind Password: ");
 

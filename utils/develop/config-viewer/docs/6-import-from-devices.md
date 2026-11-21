@@ -19,14 +19,16 @@ nothing is written to the device. The result becomes a new version of the projec
    - PAN-OS: host name / IP address and the XML API key
    - SCM: TSG id, client id and client secret of a service account
 
-   - other entries of the pan-os-php key store: egress-IP key (`egressip_tsg_id<TSG>`), `ldap-password`, `bpa-apikey`,
+   - LDAP accounts: bind user + password (`ldap_user<bind user>`, see *LDAP*)
+   - other entries of the pan-os-php key store: egress-IP key (`egressip_tsg_id<TSG>`), `ldap-password` (old), `bpa-apikey`,
      `license-apikey`, `maxmind-licensekey`, `gcp-mysql-password`, and any other entry name - stored for the runs
      that need them
    - **an existing `.panconfkeystore`**: *Import key store* takes over all its entries (an entry of the same kind and
      target is replaced; lines that do not fit are named with their line number, never their content)
 
    A key is **personal**: only you use it, in your projects - nobody else, also no administrator. After saving it is
-   never shown again (only its last 4 characters). It stays until you delete it - for the next import and, later,
+   never shown again (only its last 4 characters). **Edit** in its row changes the label (e.g. after a key store
+   import) and, for PAN-OS, the port; a new secret can be given there too - left empty, the stored one stays. It stays until you delete it - for the next import and, later,
    for other work with the same device.
 4. **Write permission** in the project.
 

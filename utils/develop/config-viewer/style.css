@@ -90,3 +90,4 @@ span.row[hidden] { display: none; }
 .editorbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--bg); }
 .editorbar .spacer { flex: 1; }
 iframe.editorframe { flex: 1; border: 0; width: 100%; }
+tr.warnrow td { background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent); }

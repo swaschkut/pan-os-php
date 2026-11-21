@@ -180,6 +180,26 @@ function cliNoticeCard(list) {
     const m = document.getElementById('main');
     m.insertBefore(card, m.firstChild);
 }
+// change an entry of my key store in its row: the label (and port), optionally a new secret (empty = the stored one stays)
+function keyEdit(k, tr) {
+    const label = el('input', { value: k.label, maxlength: 80, autocomplete: 'off' });
+    const port = el('input', { type: 'number', min: 1, max: 65535, value: k.port || '', placeholder: '443', class: 'narrow' });
+    const key = el('input', { type: 'password', autocomplete: 'new-password', placeholder: 'empty = keep' });
+    const cid = el('input', { autocomplete: 'off', spellcheck: false, placeholder: 'client id (empty = keep)' });
+    const sec = el('input', { type: 'password', autocomplete: 'new-password', placeholder: 'client secret' });
+    const form = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        const body = { label: label.value.trim() };
+        if (k.kind === 'panos') body.port = port.value;
+        if (k.kind === 'scm') { if (cid.value.trim() || sec.value) { body.client_id = cid.value.trim(); body.client_secret = sec.value; } }
+        else if (key.value) body.key = k.kind === 'named' || k.kind === 'other' || k.kind === 'ldap' ? key.value : key.value.trim();
+        await api('PUT', 'keys/' + k.kid, body);
+        await showAccount(); message('key changed');
+    }); } }, field('Label', label), k.kind === 'panos' ? field('Port', port) : null,
+        k.kind === 'scm' ? [field('New client id', cid), field('New client secret', sec)] : field('New ' + (k.kind === 'ldap' ? 'password' : k.kind === 'named' || k.kind === 'other' ? 'value' : 'API key') + ' (optional)', key),
+        el('button', { class: 'primary', type: 'submit', text: 'Save' }), el('button', { type: 'button', text: 'Cancel', onclick: () => run(showAccount) }));
+    tr.replaceChildren(el('td', { text: k.target }), el('td', { colspan: 7 }, form));
+    label.focus();
+}
 async function showAccount() {
     const oldPw = el('input', { type: 'password', autocomplete: 'current-password', required: true });
     const newPw = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: 10 });
@@ -205,18 +225,18 @@ async function showAccount() {
             const k = kKind.value;
             fTarget.hidden = k === 'named'; fNamed.hidden = k !== 'named'; fPort.hidden = k !== 'panos';
             fKey.hidden = k === 'scm'; fId.hidden = fSecret.hidden = k !== 'scm';
-            fTarget.firstChild.textContent = { panos: 'Host name / IP address', scm: 'TSG id', egressip: 'TSG id', other: 'Entry name' }[k] || '';
-            fKey.firstChild.textContent = k === 'named' || k === 'other' ? 'Value (password / key)' : 'API key';
+            fTarget.firstChild.textContent = { panos: 'Host name / IP address', scm: 'TSG id', egressip: 'TSG id', ldap: 'Bind user (UPN or DOMAIN\\user)', other: 'Entry name' }[k] || '';
+            fKey.firstChild.textContent = k === 'ldap' ? 'Password' : k === 'named' || k === 'other' ? 'Value (password / key)' : 'API key';
         };
         kKind.addEventListener('change', kindChanged); kindChanged();
         const ksFile = el('input', { type: 'file', required: true });
         const ksResult = el('div', {});
-        const kindName = { panos: 'PAN-OS', scm: 'SCM', egressip: 'egress IP', named: 'named', other: 'other' };
+        const kindName = { panos: 'PAN-OS', scm: 'SCM', egressip: 'egress IP', ldap: 'LDAP account', named: 'named', other: 'other' };
         nodes.push(el('div', { class: 'card' }, el('h2', { text: 'My API keys' }),
-            el('p', { class: 'muted', text: 'The entries of your pan-os-php key store (.panconfkeystore): keys of firewalls / Panoramas and SCM tenants for imports into your projects, and the other entries pan-os-php uses (LDAP password, BPA / licence / MaxMind key, egress-IP key, …). Only you can use them - nobody else, also no administrator. After saving, a key is never shown again (only its last 4 characters); it stays until you delete it.' + (ks.network ? '' : ' Network for runs is off at the moment (administrator).') }),
+            el('p', { class: 'muted', text: 'The entries of your pan-os-php key store (.panconfkeystore): keys of firewalls / Panoramas and SCM tenants for imports into your projects, and the other entries pan-os-php uses (LDAP accounts = bind user + password, BPA / licence / MaxMind key, egress-IP key, …). Only you can use them - nobody else, also no administrator. After saving, a key is never shown again (only its last 4 characters); it stays until you delete it.' + (ks.network ? '' : ' Network for runs is off at the moment (administrator).') }),
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const k = kKind.value, body = { kind: k, label: kLabel.value.trim(), target: k === 'named' ? kNamed.value : kTarget.value.trim() };
-                if (k === 'scm') { body.client_id = kId.value.trim(); body.client_secret = kSecret.value; } else body.key = k === 'named' || k === 'other' ? kKey.value : kKey.value.trim();
+                if (k === 'scm') { body.client_id = kId.value.trim(); body.client_secret = kSecret.value; } else body.key = k === 'named' || k === 'other' || k === 'ldap' ? kKey.value : kKey.value.trim();
                 if (k === 'panos' && kPort.value) body.port = kPort.value;
                 await api('POST', 'keys', body);
                 kKey.value = kSecret.value = kId.value = '';
@@ -235,10 +255,12 @@ async function showAccount() {
                 el('td', { text: (k.kind === 'scm' || k.kind === 'egressip' ? 'TSG ' : '') + k.target + (k.port ? ':' + k.port : '') }), el('td', { text: k.label }),
                 el('td', { text: k.hint }), el('td', { text: fmtTime(k.created) }), el('td', { text: fmtTime(k.last_used) }),
                 el('td', { class: 'wrap' }, !k.import ? el('span', { class: 'muted', text: 'stored (not for imports)' }) : k.refused ? el('span', { class: 'muted', text: k.refused }) : el('span', { class: 'badge', text: 'yes' })),
-                el('td', {}, el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
-                    if (!confirm('Delete the key ' + k.target + '?')) return;
-                    await api('DELETE', 'keys/' + k.kid); await showAccount();
-                }) })))))));
+                el('td', {}, el('div', { class: 'row' },
+                    el('button', { type: 'button', text: 'Edit', onclick: (ev) => keyEdit(k, ev.target.closest('tr')) }),
+                    el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                        if (!confirm('Delete the key ' + k.target + '?')) return;
+                        await api('DELETE', 'keys/' + k.kid); await showAccount();
+                    }) }))))))));
     }
     if (state.admin) {
         const users = (await api('GET', 'users')).users;
@@ -612,6 +634,7 @@ async function showProject(pid) {
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
                     const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: r.type === 'appid' ? 'App-ID from ' + ((r.args || []).find(a => a.startsWith('x-appid-target=')) || '').slice(15)
+                            : r.type === 'ldap' ? 'LDAP ' + ((r.args || []).find(a => a.startsWith('x-ldap-target=')) || '').slice(14)
                             : r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')
                             : !r.cid ? '-' : (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
                         el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
@@ -622,7 +645,7 @@ async function showProject(pid) {
                                 if (openFiles.has(r.jid)) openFiles.delete(r.jid); else openFiles.add(r.jid);
                                 await drawRuns();
                             }) }), ' ',
-                            canWrite && (r.type === 'playbook' || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
+                            canWrite && (r.type === 'playbook' || (r.type === 'ldap-users' && (r.args || []).includes('out=%JOB%/out.xml')) || (plug.runs[r.type] && plug.runs[r.type].result)) && r.state === 'done' ? el('span', {}, el('button', { type: 'button', text: 'Result as new version', onclick: (ev) => run(async () => {
                                 const to = ev.target.parentNode.querySelector('select').value;
                                 await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
                                 await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
@@ -681,6 +704,11 @@ async function showProject(pid) {
         state.pendingTimers = [setInterval(() => { if (openRuns) refreshRuns().catch(() => {}); }, 4000)];
     }
 
+    // ---- LDAP: my saved queries (personal) against the LDAP / AD of the customer, with my own bind account (key store
+    // entry ldap_user<user>); and the check of the users of the security rules of a version (user-check-ldap)
+    let ldapCard = null;
+    if (canWrite && !limited) ldapCard = await ldapTab(base, pid, p, owner, configs.configs);
+
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
         owner ? el('button', { class: 'danger', type: 'button', text: 'Delete project', onclick: () => run(async () => {
@@ -689,6 +717,7 @@ async function showProject(pid) {
         }) }) : null), projectTabs(pid, [
             ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard, appidCard]],
             ['runs', 'Runs and project files', [runsCard, filesCard]],
+            ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now
     if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
@@ -730,8 +759,100 @@ function openEditor(kind, pid, file, done) {
     document.body.append(overlay);
 }
 
+// ---------------------------------------------------------------- LDAP tab of a project
+async function ldapTab(base, pid, p, owner, versions) {
+    const card = el('div', { class: 'card' });
+    const info = await api('GET', 'ldap');
+    const runs = (await api('GET', base + '/runs')).runs.filter(r => (r.type === 'ldap' || r.type === 'ldap-users') && r.user === state.user);
+    const out = el('div', {});
+    const redraw = async () => { card.replaceWith(await ldapTab(base, pid, p, owner, versions)); };
+    // the form: a new query, or a saved one to change
+    const f = {
+        name: el('input', { required: true, maxlength: 80, autocomplete: 'off' }),
+        server: el('input', { required: true, placeholder: 'ldaps://dc1.example.com:636', autocomplete: 'off', spellcheck: false }),
+        bind_user: el('input', { required: true, placeholder: 'admin@example.com or EXAMPLE\\admin', autocomplete: 'off', spellcheck: false, list: 'ldap-accounts-' + pid }),
+        base_dn: el('input', { required: true, placeholder: 'OU=Users,DC=example,DC=com', autocomplete: 'off', spellcheck: false }),
+        attribute: el('input', { value: 'sAMAccountName', autocomplete: 'off', spellcheck: false }),
+        mode: el('select', {}, Object.entries(info.modes).map(([k, t]) => el('option', { value: k, text: k + ' - ' + t }))),
+        users: el('textarea', { rows: 3, placeholder: 'one user per line (or comma separated)', spellcheck: false }),
+        group: el('input', { autocomplete: 'off', spellcheck: false }),
+        transitive: el('input', { type: 'checkbox' }),
+    };
+    let editing = null;
+    const fUsers = field('Users', f.users), fGroup = field('Group (CN or sAMAccountName)', f.group), fTrans = field('With nested groups', f.transitive);
+    const modeChanged = () => { const m = f.mode.value; fUsers.hidden = m === 'group-members'; fGroup.hidden = m !== 'group-members'; fTrans.hidden = m !== 'common-groups'; };
+    f.mode.addEventListener('change', modeChanged); modeChanged();
+    const saveBtn = el('button', { class: 'primary', type: 'submit', text: 'Save query' });
+    const fill = (q) => {
+        editing = q ? q.qid : null;
+        for (const k of ['name', 'server', 'bind_user', 'base_dn', 'attribute']) f[k].value = q ? q[k] : (k === 'attribute' ? 'sAMAccountName' : '');
+        f.mode.value = q ? q.mode : 'validation'; f.users.value = q ? q.users.join('\n') : ''; f.group.value = q ? q.group : ''; f.transitive.checked = q ? q.transitive : false;
+        saveBtn.textContent = q ? 'Save changes' : 'Save query'; modeChanged();
+    };
+    // my LDAP accounts (key store entries ldap_user<user>) as suggestions for the bind user
+    const accounts = el('datalist', { id: 'ldap-accounts-' + pid }, info.accounts.map(a => el('option', { value: a })));
+    const form = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        const body = {};
+        for (const k of ['name', 'server', 'bind_user', 'base_dn', 'attribute', 'mode', 'users', 'group']) body[k] = f[k].value.trim();
+        body.transitive = f.transitive.checked;
+        await api(editing ? 'PUT' : 'POST', 'ldap' + (editing ? '/' + editing : ''), body);
+        await redraw(); message('LDAP query saved');
+    }); } }, field('Name', f.name), field('Server', f.server), field('Bind user (my account)', f.bind_user), field('Base DN', f.base_dn), field('User attribute', f.attribute),
+        field('What', f.mode), fUsers, fGroup, fTrans, saveBtn, el('button', { type: 'button', text: 'New', onclick: () => fill(null) }));
+
+    const why = !p.network_global ? 'Network for runs is off (an administrator turns it on under Account).'
+        : !p.network ? 'Network is off for this project' + (owner ? ' (Configuration versions, Import from a device).' : ' (the owner turns it on).')
+        : info.accounts.length === 0 ? 'You have no LDAP account yet: add one under Account, My API keys (kind LDAP account: bind user + password; key store entry ldap_user<user>).' : null;
+    const verSel = () => el('select', { 'aria-label': 'version' }, versions.map(c => el('option', { value: c.cid, text: c.name })));
+    const queries = info.queries.length === 0 ? el('p', { class: 'muted', text: 'No saved queries yet.' }) :
+        table(['Name', 'What', 'Server', 'Base DN', 'Users / group', ''], info.queries.map(q => {
+            const v = verSel();
+            const noAccount = !info.accounts.includes(q.bind_user.toLowerCase());
+            const act = el('select', { 'aria-label': 'show or remove' }, el('option', { value: 'show', text: 'show missing users' }), el('option', { value: 'remove', text: 'remove missing users (result = new version)' }));
+            return el('tr', {}, el('td', { text: q.name }), el('td', { text: q.mode }), el('td', { text: q.server }), el('td', { class: 'wrap', text: q.base_dn }),
+                el('td', { class: 'wrap', text: q.mode === 'group-members' ? q.group : q.users.join(', ') }),
+                el('td', {}, el('div', { class: 'row' },
+                    !why && noAccount ? el('span', { class: 'error', text: 'no LDAP account ' + q.bind_user + ' (My API keys)' }) : null,
+                    why || noAccount ? null : el('button', { type: 'button', class: 'primary', text: 'Run', disabled: q.mode !== 'group-members' && q.users.length === 0, onclick: () => run(async () => {
+                        await api('POST', base + '/ldap/runs', { qid: q.qid }); await redraw(); message('LDAP query queued');
+                    }) }),
+                    why || noAccount || versions.length === 0 ? null : el('span', {}, el('button', { type: 'button', text: 'Check the users of the rules', title: 'type=rule actions=user-check-ldap with the server, bind user, base DN and attribute of this query', onclick: () => run(async () => {
+                        if (act.value === 'remove' && !confirm('Remove the users that are not in the LDAP any more from the security rules? The result is a new configuration (Result as new version) - the version itself stays.')) return;
+                        await api('POST', base + '/configs/' + v.value + '/ldap-users/runs', { qid: q.qid, action: act.value }); await redraw(); message('check queued');
+                    }) }), ' of ', v, ' ', act),
+                    el('button', { type: 'button', text: 'Edit', onclick: () => { fill(q); f.name.focus(); } }),
+                    el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
+                        if (!confirm('Delete the LDAP query ' + q.name + '?')) return;
+                        await api('DELETE', 'ldap/' + q.qid); await redraw();
+                    }) }))));
+        }));
+    const show = async (r) => {
+        if (r.type === 'ldap-users') { out.replaceChildren(el('h3', { text: 'Result' }), el('pre', { class: 'log', text: await (await fetch(API + '/' + base + '/runs/' + r.jid + '/files/run.log', { credentials: 'same-origin' })).text() })); return; }
+        const res = await (await fetch(API + '/' + base + '/runs/' + r.jid + '/files/ldap.json', { credentials: 'same-origin' })).json();
+        const rows = res.rows || [];
+        const cols = [...new Set(rows.flatMap(x => Object.keys(x)))];
+        const val = v => v === null || v === undefined ? '' : typeof v === 'boolean' ? (v ? 'yes' : 'no') : typeof v === 'object' ? Object.entries(v).map(([a, b]) => a + ': ' + b).join(', ') : String(v);
+        out.replaceChildren(el('h3', { text: 'Result: ' + res.mode + (res.group ? ' ' + res.group : '') + (res.user ? ' ' + res.user : '') + ' - ' + rows.length + ' row(s)' + (res.missing ? ', ' + res.missing + ' not found' : '') }),
+            res.notFound && res.notFound.length ? el('p', { class: 'error', text: 'not found: ' + res.notFound.join(', ') }) : null,
+            el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/ldap.csv', text: 'CSV' }),
+            rows.length === 0 ? el('p', { class: 'muted', text: 'nothing found' }) :
+            table(cols, rows.map(x => el('tr', { class: x.found === false || x.status === 'disabled' || x.expired ? 'warnrow' : '' }, cols.map(c => el('td', { class: 'wrap', text: val(x[c]) }))))));
+    };
+    const runList = runs.length === 0 ? null : table(['Run', 'State', 'Started', ''], runs.slice(0, 20).map(r => el('tr', {},
+        el('td', { text: r.type === 'ldap' ? 'query ' + ((r.args || []).find(a => a.startsWith('mode=')) || '').slice(5) : 'rule users of ' + ((versions.find(c => c.cid === r.cid) || { name: '-' }).name) }),
+        el('td', { class: 'wrap' }, el('span', { class: 'badge' + (r.state === 'queued' || r.state === 'running' ? ' dirty' : ''), text: r.state }), r.error ? el('span', { class: 'muted', text: ' ' + r.error }) : null),
+        el('td', { text: fmtTime(r.started) }),
+        el('td', {}, r.state === 'done' ? el('button', { type: 'button', text: 'Show result', onclick: () => run(() => show(r)) }) : null,
+            r.state === 'queued' || r.state === 'running' ? el('button', { type: 'button', text: 'Refresh', onclick: () => run(redraw) }) : null))));
+    card.append(el('h2', { text: 'LDAP' }),
+        el('p', { class: 'muted', text: 'Ask the LDAP / Active Directory with your own account: do the users still exist (cleanup), which groups does a user have, which groups do several users share, who is in a group. The queries are yours (nobody else sees them); the password of the bind user is your LDAP account under My API keys (key store entry ldap_user<user>). The server must be allowed by the administrator (network allow list). "Check the users of the rules" looks up the users of the security rules of a version (pan-os-php user-check-ldap); the run log shows the missing ones, "remove" also makes a result configuration without them.' }),
+        why ? el('p', { class: 'muted', text: why }) : null, accounts, form, queries, runList ? el('h3', { text: 'My LDAP runs' }) : null, runList, out);
+    return card;
+}
+
 // ---------------------------------------------------------------- tabs of a project (the chosen one is kept per project)
 function projectTabs(pid, tabs) {
+    tabs = tabs.filter(t => t);
     state.projectTab = state.projectTab || {};
     const panel = el('div', { class: 'tabpanel', role: 'tabpanel' });
     const bar = el('div', { class: 'tabs', role: 'tablist' }, tabs.map(([id, title]) => el('button', { type: 'button', role: 'tab', 'data-tab': id, text: title, onclick: () => show(id) })));

@@ -190,6 +190,12 @@ class ViewerApp
         $cols = array_column( $this->db->query( 'PRAGMA table_info(user_keys)' )->fetchAll(), 'name' );
         if( !in_array( 'port', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE user_keys ADD COLUMN port INTEGER' );
+        // saved LDAP queries of a user (server, bind user, base DN, what to ask); the password: the user's key store entry
+        // ldap_user<bind user> (kind ldap)
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS ldap_queries (id INTEGER PRIMARY KEY, qid TEXT NOT NULL UNIQUE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, server TEXT NOT NULL, bind_user TEXT NOT NULL,
+            base_dn TEXT NOT NULL, attribute TEXT NOT NULL, mode TEXT NOT NULL, users TEXT NOT NULL, grp TEXT NOT NULL, transitive INTEGER NOT NULL,
+            created INTEGER NOT NULL, updated INTEGER NOT NULL)' );
         // why a run failed: memory (killed / out of memory), timeout, error
         $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
         if( !in_array( 'reason', $cols, TRUE ) )
@@ -561,7 +567,8 @@ class ViewerApp
      * todo/config-viewer-device-access.md). 'other': any further entry name, kept as it is.
      */
     const KEY_KINDS = array( 'panos' => 'PAN-OS firewall / Panorama (XML API key)', 'scm' => 'SCM / SASE tenant (client id + secret)',
-        'egressip' => 'Prisma Access egress-IP API key (tenant)', 'named' => 'named entry (LDAP password, BPA / licence / MaxMind key, GCP MySQL password)',
+        'egressip' => 'Prisma Access egress-IP API key (tenant)', 'ldap' => 'LDAP account (bind user + password)',
+        'named' => 'named entry (BPA / licence / MaxMind key, GCP MySQL password, old ldap-password)',
         'other' => 'other entry (name as in .panconfkeystore)' );
     /** named entries pan-os-php knows (PanAPIConnector::findOrCreateConnectorFromHost) */
     const KEY_NAMED = array( 'ldap-password', 'bpa-apikey', 'license-apikey', 'maxmind-licensekey', 'gcp-mysql-password' );
@@ -734,6 +741,14 @@ class ViewerApp
                 throw new ViewerException( 'target: the TSG id of the tenant (digits)', 400 );
             return $t;
         }
+        if( $kind === 'ldap' )
+        {
+            // the bind user of the key store entry ldap_user<user>: UPN or DOMAIN\user; pan-os-php reads the entry names in
+            // lower case and ':' / '%' / '/' have a meaning there; ',' separates the arguments of user-check-ldap
+            if( $t === '' || strlen( $t ) > 200 || preg_match( '#[\x00-\x20\x7F:%/,]#', $t ) )
+                throw new ViewerException( 'target: the LDAP bind user (UPN or DOMAIN\\user; no spaces, ":", "%", "/", ",")', 400 );
+            return strtolower( $t );
+        }
         if( $kind === 'named' )
         {
             if( !in_array( strtolower( $t ), self::KEY_NAMED, TRUE ) )
@@ -759,6 +774,8 @@ class ViewerApp
             return 'scm';
         if( preg_match( '/^egressip_tsg_id[0-9]{1,20}$/', $name ) )
             return 'egressip';
+        if( stripos( $name, 'ldap_user' ) === 0 && strlen( $name ) > 9 )
+            return 'ldap';
         if( in_array( strtolower( $name ), self::KEY_NAMED, TRUE ) )
             return 'named';
         $l = strtolower( $name );
@@ -774,6 +791,8 @@ class ViewerApp
             return 'tsg_id' . $target . ':' . $secret;
         if( $kind === 'egressip' )
             return 'egressip_tsg_id' . $target . ':' . $secret;
+        if( $kind === 'ldap' )
+            return 'ldap_user' . $target . ':' . $secret;
         if( $kind === 'panos' && $port !== null && $port !== 443 )
             return $target . '%' . $port . ':' . $secret;
         return $target . ':' . $secret;
@@ -842,8 +861,8 @@ class ViewerApp
             $secret = $id . '%' . $sec;
         }
         else
-            $secret = self::keySecret( $in['key'] ?? null, 'key', in_array( $kind, array( 'named', 'other' ), TRUE ) );
-        if( $kind !== 'named' && $kind !== 'other' && strlen( $secret ) < 8 )
+            $secret = self::keySecret( $in['key'] ?? null, 'key', in_array( $kind, array( 'named', 'other', 'ldap' ), TRUE ) );
+        if( !in_array( $kind, array( 'named', 'other', 'ldap' ), TRUE ) && strlen( $secret ) < 8 )
             throw new ViewerException( 'key: at least 8 characters', 400 );
         $this->keyStore( $user, $kind, $target, $port, (string)( $in['label'] ?? '' ), $secret );
         foreach( $this->keyList( $user ) as $k )
@@ -898,7 +917,7 @@ class ViewerApp
                 }
                 else
                 {
-                    $in['target'] = $kind === 'egressip' ? substr( $name, 15 ) : $name;
+                    $in['target'] = $kind === 'egressip' ? substr( $name, 15 ) : ( $kind === 'ldap' ? substr( $name, 9 ) : $name );
                     $in['key'] = $value;
                 }
                 $k = $this->keyAdd( $user, $in );
@@ -910,6 +929,117 @@ class ViewerApp
             }
         }
         return array( 'imported' => $done, 'skipped' => $skipped );
+    }
+
+    /** change an entry of the user: the label, and - when given - a new secret (as keyAdd: key / client_id + client_secret) */
+    public function keyUpdate( array $user, $kid, array $in ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)$kid, $user['id'] ) )->fetch();
+        if( !$k )
+            throw new ViewerException( 'not found', 404 );
+        $newSecret = ( isset( $in['key'] ) && $in['key'] !== '' ) || ( isset( $in['client_id'] ) && $in['client_id'] !== '' ) || ( isset( $in['client_secret'] ) && $in['client_secret'] !== '' );
+        if( $newSecret )
+            // the same checks as a new entry; it replaces the secret of this kind and target
+            return $this->keyAdd( $user, array( 'kind' => $k['kind'], 'target' => $k['target'], 'port' => $in['port'] ?? $k['port'], 'label' => $in['label'] ?? $k['label'] ) + $in );
+        $label = trim( (string)( $in['label'] ?? '' ) );
+        $label = $label === '' ? $k['target'] : self::checkLabel( $label, 'label' );
+        $port = $k['port'];
+        if( $k['kind'] === 'panos' && array_key_exists( 'port', $in ) )
+        {
+            if( $in['port'] === '' || $in['port'] === null )
+                $port = null;
+            elseif( !ctype_digit( (string)$in['port'] ) || (int)$in['port'] < 1 || (int)$in['port'] > 65535 )
+                throw new ViewerException( 'port: 1-65535', 400 );
+            else
+                $port = (int)$in['port'];
+        }
+        $this->q( 'UPDATE user_keys SET label = ?, port = ? WHERE id = ?', array( $label, $port, $k['id'] ) );
+        foreach( $this->keyList( $user ) as $x )
+            if( $x['kid'] === $k['kid'] )
+                return $x;
+        throw new ViewerException( 'not found', 404 );
+    }
+
+    // ------------------------------------------------------------------ LDAP queries of a user (type=ldap-query, user-check-ldap)
+
+    const LDAP_MODES = array( 'validation' => 'do the accounts still exist?', 'user-groups' => 'groups of a user', 'common-groups' => 'groups all users are in',
+        'group-members' => 'members of a group' );
+
+    private static function ldapQueryCheck( array $in ): array
+    {
+        $txt = function( $v, string $what, int $max, string $deny = '' ) {
+            $v = is_string( $v ) ? trim( $v ) : '';
+            if( $v === '' || strlen( $v ) > $max || preg_match( '/[\x00-\x1F\x7F' . $deny . ']/', $v ) )
+                throw new ViewerException( $what . ': 1-' . $max . ' characters' . ( $deny !== '' ? ', no "' . stripslashes( $deny ) . '"' : '' ), 400 );
+            return $v;
+        };
+        $server = is_string( $in['server'] ?? null ) ? trim( $in['server'] ) : '';
+        if( !preg_match( '#^(ldaps?)://([A-Za-z0-9.-]{1,253})(:([0-9]{1,5}))?$#', $server, $m ) || ( isset( $m[4] ) && ( (int)$m[4] < 1 || (int)$m[4] > 65535 ) ) )
+            throw new ViewerException( 'server: ldaps://host[:port] or ldap://host[:port] (no automatic discovery - the host must be on the allow list)', 400 );
+        $mode = $in['mode'] ?? '';
+        if( !is_string( $mode ) || !isset( self::LDAP_MODES[$mode] ) )
+            throw new ViewerException( 'mode: ' . implode( ', ', array_keys( self::LDAP_MODES ) ), 400 );
+        $attr = trim( (string)( $in['attribute'] ?? 'sAMAccountName' ) );
+        if( !preg_match( '/^[A-Za-z][A-Za-z0-9-]{0,62}$/', $attr ) )
+            throw new ViewerException( 'attribute: an LDAP attribute name (e.g. sAMAccountName)', 400 );
+        $users = array();
+        foreach( preg_split( '/[\r\n,]+/', (string)( $in['users'] ?? '' ) ) as $u )
+            if( ( $u = trim( $u ) ) !== '' )
+                $users[] = $txt( $u, 'users: a user', 200, ',' );
+        if( count( $users ) > 500 )
+            throw new ViewerException( 'users: at most 500', 400 );
+        $group = trim( (string)( $in['group'] ?? '' ) );
+        if( $mode === 'group-members' )
+            $group = $txt( $group, 'group', 200, ',' );
+        elseif( $mode !== 'validation' && count( $users ) === 0 )
+            throw new ViewerException( 'users: at least one user', 400 );
+        return array( 'name' => self::checkLabel( $in['name'] ?? null, 'name' ), 'server' => $server, 'host' => strtolower( $m[2] ),
+            // the bind user goes into the arguments of a pan-os-php action (comma separated): UPN or DOMAIN\user
+            'bind_user' => $txt( $in['bind_user'] ?? null, 'bind_user (UPN or DOMAIN\\user)', 200, ',' ),
+            'base_dn' => $txt( $in['base_dn'] ?? null, 'base_dn', 500 ), 'attribute' => $attr, 'mode' => $mode, 'users' => implode( ',', $users ),
+            'grp' => $group, 'transitive' => !empty( $in['transitive'] ) && $in['transitive'] !== 'false' ? 1 : 0 );
+    }
+
+    private static function ldapQueryPublic( array $q ): array
+    {
+        return array( 'qid' => $q['qid'], 'name' => $q['name'], 'server' => $q['server'], 'bind_user' => $q['bind_user'], 'base_dn' => $q['base_dn'],
+            'attribute' => $q['attribute'], 'mode' => $q['mode'], 'users' => $q['users'] === '' ? array() : explode( ',', $q['users'] ), 'group' => $q['grp'],
+            'transitive' => (bool)$q['transitive'], 'created' => (int)$q['created'], 'updated' => (int)$q['updated'] );
+    }
+
+    /** the saved LDAP queries of the user (personal), and the LDAP accounts of the user (key store entries ldap_user<user>) */
+    public function ldapQueries( array $user ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $rows = $this->q( 'SELECT * FROM ldap_queries WHERE user_id = ? ORDER BY name', array( $user['id'] ) )->fetchAll();
+        $accounts = $this->q( "SELECT target FROM user_keys WHERE user_id = ? AND kind = 'ldap' ORDER BY target", array( $user['id'] ) )->fetchAll( PDO::FETCH_COLUMN );
+        return array( 'queries' => array_map( array( self::class, 'ldapQueryPublic' ), $rows ), 'modes' => self::LDAP_MODES, 'accounts' => $accounts );
+    }
+
+    public function ldapQuerySave( array $user, ?string $qid, array $in ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $q = self::ldapQueryCheck( $in );
+        if( $qid === null )
+        {
+            $qid = self::randomId( 8 );
+            $this->q( 'INSERT INTO ldap_queries (qid, user_id, name, server, bind_user, base_dn, attribute, mode, users, grp, transitive, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                array( $qid, $user['id'], $q['name'], $q['server'], $q['bind_user'], $q['base_dn'], $q['attribute'], $q['mode'], $q['users'], $q['grp'], $q['transitive'], time(), time() ) );
+        }
+        elseif( $this->q( 'UPDATE ldap_queries SET name = ?, server = ?, bind_user = ?, base_dn = ?, attribute = ?, mode = ?, users = ?, grp = ?, transitive = ?, updated = ? WHERE qid = ? AND user_id = ?',
+            array( $q['name'], $q['server'], $q['bind_user'], $q['base_dn'], $q['attribute'], $q['mode'], $q['users'], $q['grp'], $q['transitive'], time(), $qid, $user['id'] ) )->rowCount() === 0 )
+            throw new ViewerException( 'not found', 404 );
+        return self::ldapQueryPublic( $this->q( 'SELECT * FROM ldap_queries WHERE qid = ?', array( $qid ) )->fetch() );
+    }
+
+    public function ldapQueryDelete( array $user, $qid ): void
+    {
+        if( isset( $user['token'] ) || $this->q( 'DELETE FROM ldap_queries WHERE qid = ? AND user_id = ?', array( (string)$qid, $user['id'] ) )->rowCount() === 0 )
+            throw new ViewerException( 'not found', 404 );
     }
 
     public function keyDelete( array $user, $kid ): void
@@ -1008,7 +1138,7 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip' );
+    const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users' );
     /** where type=maxmind-update downloads from (must be on the allow list of the administrator) */
     const MAXMIND_HOST = 'download.maxmind.com';
     /** the project of the installation-wide runs (App-ID / MaxMind of the administrator): not listed, only administrators */
@@ -1196,7 +1326,7 @@ class ViewerApp
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
         // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
-        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip' ), TRUE );
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap' ), TRUE );
         // the project of the installation-wide runs has only App-ID / MaxMind runs; MaxMind is installation-wide only
         if( ( $p['pid'] === self::SYSTEM_PID && !in_array( $type, array( 'appid', 'geoip' ), TRUE ) ) || ( $type === 'geoip' && $p['pid'] !== self::SYSTEM_PID ) )
             throw new ViewerException( 'not found', 404 );
@@ -1228,6 +1358,57 @@ class ViewerApp
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+        }
+        if( $type === 'ldap' || $type === 'ldap-users' )
+        {
+            // an LDAP query of the user (type=ldap-query) or the users of the security rules of this version
+            // (type=rule actions=user-check-ldap: show the ones that do not exist any more, or remove them - a result
+            // configuration). The password: the user's key store entry ldap_user<bind user>. Network as for an import.
+            $this->projectGet( $user, $pid, 'write' );
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $qr = $this->q( 'SELECT * FROM ldap_queries WHERE qid = ? AND user_id = ?', array( (string)( $in['qid'] ?? '' ), $user['id'] ) )->fetch();
+            if( !$qr )
+                throw new ViewerException( 'qid: one of your saved LDAP queries', 400 );
+            $k = $this->q( "SELECT * FROM user_keys WHERE user_id = ? AND kind = 'ldap' AND target = ?", array( $user['id'], strtolower( $qr['bind_user'] ) ) )->fetch();
+            if( !$k )
+                throw new ViewerException( 'no LDAP account ' . $qr['bind_user'] . ' under Account, My API keys (kind LDAP account: bind user + password)', 400 );
+            $q = self::ldapQueryCheck( array( 'name' => $qr['name'], 'server' => $qr['server'], 'bind_user' => $qr['bind_user'], 'base_dn' => $qr['base_dn'],
+                'attribute' => $qr['attribute'], 'mode' => $type === 'ldap' ? $qr['mode'] : 'validation', 'users' => $qr['users'], 'group' => $qr['grp'], 'transitive' => $qr['transitive'] ) );
+            if( !$this->networkGet()['enabled'] )
+                throw new ViewerException( (string)$this->networkRefusal( 'panos', $q['host'] ), 403 );
+            if( empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+            if( ( $why = $this->networkRefusal( 'panos', $q['host'] ) ) !== null )
+                throw new ViewerException( $why, 403 );
+            $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $q['host'] );
+            if( $type === 'ldap' )
+            {
+                if( $q['mode'] === 'validation' && $q['users'] === '' )
+                    throw new ViewerException( 'the query has no users to check', 400 );
+                array_push( $args, 'mode=' . $q['mode'], 'ldapServer=' . $q['server'], 'ldapUser=' . $q['bind_user'], 'dn=' . $q['base_dn'], 'filtercriteria=' . $q['attribute'] );
+                if( $q['users'] !== '' )
+                    $args[] = 'users=' . $q['users'];
+                if( $q['grp'] !== '' )
+                    $args[] = 'group=' . $q['grp'];
+                if( $q['transitive'] )
+                    $args[] = 'transitive=yes';
+                array_push( $args, 'out=%JOB%/ldap.json', 'csv=%JOB%/ldap.csv' );
+            }
+            else
+            {
+                $remove = ( $in['action'] ?? 'show' ) === 'remove';
+                // the arguments of the action (separated by ',', no ':' / '/'): show|remove, bind user, server as
+                // ldaps%host[%port], base DN (';' instead of ','), attribute, existentUser
+                if( preg_match( '#[:/]#', $q['bind_user'] . $q['base_dn'] ) )
+                    throw new ViewerException( 'bind user and base DN: no ":" or "/" for the check of the rules', 400 );
+                preg_match( '#^(ldaps?)://([^:]+)(?::([0-9]+))?$#', $q['server'], $s );
+                $server = $s[1] . '%' . $s[2] . ( isset( $s[3] ) ? '%' . $s[3] : '' );
+                $args[] = 'location=any';
+                $args[] = 'actions=user-check-ldap:' . ( $remove ? 'remove' : 'show' ) . ',' . $q['bind_user'] . ',' . $server . ',' . str_replace( ',', ';', $q['base_dn'] ) . ',' . $q['attribute'] . ',false';
+                if( $remove )
+                    $args[] = 'out=%JOB%/out.xml';
+            }
         }
         if( $type === 'appid' || $type === 'geoip' )
         {
@@ -1437,7 +1618,7 @@ class ViewerApp
             self::needUnlimited( $target, 'a new version' );
         }
         // playbook runs write out.xml; a run type of a plug-in names its result configuration
-        $result = $j['type'] === 'playbook' ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
+        $result = in_array( $j['type'], array( 'playbook', 'ldap-users' ), TRUE ) ? 'out.xml' : ( $this->pluginRuns()[$j['type']]['result'] ?? null );
         $out = $this->jobDir( $p, $j['jid'] ) . '/' . ( $result ?? 'out.xml' );
         if( $j['state'] !== 'done' || $result === null || !is_file( $out ) || is_link( $out ) || !self::isPanosConfig( $out ) )
             throw new ViewerException( 'this run has no result configuration', 409 );
@@ -1796,7 +1977,7 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip' ), TRUE ) ) && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap' ), TRUE ) ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
         // App-ID database / MaxMind data of the installation or of the project: for every run (not for the runs that
@@ -1834,7 +2015,7 @@ class ViewerApp
         // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
         // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
         $steps = null;
-        if( in_array( $j['type'], array( 'import', 'appid', 'geoip' ), TRUE ) )
+        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users' ), TRUE ) )
         {
             try
             {
@@ -1896,7 +2077,7 @@ class ViewerApp
         $type = $j['type'];
         $x = array();
         foreach( $args as $a )
-            if( preg_match( '/^x-[a-z]+-(key|target|source|zip)=(.*)$/', $a, $m ) )
+            if( preg_match( '/^x-[a-z-]+?-(key|target|source|zip)=(.*)$/', $a, $m ) )
                 $x[$m[1]] = $m[2];
         $step = function( string $tool, array $raw, bool $network, array $rawEnv = array() ) use ( $jobDir, $j ) {
             return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
@@ -1909,15 +2090,25 @@ class ViewerApp
                 throw new ViewerException( 'the uploaded zip is not there any more' );
             return array( $step( 'maxmind-update', array( 'maxmind-zip=%JOB%/GeoLite2-Country-CSV-upload.zip' ), FALSE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
         }
-        $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ) )[$type];
+        $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ), 'ldap' => array( 'ldap' ), 'ldap-users' => array( 'ldap' ) )[$type];
         $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
         if( !$k || !in_array( $k['kind'], $kinds, TRUE ) )
             throw new ViewerException( 'the API key of the run does not exist any more' );
         $p = $this->q( 'SELECT network FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
         if( $j['pid'] !== self::SYSTEM_PID && ( !$p || empty( $p['network'] ) ) )
             throw new ViewerException( 'network is off for this project' );
-        $host = $type === 'geoip' ? self::MAXMIND_HOST : $k['target'];
-        if( ( $why = $this->networkRefusal( $type === 'geoip' ? 'panos' : $k['kind'], $host ) ) !== null )
+        // an LDAP run: the bind user of its arguments must be the one of the key store entry (ldap_user<user>)
+        if( $type === 'ldap' || $type === 'ldap-users' )
+        {
+            $bind = null;
+            foreach( $args as $a )
+                if( preg_match( '/^ldapUser=(.*)$/', $a, $m ) || preg_match( '/^actions=user-check-ldap:[a-z]+,([^,]*),/', $a, $m ) )
+                    $bind = strtolower( $m[1] );
+            if( $bind !== $k['target'] )
+                throw new ViewerException( 'the LDAP account of the run does not fit its bind user any more' );
+        }
+        $host = $type === 'geoip' ? self::MAXMIND_HOST : ( $type === 'ldap' || $type === 'ldap-users' ? (string)( $x['target'] ?? '' ) : $k['target'] );
+        if( ( $why = $this->networkRefusal( in_array( $type, array( 'geoip', 'ldap', 'ldap-users' ), TRUE ) ? 'panos' : $k['kind'], $host ) ) !== null )
             throw new ViewerException( $why );
         $secret = $this->unseal( $k['secret'] );
         if( $secret === null )
@@ -1930,6 +2121,12 @@ class ViewerApp
         if( !$ok )
             throw new ViewerException( 'the key store of the run can not be written' );
         $this->q( 'UPDATE user_keys SET last_used = ? WHERE id = ?', array( time(), $k['id'] ) );
+        // the LDAP runs: their arguments were made when the run was queued (no secret in them)
+        if( $type === 'ldap' || $type === 'ldap-users' )
+        {
+            $raw = array_values( array_filter( $args, function( $a ) { return strpos( $a, 'x-' ) !== 0; } ) );
+            return array( $step( $type === 'ldap' ? 'ldap-query' : 'rule', $raw, TRUE, $type === 'ldap-users' ? $this->dataEnv( $j['pid'] ) : array() ) );
+        }
         if( $type === 'appid' )
             return array( $step( 'download-predefined', array( 'in=api://' . $k['target'], 'predefined-out=%JOB%/predefined.xml' ), TRUE ) );
         if( $type === 'geoip' )
@@ -2169,7 +2366,7 @@ class ViewerApp
         if( $changed === 0 )
             return;
         $j = $this->q( 'SELECT j.*, p.pid FROM jobs j JOIN projects p ON p.id = j.project_id WHERE j.id = ?', array( $id ) )->fetch();
-        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip' ), TRUE ) )
+        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users' ), TRUE ) )
             $this->importFinish( $j );
     }
 
@@ -2195,6 +2392,9 @@ class ViewerApp
             if( $clean !== $log )
                 file_put_contents( $dir . '/run.log', $clean );
         }
+        // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove)
+        if( $j['type'] === 'ldap' || $j['type'] === 'ldap-users' )
+            return;
         // App-ID database / MaxMind data: in place for the installation (project of the installation) or the project
         if( $j['type'] === 'appid' || $j['type'] === 'geoip' )
         {
@@ -2278,7 +2478,7 @@ class ViewerApp
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
         'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath',
-        'kid', 'source', 'target', 'allow', 'deny' );
+        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void
