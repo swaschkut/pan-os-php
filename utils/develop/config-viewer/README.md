@@ -268,6 +268,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `users` | GET / POST | admin | list / create (`user`, `password`, `admin`) |
 | `network` | GET / PUT | admin | network for runs (imports): `enabled`, `allow`, `deny` (lists: host, `*.domain`, IP, network, `tsg:<id>`, `*`; deny wins, empty allow list = nothing) |
 | `keys` | GET / POST | login (no token) | own API keys (personal): list (`kid`, `kind`, `target`, `label`, `hint` = last 4 characters, `refused` = why not usable now) / store (`kind` `panos`: `target` host, `key`; `scm`: `target` TSG, `client_id`, `client_secret`) - the secret is never sent back |
+| `keys/import` | POST | login (no token) | take over an existing `.panconfkeystore` (multipart field `keystore`, or JSON `keystore` = its text): `<host>[%port]`, `tsg_id<TSG>`, `egressip_tsg_id<TSG>`, `ldap-password`, `bpa-apikey`, `license-apikey`, `maxmind-licensekey`, `gcp-mysql-password`, other names → `imported` (kind, target), `skipped` (line, reason) |
 | `keys/<kid>` | DELETE | login | delete an own key |
 | `projects/<pid>/network` | PUT | owner | network for the runs of the project (`enabled`); works only while the administrator allows it |
 | `projects/<pid>/import/runs` | POST | write | import from a device with an own key: `kid`, `source` (`candidate` / `running`, PAN-OS) → a new version when done; see `docs/6-import-from-devices.md` |

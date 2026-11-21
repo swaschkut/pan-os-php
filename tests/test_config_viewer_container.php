@@ -412,6 +412,28 @@ $vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), n
 eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, $il[0][3][0] ?? null, isset( $vers['scm-1234567890.xml'] ) ),
     array( 'done', array( 'scm-export', 'scm-export-xml' ), array( 'bridge', 'none' ), 'tsg_id1234567890:sa-client@1234567890.iam%scm-geheim-4711' . "\n", 'in=scm-api://1234567890', TRUE ),
     'import SCM: scm-export with network (read only), scm-export-xml without, new version' );
+// an existing .panconfkeystore of a customer: every kind of entry pan-os-php knows, and unknown names as they are
+$ksText = "fw1.example.com%443:LUFRPT1-neu-0815:zweiter\r\nfw9.example.com%8443:LUFRPT9-port-4711\ntsg_id1234567890:sa-two@x.iam%scm-zwei-4711\negressip_tsg_id1234567890:egress-key-4711\n"
+    . "ldap-password:mein ldap passwort\nbpa-apikey:bpa-key-4711\n# a comment\n\ncustom-entry_1:wert-4711\nno colon here\nfw5.example.com:a:b:c\n";
+$r = call( 'POST', 'keys/import', null, array( '.panconfkeystore', $ksText, 'keystore' ) );
+eq( array( $r[0], count( $r[1]['imported'] ?? array() ), array_column( $r[1]['skipped'] ?? array(), 'line' ), strpos( json_encode( $r[1] ), '4711' ), strpos( json_encode( $r[1] ), 'passwort' ) ),
+    array( 200, 7, array( 10, 11 ), FALSE, FALSE ), 'key store import: 7 entries, 2 lines skipped (line number and reason, never the content)' );
+$all = array();
+foreach( call( 'GET', 'keys' )[1]['keys'] ?? array() as $k )
+    $all[$k['kind'] . '|' . $k['target']] = $k;
+eq( array( $all['panos|fw9.example.com']['port'] ?? null, $all['panos|fw1.example.com']['hint'] ?? null, isset( $all['scm|1234567890'], $all['egressip|1234567890'], $all['named|ldap-password'], $all['named|bpa-apikey'], $all['other|custom-entry_1'] ),
+    $all['named|ldap-password']['import'] ?? null, array_key_exists( 'refused', $all['other|custom-entry_1'] ?? array() ) ? $all['other|custom-entry_1']['refused'] : 'x' ),
+    array( 8443, '…iter', TRUE, FALSE, null ), 'key store import: PAN-OS with port, a key with ":" replaces the old one, SCM, egress IP, named, other (stored, not for imports)' );
+eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array( 'limit' => 1000 ) ) ), 'passwort' ), FALSE, 'key store import: nothing of it in the audit log' );
+eq( $imp( array( 'kid' => $all['named|ldap-password']['kid'] ?? '' ) )[0], 400, 'import: not with a named entry' );
+@unlink( $bin . '/import.log' );
+$r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $all['panos|fw9.example.com']['kid'] ?? '' ) )[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, $il[0][2] ?? null ), array( 'done', "fw9.example.com%8443:LUFRPT9-port-4711\n" ), 'import with a port: the key store line host%port:key' );
+foreach( array( array( 'kind' => 'named', 'target' => 'foo', 'key' => 'x' ), array( 'kind' => 'other', 'target' => 'tsg_id1', 'key' => 'x' ), array( 'kind' => 'panos', 'target' => 'fw1.example.com', 'port' => '70000', 'key' => 'LUFRPT1-12345678' ),
+    array( 'kind' => 'named', 'target' => 'ldap-password', 'key' => "zwei\nzeilen" ) ) as $bad )
+    eq( call( 'POST', 'keys', $bad )[0], 400, 'key checked: ' . json_encode( array_diff_key( $bad, array( 'key' => 1 ) ) ) );
+
 // stats / playbook runs never get a network
 eq( count( array_filter( calls(), function( $c ) { return $c[0] === 'run' && $c[array_search( '--network', $c ) + 1] !== 'none' && !in_array( 'type=upload', $c, TRUE ) && !in_array( 'type=scm-export', $c, TRUE ); } ) ), 0,
     'all other runs: --network none' );

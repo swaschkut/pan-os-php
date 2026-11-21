@@ -189,39 +189,54 @@ async function showAccount() {
         message('password changed');
     }); } }, el('h2', { text: 'Change password' }), el('div', { class: 'row' }, field('Current password', oldPw), field('New password (10+ characters)', newPw),
         el('button', { class: 'primary', type: 'submit', text: 'Change' })))];
-    // ---- my API keys (personal: only I use them, for imports in my projects; the secret is never shown again)
+    // ---- my API keys: the entries of my pan-os-php key store (personal: only I use them; the secret is never shown again)
     {
         const ks = await api('GET', 'keys');
         const kKind = el('select', {}, Object.entries(ks.kinds).map(([k, t]) => el('option', { value: k, text: t })));
-        const kTarget = el('input', { required: true, autocomplete: 'off', spellcheck: false });
+        const kTarget = el('input', { autocomplete: 'off', spellcheck: false });
+        const kNamed = el('select', {}, ks.named.map(n => el('option', { value: n, text: n })));
+        const kPort = el('input', { type: 'number', min: 1, max: 65535, placeholder: '443', class: 'narrow' });
         const kLabel = el('input', { autocomplete: 'off', maxlength: 80, placeholder: 'optional' });
         const kKey = el('input', { type: 'password', autocomplete: 'new-password' });
         const kId = el('input', { autocomplete: 'off', spellcheck: false }), kSecret = el('input', { type: 'password', autocomplete: 'new-password' });
-        const fPanos = [field('API key', kKey)], fScm = [field('Client id', kId), field('Client secret', kSecret)];
-        const targetField = field('Host name / IP address', kTarget);
+        const fTarget = field('Host name / IP address', kTarget), fNamed = field('Entry', kNamed), fPort = field('Port', kPort);
+        const fKey = field('API key', kKey), fId = field('Client id', kId), fSecret = field('Client secret', kSecret);
         const kindChanged = () => {
-            const scm = kKind.value === 'scm';
-            fPanos.forEach(x => { x.hidden = scm; }); fScm.forEach(x => { x.hidden = !scm; });
-            kKey.required = !scm; kId.required = kSecret.required = scm;
-            targetField.firstChild.textContent = scm ? 'TSG id of the tenant' : 'Host name / IP address';
+            const k = kKind.value;
+            fTarget.hidden = k === 'named'; fNamed.hidden = k !== 'named'; fPort.hidden = k !== 'panos';
+            fKey.hidden = k === 'scm'; fId.hidden = fSecret.hidden = k !== 'scm';
+            fTarget.firstChild.textContent = { panos: 'Host name / IP address', scm: 'TSG id', egressip: 'TSG id', other: 'Entry name' }[k] || '';
+            fKey.firstChild.textContent = k === 'named' || k === 'other' ? 'Value (password / key)' : 'API key';
         };
         kKind.addEventListener('change', kindChanged); kindChanged();
+        const ksFile = el('input', { type: 'file', required: true });
+        const ksResult = el('div', {});
+        const kindName = { panos: 'PAN-OS', scm: 'SCM', egressip: 'egress IP', named: 'named', other: 'other' };
         nodes.push(el('div', { class: 'card' }, el('h2', { text: 'My API keys' }),
-            el('p', { class: 'muted', text: 'Your own keys for importing configurations from a firewall, Panorama or an SCM tenant into your projects. Only you can use them - nobody else, also no administrator. After saving, a key is never shown again (only its last 4 characters); it stays until you delete it.' + (ks.network ? '' : ' Network for runs is off at the moment (administrator).') }),
+            el('p', { class: 'muted', text: 'The entries of your pan-os-php key store (.panconfkeystore): keys of firewalls / Panoramas and SCM tenants for imports into your projects, and the other entries pan-os-php uses (LDAP password, BPA / licence / MaxMind key, egress-IP key, …). Only you can use them - nobody else, also no administrator. After saving, a key is never shown again (only its last 4 characters); it stays until you delete it.' + (ks.network ? '' : ' Network for runs is off at the moment (administrator).') }),
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
-                const body = { kind: kKind.value, target: kTarget.value.trim(), label: kLabel.value.trim() };
-                if (kKind.value === 'scm') { body.client_id = kId.value.trim(); body.client_secret = kSecret.value; } else body.key = kKey.value.trim();
+                const k = kKind.value, body = { kind: k, label: kLabel.value.trim(), target: k === 'named' ? kNamed.value : kTarget.value.trim() };
+                if (k === 'scm') { body.client_id = kId.value.trim(); body.client_secret = kSecret.value; } else body.key = k === 'named' || k === 'other' ? kKey.value : kKey.value.trim();
+                if (k === 'panos' && kPort.value) body.port = kPort.value;
                 await api('POST', 'keys', body);
                 kKey.value = kSecret.value = kId.value = '';
-                await showAccount(); message('API key saved');
-            }); } }, field('Kind', kKind), targetField, field('Label', kLabel), ...fPanos, ...fScm, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
-            ks.keys.length === 0 ? el('p', { class: 'muted', text: 'No API keys.' }) :
-            table(['Kind', 'Target', 'Label', 'Key', 'Saved', 'Last used', 'Usable now', ''], ks.keys.map(k => el('tr', {},
-                el('td', { text: k.kind === 'scm' ? 'SCM' : 'PAN-OS' }), el('td', { text: k.kind === 'scm' ? 'TSG ' + k.target : k.target }), el('td', { text: k.label }),
+                await showAccount(); message('key saved');
+            }); } }, field('Kind', kKind), fTarget, fNamed, fPort, field('Label', kLabel), fKey, fId, fSecret, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
+            el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                const fd = new FormData(); fd.append('keystore', ksFile.files[0]);
+                const r = await api('POST', 'keys/import', fd);
+                await showAccount();
+                message(r.imported.length + ' entr' + (r.imported.length === 1 ? 'y' : 'ies') + ' taken' + (r.skipped.length ? ', ' + r.skipped.length + ' line(s) skipped: ' + r.skipped.map(x => 'line ' + x.line + ' (' + x.reason + ')').join('; ') : ''), r.skipped.length ? 'error' : undefined);
+            }); } }, field('Take over an existing .panconfkeystore (an entry of the same kind and target is replaced)', ksFile), el('button', { type: 'submit', text: 'Import key store' })),
+            ksResult,
+            ks.keys.length === 0 ? el('p', { class: 'muted', text: 'No keys.' }) :
+            table(['Kind', 'Target', 'Label', 'Key', 'Saved', 'Last used', 'Import', ''], ks.keys.map(k => el('tr', {},
+                el('td', { text: kindName[k.kind] || k.kind }),
+                el('td', { text: (k.kind === 'scm' || k.kind === 'egressip' ? 'TSG ' : '') + k.target + (k.port ? ':' + k.port : '') }), el('td', { text: k.label }),
                 el('td', { text: k.hint }), el('td', { text: fmtTime(k.created) }), el('td', { text: fmtTime(k.last_used) }),
-                el('td', { class: 'wrap' }, k.refused ? el('span', { class: 'muted', text: k.refused }) : el('span', { class: 'badge', text: 'yes' })),
+                el('td', { class: 'wrap' }, !k.import ? el('span', { class: 'muted', text: 'stored (not for imports)' }) : k.refused ? el('span', { class: 'muted', text: k.refused }) : el('span', { class: 'badge', text: 'yes' })),
                 el('td', {}, el('button', { class: 'danger', type: 'button', text: 'Delete', onclick: () => run(async () => {
-                    if (!confirm('Delete the API key for ' + k.target + '?')) return;
+                    if (!confirm('Delete the key ' + k.target + '?')) return;
                     await api('DELETE', 'keys/' + k.kid); await showAccount();
                 }) })))))));
     }
@@ -378,7 +393,7 @@ async function showProject(pid) {
     let importCard = null;
     if (canWrite && !limited) {
         const my = await api('GET', 'keys').catch(() => ({ keys: [] }));
-        const usable = my.keys.filter(k => !k.refused);
+        const usable = my.keys.filter(k => k.import && !k.refused);
         const iKey = el('select', {}, usable.map(k => el('option', { value: k.kid, text: (k.kind === 'scm' ? 'SCM TSG ' : '') + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
         const iSource = el('select', {}, el('option', { value: 'candidate', text: 'candidate configuration' }), el('option', { value: 'running', text: 'running configuration' }));
         const sourceField = field('Configuration', iSource);

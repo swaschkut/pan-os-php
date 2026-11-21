@@ -28,6 +28,14 @@
   only this entry in the folder of the run, removed at the end (also on cancel / runner restart), never a result
   file; the secret is replaced in `run.log`; `out.xml` becomes a new version
 
+## Built (step 1b, 2026-11-21): the whole key store
+
+* kinds `panos` (with port), `scm`, `egressip`, `named` (`ldap-password`, `bpa-apikey`, `license-apikey`,
+  `maxmind-licensekey`, `gcp-mysql-password`), `other` (any further entry name, kept as it is)
+* `POST keys/import`: an existing `.panconfkeystore` of a customer is taken over (upsert per kind + target)
+* imports use `panos` / `scm`; the other entries are stored for the runs that need them (open: which runs get which
+  entries - G below)
+
 ## Open
 
 | # | Topic | Notes |
@@ -37,4 +45,5 @@
 | C | Firewall through Panorama (`api://<serial>@<panorama>`) | key of the Panorama, target serial; allow list on the Panorama host |
 | D | Key generation from user + password (`type=key-manager`) | needs network from the web part - today the user brings the API key |
 | E | Network limited to the targets | today: the container gets a normal network; the allow list is checked by the viewer, not by a firewall rule - a dedicated docker network with egress rules would be stronger |
+| G | Named entries in runs | e.g. `maxmind-licensekey` for a MaxMind update, `ldap-password` for LDAP runs, `bpa-apikey` for bpa-generator: the run gets only the entry it needs, like an import |
 | F | Encryption of the key store | today the key of the installation lies in the volume (protects a copied database, not a copied volume) - see config-viewer-encryption.md |

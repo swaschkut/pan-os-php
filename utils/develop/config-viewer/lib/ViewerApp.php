@@ -185,6 +185,9 @@ class ViewerApp
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS user_keys (id INTEGER PRIMARY KEY, kid TEXT NOT NULL UNIQUE,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, kind TEXT NOT NULL, target TEXT NOT NULL, label TEXT NOT NULL,
             secret TEXT NOT NULL, hint TEXT NOT NULL, created INTEGER NOT NULL, last_used INTEGER, UNIQUE (user_id, kind, target))' );
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(user_keys)' )->fetchAll(), 'name' );
+        if( !in_array( 'port', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE user_keys ADD COLUMN port INTEGER' );
         // why a run failed: memory (killed / out of memory), timeout, error
         $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
         if( !in_array( 'reason', $cols, TRUE ) )
@@ -545,7 +548,16 @@ class ViewerApp
 
     // ------------------------------------------------------------------ network for runs, API keys of a user, import
 
-    const KEY_KINDS = array( 'panos' => 'PAN-OS firewall / Panorama (XML API key)', 'scm' => 'Strata Cloud Manager tenant (client id + secret)' );
+    /**
+     * the kinds of entries of the pan-os-php key store (.panconfkeystore) a user can keep: devices / tenants an import can
+     * reach, and named entries for other pan-os-php types (stored; used by the runs that need them - see
+     * todo/config-viewer-device-access.md). 'other': any further entry name, kept as it is.
+     */
+    const KEY_KINDS = array( 'panos' => 'PAN-OS firewall / Panorama (XML API key)', 'scm' => 'SCM / SASE tenant (client id + secret)',
+        'egressip' => 'Prisma Access egress-IP API key (tenant)', 'named' => 'named entry (LDAP password, BPA / licence / MaxMind key, GCP MySQL password)',
+        'other' => 'other entry (name as in .panconfkeystore)' );
+    /** named entries pan-os-php knows (PanAPIConnector::findOrCreateConnectorFromHost) */
+    const KEY_NAMED = array( 'ldap-password', 'bpa-apikey', 'license-apikey', 'maxmind-licensekey', 'gcp-mysql-password' );
 
     /**
      * Network for runs (administrator): off by default. 'allow' / 'deny': one entry per line - a host name, *.domain,
@@ -705,62 +717,192 @@ class ViewerApp
         return $p === FALSE ? null : $p;
     }
 
+    /** the target of an entry: host name / IP (panos), TSG id (scm, egressip), the entry name (named, other) */
     private static function keyTarget( string $kind, $target ): string
     {
-        $t = is_string( $target ) ? strtolower( trim( $target ) ) : '';
-        if( $kind === 'scm' )
+        $t = is_string( $target ) ? trim( $target ) : '';
+        if( $kind === 'scm' || $kind === 'egressip' )
         {
             if( !preg_match( '/^[0-9]{1,20}$/', $t ) )
                 throw new ViewerException( 'target: the TSG id of the tenant (digits)', 400 );
             return $t;
         }
+        if( $kind === 'named' )
+        {
+            if( !in_array( strtolower( $t ), self::KEY_NAMED, TRUE ) )
+                throw new ViewerException( 'target: one of ' . implode( ', ', self::KEY_NAMED ), 400 );
+            return strtolower( $t );
+        }
+        if( $kind === 'other' )
+        {
+            if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9._@-]{0,99}$/', $t ) || self::keyKindOf( $t ) !== 'other' )
+                throw new ViewerException( 'target: an entry name (letters, digits, . _ @ -) that is no host, TSG or named entry', 400 );
+            return $t;
+        }
+        $t = strtolower( $t );
         if( filter_var( $t, FILTER_VALIDATE_IP ) === FALSE && !preg_match( '/^[a-z0-9]([a-z0-9-]{0,62}\.)*[a-z0-9-]{1,63}$/', $t ) )
             throw new ViewerException( 'target: host name or IP address of the firewall / Panorama', 400 );
         return $t;
     }
 
-    /** the API keys of the user - never the secret, only its last 4 characters; 'refused': why a run can not use it now */
+    /** the kind of a key store entry name (without the port) */
+    private static function keyKindOf( string $name ): string
+    {
+        if( preg_match( '/^tsg_id[0-9]{1,20}$/', $name ) )
+            return 'scm';
+        if( preg_match( '/^egressip_tsg_id[0-9]{1,20}$/', $name ) )
+            return 'egressip';
+        if( in_array( strtolower( $name ), self::KEY_NAMED, TRUE ) )
+            return 'named';
+        $l = strtolower( $name );
+        if( filter_var( $l, FILTER_VALIDATE_IP ) !== FALSE || ( strpos( $l, '.' ) !== FALSE && preg_match( '/^[a-z0-9]([a-z0-9-]{0,62}\.)*[a-z0-9-]{1,63}$/', $l ) ) )
+            return 'panos';
+        return 'other';
+    }
+
+    /** the line of the key store of pan-os-php for an entry */
+    private static function keystoreLine( string $kind, string $target, ?int $port, string $secret ): string
+    {
+        if( $kind === 'scm' )
+            return 'tsg_id' . $target . ':' . $secret;
+        if( $kind === 'egressip' )
+            return 'egressip_tsg_id' . $target . ':' . $secret;
+        if( $kind === 'panos' && $port !== null && $port !== 443 )
+            return $target . '%' . $port . ':' . $secret;
+        return $target . ':' . $secret;
+    }
+
+    /**
+     * the secret of an entry, as the key store loader of pan-os-php reads it: after the first ":" of the line, with at
+     * most one more ":" (PAN-OS keys of the newer algorithm); no line breaks. Keys: no spaces; passwords may have them.
+     */
+    private static function keySecret( $v, string $what, bool $spaces ): string
+    {
+        if( !is_string( $v ) || $v === '' || strlen( $v ) > 4000 || preg_match( '/[\x00-\x1F\x7F]/', $v ) || substr_count( $v, ':' ) > 1
+            || ( !$spaces && strpos( $v, ' ' ) !== FALSE ) )
+            throw new ViewerException( $what . ': 1-4000 characters, at most one ":", no line breaks' . ( $spaces ? '' : ', no spaces' ), 400 );
+        return $v;
+    }
+
+    /** the API keys / entries of the user - never the secret, only its last 4 characters; 'refused': why an import can not use it now */
     public function keyList( array $user ): array
     {
         if( isset( $user['token'] ) )
             throw new ViewerException( 'not found', 404 );
         $out = array();
-        foreach( $this->q( 'SELECT kid, kind, target, label, hint, created, last_used FROM user_keys WHERE user_id = ? ORDER BY kind, target', array( $user['id'] ) )->fetchAll() as $k )
-            $out[] = array( 'kid' => $k['kid'], 'kind' => $k['kind'], 'target' => $k['target'], 'label' => $k['label'], 'hint' => '…' . $k['hint'],
-                'created' => (int)$k['created'], 'last_used' => $k['last_used'] !== null ? (int)$k['last_used'] : null, 'refused' => $this->networkRefusal( $k['kind'], $k['target'] ) );
+        foreach( $this->q( 'SELECT kid, kind, target, port, label, hint, created, last_used FROM user_keys WHERE user_id = ? ORDER BY kind, target', array( $user['id'] ) )->fetchAll() as $k )
+            $out[] = array( 'kid' => $k['kid'], 'kind' => $k['kind'], 'target' => $k['target'], 'port' => $k['port'] !== null ? (int)$k['port'] : null, 'label' => $k['label'],
+                'hint' => '…' . $k['hint'], 'created' => (int)$k['created'], 'last_used' => $k['last_used'] !== null ? (int)$k['last_used'] : null,
+                'import' => in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ),
+                'refused' => in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ) ? $this->networkRefusal( $k['kind'], $k['target'] ) : null );
         return $out;
     }
 
-    /** a new API key of the user (or a new secret for the same target): panos - key; scm - client_id + client_secret */
+    private function keyStore( array $user, string $kind, string $target, ?int $port, string $label, string $secret ): void
+    {
+        $label = trim( $label );
+        $label = $label === '' ? $target : self::checkLabel( $label, 'label' );
+        $this->q( 'INSERT INTO user_keys (kid, user_id, kind, target, port, label, secret, hint, created) VALUES (?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(user_id, kind, target) DO UPDATE SET secret = excluded.secret, hint = excluded.hint, label = excluded.label, port = excluded.port, created = excluded.created',
+            array( self::randomId( 8 ), $user['id'], $kind, $target, $port, $label, $this->seal( $secret ), substr( $secret, -4 ), time() ) );
+    }
+
+    /**
+     * a new entry of the user (or a new secret for the same one): panos - target, port (optional), key; scm - target
+     * (TSG), client_id, client_secret; egressip - target (TSG), key; named / other - target (the entry name), key
+     */
     public function keyAdd( array $user, array $in ): array
     {
         if( isset( $user['token'] ) )
             throw new ViewerException( 'not found', 404 );
         $kind = $in['kind'] ?? '';
         if( !is_string( $kind ) || !isset( self::KEY_KINDS[$kind] ) )
-            throw new ViewerException( 'kind: panos or scm', 400 );
+            throw new ViewerException( 'kind: ' . implode( ', ', array_keys( self::KEY_KINDS ) ), 400 );
         $target = self::keyTarget( $kind, $in['target'] ?? null );
-        $label = trim( (string)( $in['label'] ?? '' ) );
-        $label = $label === '' ? $target : self::checkLabel( $label, 'label' );
-        // the key store line of pan-os-php: <host>:<key> (a PAN-OS key may have a ":" itself), tsg_id<TSG>:<id>%<secret>
-        $ok = function( $v, $what, $colon = FALSE ) {
-            if( !is_string( $v ) || strlen( $v ) < 8 || strlen( $v ) > 4000 || preg_match( $colon ? '/[\x00-\x20\x7F%]/' : '/[\x00-\x20\x7F:%]/', $v ) )
-                throw new ViewerException( $what . ': 8-4000 characters, no spaces, no "%"' . ( $colon ? '' : ' or ":"' ), 400 );
-            return $v;
-        };
-        if( $kind === 'panos' )
-            $secret = $ok( $in['key'] ?? null, 'key', TRUE );
+        $port = null;
+        if( $kind === 'panos' && isset( $in['port'] ) && $in['port'] !== '' && $in['port'] !== null )
+        {
+            if( !ctype_digit( (string)$in['port'] ) || (int)$in['port'] < 1 || (int)$in['port'] > 65535 )
+                throw new ViewerException( 'port: 1-65535', 400 );
+            $port = (int)$in['port'];
+        }
+        if( $kind === 'scm' )
+        {
+            $id = self::keySecret( $in['client_id'] ?? null, 'client_id', FALSE );
+            $sec = self::keySecret( $in['client_secret'] ?? null, 'client_secret', FALSE );
+            if( strpos( $id . $sec, '%' ) !== FALSE || strpos( $id . $sec, ':' ) !== FALSE )
+                throw new ViewerException( 'client_id / client_secret: no "%" or ":"', 400 );
+            $secret = $id . '%' . $sec;
+        }
         else
-            $secret = $ok( $in['client_id'] ?? null, 'client_id' ) . '%' . $ok( $in['client_secret'] ?? null, 'client_secret' );
-        $hint = substr( $secret, -4 );
-        $kid = self::randomId( 8 );
-        $this->q( 'INSERT INTO user_keys (kid, user_id, kind, target, label, secret, hint, created) VALUES (?,?,?,?,?,?,?,?)
-            ON CONFLICT(user_id, kind, target) DO UPDATE SET secret = excluded.secret, hint = excluded.hint, label = excluded.label, created = excluded.created',
-            array( $kid, $user['id'], $kind, $target, $label, $this->seal( $secret ), $hint, time() ) );
+            $secret = self::keySecret( $in['key'] ?? null, 'key', in_array( $kind, array( 'named', 'other' ), TRUE ) );
+        if( $kind !== 'named' && $kind !== 'other' && strlen( $secret ) < 8 )
+            throw new ViewerException( 'key: at least 8 characters', 400 );
+        $this->keyStore( $user, $kind, $target, $port, (string)( $in['label'] ?? '' ), $secret );
         foreach( $this->keyList( $user ) as $k )
             if( $k['kind'] === $kind && $k['target'] === $target )
                 return $k;
         throw new ViewerException( 'key not stored', 500 );
+    }
+
+    /**
+     * takes the entries of an existing .panconfkeystore (the text of the file) as entries of the user: every line
+     * "<name>[%<port>]:<value>" by its kind; an entry of the same kind and target is replaced. Lines that do not fit are
+     * skipped - with the line number and the reason, never their content.
+     */
+    public function keyImport( array $user, $text ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        if( !is_string( $text ) || $text === '' || strlen( $text ) > 1048576 )
+            throw new ViewerException( 'keystore: the content of a .panconfkeystore file (at most 1 MB)', 400 );
+        $lines = preg_split( '/\r?\n/', $text );
+        if( count( $lines ) > 5000 )
+            throw new ViewerException( 'keystore: at most 5000 lines', 400 );
+        $done = array();
+        $skipped = array();
+        foreach( $lines as $i => $line )
+        {
+            if( trim( $line ) === '' || $line[0] === '#' )
+                continue;
+            $pos = strpos( $line, ':' );
+            if( $pos === FALSE || $pos === 0 )
+            {
+                $skipped[] = array( 'line' => $i + 1, 'reason' => 'no "<name>:<value>"' );
+                continue;
+            }
+            $name = substr( $line, 0, $pos );
+            $value = substr( $line, $pos + 1 );
+            $port = null;
+            if( strpos( $name, '%' ) !== FALSE )
+            {
+                list( $name, $p ) = explode( '%', $name, 2 );
+                if( ctype_digit( $p ) && (int)$p >= 1 && (int)$p <= 65535 )
+                    $port = (int)$p;
+            }
+            $kind = self::keyKindOf( $name );
+            try
+            {
+                $in = array( 'kind' => $kind, 'port' => $kind === 'panos' ? $port : null );
+                if( $kind === 'scm' )
+                {
+                    $in['target'] = substr( $name, 6 );
+                    list( $in['client_id'], $in['client_secret'] ) = array_pad( explode( '%', $value, 2 ), 2, '' );
+                }
+                else
+                {
+                    $in['target'] = $kind === 'egressip' ? substr( $name, 15 ) : $name;
+                    $in['key'] = $value;
+                }
+                $k = $this->keyAdd( $user, $in );
+                $done[] = array( 'kind' => $k['kind'], 'target' => $k['target'] );
+            }
+            catch( ViewerException $e )
+            {
+                $skipped[] = array( 'line' => $i + 1, 'reason' => $kind . ': ' . $e->getMessage() );
+            }
+        }
+        return array( 'imported' => $done, 'skipped' => $skipped );
     }
 
     public function keyDelete( array $user, $kid ): void
@@ -1058,8 +1200,8 @@ class ViewerApp
             if( isset( $user['token'] ) )
                 throw new ViewerException( 'not allowed with an API token', 403 );
             $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
-            if( !$k )
-                throw new ViewerException( 'kid: one of your API keys (Account, My API keys)', 400 );
+            if( !$k || !in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ) )
+                throw new ViewerException( 'kid: one of your API keys of a firewall / Panorama or an SCM tenant (Account, My API keys)', 400 );
             // the order of the reasons: installation, project, target
             if( !$this->networkGet()['enabled'] )
                 throw new ViewerException( (string)$this->networkRefusal( $k['kind'], $k['target'] ), 403 );
@@ -1715,7 +1857,7 @@ class ViewerApp
             if( preg_match( '/^x-import-(key|target|source)=(.*)$/', $a, $m ) )
                 $x[$m[1]] = $m[2];
         $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
-        if( !$k )
+        if( !$k || !in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ) )
             throw new ViewerException( 'the API key of the run does not exist any more' );
         $p = $this->q( 'SELECT network FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
         if( !$p || empty( $p['network'] ) )
@@ -1725,7 +1867,7 @@ class ViewerApp
         $secret = $this->unseal( $k['secret'] );
         if( $secret === null )
             throw new ViewerException( 'the API key can not be read (key of the installation changed?) - store it again' );
-        $line = $k['kind'] === 'scm' ? 'tsg_id' . $k['target'] . ':' . $secret : $k['target'] . ':' . $secret;
+        $line = self::keystoreLine( $k['kind'], $k['target'], $k['port'] !== null ? (int)$k['port'] : null, $secret );
         $store = $jobDir . '/.panconfkeystore';
         $old = umask( 0077 );
         $ok = file_put_contents( $store, $line . "\n" ) !== FALSE;

@@ -277,7 +277,14 @@ try
     if( $r0 === 'keys' )
     {
         if( $method === 'GET' && count( $route ) === 1 )
-            viewerOut( array( 'keys' => $app->keyList( $user ), 'kinds' => ViewerApp::KEY_KINDS, 'network' => $app->networkGet()['enabled'] ) );
+            viewerOut( array( 'keys' => $app->keyList( $user ), 'kinds' => ViewerApp::KEY_KINDS, 'named' => ViewerApp::KEY_NAMED, 'network' => $app->networkGet()['enabled'] ) );
+        // an existing .panconfkeystore: the file (multipart field "keystore") or its text (JSON "keystore")
+        if( $method === 'POST' && count( $route ) === 2 && $route[1] === 'import' )
+        {
+            $f = $_FILES['keystore'] ?? null;
+            $text = is_array( $f ) && ( $f['error'] ?? 1 ) === UPLOAD_ERR_OK && is_uploaded_file( $f['tmp_name'] ) ? (string)file_get_contents( $f['tmp_name'] ) : ( viewerBody()['keystore'] ?? null );
+            viewerOut( $app->keyImport( $user, $text ) );
+        }
         if( $method === 'POST' && count( $route ) === 1 )
             viewerOut( $app->keyAdd( $user, viewerBody() ), 201 );
         if( $method === 'DELETE' && count( $route ) === 2 )
