@@ -160,3 +160,11 @@ details.extracols .checks { margin-top: .3em; }
 td.mergersettings { white-space: pre-line; font-family: var(--mono, monospace); font-size: 12px; }
 mark.diff { background: #ffe08a; color: inherit; padding: 0 1px; border-radius: 2px; }
 mark.diff.gone { background: #f6c2c2; }
+
+/* merger report: Explain of a merge the effective-policy check refused */
+.explaincols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 800px) { .explaincols { grid-template-columns: 1fr; } }
+.explaintrace { margin-bottom: .8rem; }
+.explaintrace table { width: 100%; }
+tr.winrow td { font-weight: 600; background: rgba(46, 125, 50, .10); }
+p.warn, span.warn { color: var(--danger, #c0392b); }

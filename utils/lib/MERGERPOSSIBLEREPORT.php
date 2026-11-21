@@ -610,7 +610,8 @@ class MERGERPOSSIBLEREPORT extends MERGER
             if( $reason === null )
                 $ok++;
             else
-                $blocked[] = array( 'copy' => $entries[$i]['label'] . ':' . $entries[$i]['name'], 'reason' => (string)$reason );
+                $blocked[] = array( 'copy' => $entries[$i]['label'] . ':' . $entries[$i]['name'], 'reason' => (string)$reason,
+                    'detail' => is_array( $safety->lastDetail ) ? $safety->lastDetail : null );
         }
         // copies the kept one is not visible from (sibling device groups, two vsys, sibling folders): the object-merger
         // merges them by creating the object in their common parent (allowMergingWithUpperLevel) - checked here

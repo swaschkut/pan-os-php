@@ -146,6 +146,15 @@ groups) are listed with the reason when the merger does not merge them (it would
 parent - needs allowMergingWithUpperLevel and a DupAlgorithm that creates, not Identical); the merger-possible-report
 shows them as **merge-into-parent** with the common parent.
 
+**Explain**: a row that pan-os-php did not merge because the firewalls would receive something else ("effective policy
+would change for firewalls of … before […] after […]") has a button **Explain**. The window shows for the firewalls of
+that location what the name gives before and after the merge (differences marked), how the name resolves level by level
+(device group, its parents, shared - the level that wins is highlighted, with "ancestor objects take precedence" or
+"the nearest level wins"), the members of a group as the firewall resolves them, the simulated changes of the merge step
+and the cause in words, e.g. a copy of the name in a lower device group that shadows the copy that would be removed, or
+a group that would contain itself (`after []`: group G-B = [G-A] merged with G-A). Links open the objects in the version
+the run ran on. The data is in `merger.json` (`skipped[].safety`, merger-possible-report `blocked[].detail`).
+
 The tables come from `exportJSON=merger.json` of pan-os-php - the same data the HTML of `exportCSV=` is made of (one
 code path, `utils/lib/MergerReport.php`); on the command line: `pan-os-php type=object-merger … exportjson=report.json`,
 or `shadow-json` (key `merger-report`). Applying a merge to the loaded version (one change, one commit, undo): later.

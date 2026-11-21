@@ -80,6 +80,36 @@ $f = $j['findings'][0] ?? array();
 $ok( ( $f['status'] ?? '' ) === 'merge-into-parent' && ( $f['parent'] ?? '' ) === 'shared' && ( $f['intoParent'] ?? null ) === array( 'DG-B:web01' ) && ( $j['summary']['address']['merge-into-parent'] ?? 0 ) === 1,
     'merger-possible-report: sibling copies - status merge-into-parent with the common parent (before: not-checked)' );
 
+// ---- MergeSafety as data (the Explain of the config viewer): the check that refused a merge, with the resolution
+// of the name level by level before / after and the simulated changes
+$sh = $repo . '/tests/input/merger/safety-shadowed-panorama.xml';
+$run( 'type=object-merger in=' . escapeshellarg( $sh ) . ' out=sh.xml objecttype=address location=DG-P ' . escapeshellarg( 'pickFilter=(name eq web2)' ) . ' exportjson=sh.json' );
+$j = json_decode( (string)@file_get_contents( $dir . '/sh.json' ), TRUE );
+$d = $j['skipped'][0]['safety'][0] ?? array();
+$ok( ( $d['copy'] ?? '' ) === 'DG-P:web' && ( $d['firewalls'] ?? '' ) === 'DG-C' && ( $d['usedBy']['kind'] ?? '' ) === 'group' && ( $d['usedBy']['name'] ?? '' ) === 'G'
+    && ( $d['before']['content'] ?? null ) === array( '10.9.9.9' ) && ( $d['after']['content'] ?? null ) === array( '10.1.1.1' ),
+    'MergeSafety detail: firewalls, user of the name, content before / after' );
+$lv = $d['before']['resolution'][0]['levels'] ?? array();
+$ok( array_column( $lv, 'location' ) === array( 'DG-C', 'DG-P', 'shared' ) && array_column( $lv, 'state' ) === array( 'found', 'found', 'none' )
+    && ( $d['before']['resolution'][0]['result']['location'] ?? '' ) === 'DG-C' && ( $d['after']['resolution'][0]['result']['location'] ?? '' ) === 'DG-P',
+    'MergeSafety detail: resolution level by level - before the copy of DG-C shadows DG-P, after the kept object of DG-P' );
+$ok( ( $d['changes']['removed'] ?? null ) === array( 'DG-P:web' ) && ( $d['changes']['memberRenamed'][0] ?? null ) === array( 'group' => 'DG-P:G', 'from' => 'web', 'to' => 'web2' ),
+    'MergeSafety detail: the simulated changes (removed, member renamed)' );
+$lp = $repo . '/tests/input/merger/safety-group-loop-panorama.xml';
+$run( 'type=addressgroup-merger in=' . escapeshellarg( $lp ) . ' out=lp.xml location=DG-P ' . escapeshellarg( 'pickFilter=(name eq G-B)' ) . ' dupalgorithm=sameIP4mapping exportjson=lp.json' );
+$j = json_decode( (string)@file_get_contents( $dir . '/lp.json' ), TRUE );
+$d = $j['skipped'][0]['safety'][0] ?? array();
+$mb = $d['after']['resolution'][0]['result']['members'][0] ?? array();
+$ok( strpos( $j['skipped'][0]['reason'][0] ?? '', 'after []' ) !== FALSE && ( $d['after']['content'] ?? null ) === array() && ( $mb['renamedTo'] ?? '' ) === 'G-B' && !empty( $mb['loop'] ),
+    'MergeSafety detail: "after []" of a group that would contain itself - the member marked as loop' );
+$run( 'type=merger-possible-report in=' . escapeshellarg( $sh ) . ' objecttype=address mergecheck exportjson=shpr.json' );
+$j = json_decode( (string)@file_get_contents( $dir . '/shpr.json' ), TRUE );
+$bl = array();
+foreach( $j['findings'] ?? array() as $f )
+    foreach( $f['blocked'] ?? array() as $b )
+        $bl[] = $b;
+$ok( count( $bl ) > 0 && isset( $bl[0]['detail']['before']['resolution'], $bl[0]['detail']['after']['content'] ), 'merger-possible-report: a blocked copy carries the MergeSafety detail' );
+
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

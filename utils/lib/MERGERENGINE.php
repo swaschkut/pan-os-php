@@ -79,6 +79,12 @@ trait MergerEngine
 
         PH::print_stdout( "    - SKIP: '{$removed->_PANC_shortName()}' not merged, " . $reason );
         $this->skippedObject( $index, $kept, $removed, $reason );
+        // the check as data (Explain of the config viewer, exportJSON): per copy that was not merged
+        if( $this->mergeSafety !== null && $this->mergeSafety->lastReason === $reason && is_array( $this->mergeSafety->lastDetail ) )
+        {
+            $loc = isset( $removed->owner->owner ) && method_exists( $removed->owner->owner, 'name' ) && $removed->owner->owner->name() !== '' ? $removed->owner->owner->name() : 'shared';
+            $this->skippedObjects[$this->mergeIndexPrefix . $index]['safety'][] = array( 'copy' => $loc . ':' . $removed->name() ) + $this->mergeSafety->lastDetail;
+        }
         return TRUE;
     }
 

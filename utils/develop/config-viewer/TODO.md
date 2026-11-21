@@ -53,6 +53,10 @@ Counted from [action-classes.json](action-classes.json), class `change`.
 * ~~step 1~~ built 2026-11-21: tab **Merger** - object-merger, rule-merger, merger-possible-report as runs on a copy;
   the report as tables (merged, not merged with the reason) from `exportJSON` (pan-os-php `MergerReport`, the same
   data as the HTML of `exportCSV`); result as new version
+* ~~Explain~~ built 2026-11-21: button **Explain** at rows refused by the effective-policy check (MergeSafety
+  `lastDetail`: resolution per level before / after, members, simulated changes, cause in words)
+* open: Explain for the other refusals of MergeSafety (unreplaceable user, textual EDL / profile users) - today only
+  the effective-policy check carries the detail; Explain from the object window (where-used → "why not mergeable")
 * open: **apply to the loaded version** - the merger in the worker on the memory as one change: one commit with every
   merged / removed object and every reference, undone as a whole (git step 3)
 * open: members limited to locations (today the tab needs the whole configuration, like every run)

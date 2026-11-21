@@ -72,7 +72,9 @@ class MergerReport
             $reason = array_values( array_filter( explode( PHP_EOL, (string)( $l['reason'] ?? '' ) ), function( $x ) { return trim( $x ) !== ''; } ) );
             $r['skipped'][] = array( 'objecttype' => $type, 'key' => $key, 'index' => (string)$index,
                 'kept' => isset( $l['kept'] ) && $l['kept'] !== '' ? self::ref( $l['kept'] ) : null, 'notMergedWith' => $list( $l['removed'] ?? '' ),
-                'reason' => $reason );
+                'reason' => $reason )
+                // the effective-policy check as data (MergeSafety::$lastDetail): what the firewalls get before / after
+                + ( isset( $l['safety'] ) && is_array( $l['safety'] ) ? array( 'safety' => array_values( $l['safety'] ) ) : array() );
         }
         foreach( array( 'merged', 'skipped' ) as $k )
             foreach( $r[$k] as $e )

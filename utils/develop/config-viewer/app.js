@@ -1048,6 +1048,91 @@ function diffLines(items, other) {
     return box;
 }
 
+/**
+ * "Explain" of a merge the effective-policy check refused (pan-os-php MergeSafety lastDetail): for the firewalls of one
+ * location what the name gives before and after the merge, how the name resolves level by level (device group, parents,
+ * shared), the members of a group, and the simulated changes. Links open the objects / the rule in the version the run
+ * ran on (new window).
+ */
+function explainMergeSafety(d, link) {
+    const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'explain' });
+    const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
+    const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+    function close() { document.removeEventListener('keydown', onKey); overlay.remove(); }
+    // the viewer list of the objects (address / service / security profile group / EDL); other types: text only
+    const vtype = { addressStore: 'address', serviceStore: 'service', securityProfileGroupStore: 'securityprofilegroup', EDLStore: 'edl' }[d.store];
+    const objLink = (name, loc, text) => vtype && loc && loc !== 'predefined' && name ? el('a', { href: link({ name, location: loc, type: vtype }), target: '_blank', rel: 'noopener', text: text || name, title: 'open ' + loc + ': ' + name + ' (new window)' }) : el('span', { text: text || name });
+    const list = (items, other) => {
+        const o = new Set(other || []);
+        return items.length ? el('span', {}, ...items.flatMap((x, i) => [i ? ', ' : '', o.has(x) ? x : el('mark', { class: 'diff', text: x })])) : el('mark', { class: 'diff gone', text: '∅ empty', title: 'nothing - see the resolution below' });
+    };
+    const STATE = { found: 'found', removed: 'found - removed by this merge', placed: 'placed here by this merge', none: '-' };
+    const levelRow = (t, l) => el('tr', { class: t.result && t.result.location === l.location && (l.state === 'found' || l.state === 'placed') ? 'winrow' : '' },
+        el('td', { text: l.location }), el('td', { text: STATE[l.state] || l.state }),
+        el('td', { class: 'wrap' }, l.state === 'found' || l.state === 'removed' ? objLink(t.name, l.location, (l.value || []).join(', ') || '(empty)') : el('span', { text: (l.value || []).join(', ') })));
+    const memberRow = (m) => el('tr', {},
+        el('td', { text: m.name }),
+        el('td', {}, m.removed ? 'removed from the group' : m.added ? 'added to the group' : m.renamedTo ? 'renamed to ' + m.renamedTo : '',
+            m.loop ? el('span', { class: 'warn', text: ' - the group would contain itself (loop): nothing from this member' }) : null),
+        el('td', { class: 'wrap' }, m.removed ? el('span', { class: 'muted', text: '-' })
+            : m.result ? el('span', {}, objLink(m.result.name, m.result.location, m.result.location + ': ' + m.result.name), ' = ', (m.result.content || []).join(', ') || '(empty)')
+            : el('span', { class: 'warn', text: 'does not resolve' })));
+    const resultLine = (t) => t.result === null ? el('p', { class: 'warn', text: 'the name does not resolve for these firewalls' })
+        : el('p', {}, '→ ', objLink(t.result.name, t.result.location, t.result.location + ': ' + t.result.name), t.result.group ? ' (group)' : '', ': ',
+            (t.result.content || []).join(', ') || el('mark', { class: 'diff gone', text: 'empty' }));
+    const trace = (res) => el('div', {}, ...(res || []).map(t => el('div', { class: 'explaintrace' },
+        el('p', {}, el('strong', { text: t.name }), el('span', { class: 'muted', text: ' (' + (t.precedence === 'ancestor' ? 'ancestor objects take precedence: the highest level wins' : 'the nearest level wins') + ')' })),
+        table(['level', 'state', 'value'], t.levels.map(l => levelRow(t, l))),
+        resultLine(t),
+        t.result && t.result.members ? table(['member', 'after the merge', 'resolves to'], t.result.members.map(memberRow)) : null)));
+    const u = d.usedBy || {};
+    const userLink = u.kind === 'rule' ? el('a', { href: link({ name: u.name, location: u.location, type: 'rule', ruletype: u.ruletype }), target: '_blank', rel: 'noopener', text: 'rule ' + u.name })
+        : u.name ? objLink(u.name, u.location, (u.kind || 'object') + ' ' + u.name) : el('span', { text: u.text || '-' });
+    const ch = d.changes || {};
+    const changes = [].concat((ch.removed || []).map(x => 'removed: ' + x), (ch.placed || []).map(x => 'placed: ' + x),
+        (ch.memberRenamed || []).map(x => 'group ' + x.group + ': member ' + x.from + ' → ' + x.to),
+        (ch.memberAdded || []).map(x => 'group ' + x.group + ': member ' + x.name + ' added'),
+        (ch.memberRemoved || []).map(x => 'group ' + x.group + ': member ' + x.name + ' removed'));
+    // the likely cause in words, read from the resolution: a copy in a lower level that shadows, a name that does not
+    // resolve, a group that would contain itself, a group that becomes empty
+    const why = [];
+    const traces = (side) => (d[side].resolution || []);
+    traces('before').forEach((t, i) => {
+        const a = traces('after')[i];
+        if (!t.result || !a) return;
+        if (!a.result) why.push('after the merge "' + a.name + '" does not exist for the firewalls of ' + d.firewalls + ' (no level has it)');
+        else if (t.result.location !== a.result.location) {
+            const lv = t.levels.findIndex(l => l.location === t.result.location), la = a.levels.findIndex(l => l.location === a.result.location);
+            why.push(lv >= 0 && la > lv ? 'for the firewalls of ' + d.firewalls + ' "' + t.name + '" is found in ' + t.result.location + ' first (it shadows the copy of the other levels); "' + a.name + '" only exists in ' + a.result.location + ' - so the value changes'
+                : '"' + t.name + '" resolves in ' + t.result.location + ', after the merge "' + a.name + '" in ' + a.result.location);
+        }
+        ((a.result || {}).members || []).forEach(m => {
+            if (m.loop) why.push('group ' + a.result.name + ': member ' + m.name + (m.renamedTo ? ' would be renamed to ' + m.renamedTo : '') + ' - the group would contain itself (loop), the firewall gets nothing from it');
+            else if (!m.removed && !m.result) why.push('group ' + a.result.name + ': member ' + (m.renamedTo || m.name) + ' does not resolve for the firewalls of ' + d.firewalls);
+        });
+        if (a.result && a.result.group && (a.result.content || []).length === 0 && !((a.result.members || []).some(m => m.loop))) why.push('group ' + a.result.name + ' would be empty for the firewalls of ' + d.firewalls);
+    });
+    if (u.location && u.location !== d.firewalls && u.kind === 'group') why.push('the group ' + u.name + ' is defined in ' + u.location + ', but its members are resolved by the firewalls of ' + d.firewalls + ' (the levels from there upwards)');
+    box.append(el('div', { class: 'objhead' }, el('h3', { text: 'Explain: ' + (d.copy || (d.names || []).join(', ')) + ' not merged' }),
+            el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+        el('p', { class: 'muted', text: 'The merge would change what the firewalls of ' + d.firewalls + ' receive: the name resolves to other values before and after the merge. Differences are marked.' }),
+        why.length ? el('div', { class: 'card notice' }, el('strong', { text: 'Why: ' }), ...why.flatMap((w, i) => [i ? el('br') : '', w])) : null,
+        el('table', { class: 'plain' }, el('tbody', {}, [
+            el('tr', {}, el('th', { text: 'firewalls of' }), el('td', { text: d.firewalls })),
+            el('tr', {}, el('th', { text: 'name' }), el('td', { text: (d.names || []).join(', ') + ((d.afterNames || []).join(',') !== (d.names || []).join(',') ? ' → ' + (d.afterNames || []).join(', ') : '') })),
+            el('tr', {}, el('th', { text: 'used by' }), el('td', {}, u.location ? u.location + ': ' : '', userLink, d.via && d.via.name && d.via.name !== u.name ? el('span', { class: 'muted', text: ' via group ' + d.via.location + ': ' + d.via.name }) : null)),
+            el('tr', {}, el('th', { text: 'before' }), el('td', { class: 'wrap' }, list(d.before.content, d.after.content))),
+            el('tr', {}, el('th', { text: 'after' }), el('td', { class: 'wrap' }, list(d.after.content, d.before.content)))])),
+        el('div', { class: 'explaincols' },
+            el('div', {}, el('h4', { text: 'Before the merge' }), trace(d.before.resolution)),
+            el('div', {}, el('h4', { text: 'After the merge (simulated)' }), trace(d.after.resolution))),
+        el('h4', { text: 'Simulated changes of this merge step' }),
+        changes.length ? el('pre', { class: 'log', text: changes.join('\n') }) : el('p', { class: 'muted', text: 'none' }),
+        el('details', {}, el('summary', { text: 'pan-os-php message' }), el('pre', { class: 'log', text: d.reason || '' })));
+    document.addEventListener('keydown', onKey);
+    document.body.append(overlay);
+}
+
 // merger-possible-report: status of a finding (pan-os-php MERGERPOSSIBLEREPORT) - the problems first
 const MERGE_PROBLEM = ['conflict', 'would-change-policy', 'not-checked'];
 const MERGE_ORDER = ['conflict', 'would-change-policy', 'not-checked', 'merge-into-parent', 'merge-ok', 'unchecked'];
@@ -1062,6 +1147,12 @@ async function showMergerReport(base, r, out) {
     const res = await fetch(API + '/' + base + '/runs/' + r.jid + '/files/merger.json', { credentials: 'same-origin' });
     if (!res.ok) throw new Error('the run has no report (merger.json) - see run.log');
     const rep = await res.json();
+    // "Explain" buttons (cells are copied when drawn: one click handler on the report, the detail by number)
+    const explains = [];
+    const pid = base.split('/')[1];
+    const link = (x) => { const h = new URLSearchParams({ p: pid, c: r.cid, type: x.type, location: x.location, filter: '(name eq ' + x.name + ')' }); if (x.ruletype) h.set('ruletype', x.ruletype); return window.location.pathname + '#' + h.toString(); };
+    const explainBtn = (d) => { explains.push(d); return el('button', { type: 'button', class: 'small', 'data-explain': String(explains.length - 1), text: 'Explain', title: 'why the merge would change the policy' }); };
+    out.onclick = (ev) => { const b = ev.target.closest('[data-explain]'); if (b && explains[+b.dataset.explain]) explainMergeSafety(explains[+b.dataset.explain], link); };
     const ref = (x) => x ? (x.location ? x.location + ': ' : '') + x.name + (x.detail ? ' ' + x.detail : '') : '';
     const val = (v) => Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v));
     const filterBox = el('input', { placeholder: 'filter the rows (text)', autocomplete: 'off', spellcheck: false, 'aria-label': 'filter' });
@@ -1122,7 +1213,9 @@ async function showMergerReport(base, r, out) {
         parts.push(section('Findings', ['object type', 'merge', 'finding', 'name(s)', 'overlapping', 'kept copy', 'can not be merged (copy: reason)', 'copies (location:name=value)'],
             findings.map(x => [x.type, x.status || 'unchecked', x.kind, x.key, x.overlap,
                 (x.keep || '') + (x.parent ? '\n→ copy in the common parent ' + x.parent + ' (object-merger allowMergingWithUpperLevel): ' + (x.intoParent || []).join(', ') : ''),
-                (x.blocked || []).map(b => b.copy + ': ' + b.reason).concat((x.notChecked || []).map(n => n + ': not checked - kept copy not visible there')).join('\n'),
+                (x.blocked || []).some(b => b.detail) ? el('span', {}, ...(x.blocked || []).flatMap((b, i) => [i ? el('br') : '', b.copy + ': ' + b.reason, b.detail ? ' ' : '', b.detail ? explainBtn(Object.assign({ copy: b.copy }, b.detail)) : '']),
+                    ...(x.notChecked || []).flatMap(n => [el('br'), n + ': not checked - kept copy not visible there']))
+                    : (x.blocked || []).map(b => b.copy + ': ' + b.reason).concat((x.notChecked || []).map(n => n + ': not checked - kept copy not visible there')).join('\n'),
                 copiesCell(x.copies || [])].map(c => c !== null && typeof c === 'object' && c.nodeType ? c : val(c)))));
     } else if (rep.type === 'rule-merger') {
         const s = rep.summary || {};
@@ -1142,8 +1235,10 @@ async function showMergerReport(base, r, out) {
         parts.push(section('Not merged', ['object type', 'value / key', 'kept', 'not merged with', 'reason'],
             (rep.skipped || []).map(m => {
                 const kd = m.kept ? m.kept.detail || '' : '', od = (m.notMergedWith[0] || {}).detail || '';
+                const reason = (m.reason || []).map(x => x.trim()).join('\n');
                 return [m.objecttype, m.key, m.kept ? diffLines([{ prefix: head(m.kept), value: kd }], od) : '',
-                    diffLines(m.notMergedWith.map(x => ({ prefix: head(x), value: x.detail || '' })), kd), (m.reason || []).map(x => x.trim()).join('\n')];
+                    diffLines(m.notMergedWith.map(x => ({ prefix: head(x), value: x.detail || '' })), kd),
+                    m.safety && m.safety.length ? el('span', {}, reason, ...m.safety.map(d => el('span', {}, el('br'), explainBtn(d), m.safety.length > 1 ? ' ' + d.copy : ''))) : reason];
             })));
     }
     filterBox.addEventListener('input', () => sections.forEach(d => d()));

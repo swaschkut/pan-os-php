@@ -53,6 +53,8 @@ UTIL:
 * type=object-merger / xyz-merger | objects / groups with the same name and value in locations that do not see each other (sibling device groups, vsys, folders) and not merged: now a skipped entry with the reason (needs allowMergingWithUpperLevel / DupAlgorithm Identical does not create in the parent / parent not in the run) - before: nothing said
 * type=merger-possible-report | copies that do not see each other: status merge-into-parent with the common parent (checked: parent has the name with another value; ancestor-objects-take-precedence) - before: not-checked; summary column "merge into parent"
 * config-viewer | merger reports: the values of kept / not merged copies and of conflicting copies with their differences marked
+* type=object-merger / xyz-merger / merger-possible-report | a merge refused by the effective-policy check ("effective policy would change for firewalls of … before […] after […]") as data in exportJSON (skipped[].safety / blocked[].detail): firewalls, the user of the name, content before / after, how the name resolves level by level (device group, parents, shared) before and after, the members of a group, the simulated changes (removed, member renamed / added / removed); a group that would contain itself is marked as loop
+* config-viewer | merger reports: button "Explain" at a row the effective-policy check refused - before / after side by side with the differences marked, the resolution per level, the cause in words (copy of a lower level shadows, name does not resolve, group would contain itself / be empty), links to the objects in the version of the run
 
 BUGFIX:
 * SCM export after first production run / IAM patch

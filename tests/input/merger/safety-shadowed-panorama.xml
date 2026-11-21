@@ -1,0 +1,22 @@
+<config version="10.1.0">
+  <mgt-config/>
+  <shared/>
+  <devices><entry name="localhost.localdomain">
+    <device-group>
+      <entry name="DG-P">
+        <address>
+          <entry name="web2"><ip-netmask>10.1.1.1</ip-netmask></entry>
+          <entry name="web"><ip-netmask>10.1.1.1</ip-netmask></entry>
+        </address>
+        <address-group><entry name="G"><static><member>web</member></static></entry></address-group>
+      </entry>
+      <entry name="DG-C">
+        <address><entry name="web"><ip-netmask>10.9.9.9</ip-netmask></entry></address>
+        <pre-rulebase><security><rules><entry name="rc"><from><member>any</member></from><to><member>any</member></to><source><member>G</member></source><destination><member>any</member></destination><service><member>any</member></service><application><member>any</member></application><action>allow</action></entry></rules></security></pre-rulebase>
+      </entry>
+    </device-group>
+  </entry></devices>
+  <readonly><devices><entry name="localhost.localdomain"><device-group>
+    <entry name="DG-P"><id>11</id></entry><entry name="DG-C"><id>12</id><parent-dg>DG-P</parent-dg></entry>
+  </device-group></entry></devices></readonly>
+</config>
