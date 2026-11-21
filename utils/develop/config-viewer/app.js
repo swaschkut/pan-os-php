@@ -1066,7 +1066,7 @@ const VIEWER_MENU = [
     ['Policies', 'rule-captiveportal', 'Captive Portal', 'rule', { ruletype: 'captiveportal', window: 'rule', one: 'Captive Portal rule' }],
     ['Policies', 'rule-defaultsecurity', 'Default Security Rules', 'rule', { ruletype: 'defaultsecurity', window: 'rule', one: 'Default Security Rules rule' }],
     ['Policies', 'dns-rules', 'DNS Security Rules', 'dns-rule'],
-    ['Network', 'zones', 'Zones', 'zone'],
+    ['Network', 'zones', 'Zones', 'zone', { window: 'zone', one: 'Zone' }],
     ['Network', 'interfaces', 'Interfaces', 'interface'],
     ['Network', 'virtual-wires', 'Virtual Wires', 'virtualwire'],
     ['Network', 'routing', 'Virtual Routers / Routing', 'routing'],
@@ -1089,8 +1089,9 @@ const VIEWER_MENU = [
 ];
 /** the entries the user can open: types of the meta (and of a limited access); every other type of the meta under "Other" */
 function viewerMenu(types) {
-    const list = VIEWER_MENU.filter(m => types.includes(m[3])).map(m => Object.assign({ section: m[0], id: m[1], label: m[2], type: m[3] }, m[4] || {}));
-    for (const t of types) if (!VIEWER_MENU.some(m => m[3] === t)) list.push({ section: 'Other', id: 'type-' + t, label: t, type: t });
+    // every entry opens its objects in a window: an own one (fields with actions) or the generic one (all fields, read only)
+    const list = VIEWER_MENU.filter(m => types.includes(m[3])).map(m => Object.assign({ section: m[0], id: m[1], label: m[2], type: m[3], window: 'generic' }, m[4] || {}));
+    for (const t of types) if (!VIEWER_MENU.some(m => m[3] === t)) list.push({ section: 'Other', id: 'type-' + t, label: t, type: t, window: 'generic' });
     return list;
 }
 
@@ -1177,7 +1178,7 @@ async function showViewer(config, preset) {
         autosaveInfo.textContent = s.autosaved ? 'recovery copy written ' + fmtTime(s.autosaved) : '';
         changeList.replaceChildren(...(s.changes || []).map(c => typeof c === 'string' ? el('li', { text: c }) :
             el('li', {}, el('span', { class: 'muted', text: fmtTime(c.time) + ' ' + (c.user || '') + ' - ' }), el('code', { text: c.type + (c.ruletype ? '/' + c.ruletype : '') }), ' ',
-                el('span', { text: (c.location || 'any') + (c.filter ? ' ' + c.filter : '') + ' → ' }), el('code', { text: c.actions || '' }),
+                el('span', { text: (c.template ? 'template ' + c.template + ' / ' : '') + (c.location || 'any') + (c.filter ? ' ' + c.filter : '') + ' → ' }), el('code', { text: c.actions || '' }),
                 c.field ? el('span', { class: 'muted', text: c.field === 'multi-edit' ? ' (multi-edit)' : ' (field ' + c.field + ')' }) : null,
                 // a change of one object: the same action on more objects (filter from the properties of the object)
                 canWrite && /^\(name eq .+\)$/.test(c.filter || '') && c.actions ? el('button', { type: 'button', class: 'small', text: 'Multi-edit …',
@@ -1325,6 +1326,28 @@ async function showViewer(config, preset) {
             return [name, { key: 'members', label: 'Members', kind: 'ro', value: (Array.isArray(m.members) ? m.members : []).join(', '), note: 'no pan-os-php action to change members of a service group yet' },
                 tags, loc];
         if (kind === 'rule') return ruleFields(row, m, name, loc);
+        if (kind === 'zone') {
+            const bool = (key, label, action) => ({ key, label, kind: 'select', value: '', choices: ['', 'yes', 'no'], needs: [action],
+                note: 'the current value is not in the list of pan-os-php - choose to set it', act: (o, n) => n === '' ? '' : action + ':' + (n === 'yes' ? 'true' : 'false') });
+            return [name, { key: 'type', label: 'Type', kind: 'ro', value: m.network ? Object.keys(m.network).join(', ') : (row.type || '') },
+                { key: 'interfaces', label: 'Interfaces', kind: 'ro', value: fmtTree(m.network) || fmtTree(row.interfaces) || '-' },
+                { key: 'zpp', label: 'Zone protection profile', kind: 'text', value: row.zpp || '', needs: ['zpp-set'],
+                    act: (o, n) => { if (n === '') throw new Error('removing it: no pan-os-php action yet'); return 'zpp-set:' + actArg(n); } },
+                { key: 'log', label: 'Log setting', kind: 'text', value: row.log || '', placeholder: 'empty = PAN-OS default', needs: ['logsetting-set'], act: (o, n) => 'logsetting-set:' + (n === '' ? 'none' : actArg(n)) },
+                bool('userid', 'User identification', 'userid-enable'), bool('pbp', 'Packet buffer protection', 'packetbufferprotection-set'),
+                row.template ? { key: 'template', label: 'Template', kind: 'ro', value: row.template } : null, loc].filter(f => f);
+        }
+        if (kind === 'generic') {
+            // every other type: all its fields, read only - the list row and what the structured model adds
+            const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
+            const fields = [{ key: 'name', label: 'Name', kind: 'ro', value: row.name }];
+            for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? v.join(', ') : (v === null ? '' : String(v))) });
+            for (const [k, v] of Object.entries(m)) if (!(k in row) && !['name', 'device_group', 'template', 'vsys', 'folder', 'snippet'].includes(k))
+                fields.push({ key: 'm-' + k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null ? fmtTree(v) : String(v) });
+            if (row.template) fields.push({ key: 'template', label: 'Template', kind: 'ro', value: row.template });
+            fields.push(loc);
+            return fields;
+        }
         if (kind === 'tag') {
             const cs = (state.meta.types.tag.actions['color-set'] || [])[0];
             return [{ key: 'name', label: 'Name', kind: 'ro', value: row.name, note: 'renaming a tag: no pan-os-php action yet' },
@@ -1387,7 +1410,7 @@ async function showViewer(config, preset) {
                 : ( m.action !== undefined ? { key: 'action', label: 'Action', kind: 'ro', value: m.action } : null),
             sec ? { key: 'profilegroup', label: 'Profile group', kind: 'text', value: row.securityprofilegroup && row.securityprofilegroup !== 'null' ? row.securityprofilegroup : '', needs: ['securityprofile-group-set', 'securityprofile-remove'],
                 act: (o, n) => n === '' ? 'securityprofile-remove:any' : 'securityprofile-group-set:' + actArg(n) } : null,
-            sec && row.securityprofile && row.securityprofile !== 'null' ? { key: 'profiles', label: 'Profiles', kind: 'ro', value: typeof row.securityprofile === 'string' ? row.securityprofile : JSON.stringify(row.securityprofile) } : null,
+            sec && row.securityprofile && row.securityprofile !== 'null' ? { key: 'profiles', label: 'Profiles', kind: 'ro', value: typeof row.securityprofile === 'string' ? row.securityprofile : fmtTree(row.securityprofile) } : null,
             sec ? { key: 'logsetting', label: 'Log forwarding', kind: 'text', value: m.log_setting || '', needs: ['logsetting-set'], act: (o, n) => n === '' ? (() => { throw new Error('removing the log forwarding: no pan-os-php action yet'); })() : 'logsetting-set:' + actArg(n) } : null,
             sec ? { key: 'logstart', label: 'Log at session start', kind: 'select', value: yesno(log.start), choices: ['no', 'yes'], needs: ['logstart-enable', 'logstart-disable'], act: (o, n) => n === 'yes' ? 'logstart-enable' : 'logstart-disable' } : null,
             sec ? { key: 'logend', label: 'Log at session end', kind: 'select', value: yesno(log.end), choices: ['no', 'yes'], needs: ['logend-enable', 'logend-disable'], act: (o, n) => n === 'yes' ? 'logend-enable' : 'logend-disable' } : null,
@@ -1398,13 +1421,16 @@ async function showViewer(config, preset) {
             m.uuid ? { key: 'uuid', label: 'UUID', kind: 'ro', value: m.uuid } : null,
             loc].filter(f => f);
     }
-    async function fetchObject(name, loc) {
+    async function fetchObject(name, loc, template) {
         const q = new URLSearchParams({ type: cur.type, location: loc, name });
+        if (template) q.set('template', template);
         if (cur.type === 'rule') q.set('ruletype', ruletype.value);
         return api('GET', base() + '/object?' + q.toString());
     }
     async function openObject(r) {
-        let obj = await fetchObject(r.name, r.location);
+        // the generic window shows the list row when the object can not be read on its own (e.g. a type without a name filter)
+        let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template).catch(() => ({ row: r, model: null }))
+            : await fetchObject(r.name, r.location, r.template);
         const offered = state.meta.types[cur.type].actions || {};
         const done = {}, errors = {};
         const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': cur.label + ' ' + r.name });
@@ -1414,6 +1440,12 @@ async function showViewer(config, preset) {
         function close() { document.removeEventListener('keydown', onKey); overlay.remove(); if (changed) run(() => load(true)); }
         async function apply(f, actions) {
             const body = { type: cur.type, location: obj.row.location, filter: '(name eq ' + obj.row.name + ')', actions, field: f.key };
+            if (obj.row.template) {
+                // an object of a template: pan-os-php takes location=any with the template - only when the name is unique in it
+                body.template = obj.row.template; body.location = 'any';
+                const n = await api('GET', base() + '/objects?' + new URLSearchParams({ type: cur.type, location: 'any', template: obj.row.template, filter: body.filter }).toString());
+                if (n.total !== 1) throw new Error('"' + obj.row.name + '" is ' + n.total + ' times in template ' + obj.row.template + ' (several vsys) - change it with a filter instead');
+            }
             if (cur.type === 'rule') body.ruletype = ruletype.value;
             const res = await api('POST', base() + '/change', body);
             setStatus(Object.assign({ loaded: true }, res.status));
@@ -1428,13 +1460,13 @@ async function showViewer(config, preset) {
                 const actions = f.act(String(f.value), newValue);
                 if (!actions) return;
                 await apply(f, actions);
-                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location);
+                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location, obj.row.template);
             } catch (e) { errors[f.key] = e.message; }
             render();
         }
         async function listChange(f, actions) {
             delete errors[f.key];
-            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location); } catch (e) { errors[f.key] = e.message; }
+            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location, obj.row.template); } catch (e) { errors[f.key] = e.message; }
             render();
         }
         function control(f) {
@@ -1474,7 +1506,7 @@ async function showViewer(config, preset) {
         function render() {
             const fields = windowFields(cur.window, obj.row, obj.model);
             box.replaceChildren(
-                el('div', { class: 'objhead' }, el('h3', { text: (cur.one || cur.label) + ': ' + obj.row.name }), el('span', { class: 'badge', text: obj.row.location }),
+                el('div', { class: 'objhead' }, el('h3', { text: (cur.one || cur.label) + ': ' + obj.row.name }), obj.row.template ? el('span', { class: 'badge', text: 'template ' + obj.row.template }) : null, el('span', { class: 'badge', text: obj.row.location }),
                     el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
                 el('table', { class: 'objfields' }, el('tbody', {}, fields.map(f => {
                     const can = f.kind === 'buttons' || (canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]));
@@ -1531,6 +1563,7 @@ async function showViewer(config, preset) {
         const name = c.filter.slice(9, -1);
         const q = new URLSearchParams({ type: c.type, location: c.location || '', name });
         if (c.ruletype) q.set('ruletype', c.ruletype);
+        if (c.template) q.set('template', c.template);
         // the object as it is now (renamed by the change: not found - then only the generic suggestions)
         const obj = await api('GET', base() + '/object?' + q.toString()).catch(() => ({ row: { name }, model: {} }));
         const sugg = filterSuggestions(c.type, c.ruletype, obj.row, obj.model || {}, name);
@@ -1561,6 +1594,7 @@ async function showViewer(config, preset) {
             applyBtn.disabled = true; result.textContent = 'counting …';
             const qq = new URLSearchParams({ type: c.type, location: loc.value || 'any', filter: filterText() });
             if (c.ruletype) qq.set('ruletype', c.ruletype);
+            if (c.template) qq.set('template', c.template);
             try {
                 const r = await api('GET', base() + '/objects?' + qq.toString());
                 if (my !== seq) return;
@@ -1578,6 +1612,7 @@ async function showViewer(config, preset) {
             if (!confirm('Run "' + a + '" on ' + matched + ' object(s)?' + (f ? '' : '\nNo filter: all objects of this type in the location.'))) return;
             const body = { type: c.type, location: loc.value || 'any', filter: f, actions: a, field: 'multi-edit' };
             if (c.ruletype) body.ruletype = c.ruletype;
+            if (c.template) body.template = c.template;
             const r = await api('POST', base() + '/change', body);
             setStatus(Object.assign({ loaded: true }, r.status));
             state.cache.clear(); close();

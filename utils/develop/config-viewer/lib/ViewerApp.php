@@ -3061,6 +3061,17 @@ class ViewerApp
         if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.,:\-]{1,200}$/', $location ) )
             throw new ViewerException( 'location: letters, digits, space and . _ - , : only', 400 );
         $args[] = 'location=' . $location;
+        // Panorama: the template of network / device objects (zones, interfaces, …) - the same vsys exists in several
+        // templates, a change of the object window names its template
+        $template = $in['template'] ?? '';
+        if( $template !== '' && $template !== null )
+        {
+            if( !is_string( $template ) || !preg_match( '/^[A-Za-z0-9 _.\-]{1,200}$/', $template ) )
+                throw new ViewerException( 'template: letters, digits, space and . _ - only', 400 );
+            if( $project['scope'] !== null )
+                throw new ViewerException( 'not allowed: templates are not available with access limited to locations', 403 );
+            $args[] = 'template=' . $template;
+        }
 
         if( $type === 'rule' )
         {
@@ -3293,7 +3304,7 @@ class ViewerApp
     }
 
     /** objects of the display output as flat rows */
-    private static function rows( array $json ): array
+    private static function rows( array $json, bool $nested = FALSE ): array
     {
         $rows = array();
         foreach( $json as $key => $stores )
@@ -3312,10 +3323,14 @@ class ViewerApp
                         continue;
                     unset( $o['actions'] );
                     $row = array( 'location' => $location );
+                    // Panorama: the template of a network / device object (zone, interface, …)
+                    if( isset( $o['model']['item']['template'] ) && is_string( $o['model']['item']['template'] ) && $o['model']['item']['template'] !== '' )
+                        $row['template'] = $o['model']['item']['template'];
                     if( isset( $sub['store'] ) && is_string( $sub['store'] ) )
                         $row['store'] = $sub['store'];
                     foreach( $o as $k => $v )
-                        $row[(string)$k] = ( is_array( $v ) && $k !== 'model' ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
+                        // the list: nested values flat (a list of texts); the object window: as they are ($nested)
+                        $row[(string)$k] = ( is_array( $v ) && $k !== 'model' && !$nested ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
                     $rows[] = $row;
                 }
             }
@@ -3332,7 +3347,7 @@ class ViewerApp
     }
 
     /** read: all objects of one type, filtered by pan-os-php, from the configuration in memory */
-    public function objects( array $user, $pid, $cid, array $in, int $max = 50000, bool $computed = FALSE ): array
+    public function objects( array $user, $pid, $cid, array $in, int $max = 50000, bool $computed = FALSE, bool $nested = FALSE ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $c = $this->configGet( $p, $cid );
@@ -3343,7 +3358,7 @@ class ViewerApp
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type,
             'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $refcount ? array( 'x-refcount' ) : array(),
                 $this->bpArg( $p, $in ) ) ) );
-        $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() );
+        $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array(), $nested );
         if( $refcount && is_array( $r['refcounts'] ?? null ) )
             foreach( $rows as $i => $row )
             {
@@ -3473,11 +3488,15 @@ class ViewerApp
         if( !is_string( $name ) || $name === '' || strlen( $name ) > 300 || preg_match( '/[\x00-\x1F\x7F()]/', $name ) || trim( $name ) !== $name )
             throw new ViewerException( 'name: the name of the object (no brackets)', 400 );
         $location = $in['location'] ?? '';
-        if( !is_string( $location ) || $location === '' || $location === 'any' )
+        $tpl = is_string( $in['template'] ?? null ) && $in['template'] !== '';
+        if( !is_string( $location ) || $location === '' || ( $location === 'any' && !$tpl ) )
             throw new ViewerException( 'location: the location of the object', 400 );
-        $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + $in, PHP_INT_MAX );
+        $template = is_string( $in['template'] ?? null ) ? $in['template'] : '';
+        // an object of a template (Panorama): pan-os-php takes location=any with template= (the vsys of the template is
+        // no location of the configuration) - the row is matched by its vsys and template
+        $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + ( $template !== '' ? array( 'location' => 'any' ) : array() ) + $in, PHP_INT_MAX, FALSE, TRUE );
         foreach( $r['rows'] as $row )
-            if( ( $row['name'] ?? null ) === $name && ( $row['location'] ?? null ) === $location )
+            if( ( $row['name'] ?? null ) === $name && ( $location === 'any' || ( $row['location'] ?? null ) === $location ) && ( $template === '' || ( $row['template'] ?? '' ) === $template ) )
             {
                 $model = is_array( $row['model']['item'] ?? null ) ? $row['model']['item'] : null;
                 unset( $row['model'] );
@@ -3499,7 +3518,7 @@ class ViewerApp
         // todo/config-viewer-panos-style-edit.md
         $note = array( 'time' => time(), 'user' => (string)$user['name'], 'type' => $type, 'args' => $args );
         foreach( $args as $a )
-            if( preg_match( '/^(location|filter|actions|ruletype|securityprofiletype)=(.*)$/s', $a, $m ) )
+            if( preg_match( '/^(location|template|filter|actions|ruletype|securityprofiletype)=(.*)$/s', $a, $m ) )
                 $note[$m[1]] = $m[2];
         if( isset( $in['field'] ) && is_string( $in['field'] ) && preg_match( '/^[a-z][a-z0-9_-]{0,40}$/', $in['field'] ) )
             $note['field'] = $in['field'];
@@ -3581,7 +3600,7 @@ class ViewerApp
                 continue;
             $step = array( 'comment' => trim( ( isset( $c['time'] ) ? date( 'Y-m-d H:i T', (int)$c['time'] ) : '' ) . ' ' . (string)( $c['user'] ?? '' )
                 . ( isset( $c['field'] ) ? ( $c['field'] === 'multi-edit' ? ' - multi-edit' : ' - field ' . $c['field'] ) : '' ) ), 'type' => $c['type'] );
-            foreach( array( 'location', 'ruletype', 'securityprofiletype', 'filter' ) as $k )
+            foreach( array( 'location', 'template', 'ruletype', 'securityprofiletype', 'filter' ) as $k )
                 if( isset( $c[$k] ) && is_string( $c[$k] ) && $c[$k] !== '' )
                     $step[$k] = $k . '=' . $c[$k];
             $step['actions'] = 'actions=' . $c['actions'];

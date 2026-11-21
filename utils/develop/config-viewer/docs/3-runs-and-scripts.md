@@ -25,6 +25,10 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   any*; service also *application-default*), action, profile group, log forwarding, log at start / end, schedule.
   Shown only: URL category, NAT translations, UUID (no pan-os-php action for them yet). The default security rules
   can not be renamed or moved.
+- **Network / Device and every other entry**: a click opens the object too. Zones can be changed (name, zone
+  protection profile, log setting, user identification, packet buffer protection); every other type shows all its
+  fields, read only (its actions are not reviewed for the viewer yet). Panorama: zones, interfaces, … of a template
+  show the template (column and window); a change names it.
 - **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
   window). Nothing is written until **Save as new version**; **Discard changes** drops them all.
 - **Multi-edit …** (at a change of one object in the list of unsaved changes): the same action on more objects. The

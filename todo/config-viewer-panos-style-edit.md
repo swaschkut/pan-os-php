@@ -17,8 +17,25 @@ Status: **in progress** (Sven, 2026-11-21).
   rename needs a `$$` formula. Playbook export (2026-11-21): "Export as playbook …" (unsaved changes) and
   "Playbook" at a version saved from changes (column `configs.changes`: the change list as JSON); one step per change
   with a comment; checked like an uploaded playbook; save as a project file or download. Tested: the playbook of the
-  changes, run on the original version, gives the same changes. Not yet: Network / Device windows, NAT translations in
-  the window, git.
+  changes, run on the original version, gives the same changes. Network / Device (2026-11-21): every menu entry opens its objects in a window - zones
+  with their fields (name, zone protection profile, log setting, user identification, packet buffer protection; the
+  only reviewed network type), every other type in a generic window (all fields, read only, nested values as one
+  line). Panorama: objects of a template carry it (`template` column; `…/object?template=`, changes with
+  `location=any` + `template=` - only when the name is unique in the template; in the change list and the playbook).
+
+### Still open (list of Sven, 2026-11-21)
+
+* NAT translations in the window (`dnat-set`, `snat-set-interface`)
+* git on object level (see below)
+* aliases (`$$comma$$`, `$$colon$$`, `$$forwardslash$$`, …) for the descriptions of addresses and services in
+  pan-os-php (as for rules) - today `,` and `:` can not be used there
+* **run.log in a window** - shown in the page (as the LDAP results), not only as a download
+* **the XML snippet of each object** - in the object window: the XML of exactly this object (`$obj->xmlroot`), read
+  only (later: the entry of the object in git)
+* **search text in the whole XML** (as `type=xpath`): a name / text anywhere in the configuration, with options -
+  exact / contains / regex, element names or values, attributes (`name=`), limited to a location / template; the hits
+  with their XPath and a link to the object (window) where there is one
+* more network / device types editable as soon as their actions are reviewed (action-classes.json `reviewed`)
 
 ## Goal
 

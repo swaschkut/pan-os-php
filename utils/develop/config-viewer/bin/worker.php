@@ -543,7 +543,7 @@ while( TRUE )
             if( is_array( $note ) )
             {
                 $clean = array();
-                foreach( array( 'time', 'user', 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'field' ) as $k )
+                foreach( array( 'time', 'user', 'type', 'location', 'template', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'field' ) as $k )
                     if( isset( $note[$k] ) && is_scalar( $note[$k] ) )
                         $clean[$k] = is_string( $note[$k] ) ? substr( $note[$k], 0, 2000 ) : $note[$k];
                 $clean['args'] = array_slice( array_map( function( $a ) { return substr( (string)$a, 0, 2000 ); }, array_filter( (array)( $note['args'] ?? array() ), 'is_scalar' ) ), 0, 10 );

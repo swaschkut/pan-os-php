@@ -314,6 +314,20 @@ eq( array( status( $r ), count( $steps ) >= 6, $last['type'] ?? null, $last['loc
 $rs = array_values( array_filter( $steps, function( $x ) { return ( $x['type'] ?? '' ) === 'rule'; } ) );
 eq( $rs[0]['ruletype'] ?? null, 'ruletype=security', 'playbook: the rule type of a rule step' );
 eq( array( status( $bob->call( 'GET', $C . '/playbook?source=version' ) ), status( $bob->call( 'GET', $C . '/playbook?source=x' ) ) ), array( 400, 400 ), 'playbook: an uploaded version has no changes; source checked' );
+// network objects of a template (Panorama): the template in the list, the object window and the change (location=any + template)
+$z = $bob->call( 'GET', $C . '/objects?type=zone&location=any' )[1]['rows'] ?? array();
+$wan = array_values( array_filter( $z, function( $x ) { return ( $x['name'] ?? '' ) === 'WAN'; } ) )[0] ?? array();
+eq( array( $wan['template'] ?? null, $wan['location'] ?? null ), array( 'Datacenter Master Template', 'vsys1' ), 'zones: the template of each zone in the list' );
+$r = $bob->call( 'GET', $C . '/object?type=zone&location=vsys1&template=' . urlencode( 'Datacenter Master Template' ) . '&name=WAN' );
+eq( array( status( $r ), $r[1]['row']['template'] ?? null, $r[1]['model']['template'] ?? null ), array( 200, 'Datacenter Master Template', 'Datacenter Master Template' ), 'zone window: an object of a template' );
+eq( status( $bob->call( 'GET', $C . '/object?type=zone&location=vsys1&template=' . urlencode( 'Internet Perimeter Master' ) . '&name=WAN' ) ), 404, 'zone window: the template counts' );
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'zone', 'location' => 'any', 'template' => 'Datacenter Master Template', 'filter' => '(name eq WAN)', 'actions' => 'logsetting-set:lfp-viewer', 'field' => 'log' ) );
+$ch = end( $r[1]['status']['changes'] );
+$r2 = $bob->call( 'GET', $C . '/object?type=zone&location=vsys1&template=' . urlencode( 'Datacenter Master Template' ) . '&name=WAN' );
+$st = end( $bob->call( 'GET', $C . '/playbook?source=unsaved' )[1]['command'] );
+eq( array( status( $r ), $ch['template'] ?? null, $r2[1]['row']['log'] ?? null, $st['template'] ?? null ), array( 200, 'Datacenter Master Template', 'lfp-viewer', 'template=Datacenter Master Template' ),
+    'zone: changed in its template; the template in the change list and the playbook' );
+eq( status( $bob->call( 'GET', $C . '/objects?type=zone&location=any&template=' . urlencode( 'a/b' ) ) ), 400, 'template checked' );
 eq( count( glob( $data . '/projects/' . $pid . '/*.xml' ) ), 1, 'no new file before save' );
 eq( status( $bob->call( 'DELETE', $P ) ), 403, 'bob (write) can not delete the project' );
 
