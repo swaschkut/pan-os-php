@@ -42,7 +42,7 @@ BUGFIX:
 * spyware | local-deep-learning - alert-only-set enable any type
 
 
-2.1.62
+2.1.62 (20261121)
 UTIL:
 * type=device actions=display / exportToExcel | template-stack templates in configuration order with priority (1 = highest), e.g. '1: GLOBAL-TPL [vsys1]' - before: exportToExcel printed the list reversed without priority
 * type=zone actions=exportToExcel | new columns zpp-template-stack / zpp-template - where the zone-protection-profile the firewall receives is defined
@@ -78,6 +78,7 @@ UTIL:
 * type=securityprofile actions=exporttoExcel - extend vulnerability with cve/vendor-id | if SP type single -> export only these columns which are needed
 * type=stats actions=display-bpa json-to-folder | introduce fall-back for data-filtering
 * class URLProfile - BP Json has no longer URL mica BP checks, so do not mention it is a customised check
+* SP classes - change to single place for versioning
 
 BUGFIX:
 * type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
@@ -102,6 +103,10 @@ BUGFIX:
 * bugfix to get N/A output correct running
 * type=stats / securityprofile | improve to bring in a general PAN-OS feature version control
 * type=securityprofile securityprofiletype=url-filtering | bugfix for local/cloud-inline-cat
+* [reverted] bugfix VP / Spyware - to set local-inline to enable with alert-only-set
+* url.alert-only-set-no-empty-alert-allow-members
+* ancestor-objects-take-precedence-rule-filters
+* spyware-local-deep-learning-is-never-written
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes
