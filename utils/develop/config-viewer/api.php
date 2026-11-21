@@ -469,6 +469,9 @@ try
             // the result configuration of a playbook run as a new version of the project
             if( $n == 5 && $method === 'POST' && $route[4] === 'save' )
                 viewerOut( $app->jobSaveConfig( $user, $pid, $route[3], viewerBody()['project'] ?? null ), 201 );
+            // a failed SCM import: only the conversion again, from the export the run has downloaded
+            if( $n == 5 && $method === 'POST' && $route[4] === 'convert' )
+                viewerOut( $app->jobConvert( $user, $pid, $route[3] ), 202 );
             if( $n >= 6 && $method === 'GET' && $route[4] === 'files' )
             {
                 $f = $app->jobFile( $user, $pid, $route[3], implode( '/', array_map( 'rawurldecode', array_slice( $route, 5 ) ) ) );

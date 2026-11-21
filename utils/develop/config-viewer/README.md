@@ -279,6 +279,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `ldap/<qid>` | PUT / DELETE | login (no token) | change / delete an own LDAP query |
 | `projects/<pid>/ldap/runs` | POST | write | run an own LDAP query (`qid`) with `type=ldap-query` → `ldap.json`, `ldap.csv`; network rules as for imports (server on the allow list); see `docs/7-ldap.md` |
 | `projects/<pid>/configs/<cid>/ldap-users/runs` | POST | write | users of the security rules of a version against the LDAP of a query (`qid`, `action` `show` / `remove`): `type=rule actions=user-check-ldap`; `remove` → result configuration (`…/save`) |
+| `projects/<pid>/runs/<jid>/convert` | POST | write (no token) | a failed SCM import: only the conversion (`scm-export-xml`) again on the export the run has - no network, no key; the run is queued again (old log → `run-<n>.log`), its result becomes a new version |
 | `projects/<pid>/network` | PUT | owner | network for the runs of the project (`enabled`); works only while the administrator allows it |
 | `projects/<pid>/import/runs` | POST | write | import from a device with an own key: `kid`, `source` (`candidate` / `running`, PAN-OS) → a new version when done; see `docs/6-import-from-devices.md` |
 | `users/<name>/password` | POST | admin | a new password for the user, made by the viewer → `password` (shown once) |

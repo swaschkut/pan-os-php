@@ -1515,6 +1515,43 @@ class ViewerApp
         return $this->jobGet( $user, $pid, $jid );
     }
 
+    /**
+     * a failed SCM import again from its export: only the conversion (type=scm-export-xml) on the JSON the run has
+     * already downloaded - no network, no key. The run is queued again (its run.log stays as run-<n>.log); when it
+     * is done the configuration becomes a new version, as after an import.
+     */
+    public function jobConvert( array $user, $pid, $jid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
+        $j = $this->jobRow( $p, $jid );
+        $args = (array)json_decode( $j['args'], TRUE );
+        $tsg = null;
+        foreach( $args as $a )
+            if( is_string( $a ) && preg_match( '/^x-import-target=scm:([0-9]{1,20})$/', $a, $m ) )
+                $tsg = $m[1];
+        if( $j['type'] !== 'import' || $tsg === null )
+            throw new ViewerException( 'only an SCM import can be converted again', 400 );
+        if( $j['state'] !== 'failed' )
+            throw new ViewerException( 'only a failed import can be converted again (state: ' . $j['state'] . ')', 409 );
+        $dir = $this->jobDir( $p, $j['jid'] );
+        $export = $dir . '/scm-export/' . $tsg;
+        if( !is_dir( $export ) || is_link( $export ) || count( glob( $export . '/*/manifest.json' ) ?: array() ) === 0 )
+            throw new ViewerException( 'the run has no complete SCM export to convert (the download did not finish) - import again', 409 );
+        // the log of the attempt before
+        for( $n = 1; is_file( $dir . '/run-' . $n . '.log' ) && $n < 100; $n++ );
+        if( is_file( $dir . '/run.log' ) )
+            @rename( $dir . '/run.log', $dir . '/run-' . $n . '.log' );
+        @unlink( $dir . '/out.xml' );
+        $args = array_values( array_filter( $args, function( $a ) { return $a !== 'x-import-resume=convert'; } ) );
+        $args[] = 'x-import-resume=convert';
+        if( $this->q( "UPDATE jobs SET state = 'queued', args = ?, error = NULL, reason = NULL, started = NULL, finished = NULL WHERE id = ? AND state = 'failed'",
+            array( json_encode( $args ), $j['id'] ) )->rowCount() === 0 )
+            throw new ViewerException( 'the run changed - try again', 409 );
+        return $this->jobGet( $user, $pid, $j['jid'] );
+    }
+
     private function jobRow( array $project, $jid ): array
     {
         $j = is_string( $jid ) && preg_match( '/^[0-9a-f]{32}$/', $jid )
@@ -2077,12 +2114,19 @@ class ViewerApp
         $type = $j['type'];
         $x = array();
         foreach( $args as $a )
-            if( preg_match( '/^x-[a-z-]+?-(key|target|source|zip)=(.*)$/', $a, $m ) )
+            if( preg_match( '/^x-[a-z-]+?-(key|target|source|zip|resume)=(.*)$/', $a, $m ) )
                 $x[$m[1]] = $m[2];
         $step = function( string $tool, array $raw, bool $network, array $rawEnv = array() ) use ( $jobDir, $j ) {
             return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
                 'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
         };
+        // a failed SCM import converted again (jobConvert): only the offline step, on the export the run has
+        if( $type === 'import' && ( $x['resume'] ?? '' ) === 'convert' )
+        {
+            if( !preg_match( '/^scm:([0-9]{1,20})$/', (string)( $x['target'] ?? '' ), $m ) || !is_dir( $jobDir . '/scm-export/' . $m[1] ) )
+                throw new ViewerException( 'the SCM export of the run is not there any more' );
+            return array( $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $m[1], 'out=%JOB%/out.xml' ), FALSE ) );
+        }
         // MaxMind from an uploaded zip: no key, no network
         if( $type === 'geoip' && isset( $x['zip'] ) )
         {

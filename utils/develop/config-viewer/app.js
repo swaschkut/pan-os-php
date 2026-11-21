@@ -650,8 +650,12 @@ async function showProject(pid) {
                                 await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
                                 await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
                             }) }), ' in ', el('select', { 'aria-label': 'project for the result' }, writable.map(x => { const o = el('option', { value: x.pid, text: x.pid === pid ? 'this project' : x.name }); o.selected = x.pid === pid; return o; }))) : null, ' ',
+                            canWrite && r.type === 'import' && r.state === 'failed' && (r.args || []).some(a => a.startsWith('x-import-target=scm:')) ? el('button', { type: 'button', text: 'Convert again', title: 'only the conversion to XML (scm-export-xml) on the export this run has already downloaded - no download, no network', onclick: () => run(async () => {
+                                await api('POST', base + '/runs/' + r.jid + '/convert');
+                                message('conversion queued - the configuration becomes a new version when it is done'); await refreshRuns();
+                            }) }) : null, ' ',
                             el('button', { class: 'danger', type: 'button', text: open ? 'Cancel' : 'Delete', onclick: () => run(async () => {
-                                if (!open && !confirm('Delete this run with its result files?')) return;
+                                if (!open && !confirm('Delete this run with its result files' + (r.type === 'import' && r.state === 'failed' ? ' (also a downloaded SCM export: Convert again is then not possible)' : '') + '?')) return;
                                 await api('DELETE', base + '/runs/' + r.jid); openFiles.delete(r.jid); await refreshRuns();
                             }) })));
                     if (!details.has(r.jid)) return [row];

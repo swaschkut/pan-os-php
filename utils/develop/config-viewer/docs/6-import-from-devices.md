@@ -43,6 +43,11 @@ What runs:
 - PAN-OS: `type=upload in=api://<host>[/running-config] out=out.xml`
 - SCM: `type=scm-export in=scm-api://<TSG> area=config` (read only), then offline `type=scm-export-xml` → `out.xml`
 
+**Convert again** - when an SCM import fails in the conversion (`scm-export-xml`), the downloaded export stays with
+the run. *Convert again* in the list of runs runs only the conversion once more on it: no download, no network, no
+key; the log of the attempt before stays as `run-1.log`. When it works the configuration becomes a new version. (So
+keep the failed run until then - deleting it removes the export.)
+
 Only the download step gets a network; every other run (and the conversion step) has none. The run gets a key store
 with only this one key; it is removed when the run ends, and the key is taken out of `run.log`.
 

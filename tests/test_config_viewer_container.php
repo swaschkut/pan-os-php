@@ -189,12 +189,21 @@ if( in_array( $tool0, array( 'upload', 'scm-export', 'scm-export-xml' ), TRUE ) 
     $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
     file_put_contents( __DIR__ . '/import.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
     print "connecting with key " . trim( substr( $ks, strpos( $ks, ':' ) + 1 ) ) . "\n";
+    // a conversion that stops (as the TypeError of an SCM description as a list)
+    if( $tool0 === 'scm-export-xml' && is_file( __DIR__ . '/fail-scm-xml' ) )
+    {
+        print "PHP Fatal error:  Uncaught TypeError: strlen(): Argument #1 (\$string) must be of type string, array given\n";
+        exit( 255 );
+    }
     foreach( $rest as $x )
     {
         if( strpos( $x, 'out=' ) === 0 )
             copy( __DIR__ . '/import-' . $tool0 . '.xml', substr( $x, 4 ) );
         if( strpos( $x, 'outdir=' ) === 0 )
+        {
             @mkdir( substr( $x, 7 ) . '/1234567890/20261121', 0777, TRUE );
+            file_put_contents( substr( $x, 7 ) . '/1234567890/20261121/manifest.json', '{"tsg_id":"1234567890"}' );
+        }
     }
     exit( 0 );
 }
@@ -449,6 +458,26 @@ $vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), n
 eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, $il[0][3][0] ?? null, isset( $vers['scm-1234567890.xml'] ) ),
     array( 'done', array( 'scm-export', 'scm-export-xml' ), array( 'bridge', 'none' ), 'tsg_id1234567890:sa-client@1234567890.iam%scm-geheim-4711' . "\n", 'in=scm-api://1234567890', TRUE ),
     'import SCM: scm-export with network (read only), scm-export-xml without, new version' );
+// the conversion fails: only it again, on the export the run has (no download, no network, no key)
+$doneJid = $r[1]['jid'] ?? '';
+touch( $bin . '/fail-scm-xml' );
+$r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $skid ) )[1]['jid'] ?? '' ) );
+$fjid = $r[1]['jid'] ?? '';
+$nVers = count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() );
+eq( array( $r[1]['state'] ?? null, is_dir( $data . '/projects/' . $pid . '/jobs/' . $fjid . '/scm-export/1234567890' ) ), array( 'failed', TRUE ), 'import SCM: conversion failed, the export stays with the run' );
+eq( array( call( 'POST', $P . '/runs/' . $doneJid . '/convert' )[0], call( 'POST', $P . '/runs/' . $ijid . '/convert' )[0], call( 'POST', $P . '/runs/' . str_repeat( '0', 32 ) . '/convert' )[0] ),
+    array( 409, 400, 404 ), 'convert again: only a failed SCM import' );
+unlink( $bin . '/fail-scm-xml' );
+@unlink( $bin . '/import.log' );
+$r = call( 'POST', $P . '/runs/' . $fjid . '/convert' );
+eq( array( $r[0], $r[1]['state'] ?? null ), array( 202, 'queued' ), 'convert again: queued' );
+$r = waitRun( $P . '/runs/' . $fjid );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, in_array( 'run-1.log', $names, TRUE ), in_array( 'run.log', $names, TRUE ),
+    count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() ) ),
+    array( 'done', array( 'scm-export-xml' ), array( 'none' ), '', TRUE, TRUE, $nVers + 1 ), 'convert again: only scm-export-xml, no network, no key store, the old log as run-1.log, a new version' );
+eq( call( 'POST', $P . '/runs/' . $fjid . '/convert' )[0], 409, 'convert again: not a second time once it is done' );
 // an existing .panconfkeystore of a customer: every kind of entry pan-os-php knows, and unknown names as they are
 $ksText = "fw1.example.com%443:LUFRPT1-neu-0815:zweiter\r\nfw9.example.com%8443:LUFRPT9-port-4711\ntsg_id1234567890:sa-two@x.iam%scm-zwei-4711\negressip_tsg_id1234567890:egress-key-4711\n"
     . "ldap-password:altes passwort\nbpa-apikey:bpa-key-4711\n# a comment\n\ncustom-entry_1:wert-4711\nno colon here\nfw5.example.com:a:b:c\nldap_userAlice@Example.com:mein ldap passwort\n";
