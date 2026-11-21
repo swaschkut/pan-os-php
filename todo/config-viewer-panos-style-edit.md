@@ -142,8 +142,8 @@ repeatable, documented change.
 
 1. Menu on the left (Objects / Policies, per kind of configuration: Panorama, firewall, SCM), location on top; the
    type select goes away.
-2. Object window for addresses, services, tags - fields that have an action editable, the others read-only; change
-   list.
+2. Object window (overlay) for addresses, services, tags - each field applied after focus + change; fields without
+   an action read-only; change list.
 3. Multi-edit: filter suggestions from the object, number of matches, apply.
 4. Security rules in the window (the actions are almost complete), then NAT.
 5. Missing actions in pan-os-php (marked **open** above): `description-set` (address, service, rule), `value-set` /
@@ -151,11 +151,31 @@ repeatable, documented change.
    URL category (rule) - useful on the command line too.
 6. Playbook export of the change list.
 
+## Decisions (Sven, 2026-11-21)
+
+* **Window: overlay** as the edit dialog of PAN-OS (modal over the table).
+* **Each field on its own**: a field is applied when it loses the focus after a change (blur / Enter) - one action
+  per field, at once; no common "OK". A field that did not change sends nothing. A failed action shows its error at
+  the field and leaves the old value.
+* **Location of an object: from the PHP object** - every object belongs to its store, the store to its location
+  (DeviceGroup / VirtualSystem / shared, SCM: Container / DeviceCloud / DeviceOnPrem / Snippet);
+  `PH::getLocationString( $obj )` gives it (the worker uses it already for references). The window and the table show
+  it; the action of a change runs with exactly this location (`location=<location of the object>`), so an object with
+  the same name in another location is not touched. An object that overrides a shared one: the window says so and
+  shows the other one as a reference (the "Open" link exists).
+* **SCM**: folders (Container, DeviceCloud, DeviceOnPrem) have parents - `parentContainer` / `parentContainers()`,
+  `childContainers()` (lib/device-and-system-classes/Container.php, BuckbeakConf.php: parent "All" when none);
+  objects of a parent are seen below. **Snippets are not inherited** - a snippet is attached to containers
+  (`attachedSnippets`, `getAttachedSnippets()`). Menu / location select: the folder tree with its parents, the
+  snippets as their own locations; the window of a folder object shows the snippets attached to its folder only as
+  information.
+* **Rights**: as today - a member limited to object types / locations sees and changes only these; no access to the
+  type or the location = no access (not in the menu, not in the location select, the API refuses). Nothing more
+  fine-grained (no per field rights).
+
 ## Open questions
 
-* Window as an overlay or as a second panel next to the table (PAN-OS: modal dialog)?
-* Several changes in the window: one "OK" that runs all actions in order (as PAN-OS), or each field at once?
-* Objects of a lower location that override a shared one: show where the object comes from (as PAN-OS shows the
-  location column) and which one the action changes.
-* SCM: folder / snippet inheritance in the menu and in the window.
-* Permissions: the change list per user or per version; limited members (types / locations) see only their part.
+* Undo of one field change: today only "Discard changes" of the whole version - an undo per line of the change list
+  would need the reverse action (`tag-add` ↔ `tag-remove`, …) or a replay of the list without that line.
+* Order of the menu for Panorama: device group objects and template / template stack (network, device) as in PAN-OS
+  (two separate trees) - with steps 1-4 only Objects / Policies.
