@@ -367,6 +367,16 @@ $r = $alice->call( 'GET', $RC . '/references?type=address&location=shared&name=n
 eq( array( status( $r ), $r[1]['objects'] ?? null ), array( 200, array() ), 'references: an unknown name - no object' );
 eq( status( $alice->call( 'GET', $RC . '/references?type=rule&location=any&name=x' ) ), 400, 'references: a type without references' );
 eq( status( $alice->call( 'GET', $RC . '/references?type=address&location=any' ) ), 400, 'references: the name is needed' );
+// the list of the page counts the users of every object (refcount after name) - the same users References shows
+$r = $alice->call( 'GET', $RC . '/objects?type=address&location=any' );
+$rc = array();
+foreach( $r[1]['rows'] ?? array() as $row )
+    $rc[$row['location'] . '|' . $row['name']] = $row['refcount'] ?? 'missing';
+$cols = $r[1]['columns'] ?? array();
+eq( array( $rc['shared|new test 2'] ?? null, $rc['shared|another object'] ?? null, $rc['Datacenter-Firewalls|new test 2'] ?? null, array_search( 'refcount', $cols ) === array_search( 'name', $cols ) + 1 ),
+    array( 6, 0, count( array_column( $byLoc['Datacenter-Firewalls']['references'] ?? array(), 'name' ) ), TRUE ), 'list: refcount per object, right after the name' );
+eq( array_key_exists( 'refcount', $alice->call( 'GET', $RC . '/addresses?model=display-v0&limit=1' )[1]['items'][0] ?? array() ), FALSE, 'REST: no refcount in the items' );
+eq( in_array( 'refcount', $alice->call( 'GET', $RC . '/objects?type=rule&location=any' )[1]['columns'] ?? array(), TRUE ), FALSE, 'list: no refcount for a type without references' );
 $r = $alice->call( 'GET', $RC . '/addresses?model=display-v0' );
 eq( array( status( $r ), $r[1]['type'] ?? null, $r[1]['total'] ?? null, count( $r[1]['items'] ?? array() ), $r[1]['model'] ?? null ), array( 200, 'address', 27, 27, 'display-v0' ), 'REST: GET addresses, display-v0 (objects and groups)' );
 eq( isset( $r[1]['items'][0]['model'] ), FALSE, 'REST: display-v0 items carry no model field' );

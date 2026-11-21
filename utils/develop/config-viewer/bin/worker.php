@@ -157,6 +157,46 @@ function viewerTypeOf( $o )
     return null;
 }
 
+/** the objects that use $o (a rule, group, profile group, …), each once, with the fields it uses $o in */
+function viewerUsers( $o )
+{
+    $refs = array();
+    foreach( isset( $o->refrules ) && is_array( $o->refrules ) ? $o->refrules : array() as $ref )
+    {
+        // from the reference up to the object that uses it: a rule / group / profile group …; a "…Container" on
+        // the way is the field (AddressRuleContainer:source)
+        $field = null;
+        $user = null;
+        $first = null;
+        for( $x = $ref, $i = 0; is_object( $x ) && $i < 8; $x = $x->owner ?? null, $i++ )
+        {
+            if( $first === null && method_exists( $x, 'name' ) && !preg_match( '/Store$/', get_class( $x ) ) )
+                $first = $x;
+            if( $field === null && preg_match( '/Container$/', get_class( $x ) ) && method_exists( $x, 'name' ) && is_string( $x->name() ) && $x->name() !== '' )
+                $field = $x->name();
+            if( viewerTypeOf( $x ) !== null )
+            {
+                $user = $x;
+                break;
+            }
+        }
+        $user = $user ?? $first;
+        if( !is_object( $user ) )
+            continue;
+        $t = viewerTypeOf( $user );
+        $loc = PH::getLocationString( $user );
+        $row = array( 'type' => $t['type'] ?? null, 'ruletype' => $t['ruletype'] ?? null, 'securityprofiletype' => $t['securityprofiletype'] ?? null,
+            'location' => is_string( $loc ) ? $loc : null, 'name' => method_exists( $user, 'name' ) ? (string)$user->name() : '', 'class' => get_class( $user ),
+            'rulebase' => method_exists( $user, 'isPostRule' ) && $t !== null && $t['type'] === 'rule' ? ( $user->isPostRule() ? 'post' : 'pre' ) : null );
+        $key = $row['class'] . '|' . $row['location'] . '|' . $row['name'];
+        if( !isset( $refs[$key] ) )
+            $refs[$key] = $row + array( 'fields' => array() );
+        if( $field !== null && !in_array( $field, $refs[$key]['fields'], TRUE ) )
+            $refs[$key]['fields'][] = $field;
+    }
+    return array_values( $refs );
+}
+
 /**
  * who uses the objects named $name of a type (in the location of $args): every object found, with its references -
  * the referencing object (type, rule type, location, name, pre / post) and the field (source, destination, member, …)
@@ -179,42 +219,9 @@ function viewerReferences( $type, array $args, $name )
         {
             if( !is_object( $o ) || !method_exists( $o, 'name' ) || $o->name() !== $name )
                 continue;
-            $refs = array();
-            foreach( isset( $o->refrules ) && is_array( $o->refrules ) ? $o->refrules : array() as $ref )
-            {
-                // from the reference up to the object that uses it: a rule / group / profile group …; a "…Container" on
-                // the way is the field (AddressRuleContainer:source)
-                $field = null;
-                $user = null;
-                $first = null;
-                for( $x = $ref, $i = 0; is_object( $x ) && $i < 8; $x = $x->owner ?? null, $i++ )
-                {
-                    if( $first === null && method_exists( $x, 'name' ) && !preg_match( '/Store$/', get_class( $x ) ) )
-                        $first = $x;
-                    if( $field === null && preg_match( '/Container$/', get_class( $x ) ) && method_exists( $x, 'name' ) && is_string( $x->name() ) && $x->name() !== '' )
-                        $field = $x->name();
-                    if( viewerTypeOf( $x ) !== null )
-                    {
-                        $user = $x;
-                        break;
-                    }
-                }
-                $user = $user ?? $first;
-                if( !is_object( $user ) )
-                    continue;
-                $t = viewerTypeOf( $user );
-                $loc = PH::getLocationString( $user );
-                $row = array( 'type' => $t['type'] ?? null, 'ruletype' => $t['ruletype'] ?? null, 'securityprofiletype' => $t['securityprofiletype'] ?? null,
-                    'location' => is_string( $loc ) ? $loc : null, 'name' => method_exists( $user, 'name' ) ? (string)$user->name() : '', 'class' => get_class( $user ),
-                    'rulebase' => method_exists( $user, 'isPostRule' ) && $t !== null && $t['type'] === 'rule' ? ( $user->isPostRule() ? 'post' : 'pre' ) : null );
-                $key = $row['class'] . '|' . $row['location'] . '|' . $row['name'];
-                if( !isset( $refs[$key] ) )
-                    $refs[$key] = $row + array( 'fields' => array() );
-                if( $field !== null && !in_array( $field, $refs[$key]['fields'], TRUE ) )
-                    $refs[$key]['fields'][] = $field;
-            }
+            $refs = viewerUsers( $o );
             $loc = PH::getLocationString( $o );
-            $out[] = array( 'location' => is_string( $loc ) ? $loc : null, 'class' => get_class( $o ), 'references' => array_values( $refs ) );
+            $out[] = array( 'location' => is_string( $loc ) ? $loc : null, 'class' => get_class( $o ), 'references' => $refs );
         }
     return $out;
 }
@@ -234,7 +241,9 @@ function viewerRun( $type, array $args )
     global $configFile;
     // 'x-computed' is no pan-os-php argument: the API object model also gets its computed values (_panosphp)
     ApiObjectModel::$withComputed = in_array( 'x-computed', $args, TRUE );
-    $args = array_values( array_diff( $args, array( 'x-computed' ) ) );
+    // 'x-refcount': count the users of every object of the read ("location|name" => number, $GLOBALS['viewerRefcounts'])
+    $refcount = in_array( 'x-refcount', $args, TRUE );
+    $args = array_values( array_diff( $args, array( 'x-computed', 'x-refcount' ) ) );
     // 'x-bp=<file>' is no pan-os-php argument either: the BP JSON of the project for this one run (checks, computed
     // verdicts, alert-only-set / best-practice-set). Only a file of the folder "files" of this project; afterwards the
     // BP JSON the configuration was loaded with is used again.
@@ -265,6 +274,17 @@ function viewerRun( $type, array $args )
     PH::$JSON_OUTlog = '';
     ob_start();
     $util = PH::callPANOSPHP( $type, $argv, $argc, 'config-viewer' );
+    if( $refcount )
+    {
+        $GLOBALS['viewerRefcounts'] = array();
+        foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
+            foreach( is_array( $set['objects'] ?? null ) ? $set['objects'] : array() as $o )
+                if( is_object( $o ) && isset( $o->refrules ) && method_exists( $o, 'name' ) )
+                {
+                    $loc = PH::getLocationString( $o );
+                    $GLOBALS['viewerRefcounts'][( is_string( $loc ) ? $loc : '' ) . '|' . $o->name()] = count( viewerUsers( $o ) );
+                }
+    }
     unset( $util );
     $out = (string)ob_get_clean();
     if( $bp !== null )
@@ -314,6 +334,8 @@ function viewerChild( $conn, $type, array $args, $send )
         while( ob_get_level() > 0 )
             $out = (string)ob_get_clean() . $out;
         $r = viewerDecode( $out );
+        if( isset( $GLOBALS['viewerRefcounts'] ) && $r['ok'] )
+            $r['refcounts'] = $GLOBALS['viewerRefcounts'];
         if( !$done && $r['ok'] )
             $r = array( 'ok' => FALSE, 'error' => 'the run stopped' );
         if( $send || !$r['ok'] )

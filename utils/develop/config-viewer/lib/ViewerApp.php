@@ -2095,9 +2095,25 @@ class ViewerApp
         $c = $this->configGet( $p, $cid );
         $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
+        // the page (not REST): how many objects use each object - a 'refcount' column after 'name', for the References button
+        $refcount = $max !== PHP_INT_MAX && !empty( $this->meta()['types'][$type]['references'] );
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type,
-            'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $this->bpArg( $p, $in ) ) ) );
+            'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $refcount ? array( 'x-refcount' ) : array(),
+                $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array() );
+        if( $refcount && is_array( $r['refcounts'] ?? null ) )
+            foreach( $rows as $i => $row )
+            {
+                $n = $r['refcounts'][( $row['location'] ?? '' ) . '|' . ( $row['name'] ?? '' )] ?? null;
+                $new = array();
+                foreach( $row as $k => $v )
+                {
+                    $new[$k] = $v;
+                    if( $k === 'name' )
+                        $new['refcount'] = $n;
+                }
+                $rows[$i] = $new;
+            }
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
                 unset( $rows[$i]['model'] );

@@ -74,5 +74,8 @@ ul.suggest li.on, ul.suggest li:hover { background: #e8f0fa; }
 td.refcell { width: 1%; }
 button.small { padding: 2px 8px; font-size: 12px; }
 tr.refrow > td { background: #f4f8fc; white-space: normal; max-width: none; padding: 8px 12px 12px; }
-.refs table { margin-top: 6px; background: #fff; }
+.refs { position: sticky; left: 0; display: inline-block; max-width: min(1100px, 90vw); }
+.refs table { margin-top: 6px; background: #fff; width: auto; }
 .refs a { white-space: nowrap; }
+button.refbtn { min-width: 3.2em; }
+button.refbtn.on { background: #e8f0fa; border-color: var(--accent); }

@@ -721,13 +721,19 @@ async function showViewer(config, preset) {
             el('thead', {}, el('tr', {}, view.columns.map(c => el('th', { text: c + (view.sort === c ? (view.desc ? ' ▼' : ' ▲') : ''), onclick: () => {
                 if (view.sort === c) view.desc = !view.desc; else { view.sort = c; view.desc = false; }
                 draw();
-            } })), state.meta.types[view.type] && state.meta.types[view.type].references ? el('th', {}) : null)),
+            } })), state.meta.types[view.type] && state.meta.types[view.type].references && !view.columns.includes('refcount') ? el('th', { text: 'references' }) : null)),
             el('tbody', {}, slice.flatMap(r => {
-                const withRefs = state.meta.types[view.type] && state.meta.types[view.type].references && typeof r.name === 'string' && r.name !== '';
+                // refcount (types with references): the number is the button that shows the users below the row;
+                // 0 - nothing to show; no number (not counted) - the button still works
+                const refs = state.meta.types[view.type] && state.meta.types[view.type].references && typeof r.name === 'string' && r.name !== '';
                 const key = (r.location || '') + '|' + r.name;
-                const row = el('tr', {}, view.columns.map(c => { const t = cell(r[c]); return el('td', { text: t, title: t.length > 40 ? t : null }); }),
-                    withRefs ? el('td', { class: 'refcell' }, el('button', { type: 'button', class: 'small', text: view.refs.has(key) ? 'Hide references' : 'References',
-                        title: 'where this object is used (pan-os-php actions=displayreferences)', onclick: () => run(() => toggleRefs(r, key)) })) : null);
+                const refButton = () => r.refcount === 0 ? el('span', { class: 'muted', text: '0', title: 'not used' })
+                    : el('button', { type: 'button', class: 'small refbtn' + (view.refs.has(key) ? ' on' : ''), text: (typeof r.refcount === 'number' ? r.refcount : '?') + (view.refs.has(key) ? ' ▾' : ' ▸'),
+                        title: (view.refs.has(key) ? 'hide' : 'show') + ' where this object is used (pan-os-php displayreferences)', onclick: () => run(() => toggleRefs(r, key)) });
+                const row = el('tr', {}, view.columns.map(c => {
+                    if (c === 'refcount' && refs) return el('td', { class: 'refcell' }, refButton());
+                    const t = cell(r[c]); return el('td', { text: t, title: t.length > 40 ? t : null });
+                }), refs && !view.columns.includes('refcount') ? el('td', { class: 'refcell' }, refButton()) : null);
                 return view.refs.has(key) ? [row, el('tr', { class: 'refrow' }, el('td', { colspan: view.columns.length + 1 }, refsBox(view.refs.get(key))))] : [row];
             }))));
         pager.replaceChildren(
