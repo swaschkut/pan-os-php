@@ -5155,6 +5155,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "ldap-query": {
+        "name": "ldap-query",
+        "action": [],
+        "filter": []
+    },
     "license": {
         "name": "license",
         "action": [],
@@ -6218,6 +6223,10 @@ var subjectObject =
                 "name": "display-app-seen",
                 "MainFunction": {}
             },
+            "dnat-remove": {
+                "name": "DNat-remove",
+                "MainFunction": {}
+            },
             "dnat-set": {
                 "name": "DNat-set",
                 "MainFunction": {},
@@ -7084,6 +7093,36 @@ var subjectObject =
                 "section": "service",
                 "MainFunction": {}
             },
+            "snat-remove": {
+                "name": "SNat-remove",
+                "MainFunction": {}
+            },
+            "snat-set": {
+                "name": "SNat-set",
+                "MainFunction": {},
+                "args": {
+                    "SNATtype": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "dynamic-ip-and-port, dynamic-ip, static-ip or none"
+                    },
+                    "addresses": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "the translated address objects, separated by '|' (static-ip: one; dynamic-ip-and-port with an interface: optional, the IP of the interface); - = none"
+                    },
+                    "interface": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "dynamic-ip-and-port: the interface whose address is used (ethernet1\/\/1 or ethernet1$$1 for ethernet1\/1)"
+                    },
+                    "bidirectional": {
+                        "type": "bool",
+                        "default": "no",
+                        "help": "static-ip: bi-directional"
+                    }
+                }
+            },
             "snat-set-interface": {
                 "name": "SNat-set-interface",
                 "MainFunction": {},
@@ -7537,7 +7576,7 @@ var subjectObject =
                     "ldapServer": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "LDAP server fqdn \/ IP"
+                        "help": "LDAP server fqdn \/ IP, or ldaps%fqdn[%port] \/ ldap%fqdn[%port], or auto \/ auto-ldap[%domain]: the domain controllers of the domain (default: the DC= parts of dn) from DNS (LDAPS \/ LDAP), the first that works"
                     },
                     "dn": {
                         "type": "string",

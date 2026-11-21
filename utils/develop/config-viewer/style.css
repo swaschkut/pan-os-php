@@ -123,3 +123,6 @@ tr.clickable:hover td { background: var(--bg); }
 label.check { display: block; margin: 2px 0; }
 label.check code { font-size: 12px; }
 .objfields input[type=checkbox] { width: auto; margin-right: 4px; }
+.parts { display: flex; flex-wrap: wrap; gap: 8px; }
+.parts .part { display: flex; flex-direction: column; gap: 2px; min-width: 150px; flex: 1; }
+.parts .part input, .parts .part select { width: 100%; }

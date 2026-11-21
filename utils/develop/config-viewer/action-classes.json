@@ -814,6 +814,9 @@
             "display-app-seen": {
                 "class": "read"
             },
+            "dnat-remove": {
+                "class": "change"
+            },
             "dnat-set": {
                 "class": "change"
             },
@@ -1042,6 +1045,12 @@
                 "class": "change"
             },
             "service-set-appdefault": {
+                "class": "change"
+            },
+            "snat-remove": {
+                "class": "change"
+            },
+            "snat-set": {
                 "class": "change"
             },
             "snat-set-interface": {

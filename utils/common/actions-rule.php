@@ -3697,16 +3697,21 @@ RuleCallContext::$supportedActions[] = array(
         }
 
         $dnattype = $context->arguments['DNATtype'];
+        // the translated port (servicePort, 1-65535; *nodefault* / empty: none)
         $port = $context->arguments['servicePort'];
+        if( $port === '*nodefault*' || $port === '' )
+            $port = null;
+        elseif( !ctype_digit( (string)$port ) || (int)$port < 1 || (int)$port > 65535 )
+            derr( "servicePort: a port 1-65535", null, FALSE );
 
         $objectFind = $rule->source->parentCentralStore->find($context->arguments['objName']);
         if( $objectFind === null )
             derr("address-type object named '{$context->arguments['objName']}' not found", null, FALSE);
 
         if( $context->isAPI )
-            $rule->API_setDNAT( $objectFind, null, $dnattype  );
+            $rule->API_setDNAT( $objectFind, $port, $dnattype  );
         else
-            $rule->setDNAT( $objectFind, null, $dnattype );
+            $rule->setDNAT( $objectFind, $port, $dnattype );
 
     },
     'args' => array(
@@ -3724,6 +3729,90 @@ RuleCallContext::$supportedActions[] = array(
     )
 );
 
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'DNat-remove',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "it's not a NAT rule" );
+            return;
+        }
+        /** @var NatRule $rule */
+        if( $rule->dnathost === null )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "no destination translation" );
+            return;
+        }
+        if( $context->isAPI )
+            $rule->API_setNoDNAT();
+        else
+            $rule->setNoDNAT();
+        $rule->dnattype = 'none';
+    }
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'SNat-set',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "it's not a NAT rule" );
+            return;
+        }
+        /** @var NatRule $rule */
+        $type = $context->arguments['SNATtype'];
+        $hosts = array();
+        $names = $context->arguments['addresses'];
+        if( $names !== '-' && $names !== '' )
+            foreach( explode( '|', $names ) as $name )
+            {
+                $name = trim( $name );
+                if( $name === '' )
+                    continue;
+                $o = $rule->source->parentCentralStore->find( $name );
+                if( $o === null )
+                    derr( "address-type object named '" . $name . "' not found", null, FALSE );
+                $hosts[] = $o;
+            }
+        $interface = $context->arguments['interface'];
+        $interface = ( $interface === '-' || $interface === '' ) ? null : str_replace( '$$', '/', $interface );
+        $rule->setSourceNat( $type, $hosts, $interface, $context->arguments['bidirectional'] );
+        if( $context->isAPI )
+            $rule->API_sync();
+    },
+    'args' => array(
+        'SNATtype' => array( 'type' => 'string', 'default' => '*nodefault*',
+            'help' => "dynamic-ip-and-port, dynamic-ip, static-ip or none" ),
+        'addresses' => array( 'type' => 'string', 'default' => '-',
+            'help' => "the translated address objects, separated by '|' (static-ip: one; dynamic-ip-and-port with an interface: optional, the IP of the interface); - = none" ),
+        'interface' => array( 'type' => 'string', 'default' => '-',
+            'help' => "dynamic-ip-and-port: the interface whose address is used (ethernet1//1 or ethernet1\$\$1 for ethernet1/1)" ),
+        'bidirectional' => array( 'type' => 'bool', 'default' => 'no',
+            'help' => "static-ip: bi-directional" ),
+    )
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'SNat-remove',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "it's not a NAT rule" );
+            return;
+        }
+        /** @var NatRule $rule */
+        if( $rule->sourceNatTypeIs_None() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "no source translation" );
+            return;
+        }
+        if( $context->isAPI )
+            $rule->API_setNoSNAT();
+        else
+            $rule->setNoSNAT();
+    }
+);
 RuleCallContext::$supportedActions[] = array(
     'name' => 'SNat-set-interface',
     'MainFunction' => function (RuleCallContext $context) {

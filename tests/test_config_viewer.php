@@ -297,6 +297,23 @@ foreach( array( 'description-append:a$$comma$$ b$$colon$$ c', 'src-add:shared-ho
 $r = $bob->call( 'GET', $C . '/object?type=rule&ruletype=security&location=shared&name=' . urlencode( 'shared pre rule 1' ) );
 eq( array( $r[1]['row']['description'] ?? null, $r[1]['model']['source'] ?? null, $r[1]['model']['action'] ?? null, $r[1]['row']['disabled'] ?? null ),
     array( 'a, b: c', array( 'shared-host2' ), 'deny', 'true' ), 'rule window: description (aliases), source, action, disabled changed' );
+// NAT translations (snat-set / snat-remove, dnat-set with port / dnat-remove)
+$nat = function( $a ) use ( $bob, $C ) {
+    $r = $bob->call( 'POST', $C . '/change', array( 'type' => 'rule', 'ruletype' => 'nat', 'location' => 'DE-Berlin Office', 'filter' => '(name eq test)', 'actions' => $a, 'field' => 'snat' ) );
+    $o = $bob->call( 'GET', $C . '/object?type=rule&ruletype=nat&location=' . urlencode( 'DE-Berlin Office' ) . '&name=test' )[1]['model'] ?? array();
+    return array( status( $r ), $o );
+};
+list( $st, $o ) = $nat( 'snat-set:dynamic-ip-and-port,shared-host1|shared-host2' );
+eq( array( $st, $o['source_translation']['dynamic_ip_and_port']['translated_address'] ?? null ), array( 200, array( 'shared-host1', 'shared-host2' ) ), 'NAT: source translation dynamic IP and port with addresses' );
+list( $st, $o ) = $nat( 'snat-set:dynamic-ip-and-port,-,ethernet1//1' );
+eq( array( $st, $o['source_translation']['dynamic_ip_and_port']['interface_address']['interface'] ?? null ), array( 200, 'ethernet1/1' ), 'NAT: source translation with the interface address' );
+list( $st, $o ) = $nat( 'snat-set:static-ip,shared-host1,-,yes' );
+eq( array( $st, $o['source_translation']['static_ip']['translated_address'] ?? null ), array( 200, 'shared-host1' ), 'NAT: static IP source translation' );
+eq( $nat( 'snat-set:static-ip,shared-host1|shared-host2' )[0], 400, 'NAT: static IP with two addresses refused' );
+list( $st, $o ) = $nat( 'dnat-set:static,shared-host2,8443' );
+eq( array( $st, $o['translated_address'] ?? null, (string)( $o['translated_port'] ?? '' ) ), array( 200, 'shared-host2', '8443' ), 'NAT: destination translation with a port' );
+list( $st, $o ) = $nat( 'dnat-remove/snat-remove' );
+eq( array( $st, isset( $o['translated_address'] ), isset( $o['source_translation'] ) ), array( 200, FALSE, FALSE ), 'NAT: both translations removed' );
 // multi-edit: the same action with a wider filter (suggestions of the page: !, and, string.eq) - one line of the change list
 $r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'any', 'filter' => '!(object is.group) and (value string.eq 1.1.1.1) and !(name eq new test 1)',
     'actions' => 'description-delete/description-append:MULTI', 'field' => 'multi-edit' ) );

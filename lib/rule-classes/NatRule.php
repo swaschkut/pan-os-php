@@ -790,6 +790,44 @@ class NatRule extends Rule
         }
     }
 
+    /**
+     * the whole source translation at once: $type 'dynamic-ip-and-port' (translated addresses, or an interface - with an
+     * optional IP address object), 'dynamic-ip' (translated addresses), 'static-ip' (one translated address, $bidir) or
+     * 'none'
+     * @param Address[]|AddressGroup[] $hosts
+     * @return bool
+     */
+    public function setSourceNat( $type, array $hosts = array(), $interface = null, $bidir = FALSE )
+    {
+        if( $type === 'none' )
+        {
+            $this->snatinterface = null;
+            return $this->setNoSNAT();
+        }
+        if( !in_array( $type, array( 'dynamic-ip-and-port', 'dynamic-ip', 'static-ip' ), TRUE ) )
+            derr( "source NAT type '" . $type . "' not supported: dynamic-ip-and-port, dynamic-ip, static-ip or none", null, FALSE );
+        if( $type === 'static-ip' && count( $hosts ) !== 1 )
+            derr( "static-ip source NAT needs exactly one translated address", null, FALSE );
+        if( $type === 'dynamic-ip' && count( $hosts ) === 0 )
+            derr( "dynamic-ip source NAT needs translated addresses", null, FALSE );
+        if( $type === 'dynamic-ip-and-port' && count( $hosts ) === 0 && ( $interface === null || $interface === '' ) )
+            derr( "dynamic-ip-and-port source NAT needs translated addresses or an interface", null, FALSE );
+
+        // the old members out without writing XML for the old type, then the new ones, then the XML once
+        $this->snattype = 'none';
+        $this->snathosts->setAny();
+        $this->snathosts->xmlroot = null;
+        $this->snattype = $type;
+        $this->snatinterface = ( $type === 'dynamic-ip-and-port' && $interface !== null && $interface !== '' ) ? $interface : null;
+        $this->_snatbidir = ( $type === 'static-ip' && $bidir ) ? 'yes' : 'no';
+        $this->_snatUsesFloatingIP = FALSE;
+        foreach( $hosts as $h )
+            $this->snathosts->addObject( $h );
+        $this->rewriteSNAT_XML();
+
+        return TRUE;
+    }
+
     public function setNoSNAT()
     {
         $this->snattype = 'none';

@@ -1065,7 +1065,6 @@ const VIEWER_MENU = [
     ['Policies', 'rule-sdwan', 'SD-WAN', 'rule', { ruletype: 'sdwan', window: 'rule', one: 'SD-WAN rule' }],
     ['Policies', 'rule-captiveportal', 'Captive Portal', 'rule', { ruletype: 'captiveportal', window: 'rule', one: 'Captive Portal rule' }],
     ['Policies', 'rule-defaultsecurity', 'Default Security Rules', 'rule', { ruletype: 'defaultsecurity', window: 'rule', one: 'Default Security Rules rule' }],
-    ['Policies', 'dns-rules', 'DNS Security Rules', 'dns-rule'],
     ['Network', 'zones', 'Zones', 'zone', { window: 'zone', one: 'Zone' }],
     ['Network', 'interfaces', 'Interfaces', 'interface'],
     ['Network', 'virtual-wires', 'Virtual Wires', 'virtualwire'],
@@ -1086,6 +1085,9 @@ const VIEWER_MENU = [
     ['Device', 'certificates', 'Certificates', 'certificate'],
     ['Device', 'certificate-profiles', 'Certificate Profiles', 'certificate-profile'],
     ['Device', 'ssl-tls-profiles', 'SSL/TLS Service Profiles', 'ssl-tls-service-profile'],
+    // DNS rules are comparable to the threat rules (no policies): both under Other
+    ['Other', 'threat-rules', 'Threat Rules', 'threat-rule'],
+    ['Other', 'dns-rules', 'DNS Rules', 'dns-rule'],
 ];
 /** the entries the user can open: types of the meta (and of a limited access); every other type of the meta under "Other" */
 function viewerMenu(types) {
@@ -1375,6 +1377,53 @@ async function showViewer(config, preset) {
         if (typeof v === 'object') return Object.entries(v).map(([k, x]) => { const t = fmtTree(x); return t === '' ? k : k + ' ' + t; }).join('; ');
         return String(v);
     }
+    // NAT: source / destination translation as one field each with parts; a change of a part is applied as soon as the
+    // parts together are complete (snat-set / snat-remove, dnat-set / dnat-remove)
+    function natSource(row, m) {
+        const st = m.source_translation || {};
+        const dipp = st.dynamic_ip_and_port, dip = st.dynamic_ip, sip = st.static_ip;
+        const cur = dipp ? (dipp.interface_address ? 'interface' : 'dynamic-ip-and-port') : dip ? 'dynamic-ip' : sip ? 'static-ip' : 'none';
+        const hosts = dipp && !dipp.interface_address ? listOf(dipp.translated_address) : dip ? listOf(dip.translated_address) : sip ? listOf(sip.translated_address) : [];
+        const bid = row.snat && row.snat['static-ip'] ? String(row.snat['static-ip'].bidir) : (sip && sip.bi_directional ? String(sip.bi_directional) : 'no');
+        const vals = { type: cur, addresses: hosts.join(', '), interface: dipp && dipp.interface_address ? (dipp.interface_address.interface || '') : '',
+            ip: dipp && dipp.interface_address ? (dipp.interface_address.ip || dipp.interface_address.floating_ip || '') : '', bidir: bid === 'yes' || bid === 'true' ? 'yes' : 'no' };
+        return { key: 'snat', label: 'Source translation', kind: 'parts', value: vals, needs: ['snat-set', 'snat-remove'],
+            parts: [
+                { key: 'type', kind: 'select', label: 'type', choices: [['none', 'none'], ['dynamic-ip-and-port', 'dynamic IP and port - addresses'], ['interface', 'dynamic IP and port - interface address'], ['dynamic-ip', 'dynamic IP'], ['static-ip', 'static IP']] },
+                { key: 'addresses', kind: 'text', label: 'translated address(es)', placeholder: 'address objects, separated by ","', show: v => ['dynamic-ip-and-port', 'dynamic-ip', 'static-ip'].includes(v.type) },
+                { key: 'interface', kind: 'text', label: 'interface', placeholder: 'ethernet1/1', show: v => v.type === 'interface' },
+                { key: 'ip', kind: 'text', label: 'IP (optional)', placeholder: 'an address object', show: v => v.type === 'interface' },
+                { key: 'bidir', kind: 'select', label: 'bi-directional', choices: [['no', 'no'], ['yes', 'yes']], show: v => v.type === 'static-ip' }],
+            act: (o, v) => {
+                if (v.type === 'none') return o.type === 'none' ? '' : 'snat-remove';
+                const names = v.addresses.split(',').map(x => x.trim()).filter(x => x);
+                if (v.type === 'interface') {
+                    if (!v.interface.trim()) return { hint: 'enter the interface' };
+                    return 'snat-set:dynamic-ip-and-port,' + (v.ip.trim() ? actArg(v.ip.trim()) : '-') + ',' + actArg(v.interface.trim());
+                }
+                if (names.length === 0) return { hint: 'enter the translated address' + (v.type === 'static-ip' ? '' : '(es)') };
+                if (v.type === 'static-ip' && names.length !== 1) return { hint: 'static IP: exactly one translated address' };
+                return 'snat-set:' + v.type + ',' + names.map(actArg).join('|') + (v.type === 'static-ip' ? ',-,' + v.bidir : '');
+            } };
+    }
+    function natDestination(row, m) {
+        const dyn = m.dynamic_destination_translation;
+        const type = dyn ? 'dynamic' : (m.translated_address !== undefined || m.destination_translation ? 'static' : 'none');
+        const d = dyn || m.destination_translation || {};
+        const vals = { type, address: String(dyn ? (d.translated_address || '') : (m.translated_address !== undefined ? m.translated_address : (d.translated_address || ''))),
+            port: String(dyn ? (d.translated_port || '') : (m.translated_port !== undefined ? m.translated_port : (d.translated_port || ''))) };
+        return { key: 'dnat', label: 'Destination translation', kind: 'parts', value: vals, needs: ['dnat-set', 'dnat-remove'],
+            parts: [
+                { key: 'type', kind: 'select', label: 'type', choices: [['none', 'none'], ['static', 'static IP'], ['dynamic', 'dynamic IP (with session distribution)']] },
+                { key: 'address', kind: 'text', label: 'translated address', placeholder: 'an address object', show: v => v.type !== 'none' },
+                { key: 'port', kind: 'text', label: 'translated port (optional)', placeholder: '1-65535', show: v => v.type !== 'none' }],
+            act: (o, v) => {
+                if (v.type === 'none') return o.type === 'none' ? '' : 'dnat-remove';
+                if (!v.address.trim()) return { hint: 'enter the translated address' };
+                if (v.port.trim() && !/^[0-9]{1,5}$/.test(v.port.trim())) throw new Error('port: 1-65535');
+                return 'dnat-set:' + v.type + ',' + actArg(v.address.trim()) + (v.port.trim() ? ',' + v.port.trim() : '');
+            } };
+    }
     function ruleFields(row, m, name, loc) {
         const yesno = (v) => String(v) === 'true' || String(v) === 'yes' ? 'yes' : 'no';
         const list = (key, label, value, a) => Array.isArray(value) ? { key, label, kind: 'list', value: value.filter(x => x !== 'any'), any: value.includes('any') || value.length === 0,
@@ -1415,9 +1464,8 @@ async function showViewer(config, preset) {
             sec ? { key: 'logstart', label: 'Log at session start', kind: 'select', value: yesno(log.start), choices: ['no', 'yes'], needs: ['logstart-enable', 'logstart-disable'], act: (o, n) => n === 'yes' ? 'logstart-enable' : 'logstart-disable' } : null,
             sec ? { key: 'logend', label: 'Log at session end', kind: 'select', value: yesno(log.end), choices: ['no', 'yes'], needs: ['logend-enable', 'logend-disable'], act: (o, n) => n === 'yes' ? 'logend-enable' : 'logend-disable' } : null,
             sec ? { key: 'schedule', label: 'Schedule', kind: 'text', value: m.schedule || '', needs: ['schedule-set', 'schedule-remove'], act: (o, n) => n === '' ? 'schedule-remove' : 'schedule-set:' + actArg(n) } : null,
-            m.source_translation !== undefined || row.snat !== undefined ? { key: 'snat', label: 'Source translation', kind: 'ro', value: fmtTree(m.source_translation !== undefined ? m.source_translation : row.snat) || 'none', note: 'not in the window yet' } : null,
-            m.destination_translation !== undefined || m.translated_address !== undefined || row.dnat !== undefined ? { key: 'dnat', label: 'Destination translation', kind: 'ro',
-                value: fmtTree(m.destination_translation !== undefined ? m.destination_translation : (m.translated_address !== undefined ? { translated_address: m.translated_address, translated_port: m.translated_port } : row.dnat)) || 'none', note: 'not in the window yet' } : null,
+            ruletype.value === 'nat' ? natSource(row, m) : null,
+            ruletype.value === 'nat' ? natDestination(row, m) : null,
             m.uuid ? { key: 'uuid', label: 'UUID', kind: 'ro', value: m.uuid } : null,
             loc].filter(f => f);
     }
@@ -1432,7 +1480,7 @@ async function showViewer(config, preset) {
         let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template).catch(() => ({ row: r, model: null }))
             : await fetchObject(r.name, r.location, r.template);
         const offered = state.meta.types[cur.type].actions || {};
-        const done = {}, errors = {};
+        const done = {}, errors = {}, pending = {}, hints = {};
         const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': cur.label + ' ' + r.name });
         const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
         const onKey = (ev) => { if (ev.key === 'Escape') close(); };
@@ -1493,6 +1541,32 @@ async function showViewer(config, preset) {
             }
             if (f.kind === 'button')
                 return el('button', { type: 'button', text: f.text, onclick: () => run(() => listChange(f, f.act())) });
+            if (f.kind === 'parts') {
+                // several parts of one setting (NAT): a change of a part is applied when the parts together are complete
+                const vals = Object.assign({}, pending[f.key] || f.value);
+                const wrap = el('div', { class: 'parts' });
+                const draw = () => wrap.replaceChildren(...f.parts.filter(pt => !pt.show || pt.show(vals)).map(pt => {
+                    const c = pt.kind === 'select' ? el('select', { 'aria-label': pt.label }, pt.choices.map(([v, t]) => el('option', { value: v, text: t })))
+                        : el('input', { value: vals[pt.key] || '', placeholder: pt.placeholder || null, autocomplete: 'off', spellcheck: false, 'aria-label': pt.label });
+                    c.value = vals[pt.key] || '';
+                    c.addEventListener('change', () => run(async () => {
+                        vals[pt.key] = c.value; pending[f.key] = Object.assign({}, vals);
+                        let a;
+                        try { a = f.act(f.value, vals); } catch (e) { errors[f.key] = e.message; render(); return; }
+                        if (a && typeof a === 'object') { hints[f.key] = a.hint; delete errors[f.key]; draw(); hintEl.textContent = a.hint; return; }
+                        delete hints[f.key];
+                        if (!a) { draw(); return; }
+                        await listChange(f, a);
+                        delete pending[f.key];
+                        render();
+                    }));
+                    if (pt.kind !== 'select') c.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); c.blur(); } });
+                    return el('label', { class: 'part' }, el('span', { class: 'muted', text: pt.label }), c);
+                }));
+                const hintEl = el('div', { class: 'muted', text: hints[f.key] || '' });
+                draw();
+                return el('div', {}, wrap, hintEl);
+            }
             // list: the members with ✕ (if there is an action to remove), a field to add one
             const canRemove = f.remove && (f.needsRemove || []).every(a => offered[a]);
             const add = el('input', { placeholder: 'add …', autocomplete: 'off', spellcheck: false, 'aria-label': 'add to ' + f.label });

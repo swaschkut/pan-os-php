@@ -10,8 +10,10 @@ Status: **in progress** (Sven, 2026-11-21).
   network - that argument is refused: `ACTION_GUARDED`). Step 4 (2026-11-21): the rule window for every rule
   type (Policies menu) - list fields add / remove / set any, -set fields, move; the description of a rule with the
   aliases of pan-os-php (`$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`) - set as
-  `description-replace-character:<old>,<new>`. Shown only: URL category, NAT translations (`dnat-set`,
-  `snat-set-interface` not in the window yet). Step 3 (2026-11-21): multi-edit - "Multi-edit …" at a change of one object: filter
+  `description-replace-character:<old>,<new>`. Shown only: URL category. NAT translations (2026-11-21): source
+  and destination translation in the rule window - new pan-os-php actions `snat-set:<type>,<addr|addr>,<interface>,
+  <bidirectional>`, `snat-remove`, `dnat-remove`, `dnat-set` with the port; not yet: persistent dynamic IP, DNAT
+  distribution, the interface IP as an object (written as value). DNS Rules under *Other* next to Threat Rules. Step 3 (2026-11-21): multi-edit - "Multi-edit …" at a change of one object: filter
   suggestions from the object (filter fields of the meta only), location, own filter, the number of matches and their
   names live, apply = one change with the wider filter (field `multi-edit`); the object itself left out by default; a
   rename needs a `$$` formula. Playbook export (2026-11-21): "Export as playbook …" (unsaved changes) and
@@ -25,7 +27,6 @@ Status: **in progress** (Sven, 2026-11-21).
 
 ### Still open (list of Sven, 2026-11-21)
 
-* NAT translations in the window (`dnat-set`, `snat-set-interface`)
 * git on object level (see below)
 * aliases (`$$comma$$`, `$$colon$$`, `$$forwardslash$$`, …) for the descriptions of addresses and services in
   pan-os-php (as for rules) - today `,` and `:` can not be used there
@@ -148,7 +149,7 @@ Rules for the mapping:
 | target (Panorama) | `target-add-device` / `target-remove-device`, `target-set-any`, `target-negate-set` | |
 | position | `position-move-to-top` / `-to-bottom`, `position-move-before` / `-after` | |
 
-NAT and the other rule types: the same mapping to be checked per field (`dnat-set`, `snat-set-interface`, …).
+NAT and the other rule types: the same mapping per field; NAT translations built 2026-11-21 (`snat-set`, `snat-remove`, `dnat-set`, `dnat-remove`).
 
 The complete table per type is built from `util_action_filter.json` (actions + arguments) and kept in the viewer as
 a mapping file (field → action, argument from the field value) - checked by a test against

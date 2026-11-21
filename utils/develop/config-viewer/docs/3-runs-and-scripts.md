@@ -23,8 +23,13 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   name, description (`,` `:` `/` allowed: pan-os-php aliases), tags, disabled, move (to the top / bottom, before /
   after a rule), source / destination zone, address, negate, user, application, service (each: add, ✕ remove, *set to
   any*; service also *application-default*), action, profile group, log forwarding, log at start / end, schedule.
-  Shown only: URL category, NAT translations, UUID (no pan-os-php action for them yet). The default security rules
+  NAT rules also: **source translation** (none, dynamic IP and port with addresses or with the interface address
+  - interface, optional IP -, dynamic IP, static IP with bi-directional; `snat-set` / `snat-remove`) and
+  **destination translation** (none, static IP or dynamic IP with address and optional port; `dnat-set` /
+  `dnat-remove`). The parts of a translation are applied together, once they are complete (until then the window says
+  what is missing). Shown only: URL category, UUID (no pan-os-php action for them yet). The default security rules
   can not be renamed or moved.
+- *Other*: Threat Rules and DNS Rules (comparable, no policies), and every type without an own entry.
 - **Network / Device and every other entry**: a click opens the object too. Zones can be changed (name, zone
   protection profile, log setting, user identification, packet buffer protection); every other type shows all its
   fields, read only (its actions are not reviewed for the viewer yet). Panorama: zones, interfaces, … of a template
