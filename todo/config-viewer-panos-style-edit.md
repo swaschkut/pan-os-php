@@ -7,8 +7,12 @@ Status: **in progress** (Sven, 2026-11-21).
   applied on leaving it after a change, as one action on this object; change list as data (`time`, `user`, `type`,
   `location`, `filter`, `actions`, `field` - later the trailers of a git commit). `…/configs/<cid>/object` for one
   object. Address `name-rename` is offered although its class is "network" (only `$$reverse-dns$$` reaches the
-  network - that argument is refused: `ACTION_GUARDED`). Not yet: security rules in the window (next), multi-edit with
-  filter suggestions, Network / Device windows, git.
+  network - that argument is refused: `ACTION_GUARDED`). Step 4 (2026-11-21): the rule window for every rule
+  type (Policies menu) - list fields add / remove / set any, -set fields, move; the description of a rule with the
+  aliases of pan-os-php (`$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`) - set as
+  `description-replace-character:<old>,<new>`. Shown only: URL category, NAT translations (`dnat-set`,
+  `snat-set-interface` not in the window yet). Not yet: multi-edit with filter suggestions, Network / Device windows,
+  git.
 
 ## Goal
 

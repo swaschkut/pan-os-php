@@ -288,6 +288,15 @@ eq( isset( $alice->call( 'GET', 'meta' )[1]['types']['address']['actions']['name
 $r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq shared-host2)', 'actions' => 'name-rename:$$reverse-dns$$' ) );
 eq( array( status( $r ), strpos( $r[1]['error'] ?? '', 'reach the network' ) !== FALSE ), array( 400, TRUE ), 'name-rename with $$reverse-dns$$ refused' );
 eq( ( $alice->call( 'GET', 'meta' )[1]['types']['tag']['actions']['color-set'][0]['choices'] ?? array() )[1] ?? null, 'red', 'meta: the choices of an argument (color-set)' );
+// the rule window: a rule of a rule type, changed field by field (description with the aliases of pan-os-php)
+$r = $bob->call( 'GET', $C . '/object?type=rule&ruletype=security&location=shared&name=' . urlencode( 'shared pre rule 1' ) );
+eq( array( status( $r ), $r[1]['model']['rulebase'] ?? null, $r[1]['model']['action'] ?? null, $r[1]['model']['source'] ?? null ), array( 200, 'pre', 'allow', array( 'any' ) ), 'rule window: a security rule with its model' );
+eq( status( $bob->call( 'GET', $C . '/object?type=rule&ruletype=nat&location=shared&name=' . urlencode( 'shared pre rule 1' ) ) ), 404, 'rule window: the rule type counts' );
+foreach( array( 'description-append:a$$comma$$ b$$colon$$ c', 'src-add:shared-host2', 'action-set:deny', 'disabled-set:true' ) as $a )
+    $bob->call( 'POST', $C . '/change', array( 'type' => 'rule', 'ruletype' => 'security', 'location' => 'shared', 'filter' => '(name eq shared pre rule 1)', 'actions' => $a, 'field' => 'x' ) );
+$r = $bob->call( 'GET', $C . '/object?type=rule&ruletype=security&location=shared&name=' . urlencode( 'shared pre rule 1' ) );
+eq( array( $r[1]['row']['description'] ?? null, $r[1]['model']['source'] ?? null, $r[1]['model']['action'] ?? null, $r[1]['row']['disabled'] ?? null ),
+    array( 'a, b: c', array( 'shared-host2' ), 'deny', 'true' ), 'rule window: description (aliases), source, action, disabled changed' );
 eq( count( glob( $data . '/projects/' . $pid . '/*.xml' ) ), 1, 'no new file before save' );
 eq( status( $bob->call( 'DELETE', $P ) ), 403, 'bob (write) can not delete the project' );
 

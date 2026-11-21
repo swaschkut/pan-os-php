@@ -1016,19 +1016,19 @@ const VIEWER_MENU = [
     ['Objects', 'security-profile-groups', 'Security Profile Groups', 'securityprofilegroup'],
     ['Objects', 'log-forwarding', 'Log Forwarding', 'log-profile'],
     ['Objects', 'threats', 'Threats', 'threat'],
-    ['Policies', 'rule-security', 'Security', 'rule', { ruletype: 'security' }],
-    ['Policies', 'rule-nat', 'NAT', 'rule', { ruletype: 'nat' }],
-    ['Policies', 'rule-qos', 'QoS', 'rule', { ruletype: 'qos' }],
-    ['Policies', 'rule-pbf', 'Policy Based Forwarding', 'rule', { ruletype: 'pbf' }],
-    ['Policies', 'rule-decryption', 'Decryption', 'rule', { ruletype: 'decryption' }],
-    ['Policies', 'rule-networkpacketbroker', 'Network Packet Broker', 'rule', { ruletype: 'networkpacketbroker' }],
-    ['Policies', 'rule-tunnelinspection', 'Tunnel Inspection', 'rule', { ruletype: 'tunnelinspection' }],
-    ['Policies', 'rule-appoverride', 'Application Override', 'rule', { ruletype: 'appoverride' }],
-    ['Policies', 'rule-authentication', 'Authentication', 'rule', { ruletype: 'authentication' }],
-    ['Policies', 'rule-dos', 'DoS Protection', 'rule', { ruletype: 'dos' }],
-    ['Policies', 'rule-sdwan', 'SD-WAN', 'rule', { ruletype: 'sdwan' }],
-    ['Policies', 'rule-captiveportal', 'Captive Portal', 'rule', { ruletype: 'captiveportal' }],
-    ['Policies', 'rule-defaultsecurity', 'Default Security Rules', 'rule', { ruletype: 'defaultsecurity' }],
+    ['Policies', 'rule-security', 'Security', 'rule', { ruletype: 'security', window: 'rule', one: 'Security rule' }],
+    ['Policies', 'rule-nat', 'NAT', 'rule', { ruletype: 'nat', window: 'rule', one: 'NAT rule' }],
+    ['Policies', 'rule-qos', 'QoS', 'rule', { ruletype: 'qos', window: 'rule', one: 'QoS rule' }],
+    ['Policies', 'rule-pbf', 'Policy Based Forwarding', 'rule', { ruletype: 'pbf', window: 'rule', one: 'Policy Based Forwarding rule' }],
+    ['Policies', 'rule-decryption', 'Decryption', 'rule', { ruletype: 'decryption', window: 'rule', one: 'Decryption rule' }],
+    ['Policies', 'rule-networkpacketbroker', 'Network Packet Broker', 'rule', { ruletype: 'networkpacketbroker', window: 'rule', one: 'Network Packet Broker rule' }],
+    ['Policies', 'rule-tunnelinspection', 'Tunnel Inspection', 'rule', { ruletype: 'tunnelinspection', window: 'rule', one: 'Tunnel Inspection rule' }],
+    ['Policies', 'rule-appoverride', 'Application Override', 'rule', { ruletype: 'appoverride', window: 'rule', one: 'Application Override rule' }],
+    ['Policies', 'rule-authentication', 'Authentication', 'rule', { ruletype: 'authentication', window: 'rule', one: 'Authentication rule' }],
+    ['Policies', 'rule-dos', 'DoS Protection', 'rule', { ruletype: 'dos', window: 'rule', one: 'DoS Protection rule' }],
+    ['Policies', 'rule-sdwan', 'SD-WAN', 'rule', { ruletype: 'sdwan', window: 'rule', one: 'SD-WAN rule' }],
+    ['Policies', 'rule-captiveportal', 'Captive Portal', 'rule', { ruletype: 'captiveportal', window: 'rule', one: 'Captive Portal rule' }],
+    ['Policies', 'rule-defaultsecurity', 'Default Security Rules', 'rule', { ruletype: 'defaultsecurity', window: 'rule', one: 'Default Security Rules rule' }],
     ['Policies', 'dns-rules', 'DNS Security Rules', 'dns-rule'],
     ['Network', 'zones', 'Zones', 'zone'],
     ['Network', 'interfaces', 'Interfaces', 'interface'],
@@ -1285,6 +1285,7 @@ async function showViewer(config, preset) {
         if (kind === 'servicegroup')
             return [name, { key: 'members', label: 'Members', kind: 'ro', value: (Array.isArray(m.members) ? m.members : []).join(', '), note: 'no pan-os-php action to change members of a service group yet' },
                 tags, loc];
+        if (kind === 'rule') return ruleFields(row, m, name, loc);
         if (kind === 'tag') {
             const cs = (state.meta.types.tag.actions['color-set'] || [])[0];
             return [{ key: 'name', label: 'Name', kind: 'ro', value: row.name, note: 'renaming a tag: no pan-os-php action yet' },
@@ -1293,6 +1294,70 @@ async function showViewer(config, preset) {
                     act: (o, n) => n === '' ? 'comments-delete' : (o === '' ? '' : 'comments-delete/') + 'comments-add:' + actArg(n) }, loc];
         }
         return [name, loc];
+    }
+    // a rule (every rule type): the fields its model has; list fields as add / remove (+ "any"), single values as -set
+    function ruleText(v) {
+        // description of a rule: pan-os-php replaces these aliases (description-append, description-replace-character)
+        if (/[\x00-\x1f]/.test(v)) throw new Error('no line breaks here');
+        return v.replace(/\$\$/g, '$ $').replace(/,/g, '$$$$comma$$$$').replace(/\//g, '$$$$forwardslash$$$$').replace(/:/g, '$$$$colon$$$$').replace(/\|/g, '$$$$pipe$$$$');
+    }
+    function listOf(v) {
+        if (Array.isArray(v)) return v.map(String);
+        if (v === undefined || v === null || v === '' || v === '**ANY**') return [];
+        return String(v).split(',').map(x => x.trim()).filter(x => x);
+    }
+    // a nested value of the model as one readable line: "static_ip: translated_address new test 2"
+    function fmtTree(v) {
+        if (v === null || v === undefined || v === '') return '';
+        if (Array.isArray(v)) return v.map(fmtTree).filter(x => x).join(', ');
+        if (typeof v === 'object') return Object.entries(v).map(([k, x]) => { const t = fmtTree(x); return t === '' ? k : k + ' ' + t; }).join('; ');
+        return String(v);
+    }
+    function ruleFields(row, m, name, loc) {
+        const yesno = (v) => String(v) === 'true' || String(v) === 'yes' ? 'yes' : 'no';
+        const list = (key, label, value, a) => Array.isArray(value) ? { key, label, kind: 'list', value: value.filter(x => x !== 'any'), any: value.includes('any') || value.length === 0,
+            needs: [a + '-add'], needsRemove: [a + '-remove'], add: x => a + '-add:' + actArg(x), remove: x => a + '-remove:' + actArg(x),
+            buttons: [[a + '-set-any', 'set to any']].concat(a === 'service' ? [['service-set-appdefault', 'application-default']] : []) }
+            : (value === undefined ? null : { key, label, kind: 'ro', value: listOf(value).join(', ') || 'any' });
+        const log = row.logsetting && typeof row.logsetting === 'object' ? row.logsetting : {};
+        const sec = ruletype.value === 'security';
+        // the default security rules (intrazone / interzone): fixed name and place
+        const fixed = ruletype.value === 'defaultsecurity';
+        return [fixed ? { key: 'name', label: 'Name', kind: 'ro', value: row.name } : name,
+            { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-append', 'description-replace-character'],
+                act: (o, n) => o === '' ? (n === '' ? '' : 'description-append:' + ruleText(n)) : 'description-replace-character:' + ruleText(o) + ',' + ruleText(n) },
+            { key: 'tag', label: 'Tags', kind: 'list', value: Array.isArray(m.tag) ? m.tag : listOf(row.tag), needs: ['tag-add'], needsRemove: ['tag-remove'],
+                add: t => 'tag-add:' + actArg(t), remove: t => 'tag-remove:' + actArg(t) },
+            row.disabled !== undefined ? { key: 'disabled', label: 'Disabled', kind: 'select', value: yesno(row.disabled), choices: ['no', 'yes'], needs: ['disabled-set'],
+                act: (o, n) => 'disabled-set:' + (n === 'yes' ? 'true' : 'false') } : null,
+            { key: 'rulebase', label: 'Rulebase / position', kind: 'ro', value: [m.rulebase, m.position].filter(x => x !== undefined && x !== null).join(' / ') },
+            fixed ? null : { key: 'move', label: 'Move', kind: 'buttons', buttons: [['position-move-to-top', 'to the top'], ['position-move-to-bottom', 'to the bottom']] },
+            fixed ? null : { key: 'before', label: 'Move before rule', kind: 'text', value: '', placeholder: 'name of a rule', needs: ['position-move-before'], act: (o, n) => n === '' ? '' : 'position-move-before:' + actArg(n) },
+            fixed ? null : { key: 'after', label: 'Move after rule', kind: 'text', value: '', placeholder: 'name of a rule', needs: ['position-move-after'], act: (o, n) => n === '' ? '' : 'position-move-after:' + actArg(n) },
+            list('from', 'Source zone', m.from !== undefined ? m.from : row.from, 'from'),
+            list('to', 'Destination zone', m.to !== undefined ? m.to : row.to, 'to'),
+            list('source', 'Source address', m.source !== undefined ? m.source : row.source, 'src'),
+            row.sourcenegated !== undefined ? { key: 'sourcenegated', label: 'Negate source', kind: 'select', value: yesno(row.sourcenegated), choices: ['no', 'yes'], needs: ['src-negate-set'], act: (o, n) => 'src-negate-set:' + n } : null,
+            list('source_user', 'Source user', m.source_user, 'user'),
+            list('destination', 'Destination address', m.destination !== undefined ? m.destination : row.destination, 'dst'),
+            row.destinationnegated !== undefined ? { key: 'destinationnegated', label: 'Negate destination', kind: 'select', value: yesno(row.destinationnegated), choices: ['no', 'yes'], needs: ['dst-negate-set'], act: (o, n) => 'dst-negate-set:' + n } : null,
+            list('application', 'Application', m.application, 'app'),
+            m.service !== undefined || row.service !== undefined ? list('service', 'Service', m.service !== undefined ? m.service : row.service, 'service') : null,
+            m.category !== undefined || row.urlcategory !== undefined ? { key: 'category', label: 'URL category', kind: 'ro', value: listOf(m.category !== undefined ? m.category : row.urlcategory).join(', ').replace('**ANY**', 'any') || 'any', note: 'no pan-os-php action to change it yet' } : null,
+            m.action !== undefined && sec ? { key: 'action', label: 'Action', kind: 'select', value: m.action, choices: ['allow', 'deny', 'drop', 'reset-client', 'reset-server', 'reset-both'], needs: ['action-set'], act: (o, n) => 'action-set:' + n }
+                : ( m.action !== undefined ? { key: 'action', label: 'Action', kind: 'ro', value: m.action } : null),
+            sec ? { key: 'profilegroup', label: 'Profile group', kind: 'text', value: row.securityprofilegroup && row.securityprofilegroup !== 'null' ? row.securityprofilegroup : '', needs: ['securityprofile-group-set', 'securityprofile-remove'],
+                act: (o, n) => n === '' ? 'securityprofile-remove:any' : 'securityprofile-group-set:' + actArg(n) } : null,
+            sec && row.securityprofile && row.securityprofile !== 'null' ? { key: 'profiles', label: 'Profiles', kind: 'ro', value: typeof row.securityprofile === 'string' ? row.securityprofile : JSON.stringify(row.securityprofile) } : null,
+            sec ? { key: 'logsetting', label: 'Log forwarding', kind: 'text', value: m.log_setting || '', needs: ['logsetting-set'], act: (o, n) => n === '' ? (() => { throw new Error('removing the log forwarding: no pan-os-php action yet'); })() : 'logsetting-set:' + actArg(n) } : null,
+            sec ? { key: 'logstart', label: 'Log at session start', kind: 'select', value: yesno(log.start), choices: ['no', 'yes'], needs: ['logstart-enable', 'logstart-disable'], act: (o, n) => n === 'yes' ? 'logstart-enable' : 'logstart-disable' } : null,
+            sec ? { key: 'logend', label: 'Log at session end', kind: 'select', value: yesno(log.end), choices: ['no', 'yes'], needs: ['logend-enable', 'logend-disable'], act: (o, n) => n === 'yes' ? 'logend-enable' : 'logend-disable' } : null,
+            sec ? { key: 'schedule', label: 'Schedule', kind: 'text', value: m.schedule || '', needs: ['schedule-set', 'schedule-remove'], act: (o, n) => n === '' ? 'schedule-remove' : 'schedule-set:' + actArg(n) } : null,
+            m.source_translation !== undefined || row.snat !== undefined ? { key: 'snat', label: 'Source translation', kind: 'ro', value: fmtTree(m.source_translation !== undefined ? m.source_translation : row.snat) || 'none', note: 'not in the window yet' } : null,
+            m.destination_translation !== undefined || m.translated_address !== undefined || row.dnat !== undefined ? { key: 'dnat', label: 'Destination translation', kind: 'ro',
+                value: fmtTree(m.destination_translation !== undefined ? m.destination_translation : (m.translated_address !== undefined ? { translated_address: m.translated_address, translated_port: m.translated_port } : row.dnat)) || 'none', note: 'not in the window yet' } : null,
+            m.uuid ? { key: 'uuid', label: 'UUID', kind: 'ro', value: m.uuid } : null,
+            loc].filter(f => f);
     }
     async function fetchObject(name, loc) {
         const q = new URLSearchParams({ type: cur.type, location: loc, name });
@@ -1334,6 +1399,11 @@ async function showViewer(config, preset) {
             render();
         }
         function control(f) {
+            if (f.kind === 'buttons') {
+                const bs = f.buttons.filter(b => canWrite && offered[b[0]]);
+                return bs.length ? el('div', { class: 'row' }, bs.map(b => el('button', { type: 'button', text: b[1], onclick: () => run(() => listChange(f, b[0])) })))
+                    : el('span', { class: 'muted', text: 'read only' });
+            }
             const can = canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]);
             if (f.kind === 'ro' || !can)
                 return el('span', { class: 'objro', text: Array.isArray(f.value) ? f.value.join(', ') : String(f.value === undefined ? '' : f.value) });
@@ -1357,9 +1427,10 @@ async function showViewer(config, preset) {
             const add = el('input', { placeholder: 'add …', autocomplete: 'off', spellcheck: false, 'aria-label': 'add to ' + f.label });
             add.addEventListener('change', () => { const v = add.value.trim(); if (v) run(async () => { try { await listChange(f, f.add(v)); } catch (e) { errors[f.key] = e.message; render(); } }); });
             add.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); add.blur(); } });
-            return el('div', { class: 'chips' }, f.value.map(v => el('span', { class: 'chip' }, v,
+            const extra = (f.buttons || []).filter(b => offered[b[0]]).map(b => el('button', { type: 'button', class: 'small', text: b[1], onclick: () => run(() => listChange(f, b[0])) }));
+            return el('div', { class: 'chips' }, f.any ? el('span', { class: 'chip any', text: 'any' }) : null, f.value.map(v => el('span', { class: 'chip' }, v,
                 canRemove ? el('button', { type: 'button', class: 'chipx', text: '✕', title: 'remove ' + v, 'aria-label': 'remove ' + v, onclick: () => run(async () => {
-                    try { await listChange(f, f.remove(v)); } catch (e) { errors[f.key] = e.message; render(); } }) }) : null)), add);
+                    try { await listChange(f, f.remove(v)); } catch (e) { errors[f.key] = e.message; render(); } }) }) : null)), add, extra);
         }
         function render() {
             const fields = windowFields(cur.window, obj.row, obj.model);
@@ -1367,7 +1438,7 @@ async function showViewer(config, preset) {
                 el('div', { class: 'objhead' }, el('h3', { text: (cur.one || cur.label) + ': ' + obj.row.name }), el('span', { class: 'badge', text: obj.row.location }),
                     el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
                 el('table', { class: 'objfields' }, el('tbody', {}, fields.map(f => {
-                    const can = canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]);
+                    const can = f.kind === 'buttons' || (canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]));
                     return el('tr', {}, el('th', { text: f.label }), el('td', {}, control(f),
                         errors[f.key] ? el('div', { class: 'error', text: errors[f.key] }) : null,
                         done[f.key] ? el('div', { class: 'muted objact' }, '✓ ', el('code', { text: done[f.key] })) : null,

@@ -18,7 +18,13 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   `description-delete/description-append:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, the value of an ip-netmask →
   `value-replace:…`, the name → `name-rename:…`, a member → `add-member:…`, the color of a tag → `color-set:…`. Under the
   field the action is shown (✓). A field without a pan-os-php action for it is read only (and says why). `,` and `:`
-  can not be used in a value (they separate the arguments of an action). Security rules follow.
+  can not be used in a value (they separate the arguments of an action).
+- **Rule window** (every entry under *Policies*: Security, NAT, QoS, PBF, Decryption, …): the fields the rule has -
+  name, description (`,` `:` `/` allowed: pan-os-php aliases), tags, disabled, move (to the top / bottom, before /
+  after a rule), source / destination zone, address, negate, user, application, service (each: add, ✕ remove, *set to
+  any*; service also *application-default*), action, profile group, log forwarding, log at start / end, schedule.
+  Shown only: URL category, NAT translations, UUID (no pan-os-php action for them yet). The default security rules
+  can not be renamed or moved.
 - **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
   window). Nothing is written until **Save as new version**; **Discard changes** drops them all.
 - **Multi-edit** (below the list): one action on all objects of the list (menu entry + location + filter) - type part
