@@ -19,7 +19,7 @@ button.link { border: 0; padding: 0; color: var(--accent); background: none; tex
 button:disabled { opacity: .5; cursor: default; }
 input, select { padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
 label { display: inline-flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
-form.row, div.row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin: 0 0 12px; }
+form.row, div.row, span.row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin: 0 0 12px; }
 .grow { flex: 1 1 260px; }
 .grow input { width: 100%; }
 #message { margin: 0; padding: 8px 20px; border-bottom: 1px solid var(--line); }
@@ -79,3 +79,10 @@ tr.refrow > td { background: #f4f8fc; white-space: normal; max-width: none; padd
 .refs a { white-space: nowrap; }
 button.refbtn { min-width: 3.2em; }
 button.refbtn.on { background: #e8f0fa; border-color: var(--accent); }
+.projecttabs { flex-basis: 100%; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 4px 0 16px; }
+.tabs button { border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; background: none; padding: 8px 14px; margin-bottom: -1px; color: var(--muted); }
+.tabs button:hover { color: var(--fg); border-color: transparent; }
+.tabs button.on { border-color: var(--line); background: #fff; color: var(--fg); font-weight: 600; }
+span.row { margin: 0; }
+span.row[hidden] { display: none; }

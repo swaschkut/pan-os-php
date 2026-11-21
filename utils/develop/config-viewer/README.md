@@ -290,6 +290,7 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `…/<cid>/playbook/runs` | POST | read, whole configuration | queues `type=playbook` on this version: body `playbook` (file id) **or** `predefined` (name of an offered predefined playbook, e.g. `visibility.json`), optional `bp` (file id, becomes `shadow-bpjsonfile=`), optional `subprocess`, `memorythreshold`, `debugmemory`, `removestagefiles` |
 | `playbooks` | GET | login | the predefined playbooks offered for runs (`name`, `steps`) |
 | `playbooks?all=1` / `playbooks` | GET / PUT | admin | all predefined playbooks with `on`, `usable`, `why` / turn them on: body `enabled` (list of names; only usable ones) |
+| `…/<cid>/diff/runs` | POST | read, whole configuration | queues `type=diff`: this version = `file1`, body `other` (cid) = `file2`; optional `setcommands` (→ `set-commands.txt`, file1 → file2), `noruleordercheck`, `xpath` (an XPath of the configuration: `/config…`, `/policy…`, `/template…`, `/cloud_services…`; never a file); no `in=` |
 | `projects/<pid>/runs/<jid>/save` | POST | write | the result configuration (`out.xml`) of a finished playbook run becomes a new version |
 | `projects/<pid>/runs` | GET | read, whole configuration | the last 200 runs |
 | `projects/<pid>/runs/<jid>` | GET / DELETE | read / who started it or write | `state` (`queued`, `running`, `done`, `failed`, `cancelled`), `files` / cancel an open run, delete a finished one with its files |

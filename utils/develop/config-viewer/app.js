@@ -398,6 +398,7 @@ async function showProject(pid) {
     if (!limited) {
         const rVersion = el('select', { required: true }, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
         const rType = el('select', {}, el('option', { value: 'stats', text: 'stats (BPA figures)' }), el('option', { value: 'playbook', text: 'playbook' }),
+            el('option', { value: 'diff', text: 'diff (compare two versions)' }),
             Object.entries(plug.runs).map(([k, r]) => el('option', { value: k, text: r.title })));
         // predefined playbooks (shipped with pan-os-php, turned on by an administrator) and the playbook files of the project
         const ownPb = files.files.filter(f => f.kind === 'playbook');
@@ -414,6 +415,14 @@ async function showProject(pid) {
             el('div', { class: 'row' }, field('Every step its own process (subprocess)', oSub), field('Own process above (memorythreshold, MB)', oThr),
                 field('Memory use in run.log (debugmemory)', oDbg), field('Remove stage files (removestagefiles)', oRm)),
             el('p', { class: 'muted', text: 'subprocess: every step runs as its own PHP process, its memory is free again afterwards - slower, needs least memory. memorythreshold: only steps that start while the run uses more than this many MB run as their own process. The memory a run may use at all is set by the administrator of the computer (VIEWER_RUN_MEMORY).' }));
+        // diff: this version (file1, the original) against another one (file2); set commands from file1 to file2
+        const dOther = el('select', {}, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
+        if (configs.configs.length > 1) dOther.value = configs.configs[0].cid;
+        if (configs.configs.length > 1) rVersion.value = configs.configs[1].cid;
+        const dSet = el('input', { type: 'checkbox', checked: true }), dOrder = el('input', { type: 'checkbox' });
+        const dXpath = el('input', { maxlength: 2000, placeholder: "optional, e.g. /config/devices/entry[@name='localhost.localdomain']/device-group" });
+        const diffFields = el('span', { class: 'row' }, field('Compare with (file2, the newer one)', dOther), field('Set commands file1 → file2', dSet),
+            field('No rule order check', dOrder), el('label', { class: 'grow' }, 'Only this part (XPath)', dXpath));
         const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp), versionField = field('Version', rVersion);
         // run types of plug-ins: the fields the plug-in declares (text, location, a project file of a kind)
         const plugFields = el('span', { class: 'row' });
@@ -421,7 +430,9 @@ async function showProject(pid) {
         const typeChanged = () => {
             const pr = plug.runs[rType.value];
             pbField.hidden = pbOpts.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
-            bpField.hidden = !!pr && !pr.bp;
+            diffFields.hidden = rType.value !== 'diff';
+            versionField.firstChild.textContent = rType.value === 'diff' ? 'Version (file1, the original)' : 'Version';
+            bpField.hidden = (!!pr && !pr.bp) || rType.value === 'diff';
             // a run type without a version (its input is a project file)
             versionField.hidden = !!pr && pr.input === 'none';
             rVersion.required = !versionField.hidden;
@@ -476,7 +487,7 @@ async function showProject(pid) {
             return runs.some(r => r.state === 'queued' || r.state === 'running');
         }
         runsCard = el('div', { class: 'card' }, el('h2', { text: 'Runs' }),
-            el('p', { class: 'muted', text: 'A run works on one version in its own folder; exports, set commands and the result configuration are its result files. Nothing changes a version - the result of a playbook run can be taken as a new version.' }),
+            el('p', { class: 'muted', text: 'A run works on one version in its own folder; exports, set commands and the result configuration are its result files. Nothing changes a version - the result of a playbook run can be taken as a new version. diff compares two versions: the differences are in run.log, the set commands (file1 → file2) in set-commands.txt.' }),
             configs.configs.length === 0 && !Object.values(plug.runs).some(r => r.input === 'none') ? el('p', { class: 'muted', text: 'Upload a configuration first.' }) :
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const body = {};
@@ -488,6 +499,13 @@ async function showProject(pid) {
                     if (oThr.value) body.memorythreshold = oThr.value;
                     if (oDbg.checked) body.debugmemory = true;
                     if (oRm.checked) body.removestagefiles = true;
+                }
+                else if (rType.value === 'diff') {
+                    delete body.bp;
+                    if (dOther.value === rVersion.value) throw new Error('choose two different versions');
+                    body.other = dOther.value; body.setcommands = dSet.checked;
+                    if (dOrder.checked) body.noruleordercheck = true;
+                    if (dXpath.value.trim()) body.xpath = dXpath.value.trim();
                 }
                 else if (plug.runs[rType.value]) {
                     if (!plug.runs[rType.value].bp) delete body.bp;
@@ -502,7 +520,7 @@ async function showProject(pid) {
                 await api('POST', base + (noVersion ? '' : '/configs/' + rVersion.value) + '/' + rType.value + '/runs', body);
                 message('run queued');
                 await refreshRuns();
-            }); } }, field('Run', rType), versionField, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
+            }); } }, field('Run', rType), versionField, diffFields, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
             runsBody);
         // while a run is open: refresh the list
         let openRuns = await drawRuns();
@@ -515,9 +533,27 @@ async function showProject(pid) {
         owner ? el('button', { class: 'danger', type: 'button', text: 'Delete project', onclick: () => run(async () => {
             if (!confirm('Delete project "' + p.name + '" with all configurations?')) return;
             await api('DELETE', base); await showProjects();
-        }) }) : null), versions, runsCard, filesCard, memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null);
+        }) }) : null), projectTabs(pid, [
+            ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions]],
+            ['runs', 'Runs and project files', [runsCard, filesCard]],
+            ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now
     if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
+}
+
+// ---------------------------------------------------------------- tabs of a project (the chosen one is kept per project)
+function projectTabs(pid, tabs) {
+    state.projectTab = state.projectTab || {};
+    const panel = el('div', { class: 'tabpanel', role: 'tabpanel' });
+    const bar = el('div', { class: 'tabs', role: 'tablist' }, tabs.map(([id, title]) => el('button', { type: 'button', role: 'tab', 'data-tab': id, text: title, onclick: () => show(id) })));
+    function show(id) {
+        const t = tabs.find(x => x[0] === id) || tabs[0];
+        state.projectTab[pid] = t[0];
+        for (const b of bar.children) { b.classList.toggle('on', b.dataset.tab === t[0]); b.setAttribute('aria-selected', b.dataset.tab === t[0] ? 'true' : 'false'); }
+        panel.replaceChildren(...t[2].filter(x => x));
+    }
+    show(state.projectTab[pid] || tabs[0][0]);
+    return el('div', { class: 'projecttabs' }, bar, panel);
 }
 
 // ---------------------------------------------------------------- suggestions while typing (filter, action)

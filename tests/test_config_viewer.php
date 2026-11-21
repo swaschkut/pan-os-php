@@ -703,6 +703,31 @@ eq( array( $r[1]['state'] ?? null, in_array( 'set-commands.txt', $fn, TRUE ), st
 eq( status( $alice->call( 'PUT', 'playbooks', array( 'enabled' => array() ) ) ), 200, 'predefined playbooks: all turned off' );
 eq( array( $names( $bob->call( 'GET', 'playbooks' ) ), status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'predefined' => 'visibility.json' ) ) ) ),
     array( array(), 400 ), 'predefined playbooks: nothing offered, a run is refused (no fall back to the default)' );
+
+// diff: two versions of the project (file1 = this version, file2 = 'other'), set commands file1 -> file2
+$xml2 = str_replace( '<ip-netmask>1.2.2.3/32</ip-netmask>', '<ip-netmask>9.9.9.9/32</ip-netmask>', $xml );
+$other = $alice->call( 'POST', $PB . '/configs', null, array( 'p-changed.xml', $xml2 ) )[1]['cid'] ?? '';
+eq( status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => basename( $PBC ) ) ) ), 400, 'diff: the same version twice is refused' );
+eq( status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => str_repeat( 'f', 32 ) ) ) ), 404, 'diff: an unknown version' );
+foreach( array( '/etc/passwd', '/config/../../etc', 'files/x.json', "/config/shared\n" ) as $bad )
+    eq( status( $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other, 'xpath' => $bad ) ) ), 400, 'diff: xpath that is no XPath of the configuration refused (' . json_encode( $bad ) . ')' );
+eq( status( $bob->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other ) ) ), 404, 'diff: no access' );
+$r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other, 'setcommands' => TRUE ) );
+$a = $r[1]['args'] ?? array();
+eq( array( status( $r ), count( $a ), (bool)preg_match( '#^file1=%PROJECT%/[0-9a-f]{32}\.xml$#', $a[0] ?? '' ), (bool)preg_match( '#^file2=%PROJECT%/[0-9a-f]{32}\.xml$#', $a[1] ?? '' ),
+    ( $a[0] ?? '' ) !== 'file1' . substr( $a[1] ?? '', 5 ), $a[2] ?? null ), array( 202, 3, TRUE, TRUE, TRUE, 'outputformatset=set-commands.txt' ),
+    'diff: queued with file1 / file2 (two versions of the project) and the set commands' );
+$drun = $PB . '/runs/' . ( $r[1]['jid'] ?? '' );
+$r = waitRun( $alice, $drun );
+$set = (string)$alice->call( 'GET', $drun . '/files/set-commands.txt' )[1];
+$log = (string)$alice->call( 'GET', $drun . '/files/run.log' )[1];
+eq( array( $r[1]['state'] ?? null, strpos( $set, 'set shared address "shared-host1" ip-netmask 9.9.9.9/32' ) !== FALSE, strpos( $log, 'in=' ) === FALSE, strpos( $log, $data ) ),
+    array( 'done', TRUE, TRUE, FALSE ), 'diff: done - set commands from file1 to file2, no in=' );
+$r = $alice->call( 'POST', $PBC . '/diff/runs', array( 'other' => $other, 'xpath' => "/config/devices/entry[@name='localhost.localdomain']/device-group", 'noruleordercheck' => TRUE ) );
+eq( array( status( $r ), array_slice( $r[1]['args'] ?? array(), 2 ) ), array( 202, array( 'noruleordercheck', "filter=/config/devices/entry[@name='localhost.localdomain']/device-group" ) ),
+    'diff: only a part (XPath), without the rule order check' );
+waitRun( $alice, $PB . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$alice->call( 'DELETE', $PB . '/configs/' . $other );
 eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: deleted' );
 eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
 eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );

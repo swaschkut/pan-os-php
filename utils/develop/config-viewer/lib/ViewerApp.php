@@ -620,7 +620,7 @@ class ViewerApp
      * Job types: the pan-os-php arguments are built here from checked values only - never an argument, file name or
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
-    const JOB_TYPES = array( 'stats', 'playbook' );
+    const JOB_TYPES = array( 'stats', 'playbook', 'diff' );
     const JOB_QUEUE_MAX = 20;          // queued + running jobs per project
     const JOB_FILE_MAX = 104857600;    // largest result file that can be downloaded
 
@@ -816,6 +816,28 @@ class ViewerApp
             if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.\-]{1,63}$/', $location ) )
                 throw new ViewerException( 'location: letters, digits, space and . _ - only', 400 );
             $args = array( 'location=' . $location, 'actions=display-bpa', 'json-to-folder', 'debugapi' );
+        }
+        if( $type === 'diff' )
+        {
+            // two versions of the project: this one (file1, the original) and 'other' (file2, the newer one); no in= -
+            // with in= type=diff compares inside one file. Set commands from file1 to file2 on request.
+            $other = $this->configGet( $p, $in['other'] ?? null );
+            if( (int)$other['id'] === (int)$c['id'] )
+                throw new ViewerException( 'diff: choose two different versions', 400 );
+            $args = array( 'file1=%PROJECT%/' . $c['file'], 'file2=%PROJECT%/' . $other['file'] );
+            if( !empty( $in['setcommands'] ) )
+                $args[] = 'outputformatset=set-commands.txt';
+            if( !empty( $in['noruleordercheck'] ) )
+                $args[] = 'noruleordercheck';
+            // filter: an XPath of the configuration (never a file - type=diff reads a filter that is a file name)
+            $xf = $in['xpath'] ?? '';
+            if( $xf !== '' && $xf !== null )
+            {
+                if( !is_string( $xf ) || strlen( $xf ) > 2000 || preg_match( '/[\x00-\x1F\x7F]|\.\./', $xf )
+                    || !preg_match( '#^/(config|policy|template|template-stack|cloud_services|device-group)(/|\[|$)#', $xf ) )
+                    throw new ViewerException( 'diff: xpath - an XPath of the configuration, e.g. /config/devices/entry[@name=\'localhost.localdomain\']/device-group', 400 );
+                $args[] = 'filter=' . $xf;
+            }
         }
         if( $type === 'playbook' )
         {
@@ -1330,6 +1352,8 @@ class ViewerApp
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
         $noVersion = ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' && (int)$j['config_id'] === 0;
+        // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
+        $noIn = $noVersion || $j['type'] === 'diff';
         if( ( !$noVersion && ( $config === null || !is_file( $config ) ) ) || !in_array( $j['type'], $this->jobTypes(), TRUE ) || !is_array( $args ) || !preg_match( '/^[0-9a-f]{32}$/', $j['jid'] ) )
         {
             $this->runnerFinish( (int)$j['id'], 'failed', 'the configuration version does not exist any more' );
@@ -1351,7 +1375,13 @@ class ViewerApp
                 $this->runnerFinish( (int)$j['id'], 'failed', 'a file of the run (playbook / BP JSON) does not exist any more' );
                 return $this->runnerTake();
             }
-            $args[$i] = str_replace( array( '%FILES%', '%JOB%' ), array( $dir . '/files', $jobDir ), $a );
+            // %PROJECT%: a version of this project (type=diff) - only <32 hex>.xml, and it must still exist
+            if( strpos( $a, '%PROJECT%' ) !== FALSE && ( !preg_match( '#^[a-z0-9-]+=%PROJECT%/([0-9a-f]{32}\.xml)$#', $a, $m ) || !is_file( $dir . '/' . $m[1] ) ) )
+            {
+                $this->runnerFinish( (int)$j['id'], 'failed', 'a version of the run does not exist any more' );
+                return $this->runnerTake();
+            }
+            $args[$i] = str_replace( array( '%FILES%', '%JOB%', '%PROJECT%' ), array( $dir . '/files', $jobDir, $dir ), $a );
         }
         // pid / jid / file / rawArgs: for a run in a container (ViewerContainer), where the folders have other paths
         // 'tool': the pan-os-php type that runs - for a run type of a plug-in the one it names
@@ -1377,8 +1407,8 @@ class ViewerApp
         }
         return array( 'env' => $env, 'rawEnv' => $pr['env'] ?? array(), 'plugin' => $pr['plugin'] ?? null, 'pluginBuiltin' => $pr['builtin'] ?? FALSE,
             'pluginPackage' => $package, 'licence' => $licenceText,
-            'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noVersion ? null : $config,
-            'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noVersion ? null : $j['file'], 'rawArgs' => $rawArgs );
+            'id' => (int)$j['id'], 'type' => $j['type'], 'tool' => $this->pluginRuns()[$j['type']]['tool'] ?? $j['type'], 'args' => $args, 'dir' => $jobDir, 'config' => $noIn ? null : $config,
+            'pid' => $j['pid'], 'jid' => $j['jid'], 'file' => $noIn ? null : $j['file'], 'rawArgs' => $rawArgs );
     }
 
     /** 'running' (still wanted), 'cancelled', or null when the job / project was deleted */
@@ -1423,7 +1453,7 @@ class ViewerApp
 
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
-        'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles' );
+        'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void

@@ -54,6 +54,12 @@ $job = array( 'pid' => $pid, 'jid' => $jid, 'file' => $file, 'type' => 'playbook
 eq( withEnv( array(), function() { return ViewerContainer::fromEnv( '/data' ); } ), null, 'not configured: no container' );
 $base = array( 'PANOSPHP_VIEWER_CONTAINER' => 'docker', 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => 'swaschkut/pan-os-php:develop', 'PANOSPHP_VIEWER_CONTAINER_USER' => '1000:1000' );
 $cmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/srv/viewer-data' )->runCommand( $job ); } );
+// type=diff: two versions of the project as file1 / file2 under /project, no in=
+$dcmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/srv/viewer-data' )->runCommand( array( 'type' => 'diff', 'file' => null,
+    'rawArgs' => array( 'file1=%PROJECT%/' . str_repeat( 'c', 32 ) . '.xml', 'file2=%PROJECT%/' . str_repeat( 'e', 32 ) . '.xml', 'outputformatset=set-commands.txt' ) ) + $job ); } );
+eq( array( array_slice( $dcmd, -3 ), count( preg_grep( '/^in=/', $dcmd ) ), in_array( 'type=diff', $dcmd, TRUE ) ),
+    array( array( 'file1=/project/' . str_repeat( 'c', 32 ) . '.xml', 'file2=/project/' . str_repeat( 'e', 32 ) . '.xml', 'outputformatset=set-commands.txt' ), 0, TRUE ),
+    'diff in a container: both versions from /project (read-only), no in=' );
 $image = array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE );
 $opts = array_slice( $cmd, 0, $image );
 eq( array_slice( $cmd, 0, 5 ), array( 'docker', 'run', '--rm', '--name', 'panosphp-run-' . $jid ), 'docker run --rm with the name of the run' );

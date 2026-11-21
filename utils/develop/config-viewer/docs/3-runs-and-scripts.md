@@ -18,12 +18,14 @@ Open a version, choose the **type** (address, rule, …) and press **Show**.
 
 ## Runs
 
-A run works on a copy of one version in its own folder and container (no network). Under **Runs** in a project:
+A run works on a copy of one version in its own folder and container (no network). The project page has three tabs:
+**Configuration versions**, **Runs and project files**, **Members, API tokens, audit log**. Under **Runs**:
 
 | Run | What it does |
 |---|---|
 | stats | best practice figures of the configuration |
 | playbook | the steps of a playbook - exports, set commands, changed configuration |
+| diff | compares two versions (file1 = the original, file2 = the newer one): differences in `run.log`, set commands file1 → file2 in `set-commands.txt`; optional only a part (XPath) |
 | migration (licence) | a configuration of another vendor (project file) to PAN-OS |
 
 **Playbooks** come from two places, like the BP JSON:

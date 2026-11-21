@@ -102,7 +102,7 @@ class ViewerContainer
             throw new Exception( 'container: invalid job' );
         $args = array();
         foreach( $job['rawArgs'] as $a )
-            $args[] = str_replace( array( '%FILES%', '%JOB%' ), array( '/project/files', '/job' ), $a );
+            $args[] = str_replace( array( '%FILES%', '%JOB%', '%PROJECT%' ), array( '/project/files', '/job', '/project' ), $a );
 
         $cmd = array( $this->program, 'run', '--rm', '--name', self::name( $job['jid'] ), '--label', $this->label,
             '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
