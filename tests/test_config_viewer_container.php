@@ -20,6 +20,7 @@
 $repo = dirname( __FILE__, 2 );
 $viewer = $repo . '/utils/develop/config-viewer';
 require_once $viewer . '/lib/ViewerContainer.php';
+require_once $viewer . '/lib/ViewerApp.php';
 foreach( array( 'pdo_sqlite', 'pcntl', 'posix' ) as $ext )
     if( !extension_loaded( $ext ) )
     {
@@ -135,6 +136,17 @@ foreach( $a as $i => $o )
 foreach( $rest as $i => $r )
     $rest[$i] = preg_replace_callback( '#(?<==|^)/(project|job)(?=/|$)#', function( $m ) use ( $map ) { return $map['/' . $m[1]]; }, $r );
 file_put_contents( __DIR__ . '/' . $name . '.pid', getmypid() );
+// a container the kernel stops for its memory limit ends with 137 (SIGKILL); a run with this marker plays that
+if( in_array( 'memorythreshold=999936', $a, TRUE ) )
+{
+    print "Killed\n";
+    exit( 137 );
+}
+if( in_array( 'memorythreshold=999872', $a, TRUE ) )
+{
+    print "some other error\n";
+    exit( 1 );
+}
 chdir( $map['/job'] );
 pcntl_exec( PHP_BINARY, array_merge( array( trim( file_get_contents( __DIR__ . '/tool' ) ) ), $rest ) );
 FAKE
@@ -260,6 +272,28 @@ $tail = array_slice( $c, (int)array_search( 'pan-os-php:test', $c, TRUE ) + 1 );
 eq( count( preg_grep( '#=/project/files/[0-9a-f]{32}\.json$#', $tail ) ), 2, 'playbook run: playbook and BP JSON from /project/files (' . implode( ' ', $tail ) . ')' );
 eq( count( preg_grep( '#=/job/#', $tail ) ) >= 1, TRUE, 'playbook run: result goes to /job' );
 eq( call( 'POST', $P . '/runs/' . $jid2 . '/save' )[0], 201, 'playbook run: result taken as a new version' );
+
+// playbook options for large configurations go to type=playbook; a run killed for memory is told apart
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'subprocess' => TRUE, 'memorythreshold' => '512', 'debugmemory' => TRUE, 'removestagefiles' => TRUE ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, array_slice( $r[1]['args'] ?? array(), 4 ) ), array( 'done', array( 'subprocess', 'debugmemory', 'removestagefiles', 'memorythreshold=512' ) ),
+    'playbook options: subprocess, memorythreshold, debugmemory, removestagefiles - the run works with them' );
+$log = (string)call( 'GET', $P . '/runs/' . $r[1]['jid'] . '/files/run.log' )[1];
+eq( strpos( $log, 'Running step as subprocess' ) !== FALSE, TRUE, 'playbook options: the steps ran as subprocesses (debugmemory in run.log)' );
+foreach( array( array( 'memorythreshold' => '10' ), array( 'memorythreshold' => 'x' ), array( 'subprocess' => 'yes' ) ) as $bad )
+    eq( call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb ) + $bad )[0], 400, 'playbook options checked: ' . json_encode( $bad ) );
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'memorythreshold' => 999936 ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, strpos( $r[1]['error'] ?? '', 'out of memory' ) === 0, strpos( $r[1]['error'] ?? '', 'limit per run: 2g' ) !== FALSE ),
+    array( 'failed', 'memory', TRUE, TRUE ), 'container killed (137): failed, reason memory, with the limit per run' );
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'memorythreshold' => 999872 ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, $r[1]['error'] ?? null ), array( 'failed', 'error', 'pan-os-php ended with an error (see run.log)' ),
+    'other error: reason error' );
+eq( array( ViewerApp::runFailure( 1, null, "x\n ** step type=rule ended with exit code 137 - the process was killed, most likely out of memory - the playbook stops here", null )[0],
+    ViewerApp::runFailure( 255, null, "PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes)", null )[0],
+    ViewerApp::runFailure( -1, 9, '', null )[0], ViewerApp::runFailure( 1, null, 'derr: no such object', '4g' )[0] ),
+    array( 'memory', 'memory', 'memory', 'error' ), 'out of memory also from the log (killed subprocess step, PHP memory_limit) and from signal 9' );
 
 // cancel: the container is removed
 $r = call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() );

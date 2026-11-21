@@ -611,6 +611,42 @@ eq( array( $r[1]['state'] ?? null, in_array( 'out.xml', $names, TRUE ), in_array
     'visibility playbook through the API: done, result configuration and set commands' );
 $out = (string)$alice->call( 'GET', $vrun . '/files/out.xml' )[1];
 eq( array( strpos( $out, 'Alert-Only-AS' ) !== FALSE, strpos( $out, 'Alert_Only_Zone_Protection' ) !== FALSE ), array( TRUE, TRUE ), 'visibility playbook: the result has the alert-only profiles' );
+
+// predefined playbooks (shipped with pan-os-php): visibility.json offered by default, more only by an administrator
+$names = function( $r ) { return array_column( $r[1]['playbooks'] ?? array(), 'name' ); };
+eq( $names( $bob->call( 'GET', 'playbooks' ) ), array( 'visibility.json' ), 'predefined playbooks: visibility.json offered by default' );
+eq( $names( $alice->call( 'GET', 'playbooks' ) ), array( 'visibility.json' ), 'predefined playbooks: also an administrator gets only the offered ones for runs' );
+eq( status( $bob->call( 'GET', 'playbooks?all=1' ) ), 404, 'predefined playbooks: the whole list only for an administrator' );
+$all = $alice->call( 'GET', 'playbooks?all=1' )[1]['playbooks'] ?? array();
+$usable = array_column( array_filter( $all, function( $p ) { return $p['usable']; } ), 'name' );
+$notUsable = array_column( array_filter( $all, function( $p ) { return !$p['usable']; } ), 'why', 'name' );
+eq( array( count( $all ) === count( glob( $here . '/../utils/api/v1/playbook/*.json' ) ), in_array( 'visibility.json', $usable, TRUE ),
+    in_array( 'panorama_rule-merger.json', array_keys( $notUsable ), TRUE ), strpos( $notUsable['panorama_rule-merger.json'] ?? '', 'rule-merger' ) !== FALSE,
+    array_column( array_filter( $all, function( $p ) { return $p['on']; } ), 'name' ) ),
+    array( TRUE, TRUE, TRUE, TRUE, array( 'visibility.json' ) ), 'predefined playbooks: the administrator sees all, which can run here and why not' );
+eq( status( $bob->call( 'PUT', 'playbooks', array( 'enabled' => array( 'best-practice-set.json' ) ) ) ), 404, 'predefined playbooks: only an administrator turns them on' );
+eq( status( $alice->call( 'PUT', 'playbooks', array( 'enabled' => array( 'panorama_rule-merger.json' ) ) ) ), 400, 'predefined playbooks: one that can not run here is refused' );
+eq( status( $alice->call( 'PUT', 'playbooks', array( 'enabled' => array( '../../etc/passwd' ) ) ) ), 400, 'predefined playbooks: unknown name refused' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'predefined' => 'best-practice-set.json' ) ) ), 400, 'predefined run: a playbook that is not turned on is refused' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'predefined' => '../visibility.json' ) ) ), 400, 'predefined run: name checked' );
+eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'predefined' => 'visibility.json', 'playbook' => $pbFid ) ) ), 400, 'predefined run: not together with a playbook file' );
+$r = $alice->call( 'PUT', 'playbooks', array( 'enabled' => array( 'best-practice-set.json', 'visibility.json' ) ) );
+eq( array( status( $r ), array_column( array_filter( $r[1]['playbooks'] ?? array(), function( $p ) { return $p['on']; } ), 'name' ) ),
+    array( 200, array( 'best-practice-set.json', 'visibility.json' ) ), 'predefined playbooks: the administrator turns one more on' );
+eq( $names( $bob->call( 'GET', 'playbooks' ) ), array( 'best-practice-set.json', 'visibility.json' ), 'predefined playbooks: offered to every user' );
+$r = $alice->call( 'POST', $PBC . '/playbook/runs', array( 'predefined' => 'visibility.json', 'bp' => $bpFid ) );
+eq( array( status( $r ), $r[1]['args'][0] ?? null ), array( 202, 'json=$$playbook$$/visibility.json' ), 'predefined run: queued, json=$$playbook$$/<name> as on the command line' );
+$prun2 = $PB . '/runs/' . $r[1]['jid'];
+$r = waitRun( $alice, $prun2 );
+if( ( $r[1]['state'] ?? '' ) !== 'done' )
+    print "run.log:\n" . substr( (string)$alice->call( 'GET', $prun2 . '/files/run.log' )[1], -1500 ) . "\n";
+$fn = array_column( $r[1]['files'] ?? array(), 'name' );
+$out2 = (string)$alice->call( 'GET', $prun2 . '/files/out.xml' )[1];
+eq( array( $r[1]['state'] ?? null, in_array( 'set-commands.txt', $fn, TRUE ), strpos( $out2, 'Alert-Only-AS' ) !== FALSE ), array( 'done', TRUE, TRUE ),
+    'predefined run: done - same result as the uploaded visibility.json' );
+eq( status( $alice->call( 'PUT', 'playbooks', array( 'enabled' => array() ) ) ), 200, 'predefined playbooks: all turned off' );
+eq( array( $names( $bob->call( 'GET', 'playbooks' ) ), status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'predefined' => 'visibility.json' ) ) ) ),
+    array( array(), 400 ), 'predefined playbooks: nothing offered, a run is refused (no fall back to the default)' );
 eq( status( $alice->call( 'DELETE', $PB . '/files/' . $pbFid ) ), 200, 'files: deleted' );
 eq( status( $alice->call( 'POST', $PBC . '/playbook/runs', array( 'playbook' => $pbFid ) ) ), 400, 'playbook run: deleted file' );
 eq( status( $alice->call( 'DELETE', $PB ) ), 200, 'playbook project deleted' );

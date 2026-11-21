@@ -239,6 +239,18 @@ async function showAccount() {
                     el('td', { text: x.form === 'package' ? 'package (encrypted)' : 'folder (source)' }),
                     el('td', { class: 'wrap' }, el('span', { class: 'badge' + (x.on ? '' : ' dirty'), text: x.on ? 'on' : 'locked' }), x.why ? el('span', { class: 'muted', text: ' ' + x.why }) : null))),
                 ...errs.map(([folder, why]) => el('tr', {}, el('td', { text: folder }), el('td', {}), el('td', {}), el('td', {}), el('td', { class: 'wrap', text: 'not loaded: ' + why })))])));
+        // predefined playbooks: which ones the runs offer (default visibility.json); some can not run here at all
+        const pbs = (await api('GET', 'playbooks?all=1')).playbooks;
+        const boxes = pbs.map(p => el('input', { type: 'checkbox', value: p.name, checked: p.on, disabled: !p.usable }));
+        nodes.push(el('form', { class: 'card', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            await api('PUT', 'playbooks', { enabled: boxes.filter(b => b.checked).map(b => b.value) });
+            message('predefined playbooks saved'); await showAccount();
+        }); } }, el('h2', { text: 'Predefined playbooks (admin)' }),
+            el('p', { class: 'muted', text: 'Playbooks shipped with pan-os-php. Only the ones turned on here are offered for runs, to every user. A playbook that is not usable here has steps the viewer does not allow (e.g. mergers, own input / output files).' }),
+            pbs.length === 0 ? el('p', { class: 'muted', text: 'No predefined playbooks found.' }) :
+            table(['Offered', 'Playbook', 'Steps', 'State'], pbs.map((p, i) => el('tr', {}, el('td', {}, boxes[i]), el('td', { text: p.name }), el('td', { text: String(p.steps) }),
+                el('td', { class: 'wrap', text: p.usable ? (p.on ? 'offered' : '') : 'not usable here: ' + p.why.replace(/^playbook: /, '') })))),
+            el('button', { class: 'primary', type: 'submit', text: 'Save' })));
         nodes.push(auditCard('audit', 'Audit log (admin, all projects)'));
     }
     main(nodes);
@@ -289,7 +301,8 @@ async function showProject(pid) {
     // access limited to some types / locations: no whole-configuration operations (download, upload, runs)
     const limited = !!(p.types || p.scope);
     const base = 'projects/' + pid;
-    const [members, configs, tokens, files] = await Promise.all([api('GET', base + '/members'), api('GET', base + '/configs'), api('GET', base + '/tokens'), api('GET', base + '/files')]);
+    const [members, configs, tokens, files, offered] = await Promise.all([api('GET', base + '/members'), api('GET', base + '/configs'), api('GET', base + '/tokens'), api('GET', base + '/files'),
+        api('GET', 'playbooks').catch(() => ({ playbooks: [] }))]);
 
     // ---- versions
     const file = el('input', { type: 'file', accept: '.xml,text/xml,application/xml', required: true });
@@ -383,16 +396,28 @@ async function showProject(pid) {
         const rVersion = el('select', { required: true }, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
         const rType = el('select', {}, el('option', { value: 'stats', text: 'stats (BPA figures)' }), el('option', { value: 'playbook', text: 'playbook' }),
             Object.entries(plug.runs).map(([k, r]) => el('option', { value: k, text: r.title })));
-        const rPlaybook = el('select', {}, el('option', { value: '', text: '- choose a playbook -' }), files.files.filter(f => f.kind === 'playbook').map(f => el('option', { value: f.fid, text: f.name })));
+        // predefined playbooks (shipped with pan-os-php, turned on by an administrator) and the playbook files of the project
+        const ownPb = files.files.filter(f => f.kind === 'playbook');
+        const rPlaybook = el('select', {}, el('option', { value: '', text: '- choose a playbook -' }),
+            offered.playbooks.length ? el('optgroup', { label: 'predefined (pan-os-php)' }, offered.playbooks.map(p => el('option', { value: 'predefined:' + p.name, text: p.name + ' (' + p.steps + ' steps)' }))) : null,
+            ownPb.length ? el('optgroup', { label: 'project files' }, ownPb.map(f => el('option', { value: f.fid, text: f.name }))) : null);
+        if (offered.playbooks.length) rPlaybook.value = 'predefined:' + (offered.playbooks.find(p => p.name === 'visibility.json') || offered.playbooks[0]).name;
         const rBp = el('select', {}, el('option', { value: '', text: 'BP JSON shipped with pan-os-php' }), files.files.filter(f => f.kind === 'bp').map(f => el('option', { value: f.fid, text: f.name })));
         const rLocation = el('input', { value: 'any', maxlength: 63 });
+        // playbook options for large configurations (type=playbook: subprocess, memorythreshold, debugmemory, removestagefiles)
+        const oSub = el('input', { type: 'checkbox' }), oThr = el('input', { type: 'number', min: 64, max: 1048576, step: 64, placeholder: 'MB', class: 'narrow' });
+        const oDbg = el('input', { type: 'checkbox' }), oRm = el('input', { type: 'checkbox' });
+        const pbOpts = el('details', { class: 'pbopts' }, el('summary', { text: 'Options for large configurations' }),
+            el('div', { class: 'row' }, field('Every step its own process (subprocess)', oSub), field('Own process above (memorythreshold, MB)', oThr),
+                field('Memory use in run.log (debugmemory)', oDbg), field('Remove stage files (removestagefiles)', oRm)),
+            el('p', { class: 'muted', text: 'subprocess: every step runs as its own PHP process, its memory is free again afterwards - slower, needs least memory. memorythreshold: only steps that start while the run uses more than this many MB run as their own process. The memory a run may use at all is set by the administrator of the computer (VIEWER_RUN_MEMORY).' }));
         const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp), versionField = field('Version', rVersion);
         // run types of plug-ins: the fields the plug-in declares (text, location, a project file of a kind)
         const plugFields = el('span', { class: 'row' });
         let plugInputs = [];
         const typeChanged = () => {
             const pr = plug.runs[rType.value];
-            pbField.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
+            pbField.hidden = pbOpts.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
             bpField.hidden = !!pr && !pr.bp;
             // a run type without a version (its input is a project file)
             versionField.hidden = !!pr && pr.input === 'none';
@@ -422,7 +447,8 @@ async function showProject(pid) {
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
                     const row = el('tr', {}, el('td', { text: r.type }), el('td', { text: (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
-                        el('td', {}, el('span', { class: 'badge' + (open ? ' dirty' : ''), text: r.state }), r.error ? el('span', { class: 'muted', text: ' ' + r.error }) : null),
+                        el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
+                            r.error ? el('span', { class: r.reason === 'memory' ? 'error' : 'muted', text: ' ' + (r.reason === 'memory' ? r.error.replace(/^out of memory: /, '') : r.error) }) : null),
                         el('td', { text: r.user || '' }), el('td', { text: fmtTime(r.started) }), el('td', { text: fmtTime(r.finished) }),
                         el('td', {},
                             open ? null : el('button', { type: 'button', text: openFiles.has(r.jid) ? 'Hide files' : 'Result files', onclick: () => run(async () => {
@@ -452,7 +478,14 @@ async function showProject(pid) {
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const body = {};
                 if (rBp.value) body.bp = rBp.value;
-                if (rType.value === 'playbook') { if (!rPlaybook.value) throw new Error('choose a playbook (upload one under "Project files")'); body.playbook = rPlaybook.value; }
+                if (rType.value === 'playbook') {
+                    if (!rPlaybook.value) throw new Error('choose a playbook (upload one under "Project files")');
+                    if (rPlaybook.value.startsWith('predefined:')) body.predefined = rPlaybook.value.slice(11); else body.playbook = rPlaybook.value;
+                    if (oSub.checked) body.subprocess = true;
+                    if (oThr.value) body.memorythreshold = oThr.value;
+                    if (oDbg.checked) body.debugmemory = true;
+                    if (oRm.checked) body.removestagefiles = true;
+                }
                 else if (plug.runs[rType.value]) {
                     if (!plug.runs[rType.value].bp) delete body.bp;
                     for (const x of plugInputs) {
@@ -466,7 +499,7 @@ async function showProject(pid) {
                 await api('POST', base + (noVersion ? '' : '/configs/' + rVersion.value) + '/' + rType.value + '/runs', body);
                 message('run queued');
                 await refreshRuns();
-            }); } }, field('Run', rType), versionField, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' })),
+            }); } }, field('Run', rType), versionField, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
             runsBody);
         // while a run is open: refresh the list
         let openRuns = await drawRuns();

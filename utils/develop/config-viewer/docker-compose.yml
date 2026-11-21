@@ -67,6 +67,10 @@ services:
       PANOSPHP_VIEWER_CONTAINER: "docker"
       PANOSPHP_VIEWER_CONTAINER_IMAGE: "${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}"
       PANOSPHP_VIEWER_CONTAINER_DATA: "panosphp-viewer-data"
+      # memory and CPUs of one run (large configurations need more; Docker Desktop: the VM needs at least this much)
+      PANOSPHP_VIEWER_CONTAINER_MEMORY: "${VIEWER_RUN_MEMORY:-2g}"
+      PANOSPHP_VIEWER_CONTAINER_CPUS: "${VIEWER_RUN_CPUS:-2}"
+      PANOSPHP_VIEWER_JOB_TIMEOUT: "${VIEWER_RUN_TIMEOUT:-3600}"
       # the same folder as the Docker of the host sees it (a run of a plug-in gets its folder read-only)
       PANOSPHP_VIEWER_CONTAINER_PLUGINS: "${VIEWER_PLUGINS_DIR:-}"
 

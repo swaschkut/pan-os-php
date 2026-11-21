@@ -60,3 +60,8 @@ p.error { color: #b42318; }
 .card.notice { background: #e8f4ec; border-color: #b9dcc5; }
 .card.notice.warn { background: #fdecea; border-color: #f1b8b2; }
 .card.notice.warn h2 { color: var(--warn); }
+details.pbopts { flex-basis: 100%; }
+details.pbopts summary { cursor: pointer; color: var(--accent); }
+input.narrow { width: 7em; }
+.badge.oom { background: #fdecea; color: var(--warn); border-color: #f1b8b2; }
+span.error { color: var(--warn); }

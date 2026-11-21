@@ -24,6 +24,11 @@ Every day
     ./panosphp-viewer user list          users (changes: in the browser, Account - by an administrator)
     ./panosphp-viewer setup              answer the questions again, then ./panosphp-viewer restart
 
+Large configurations
+    A run may use 2 GB by default. More: VIEWER_RUN_MEMORY=6g in .env (here), then ./panosphp-viewer restart.
+    Docker Desktop: give the VM more memory than that (Settings -> Resources). Playbook runs also have
+    "Options for large configurations" (every step its own process). A run stopped for memory shows "out of memory".
+
 Licensed plug-ins (e.g. migration)
     ./panosphp-viewer plugin migration.ppp      add a plug-in package (also: plug-ins in the folder plugins/ of this bundle)
     ./panosphp-viewer license acme-2026.lic     install the licence (or in the browser: Account -> Licence)

@@ -285,7 +285,9 @@ required), 403 (permission, CSRF, HTTPS), 404 (unknown or no access), 409, 413, 
 | `projects/<pid>/files?kind=playbook\|bp` | GET / POST | read / write | project files: list / upload (multipart field `file`) of a playbook JSON (checked, see below) or a BP JSON |
 | `projects/<pid>/files/<fid>[/download]` | DELETE / GET | write / read | delete / download a project file |
 | `…/<cid>/stats/runs` | POST | read, whole configuration | queues a run (`type=stats actions=display-bpa json-to-folder`), body `location` (default `any`), optional `bp` (BP JSON of the project) → `202` with `jid`, `state` |
-| `…/<cid>/playbook/runs` | POST | read, whole configuration | queues `type=playbook` on this version: body `playbook` (file id), optional `bp` (file id, becomes `shadow-bpjsonfile=`) |
+| `…/<cid>/playbook/runs` | POST | read, whole configuration | queues `type=playbook` on this version: body `playbook` (file id) **or** `predefined` (name of an offered predefined playbook, e.g. `visibility.json`), optional `bp` (file id, becomes `shadow-bpjsonfile=`), optional `subprocess`, `memorythreshold`, `debugmemory`, `removestagefiles` |
+| `playbooks` | GET | login | the predefined playbooks offered for runs (`name`, `steps`) |
+| `playbooks?all=1` / `playbooks` | GET / PUT | admin | all predefined playbooks with `on`, `usable`, `why` / turn them on: body `enabled` (list of names; only usable ones) |
 | `projects/<pid>/runs/<jid>/save` | POST | write | the result configuration (`out.xml`) of a finished playbook run becomes a new version |
 | `projects/<pid>/runs` | GET | read, whole configuration | the last 200 runs |
 | `projects/<pid>/runs/<jid>` | GET / DELETE | read / who started it or write | `state` (`queued`, `running`, `done`, `failed`, `cancelled`), `files` / cancel an open run, delete a finished one with its files |
@@ -330,8 +332,14 @@ server from checked values (`ViewerApp::jobCreate()`); nothing of the request be
 `run.log` stay; server paths are replaced when a file is downloaded. At most 20 open runs per project. Run types:
 `stats` and `playbook`; not yet: mergers, `diff`, one container per run.
 
-**Playbook runs.** The playbook JSON and the BP JSON are files of the project (`projects/<pid>/files`). A playbook is
-checked when it is uploaded and again before every run (`ViewerApp::playbookCheck()`):
+**Playbook runs.** The playbook JSON and the BP JSON are files of the project (`projects/<pid>/files`) - or the playbook
+is a **predefined** one shipped with pan-os-php (`utils/api/v1/playbook/*.json`), like the BP JSON shipped with
+pan-os-php. Predefined playbooks are offered only when an administrator turned them on (Account → Predefined playbooks,
+setting `playbooks` in `viewer.sqlite`); by default only `visibility.json`. Shipped playbooks the check below refuses
+(today: the `*-merger` ones, `NGFW_migration_to_Panorama.json` with `in=`, `missconfiguration.json` with
+`projectfolder`) are listed with the reason and can not be turned on. A run of a predefined playbook calls
+`json=$$playbook$$/<name>`, as on the command line. A playbook is checked when it is uploaded and again before every run
+(`ViewerApp::playbookCheck()`):
 * no keys `in`, `out`, `projectfolder`, `json` – input, output and folders are set by the run;
 * every step: `type` out of `ViewerApp::PLAYBOOK_TYPES` (types that work on the configuration file only), every
   argument out of `PLAYBOOK_ARGS` (`actions`, `filter`, `location`, `template`, `ruletype`, `securityprofiletype`,
@@ -343,6 +351,18 @@ checked when it is uploaded and again before every run (`ViewerApp::playbookChec
 The run calls `type=playbook in=<version> json=<playbook> out=out.xml stagename=stage/step- outputformatset=set-commands.txt`
 (+ `shadow-bpjsonfile=<BP JSON>`) in the folder of the run; exports, set commands, stage files and `out.xml` are its
 result files. `POST …/runs/<jid>/save` takes `out.xml` as a new version.
+
+**Large configurations.** The run body takes the memory options of `type=playbook` (all optional, checked):
+`subprocess` (true: every step its own PHP process), `memorythreshold` (MB, 64 - 1048576: a step runs as its own process
+when the container uses more), `debugmemory` (true: memory use per step in `run.log`), `removestagefiles` (true). The
+page offers them under "Options for large configurations". What they do: [utils/api/v1/playbook/README.md](../../api/v1/playbook/README.md).
+The memory one run may use is the limit of its container - compose: `VIEWER_RUN_MEMORY` in `.env` (default `2g`; also
+`VIEWER_RUN_CPUS`, `VIEWER_RUN_TIMEOUT` in seconds), then `./panosphp-viewer restart`. With Docker Desktop the VM needs
+more memory than that (Settings → Resources).
+
+**Why a run failed** (`reason` of a run): `memory` - the run was killed for memory (exit code 137 / signal 9, a killed
+playbook subprocess step, or PHP's `memory_limit` in `run.log`); the page shows **out of memory** with the limit per run;
+`timeout` - longer than `PANOSPHP_VIEWER_JOB_TIMEOUT`; `error` - anything else (see `run.log`).
 
 
 ### Processes
@@ -400,7 +420,7 @@ more than its name, arguments and the scanned calls show – that is what the re
 cd tests && php test_config_viewer.php
 ```
 
-340 checks: login, allow list per action, audit log, project files, playbook runs, SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
+420 checks: login, allow list per action, audit log, project files, playbook runs (own and predefined), SCM object model, REST resources per type, runs (jobs), grants per member (types, locations), API tokens, separation between users (every project route `404` without access), read / write / owner, CSRF,
 input checks, load once, change in memory, save as new version, recovery of unsaved changes, discard, delete, service stop.
 
 ## Browser pages for the API parts
@@ -433,7 +453,7 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 | `PANOSPHP_VIEWER_CONTAINER_IMAGE` | image with pan-os-php, same version as the viewer (needed) |
 | `PANOSPHP_VIEWER_CONTAINER_DATA` | where the **runtime** finds the data directory: absolute path on its host, or the name of the volume that holds it. Default: `PANOSPHP_VIEWER_DATA` (job runner directly on the host) |
 | `PANOSPHP_VIEWER_CONTAINER_TOOL` | `pan-os-php.php` in the image (default `/tools/pan-os-php/utils/pan-os-php.php`) |
-| `PANOSPHP_VIEWER_CONTAINER_MEMORY`, `_CPUS` | limits per run (default `2g`, `2`) |
+| `PANOSPHP_VIEWER_CONTAINER_MEMORY`, `_CPUS` | limits per run (default `2g`, `2`; compose: `VIEWER_RUN_MEMORY`, `VIEWER_RUN_CPUS` in `.env`) |
 | `PANOSPHP_VIEWER_CONTAINER_USER` | `uid:gid` in the container (default: the one of the job runner, so that it can read the result files) |
 
 **Viewer itself in containers (Docker).** Three services with the same data volume: web (`api.php`), service (`bin/service.php`), job runner (`bin/jobs.php`). Only the job runner gets the Docker socket (`/var/run/docker.sock`) and the `docker` client; web and service get neither. Who controls the socket controls the host - that is why it stays in the one process that builds the call from fixed parts and takes no request from the network. The run containers are started by the Docker of the host, so `PANOSPHP_VIEWER_CONTAINER_DATA` must be the volume name (as `docker volume ls` shows it, with the compose project prefix) or the host path of the data directory, not the path inside the job runner.
@@ -442,10 +462,14 @@ docker run --rm --name panosphp-run-<jid> --label panosphp-viewer=<installation>
 
 ## Example: a playbook run from a script
 
-`examples/viewer-playbook-run.sh` (needs `curl`, `jq`): log in → new project → upload a Panorama / firewall XML and a playbook → run → download `out.xml` (changed configuration), `set-commands.txt` and `run.log`.
+`examples/viewer-playbook-run.sh` (needs `curl`, `jq`): log in → new project → upload a Panorama / firewall XML (and the playbook, when it is a file) → run → download `out.xml` (changed configuration), `set-commands.txt` and `run.log`.
 
 ```bash
-VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.sh panorama.xml utils/api/v1/playbook/visibility.json [bp.json]
+# predefined playbook of pan-os-php (turned on by an administrator; visibility.json is on by default)
+VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.sh panorama.xml visibility.json [bp.json]
+VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.sh panorama.xml '$$playbook$$/visibility.json'
+# an own playbook file (uploaded into the project)
+VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.sh panorama.xml ./my-playbook.json [bp.json]
 ```
 
 Without the third argument the BP JSON shipped with pan-os-php is used (CLI: no `shadow-bpjsonfile=`). The set commands file is always written (CLI: `outputformatset=`); its name is fixed. Settings: `VIEWER_URL`, `VIEWER_USER`, `VIEWER_PROJECT`, `VIEWER_OUT`. It logs in with user and password because an API token belongs to one existing project; for repeated runs in one project use a token (`Authorization: Bearer`, no CSRF header).

@@ -167,12 +167,18 @@ class ViewerApp
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, ts INTEGER NOT NULL, user TEXT, token TEXT, ip TEXT,
             pid TEXT, method TEXT NOT NULL, route TEXT NOT NULL, status INTEGER NOT NULL, detail TEXT)' );
         $this->db->exec( 'CREATE INDEX IF NOT EXISTS audit_pid ON audit (pid, id)' );
+        // settings of the installation an administrator makes (e.g. the predefined playbooks that are offered)
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL)' );
         // grants of a member: types (JSON list, NULL = all offered types) and scope (JSON list of locations, NULL = whole configuration)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(members)' )->fetchAll(), 'name' );
         if( !in_array( 'types', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE members ADD COLUMN types TEXT' );
         if( !in_array( 'scope', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE members ADD COLUMN scope TEXT' );
+        // why a run failed: memory (killed / out of memory), timeout, error
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
+        if( !in_array( 'reason', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE jobs ADD COLUMN reason TEXT' );
         // command line use an administrator has seen (shown once after the login: cliNotices)
         $cols = array_column( $this->db->query( 'PRAGMA table_info(users)' )->fetchAll(), 'name' );
         if( !in_array( 'cli_seen', $cols, TRUE ) )
@@ -813,11 +819,25 @@ class ViewerApp
         }
         if( $type === 'playbook' )
         {
-            // the playbook file of the project, checked again now (PLAYBOOK_* rules); the stage files, the set commands
-            // and the result configuration stay in the folder of the run
-            $pb = $this->fileGet( $p, $in['playbook'] ?? null, 'playbook' );
-            $this->playbookCheck( json_decode( (string)file_get_contents( $pb['path'] ), TRUE ) );
-            $args = array( 'json=%FILES%/' . $pb['file'], 'out=%JOB%/out.xml', 'stagename=stage/step-', 'outputformatset=set-commands.txt' );
+            // a playbook file of the project or a predefined one (turned on by an administrator), checked again now
+            // (PLAYBOOK_* rules); the stage files, the set commands and the result configuration stay in the folder of the run
+            $predefined = $in['predefined'] ?? null;
+            if( $predefined !== null && $predefined !== '' )
+            {
+                if( isset( $in['playbook'] ) && $in['playbook'] !== '' )
+                    throw new ViewerException( 'playbook or predefined - not both', 400 );
+                if( !self::playbookName( $predefined ) || !in_array( $predefined, array_column( $this->playbooksPredefined(), 'name' ), TRUE ) )
+                    throw new ViewerException( 'predefined playbook not offered here (an administrator turns them on)', 400 );
+                $this->playbookCheck( json_decode( (string)file_get_contents( $this->playbookDir() . '/' . $predefined ), TRUE ) );
+                $json = 'json=$$playbook$$/' . $predefined;
+            }
+            else
+            {
+                $pb = $this->fileGet( $p, $in['playbook'] ?? null, 'playbook' );
+                $this->playbookCheck( json_decode( (string)file_get_contents( $pb['path'] ), TRUE ) );
+                $json = 'json=%FILES%/' . $pb['file'];
+            }
+            $args = array_merge( array( $json, 'out=%JOB%/out.xml', 'stagename=stage/step-', 'outputformatset=set-commands.txt' ), self::playbookOptions( $in ) );
         }
         if( $plugin !== null )
         {
@@ -864,7 +884,7 @@ class ViewerApp
     {
         return array( 'jid' => $j['jid'], 'type' => $j['type'], 'cid' => $j['cid'], 'args' => json_decode( $j['args'], TRUE ), 'state' => $j['state'], 'user' => $j['user'],
             'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null,
-            'finished' => $j['finished'] !== null ? (int)$j['finished'] : null, 'error' => $j['error'] );
+            'finished' => $j['finished'] !== null ? (int)$j['finished'] : null, 'error' => $j['error'], 'reason' => $j['reason'] ?? null );
     }
 
     /** result files of a job: names relative to the folder of the job */
@@ -1115,6 +1135,118 @@ class ViewerApp
             WHERE f.project_id = ? ORDER BY f.id DESC', array( $p['id'] ) )->fetchAll();
     }
 
+    /**
+     * Optional arguments of type=playbook for large configurations (PLAYBOOK__.php; utils/api/v1/playbook/README.md):
+     *   subprocess        every step as its own PHP process - its memory is free again after the step (slower)
+     *   memorythreshold   MB: a step runs as its own process when the run uses more than this (memory of the container)
+     *   debugmemory       memory use after every step in run.log
+     *   removestagefiles  remove a stage file once the next step has written its own (less disk / page cache)
+     */
+    const PLAYBOOK_OPTIONS = array( 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles' );
+
+    public static function playbookOptions( array $in ): array
+    {
+        $flag = function( string $k ) use ( $in ) {
+            $v = $in[$k] ?? null;
+            if( $v === null || $v === FALSE || $v === '' || $v === '0' || $v === 0 || $v === 'false' )
+                return FALSE;
+            if( $v === TRUE || $v === '1' || $v === 1 || $v === 'true' )
+                return TRUE;
+            throw new ViewerException( $k . ': true or false', 400 );
+        };
+        $out = array();
+        foreach( array( 'subprocess', 'debugmemory', 'removestagefiles' ) as $k )
+            if( $flag( $k ) )
+                $out[] = $k;
+        $mb = $in['memorythreshold'] ?? null;
+        if( $mb !== null && $mb !== '' && $mb !== 0 && $mb !== '0' )
+        {
+            if( !( is_int( $mb ) || ( is_string( $mb ) && ctype_digit( $mb ) ) ) || (int)$mb < 64 || (int)$mb > 1048576 )
+                throw new ViewerException( 'memorythreshold: MB, 64 - 1048576', 400 );
+            $out[] = 'memorythreshold=' . (int)$mb;
+        }
+        return $out;
+    }
+
+    // ------------------------------------------------------------------ predefined playbooks (shipped with pan-os-php)
+
+    /** offered when nothing was set by an administrator */
+    const PLAYBOOKS_DEFAULT = array( 'visibility.json' );
+
+    /** the playbooks shipped with pan-os-php (utils/api/v1/playbook; a run names them json=$$playbook$$/<name>) */
+    private function playbookDir(): string
+    {
+        return $this->repoDir . '/utils/api/v1/playbook';
+    }
+
+    private static function playbookName( $name ): bool
+    {
+        return is_string( $name ) && preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.json$/', $name ) === 1;
+    }
+
+    /** the predefined playbooks an administrator turned on (default: visibility.json) */
+    private function playbooksOn(): array
+    {
+        $row = $this->q( "SELECT value FROM settings WHERE name = 'playbooks'" )->fetch();
+        $on = $row ? json_decode( $row['value'], TRUE ) : self::PLAYBOOKS_DEFAULT;
+        return is_array( $on ) ? array_values( array_filter( $on, array( self::class, 'playbookName' ) ) ) : array();
+    }
+
+    /**
+     * The predefined playbooks: every one shipped with pan-os-php, whether an administrator turned it on, and whether it
+     * can run here at all (playbookCheck - e.g. no *-merger, no in= / projectfolder). With $all FALSE only the ones a
+     * run can use: turned on and usable.
+     */
+    public function playbooksPredefined( bool $all = FALSE ): array
+    {
+        $on = $this->playbooksOn();
+        $out = array();
+        foreach( glob( $this->playbookDir() . '/*.json' ) ?: array() as $f )
+        {
+            $name = basename( $f );
+            if( !self::playbookName( $name ) || is_link( $f ) )
+                continue;
+            $j = json_decode( (string)file_get_contents( $f ), TRUE );
+            $why = null;
+            try
+            {
+                $this->playbookCheck( $j );
+            }
+            catch( ViewerException $e )
+            {
+                $why = $e->getMessage();
+            }
+            $row = array( 'name' => $name, 'steps' => is_array( $j['command'] ?? null ) ? count( $j['command'] ) : 0, 'on' => in_array( $name, $on, TRUE ) && $why === null,
+                'usable' => $why === null, 'why' => $why );
+            if( $all || $row['on'] )
+                $out[] = $all ? $row : array( 'name' => $name, 'steps' => $row['steps'] );
+        }
+        usort( $out, function( $a, $b ) { return strnatcasecmp( $a['name'], $b['name'] ); } );
+        return $out;
+    }
+
+    /** administrator: the predefined playbooks that are offered (only usable ones) */
+    public function playbooksSet( $names ): array
+    {
+        if( !is_array( $names ) )
+            throw new ViewerException( 'enabled: a list of playbook names', 400 );
+        $known = array();
+        foreach( $this->playbooksPredefined( TRUE ) as $p )
+            $known[$p['name']] = $p;
+        $on = array();
+        foreach( $names as $n )
+        {
+            if( !is_string( $n ) || !isset( $known[$n] ) )
+                throw new ViewerException( 'unknown predefined playbook: ' . ( is_string( $n ) ? substr( $n, 0, 80 ) : '?' ), 400 );
+            if( !$known[$n]['usable'] )
+                throw new ViewerException( $n . ' can not run here - ' . $known[$n]['why'], 400 );
+            $on[$n] = TRUE;
+        }
+        $this->q( "INSERT INTO settings (name, value) VALUES ('playbooks', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value",
+            array( json_encode( array_keys( $on ) ) ) );
+        return $this->playbooksPredefined( TRUE );
+    }
+
     /** upload of a playbook JSON (checked: playbookCheck()) or a BP JSON; stored under a random name */
     public function fileUpload( array $user, $pid, $kind, ?array $upload ): array
     {
@@ -1256,22 +1388,42 @@ class ViewerApp
         return $r ? $r['state'] : null;
     }
 
-    public function runnerFinish( int $id, string $state, ?string $error = null ): void
+    /** $reason of a failed run: 'memory' (killed - out of memory), 'timeout', 'error' */
+    public function runnerFinish( int $id, string $state, ?string $error = null, ?string $reason = null ): void
     {
-        $this->q( "UPDATE jobs SET state = ?, finished = ?, error = ? WHERE id = ? AND state = 'running'", array( $state, time(), $error, $id ) );
+        if( $state === 'failed' && $reason === null )
+            $reason = 'error';
+        $this->q( "UPDATE jobs SET state = ?, finished = ?, error = ?, reason = ? WHERE id = ? AND state = 'running'", array( $state, time(), $error, $reason, $id ) );
+    }
+
+    /**
+     * Why a run ended with an error: out of memory or something else. Out of memory: the process of the run was killed
+     * (exit code 137 / signal 9 - the memory limit of its container or of the computer), a playbook step in a subprocess
+     * was killed (PLAYBOOK__: "most likely out of memory"), or PHP's own memory_limit was reached.
+     * @return array [reason, message]
+     */
+    public static function runFailure( int $exitCode, ?int $signal, string $logTail, ?string $memoryLimit ): array
+    {
+        $killed = $exitCode === 137 || $signal === 9;
+        $oomLog = preg_match( '/most likely out of memory|Allowed memory size of \d+ bytes exhausted|Out of memory \(allocated|exit code 137\b/i', $logTail ) === 1;
+        if( $killed || $oomLog )
+            return array( 'memory', 'out of memory: the run was stopped because it needed more memory than it may use'
+                . ( $memoryLimit !== null ? ' (limit per run: ' . $memoryLimit . ' - setting VIEWER_RUN_MEMORY)' : '' )
+                . '. For a playbook: options "subprocess" or "memory threshold"; see run.log' );
+        return array( 'error', 'pan-os-php ended with an error (see run.log)' );
     }
 
     /** after a restart of the runner: nothing is running any more */
     public function runnerReset(): void
     {
-        $this->q( "UPDATE jobs SET state = 'failed', finished = ?, error = 'the job runner was stopped' WHERE state = 'running'", array( time() ) );
+        $this->q( "UPDATE jobs SET state = 'failed', finished = ?, error = 'the job runner was stopped', reason = 'error' WHERE state = 'running'", array( time() ) );
     }
 
     // ------------------------------------------------------------------ audit log
 
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
-        'name', 'playbook', 'bp', 'admin', 'kind' );
+        'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void

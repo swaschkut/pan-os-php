@@ -105,8 +105,20 @@ while( !$stop )
         $state = $app->runnerState( $id );
         if( !$st['running'] )
         {
-            proc_close( $r['proc'] );
-            $app->runnerFinish( $id, $st['exitcode'] === 0 ? 'done' : 'failed', $st['exitcode'] === 0 ? null : 'pan-os-php ended with an error (see run.log)' );
+            $code = proc_close( $r['proc'] );
+            // proc_get_status reports the exit code only once; proc_close gives it when the status had none (-1)
+            $exit = $st['exitcode'] !== -1 ? (int)$st['exitcode'] : (int)$code;
+            if( $exit === 0 && empty( $st['signaled'] ) )
+                $app->runnerFinish( $id, 'done' );
+            else
+            {
+                // out of memory (killed: exit code 137 / signal 9, or the log says so) is told apart from other errors
+                $log = $r['dir'] . '/run.log';
+                $tail = is_file( $log ) ? (string)file_get_contents( $log, FALSE, null, max( 0, filesize( $log ) - 65536 ) ) : '';
+                list( $reason, $msg ) = ViewerApp::runFailure( $exit, !empty( $st['signaled'] ) ? (int)$st['termsig'] : null, $tail,
+                    $container !== null ? $container->memory : null );
+                $app->runnerFinish( $id, 'failed', $msg, $reason );
+            }
             unset( $running[$id] );
         }
         elseif( $state !== 'running' )
@@ -119,7 +131,7 @@ while( !$stop )
         elseif( time() - $r['started'] > $timeout )
         {
             jobsKill( $r['proc'], $r['jid'] );
-            $app->runnerFinish( $id, 'failed', 'stopped after ' . $timeout . ' seconds' );
+            $app->runnerFinish( $id, 'failed', 'stopped after ' . $timeout . ' seconds (setting PANOSPHP_VIEWER_JOB_TIMEOUT)', 'timeout' );
             unset( $running[$id] );
         }
     }

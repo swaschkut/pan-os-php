@@ -3,6 +3,10 @@
 #
 #   VIEWER_PASSWORD='...' ./viewer-playbook-run.sh panorama.xml visibility.json [bp.json]
 #
+# The playbook: a file here is uploaded into the project; a name that is no file here (visibility.json, or
+# '$$playbook$$/visibility.json' as with the CLI) is a predefined playbook of pan-os-php - an administrator of the
+# viewer turns them on (visibility.json is on by default).
+#
 # Environment: VIEWER_URL (default http://127.0.0.1:8080), VIEWER_USER (default admin), VIEWER_PASSWORD,
 #              VIEWER_PROJECT (project name, default "api-<date>"), VIEWER_OUT (folder for the results, default .)
 # Needs curl and jq.
@@ -37,11 +41,18 @@ echo "project   $PID"
 # 3. configuration, playbook, optional BP JSON
 CID="$(call POST "projects/$PID/configs" -F "config=@$CONFIG;type=text/xml" | jq -r .cid)"
 echo "version   $CID"
-PB="$(call POST "projects/$PID/files?kind=playbook" -F "file=@$PLAYBOOK;type=application/json" | jq -r .fid)"
-RUN_BODY="$(jq -n --arg pb "$PB" '{playbook:$pb}')"
+if [ -f "$PLAYBOOK" ]; then
+    PB="$(call POST "projects/$PID/files?kind=playbook" -F "file=@$PLAYBOOK;type=application/json" | jq -r .fid)"
+    RUN_BODY="$(jq -n --arg pb "$PB" '{playbook:$pb}')"
+    echo "playbook  $PLAYBOOK (uploaded)"
+else
+    NAME="${PLAYBOOK#\$\$playbook\$\$/}"
+    RUN_BODY="$(jq -n --arg n "$NAME" '{predefined:$n}')"
+    echo "playbook  $NAME (predefined)"
+fi
 if [ -n "$BP" ]; then
     BPF="$(call POST "projects/$PID/files?kind=bp" -F "file=@$BP;type=application/json" | jq -r .fid)"
-    RUN_BODY="$(jq -n --arg pb "$PB" --arg bp "$BPF" '{playbook:$pb,bp:$bp}')"
+    RUN_BODY="$(echo "$RUN_BODY" | jq --arg bp "$BPF" '. + {bp:$bp}')"
 fi
 
 # 4. run (without "bp": the BP JSON shipped with pan-os-php)

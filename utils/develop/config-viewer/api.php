@@ -19,7 +19,7 @@
 
 /**
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
- *   POST login, POST logout, GET me, POST password, GET meta
+ *   POST login, POST logout, GET me, POST password, GET meta, GET playbooks, GET playbooks?all=1 + PUT playbooks (admin)
  *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
  *   GET projects/<pid>/audit                                              (owner)
  *   GET|POST projects, GET|DELETE projects/<pid>
@@ -199,6 +199,23 @@ try
         $app->userSetPassword( (int)$user['id'], $b['new'] ?? null );
         session_regenerate_id( TRUE );
         viewerOut( array( 'ok' => TRUE ) );
+    }
+    // predefined playbooks (shipped with pan-os-php): everybody gets the offered ones; an administrator all of them
+    // (?all=1: on / usable / why not) and turns them on
+    if( $r0 === 'playbooks' && count( $route ) === 1 )
+    {
+        if( $method === 'GET' )
+        {
+            if( !empty( $_GET['all'] ) && !$admin )
+                throw new ViewerException( 'not found', 404 );
+            viewerOut( array( 'playbooks' => $app->playbooksPredefined( !empty( $_GET['all'] ) ) ) );
+        }
+        if( $method === 'PUT' )
+        {
+            if( !$admin )
+                throw new ViewerException( 'not found', 404 );
+            viewerOut( array( 'playbooks' => $app->playbooksSet( viewerBody()['enabled'] ?? null ) ) );
+        }
     }
     if( $key === 'GET meta' )
         viewerOut( $app->meta() + array( 'plugins' => $app->pluginMeta( $admin ) ) );

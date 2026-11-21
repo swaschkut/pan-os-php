@@ -48,7 +48,7 @@ ask() {   # ask <question> <default> -> answer (default when there is no termina
 
 setup() {
     say "Settings of the config viewer (Enter keeps the value in [brackets])."
-    local port https domain tls certs mode image
+    local port https domain tls certs mode image k v re runlimits=''
     image="$(setting VIEWER_IMAGE)"; image="${image:-${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}}"
     say ""
     say "Who uses the viewer?"
@@ -79,6 +79,15 @@ setup() {
         port="$(ask "port" "$(setting VIEWER_PORT)")"; port="${port:-8080}"
         [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ] || fail "port: a number 1-65535"
     fi
+    for k in VIEWER_RUN_MEMORY VIEWER_RUN_CPUS VIEWER_RUN_TIMEOUT; do
+        v="$(setting "$k")"
+        case "$k" in
+            VIEWER_RUN_MEMORY) re='^[0-9]+[bkmg]?$' ;; VIEWER_RUN_CPUS) re='^[0-9]+(\.[0-9]+)?$' ;; *) re='^[0-9]+$' ;;
+        esac
+        [ -z "$v" ] || [[ "$v" =~ $re ]] || fail "$k: not a valid value ($v) - e.g. VIEWER_RUN_MEMORY=4g, VIEWER_RUN_CPUS=2, VIEWER_RUN_TIMEOUT=7200"
+        # limits of one run - kept when the questions are answered again (read now: the file is rewritten below)
+        if [ -n "$v" ]; then runlimits+="$k=$v"$'\n'; else runlimits+="# $k="$'\n'; fi
+    done
     mkdir -p "$PLUGINS"
     umask 077
     {
@@ -90,6 +99,8 @@ setup() {
         echo "VIEWER_TLS=\"$tls\""
         [ -n "$certs" ] && echo "VIEWER_CERTS=$certs"
         echo "VIEWER_PLUGINS_DIR=$PLUGINS"
+        # limits of one run (large configurations: VIEWER_RUN_MEMORY=4g or more), then ./panosphp-viewer restart
+        printf '%s' "$runlimits"
     } > "$ENV_FILE"
     chmod 600 "$ENV_FILE"
     say ""

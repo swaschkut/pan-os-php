@@ -151,6 +151,13 @@ list( $code, $out ) = pv( array( 'setup' ), array( 'VIEWER_HTTPS' => 'yes', 'VIE
 eq( array( $code !== 0, strpos( $out, 'no cert.pem / key.pem' ) !== FALSE, env( 'VIEWER_DOMAIN' ) ), array( TRUE, TRUE, 'viewer.example.com' ), 'setup: own certificate without files is refused, settings stay' );
 unlink( $dir . '/.env' );
 pv( array( 'setup' ) );
+// limits of a run: kept when setup runs again, checked
+file_put_contents( $dir . '/.env', "VIEWER_RUN_MEMORY=6g\n", FILE_APPEND );
+list( $code ) = pv( array( 'setup' ) );
+eq( array( $code, env( 'VIEWER_RUN_MEMORY' ), strpos( (string)file_get_contents( $dir . '/.env' ), '# VIEWER_RUN_CPUS=' ) !== FALSE ), array( 0, '6g', TRUE ),
+    'setup: VIEWER_RUN_MEMORY kept, the other limits as comments' );
+list( $code, $out ) = pv( array( 'setup' ), array( 'VIEWER_RUN_MEMORY' => 'lots' ) );
+eq( array( $code !== 0, strpos( $out, 'VIEWER_RUN_MEMORY: not a valid value' ) !== FALSE, env( 'VIEWER_RUN_MEMORY' ) ), array( TRUE, TRUE, '6g' ), 'setup: a wrong limit is refused, the settings stay' );
 
 // ---- after the setup: no changes on the command line (users, passwords, projects, tokens: in the browser)
 list( $code, $out, $calls ) = pv( array( 'password', 'admin' ) );
