@@ -241,3 +241,12 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
       first ones are read), device settings (/config/device/v1 ...: to check on pan.dev which ones exist)
   - viewer: a menu entry "System" with the sections as read-only windows; secrets (hashes, keys, PSK) never shown;
     then changes through config-section set / add-member (reviewed per section in action-classes.json)
+
+* **SCM tab** (concept 2026-11-22: SCM_TAB.md) - a tab SCM per project (one tenant / TSG): Prisma Access (egress IP,
+  infrastructure, service connections, remote networks, mobile users GlobalProtect / PAA / gateway, explicit proxy,
+  Prisma Browser), Identity & Access (service accounts), CIE, config versions + push status, variables, deployment
+  (locations, bandwidth, BGP, traffic steering), trusted tenants, licences / instances, insights, audit logs, BPA.
+  Data: import of a scm_pa_export directory (versioned), live refresh per page with the personal key, compare of two
+  states; later an as-is report. Changes only through change files + review per area + live compare right before the
+  upload (conflicts, e.g. an address of the same name created meanwhile) + scm_pa_change.php - never directly.
+  Built: egress IP on the CLI (scm_egress_ip.php, SCMEgressIP). Next: the tab with Egress IP (import, live, compare).
