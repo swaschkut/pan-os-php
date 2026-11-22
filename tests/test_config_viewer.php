@@ -62,6 +62,7 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
 // an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
 require_once $here . '/../lib/misc-classes/PluginLicense.php';
 require_once $here . '/../lib/misc-classes/PluginPackage.php';
+require_once $here . '/../lib/misc-classes/SupportFile.php';
 require_once $here . '/plugin_license_helper.php';
 $licKeys = testLicenceKeys();
 $pkFiles = array( 'plugin.php' => "<?php return array( 'api' => 1, 'name' => 'pack', 'title' => 'Packed', 'version' => '1.0', 'feature' => 'test-pack',
@@ -77,6 +78,9 @@ $pkRel = testPack( $plugins, 'pack', '1.0', 'test-pack', $pkFiles );
 // ---- users, server
 $env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => getenv('PATH'), 'PANOSPHP_VIEWER_AUTOSAVE_MIN' => '1', 'PANOSPHP_VIEWER_PLUGINS' => $plugins,
     'PANOSPHP_LICENSE_TEST_KEYS' => testTrustedJson( $licKeys ) );
+// the support key of the test: support files of the runs are encrypted for it (SupportFile)
+$supportKey = SupportFile::keygen( 'test-support' );
+$env['PANOSPHP_SUPPORT_TEST_KEYS'] = json_encode( array( 'keys' => array( $supportKey['public'] ) ) );
 // the command line makes users only until there is an administrator: alice (admin) last
 foreach( array( 'bob' => 'bob-secret-12', 'carol' => 'carol-secret-3', 'alice' => 'alice-secret-1 admin' ) as $name => $spec )
 {
@@ -1039,6 +1043,40 @@ eq( array( strpos( $kc['subject'] ?? '', 'object-merger run ' ) === 0, $kc['chan
     strpos( json_encode( $kc ), 'out.xml' ) === FALSE, ( end( $ko['history']['commits'] )['subject'] ?? '' ) !== ( $kc['subject'] ?? '' ) ),
     array( TRUE, 'object-merger', TRUE, TRUE, TRUE, TRUE ),
     'merger result: the kept object has the run in its history (Merged: removed -> kept), on top of the history of the version it ran on' );
+// ---- support file: the case (this merger run), excerpt, project data, browser errors - encrypted for the support key
+$mjid = basename( $mrun );
+$r = $alice->call( 'POST', $JC . '/support-file/runs', array( 'run' => $mjid, 'note' => 'web merged wrongly', 'browser' => array( array( 'kind' => 'api', 'text' => 'GET x -> 500' ) ) ) );
+eq( array( status( $r ), in_array( 'out=%JOB%/support.tsf', $r[1]['args'] ?? array(), TRUE ), in_array( 'report=%JOB%/.support/merger.json', $r[1]['args'] ?? array(), TRUE ),
+    in_array( 'result=%JOB%/.support/out.xml', $r[1]['args'] ?? array(), TRUE ) ), array( 202, TRUE, TRUE, TRUE ), 'support file: queued with the case of the merger run' );
+$sr = waitRun( $alice, $J . '/runs/' . $r[1]['jid'] );
+$tsf = (string)$alice->call( 'GET', $J . '/runs/' . $r[1]['jid'] . '/files/support.tsf' )[1];
+$zipBytes = null;
+try { $zipBytes = SupportFile::decrypt( $tsf, $supportKey['secret'] ); } catch( Exception $e ) { echo "   (support file: " . $e->getMessage() . ")
+"; }
+$zf = tempnam( sys_get_temp_dir(), 'tz' ); file_put_contents( $zf, (string)$zipBytes );
+$z = new ZipArchive(); $zin = array();
+if( $z->open( $zf ) === TRUE ) { for( $i = 0; $i < $z->numFiles; $i++ ) $zin[$z->getNameIndex( $i )] = $z->getFromIndex( $i ); $z->close(); }
+@unlink( $zf );
+$man = json_decode( $zin['manifest.json'] ?? '', TRUE );
+eq( array( $sr[1]['state'] ?? null, strpos( $tsf, SupportFile::MAGIC ) === 0, isset( $zin['config/excerpt-before.xml'], $zin['config/excerpt-after.xml'], $zin['case/report.json'], $zin['viewer/run.json'], $zin['viewer/project.json'], $zin['viewer/browser.json'], $zin['config/hierarchy.json'] ),
+    $man['note'] ?? null, json_decode( $zin['viewer/run.json'] ?? '', TRUE )['type'] ?? null, strpos( implode( '', $zin ), 'alice-secret' ), in_array( '.support/extra/run.json', array_column( $sr[1]['files'] ?? array(), 'name' ), TRUE ) ),
+    array( 'done', TRUE, TRUE, 'web merged wrongly', 'object-merger', FALSE, FALSE ), 'support file: encrypted, excerpt before / after, report, run, project, browser errors; the staging is not a file of the run' );
+$r = $alice->call( 'POST', $JC . '/support-file/runs', array( 'run' => $mjid, 'anonymize' => TRUE, 'full' => TRUE ) );
+$sr = waitRun( $alice, $J . '/runs/' . $r[1]['jid'] );
+$zipBytes = '';
+try { $zipBytes = SupportFile::decrypt( (string)$alice->call( 'GET', $J . '/runs/' . $r[1]['jid'] . '/files/support.tsf' )[1], $supportKey['secret'] ); } catch( Exception $e ) {}
+$map = $alice->call( 'GET', $J . '/runs/' . $r[1]['jid'] . '/files/mapping-SENSITIVE.json' )[1];
+$map = is_string( $map ) ? json_decode( $map, TRUE ) : $map;
+$zf = tempnam( sys_get_temp_dir(), 'tz' ); file_put_contents( $zf, $zipBytes );
+$zin = array();
+if( $z->open( $zf ) === TRUE ) { for( $i = 0; $i < $z->numFiles; $i++ ) $zin[$z->getNameIndex( $i )] = $z->getFromIndex( $i ); $z->close(); }
+@unlink( $zf );
+$all = implode( "\n", $zin );
+$leak = array_filter( array_keys( (array)( $map['names'] ?? array() ) ), function( $n ) use ( $all ) { return strlen( $n ) >= 4 && preg_match( '/[>"]' . preg_quote( $n, '/' ) . '[<"]/', $all ); } );
+eq( array( $sr[1]['state'] ?? null, count( (array)( $map['names'] ?? array() ) ) > 0, isset( $zin['config/full-before.xml'], $zin['config/full-after.xml'] ), count( preg_grep( '/mapping/', array_keys( $zin ) ) ),
+    strpos( $all, '"Merger"' ), array_values( $leak ) ), array( 'done', TRUE, TRUE, 0, FALSE, array() ), 'support file anonymised + whole configuration: the mapping is a file of the run (never in the support file), no project name, no original name' );
+$r = $alice->call( 'POST', $JC . '/support-file/runs', array( 'run' => 'ffffffffffffffffffffffffffffffff' ) );
+eq( status( $r ), 404, 'support file: the run must be one of the project' );
 $r = $alice->call( 'POST', $JC . '/rule-merger/runs', array( 'location' => 'any', 'method' => 'matchFromToSrcDstApp', 'rulebase' => 'pre', 'stopmergingifdenyseen' => TRUE, 'additionalmatch' => array( 'tag' ) ) );
 eq( $r[1]['args'] ?? null, array( 'location=any', 'out=%JOB%/out.xml', 'method=matchFromToSrcDstApp', 'panoramaPreRules', 'stopMergingIfDenySeen=yes', 'additionalMatch=tag', 'exportjson=merger.json', 'exportcsv=merger.html' ), 'rule-merger: arguments' );
 $r = waitRun( $alice, $J . '/runs/' . $r[1]['jid'] );

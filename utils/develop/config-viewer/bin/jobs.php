@@ -123,6 +123,9 @@ function jobsStart( array $job, int $n )
     // tests only: the extra licence keys of the test (lib/misc-classes/PluginLicense.php)
     if( getenv( 'PANOSPHP_LICENSE_TEST_KEYS' ) )
         $env['PANOSPHP_LICENSE_TEST_KEYS'] = (string)getenv( 'PANOSPHP_LICENSE_TEST_KEYS' );
+    // tests only: the support key of the test (lib/misc-classes/SupportFile.php)
+    if( getenv( 'PANOSPHP_SUPPORT_TEST_KEYS' ) )
+        $env['PANOSPHP_SUPPORT_TEST_KEYS'] = (string)getenv( 'PANOSPHP_SUPPORT_TEST_KEYS' );
     if( $container !== null )
     {
         try

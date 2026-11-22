@@ -14,6 +14,7 @@ under development.
 
 | Area | Topic | Status | File |
 |---|---|---|---|
+| support | **support file** (`type=support-file` / `support-file-read`, viewer tab Support file): encrypted for the support key, excerpt of the configuration for the objects (hierarchy, every copy, groups, members, rules - before / after, loadable), case of the run, project data, browser errors; anonymised optional (mapping stays with the customer); key pair in the licence tool | base + merger case + reader built 2026-11-22; open: open it in the viewer, other run types, SCM / templates, upload | [todo/support-file.md](todo/support-file.md) |
 | rule-compare | switch `type=rule-compare` to `RuleResolver` (more fields, IPv6, EDL, other rule types) | planned, open decisions | [todo/rule-compare-ruleresolver.md](todo/rule-compare-ruleresolver.md) |
 | panorama-move | move device groups from one Panorama to another (`type=panorama-move`) | implemented on `alpha`; scheduled config push and `auto-push` / `to-sw-version` of moved firewalls: not transferred, report only (2026-11-19, xpath of the scheduled config push to verify with a real configuration); open items: predefined profile names, name length / characters (concept section 11) | [todo/panorama-move-concept.md](todo/panorama-move-concept.md) |
 | SCM | Panorama → SCM migration firewall by firewall | concept; step 2 (onboarding) is new | [todo/scm-panorama-migration.md](todo/scm-panorama-migration.md) |

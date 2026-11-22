@@ -34,6 +34,15 @@ function message(text, kind) {
 function fmtTime(ts) { return ts ? new Date(ts * 1000).toLocaleString() : ''; }
 function fmtSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.ceil(n / 1024) + ' kB'; }
 
+// ---- errors of this page for a support file (the last 100: script errors, refused API calls) - only in memory
+const browserErrors = [];
+function browserError(kind, text) {
+    browserErrors.push({ time: new Date().toISOString(), kind, text: String(text).slice(0, 2000), page: location.hash.split('&')[0].slice(0, 200) });
+    if (browserErrors.length > 100) browserErrors.shift();
+}
+window.addEventListener('error', (ev) => browserError('script', (ev.message || 'error') + (ev.filename ? ' at ' + ev.filename.split('/').pop() + ':' + ev.lineno + ':' + ev.colno : '')));
+window.addEventListener('unhandledrejection', (ev) => browserError('promise', ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason)));
+
 async function api(method, path, body) {
     const opt = { method, credentials: 'same-origin', headers: {} };
     if (method !== 'GET' && state.csrf) opt.headers['X-CSRF-Token'] = state.csrf;
@@ -43,7 +52,11 @@ async function api(method, path, body) {
     let data = null;
     try { data = await res.json(); } catch (e) { data = null; }
     if (res.status === 401 && state.user) { leave(); showLogin(); throw new Error('session ended - please log in again'); }
-    if (!res.ok) { const e = new Error(data && data.error ? data.error : 'request failed (' + res.status + ')'); if (data && data.details) e.details = data.details; throw e; }
+    if (!res.ok) {
+        const e = new Error(data && data.error ? data.error : 'request failed (' + res.status + ')'); if (data && data.details) e.details = data.details;
+        browserError('api', method + ' ' + path.split('?')[0] + ' -> ' + res.status + ': ' + e.message);
+        throw e;
+    }
     return data;
 }
 async function run(fn) {
@@ -853,6 +866,7 @@ async function showProject(pid) {
     if (canWrite && !limited) ldapCard = await ldapTab(base, pid, p, owner, configs.configs);
     // ---- Merger: object-merger / rule-merger / merger-possible-report as runs, their report as tables
     const mergerCard = !limited && configs.configs.length ? await mergerTab(base, pid, canWrite, configs.configs) : null;
+    const supportCardEl = canWrite && !limited && configs.configs.length ? await supportCard(base, configs.configs) : null;
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
@@ -864,6 +878,7 @@ async function showProject(pid) {
             ['runs', 'Runs and project files', [runsCard, filesCard]],
             mergerCard ? ['merger', 'Merger', [mergerCard]] : null,
             ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
+            supportCardEl ? ['support', 'Support file', [supportCardEl]] : null,
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now
     if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
@@ -1380,6 +1395,9 @@ async function showMergerReport(base, r, out) {
     [...typesSeen].sort().forEach(t => typeSel.append(el('option', { value: t, text: t })));
     out.dataset.jid = r.jid;
     out.replaceChildren(el('h3', { text: 'Report: ' + r.type + ' - ' + fmtTime(r.started) }),
+        state.project && state.project.role !== 'read' ? el('p', {}, el('button', { type: 'button', class: 'small', text: 'Support file for this run',
+            title: 'a support file for the support of pan-os-php with this run, its report and the objects of the report', onclick: () => run(async () => {
+                state.supportPreset = { cid: r.cid, run: r.jid }; state.projectTab = state.projectTab || {}; state.projectTab[pid] = 'support'; await showProject(pid); }) })) : null,
         el('p', {}, el('span', { class: 'muted', text: 'Settings: ' }), el('code', { text: ['type=' + r.type].concat(mergerSettings(r)).join(' ') })),
         el('div', { class: 'row' }, typesSeen.size > 0 ? field('Object type', typeSel) : null,
             rep.type === 'merger-possible-report' ? field('Merge', statusSel) : null, field('Filter', filterBox),
@@ -1420,6 +1438,63 @@ async function exportPlaybook(pid, cid, source, canWrite) {
             el('button', { type: 'button', text: 'Close', onclick: close })));
     document.addEventListener('keydown', onKey);
     document.body.append(overlay);
+}
+
+// ---------------------------------------------------------------- support file of a project (todo/support-file.md)
+// a run of pan-os-php type=support-file: encrypted for the support of pan-os-php - environment, the case (a run: its
+// settings, report, result), an excerpt of the configuration for the names (every copy in every location, groups,
+// members, rules - before / after), project data, logs, the errors of this page; options: the whole configuration,
+// anonymised (the mapping stays here: a file of the run, never in the support file)
+async function supportCard(base, configs, preset) {
+    preset = preset || state.supportPreset || {};
+    state.supportPreset = null;
+    const runs = (await api('GET', base + '/runs')).runs;
+    const ver = el('select', {}, configs.map(c => el('option', { value: c.cid, text: c.name + ' (' + fmtTime(c.created) + ')' })));
+    if (preset.cid) ver.value = preset.cid;
+    const caseRun = el('select', {});
+    const fillRuns = () => {
+        const list = runs.filter(r => r.cid === ver.value && r.type !== 'support-file' && (r.state === 'done' || r.state === 'failed'));
+        caseRun.replaceChildren(el('option', { value: '', text: '- no run (general problem) -' }), ...list.map(r => el('option', { value: r.jid, text: r.type + ' ' + r.jid.slice(0, 8) + ' - ' + r.state + ', ' + fmtTime(r.created) })));
+        if (preset.run && list.some(r => r.jid === preset.run)) caseRun.value = preset.run;
+    };
+    ver.addEventListener('change', fillRuns); fillRuns();
+    const names = el('textarea', { rows: 2, spellcheck: false, placeholder: 'optional: object names, comma separated (the names of the report are taken anyway: not merged / blocked ones, merged ones up to 200)' });
+    if (preset.names) names.value = preset.names;
+    const note = el('textarea', { rows: 3, maxlength: 4000, placeholder: 'what is wrong - e.g. "web1 was merged into web2, but DG-B uses its own web1"' });
+    const rules = el('input', { type: 'checkbox', checked: true }), full = el('input', { type: 'checkbox' }), anon = el('input', { type: 'checkbox' }), keepPriv = el('input', { type: 'checkbox' });
+    const list = el('div', {});
+    const drawList = () => {
+        const mine = runs.filter(r => r.type === 'support-file');
+        list.replaceChildren(mine.length ? table(['Made', 'By', 'State', 'Files'], mine.map(r => el('tr', {}, el('td', { text: fmtTime(r.created) }), el('td', { text: r.user || '' }),
+            el('td', {}, el('span', { class: 'badge' + (r.state === 'failed' ? ' dirty' : ''), text: r.state }), r.error ? ' ' + r.error : ''),
+            el('td', {}, r.state === 'done' || r.state === 'failed' ? el('span', {},
+                r.state === 'done' ? el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/support.tsf', text: 'support.tsf' }) : null, ' ',
+                el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/run.log', text: 'run.log' }), ' ',
+                (r.args || []).some(a => /^mapping=/.test(a)) && r.state === 'done' ? el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/mapping-SENSITIVE.json', class: 'warn', text: 'mapping (keep it - never send it)' }) : null)
+                : el('span', { class: 'muted', text: 'running ...' })))))
+            : el('p', { class: 'muted', text: 'No support file yet.' }));
+    };
+    drawList();
+    return el('div', { class: 'card' }, el('h2', { text: 'Support file' }),
+        el('p', { class: 'muted', text: 'For a problem you want the support of pan-os-php to look at: a file you send them (mail, upload). It is encrypted - only the support of pan-os-php can open it. It never contains API keys, the key store, passwords or keys of the configuration (always replaced), sessions or licence keys.' }),
+        el('form', { onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            const body = { run: caseRun.value, names: names.value.trim(), note: note.value.trim(), rules: rules.checked, full: full.checked, anonymize: anon.checked,
+                ip: keepPriv.checked ? 'keep-private' : 'remap', browser: browserErrors.slice(-100) };
+            if (full.checked && !anon.checked && !confirm('The whole configuration goes into the support file - not anonymised (secrets are replaced). Go on?')) return;
+            const r = await api('POST', base + '/configs/' + ver.value + '/support-file/runs', body);
+            message('support file is being made - it appears below'); runs.unshift(r); drawList();
+            const t = setInterval(async () => { const x = await api('GET', base + '/runs/' + r.jid).catch(() => null);
+                if (x && (x.state === 'done' || x.state === 'failed')) { clearInterval(t); const i = runs.findIndex(y => y.jid === r.jid); if (i >= 0) runs[i] = x; drawList(); } }, 1500);
+            state.timers.push(t);
+        }); } },
+            el('div', { class: 'row' }, field('Version', ver), field('The run with the problem', caseRun)),
+            el('div', { class: 'row' }, el('label', { class: 'grow' }, 'Objects (names)', names)),
+            el('div', { class: 'row' }, el('label', { class: 'grow' }, 'What is the problem', note)),
+            el('div', { class: 'row' }, field('Rules that use the objects', rules), field('The whole configuration (before / after)', full),
+                field('Anonymise everything', anon), field('… keep private IP addresses', keepPriv)),
+            el('p', { class: 'muted', text: 'Always in it: versions of pan-os-php / PHP, the settings of the run, its report and log, the hierarchy (device groups / templates), every copy of the objects in every location with the groups that hold them and their members - before and after the run -, project data (versions, last runs, audit of the project) and the last errors of this page. Anonymised: names, addresses and texts become pseudonyms everywhere; the mapping stays here (a file of the run) - keep it, never send it.' }),
+            el('button', { class: 'primary', type: 'submit', text: 'Make the support file' })),
+        el('h3', { text: 'Support files of this project' }), list);
 }
 
 // ---------------------------------------------------------------- tabs of a project (the chosen one is kept per project)

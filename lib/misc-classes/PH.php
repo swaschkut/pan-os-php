@@ -2411,7 +2411,9 @@ class PH
         "device-config-bundle",
         "config-section",
         "master-key",
-        "config-anonymize"
+        "config-anonymize",
+        "support-file",
+        "support-file-read"
         );
 
 
@@ -2449,7 +2451,9 @@ class PH
         "device-config-bundle",
         "config-section",
         "master-key",
-        "config-anonymize"
+        "config-anonymize",
+        "support-file",
+        "support-file-read"
     );
 
     /**
@@ -2678,6 +2682,9 @@ class PH
 
         elseif( $type == "config-anonymize" )
             $util = new CONFIG_ANONYMIZE__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "support-file" || $type == "support-file-read" )
+            $util = new SUPPORTFILE__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "ssh-connector" )
             $util = new SSH_CONNECTOR__( $type, $argv, $argc, $PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);

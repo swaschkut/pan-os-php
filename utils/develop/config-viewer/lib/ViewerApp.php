@@ -1754,7 +1754,7 @@ class ViewerApp
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
     const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover',
-        'object-merger', 'rule-merger', 'merger-possible-report' );
+        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file' );
     /** the mergers of the Merger tab: their arguments (checked here, the merger checks their combination again) */
     const MERGER_OBJECTTYPES = array( 'tag', 'address', 'service', 'edl', 'region', 'application-custom', 'application-filter', 'addressgroup',
         'servicegroup', 'application-group', 'custom-url-category', 'schedule', 'log-profile', 'decryption-profile', 'hip-object', 'hip-profile',
@@ -2172,9 +2172,108 @@ class ViewerApp
         if( $open >= self::JOB_QUEUE_MAX )
             throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
         $jid = self::randomId();
+        // a support file: what goes in is put next to the run now (hidden folder .support of the run)
+        if( $type === 'support-file' )
+            $args = $this->supportStage( $user, $p, $c, $jid, $in );
         $this->q( 'INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created) VALUES (?,?,?,?,?,?,?,?)',
             array( $jid, $p['id'], $c['id'], $user['id'], $type, json_encode( $args ), 'queued', time() ) );
         return $this->jobGet( $user, $pid, $jid );
+    }
+
+    /**
+     * a support file (todo/support-file.md): pan-os-php type=support-file on the version, with - in the hidden folder
+     * .support of the run - the files of the viewer for it: the case (a run of the project: its settings, report,
+     * result, run.log), project and versions, the last runs, the audit of the project, the browser errors the page
+     * collected, the environment of the viewer. Never in it: API keys, the key store, passwords, sessions, licence keys,
+     * other projects. Options: names (objects for the excerpt), rules, full (the whole configuration), anonymize (the
+     * mapping is a file of the run - for the customer only, never in the support file), note.
+     */
+    private function supportStage( array $user, array $p, array $c, string $jid, array $in ): array
+    {
+        $this->projectGet( $user, $p['pid'], 'write' );
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
+        if( !class_exists( 'SupportFile' ) )
+            require_once $this->repoDir . '/lib/misc-classes/SupportFile.php';
+        try
+        {
+            SupportFile::currentKey();
+        }
+        catch( Exception $e )
+        {
+            throw new ViewerException( $e->getMessage(), 400 );
+        }
+        $stage = $this->jobDir( $p, $jid ) . '/.support';
+        if( !is_dir( $stage . '/extra' ) && !@mkdir( $stage . '/extra', 0700, TRUE ) )
+            throw new ViewerException( 'the folder of the run can not be created', 500 );
+        $put = function( string $name, $data ) use ( $stage ) {
+            file_put_contents( $stage . '/extra/' . $name, is_string( $data ) ? $data : json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" );
+        };
+        $args = array( 'out=%JOB%/support.tsf', 'extra=%JOB%/.support/extra' );
+        // the case: a run of this project on this version
+        if( isset( $in['run'] ) && $in['run'] !== '' && $in['run'] !== null )
+        {
+            $r = $this->jobRow( $p, $in['run'] );
+            if( (int)$r['config_id'] !== (int)$c['id'] )
+                throw new ViewerException( 'run: a run on this version', 400 );
+            $rdir = $this->jobDir( $p, $r['jid'] );
+            $put( 'run.json', array( 'jid' => $r['jid'], 'type' => $r['type'], 'args' => array_values( array_filter( (array)json_decode( $r['args'], TRUE ), function( $a ) {
+                    return is_string( $a ) && strpos( $a, 'x-' ) !== 0; } ) ), 'state' => $r['state'], 'error' => $r['error'], 'created' => (int)$r['created'],
+                'started' => $r['started'] !== null ? (int)$r['started'] : null, 'finished' => $r['finished'] !== null ? (int)$r['finished'] : null ) );
+            foreach( glob( $rdir . '/run*.log' ) ?: array() as $f )
+                if( is_file( $f ) && !is_link( $f ) && filesize( $f ) < 50000000 )
+                    $put( basename( $f ), $this->hidePaths( (string)file_get_contents( $f ) ) );
+            foreach( array( 'merger.json' => 'report', 'out.xml' => 'result' ) as $f => $arg )
+                if( is_file( $rdir . '/' . $f ) && !is_link( $rdir . '/' . $f ) && copy( $rdir . '/' . $f, $stage . '/' . $f ) )
+                    $args[] = $arg . '=%JOB%/.support/' . $f;
+        }
+        // project, versions, last runs, audit of the project - without the names of other users
+        // anonymised: no names of the project / the versions (often the name of the customer)
+        $anonymous = !empty( $in['anonymize'] ) && $in['anonymize'] !== 'false';
+        $vn = 0;
+        $put( 'project.json', array( 'name' => $anonymous ? 'project' : $p['name'], 'pid' => $p['pid'], 'created' => (int)( $p['created'] ?? 0 ),
+            'versions' => array_map( function( $v ) use ( $anonymous, &$vn ) { $vn++; return array( 'name' => $anonymous ? 'version-' . $vn : $v['name'], 'size' => (int)( $v['size'] ?? 0 ),
+                    'note' => $anonymous ? '' : ( $v['note'] ?? '' ), 'created' => (int)( $v['created'] ?? 0 ), 'cid' => $v['cid'] ); },
+                $this->q( 'SELECT * FROM configs WHERE project_id = ? ORDER BY id', array( $p['id'] ) )->fetchAll() ),
+            'version' => array( 'name' => $anonymous ? '' : ( $c['name'] ?? '' ), 'cid' => $c['cid'] ?? '' ) ) );
+        $put( 'runs.json', array_map( function( $j ) { return array( 'jid' => $j['jid'], 'type' => $j['type'], 'state' => $j['state'], 'error' => $j['error'],
+                'created' => (int)$j['created'], 'started' => $j['started'] !== null ? (int)$j['started'] : null, 'finished' => $j['finished'] !== null ? (int)$j['finished'] : null,
+                'args' => array_values( array_filter( (array)json_decode( $j['args'], TRUE ), function( $a ) { return is_string( $a ) && strpos( $a, 'x-' ) !== 0; } ) ) ); },
+            $this->q( 'SELECT * FROM jobs WHERE project_id = ? ORDER BY id DESC LIMIT 50', array( $p['id'] ) )->fetchAll() ) );
+        $put( 'audit.json', array_map( function( $a ) { return array( 'ts' => (int)$a['ts'], 'method' => $a['method'], 'route' => $a['route'], 'status' => (int)$a['status'],
+                'detail' => $a['detail'] !== null ? json_decode( $a['detail'], TRUE ) : null ); },
+            $this->q( 'SELECT ts, method, route, status, detail FROM audit WHERE pid = ? ORDER BY id DESC LIMIT 300', array( $p['pid'] ) )->fetchAll() ) );
+        // the viewer: version, settings (no host lists), licence (summary), the browser of the user
+        $net = $this->networkGet();
+        $browser = array_slice( array_values( array_filter( (array)( $in['browser'] ?? array() ), 'is_array' ) ), 0, 200 );
+        $put( 'viewer.json', array( 'git' => trim( (string)@shell_exec( 'git -C ' . escapeshellarg( $this->repoDir ) . ' log -1 --format=%H%x20%cs 2>/dev/null' ) ) ?: null,
+            'php' => PHP_VERSION, 'sapi' => PHP_SAPI, 'container' => getenv( 'PANOSPHP_VIEWER_CONTAINER' ) ?: null,
+            'network' => array( 'enabled' => $net['enabled'], 'users' => $net['users'], 'conntest' => $net['conntest'], 'allow' => count( $net['allow'] ), 'deny' => count( $net['deny'] ) ),
+            'userAgent' => substr( (string)( $_SERVER['HTTP_USER_AGENT'] ?? '' ), 0, 300 ) ) );
+        if( $browser )
+            $put( 'browser.json', array_map( function( $b ) { return array_map( function( $v ) { return is_scalar( $v ) ? substr( (string)$v, 0, 2000 ) : null; }, array_slice( $b, 0, 10, TRUE ) ); }, $browser ) );
+        // options
+        $names = trim( (string)( $in['names'] ?? '' ) );
+        if( $names !== '' )
+        {
+            if( strlen( $names ) > 20000 || preg_match( '/[\x00-\x1f]/', $names ) )
+                throw new ViewerException( 'names: object names, comma separated', 400 );
+            $args[] = 'names=' . $names;
+        }
+        if( isset( $in['rules'] ) && ( $in['rules'] === FALSE || $in['rules'] === 'false' ) )
+            $args[] = 'rules=no';
+        if( !empty( $in['full'] ) && $in['full'] !== 'false' )
+            $args[] = 'full';
+        if( !empty( $in['anonymize'] ) && $in['anonymize'] !== 'false' )
+        {
+            array_push( $args, 'anonymize', 'mapping=%JOB%/mapping-SENSITIVE.json' );
+            if( ( $in['ip'] ?? '' ) === 'keep-private' )
+                $args[] = 'ip=keep-private';
+        }
+        $note = trim( (string)( $in['note'] ?? '' ) );
+        if( $note !== '' )
+            $args[] = 'note=' . substr( preg_replace( '/[\x00-\x1f]+/', ' ', $note ), 0, 4000 );
+        return $args;
     }
 
     /**
