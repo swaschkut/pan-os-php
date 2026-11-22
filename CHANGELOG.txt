@@ -164,6 +164,7 @@ BUGFIX:
 * class PanSCMAPIConnector | SCM description sent as a list (array) - TypeError in setDescription(); now its lines as text (scmText())
 * LDAP queries | a warning of an ldap_* function no longer ends the script (myErrorHandler)
 * alpha-mica-alert-only-keep-blocking
+* set-writer-member-name
 
 
 2.1.62 (20261121)
