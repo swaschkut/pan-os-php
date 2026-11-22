@@ -1841,7 +1841,14 @@ async function showViewer(config, preset) {
     // the connections of a device for its window (objLinks): [label, devicetype of the other device, names, extra links]
     const DEVICE_LINKS = {
         DeviceGroup: r => [['Parent device group', 'devicegroup', Array.isArray(r.hierarchy) && r.hierarchy.length > 2 ? r.hierarchy[r.hierarchy.length - 2] : null],
-            ['Child device groups', 'devicegroup', r.children], ['Firewalls', 'manageddevice', r.devices]],
+            ['Child device groups', 'devicegroup', r.children],
+            // each firewall with its template stack and the templates of the stack (priority order)
+            ['Firewalls', 'manageddevice', r.devices, n => {
+                const ts = r.templatestacks && r.templatestacks[n];
+                if (!ts) return [];
+                const tpls = r.stacktemplates && Array.isArray(r.stacktemplates[ts]) ? r.stacktemplates[ts] : [];
+                return [['template stack', 'templatestack', ts], ...tpls.map((t, i) => ['template ' + (i + 1), 'template', t])];
+            }]],
         TemplateStack: r => [['Templates (first = highest priority)', 'template', r.templates],
             ['Firewalls', 'manageddevice', r.devices, n => r.devicegroups && r.devicegroups[n] ? [['device group', 'devicegroup', r.devicegroups[n]]] : []]],
         ManagedDevice: r => [['Device group', 'devicegroup', r.dg], ['Template stack', 'templatestack', r.templatestack],
@@ -1986,7 +1993,7 @@ async function showViewer(config, preset) {
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
             // a device: its connections (device group, template stack, templates, firewalls, log collectors) are in
             // the section "Connections" of the window, with a link each
-            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy');
+            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy', 'templatestacks', 'stacktemplates');
             const fields = [{ key: 'name', label: 'Name', kind: 'ro', value: row.name }];
             for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? v.join(', ') : (v === null ? '' : String(v))) });
             for (const [k, v] of Object.entries(m)) if (!(k in row) && !['name', 'device_group', 'template', 'vsys', 'folder', 'snippet'].includes(k))
@@ -2286,7 +2293,7 @@ async function showViewer(config, preset) {
             const rows = f(r).map(([label, devicetype, names, extra]) => [label, devicetype, list(names), extra]).filter(x => x[2].length);
             const body = rows.length ? el('table', { class: 'objfields' }, el('tbody', {}, rows.map(([label, devicetype, names, extra]) => el('tr', {}, el('th', { text: label }),
                 el('td', {}, names.map(n => el('div', {}, n, ' ', link(devicetype, n),
-                    ...(extra ? extra(n) : []).map(([t, dt, x]) => el('span', { class: 'muted' }, ' - ' + t + ' ' + x + ' ', link(dt, x))))))))))
+                    ...(extra ? extra(n) : []).map(([t, dt, x]) => el('div', { class: 'muted', style: 'padding-left:1.5em' }, '└ ' + t + ': ' + x + ' ', link(dt, x))))))))))
                 : el('p', { class: 'muted', text: 'no connections' });
             return section('links', 'Connections', body);
         }

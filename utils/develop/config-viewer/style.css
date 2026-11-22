@@ -105,7 +105,14 @@ details.help summary { cursor: pointer; font-weight: 600; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--bg); }
 .objoverlay { position: fixed; inset: 0; background: rgba(20, 30, 40, .45); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; z-index: 50; overflow: auto; }
-.objwin { background: #fff; border-radius: 8px; padding: 14px 18px; width: min(720px, 100%); box-shadow: 0 8px 30px rgba(0, 0, 0, .25); }
+.objwin { background: #fff; border-radius: 8px; padding: 14px 18px; width: min(1000px, 96vw); box-sizing: border-box; box-shadow: 0 8px 30px rgba(0, 0, 0, .25); }
+/* the window: every table inside wraps its cells (references, connections, values of a device) - before, a long value
+   (no spaces: serials, paths) ran out on the right over the edge of the white window */
+.objwin table { table-layout: auto; }
+.objwin td, .objwin th { white-space: normal; overflow-wrap: anywhere; max-width: none; }
+.objwin > * { min-width: 0; max-width: 100%; }
+.objwin .objsection { overflow-x: auto; }
+.objwin td a { white-space: nowrap; }
 .objhead { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; }
 .objhead h3 { margin: 0; flex: 1; }
 .objclose { border: 0; background: none; font-size: 16px; }

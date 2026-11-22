@@ -579,6 +579,9 @@ eq( array( $ts['TS1']['templates'] ?? null, $ts['TS1']['devices'] ?? null, isset
     $md['001122334455']['dg'] ?? null, $md['001122334455']['templatestack'] ?? null, $md['001122334455']['templates'] ?? null, $dg['DG1']['refcount'] ?? null, $dg['DG3']['refcount'] ?? null ),
     array( array( 'T1', 'T2' ), array( '001122334455', '001122334466' ), FALSE, 2, 'DG1', 'TS1', array( 'T1', 'T2' ), 2, 0 ),
     'devices: templates and firewalls of a template stack, device group / stack / templates of a firewall, count of references' );
+$one = $alice->call( 'GET', $DV . '/object?type=device&devicetype=devicegroup&location=shared&name=DG1' )[1]['row'] ?? array();
+eq( array( $one['templatestacks'] ?? null, $one['stacktemplates'] ?? null ), array( array( '001122334455' => 'TS1' ), array( 'TS1' => array( 'T1', 'T2' ) ) ),
+    'device group: the template stack of each firewall and the templates of the stack' );
 $lc = $dev( 'logcollector' );
 $lcg = $dev( 'logcollectorgroup' );
 eq( array( $lc['009900990099']['collectorgroups'] ?? null, $lc['009900990099']['devices'] ?? null, $lcg['LCG1']['collectors'] ?? null, $lcg['LCG1']['devices'] ?? null ),

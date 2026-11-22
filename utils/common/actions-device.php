@@ -124,6 +124,9 @@ DeviceCallContext::$supportedActions['display'] = array(
                             $template_name_array[] = $template->name();
                         }
                         PH::print_stdout( $context->padding."  - Templates: ".implode( ", ", $template_name_array ) );
+                        // shadow-json: the template stack of each firewall and the templates of the stack (priority order)
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['templatestacks'][(string)$key] = $template_stack_obj->name();
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['stacktemplates'][$template_stack_obj->name()] = $template_name_array;
                     }
                 }
 
