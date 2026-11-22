@@ -680,6 +680,15 @@ foreach( $ov[1]['rows'] ?? array() as $x )
 ksort( $ovr );
 eq( array( status( $ov ), $ovr ), array( 200, array( 'DG1:dup' => array( array( 'shared' ), array( 'DG2' ) ), 'DG2:dup' => array( array( 'DG1', 'shared' ), array() ),
     'shared:dup' => array( array(), array( 'DG1', 'DG2' ) ) ) ), 'same name: overriding and overridden copies with the levels (includechilddgs + filters of pan-os-php)' );
+// same name as the firewalls of ONE device group see it (filters is.overriden.for / is.overriding.for <location>):
+// the hidden copies and the one that is used, of the levels of that device group only
+$sf = function( $loc ) use ( $alice, $EF ) {
+    $r = $alice->call( 'GET', $EF . '/objects?type=address&location=' . urlencode( $loc . ':effective' ) . '&filter='
+        . urlencode( '(object is.overriden.for ' . $loc . ') or (object is.overriding.for ' . $loc . ')' ) );
+    return array_map( function( $x ) { return $x['location'] . ':' . $x['name'] . ':' . $x['effective']; }, $r[1]['rows'] ?? array() );
+};
+eq( array( $sf( 'DG2' ), $sf( 'DG1' ) ), array( array( 'shared:dup:overridden by DG2', 'DG1:dup:overridden by DG2', 'DG2:dup:used' ),
+    array( 'shared:dup:overridden by DG1', 'DG1:dup:used' ) ), 'same name for one device group: the hidden copies and the used one (is.overriden.for / is.overriding.for)' );
 // the lookup of pan-os-php: an EDL of the same name (here in shared) comes before the address of a device group
 $exml = str_replace( '<shared><address>', '<shared><external-list><entry name="A2"><type><ip><url>https://edl.example.com/list.txt</url><recurring><hourly/></recurring></ip></type></entry></external-list><address>',
     file_get_contents( $here . '/input/effective-panorama.xml' ) );

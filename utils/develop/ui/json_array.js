@@ -801,6 +801,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -3753,6 +3771,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -5519,6 +5555,24 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -9929,6 +9983,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -12057,6 +12129,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -12940,6 +13030,24 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -13995,6 +14103,24 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },

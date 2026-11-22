@@ -1733,7 +1733,7 @@ async function showViewer(config, preset) {
     sameName.addEventListener('change', () => run(() => load(false)));
     function drawSameName() {
         const f = (state.meta.types[type.value] || {}).filters || {};
-        sameNameField.hidden = !(f.object && f.object['is.overriden'] && f.object['is.overriding']);
+        sameNameField.hidden = !(f.object && f.object['is.overriden'] && f.object['is.overriding'] && f.object['is.overriden.for'] && f.object['is.overriding.for']);
         if (sameNameField.hidden) sameName.value = '';
     }
     dgScopeField.hidden = true;
@@ -1814,7 +1814,14 @@ async function showViewer(config, preset) {
     function query() {
         // the filter of the menu entry (e.g. address groups: (object is.group)) and the one typed
         const own0 = filter.value.trim();
-        const sn = sameNameField.hidden ? '' : { both: '(object is.overriden) or (object is.overriding)', overridden: '(object is.overriden)', overriding: '(object is.overriding)' }[sameName.value] || '';
+        // the effective view of a location: same name as the firewalls of THIS location see it (is.overriden.for /
+        // is.overriding.for <location> - its levels only); else the whole hierarchy (is.overriden / is.overriding)
+        const eff = dgScope.value === 'effective' && !dgScopeField.hidden && location.value && location.value !== 'any';
+        const sfx = eff ? '.for ' + location.value : '';
+        const sn = sameNameField.hidden ? '' : { both: '(object is.overriden' + sfx + ') or (object is.overriding' + sfx + ')', overridden: '(object is.overriden' + sfx + ')',
+            overriding: '(object is.overriding' + sfx + ')' }[sameName.value] || '';
+        // both copies of a name next to each other (from the top level down)
+        if (eff && sn && !view.sortSet) { view.sort = 'name'; view.desc = false; }
         const own = sn ? (own0 ? '(' + own0 + ') and (' + sn + ')' : sn) : own0;
         const f = cur.filter && !cur.noBase ? (own ? '(' + cur.filter + ') and (' + own + ')' : cur.filter) : own;
         const q = new URLSearchParams({ type: type.value, location: (location.value || 'any') + (dgScope.value && !dgScopeField.hidden ? ':' + dgScope.value : ''), filter: f });
@@ -1976,7 +1983,7 @@ async function showViewer(config, preset) {
         const slice = rows.slice((view.page - 1) * view.size, view.page * view.size);
         tableWrap.replaceChildren(el('table', {},
             el('thead', {}, el('tr', {}, view.columns.map(c => el('th', { text: c + (view.sort === c ? (view.desc ? ' ▼' : ' ▲') : ''), onclick: () => {
-                if (view.sort === c) view.desc = !view.desc; else { view.sort = c; view.desc = false; }
+                view.sortSet = true; if (view.sort === c) view.desc = !view.desc; else { view.sort = c; view.desc = false; }
                 draw();
             } })), state.meta.types[view.type] && state.meta.types[view.type].references && !view.columns.includes('refcount') ? el('th', { text: 'references' }) : null)),
             el('tbody', {}, slice.flatMap(r => {

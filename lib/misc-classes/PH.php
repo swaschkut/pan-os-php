@@ -2151,6 +2151,72 @@ class PH
      * HIGHEST one with 'ancestor-objects-take-precedence yes'. Firewall: vsys before shared.
      * Names outside the hierarchy (predefined objects, ...) fall back to the normal lookup.
      */
+    /**
+     * Same name as the firewalls of one location see it (filters is.overriden.for / is.overriding.for X): the location
+     * X (device group, vsys, SCM folder / device; 'shared' = Panorama / firewall shared) and every level above it
+     * (firewallResolutionLevels). Which copy of the object's name a firewall of X gets: resolveNameForFirewalls (the
+     * lookup of the store - an EDL before region / address group / address; ancestor-objects-take-precedence).
+     *
+     * @return array|null  null: the object is not on a level of X (or X / the store is not found); else
+     *         array( 'winner' => the object X gets, 'copies' => objects of that name on the levels of X, nearest first )
+     */
+    public static function sameNameForLocation( $object, string $locationName ): ?array
+    {
+        if( !isset($object->owner) || !is_object($object->owner) || !isset($object->owner->owner) || !is_object($object->owner->owner) || !method_exists($object, 'name') )
+            return null;
+        $store = $object->owner;
+        $own = $store->owner;
+        $root = self::findRootObjectOrDie( $own );
+
+        $location = null;
+        if( $locationName === 'shared' )
+            $location = $root;
+        else
+            foreach( array( 'findDeviceGroup', 'findVirtualSystem', 'findContainer', 'findDeviceCloud', 'findDeviceOnPrem' ) as $f )
+                if( $location === null && method_exists($root, $f) )
+                    $location = $root->$f( $locationName );
+        if( $location === null )
+            return null;
+
+        // the store property of the object's location (addressStore, serviceStore, tagStore, ...); an EDL is found by
+        // the address lookup (EDL before address / group / region)
+        $prop = null;
+        if( get_class($object) === 'EDL' )
+            $prop = 'addressStore';
+        else
+            foreach( get_object_vars($own) as $k => $v )
+                if( $v === $store )
+                {
+                    $prop = $k;
+                    break;
+                }
+        if( $prop === null )
+            return null;
+
+        $levels = self::firewallResolutionLevels( $location );
+        $onLevel = FALSE;
+        foreach( $levels as $l )
+            if( $l === $own )
+                $onLevel = TRUE;
+        if( !$onLevel )
+            return null;
+
+        $copies = array();
+        foreach( $levels as $l )
+        {
+            if( !isset($l->$prop) || !is_object($l->$prop) )
+                continue;
+            $f = $l->$prop->find( $object->name(), null, FALSE );
+            if( $f !== null && !in_array( $f, $copies, TRUE ) )
+                $copies[] = $f;
+            // an object hidden on its own level (an EDL / region of the same name there)
+            if( $l === $own && $f !== $object )
+                $copies[] = $object;
+        }
+        $winner = self::resolveNameForFirewalls( $prop, $object->name(), $location );
+        return array( 'winner' => $winner, 'copies' => $copies );
+    }
+
     public static function resolveNameForFirewalls( string $storeProperty, string $name, $location )
     {
         $levels = self::firewallResolutionLevels($location);
