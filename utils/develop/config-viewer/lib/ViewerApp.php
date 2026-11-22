@@ -199,6 +199,20 @@ class ViewerApp
             $this->db->exec( 'ALTER TABLE members ADD COLUMN scope TEXT' );
         // network for runs (import from a firewall / Panorama / SCM): the project switch of the owner - it works only while
         // an administrator allows network for runs (settings 'network')
+        // per user (administrator, Account, Users): network for this user (when network is 'selected' users), the
+        // connection test (when it is for 'selected' users)
+        $cols = array_column( $this->db->query( 'PRAGMA table_info(users)' )->fetchAll(), 'name' );
+        if( !in_array( 'network', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE users ADD COLUMN network INTEGER NOT NULL DEFAULT 0' );
+        if( !in_array( 'conntest', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE users ADD COLUMN conntest INTEGER NOT NULL DEFAULT 0' );
+        // hosts / networks the administrator allows one user (own allow list, e.g. from an approved request)
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS user_hosts (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            entry TEXT NOT NULL, created INTEGER NOT NULL, UNIQUE (user_id, entry))' );
+        // requests of a user to the administrators: network to hosts, the connection test
+        $this->db->exec( 'CREATE TABLE IF NOT EXISTS access_requests (id INTEGER PRIMARY KEY, rid TEXT NOT NULL UNIQUE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, kind TEXT NOT NULL, hosts TEXT NOT NULL, reason TEXT NOT NULL,
+            state TEXT NOT NULL, created INTEGER NOT NULL, decided INTEGER, decided_by TEXT, note TEXT)' );
         $cols = array_column( $this->db->query( 'PRAGMA table_info(projects)' )->fetchAll(), 'name' );
         if( !in_array( 'network', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE projects ADD COLUMN network INTEGER NOT NULL DEFAULT 0' );
@@ -438,7 +452,191 @@ class ViewerApp
 
     public function userList(): array
     {
-        return $this->q( 'SELECT name, is_admin AS admin, created FROM users ORDER BY name' )->fetchAll();
+        return array_map( function( $u ) { $u['network'] = (bool)$u['network']; $u['conntest'] = (bool)$u['conntest'];
+                $u['hosts'] = $this->userHosts( array( 'id' => $u['id'] ) ); unset( $u['id'] ); return $u; },
+            $this->q( 'SELECT id, name, is_admin AS admin, created, network, conntest FROM users ORDER BY name' )->fetchAll() );
+    }
+
+    /** administrator: what a user may beyond the projects - network (runs, key from a device), the connection test */
+    public function userPermissions( string $name, array $in ): array
+    {
+        $u = $this->userByName( $name );
+        if( $u === null )
+            throw new ViewerException( 'not found', 404 );
+        foreach( array( 'network', 'conntest' ) as $k )
+            if( array_key_exists( $k, $in ) )
+            {
+                if( !is_bool( $in[$k] ) && !in_array( $in[$k], array( 0, 1, '0', '1' ), TRUE ) )
+                    throw new ViewerException( $k . ': true or false', 400 );
+                $this->q( 'UPDATE users SET ' . $k . ' = ? WHERE id = ?', array( $in[$k] ? 1 : 0, $u['id'] ) );
+            }
+        // the user's own hosts: the whole list (one entry per line, as the allow list)
+        if( array_key_exists( 'hosts', $in ) )
+        {
+            $list = self::hostList( $in['hosts'], 'hosts', TRUE );
+            $this->q( 'DELETE FROM user_hosts WHERE user_id = ?', array( $u['id'] ) );
+            foreach( $list as $e )
+                $this->q( 'INSERT INTO user_hosts (user_id, entry, created) VALUES (?, ?, ?)', array( $u['id'], $e, time() ) );
+        }
+        foreach( $this->userList() as $x )
+            if( $x['name'] === $u['name'] )
+                return $x;
+        throw new ViewerException( 'not found', 404 );
+    }
+
+    /**
+     * may this user use the network (runs that reach a device / tenant / LDAP, the key from a device, the connection
+     * test)? null = yes. Network for 'all' users: every user; for 'selected' users: administrators and the users the
+     * administrator allows (Account, Users). The lists of hosts apply in any case.
+     */
+    public function networkUserRefusal( array $user ): ?string
+    {
+        if( $this->networkGet()['users'] === 'all' )
+            return null;
+        $u = isset( $user['id'] ) ? $this->q( 'SELECT is_admin, network FROM users WHERE id = ?', array( $user['id'] ) )->fetch() : FALSE;
+        if( $u && ( !empty( $u['is_admin'] ) || !empty( $u['network'] ) ) )
+            return null;
+        return 'network is not allowed for you (an administrator allows it per user: Account, Users)';
+    }
+
+    /** a list of hosts / networks (array or text, one per line / comma): checked, lower case, unique */
+    private static function hostList( $v, string $what, bool $wide ): array
+    {
+        if( is_string( $v ) )
+            $v = preg_split( '/[\r\n,]+/', $v );
+        if( !is_array( $v ) )
+            throw new ViewerException( $what . ': a list of hosts / networks', 400 );
+        $out = array();
+        foreach( $v as $e )
+        {
+            $e = strtolower( trim( (string)$e ) );
+            if( $e === '' )
+                continue;
+            if( !self::networkPattern( $e ) )
+                throw new ViewerException( $what . ': "' . substr( $e, 0, 80 ) . '" is no host, *.domain, IP address, network (a.b.c.d/n) or tsg:<id>', 400 );
+            if( !$wide && ( $e === '*' || $e === 'tsg:*' ) )
+                throw new ViewerException( $what . ': "' . $e . '" - name the hosts / networks', 400 );
+            $out[] = $e;
+        }
+        $out = array_values( array_unique( $out ) );
+        if( count( $out ) > 100 )
+            throw new ViewerException( $what . ': at most 100 entries', 400 );
+        return $out;
+    }
+
+    /**
+     * a request of the user to the administrators: 'network' (hosts / networks the user wants to reach - devices,
+     * tenants, LDAP) or 'conntest' (the connection test; optionally with hosts as well), with a reason. At most 10
+     * open requests per user.
+     */
+    public function requestCreate( array $user, array $in ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not with an API token', 403 );
+        $kind = $in['kind'] ?? '';
+        if( !in_array( $kind, array( 'network', 'conntest' ), TRUE ) )
+            throw new ViewerException( 'kind: network or conntest', 400 );
+        $hosts = self::hostList( $in['hosts'] ?? array(), 'hosts', FALSE );
+        if( $kind === 'network' && count( $hosts ) === 0 )
+            throw new ViewerException( 'hosts: the firewalls / Panoramas / LDAP servers (name, IP address, network, *.domain, tsg:<id>) you want to reach', 400 );
+        $reason = trim( (string)( $in['reason'] ?? '' ) );
+        if( $reason === '' || strlen( $reason ) > 1000 || preg_match( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $reason ) )
+            throw new ViewerException( 'reason: why you need it (1-1000 characters)', 400 );
+        if( (int)$this->q( "SELECT COUNT(*) FROM access_requests WHERE user_id = ? AND state = 'open'", array( $user['id'] ) )->fetchColumn() >= 10 )
+            throw new ViewerException( 'you have 10 open requests - wait for the administrator or withdraw one', 400 );
+        $rid = bin2hex( random_bytes( 8 ) );
+        $this->q( "INSERT INTO access_requests (rid, user_id, kind, hosts, reason, state, created) VALUES (?, ?, ?, ?, ?, 'open', ?)",
+            array( $rid, $user['id'], $kind, json_encode( $hosts ), $reason, time() ) );
+        return $this->requestGet( $rid );
+    }
+
+    private function requestGet( string $rid ): array
+    {
+        $r = $this->q( 'SELECT r.*, u.name AS user FROM access_requests r JOIN users u ON u.id = r.user_id WHERE r.rid = ?', array( $rid ) )->fetch();
+        if( !$r )
+            throw new ViewerException( 'not found', 404 );
+        return array( 'rid' => $r['rid'], 'user' => $r['user'], 'kind' => $r['kind'], 'hosts' => json_decode( $r['hosts'], TRUE ) ?: array(),
+            'reason' => $r['reason'], 'state' => $r['state'], 'created' => (int)$r['created'], 'decided' => $r['decided'] !== null ? (int)$r['decided'] : null,
+            'decided_by' => $r['decided_by'], 'note' => $r['note'], '_uid' => (int)$r['user_id'] );
+    }
+
+    /** the requests of the user; an administrator with $all: every request (open first) */
+    public function requestList( array $user, bool $all ): array
+    {
+        $rows = $all ? $this->q( "SELECT rid FROM access_requests ORDER BY state = 'open' DESC, created DESC LIMIT 500" )->fetchAll()
+            : $this->q( 'SELECT rid FROM access_requests WHERE user_id = ? ORDER BY created DESC LIMIT 100', array( $user['id'] ) )->fetchAll();
+        return array_map( function( $r ) { $x = $this->requestGet( $r['rid'] ); unset( $x['_uid'] ); return $x; }, $rows );
+    }
+
+    /** the user withdraws an open request */
+    public function requestWithdraw( array $user, string $rid ): void
+    {
+        if( $this->q( "DELETE FROM access_requests WHERE rid = ? AND user_id = ? AND state = 'open'", array( $rid, $user['id'] ) )->rowCount() === 0 )
+            throw new ViewerException( 'not found', 404 );
+    }
+
+    /**
+     * administrator: approve (network: the hosts - as requested or changed by the administrator - become own entries of
+     * the user; conntest: the user may use the connection test, hosts given go to the own entries as well) or reject,
+     * with a note for the user
+     */
+    public function requestDecide( array $admin, string $rid, array $in ): array
+    {
+        $r = $this->requestGet( $rid );
+        if( $r['state'] !== 'open' )
+            throw new ViewerException( 'the request is ' . $r['state'] . ' already', 400 );
+        $decision = $in['decision'] ?? '';
+        if( !in_array( $decision, array( 'approve', 'reject' ), TRUE ) )
+            throw new ViewerException( 'decision: approve or reject', 400 );
+        $note = trim( (string)( $in['note'] ?? '' ) );
+        if( strlen( $note ) > 1000 )
+            throw new ViewerException( 'note: at most 1000 characters', 400 );
+        if( $decision === 'approve' )
+        {
+            $hosts = array_key_exists( 'hosts', $in ) ? self::hostList( $in['hosts'], 'hosts', TRUE ) : $r['hosts'];
+            if( $r['kind'] === 'network' && count( $hosts ) === 0 )
+                throw new ViewerException( 'hosts: at least one', 400 );
+            foreach( $hosts as $e )
+                $this->q( 'INSERT OR IGNORE INTO user_hosts (user_id, entry, created) VALUES (?, ?, ?)', array( $r['_uid'], $e, time() ) );
+            if( $r['kind'] === 'conntest' )
+                $this->q( 'UPDATE users SET conntest = 1 WHERE id = ?', array( $r['_uid'] ) );
+            $this->q( 'UPDATE access_requests SET hosts = ? WHERE rid = ?', array( json_encode( $hosts ), $rid ) );
+        }
+        $this->q( 'UPDATE access_requests SET state = ?, decided = ?, decided_by = ?, note = ? WHERE rid = ?',
+            array( $decision === 'approve' ? 'approved' : 'rejected', time(), $admin['name'], $note, $rid ) );
+        $x = $this->requestGet( $rid );
+        unset( $x['_uid'] );
+        return $x;
+    }
+
+    /** what the user may (for Account): network in general, own hosts, the connection test, open requests (administrator: of all users) */
+    public function accessInfo( array $user ): array
+    {
+        $admin = !empty( $user['is_admin'] );
+        return array( 'access' => array( 'network' => $this->networkGet()['enabled'] && $this->networkUserRefusal( $user ) === null, 'hosts' => $this->userHosts( $user ),
+            'conntest' => $this->conntestRefusal( $user ) === null,
+            'openRequests' => (int)( $admin ? $this->q( "SELECT COUNT(*) FROM access_requests WHERE state = 'open'" )->fetchColumn()
+                : $this->q( "SELECT COUNT(*) FROM access_requests WHERE state = 'open' AND user_id = ?", array( $user['id'] ) )->fetchColumn() ) ) );
+    }
+
+    /** the hosts / networks the administrator allows this user (own entries; e.g. from an approved request) */
+    public function userHosts( array $user ): array
+    {
+        if( !isset( $user['id'] ) )
+            return array();
+        return array_column( $this->q( 'SELECT entry FROM user_hosts WHERE user_id = ? ORDER BY entry', array( $user['id'] ) )->fetchAll(), 'entry' );
+    }
+
+    /** may this user use the connection test? null = yes (admins always; all users / selected users by the administrator) */
+    public function conntestRefusal( array $user ): ?string
+    {
+        if( isset( $user['token'] ) )
+            return 'not with an API token';
+        $mode = $this->networkGet()['conntest'];
+        $u = isset( $user['id'] ) ? $this->q( 'SELECT is_admin, conntest FROM users WHERE id = ?', array( $user['id'] ) )->fetch() : FALSE;
+        if( $u && ( !empty( $u['is_admin'] ) || $mode === 'all' || !empty( $u['conntest'] ) ) )
+            return null;
+        return 'the connection test is not allowed for you - request it: Account, Requests';
     }
 
     public function userDelete( string $name ): void
@@ -612,7 +810,11 @@ class ViewerApp
     {
         $row = $this->q( "SELECT value FROM settings WHERE name = 'network'" )->fetch();
         $n = $row ? json_decode( $row['value'], TRUE ) : null;
-        return array( 'enabled' => !empty( $n['enabled'] ), 'allow' => array_values( (array)( $n['allow'] ?? array() ) ), 'deny' => array_values( (array)( $n['deny'] ?? array() ) ) );
+        return array( 'enabled' => !empty( $n['enabled'] ), 'allow' => array_values( (array)( $n['allow'] ?? array() ) ), 'deny' => array_values( (array)( $n['deny'] ?? array() ) ),
+            // who: 'all' users or the 'selected' ones (Account, Users; administrators always) - before: all
+            'users' => in_array( $n['users'] ?? 'all', array( 'all', 'selected' ), TRUE ) ? ( $n['users'] ?? 'all' ) : 'all',
+            // the connection test: 'all' users or the 'selected' ones (administrators and the users allowed per user)
+            'conntest' => ( $n['conntest'] ?? 'selected' ) === 'all' ? 'all' : 'selected' );
     }
 
     public function networkSet( array $in ): array
@@ -637,7 +839,14 @@ class ViewerApp
             }
             $lists[$k] = array_values( array_unique( $lists[$k] ) );
         }
-        $n = array( 'enabled' => !empty( $in['enabled'] ) && $in['enabled'] !== 'false', 'allow' => $lists['allow'], 'deny' => $lists['deny'] );
+        $old = $this->networkGet();
+        $users = $in['users'] ?? $old['users'];
+        if( !in_array( $users, array( 'all', 'selected' ), TRUE ) )
+            throw new ViewerException( 'users: all or selected', 400 );
+        $ct = $in['conntest'] ?? $old['conntest'];
+        if( !in_array( $ct, array( 'all', 'selected' ), TRUE ) )
+            throw new ViewerException( 'conntest: all or selected', 400 );
+        $n = array( 'enabled' => !empty( $in['enabled'] ) && $in['enabled'] !== 'false', 'allow' => $lists['allow'], 'deny' => $lists['deny'], 'users' => $users, 'conntest' => $ct );
         $this->q( "INSERT INTO settings (name, value) VALUES ('network', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", array( json_encode( $n ) ) );
         return $n;
     }
@@ -693,8 +902,12 @@ class ViewerApp
         return filter_var( $e, FILTER_VALIDATE_IP ) !== FALSE && in_array( $e, $ips, TRUE );
     }
 
-    /** may runs reach this target? null = yes, else the reason why not */
-    public function networkRefusal( string $kind, string $target ): ?string
+    /**
+     * may runs reach this target? null = yes, else the reason why not. With $user (whoever starts it): the deny list of
+     * the administrator wins; allowed is what the user's own entries cover (granted by the administrator, e.g. on a
+     * request) and - when the user may use the network at all (all users, or this one selected) - the allow list
+     */
+    public function networkRefusal( string $kind, string $target, ?array $user = null ): ?string
     {
         $n = $this->networkGet();
         if( !$n['enabled'] )
@@ -709,13 +922,24 @@ class ViewerApp
             if( $needIps )
                 $ips = @gethostbynamel( $target ) ?: array();
         }
+        $own = $user !== null ? $this->userHosts( $user ) : array();
+        if( $kind === 'panos' && $ips === array() && filter_var( $target, FILTER_VALIDATE_IP ) === FALSE )
+            foreach( $own as $e )
+                if( strpos( $e, '/' ) !== FALSE || filter_var( $e, FILTER_VALIDATE_IP ) !== FALSE )
+                    $ips = @gethostbynamel( $target ) ?: array();
         foreach( $n['deny'] as $e )
             if( self::networkMatch( $e, $kind, $target, $ips ) )
                 return $target . ' is on the deny list of the administrator';
-        foreach( $n['allow'] as $e )
+        foreach( $own as $e )
             if( self::networkMatch( $e, $kind, $target, $ips ) )
                 return null;
-        return $target . ' is not on the allow list of the administrator';
+        $userWhy = $user !== null ? $this->networkUserRefusal( $user ) : null;
+        if( $userWhy === null )
+            foreach( $n['allow'] as $e )
+                if( self::networkMatch( $e, $kind, $target, $ips ) )
+                    return null;
+        return $userWhy !== null ? $target . ': ' . $userWhy . ' - or request this host: Account, Requests'
+            : $target . ' is not on the allow list of the administrator' . ( $user !== null ? ' - request it: Account, Requests' : '' );
     }
 
     /** the owner turns network for the runs of the project on / off (works only while the administrator allows it) */
@@ -850,7 +1074,7 @@ class ViewerApp
             $out[] = array( 'kid' => $k['kid'], 'kind' => $k['kind'], 'target' => $k['target'], 'port' => $k['port'] !== null ? (int)$k['port'] : null, 'label' => $k['label'],
                 'hint' => '…' . $k['hint'], 'created' => (int)$k['created'], 'last_used' => $k['last_used'] !== null ? (int)$k['last_used'] : null,
                 'import' => in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ),
-                'refused' => in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ) ? $this->networkRefusal( $k['kind'], $k['target'] ) : null );
+                'refused' => in_array( $k['kind'], array( 'panos', 'scm' ), TRUE ) ? $this->networkRefusal( $k['kind'], $k['target'], $user ) : null );
         return $out;
     }
 
@@ -902,6 +1126,199 @@ class ViewerApp
     }
 
     /**
+     * one HTTP(S) call to a device with a trace for the user (key from a device, connection test): the connection
+     * (IP, time, HTTP status), TLS (verify result, the certificates: subject, issuer, validity, SAN, SHA-256), the
+     * curl log (TLS handshake, request / answer headers - keys, cookies and authorization masked; the request body is
+     * never in it) and a hint for the usual errors. $o: post (body), headers, verify, tls ('1.2' / '1.3' / ''), proxy
+     * (FALSE: no proxy of the environment), connect (IP to connect to while the URL keeps the name: TLS name / SNI).
+     * Only http(s), no redirects, at most 1 MB.
+     */
+    private function curlTraced( string $url, array $o, array &$trace ): array
+    {
+        $verify = !empty( $o['verify'] );
+        $verbose = fopen( 'php://temp', 'w+' );
+        $ch = curl_init( $url );
+        $opt = array(
+            CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_FOLLOWLOCATION => FALSE, CURLOPT_CONNECTTIMEOUT => 7, CURLOPT_TIMEOUT => 30,
+            CURLOPT_SSL_VERIFYPEER => $verify, CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS | CURLPROTO_HTTP, CURLOPT_MAXFILESIZE => 1000000,
+            CURLOPT_HEADER => TRUE, CURLOPT_CERTINFO => TRUE, CURLOPT_VERBOSE => TRUE, CURLOPT_STDERR => $verbose,
+        );
+        if( isset( $o['post'] ) )
+        {
+            $opt[CURLOPT_POST] = TRUE;
+            $opt[CURLOPT_POSTFIELDS] = $o['post'];
+        }
+        if( !empty( $o['headers'] ) )
+            $opt[CURLOPT_HTTPHEADER] = $o['headers'];
+        if( ( $o['tls'] ?? '' ) === '1.2' )
+            $opt[CURLOPT_SSLVERSION] = CURL_SSLVERSION_TLSv1_2 | ( defined( 'CURL_SSLVERSION_MAX_TLSv1_2' ) ? CURL_SSLVERSION_MAX_TLSv1_2 : 0 );
+        elseif( ( $o['tls'] ?? '' ) === '1.3' )
+            $opt[CURLOPT_SSLVERSION] = CURL_SSLVERSION_TLSv1_3;
+        if( array_key_exists( 'proxy', $o ) && $o['proxy'] === FALSE )
+            $opt[CURLOPT_PROXY] = '';
+        if( !empty( $o['connect'] ) )
+            $opt[CURLOPT_CONNECT_TO] = array( $o['connect'] );
+        curl_setopt_array( $ch, $opt );
+        $raw = curl_exec( $ch );
+        $r = array( 'raw' => $raw, 'err' => curl_error( $ch ), 'errno' => curl_errno( $ch ), 'code' => (int)curl_getinfo( $ch, CURLINFO_RESPONSE_CODE ) );
+        $hsize = (int)curl_getinfo( $ch, CURLINFO_HEADER_SIZE );
+        $ip = (string)curl_getinfo( $ch, CURLINFO_PRIMARY_IP );
+        $time = (float)curl_getinfo( $ch, CURLINFO_TOTAL_TIME );
+        $sslv = curl_getinfo( $ch, CURLINFO_SSL_VERIFYRESULT );
+        $certs = curl_getinfo( $ch, CURLINFO_CERTINFO );
+        $https = stripos( $url, 'https:' ) === 0;
+        curl_close( $ch );
+        rewind( $verbose );
+        $vlog = (string)stream_get_contents( $verbose, 64000 );
+        fclose( $verbose );
+        // the connection as curl saw it - secrets masked (the request body is not in it)
+        $vlog = preg_replace( array( '/(password=)[^&\s]*/i', '/(key=)[^&\s]*/i', '/^([<>]? *(x-pan-key|authorization|cookie|set-cookie|x-auth-token): *).*$/mi' ),
+            array( '$1********', '$1********', '$1********' ), $vlog );
+        $trace[] = 'connection: ' . ( $ip !== '' ? $ip : '-' ) . ', ' . sprintf( '%.2f', $time ) . 's, HTTP ' . ( $r['code'] ?: '-' )
+            . ( $https && $sslv !== FALSE ? ', certificate verify result ' . (int)$sslv . ( (int)$sslv === 0 ? ' (ok)' : ( $verify ? ' (not trusted)' : ' (not trusted - ignored, check off)' ) ) : '' );
+        foreach( is_array( $certs ) ? $certs : array() as $i => $c )
+            if( is_array( $c ) )
+            {
+                $fp = '';
+                if( isset( $c['Cert'] ) && function_exists( 'openssl_x509_fingerprint' ) )
+                    $fp = (string)@openssl_x509_fingerprint( $c['Cert'], 'sha256' );
+                $trace[] = 'certificate ' . $i . ': subject ' . ( $c['Subject'] ?? '?' ) . ' | issuer ' . ( $c['Issuer'] ?? '?' )
+                    . ' | valid ' . ( $c['Start date'] ?? '?' ) . ' - ' . ( $c['Expire date'] ?? '?' )
+                    . ( isset( $c['X509v3 Subject Alternative Name'] ) ? ' | SAN ' . $c['X509v3 Subject Alternative Name'] : '' )
+                    . ( $fp !== '' ? ' | SHA-256 ' . strtoupper( implode( ':', str_split( $fp, 2 ) ) ) : '' );
+            }
+        $trace[] = '--- curl ---';
+        foreach( preg_split( '/\r?\n/', trim( $vlog ) ) as $l )
+            if( $l !== '' && !preg_match( '/^[<>] *$/', $l ) )
+                // the list of hosts without proxy is long and says little: only that it is set
+                $trace[] = substr( preg_replace( "/^(\* Uses proxy env variable no_proxy) == .*/i", '$1 (set)', $l ), 0, 300 );
+        $trace[] = '---';
+        // what usually helps with the error of curl
+        $hint = array( 6 => 'the name does not resolve on the server of the viewer (DNS) - try the IP address',
+            7 => 'connection refused / no route - management IP, port, the interface management profile (HTTPS) and permitted IPs of the device, firewalls between',
+            28 => 'timeout - the device does not answer: routing, a firewall between, the permitted IPs of the management interface',
+            35 => 'TLS handshake failed - TLS version / ciphers of the device (SSL/TLS service profile of the management) and of the server, or not HTTPS on that port',
+            51 => 'the certificate does not match the name / IP - use the name of the certificate or turn the certificate check off',
+            60 => 'the certificate is not trusted by the server of the viewer (self-signed / own CA) - turn the certificate check off or add the CA on the server',
+            56 => 'the connection was closed - proxy, TLS inspection between, or the device', 52 => 'empty answer - not the XML API on that port?' )[$r['errno']] ?? null;
+        if( $hint !== null )
+            $trace[] = 'hint: ' . $hint;
+        $r['headers'] = $raw === FALSE ? '' : substr( (string)$raw, 0, $hsize );
+        $r['body'] = $raw === FALSE ? '' : substr( (string)$raw, $hsize );
+        return $r;
+    }
+
+    /**
+     * the connection test (Account): one call to a firewall / Panorama as curl -v would show it - DNS, TCP, TLS
+     * (version, cipher, certificate chain, verify result), HTTP status / headers / answer - for the hosts this user may
+     * reach (network rules), by the users the administrator allows (conntest). Fixed fields instead of a command line:
+     * only http(s), no files, no other options. mode 'reach': GET <path>; 'api': with an own API key (kid) the XML API
+     * call show system info (the key in the header X-PAN-KEY, never shown). Returns ok, a summary, the trace and the
+     * curl command line to do the same elsewhere.
+     */
+    public function connTest( array $user, array $in ): array
+    {
+        if( ( $why = $this->conntestRefusal( $user ) ) !== null )
+            throw new ViewerException( $why, 403 );
+        $target = self::keyTarget( 'panos', $in['target'] ?? null );
+        $port = null;
+        if( isset( $in['port'] ) && $in['port'] !== '' && $in['port'] !== null )
+        {
+            if( !ctype_digit( (string)$in['port'] ) || (int)$in['port'] < 1 || (int)$in['port'] > 65535 )
+                throw new ViewerException( 'port: 1-65535', 400 );
+            $port = (int)$in['port'];
+        }
+        $mode = $in['mode'] ?? 'reach';
+        if( !in_array( $mode, array( 'reach', 'api' ), TRUE ) )
+            throw new ViewerException( 'mode: reach or api', 400 );
+        $path = $in['path'] ?? '/api/';
+        if( !in_array( $path, array( '/api/', '/', '/php/login.php' ), TRUE ) )
+            throw new ViewerException( 'path: /api/, / or /php/login.php', 400 );
+        $tls = (string)( $in['tls'] ?? '' );
+        if( !in_array( $tls, array( '', '1.2', '1.3' ), TRUE ) )
+            throw new ViewerException( 'tls: empty (auto), 1.2 or 1.3', 400 );
+        $verify = !empty( $in['verify'] ) && $in['verify'] !== 'false';
+        $proxy = !( isset( $in['proxy'] ) && ( $in['proxy'] === FALSE || $in['proxy'] === 'false' ) );
+        $sni = trim( strtolower( (string)( $in['servername'] ?? '' ) ) );
+        if( $sni !== '' && ( strlen( $sni ) > 253 || !preg_match( '/^[a-z0-9]([a-z0-9-]{0,62}\.)*[a-z0-9-]{1,63}$/', $sni ) ) )
+            throw new ViewerException( 'servername: the host name of the certificate (only the name is sent, the connection goes to the target)', 400 );
+        if( ( $why = $this->networkRefusal( 'panos', $target, $user ) ) !== null )
+            throw new ViewerException( 'can not reach ' . $target . ': ' . $why, 403 );
+        $secret = null;
+        if( $mode === 'api' )
+        {
+            $k = $this->q( "SELECT * FROM user_keys WHERE kid = ? AND user_id = ? AND kind = 'panos'", array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
+            if( !$k )
+                throw new ViewerException( 'kid: one of your API keys of a firewall / Panorama (Account, My API keys)', 400 );
+            $secret = $this->unseal( $k['secret'] );
+            if( $secret === null )
+                throw new ViewerException( 'the API key can not be read (key of the installation changed?) - store it again', 400 );
+            $path = '/api/';
+        }
+        if( !function_exists( 'curl_init' ) )
+            throw new ViewerException( 'the PHP curl extension is missing on the server', 500 );
+
+        $scheme = getenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP' ) === '1' ? 'http' : 'https';
+        $hostOf = function( string $h ) { return filter_var( $h, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) !== FALSE ? '[' . $h . ']' : $h; };
+        $p = $port ?? ( $scheme === 'https' ? 443 : 80 );
+        $url = $scheme . '://' . $hostOf( $sni !== '' ? $sni : $target ) . ( $port !== null ? ':' . $port : '' ) . $path;
+        $post = $mode === 'api' ? 'type=op&cmd=' . rawurlencode( '<show><system><info></info></system></show>' ) : null;
+        // the same with curl on another computer
+        $cmd = 'curl -v' . ( $verify ? '' : ' -k' ) . ( $tls === '1.2' ? ' --tlsv1.2 --tls-max 1.2' : ( $tls === '1.3' ? ' --tlsv1.3' : '' ) )
+            . ( $proxy ? '' : " --noproxy '*'" ) . ( $sni !== '' ? ' --connect-to ' . $sni . ':' . $p . ':' . $hostOf( $target ) . ':' . $p : '' )
+            . ( $mode === 'api' ? " -H 'X-PAN-KEY: <your API key>' --data '" . $post . "'" : '' ) . " '" . $url . "'";
+        $trace = array( ' * connection test to ' . $target . ( $port !== null ? ' port ' . $port : '' ) . ( $sni !== '' ? ' as ' . $sni : '' ) . ' ...',
+            'same with curl: ' . $cmd,
+            'TLS certificate check: ' . ( $scheme === 'http' ? 'plain HTTP (test simulation)' : ( $verify ? 'on' : 'off' ) ) . ', TLS version: ' . ( $tls === '' ? 'auto' : $tls )
+                . ', proxy of the server environment: ' . ( $proxy ? 'yes (if set)' : 'no' ) );
+        $c = $this->curlTraced( $url, array( 'post' => $post, 'verify' => $verify, 'tls' => $tls, 'proxy' => $proxy ? null : FALSE,
+            'connect' => $sni !== '' ? $sni . ':' . $p . ':' . $target . ':' . $p : null, 'headers' => $secret !== null ? array( 'X-PAN-KEY: ' . $secret ) : array() ), $trace );
+        $mask = function( string $t ) use ( $secret ) {
+            if( $secret !== null && $secret !== '' )
+                $t = str_replace( $secret, '********', $t );
+            $t = preg_replace( '#(<key>)(.*?)(</key>)#s', '$1********$3', $t );
+            return preg_replace( '/^(set-cookie|x-pan-key|authorization): *.*$/mi', '$1: ********', $t );
+        };
+        $summary = array();
+        $ok = $c['raw'] !== FALSE;
+        if( $ok )
+        {
+            $trace[] = 'answer headers: ' . trim( preg_replace( '/\r?\n/', ' | ', $mask( $c['headers'] ) ) );
+            $trace[] = 'answer (' . strlen( $c['body'] ) . ' bytes): ' . substr( preg_replace( '/\s+/', ' ', $mask( $c['body'] ) ), 0, 4000 );
+            $summary[] = 'reached ' . $target . ', HTTP ' . $c['code'];
+            if( $mode === 'api' )
+            {
+                $doc = new DOMDocument();
+                $resp = trim( $c['body'] ) !== '' && @$doc->loadXML( trim( $c['body'] ), LIBXML_NONET ) ? $doc->documentElement : null;
+                if( $resp !== null && $resp->nodeName === 'response' && $resp->getAttribute( 'status' ) === 'success' )
+                {
+                    $info = array();
+                    foreach( array( 'hostname', 'model', 'serial', 'sw-version', 'ip-address' ) as $f )
+                        foreach( $doc->getElementsByTagName( $f ) as $e )
+                        {
+                            $info[] = $f . ' ' . trim( $e->textContent );
+                            break;
+                        }
+                    $summary[] = 'XML API with your key: ok' . ( $info ? ' - ' . implode( ', ', $info ) : '' );
+                }
+                else
+                {
+                    $ok = FALSE;
+                    $summary[] = 'XML API with your key: ' . ( $resp !== null && $resp->nodeName === 'response' ? substr( trim( preg_replace( '/\s+/', ' ', $mask( $resp->textContent ) ) ), 0, 200 ) ?: 'refused' : 'no XML API answer' );
+                }
+            }
+        }
+        else
+            $summary[] = 'no answer: ' . ( $c['errno'] ? '[' . $c['errno'] . '] ' : '' ) . substr( $c['err'], 0, 200 );
+        foreach( $trace as $l )
+            if( strpos( $l, 'hint: ' ) === 0 )
+                $summary[] = $l;
+        unset( $secret );
+        return array( 'ok' => $ok, 'summary' => $summary, 'curl' => $cmd, 'debug' => $mask( implode( "\n", $trace ) ) );
+    }
+
+    /**
      * the API key of a firewall / Panorama from its management address with user name + password (as pan-os-php
      * type=key-manager add=<host>: the XML API type=keygen), stored as an own entry of kind panos (personal, encrypted;
      * an entry of the same host is replaced). The password is only sent to the device (POST, never in the URL) - it is
@@ -928,7 +1345,7 @@ class ViewerApp
         $password = $in['password'] ?? null;
         if( !is_string( $password ) || $password === '' || strlen( $password ) > 1000 )
             throw new ViewerException( 'password: the password of the administrator', 400 );
-        $why = $this->networkRefusal( 'panos', $target );
+        $why = $this->networkRefusal( 'panos', $target, $user );
         if( $why !== null )
             throw new ViewerException( 'can not reach ' . $target . ': ' . $why, 403 );
         if( !function_exists( 'curl_init' ) )
@@ -952,58 +1369,12 @@ class ViewerApp
             $trace[] = ' FAILED: ' . $msg;
             throw new ViewerDetailException( $msg, $code, implode( "\n", $trace ) );
         };
-        $verbose = fopen( 'php://temp', 'w+' );
-        $ch = curl_init( $url );
-        curl_setopt_array( $ch, array(
-            CURLOPT_POST => TRUE,
-            CURLOPT_POSTFIELDS => 'type=keygen&user=' . rawurlencode( $name ) . '&password=' . rawurlencode( $password ),
-            CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_FOLLOWLOCATION => FALSE, CURLOPT_CONNECTTIMEOUT => 7, CURLOPT_TIMEOUT => 30,
-            CURLOPT_SSL_VERIFYPEER => $verify, CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
-            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS | CURLPROTO_HTTP, CURLOPT_MAXFILESIZE => 1000000,
-            CURLOPT_HEADER => TRUE, CURLOPT_CERTINFO => TRUE, CURLOPT_VERBOSE => TRUE, CURLOPT_STDERR => $verbose,
-        ) );
-        $raw = curl_exec( $ch );
-        $err = curl_error( $ch );
-        $errno = curl_errno( $ch );
-        $code = (int)curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
-        $hsize = (int)curl_getinfo( $ch, CURLINFO_HEADER_SIZE );
-        $ip = (string)curl_getinfo( $ch, CURLINFO_PRIMARY_IP );
-        $time = (float)curl_getinfo( $ch, CURLINFO_TOTAL_TIME );
-        $sslv = curl_getinfo( $ch, CURLINFO_SSL_VERIFYRESULT );
-        $certs = curl_getinfo( $ch, CURLINFO_CERTINFO );
-        curl_close( $ch );
+        $c = $this->curlTraced( $url, array( 'post' => 'type=keygen&user=' . rawurlencode( $name ) . '&password=' . rawurlencode( $password ), 'verify' => $verify ), $trace );
         unset( $password, $in['password'] );
-        rewind( $verbose );
-        $vlog = (string)stream_get_contents( $verbose, 64000 );
-        fclose( $verbose );
-        // the connection as curl saw it (TLS handshake, certificate, HTTP status) - the request body is not in it;
-        // a password / key pattern is masked anyway
-        $vlog = preg_replace( array( '/(password=)[^&\s]*/i', '/(key=)[^&\s]*/i' ), '$1********', $vlog );
-        $trace[] = 'connection: ' . ( $ip !== '' ? $ip : '-' ) . ', ' . sprintf( '%.2f', $time ) . 's, HTTP ' . ( $code ?: '-' )
-            . ( $scheme === 'https' && $sslv !== FALSE ? ', certificate verify result ' . (int)$sslv . ( (int)$sslv === 0 ? ' (ok)' : ( $verify ? ' (not trusted)' : ' (not trusted - ignored, check off)' ) ) : '' );
-        foreach( is_array( $certs ) ? $certs : array() as $i => $c )
-            if( is_array( $c ) )
-                $trace[] = 'certificate ' . $i . ': subject ' . ( $c['Subject'] ?? '?' ) . ' | issuer ' . ( $c['Issuer'] ?? '?' )
-                    . ' | valid ' . ( $c['Start date'] ?? '?' ) . ' - ' . ( $c['Expire date'] ?? '?' );
-        $trace[] = '--- curl ---';
-        foreach( preg_split( '/\r?\n/', trim( $vlog ) ) as $l )
-            if( $l !== '' && !preg_match( '/^[<>] *$/', $l ) )
-                // the list of hosts without proxy is long and says little: only that it is set
-                $trace[] = substr( preg_replace( "/^(\\* Uses proxy env variable no_proxy) == .*/i", '$1 (set)', $l ), 0, 300 );
-        $trace[] = '---';
-        // what usually helps with the error of curl
-        $hint = array( 6 => 'the name does not resolve on the server of the viewer (DNS) - try the IP address',
-            7 => 'connection refused / no route - management IP, port, the interface management profile (HTTPS) and permitted IPs of the device, firewalls between',
-            28 => 'timeout - the device does not answer: routing, a firewall between, the permitted IPs of the management interface',
-            35 => 'TLS handshake failed - TLS version / ciphers of the device (SSL/TLS service profile of the management) and of the server, or not HTTPS on that port',
-            51 => 'the certificate does not match the name / IP - use the name of the certificate or turn the certificate check off',
-            60 => 'the certificate is not trusted by the server of the viewer (self-signed / own CA) - turn the certificate check off or add the CA on the server',
-            56 => 'the connection was closed - proxy, TLS inspection between, or the device', 52 => 'empty answer - not the XML API on that port?' )[$errno] ?? null;
-        if( $hint !== null )
-            $trace[] = 'hint: ' . $hint;
+        $raw = $c['raw']; $errno = $c['errno']; $err = $c['err']; $code = $c['code'];
         if( $raw === FALSE )
             $fail( 'no answer from ' . $target . ( $port !== null ? ':' . $port : '' ) . ': ' . ( $errno ? '[' . $errno . '] ' : '' ) . substr( $err, 0, 200 ), 502 );
-        $body = substr( (string)$raw, $hsize );
+        $body = $c['body'];
         // the answer for the trace: the key shortened, at most 4000 characters
         $shown = preg_replace_callback( '#(<key>)(.*?)(</key>)#s', function( $m ) use ( $short ) { return $m[1] . $short( trim( $m[2] ) ) . $m[3]; }, $body );
         $trace[] = 'answer (' . strlen( $body ) . ' bytes): ' . substr( preg_replace( '/\s+/', ' ', $shown ), 0, 4000 );
@@ -1243,7 +1614,7 @@ class ViewerApp
         {
             if( !is_array( $s ) || !is_string( $s['uri'] ?? null ) || !preg_match( '#^ldaps?://([a-z0-9.-]+)(:[0-9]{1,5})?$#', $s['uri'], $m ) )
                 continue;
-            $why = $this->networkRefusal( 'panos', $m[1] );
+            $why = $this->networkRefusal( 'panos', $m[1], $user );
             $servers[] = array( 'uri' => $s['uri'], 'host' => $m[1], 'priority' => (int)( $s['priority'] ?? 0 ), 'weight' => (int)( $s['weight'] ?? 0 ),
                 'answered' => ( $r['rootDse']['server'] ?? null ) === $s['uri'], 'refused' => $why );
             if( $why === null && $first === null )
@@ -1269,14 +1640,14 @@ class ViewerApp
      * network rules for an LDAP target: a host, or auto:<domain> (the domain controllers of the domain from DNS - the
      * allow list must cover the domain or its hosts, e.g. *.example.local; pan-os-php only asks hosts in the domain)
      */
-    private function ldapRefusal( string $target ): ?string
+    private function ldapRefusal( string $target, ?array $user = null ): ?string
     {
         if( strpos( $target, 'auto:' ) !== 0 )
-            return $this->networkRefusal( 'panos', $target );
+            return $this->networkRefusal( 'panos', $target, $user );
         $domain = substr( $target, 5 );
-        if( $this->networkRefusal( 'panos', $domain ) === null )
+        if( $this->networkRefusal( 'panos', $domain, $user ) === null )
             return null;
-        $why = $this->networkRefusal( 'panos', 'dc.' . $domain );
+        $why = $this->networkRefusal( 'panos', 'dc.' . $domain, $user );
         return $why === null ? null : $why . ' - the administrator puts *.' . $domain . ' on the allow list';
     }
 
@@ -1602,10 +1973,10 @@ class ViewerApp
                 throw new ViewerException( 'kid: one of your API keys of a firewall / Panorama or an SCM tenant (Account, My API keys)', 400 );
             // the order of the reasons: installation, project, target
             if( !$this->networkGet()['enabled'] )
-                throw new ViewerException( (string)$this->networkRefusal( $k['kind'], $k['target'] ), 403 );
+                throw new ViewerException( (string)$this->networkRefusal( $k['kind'], $k['target'], $user ), 403 );
             if( empty( $p['network'] ) )
                 throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
-            if( ( $why = $this->networkRefusal( $k['kind'], $k['target'] ) ) !== null )
+            if( ( $why = $this->networkRefusal( $k['kind'], $k['target'], $user ) ) !== null )
                 throw new ViewerException( $why, 403 );
             $source = $in['source'] ?? 'candidate';
             if( !in_array( $source, array( 'candidate', 'running' ), TRUE ) || ( $k['kind'] === 'scm' && $source !== 'candidate' ) )
@@ -1625,10 +1996,10 @@ class ViewerApp
             if( strlen( $domain ) > 253 || !preg_match( '/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$/', $domain ) )
                 throw new ViewerException( 'domain: the DNS name of the AD domain, e.g. example.local', 400 );
             if( !$this->networkGet()['enabled'] )
-                throw new ViewerException( (string)$this->networkRefusal( 'panos', 'dc.' . $domain ), 403 );
+                throw new ViewerException( (string)$this->networkRefusal( 'panos', 'dc.' . $domain, $user ), 403 );
             if( empty( $p['network'] ) )
                 throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
-            if( $this->networkRefusal( 'panos', $domain ) !== null && ( $why = $this->networkRefusal( 'panos', 'dc.' . $domain ) ) !== null )
+            if( $this->networkRefusal( 'panos', $domain, $user ) !== null && ( $why = $this->networkRefusal( 'panos', 'dc.' . $domain, $user ) ) !== null )
                 throw new ViewerException( $why . ' - the administrator puts *.' . $domain . ' on the allow list', 403 );
             $args = array( 'x-ldap-discover-target=' . $domain, 'mode=discover', 'domain=' . $domain, 'out=%JOB%/ldap.json' );
             if( isset( $in['ldaps'] ) && ( $in['ldaps'] === FALSE || $in['ldaps'] === 'no' || $in['ldaps'] === 'false' ) )
@@ -1653,10 +2024,10 @@ class ViewerApp
             // automatic server: the target is the domain (auto:<domain>) - the allow list must cover its hosts
             $target = $q['server'] === '' ? 'auto:' . $q['domain'] : $q['host'];
             if( !$this->networkGet()['enabled'] )
-                throw new ViewerException( (string)$this->ldapRefusal( $target ), 403 );
+                throw new ViewerException( (string)$this->ldapRefusal( $target, $user ), 403 );
             if( empty( $p['network'] ) )
                 throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
-            if( ( $why = $this->ldapRefusal( $target ) ) !== null )
+            if( ( $why = $this->ldapRefusal( $target, $user ) ) !== null )
                 throw new ViewerException( $why, 403 );
             $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $target );
             if( $type === 'ldap' )
@@ -1715,10 +2086,10 @@ class ViewerApp
                 throw new ViewerException( 'kid: ' . ( $type === 'appid' ? 'one of your API keys of a firewall / Panorama' : 'your maxmind-licensekey' ) . ' (Account, My API keys)', 400 );
             $host = $type === 'appid' ? $k['target'] : self::MAXMIND_HOST;
             if( !$this->networkGet()['enabled'] )
-                throw new ViewerException( (string)$this->networkRefusal( 'panos', $host ), 403 );
+                throw new ViewerException( (string)$this->networkRefusal( 'panos', $host, $user ), 403 );
             if( !$central && empty( $p['network'] ) )
                 throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
-            if( ( $why = $this->networkRefusal( 'panos', $host ) ) !== null )
+            if( ( $why = $this->networkRefusal( 'panos', $host, $user ) ) !== null )
                 throw new ViewerException( $why, 403 );
             $args = array( 'x-' . $type . '-key=' . $k['kid'], 'x-' . $type . '-target=' . $host );
         }
@@ -2515,7 +2886,8 @@ class ViewerApp
             $domain = (string)( $x['target'] ?? '' );
             if( !$p || empty( $p['network'] ) )
                 throw new ViewerException( 'network is off for this project' );
-            if( $this->networkRefusal( 'panos', $domain ) !== null && ( $why = $this->networkRefusal( 'panos', 'dc.' . $domain ) ) !== null )
+            $ju = array( 'id' => (int)$j['user_id'] );
+            if( $this->networkRefusal( 'panos', $domain, $ju ) !== null && ( $why = $this->networkRefusal( 'panos', 'dc.' . $domain, $ju ) ) !== null )
                 throw new ViewerException( $why );
             return array( $step( 'ldap-query', array_values( array_filter( $args, function( $a ) { return strpos( $a, 'x-' ) !== 0; } ) ), TRUE ) );
         }
@@ -2551,7 +2923,9 @@ class ViewerApp
                 throw new ViewerException( 'the LDAP account of the run does not fit its bind user any more' );
         }
         $host = $type === 'geoip' ? self::MAXMIND_HOST : ( $type === 'ldap' || $type === 'ldap-users' ? (string)( $x['target'] ?? '' ) : $k['target'] );
-        $why = $type === 'ldap' || $type === 'ldap-users' ? $this->ldapRefusal( $host ) : $this->networkRefusal( $type === 'geoip' ? 'panos' : $k['kind'], $host );
+        // the rules again when the run starts, for the user who started it (the administrator may have changed them)
+        $ju = array( 'id' => (int)$j['user_id'] );
+        $why = $type === 'ldap' || $type === 'ldap-users' ? $this->ldapRefusal( $host, $ju ) : $this->networkRefusal( $type === 'geoip' ? 'panos' : $k['kind'], $host, $ju );
         if( $why !== null )
             throw new ViewerException( $why );
         $secret = $this->unseal( $k['secret'] );
@@ -2922,7 +3296,7 @@ class ViewerApp
     /** fields of a request body that are kept in the audit log - never passwords, tokens or file content */
     const AUDIT_FIELDS = array( 'type', 'location', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'user', 'role', 'types', 'scope', 'label', 'days',
         'name', 'playbook', 'predefined', 'bp', 'admin', 'kind', 'enabled', 'subprocess', 'memorythreshold', 'debugmemory', 'removestagefiles', 'other', 'setcommands', 'noruleordercheck', 'xpath',
-        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action', 'domain', 'field' );
+        'kid', 'source', 'target', 'allow', 'deny', 'qid', 'mode', 'server', 'action', 'domain', 'field', 'hosts', 'decision', 'users', 'conntest', 'network', 'port', 'path' );
 
     /** one line of the audit log; old lines are removed after PANOSPHP_VIEWER_AUDIT_DAYS (default 365) */
     public function auditWrite( ?string $user, ?string $token, string $ip, ?string $pid, string $method, string $route, int $status, array $detail = array() ): void

@@ -202,6 +202,51 @@ function keyEdit(k, tr) {
     tr.replaceChildren(el('td', { text: k.target }), el('td', { colspan: 7 }, form));
     label.focus();
 }
+/**
+ * the connection test (Account): fixed fields instead of a command line - one call to a firewall / Panorama, the
+ * result as curl -v would show it (DNS, TCP, TLS, certificate chain, HTTP) and the curl line to do the same elsewhere
+ */
+function connTestWindow(keys) {
+    const box = el('div', { class: 'objwin explainwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'connection test' });
+    const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
+    const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+    function close() { document.removeEventListener('keydown', onKey); overlay.remove(); }
+    const host = el('input', { required: true, autocomplete: 'off', placeholder: '192.0.2.10 / fw1.example.com', size: 24 });
+    const port = el('input', { inputmode: 'numeric', size: 5, placeholder: '443' });
+    const mode = el('select', {}, el('option', { value: 'reach', text: 'reach the device (HTTPS)' }), keys.length ? el('option', { value: 'api', text: 'XML API with my key (show system info)' }) : null);
+    const path = el('select', {}, ['/api/', '/', '/php/login.php'].map(p => el('option', { value: p, text: p })));
+    const kid = el('select', {}, keys.map(k => el('option', { value: k.kid, text: k.target + (k.label ? ' (' + k.label + ')' : '') })));
+    const verify = el('input', { type: 'checkbox' }), proxy = el('input', { type: 'checkbox', checked: true });
+    const tls = el('select', {}, el('option', { value: '', text: 'auto' }), el('option', { value: '1.2', text: 'TLS 1.2 only' }), el('option', { value: '1.3', text: 'TLS 1.3' }));
+    const sni = el('input', { autocomplete: 'off', size: 22, placeholder: 'optional: fw1.example.com' });
+    const fKid = field('My API key', kid), fPath = field('Path', path);
+    const modeChanged = () => { fKid.hidden = mode.value !== 'api'; fPath.hidden = mode.value === 'api'; if (mode.value === 'api' && kid.selectedOptions[0] && !host.value) host.value = kid.selectedOptions[0].text.split(' ')[0]; };
+    mode.addEventListener('change', modeChanged);
+    const out = el('div', {});
+    const form = el('form', { onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        out.replaceChildren(el('p', { class: 'muted', text: 'testing ...' }));
+        const body = { target: host.value.trim(), mode: mode.value, path: path.value, verify: verify.checked, proxy: proxy.checked, tls: tls.value, servername: sni.value.trim() };
+        if (port.value.trim()) body.port = port.value.trim();
+        if (mode.value === 'api') body.kid = kid.value;
+        try {
+            const r = await api('POST', 'conntest', body);
+            out.replaceChildren(el('div', { class: 'card notice' }, el('strong', { class: r.ok ? '' : 'warn', text: r.ok ? 'OK' : 'FAILED' }), ...r.summary.flatMap(l => [el('br'), l])),
+                el('p', {}, 'same with curl: ', el('code', { text: r.curl })),
+                el('details', { open: !r.ok }, el('summary', { text: 'Debug output' }), el('pre', { class: 'log', text: r.debug })));
+        } catch (e) { out.replaceChildren(el('p', { class: 'warn', text: e.message })); throw e; }
+    }); } },
+        el('div', { class: 'row' }, field('Firewall / Panorama (IP or name)', host), field('Port', port), field('Test', mode), fKid, fPath),
+        el('div', { class: 'row' }, field('Check the TLS certificate', verify), field('TLS version', tls), field('Use the proxy of the server', proxy), field('Certificate name (SNI)', sni),
+            el('button', { class: 'primary', type: 'submit', text: 'Run test' })));
+    box.append(el('div', { class: 'objhead' }, el('h3', { text: 'Connection test' }), el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+        el('p', { class: 'muted', text: 'From the server of the viewer to the device, for the hosts you may reach. Only HTTPS / HTTP with these fields - no command line, no files. API keys, cookies and passwords are never shown.' }),
+        form, out);
+    modeChanged();
+    document.addEventListener('keydown', onKey);
+    document.body.append(overlay);
+    host.focus();
+}
+
 async function showAccount() {
     const oldPw = el('input', { type: 'password', autocomplete: 'current-password', required: true });
     const newPw = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: 10 });
@@ -294,6 +339,32 @@ async function showAccount() {
                         await api('DELETE', 'keys/' + k.kid); await showAccount();
                     }) }))))))));
     }
+    // ---- network access and requests (every user): what I may, ask the administrators for more, the connection test
+    {
+        const ks = await api('GET', 'keys');
+        const acc = ks.access || {};
+        const mine = (await api('GET', 'requests')).requests || [];
+        const rHosts = el('textarea', { rows: 3, spellcheck: false, placeholder: 'one per line: fw1.example.com, 192.168.10.155, 10.1.0.0/16, *.example.com, tsg:1234567890' });
+        const rReason = el('input', { size: 50, maxlength: 1000, placeholder: 'why - e.g. import of the customer firewall for the as-is report' });
+        const rKind = el('select', {}, el('option', { value: 'network', text: 'Network to these hosts' }), el('option', { value: 'conntest', text: 'Connection test (hosts optional)' }));
+        nodes.push(el('div', { class: 'card' }, el('h2', { text: 'Network access and requests' }),
+            el('p', {}, 'Network: ', el('strong', { text: !ks.network ? 'off for the installation' : acc.network ? 'allow list of the administrator' : 'only own hosts' }),
+                ' - own hosts: ', el('strong', { text: (acc.hosts || []).join(', ') || 'none' }),
+                ' - connection test: ', el('strong', { text: acc.conntest ? 'allowed' : 'not allowed' })),
+            acc.conntest ? el('div', { class: 'row' }, el('button', { type: 'button', class: 'primary', text: 'Connection test', onclick: () => connTestWindow(ks.keys.filter(k => k.kind === 'panos')) }),
+                el('span', { class: 'muted', text: 'one call to a firewall / Panorama with everything curl -v shows (DNS, TLS, certificate, HTTP) - no command line' })) : null,
+            el('h3', { text: 'Ask the administrators' }),
+            el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                await api('POST', 'requests', { kind: rKind.value, hosts: rHosts.value, reason: rReason.value });
+                await showAccount(); message('request sent to the administrators');
+            }); } }, field('Request', rKind), el('label', { class: 'grow' }, 'Hosts / networks', rHosts), field('Reason', rReason), el('button', { class: 'primary', type: 'submit', text: 'Send request' })),
+            mine.length ? table(['Sent', 'Request', 'Hosts', 'Reason', 'State', 'Note of the administrator', ''], mine.map(r => el('tr', {},
+                el('td', { text: fmtTime(r.created) }), el('td', { text: r.kind === 'conntest' ? 'connection test' : 'network' }), el('td', { class: 'wrap', text: r.hosts.join(', ') }),
+                el('td', { class: 'wrap', text: r.reason }), el('td', {}, el('span', { class: 'badge' + (r.state === 'rejected' ? ' dirty' : ''), text: r.state })),
+                el('td', { class: 'wrap', text: (r.note || '') + (r.decided_by ? ' (' + r.decided_by + ', ' + fmtTime(r.decided) + ')' : '') }),
+                el('td', {}, r.state === 'open' ? el('button', { type: 'button', class: 'small', text: 'Withdraw', onclick: () => run(async () => { await api('DELETE', 'requests/' + r.rid); await showAccount(); }) }) : null))))
+                : el('p', { class: 'muted', text: 'No requests.' })));
+    }
     if (state.admin) {
         const users = (await api('GET', 'users')).users;
         const name = el('input', { required: true, autocomplete: 'off' });
@@ -304,8 +375,18 @@ async function showAccount() {
                 await api('POST', 'users', { user: name.value, password: pw.value, admin: adm.checked });
                 await showAccount(); message('user created');
             }); } }, field('User name', name), field('Initial password', pw), field('Admin', adm), el('button', { class: 'primary', type: 'submit', text: 'Create user' })),
-            el('table', { class: 'plain' }, el('thead', {}, el('tr', {}, el('th', { text: 'User' }), el('th', { text: 'Admin' }), el('th', { text: 'Created' }), el('th', {}))),
+            el('table', { class: 'plain' }, el('thead', {}, el('tr', {}, el('th', { text: 'User' }), el('th', { text: 'Admin' }), el('th', { text: 'Created' }),
+                    el('th', { text: 'Network', title: 'may use the allow list (when it is for selected users)' }), el('th', { text: 'Conn. test' }), el('th', { text: 'Own hosts' }), el('th', {}))),
                 el('tbody', {}, users.map(u => el('tr', {}, el('td', { text: u.name }), el('td', { text: u.admin ? 'yes' : '' }), el('td', { text: fmtTime(u.created) }),
+                    el('td', {}, u.admin ? el('span', { class: 'muted', text: 'admin' }) : el('input', { type: 'checkbox', checked: u.network, 'aria-label': 'network for ' + u.name,
+                        onchange: (ev) => run(async () => { await api('PUT', 'users/' + encodeURIComponent(u.name), { network: ev.target.checked }); message('saved'); }) })),
+                    el('td', {}, u.admin ? el('span', { class: 'muted', text: 'admin' }) : el('input', { type: 'checkbox', checked: u.conntest, 'aria-label': 'connection test for ' + u.name,
+                        onchange: (ev) => run(async () => { await api('PUT', 'users/' + encodeURIComponent(u.name), { conntest: ev.target.checked }); message('saved'); }) })),
+                    el('td', { class: 'wrap' }, el('span', { text: (u.hosts || []).join(', ') || '-' }), ' ', el('button', { type: 'button', class: 'small', text: 'Edit', onclick: (ev) => {
+                        const ta = el('textarea', { rows: 3, spellcheck: false, placeholder: 'one per line' }); ta.value = (u.hosts || []).join('\n');
+                        ev.target.parentNode.replaceChildren(ta, el('button', { type: 'button', class: 'small primary', text: 'Save', onclick: () => run(async () => {
+                            await api('PUT', 'users/' + encodeURIComponent(u.name), { hosts: ta.value }); await showAccount(); message('own hosts of ' + u.name + ' saved'); }) }));
+                    } })),
                     el('td', {}, u.name === state.user ? null : el('div', { class: 'row' },
                         el('button', { type: 'button', text: 'New password', onclick: (ev) => run(async () => {
                             if (!confirm('Give "' + u.name + '" a new password? The old one stops working.')) return;
@@ -316,6 +397,23 @@ async function showAccount() {
                             if (!confirm('Delete user "' + u.name + '" and all projects this user owns?')) return;
                             await api('DELETE', 'users/' + encodeURIComponent(u.name)); await showAccount();
                         }) })))))))));
+    }
+    // ---- requests of all users (administrator): approve (hosts as asked or changed) / reject with a note
+    if (state.admin) {
+        const all = (await api('GET', 'requests?all=1')).requests || [];
+        const open = all.filter(r => r.state === 'open');
+        nodes.push(el('div', { class: 'card' }, el('h2', { text: 'Requests (admin)' + (open.length ? ' - ' + open.length + ' open' : '') }),
+            all.length ? table(['Sent', 'User', 'Request', 'Hosts', 'Reason', 'State / decision'], all.slice(0, 100).map(r => {
+                const h = el('textarea', { rows: 2, spellcheck: false }); h.value = r.hosts.join('\n');
+                const note = el('input', { size: 24, maxlength: 1000, placeholder: 'note for the user' });
+                const decide = (decision) => run(async () => { await api('PUT', 'requests/' + r.rid, { decision, note: note.value, hosts: h.value }); await showAccount(); message('request ' + (decision === 'approve' ? 'approved' : 'rejected')); });
+                return el('tr', { class: r.state === 'open' ? 'warnrow' : '' }, el('td', { text: fmtTime(r.created) }), el('td', { text: r.user }),
+                    el('td', { text: r.kind === 'conntest' ? 'connection test' : 'network' }),
+                    el('td', { class: 'wrap' }, r.state === 'open' ? h : el('span', { text: r.hosts.join(', ') })), el('td', { class: 'wrap', text: r.reason }),
+                    el('td', {}, r.state === 'open' ? el('div', { class: 'row' }, note, el('button', { type: 'button', class: 'small primary', text: 'Approve', onclick: () => decide('approve') }),
+                        el('button', { type: 'button', class: 'small danger', text: 'Reject', onclick: () => decide('reject') }))
+                        : el('span', {}, el('span', { class: 'badge' + (r.state === 'rejected' ? ' dirty' : ''), text: r.state }), ' ' + (r.decided_by || '') + ' ' + (r.note || ''))));
+            })) : el('p', { class: 'muted', text: 'No requests.' })));
     }
     if (state.admin) {
         const pl = (await api('GET', 'meta')).plugins || { plugins: [], errors: {} };
@@ -346,12 +444,17 @@ async function showAccount() {
         const nAllow = el('textarea', { rows: 4, spellcheck: false, placeholder: 'one per line: fw1.example.com, *.example.com, 10.1.1.1, 10.0.0.0/8, tsg:1234567890, tsg:*, *' });
         const nDeny = el('textarea', { rows: 4, spellcheck: false, placeholder: 'one per line - wins over the allow list' });
         nAllow.value = net.allow.join('\n'); nDeny.value = net.deny.join('\n');
+        const nUsers = el('select', {}, el('option', { value: 'all', text: 'all users' }), el('option', { value: 'selected', text: 'selected users (Users: Network) and administrators' }));
+        nUsers.value = net.users || 'all';
+        const nCt = el('select', {}, el('option', { value: 'selected', text: 'administrators and selected users (Users: Conn. test)' }), el('option', { value: 'all', text: 'all users' }));
+        nCt.value = net.conntest || 'selected';
         nodes.push(el('form', { class: 'card', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
-            await api('PUT', 'network', { enabled: nOn.checked, allow: nAllow.value, deny: nDeny.value });
+            await api('PUT', 'network', { enabled: nOn.checked, allow: nAllow.value, deny: nDeny.value, users: nUsers.value, conntest: nCt.value });
             message('network for runs saved'); await showAccount();
         }); } }, el('h2', { text: 'Network for runs (admin)' }),
             el('p', { class: 'muted', text: 'Runs have no network. With this on, an import may download a configuration (read only) from a firewall / Panorama (XML API) or an SCM tenant - with the API key of the user who starts it, in a project whose owner turned network on. Nothing is written to a device. A target must be on the allow list and not on the deny list; an empty allow list allows nothing.' }),
-            el('div', { class: 'row' }, field('Network for runs (imports)', nOn)),
+            el('div', { class: 'row' }, field('Network for runs (imports)', nOn), field('Allow list for', nUsers), field('Connection test for', nCt)),
+            el('p', { class: 'muted', text: 'Per user (Users below, or by approving a request): own hosts - a user reaches them also when the allow list is not for this user; the deny list wins always.' }),
             el('div', { class: 'row' }, el('label', { class: 'grow' }, 'Allow list', nAllow), el('label', { class: 'grow' }, 'Deny list', nDeny)),
             el('button', { class: 'primary', type: 'submit', text: 'Save' })));
         // App-ID database and MaxMind data of the installation: download (own key, network rules) or upload (air gap)

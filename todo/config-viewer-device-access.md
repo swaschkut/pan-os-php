@@ -63,6 +63,12 @@ group membership and the cleanup check (do the users still exist?); saved querie
   and `ldap-users` (a version: `type=rule actions=user-check-ldap`, `remove` → result configuration); network rules
   as for an import (LDAP host on the allow list); project tab **LDAP**
 * `PUT keys/<kid>`: label / port, optionally a new secret; **Edit** in *My API keys*
+* network per user + own hosts + requests + connection test (2026-11-22): settings `users` (all / selected) and
+  `conntest` (all / selected), users.network / users.conntest, table `user_hosts`, table `access_requests`
+  (`GET|POST requests`, `DELETE requests/<rid>`, admin `GET requests?all=1`, `PUT requests/<rid>`), `PUT users/<name>`
+  (network, conntest, hosts), `POST conntest`; `networkRefusal($kind, $target, $user)` everywhere (start + run)
+* open: a mail / notice to the administrators on a new request (today: number of open requests in Account);
+  expiry of own hosts (valid until); the connection test for SCM / LDAP (today PAN-OS HTTPS)
 * `POST keys/generate` (2026-11-22): the PAN-OS API key from management address + administrator + password (XML API
   keygen by POST, as key-manager add=<host>) - only to allowed hosts, password not stored / logged / audited, TLS
   check optional (`verify`); form *Get the API key from a firewall / Panorama* in *My API keys*

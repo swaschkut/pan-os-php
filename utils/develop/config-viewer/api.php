@@ -22,7 +22,9 @@
  *   POST login, POST logout, GET me, POST password, GET meta, GET playbooks, GET playbooks?all=1 + PUT playbooks (admin)
  *   GET|POST keys, POST keys/generate (API key from user + password), PUT|DELETE keys/<kid> (own API keys), GET|POST ldap, PUT|DELETE ldap/<qid> (own LDAP queries), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
  *   GET central, POST central/appid|geoip[/runs], DELETE central/appid|geoip (admin); GET|POST|DELETE projects/<pid>/appid, POST projects/<pid>/appid/runs
- *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
+ *   GET|POST users, PUT|DELETE users/<name> (network, conntest, hosts), POST users/<name>/password, GET audit   (admin)
+ *   POST conntest (connection test), GET|POST requests, DELETE requests/<rid> (own requests: network to hosts, connection test),
+ *   GET requests?all=1, PUT requests/<rid> (admin: approve / reject)
  *   GET projects/<pid>/audit                                              (owner)
  *   GET|POST projects, GET|DELETE projects/<pid>
  *   GET|PUT projects/<pid>/members, DELETE projects/<pid>/members/<name>
@@ -159,7 +161,7 @@ try
         $user['is_admin'] = 0;
         $csrf = null;
         $viewerAudit['token'] = $user['token']['tid'];
-        if( in_array( $r0, array( 'logout', 'password', 'users', 'license', 'keys', 'network', 'ldap' ), TRUE ) )
+        if( in_array( $r0, array( 'logout', 'password', 'users', 'license', 'keys', 'network', 'ldap', 'conntest', 'requests' ), TRUE ) )
             throw new ViewerException( 'not found', 404 );
     }
     else
@@ -260,6 +262,9 @@ try
             $b = viewerBody();
             viewerOut( $app->userCreate( $b['user'] ?? null, $b['password'] ?? null, !empty( $b['admin'] ) ), 201 );
         }
+        // what the user may beyond projects: network, connection test, own hosts
+        if( $method === 'PUT' && count( $route ) == 2 )
+            viewerOut( $app->userPermissions( $route[1], viewerBody() ) );
         // a new password for a user (made by the viewer, shown once to the administrator)
         if( $method === 'POST' && count( $route ) == 3 && $route[2] === 'password' )
             viewerOut( array( 'user' => $route[1], 'password' => $app->userNewPassword( $route[1] ) ) );
@@ -272,6 +277,32 @@ try
         }
     }
 
+    // the connection test (who may: administrator, Account, Network): one call to a device with its trace
+    if( $r0 === 'conntest' && count( $route ) === 1 && $method === 'POST' )
+        viewerOut( $app->connTest( $user, viewerBody() ) );
+    // requests to the administrators: network to hosts, the connection test
+    if( $r0 === 'requests' )
+    {
+        $n = count( $route );
+        if( $method === 'GET' && $n === 1 )
+        {
+            $all = $admin && ( $_GET['all'] ?? '' ) === '1';
+            viewerOut( array( 'requests' => $app->requestList( $user, $all ) ) );
+        }
+        if( $method === 'POST' && $n === 1 )
+            viewerOut( $app->requestCreate( $user, viewerBody() ), 201 );
+        if( $method === 'DELETE' && $n === 2 )
+        {
+            $app->requestWithdraw( $user, $route[1] );
+            viewerOut( array( 'ok' => TRUE ) );
+        }
+        if( $method === 'PUT' && $n === 2 )
+        {
+            if( !$admin )
+                throw new ViewerException( 'not found', 404 );
+            viewerOut( $app->requestDecide( $user, $route[1], viewerBody() ) );
+        }
+    }
     // network for runs (administrator): on / off, allow list, deny list
     if( $r0 === 'network' && count( $route ) === 1 )
     {
@@ -313,7 +344,8 @@ try
     if( $r0 === 'keys' )
     {
         if( $method === 'GET' && count( $route ) === 1 )
-            viewerOut( array( 'keys' => $app->keyList( $user ), 'kinds' => ViewerApp::KEY_KINDS, 'named' => ViewerApp::KEY_NAMED, 'network' => $app->networkGet()['enabled'] ) );
+            viewerOut( array( 'keys' => $app->keyList( $user ), 'kinds' => ViewerApp::KEY_KINDS, 'named' => ViewerApp::KEY_NAMED, 'network' => $app->networkGet()['enabled'] )
+                + $app->accessInfo( $user ) );
         // an existing .panconfkeystore: the file (multipart field "keystore") or its text (JSON "keystore")
         if( $method === 'POST' && count( $route ) === 2 && $route[1] === 'import' )
         {

@@ -426,7 +426,7 @@ eq( call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => '*' ) )[0], 404
 $as( 'root', 'root-secret-123' );
 eq( call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => 'no host!' ) )[0], 400, 'network: entries checked' );
 $r = call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8", 'deny' => 'bad.example.com' ) );
-eq( array( $r[0], $r[1] ), array( 200, array( 'enabled' => TRUE, 'allow' => array( '*.example.com', 'tsg:1234567890', '10.0.0.0/8' ), 'deny' => array( 'bad.example.com' ) ) ), 'network: on, allow list, deny list' );
+eq( array( $r[0], $r[1] ), array( 200, array( 'enabled' => TRUE, 'allow' => array( '*.example.com', 'tsg:1234567890', '10.0.0.0/8' ), 'deny' => array( 'bad.example.com' ), 'users' => 'all', 'conntest' => 'selected' ) ), 'network: on, allow list, deny list' );
 eq( array( $app->networkRefusal( 'panos', '10.1.2.3' ), $app->networkRefusal( 'panos', '11.1.2.3' ) !== null, $app->networkRefusal( 'panos', 'example.com' ) !== null,
     $app->networkRefusal( 'scm', '1234567890' ), $app->networkRefusal( 'scm', '99' ) !== null ), array( null, TRUE, TRUE, null, TRUE ), 'network: network / *.domain / tsg entries' );
 $cookie = $aliceCookie; $csrf = $aliceCsrf;
@@ -470,6 +470,9 @@ file_put_contents( dirname( __DIR__ ) . "/got.log", json_encode( array( $_SERVER
 header( "Content-Type: application/xml" );
 if( ( $_POST["type"] ?? "" ) === "keygen" && ( $_POST["user"] ?? "" ) === "admin" && ( $_POST["password"] ?? "" ) === "pw:with&special%chars" )
     echo "<response status=\"success\"><result><key>LUFRPT-from-device-geheim-9876</key></result></response>";
+elseif( ( $_POST["type"] ?? "" ) === "op" )
+    echo ( $_SERVER["HTTP_X_PAN_KEY"] ?? "" ) === "LUFRPT-from-device-geheim-9876" ? "<response status=\"success\"><result><system><hostname>lab-fw</hostname><model>PA-440</model><sw-version>11.1.4</sw-version></system></result></response>"
+        : "<response status=\"error\" code=\"403\"><result><msg>Invalid credentials.</msg></result></response>";
 elseif( ( $_POST["user"] ?? "" ) === "nokey" )
     echo "<response status=\"success\"><result><msg>something else</msg></result></response>";
 else
@@ -503,6 +506,54 @@ $sec = $db->query( "SELECT secret FROM user_keys WHERE target = '127.0.0.1'" )->
 eq( array( 'n/a', strpos( (string)$sec, 'geheim' ), strpos( (string)file_get_contents( $data . '/viewer.sqlite' ), 'special%chars' ),
     strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array() ) ), 'special' ) ),
     array( 'n/a', FALSE, FALSE, FALSE ), 'key from the device: the key encrypted, the password nowhere (database, audit log)' );
+// network per user, own hosts, requests to the administrators, the connection test
+$bob = $app->userByName( 'bob' );
+$root = $app->userByName( 'root' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com', 'users' => 'selected', 'conntest' => 'selected' ) );
+$bgen = function( array $in ) use ( $app, $bob ) { try { return array( 201, $app->keyGenerate( $bob, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+$r = $bgen( $kgIn );
+eq( array( $r[0], strpos( (string)$r[1], 'network is not allowed for you' ) !== FALSE, strpos( (string)$r[1], 'Account, Requests' ) !== FALSE, $gen( $kgIn )[0], $app->networkRefusal( 'panos', '127.0.0.1', $root ) ),
+    array( 403, TRUE, TRUE, 403, null ), 'network per user: allow list only for selected users - bob and alice not, the administrator yes' );
+$req = function( callable $f ) { try { return array( 200, $f() ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+eq( array( $req( function() use ( $app, $bob ) { return $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => '*', 'reason' => 'x' ) ); } )[0],
+    $req( function() use ( $app, $bob ) { return $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => '127.0.0.1', 'reason' => '' ) ); } )[0],
+    $req( function() use ( $app, $bob ) { return $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => '', 'reason' => 'lab' ) ); } )[0] ), array( 400, 400, 400 ),
+    'request: hosts named (no *), a reason' );
+$rq = $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => "127.0.0.1\n192.0.2.7", 'reason' => 'lab firewall for the as-is report' ) );
+$all = $app->requestList( $root, TRUE );
+eq( array( $rq['state'], $rq['hosts'], $all[0]['user'] ?? null, count( $app->requestList( $bob, FALSE ) ), $app->accessInfo( $root )['access']['openRequests'] ),
+    array( 'open', array( '127.0.0.1', '192.0.2.7' ), 'bob', 1, 1 ), 'request: open, the administrator sees it' );
+$d = $app->requestDecide( $root, $rq['rid'], array( 'decision' => 'approve', 'hosts' => '127.0.0.1', 'note' => 'only the lab firewall' ) );
+$r = $bgen( $kgIn );
+eq( array( $d['state'], $d['hosts'], $d['decided_by'], $app->userHosts( $bob ), $r[0], $req( function() use ( $app, $root, $rq ) { return $app->requestDecide( $root, $rq['rid'], array( 'decision' => 'reject' ) ); } )[0] ),
+    array( 'approved', array( '127.0.0.1' ), 'root', array( '127.0.0.1' ), 201, 400 ), 'request approved (hosts changed by the administrator): bob reaches his own host' );
+$app->userPermissions( 'bob', array( 'hosts' => "127.0.0.1\nbad.example.com" ) );
+eq( array( strpos( (string)$app->networkRefusal( 'panos', 'bad.example.com', $bob ), 'deny list' ) !== FALSE, strpos( (string)$app->networkRefusal( 'panos', '10.1.2.3', $bob ), 'not allowed for you' ) !== FALSE,
+    $app->networkRefusal( 'panos', '10.1.2.3', $root ), $app->userPermissions( 'bob', array( 'network' => TRUE ) )['network'], $app->networkRefusal( 'panos', '10.1.2.3', $bob ) ),
+    array( TRUE, TRUE, null, TRUE, null ), 'network per user: the deny list wins over own hosts; the allow list for a selected user' );
+$app->userPermissions( 'bob', array( 'network' => FALSE ) );
+// the connection test: only the administrators and selected users; by request
+$ct = function( array $u, array $in ) use ( $app ) { try { return array( 200, $app->connTest( $u, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+$ctIn = array( 'target' => '127.0.0.1', 'port' => $kgPort, 'path' => '/' );
+eq( array( $ct( $bob, $ctIn )[0], $ct( $root, $ctIn )[0] ), array( 403, 200 ), 'connection test: administrators, not bob' );
+$rq = $app->requestCreate( $bob, array( 'kind' => 'conntest', 'reason' => 'TLS problem with the lab firewall' ) );
+$app->requestDecide( $root, $rq['rid'], array( 'decision' => 'approve' ) );
+$r = $ct( $bob, $ctIn );
+eq( array( $r[0], $r[1]['ok'] ?? null, strpos( $r[1]['summary'][0] ?? '', 'reached 127.0.0.1' ) === 0, strpos( $r[1]['curl'] ?? '', "curl -v -k 'http://127.0.0.1:" . $kgPort . "/'" ) === 0,
+    strpos( $r[1]['debug'] ?? '', 'connection: 127.0.0.1' ) !== FALSE, $ct( $bob, array( 'target' => '10.9.9.9' ) + $ctIn )[0] ),
+    array( 200, TRUE, TRUE, TRUE, TRUE, 403 ), 'connection test: after the request; trace, curl line; only hosts bob may reach' );
+$bk = array_values( array_filter( $app->keyList( $bob ), function( $k ) { return $k['target'] === '127.0.0.1'; } ) )[0]['kid'] ?? '';
+$r = $ct( $bob, array( 'target' => '127.0.0.1', 'port' => $kgPort, 'mode' => 'api', 'kid' => $bk ) );
+eq( array( $r[1]['ok'] ?? null, $r[1]['summary'][1] ?? null, strpos( json_encode( $r[1] ), 'geheim' ), strpos( $r[1]['curl'] ?? '', '<your API key>' ) !== FALSE,
+    $ct( $bob, array( 'target' => '127.0.0.1', 'port' => $kgPort, 'mode' => 'api', 'kid' => $kid ) )[0] ),
+    array( TRUE, 'XML API with your key: ok - hostname lab-fw, model PA-440, sw-version 11.1.4', FALSE, TRUE, 400 ),
+    'connection test: XML API with an own key (header, never shown); not with the key of another user' );
+foreach( array( array( 'path' => '/etc/passwd' ), array( 'target' => 'file:///etc/passwd' ), array( 'tls' => '1.0' ), array( 'servername' => 'a b' ) ) as $bad )
+    eq( $ct( $bob, $bad + $ctIn )[0], 400, 'connection test: fixed fields (' . key( $bad ) . ')' );
+$r = call( 'POST', 'conntest', $ctIn );
+eq( array( $r[0], strpos( $r[1]['error'] ?? '', 'request it' ) !== FALSE, call( 'POST', 'requests', array( 'kind' => 'conntest', 'reason' => 'route test' ) )[0], count( call( 'GET', 'requests?all=1' )[1]['requests'] ?? array() ) ),
+    array( 403, TRUE, 201, 1 ), 'routes: POST conntest (alice not allowed), POST / GET requests (only her own without admin)' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com', 'users' => 'all' ) );
 putenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP' );
 eq( $gen( $kgIn )[0], 502, 'key from the device: https by default (the plain HTTP simulation answers no TLS)' );
 foreach( array( array( 'username' => '' ), array( 'password' => '' ), array( 'target' => 'a b' ), array( 'port' => '99999' ) ) as $bad )
