@@ -4240,6 +4240,10 @@ class ViewerApp
                 throw new ViewerException( 'location ' . $m[1] . ' not found', 400 );
             $in['location'] = implode( ',', $effective['levels'] );
         }
+        // several levels in one list (any, a device group / folder with the ones below or above, a list): which object
+        // overrides a copy of the same name on another level and where it is overridden (columns, page only)
+        $locArg = is_string( $in['location'] ?? null ) ? $in['location'] : 'any';
+        $overrideView = $max !== PHP_INT_MAX && !$nested && ( $locArg === 'any' || $locArg === '' || strpos( $locArg, ',' ) !== FALSE || preg_match( '/:(includechilddgs|excludemaindg)$/i', $locArg ) );
         $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
         // the page (not REST): how many objects use each object - a 'refcount' column after 'name', for the References button
@@ -4247,6 +4251,7 @@ class ViewerApp
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type,
             'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $refcount ? array( 'x-refcount' ) : array(),
                 $nested ? array( 'x-xml' ) : array(), $effective !== null ? array( 'x-effective=' . $effective['at'] ) : array(),
+                $overrideView ? array( 'x-override' ) : array(),
                 $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array(), $nested );
         // "Extra columns" of the list: additional fields of exportToExcel (e.g. NestedMembers, ResolveIP), by name
@@ -4277,6 +4282,24 @@ class ViewerApp
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
                 unset( $rows[$i]['model'] );
+        if( $overrideView && is_array( $r['override'] ?? null ) && count( $r['override'] ) )
+            foreach( $rows as $i => $row )
+            {
+                $o = $r['override'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . ( $row['name'] ?? '' )] ?? null;
+                $new = array();
+                // after the name (and its refcount)
+                $after = array_key_exists( 'refcount', $row ) ? 'refcount' : 'name';
+                foreach( $row as $k => $v )
+                {
+                    $new[$k] = $v;
+                    if( $k === $after )
+                    {
+                        $new['overrides'] = $o !== null ? $o['overrides'] : array();
+                        $new['overridden in'] = $o !== null ? $o['overridden'] : array();
+                    }
+                }
+                $rows[$i] = $new;
+            }
         if( $effective !== null )
             $rows = self::effectiveRows( $rows, $effective['levels'], $effective['ancestor'], is_array( $r['effective'] ?? null ) ? $r['effective'] : array() );
 

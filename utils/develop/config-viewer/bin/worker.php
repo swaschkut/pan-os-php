@@ -193,6 +193,37 @@ function viewerSystem( ?string $template, ?string $at ): array
 }
 
 /**
+ * same name on other levels, per object of the read (Panorama device groups / shared, SCM folders): with the method of
+ * pan-os-php (ReferenceableObject::getSameNameOverrideInfo / getSameNameLevelStatus - the filters is.overriden,
+ * is.overriding): rowKey => array( 'overrides' => locations of the copies it hides, 'overridden' => locations of the
+ * copies that hide it ) - only objects with a copy on another level
+ */
+function viewerOverride( $util ): array
+{
+    $out = array();
+    $locOf = function( $o ) { $l = PH::getLocationString( $o ); return is_string( $l ) ? $l : '?'; };
+    foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
+        foreach( viewerSetObjects( $set ) as $o )
+        {
+            if( !is_object( $o ) || !method_exists( $o, 'getSameNameOverrideInfo' ) || !method_exists( $o, 'name' ) )
+                continue;
+            try { $info = $o->getSameNameOverrideInfo(); } catch( Throwable $e ) { continue; }
+            $up = array_map( $locOf, $info['ancestorCopies'] ?? array() );
+            $down = array_keys( $info['descendantCopies'] ?? array() );
+            if( !count( $up ) && !count( $down ) )
+                continue;
+            if( ( $info['mode'] ?? null ) === 'panorama' && !empty( $info['precedence'] ) )
+                // ancestor precedence: the highest copy wins
+                $row = array( 'overrides' => count( $up ) ? array() : $down, 'overridden' => count( $up ) ? array( end( $up ) ) : array() );
+            else
+                // the nearest copy wins (default; SCM)
+                $row = array( 'overrides' => $up, 'overridden' => $down );
+            $out[viewerRowKey( $o )] = $row;
+        }
+    return $out;
+}
+
+/**
  * the effective view: for each object of the read, the object a firewall of $at gets for its name - with the lookup
  * of pan-os-php itself (the store of the location, nested: an EDL before an address / group / region of the same
  * name, then the parents, SCM snippets, predefined objects; Panorama "ancestor objects take precedence":
@@ -670,6 +701,10 @@ function viewerRun( $type, array $args )
     // 'x-xml': the XML of every object of the read and its entry in the history ("location|template|name" => path, xml)
     $withXml = in_array( 'x-xml', $args, TRUE );
     $args = array_values( array_diff( $args, array( 'x-computed', 'x-refcount', 'x-xml' ) ) );
+    // 'x-override': same name on other levels (pan-os-php getSameNameOverrideInfo - as the filters is.overriden /
+    // is.overriding and the object-merger): which copies an object overrides, where it is overridden
+    $override = in_array( 'x-override', $args, TRUE );
+    $args = array_values( array_diff( $args, array( 'x-override' ) ) );
     // 'x-effective=<location>': which copy of each name a firewall of this location gets (effective view)
     $effectiveAt = null;
     foreach( $args as $i => $a )
@@ -720,6 +755,8 @@ function viewerRun( $type, array $args )
     }
     if( $effectiveAt !== null )
         $GLOBALS['viewerEffective'] = viewerEffective( $util, $effectiveAt );
+    if( $override )
+        $GLOBALS['viewerOverride'] = viewerOverride( $util );
     if( $withXml )
     {
         // only the object of the window: objectsToProcess holds every object of the location (the filter is applied
@@ -793,6 +830,8 @@ function viewerChild( $conn, $type, array $args, $send )
             $r['refcounts'] = $GLOBALS['viewerRefcounts'];
         if( isset( $GLOBALS['viewerEffective'] ) && $r['ok'] )
             $r['effective'] = $GLOBALS['viewerEffective'];
+        if( isset( $GLOBALS['viewerOverride'] ) && $r['ok'] )
+            $r['override'] = $GLOBALS['viewerOverride'];
         if( isset( $GLOBALS['viewerXml'] ) && $r['ok'] )
             $r['xml'] = $GLOBALS['viewerXml'];
         if( !$done && $r['ok'] )

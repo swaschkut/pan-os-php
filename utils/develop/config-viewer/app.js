@@ -1697,6 +1697,18 @@ async function showViewer(config, preset) {
         // the effective view (viewer): the location and all levels above it, the copy that wins per name marked
         el('option', { value: 'effective', text: '+ parents (effective view)' }));
     const dgScopeField = field('Device groups', dgScope);
+    // same name on other levels (pan-os-php filters is.overriden / is.overriding - as object-merger sees it): the copy
+    // that hides another one and the hidden one; the list shows both in the columns "overrides" / "overridden in"
+    const sameName = el('select', { 'aria-label': 'same name on other levels' }, el('option', { value: '', text: 'all objects' }),
+        el('option', { value: 'both', text: 'overridden or overriding' }), el('option', { value: 'overridden', text: 'overridden (hidden by another level)' }),
+        el('option', { value: 'overriding', text: 'overriding (hides another level)' }));
+    const sameNameField = field('Same name', sameName);
+    sameName.addEventListener('change', () => run(() => load(false)));
+    function drawSameName() {
+        const f = (state.meta.types[type.value] || {}).filters || {};
+        sameNameField.hidden = !(f.object && f.object['is.overriden'] && f.object['is.overriding']);
+        if (sameNameField.hidden) sameName.value = '';
+    }
     dgScopeField.hidden = true;
     // the kind of a location for the choice: a device group, shared of Panorama (all device groups are below it) or an
     // SCM container (folder: containers, cloud / on-prem devices below it); null: no choice (vsys, snippet, any)
@@ -1766,6 +1778,7 @@ async function showViewer(config, preset) {
         view.template = null;
         spField.hidden = type.value !== 'securityprofile';
         devField.hidden = type.value !== 'device';
+        drawSameName();
         drawExtra();
         heading.textContent = cur.section + ' › ' + cur.label;
         action.value = '';
@@ -1773,7 +1786,10 @@ async function showViewer(config, preset) {
     }
     function query() {
         // the filter of the menu entry (e.g. address groups: (object is.group)) and the one typed
-        const own = filter.value.trim(), f = cur.filter && !cur.noBase ? (own ? '(' + cur.filter + ') and (' + own + ')' : cur.filter) : own;
+        const own0 = filter.value.trim();
+        const sn = sameNameField.hidden ? '' : { both: '(object is.overriden) or (object is.overriding)', overridden: '(object is.overriden)', overriding: '(object is.overriding)' }[sameName.value] || '';
+        const own = sn ? (own0 ? '(' + own0 + ') and (' + sn + ')' : sn) : own0;
+        const f = cur.filter && !cur.noBase ? (own ? '(' + cur.filter + ') and (' + own + ')' : cur.filter) : own;
         const q = new URLSearchParams({ type: type.value, location: (location.value || 'any') + (dgScope.value && !dgScopeField.hidden ? ':' + dgScope.value : ''), filter: f });
         if (type.value === 'rule') q.set('ruletype', ruletype.value);
         if (type.value === 'securityprofile') q.set('securityprofiletype', sptype.value);
@@ -2678,7 +2694,7 @@ async function showViewer(config, preset) {
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
         el('div', { class: 'viewer' }, menu, el('div', { class: 'vmain' },
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-                field('Location', location), dgScopeField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
+                field('Location', location), dgScopeField, sameNameField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
                 el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
             heading,
             el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),

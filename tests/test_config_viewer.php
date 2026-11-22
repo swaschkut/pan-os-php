@@ -671,6 +671,15 @@ $axml = str_replace( '<entry name="localhost.localdomain"><log-collector>', '<en
     file_get_contents( $here . '/input/effective-panorama.xml' ) );
 $r = $alice->call( 'POST', $SP . '/configs', null, array( 'anc.xml', $axml ) );
 $AN = $SP . '/configs/' . ( $r[1]['cid'] ?? '' );
+// a device group with the ones below: which copy overrides which (pan-os-php getSameNameOverrideInfo), filtered
+// with the filters of pan-os-php (both sides: the overriding and the overridden copy)
+$ov = $alice->call( 'GET', $EF . '/objects?type=address&location=' . urlencode( 'shared:includechilddgs' ) . '&filter=' . urlencode( '(object is.overriden) or (object is.overriding)' ) );
+$ovr = array();
+foreach( $ov[1]['rows'] ?? array() as $x )
+    $ovr[$x['location'] . ':' . $x['name']] = array( $x['overrides'], $x['overridden in'] );
+ksort( $ovr );
+eq( array( status( $ov ), $ovr ), array( 200, array( 'DG1:dup' => array( array( 'shared' ), array( 'DG2' ) ), 'DG2:dup' => array( array( 'DG1', 'shared' ), array() ),
+    'shared:dup' => array( array(), array( 'DG1', 'DG2' ) ) ) ), 'same name: overriding and overridden copies with the levels (includechilddgs + filters of pan-os-php)' );
 // the lookup of pan-os-php: an EDL of the same name (here in shared) comes before the address of a device group
 $exml = str_replace( '<shared><address>', '<shared><external-list><entry name="A2"><type><ip><url>https://edl.example.com/list.txt</url><recurring><hourly/></recurring></ip></type></entry></external-list><address>',
     file_get_contents( $here . '/input/effective-panorama.xml' ) );
