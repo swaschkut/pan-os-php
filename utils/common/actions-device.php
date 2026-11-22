@@ -33,6 +33,35 @@
  * the Panorama of an action that assigns firewalls (device group, template stack): subSystem is the store of the
  * managed devices when it runs on devicetype=manageddevice (the window of a firewall in the config viewer)
  */
+/**
+ * the variables of a folder / snippet / device of SCM (<variable><entry name="$x"><type><ip-netmask>…), printed and as
+ * name => array( type, value, description ) for shadow-json
+ */
+function deviceDisplayVariables( DeviceCallContext $context, $object )
+{
+    $list = array();
+    $root = isset( $object->xmlroot ) && $object->xmlroot instanceof DOMElement ? DH::findFirstElement( 'variable', $object->xmlroot ) : FALSE;
+    if( $root === FALSE )
+        return $list;
+    foreach( $root->childNodes as $entry )
+    {
+        if( !$entry instanceof DOMElement || $entry->nodeName !== 'entry' )
+            continue;
+        $type = DH::findFirstElement( 'type', $entry );
+        $value = $type !== FALSE ? DH::firstChildElement( $type ) : FALSE;
+        $desc = DH::findFirstElement( 'description', $entry );
+        $list[$entry->getAttribute( 'name' )] = array( 'type' => $value !== FALSE ? $value->nodeName : '', 'value' => $value !== FALSE ? $value->textContent : '',
+            'description' => $desc !== FALSE ? $desc->textContent : '' );
+    }
+    if( count( $list ) )
+    {
+        PH::print_stdout( $context->padding."- variables:" );
+        foreach( $list as $name => $v )
+            PH::print_stdout( $context->padding."  ".$name." [".$v['type']."] = ".$v['value'] );
+    }
+    return $list;
+}
+
 function deviceActionPanorama( DeviceCallContext $context )
 {
     $pan = $context->subSystem;
@@ -404,6 +433,7 @@ DeviceCallContext::$supportedActions['display'] = array(
                         PH::print_stdout( $context->padding."- ".$text.": ".implode( ", ", $j[$key] ) );
             }
             $j['snippets'] = array_values( array_map( function( $x ) { return is_object( $x ) ? $x->name() : (string)$x; }, $object->attachedSnippets ?? array() ) );
+            $j['variables'] = deviceDisplayVariables( $context, $object );
             // an on-prem device is a firewall: its name is the serial of the managed device
             if( get_class($object) === 'DeviceOnPrem' && isset( $object->owner->managedFirewallsStore ) && $object->owner->managedFirewallsStore->find( $object->name() ) !== null )
                 $j['manageddevice'] = $object->name();
@@ -423,6 +453,7 @@ DeviceCallContext::$supportedActions['display'] = array(
                             $attached[$key][] = $sub->name();
             foreach( $attached as $key => $names )
                 PH::$JSON_TMP['sub']['object'][$object->name()][$key] = array_values( array_unique( $names ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['variables'] = deviceDisplayVariables( $context, $object );
         }
 
         $length = &DH::dom_get_config_size($object->xmlroot);

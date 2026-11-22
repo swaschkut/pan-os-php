@@ -654,6 +654,8 @@ class PanSCMAPIConnector
         elseif( $utilType == "device" )
         {
             #mwarning("only local offline config validation", null, FALSE);
+            // variables of the folders / snippets / devices (interface variables of a firewall: on its device)
+            $this->typeArray[] = "variables";
         }
         elseif( $utilType == "custom" )
         {
@@ -708,6 +710,8 @@ class PanSCMAPIConnector
             $this->typeArray[] = "security-rules";
 
             $this->typeArray[] = "log-forwarding-profiles";
+
+            $this->typeArray[] = "variables";
         }
         elseif( $utilType == "zone" )
         {
@@ -892,6 +896,9 @@ class PanSCMAPIConnector
         //Buckbeak
         if( $type === "nat-rules" )
             $url .= "/config/network/v1/" . $type . "?".$foldertype."=" . $folderName;
+        // variables of a folder / snippet / device (Configuration Setup API)
+        elseif( $type === "variables" )
+            $url .= "/config/setup/v1/" . $type . "?".$foldertype."=" . urlencode( $folderName );
         elseif( $type !== null
             && ( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
             && $type !== "log-forwarding-profiles"
@@ -1290,6 +1297,41 @@ class PanSCMAPIConnector
         }
     }
 
+    /**
+     * a variable of SCM (/config/setup/v1/variables: name, type, value, description, exactly one of folder / snippet /
+     * device) into the XML of its folder / snippet / device, as PAN-OS keeps variables of a template:
+     * <variable><entry name="$name"><type><ip-netmask>value</ip-netmask></type><description>…</description></entry></variable>
+     * - a variable of a device overrides the one of the same name in its folders (SCM: "overridden"); the value of
+     * a folder is not copied to the folders / devices below
+     */
+    function SCM_API_variable_import( $object, $sub )
+    {
+        if( !isset( $object['name'] ) || !is_string( $object['name'] ) || $object['name'] === '' || !isset( $sub->xmlroot ) || !$sub->xmlroot instanceof DOMElement )
+            return null;
+        $type = isset( $object['type'] ) && is_string( $object['type'] ) && preg_match( '/^[a-z][a-z0-9-]*$/', $object['type'] ) ? $object['type'] : 'ip-netmask';
+        $value = isset( $object['value'] ) && is_scalar( $object['value'] ) ? (string)$object['value'] : '';
+
+        $doc = $sub->xmlroot->ownerDocument;
+        $root = DH::findFirstElementOrCreate( 'variable', $sub->xmlroot );
+        if( DH::findFirstElementByNameAttr( 'entry', $object['name'], $root ) !== null )
+            return null;
+        $entry = $doc->createElement( 'entry' );
+        $entry->setAttribute( 'name', $object['name'] );
+        $typeNode = $doc->createElement( 'type' );
+        $valueNode = $doc->createElement( $type );
+        $valueNode->appendChild( $doc->createTextNode( $value ) );
+        $typeNode->appendChild( $valueNode );
+        $entry->appendChild( $typeNode );
+        if( isset( $object['description'] ) && is_string( $object['description'] ) && $object['description'] !== '' )
+        {
+            $d = $doc->createElement( 'description' );
+            $d->appendChild( $doc->createTextNode( $object['description'] ) );
+            $entry->appendChild( $d );
+        }
+        $root->appendChild( $entry );
+        return $entry;
+    }
+
     function importConfig($baseSub, $folder, $type, $jsonArray)
     {
         if( !isset($jsonArray['data']) )
@@ -1562,6 +1604,10 @@ class PanSCMAPIConnector
             elseif( $type === "application-groups" || $type === "application-filters" )
             {
                 $this->SCM_API_app_import( $type, $object, $sub );
+            }
+            elseif( $type === "variables" )
+            {
+                $this->SCM_API_variable_import( $object, $sub );
             }
             elseif( $type === "regions" )
             {
