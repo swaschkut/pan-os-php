@@ -588,6 +588,15 @@ eq( array( $ts['TS1']['templates'] ?? null, $ts['TS1']['devices'] ?? null, isset
 $one = $alice->call( 'GET', $DV . '/object?type=device&devicetype=devicegroup&location=shared&name=DG1' )[1]['row'] ?? array();
 eq( array( $one['templatestacks'] ?? null, $one['stacktemplates'] ?? null ), array( array( '001122334455' => 'TS1' ), array( 'TS1' => array( 'T1', 'T2' ) ) ),
     'device group: the template stack of each firewall and the templates of the stack' );
+// the level of devices, counted as the level of objects (shared = 1, top device group = 2): device group its own,
+// firewall / template stack / template the levels of their device groups; filter (level …)
+eq( array( $dg['DG1']['level'] ?? null, $dg['DG2']['level'] ?? null, $md['001122334466']['dglevels'] ?? null, $ts['TS1']['level'] ?? null, $ts['TS1']['dglevels'] ?? null ),
+    array( 2, 3, array( 'DG2 (3)' ), array( '2', '3' ), array( 'DG1 (2)', 'DG2 (3)' ) ), 'devices: level of device groups, firewalls, template stacks' );
+$lv = array();
+foreach( array( 'devicegroup', 'manageddevice', 'templatestack', 'template' ) as $dt )
+    foreach( $alice->call( 'GET', $DV . '/objects?type=device&devicetype=' . $dt . '&location=any&filter=' . urlencode( '(level >= 3)' ) )[1]['rows'] ?? array() as $x )
+        $lv[] = $dt . ':' . $x['name'];
+eq( $lv, array( 'devicegroup:DG2', 'manageddevice:001122334466', 'templatestack:TS1', 'template:T1', 'template:T2' ), 'devices: filter (level >= 3)' );
 $lc = $dev( 'logcollector' );
 $lcg = $dev( 'logcollectorgroup' );
 eq( array( $lc['009900990099']['collectorgroups'] ?? null, $lc['009900990099']['devices'] ?? null, $lcg['LCG1']['collectors'] ?? null, $lcg['LCG1']['devices'] ?? null ),

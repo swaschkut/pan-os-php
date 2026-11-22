@@ -275,35 +275,12 @@ function viewerEffective( $util, string $at ): array
  */
 function viewerLevels( $pan, $o ): array
 {
-    if( $o instanceof DeviceGroup )
-    {
-        $list = array();
-        for( $dg = $o, $i = 0; $dg !== null && $i < 20; $dg = $dg->parentDeviceGroup, $i++ )
-            $list[] = $dg->name();
-        $list[] = 'shared';
-        return $list;
-    }
-    if( $o instanceof VirtualSystem )
-        return array( $o->name(), 'shared' );
-    if( $o instanceof Container || $o instanceof DeviceCloud || $o instanceof DeviceOnPrem )
-    {
-        $list = array();
-        for( $cur = $o, $i = 0; is_object( $cur ) && $i < 30; $i++ )
-        {
-            if( in_array( $cur->name(), $list, TRUE ) )
-                break;
-            $list[] = $cur->name();
-            foreach( $cur->attachedSnippets ?? array() as $sn )
-                if( is_object( $sn ) && !in_array( $sn->name(), $list, TRUE ) )
-                    $list[] = $sn->name();
-            $parent = $cur->parentContainer ?? null;
-            if( is_string( $parent ) && is_object( $pan ) && method_exists( $pan, 'findContainer' ) )
-                $parent = $pan->findContainer( $parent );
-            $cur = is_object( $parent ) ? $parent : null;
-        }
-        return $list;
-    }
-    return array( $o->name() );
+    // the levels of pan-os-php itself (PH::firewallResolutionLevels - the same as the filters is.overriden.for and the
+    // device level), nearest first; a Panorama / firewall configuration is "shared"
+    $list = array();
+    foreach( PH::firewallResolutionLevels( $o ) as $l )
+        $list[] = $l instanceof PanoramaConf || $l instanceof PANConf ? 'shared' : $l->name();
+    return array_values( array_unique( $list ) );
 }
 
 /** the viewer type (and rule type / profile type) of a pan-os-php object, null for others (interface, vsys, …) */

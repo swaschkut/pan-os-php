@@ -234,13 +234,17 @@ class App
             $characteristics = array();
 
 
+        // the apps the filter can match: its own store and every store above it - the chain of parentCentralStore
+        // (device group -> parent device groups -> shared -> predefined apps; SCM: folder -> parent folders -> All ->
+        // predefined apps). Before: owner->owner->appStore up to PanoramaConf / PANConf / FawkesConf - SCM Buckbeak
+        // (a folder): "Attempt to read property appStore on null"; parent device groups were skipped
         $appstore = $this->owner;
         $all = $appstore->getAll();
-
-        while( get_class( $appstore->owner ) !== "PanoramaConf" && get_class( $appstore->owner ) !== "PANConf" && get_class( $appstore->owner ) !== "FawkesConf" )
+        $seen = array( spl_object_id( $appstore ) => TRUE );
+        for( $s = $appstore->parentCentralStore ?? null; is_object( $s ) && !isset( $seen[spl_object_id( $s )] ); $s = $s->parentCentralStore ?? null )
         {
-            $all = array_merge( $all, $appstore->owner->owner->appStore->getAll() );
-            $appstore = $appstore->owner->owner->appStore;
+            $seen[spl_object_id( $s )] = TRUE;
+            $all = array_merge( $all, $s->getAll() );
         }
 
         foreach( $all as $app )

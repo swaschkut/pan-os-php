@@ -2152,6 +2152,74 @@ class PH
      * Names outside the hierarchy (predefined objects, ...) fall back to the normal lookup.
      */
     /**
+     * The level of a device in the hierarchy, counted as the level of objects (effective view): the number of levels
+     * a firewall there gets objects from (firewallResolutionLevels) - Panorama: shared = 1, a top device group = 2, its
+     * child = 3, …; SCM: the folder chain with the snippets of each folder.
+     *   device group / SCM folder, cloud / on-prem device: array( its name => level )
+     *   firewall (managed device): its device group(s)       -> array( device group => level, … )
+     *   template stack: the device groups of its firewalls   -> array( device group => level, … )
+     *   template: the device groups of the firewalls of every stack that holds it (and of firewalls with this template)
+     * @return array name => level (empty: not connected to a device group / folder)
+     */
+    public static function deviceLevels( $object ): array
+    {
+        $out = array();
+        $class = get_class( $object );
+        if( $class === 'DeviceGroup' || $class === 'Container' || $class === 'DeviceCloud' || $class === 'DeviceOnPrem' )
+            return array( $object->name() => count( self::firewallResolutionLevels( $object ) ) );
+        if( $class === 'ManagedDevice' )
+        {
+            $root = isset($object->owner->owner) && is_object($object->owner->owner) ? $object->owner->owner : null;
+            foreach( $object->getDeviceGroup() as $dgName )
+            {
+                $dg = $root !== null && method_exists( $root, 'findDeviceGroup' ) && is_string($dgName) && $dgName !== '' ? $root->findDeviceGroup( $dgName ) : null;
+                if( $dg !== null )
+                    $out[$dg->name()] = count( self::firewallResolutionLevels( $dg ) );
+            }
+            // SCM: the on-prem device of the firewall
+            if( $root !== null && method_exists( $root, 'findDeviceOnPrem' ) )
+            {
+                $d = $root->findDeviceOnPrem( $object->name() );
+                if( $d !== null )
+                    $out[$d->name()] = count( self::firewallResolutionLevels( $d ) );
+            }
+            return $out;
+        }
+        if( $class === 'TemplateStack' )
+        {
+            foreach( $object->FirewallsSerials as $fw )
+                if( is_object( $fw ) )
+                    $out = $out + self::deviceLevels( $fw );
+            return $out;
+        }
+        if( $class === 'Template' )
+        {
+            $root = $object->owner;
+            if( is_object( $root ) && method_exists( $root, 'getTemplatesStacks' ) )
+                foreach( $root->getTemplatesStacks() as $stack )
+                    if( in_array( $object, $stack->templates, TRUE ) )
+                        $out = $out + self::deviceLevels( $stack );
+            if( is_object( $root ) && isset( $root->managedFirewallsStore ) )
+                foreach( $root->managedFirewallsStore->getAll() as $fw )
+                    if( isset( $fw->template ) && $fw->template === $object->name() )
+                        $out = $out + self::deviceLevels( $fw );
+            return $out;
+        }
+        return $out;
+    }
+
+    /** filter (level >,<,=,! n): one of the levels of the device (deviceLevels) */
+    public static function deviceLevelMatch( $object, string $op, $value ): bool
+    {
+        $value = (int)$value;
+        foreach( self::deviceLevels( $object ) as $l )
+            if( ( $op === '>' && $l > $value ) || ( $op === '<' && $l < $value ) || ( $op === '==' && $l == $value ) || ( $op === '!=' && $l != $value )
+                || ( $op === '>=' && $l >= $value ) || ( $op === '<=' && $l <= $value ) )
+                return TRUE;
+        return FALSE;
+    }
+
+    /**
      * Same name as the firewalls of one location see it (filters is.overriden.for / is.overriding.for X): the location
      * X (device group, vsys, SCM folder / device; 'shared' = Panorama / firewall shared) and every level above it
      * (firewallResolutionLevels). Which copy of the object's name a firewall of X gets: resolveNameForFirewalls (the

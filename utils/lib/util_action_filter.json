@@ -3032,6 +3032,19 @@
                     }
                 }
             },
+            "level": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "PH::deviceLevelMatch( $object, '!operator!', !value! )",
+                        "arg": true,
+                        "help": "level in the hierarchy (shared = 1, top device group = 2, \u2026); a firewall \/ template stack \/ template: one of the levels of its device groups. ie: (level >= 3)",
+                        "ci": {
+                            "fString": "(%PROP% 2)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "manageddevice": {
                 "operators": {
                     "with-no-dg": {

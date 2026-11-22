@@ -473,6 +473,23 @@ DeviceCallContext::$supportedActions['display'] = array(
             deviceDisplayVariablesJson( $context, $object );
         }
 
+        // the level in the hierarchy (as the level of objects: shared = 1, top device group = 2, …) - a firewall / template
+        // stack / template: the levels of its device groups (PH::deviceLevels)
+        $levels = PH::deviceLevels( $object );
+        if( count( $levels ) )
+        {
+            $own = get_class( $object ) === 'DeviceGroup' || get_class( $object ) === 'Container' || get_class( $object ) === 'DeviceCloud' || get_class( $object ) === 'DeviceOnPrem';
+            $vals = array_values( array_unique( array_values( $levels ) ) );
+            sort( $vals );
+            $dgl = array();
+            foreach( $levels as $n => $l )
+                $dgl[] = $n . ' (' . $l . ')';
+            PH::print_stdout( $context->padding . "- level: " . ( $own ? $vals[0] : implode( ', ', $dgl ) ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['level'] = $own ? $vals[0] : $vals;
+            if( !$own )
+                PH::$JSON_TMP['sub']['object'][$object->name()]['dglevels'] = $dgl;
+        }
+
         // Panorama: variables of a template, a template stack (and its firewalls), a firewall (override in its stack)
         if( $object instanceof Template || $object instanceof TemplateStack || ( $object instanceof ManagedDevice && DeviceVariables::stackOf( $object ) !== null ) )
             deviceDisplayVariablesJson( $context, $object );
