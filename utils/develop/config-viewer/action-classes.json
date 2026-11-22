@@ -235,6 +235,9 @@
             "display": {
                 "class": "read"
             },
+            "displayreferences": {
+                "class": "read"
+            },
             "exporttoexcel": {
                 "class": "writes-file",
                 "file_arg": 0

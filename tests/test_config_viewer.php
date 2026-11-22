@@ -532,6 +532,19 @@ $ce = $alice->call( 'GET', $TC . '/objects?type=certificate&location=any' )[1]['
 $cw = $alice->call( 'GET', $TC . '/object?type=certificate&location=shared&template=T1&name=Root-CA' )[1];
 eq( array( $ce['location'] ?? null, $ce['template'] ?? null, is_int( $ce['refcount'] ?? null ), strpos( (string)( $cw['xml'] ?? '' ), '<entry name="Root-CA">' ) === 0 ),
     array( 'shared', 'T1', TRUE, TRUE ), 'certificate of a template: location shared + template, count of references, XML' );
+// who uses certificates / certificate profiles (CertificateUsage): SSL/TLS service profile, IKE gateway, GlobalProtect,
+// SSL decryption; a certificate profile used by a template stack
+$CU = $up( 'certificate-usage-firewall.xml' );
+$cr = array_column( $alice->call( 'GET', $CU . '/objects?type=certificate&location=any' )[1]['rows'] ?? array(), 'refcount', 'name' );
+$pr = array_column( $alice->call( 'GET', $CU . '/objects?type=certificate-profile&location=any' )[1]['rows'] ?? array(), 'refcount', 'name' );
+$prr = $alice->call( 'GET', $CU . '/references?type=certificate-profile&location=shared&name=CP-Users' )[1];
+$users = array_map( function( $r ) { return ( $r['class'] ?? '' ) . ':' . ( $r['name'] ?? '' ); }, $prr['objects'][0]['references'] ?? array() );
+sort( $users );
+eq( array( $cr['Srv-Cert'] ?? null, $cr['FWD-Trust'] ?? null, $cr['Root-CA'] ?? null, $pr['CP-Users'] ?? null, $users ),
+    array( 2, 1, 1, 2, array( 'GPPortal:GP-Portal', 'IKEGateway:IKE-GW' ) ), 'certificates / certificate profiles: users counted (SSL/TLS service profile, IKE, decryption, GlobalProtect)' );
+$CUP = $up( 'certificate-usage-panorama.xml' );
+$pp = $alice->call( 'GET', $CUP . '/objects?type=certificate-profile&location=any' )[1]['rows'][0] ?? array();
+eq( array( $pp['template'] ?? null, $pp['refcount'] ?? null ), array( 'T1', 3 ), 'certificate profile of a template: also used by a GlobalProtect gateway of a template stack' );
 eq( status( $alice->call( 'DELETE', $SP ) ), 200, 'security profiles: project deleted (its worker stops)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );

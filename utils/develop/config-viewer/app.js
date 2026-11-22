@@ -1846,7 +1846,9 @@ async function showViewer(config, preset) {
                 // refcount (types with references): the number is the button that shows the users below the row;
                 // 0 - nothing to show; no number (not counted) - the button still works
                 const refs = state.meta.types[view.type] && state.meta.types[view.type].references && typeof r.name === 'string' && r.name !== '';
-                const key = (r.location || '') + '|' + (r.profile ? r.profile + '/' : '') + r.name;
+                // one row = one object: the same name in another template / security profile is another row (before
+                // the key had neither - the references of one were shown at every row of that name)
+                const key = (r.location || '') + '|' + (r.template || '') + '|' + (r.profile ? r.profile + '/' : '') + r.name;
                 const refButton = () => r.refcount === 0 ? el('span', { class: 'muted', text: '0', title: 'not used' })
                     : el('button', { type: 'button', class: 'small refbtn' + (view.refs.has(key) ? ' on' : ''), text: (typeof r.refcount === 'number' ? r.refcount : '?') + (view.refs.has(key) ? ' ▾' : ' ▸'),
                         title: (view.refs.has(key) ? 'hide' : 'show') + ' where this object is used (pan-os-php displayreferences)', onclick: () => run(() => toggleRefs(r, key)) });

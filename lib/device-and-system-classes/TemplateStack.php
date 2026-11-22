@@ -182,7 +182,8 @@ class TemplateStack
                     foreach( $vsys->certificateProfileStore->getAll() as $certificateProfile )
                         $certificateProfile->resolveCACertificates();
 
-
+        // who uses the certificates / certificate profiles (SSL/TLS service profiles, GlobalProtect, IKE, …)
+        CertificateUsage::link( $this );
     }
 
     public function name()

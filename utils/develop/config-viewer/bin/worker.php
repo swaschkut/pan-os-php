@@ -170,6 +170,18 @@ function viewerUsers( $o )
         $field = null;
         $user = null;
         $first = null;
+        // a use of a certificate / certificate profile (CertificateUsage): the user is the object the field belongs to
+        // (SSL/TLS service profile, IKE gateway, GlobalProtect portal / gateway, …), the field its path; without such
+        // an object (management, SSL decryption settings, …) the field itself
+        if( $ref instanceof CertificateReference )
+        {
+            $field = $ref->field;
+            $owner = $ref->owner;
+            $isLocation = !is_object( $owner ) || $owner instanceof PANConf || $owner instanceof PanoramaConf || $owner instanceof Template
+                || $owner instanceof TemplateStack || $owner instanceof VirtualSystem || $owner instanceof DeviceGroup;
+            if( !$isLocation )
+                $ref = $owner;
+        }
         for( $x = $ref, $i = 0; is_object( $x ) && $i < 8; $x = $x->owner ?? null, $i++ )
         {
             if( $first === null && method_exists( $x, 'name' ) && !preg_match( '/Store$/', get_class( $x ) ) )
@@ -200,10 +212,6 @@ function viewerUsers( $o )
 }
 
 /**
- * who uses the objects named $name of a type (in the location of $args): every object found, with its references -
- * the referencing object (type, rule type, location, name, pre / post) and the field (source, destination, member, …)
- */
-/**
  * the objects of one set of a utility (objectsToProcess): 'objects' (addresses, services, tags, zones, devices, ...) or
  * 'rules' - RULEUTIL and also SECURITYPROFILEUTIL / PROFILEUTIL keep theirs there. Before only 'objects' was read: rules
  * and security profiles had no XML / history in the window, no count of references ("?") and no references.
@@ -232,6 +240,10 @@ function viewerSetObjects( $set ): array
     return is_array( $set['rules'] ?? null ) ? $set['rules'] : array();
 }
 
+/**
+ * who uses the objects named $name of a type (in the location of $args): every object found, with its references -
+ * the referencing object (type, rule type, location, name, pre / post) and the field (source, destination, member, …)
+ */
 function viewerReferences( $type, array $args, $name, $profile = null )
 {
     global $configFile;

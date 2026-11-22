@@ -900,6 +900,9 @@ class PANConf
             $this->network->load_from_domxml_2($tmp);
         }
         //
+        // who uses the certificates / certificate profiles (a template / template stack: after its shared part)
+        if( !( isset($this->owner) && ( $this->owner instanceof Template || $this->owner instanceof TemplateStack ) ) )
+            CertificateUsage::link( $this );
     }
 
 

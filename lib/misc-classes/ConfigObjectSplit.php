@@ -239,9 +239,23 @@ class ConfigObjectSplit
         }
         if( $loc === null || !in_array( $store, self::stores( $loc ), TRUE ) )
             return null;
-        foreach( self::collect( $doc )[self::path( $store )]['entries'] ?? array() as $key => $node )
-            if( $node === $e )
-                return self::path( $store ) . '/' . $key . '.xml';
+        // the key of the entry as collect() gives it - only this store (before: the whole document for one entry)
+        $keys = array();
+        foreach( $store->childNodes as $c )
+            if( $c instanceof DOMElement )
+            {
+                $key = self::key( $c );
+                if( isset( $keys[$key] ) )
+                {
+                    $i = 2;
+                    while( isset( $keys[$key . '~' . $i] ) )
+                        $i++;
+                    $key .= '~' . $i;
+                }
+                $keys[$key] = TRUE;
+                if( $c === $e )
+                    return self::path( $store ) . '/' . $key . '.xml';
+            }
         return null;
     }
 

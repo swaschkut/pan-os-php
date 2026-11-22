@@ -23,14 +23,15 @@ Todo: [todo/config-viewer-panos-style-edit.md](../../../todo/config-viewer-panos
 | zone: remove the zone protection profile | an action for it; yes / no fields show no current value |
 | every field except descriptions and tag comments | `,` and `:` not possible (no aliases there) |
 
-### 1.1b References pan-os-php does not count yet (count "-" / no References)
+### 1.1b References pan-os-php does not count yet
 
-* **certificate-profile**: no action displayreferences, no filter (refcount) - pan-os-php does not record who uses a
-  certificate profile (GlobalProtect portal / gateway, authentication profile, SSL/TLS service profile, decryption,
-  LDAP / SAML server profiles, …). Needs the references in the loaders of these objects, then displayreferences /
-  refcount as for the other types.
-* certificate: counted are the users pan-os-php records (certificate profile CA entries, decryption rules) - not yet
-  SSL/TLS service profiles, GlobalProtect, SCEP, the management certificate.
+* ~~certificate-profile / certificate~~ built 2026-11-22 (CertificateUsage): certificate profiles (GlobalProtect portal /
+  gateway, IKE gateway, authentication, server profiles, management - every <certificate-profile>) and certificates
+  (SSL/TLS service profile, IKE local certificate, GlobalProtect, SCEP, SSL decryption forward trust / untrust, root CA
+  lists) - firewall configurations, templates, template stacks; certificate-profile has displayreferences / refcount
+* open: SCM (folders / snippets) - CertificateUsage::link() is not called for Container / Snippet / DeviceCloud yet
+* open: SSL/TLS service profiles: who uses them (management, GlobalProtect portal / gateway, captive portal, …) - the
+  same way as certificate profiles
 
 ### 1.2 Types with the generic window only (read only)
 

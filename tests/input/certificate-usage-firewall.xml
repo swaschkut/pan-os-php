@@ -1,0 +1,20 @@
+<config version="11.1.0"><mgt-config/>
+<shared>
+<certificate>
+ <entry name="Root-CA"><common-name>Root CA</common-name><ca>yes</ca><subject>/CN=Root CA</subject><issuer>/CN=Root CA</issuer><not-valid-after>Dec 31 00:00:00 2030 GMT</not-valid-after><algorithm><RSA/></algorithm></entry>
+ <entry name="Srv-Cert"><common-name>fw.example.com</common-name><subject>/CN=fw.example.com</subject><issuer>/CN=Root CA</issuer><not-valid-after>Dec 31 00:00:00 2030 GMT</not-valid-after><algorithm><RSA/></algorithm></entry>
+ <entry name="FWD-Trust"><common-name>Forward Trust</common-name><ca>yes</ca><subject>/CN=FT</subject><issuer>/CN=FT</issuer><not-valid-after>Dec 31 00:00:00 2030 GMT</not-valid-after><algorithm><RSA/></algorithm></entry>
+</certificate>
+<certificate-profile><entry name="CP-Users"><CA><entry name="Root-CA"/></CA></entry></certificate-profile>
+<ssl-tls-service-profile><entry name="SSL-Portal"><certificate>Srv-Cert</certificate><protocol-settings><min-version>tls1-2</min-version></protocol-settings></entry></ssl-tls-service-profile>
+<ssl-decrypt><forward-trust-certificate><rsa>FWD-Trust</rsa></forward-trust-certificate></ssl-decrypt>
+</shared>
+<devices><entry name="localhost.localdomain">
+<deviceconfig><system><hostname>fw</hostname><ssl-tls-service-profile>SSL-Portal</ssl-tls-service-profile></system></deviceconfig>
+<network><ike><gateway><entry name="IKE-GW"><authentication><certificate><local-certificate><name>Srv-Cert</name></local-certificate><certificate-profile>CP-Users</certificate-profile></certificate></authentication><protocol><ikev2><dpd><enable>yes</enable></dpd></ikev2></protocol><local-address><interface>ethernet1/1</interface></local-address><peer-address><ip>192.0.2.1</ip></peer-address></entry></gateway></ike>
+<interface><ethernet><entry name="ethernet1/1"><layer3><ip><entry name="198.51.100.1/24"/></ip></layer3></entry></ethernet></interface></network>
+<vsys><entry name="vsys1">
+<global-protect><global-protect-portal><entry name="GP-Portal"><portal-config><certificate-profile>CP-Users</certificate-profile><ssl-tls-service-profile>SSL-Portal</ssl-tls-service-profile><local-address><interface>ethernet1/1</interface></local-address></portal-config></entry></global-protect-portal></global-protect>
+<import><network><interface><member>ethernet1/1</member></interface></network></import>
+</entry></vsys>
+</entry></devices></config>

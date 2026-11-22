@@ -2618,7 +2618,11 @@ class UTIL
             unset($vars[$i]);
         }
         unset($vars,$i);
-        gc_collect_cycles();
+        // a configuration kept in memory (config viewer: UTIL::$sharedConfig): no collection of the cycles of the whole
+        // object graph after every read - it took about 0.1 s per click on a large configuration and frees nothing
+        // (the objects are the loaded configuration)
+        if( self::$sharedConfig === null )
+            gc_collect_cycles();
     }
 
     public function setTimezone()

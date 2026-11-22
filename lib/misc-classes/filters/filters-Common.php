@@ -845,6 +845,7 @@ RQuery::registerFilter( array(
     'address',
     'application',
     'certificate',
+    'certificate-profile',
     'device',
     'dns-rule',
     'edl',

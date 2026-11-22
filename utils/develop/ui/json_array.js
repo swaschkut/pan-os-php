@@ -2128,6 +2128,10 @@ var subjectObject =
                 "name": "display",
                 "MainFunction": {}
             },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -2237,6 +2241,18 @@ var subjectObject =
                         "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
                         "ci": {
                             "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
