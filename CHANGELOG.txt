@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* beta-vp-merge-artifact-fix
 
 GENERAL:
 
