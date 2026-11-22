@@ -2261,6 +2261,36 @@ class PH
      * @return string
      * @throws Exception
      */
+    /**
+     * the key of an object in the JSON output (shadow-json: ['sub']['object'][<key>]): its name - but a DNS rule /
+     * threat rule (DNSPolicy, ThreatPolicy*) is one entry of one security profile (the same name in several profiles,
+     * e.g. default-paloalto-dns): "<profile>/<name>", so each has its own entry (before they overwrote each other)
+     */
+    /** after display() of a DNS / threat rule: its values (display() writes them under the profile, as in the display
+     * of the profile) into its own entry of the JSON output (jsonObjectKey) */
+    public static function ruleJsonMove( $threat ): void
+    {
+        $owner = $threat->owner->name();
+        $key = self::jsonObjectKey( $threat );
+        if( $key === $owner || !isset( self::$JSON_TMP['sub']['object'][$owner]['rule'][$threat->name()] ) )
+            return;
+        foreach( self::$JSON_TMP['sub']['object'][$owner]['rule'][$threat->name()] as $k => $v )
+            self::$JSON_TMP['sub']['object'][$key][$k] = $v;
+        unset( self::$JSON_TMP['sub']['object'][$owner]['rule'][$threat->name()] );
+        if( empty( self::$JSON_TMP['sub']['object'][$owner]['rule'] ) )
+            unset( self::$JSON_TMP['sub']['object'][$owner]['rule'] );
+        if( empty( self::$JSON_TMP['sub']['object'][$owner] ) )
+            unset( self::$JSON_TMP['sub']['object'][$owner] );
+    }
+
+    public static function jsonObjectKey( $object ): string
+    {
+        $name = (string)$object->name();
+        if( ( $object instanceof DNSPolicy || $object instanceof ThreatPolicy ) && is_object( $object->owner ?? null ) && method_exists( $object->owner, 'name' ) )
+            return $object->owner->name() . '/' . $name;
+        return $name;
+    }
+
     public static function getLocationString($panConfObject)
     {
         /** @var PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container $panConfObject */

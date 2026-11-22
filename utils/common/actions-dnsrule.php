@@ -44,6 +44,7 @@ DNSRuleCallContext::$supportedActions[] = array(
         PH::print_stdout( "          - use in AS Profile: ".$threat->owner->name() );
 
         $threat->display();
+        PH::ruleJsonMove( $threat );
     }
 );
 

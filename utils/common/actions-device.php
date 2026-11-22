@@ -92,6 +92,16 @@ DeviceCallContext::$supportedActions['display'] = array(
                 $tmp_padding .= "  ";
                 PH::$JSON_TMP['sub']['object'][$object->name()]['hierarchy'][] = $key;
             }
+            // the device groups below (direct children) and the number of firewalls (also of the ones below) - for
+            // shadow-json / the config viewer, which shows the hierarchy in the window of a device group
+            $children = array();
+            foreach( $object->childDeviceGroups() as $child )
+                $children[] = $child->name();
+            if( count( $children ) )
+                PH::print_stdout( $context->padding."- child device groups: ".implode( ', ', $children ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['children'] = $children;
+            PH::$JSON_TMP['sub']['object'][$object->name()]['firewalls'] = count( $object->getDevicesInGroup() );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['firewalls-below'] = count( $object->getDevicesInGroup( TRUE ) );
             foreach( $object->getDevicesInGroup() as $key => $device )
             {
                 #PH::print_stdout( $context->padding."- ".$key );

@@ -508,6 +508,30 @@ $r = $alice->call( 'POST', $SP . '/configs', null, array( 'edl.xml', file_get_co
 $edl = array_column( $alice->call( 'GET', $SP . '/configs/' . $r[1]['cid'] . '/objects?type=edl&location=any' )[1]['rows'] ?? array(), null, 'name' );
 eq( array( $edl['EDL1']['edl-type'] ?? null, $edl['EDL1']['recurring'] ?? null, $edl['EDL2']['recurring'] ?? null, $edl['EDL2']['url'] ?? null ),
     array( 'ip', 'hourly', 'daily', 'https://lists.example.com/u.txt' ), 'EDL: list type, recurring, URL' );
+// DNS rules: one per entry of a security profile - the same name in several profiles (default-paloalto-dns) is one row
+// per profile, with its own count, references and XML (before: one row, "used by" of all of them)
+$up = function( string $f ) use ( $alice, $SP, $here ) { $r = $alice->call( 'POST', $SP . '/configs', null, array( $f, file_get_contents( $here . '/input/' . $f ) ) ); return $SP . '/configs/' . ( $r[1]['cid'] ?? '' ); };
+$DC = $up( 'dns-rules-panorama.xml' );
+$dr = $alice->call( 'GET', $DC . '/objects?type=dns-rule&location=any&' . http_build_query( array( 'filter' => '(name eq default-paloalto-dns)' ) ) )[1]['rows'] ?? array();
+$byP = array_column( $dr, null, 'profile' );
+$ref = $alice->call( 'GET', $DC . '/references?type=dns-rule&location=shared&name=default-paloalto-dns&profile=AS-2' )[1];
+$o2 = $alice->call( 'GET', $DC . '/object?type=dns-rule&location=shared&name=default-paloalto-dns&profile=AS-2' )[1];
+eq( array( count( $dr ), $byP['AS-1']['action'] ?? null, $byP['AS-2']['action'] ?? null, $byP['AS-3']['location'] ?? null, $byP['AS-2']['refcount'] ?? null,
+    count( $ref['objects'] ?? array() ), count( $ref['objects'][0]['references'] ?? array() ), $o2['row']['action'] ?? null, strpos( (string)( $o2['xml'] ?? '' ), '<alert/>' ) !== FALSE ),
+    array( 5, 'sinkhole', 'alert', 'DG1', 1, 1, 1, 'alert', TRUE ), 'dns-rule: one row per security profile, its own count / references / XML' );
+// devices: device type; a device group with its hierarchy (parents, children)
+$GC = $up( 'dg-hierarchy-panorama.xml' );
+$dv = array_column( $alice->call( 'GET', $GC . '/objects?type=device&location=any&devicetype=any' )[1]['rows'] ?? array(), 'type', 'name' );
+$c1 = $alice->call( 'GET', $GC . '/object?type=device&location=shared&name=C1&devicetype=devicegroup' )[1]['row'] ?? array();
+eq( array( $dv['TS1'] ?? null, $dv['T1'] ?? null, count( $alice->call( 'GET', $GC . '/objects?type=device&location=any&devicetype=template' )[1]['rows'] ?? array() ),
+    $c1['hierarchy'] ?? null, $c1['children'] ?? null, status( $alice->call( 'GET', $GC . '/objects?type=device&location=any&devicetype=x' ) ) ),
+    array( 'TemplateStack', 'Template', 1, array( 'shared', 'P', 'C1' ), array( 'G' ), 400 ), 'devices: device type; the hierarchy of a device group' );
+// a certificate of a template: location shared + template (before: location <template> - "not found", count "?")
+$TC = $up( 'template-certificate-panorama.xml' );
+$ce = $alice->call( 'GET', $TC . '/objects?type=certificate&location=any' )[1]['rows'][0] ?? array();
+$cw = $alice->call( 'GET', $TC . '/object?type=certificate&location=shared&template=T1&name=Root-CA' )[1];
+eq( array( $ce['location'] ?? null, $ce['template'] ?? null, is_int( $ce['refcount'] ?? null ), strpos( (string)( $cw['xml'] ?? '' ), '<entry name="Root-CA">' ) === 0 ),
+    array( 'shared', 'T1', TRUE, TRUE ), 'certificate of a template: location shared + template, count of references, XML' );
 eq( status( $alice->call( 'DELETE', $SP ) ), 200, 'security profiles: project deleted (its worker stops)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );

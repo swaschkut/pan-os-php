@@ -1686,6 +1686,9 @@ async function showViewer(config, preset) {
     const filterBox = suggest(filter, (text, pos) => filterSuggest(state.meta.types[type.value].filters || {}, text, pos));
     const quick = el('input', { placeholder: 'text in any column', oninput: () => { view.quick = quick.value.toLowerCase(); view.page = 1; draw(); } });
     const spField = field('Profile type', sptype);
+    // type=device: which devices (device groups, templates, …; the hierarchy of a device group in its window)
+    const devtype = el('select', {}, (state.meta.devicetypes || ['any']).map(t => el('option', { value: t, text: t })));
+    const devField = field('Device type', devtype);
     // "Extra columns": additional fields of pan-os-php exportToExcel of the type (NestedMembers, ResolveIP, rule
     // summaries, best practice, …) - computed on the server when ticked and shown as columns of the list (per type)
     state.extraCols = state.extraCols || {};
@@ -1721,6 +1724,7 @@ async function showViewer(config, preset) {
 
     function typeChanged() {
         spField.hidden = type.value !== 'securityprofile';
+        devField.hidden = type.value !== 'device';
         drawExtra();
         heading.textContent = cur.section + ' › ' + cur.label;
         action.value = '';
@@ -1732,6 +1736,7 @@ async function showViewer(config, preset) {
         const q = new URLSearchParams({ type: type.value, location: location.value || 'any', filter: f });
         if (type.value === 'rule') q.set('ruletype', ruletype.value);
         if (type.value === 'securityprofile') q.set('securityprofiletype', sptype.value);
+        if (type.value === 'device') q.set('devicetype', devtype.value);
         const extra = (state.extraCols || {})[type.value] || [];
         if (extra.length) q.set('columns', extra.join('|'));
         return q;
@@ -1795,6 +1800,8 @@ async function showViewer(config, preset) {
         const q = new URLSearchParams(view.query);
         q.set('name', r.name);
         if (r.location) q.set('location', r.location);
+        if (r.profile) q.set('profile', r.profile);
+        if (r.template) q.set('template', r.template);
         q.delete('filter');
         try { view.refs.set(key, await api('GET', base() + '/references?' + q.toString())); }
         catch (e) { view.refs.set(key, { error: e.message }); }
@@ -1839,7 +1846,7 @@ async function showViewer(config, preset) {
                 // refcount (types with references): the number is the button that shows the users below the row;
                 // 0 - nothing to show; no number (not counted) - the button still works
                 const refs = state.meta.types[view.type] && state.meta.types[view.type].references && typeof r.name === 'string' && r.name !== '';
-                const key = (r.location || '') + '|' + r.name;
+                const key = (r.location || '') + '|' + (r.profile ? r.profile + '/' : '') + r.name;
                 const refButton = () => r.refcount === 0 ? el('span', { class: 'muted', text: '0', title: 'not used' })
                     : el('button', { type: 'button', class: 'small refbtn' + (view.refs.has(key) ? ' on' : ''), text: (typeof r.refcount === 'number' ? r.refcount : '?') + (view.refs.has(key) ? ' ▾' : ' ▸'),
                         title: (view.refs.has(key) ? 'hide' : 'show') + ' where this object is used (pan-os-php displayreferences)', onclick: () => run(() => toggleRefs(r, key)) });
@@ -2051,16 +2058,17 @@ async function showViewer(config, preset) {
             m.uuid ? { key: 'uuid', label: 'UUID', kind: 'ro', value: m.uuid } : null,
             loc].filter(f => f);
     }
-    async function fetchObject(name, loc, template) {
+    async function fetchObject(name, loc, template, profile) {
         const q = new URLSearchParams({ type: cur.type, location: loc, name });
         if (template) q.set('template', template);
+        if (profile) q.set('profile', profile);
         if (cur.type === 'rule') q.set('ruletype', ruletype.value);
         return api('GET', base() + '/object?' + q.toString());
     }
     async function openObject(r) {
         // the generic window shows the list row when the object can not be read on its own (e.g. a type without a name filter)
-        let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template).catch(() => ({ row: r, model: null }))
-            : await fetchObject(r.name, r.location, r.template);
+        let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template, r.profile).catch(() => ({ row: r, model: null }))
+            : await fetchObject(r.name, r.location, r.template, r.profile);
         const offered = state.meta.types[cur.type].actions || {};
         const done = {}, errors = {}, pending = {}, hints = {};
         const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': cur.label + ' ' + r.name });
@@ -2090,13 +2098,13 @@ async function showViewer(config, preset) {
                 const actions = f.act(String(f.value), newValue);
                 if (!actions) return;
                 await apply(f, actions);
-                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location, obj.row.template);
+                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location, obj.row.template, obj.row.profile);
             } catch (e) { errors[f.key] = e.message; }
             render();
         }
         async function listChange(f, actions) {
             delete errors[f.key];
-            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location, obj.row.template); } catch (e) { errors[f.key] = e.message; }
+            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location, obj.row.template, obj.row.profile); } catch (e) { errors[f.key] = e.message; }
             render();
         }
         function control(f) {
@@ -2173,20 +2181,33 @@ async function showViewer(config, preset) {
                         !canWrite || f.kind === 'ro' || can ? null : el('div', { class: 'muted', text: 'read only: no pan-os-php action for it here (' + (f.needs || []).filter(a => !offered[a]).join(', ') + ')' })));
                 }))),
                 el('p', { class: 'muted', text: canWrite ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
-                objXml(), objHistory(),
+                objHierarchy(), objXml(), objHistory(),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
         }
         // the XML of the object (as it is in memory) and its history (git: every commit that changed its entry)
         const opened = {};
         function section(key, title, body) {
             const d = el('details', { class: 'objsection' }, el('summary', { text: title }), body);
-            d.open = !!opened[key];
+            // the hierarchy of a device group is open unless closed (XML / history: closed unless opened)
+            d.open = key === 'hierarchy' ? opened[key] !== false : !!opened[key];
             d.addEventListener('toggle', () => { opened[key] = d.open; });
             return d;
+        }
+        // a device group: where it is in the hierarchy (shared → parents → it → its children), as pan-os-php type=device
+        // devicetype=devicegroup actions=display shows it
+        function objHierarchy() {
+            const h = obj.row.hierarchy;
+            if (cur.type !== 'device' || !Array.isArray(h) || !h.length) return null;
+            const lines = h.map((n, i) => '  '.repeat(i) + (i ? '└ ' : '') + n + (i === h.length - 1 ? '   ◀ this device group' : ''));
+            for (const c of (obj.row.children || [])) lines.push('  '.repeat(h.length) + '└ ' + c);
+            return section('hierarchy', 'Hierarchy', el('div', {}, el('pre', { class: 'objxml', text: lines.join('\n') }),
+                el('p', { class: 'muted', text: 'firewalls: ' + (obj.row.firewalls ?? '?') + ' in this device group, ' + (obj.row['firewalls-below'] ?? '?') + ' with the device groups below' })));
         }
         function objXml() {
             // no XML: a predefined object (applications, URL categories, profiles of PAN-OS - they come from the App-ID
             // database, not from the configuration) or an object the read did not give (then: a bug - please report)
+            // a device (device group, template, …): its XML would be its whole part of the configuration - not shown
+            if (cur.type === 'device' && !obj.xml) return null;
             return obj.xml ? section('xml', 'XML', el('pre', { class: 'objxml', text: obj.xml }))
                 : el('p', { class: 'muted', text: 'XML: not available. Predefined objects of PAN-OS (applications, URL categories, predefined profiles) are not part of the configuration; for any other object please report it.' });
         }
@@ -2371,7 +2392,7 @@ async function showViewer(config, preset) {
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
         el('div', { class: 'viewer' }, menu, el('div', { class: 'vmain' },
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-                field('Location', location), spField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
+                field('Location', location), spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
                 el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
             heading,
             el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),

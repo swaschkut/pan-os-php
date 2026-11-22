@@ -61,6 +61,9 @@ class ViewerApp
     const TYPES = array( 'address', 'service', 'tag', 'rule', 'zone', 'schedule', 'securityprofile', 'securityprofilegroup' );
     const RULETYPES = array( 'any', 'security', 'nat', 'decryption', 'appoverride', 'captiveportal', 'authentication', 'pbf', 'qos', 'dos',
         'tunnelinspection', 'defaultsecurity', 'networkpacketbroker', 'sdwan' );
+    /** type=device: devicetype (pan-os-php DEVICEUTIL; which ones a configuration has: Panorama / firewall / SCM) */
+    const DEVICETYPES = array( 'any', 'devicegroup', 'template', 'templatestack', 'manageddevice', 'logcollector', 'logcollectorgroup', 'vsys',
+        'container', 'devicecloud', 'deviceonprem', 'snippet' );
     const SPTYPES = array( 'any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'data-filtering', 'wildfire-analysis',
         'custom-url-category', 'dns-security', 'saas-security' );
 
@@ -3757,7 +3760,7 @@ class ViewerApp
             $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => count( $actions ) == 0, 'resource' => self::resourceName( $type ),
                 'references' => isset( $def['action']['displayreferences'] ), 'columns' => self::exportColumns( $def ) );
         }
-        $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES,
+        $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES, 'devicetypes' => self::DEVICETYPES,
             'resources' => array_map( function( $t ) { return array( 'type' => $t, 'model' => 'scm-v1' ); }, self::SCM_RESOURCES ) );
         return $this->meta;
     }
@@ -3890,6 +3893,15 @@ class ViewerApp
             if( !in_array( $st, self::SPTYPES, TRUE ) )
                 throw new ViewerException( 'unknown securityprofiletype', 400 );
             $args[] = 'securityprofiletype=' . $st;
+        }
+        // devices: device groups, templates, template stacks, managed firewalls, … (before: only the default of
+        // pan-os-php, the device groups)
+        if( $type === 'device' )
+        {
+            $dt = $in['devicetype'] ?? 'any';
+            if( !in_array( $dt, self::DEVICETYPES, TRUE ) )
+                throw new ViewerException( 'devicetype: ' . implode( ', ', self::DEVICETYPES ), 400 );
+            $args[] = 'devicetype=' . $dt;
         }
 
         $filter = $in['filter'] ?? '';
@@ -4130,6 +4142,14 @@ class ViewerApp
                     // Panorama: the template of a network / device object (zone, interface, …)
                     if( isset( $o['model']['item']['template'] ) && is_string( $o['model']['item']['template'] ) && $o['model']['item']['template'] !== '' )
                         $row['template'] = $o['model']['item']['template'];
+                    // an object of the shared part of a template / template stack (certificates, certificate
+                    // profiles, …): pan-os-php names the template as location - for pan-os-php it is template=<name>
+                    // location=shared (before: location <template> - "location not found", no references)
+                    elseif( in_array( $sub['type'] ?? '', array( 'Template', 'TemplateStack' ), TRUE ) && $location !== 'shared' )
+                    {
+                        $row['location'] = 'shared';
+                        $row['template'] = $location;
+                    }
                     if( isset( $sub['store'] ) && is_string( $sub['store'] ) )
                         $row['store'] = $sub['store'];
                     foreach( $o as $k => $v )
@@ -4179,7 +4199,7 @@ class ViewerApp
         if( $refcount && is_array( $r['refcounts'] ?? null ) )
             foreach( $rows as $i => $row )
             {
-                $n = $r['refcounts'][( $row['location'] ?? '' ) . '|' . ( $row['name'] ?? '' )] ?? null;
+                $n = $r['refcounts'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . ( $row['name'] ?? '' )] ?? null;
                 $new = array();
                 foreach( $row as $k => $v )
                 {
@@ -4218,7 +4238,10 @@ class ViewerApp
         $type = substr( array_shift( $args ), 5 );
         if( empty( $this->meta()['types'][$type]['references'] ) )
             throw new ViewerException( 'type ' . $type . ' has no references', 400 );
-        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'references', 'type' => $type, 'args' => $args, 'name' => $name ), 300 );
+        $profile = $in['profile'] ?? '';
+        if( !is_string( $profile ) || strlen( $profile ) > 300 || preg_match( '/[\x00-\x1F\x7F]/', $profile ) )
+            throw new ViewerException( 'profile: the security profile of the rule', 400 );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'references', 'type' => $type, 'args' => $args, 'name' => $name, 'profile' => $profile ), 300 );
         if( empty( $r['ok'] ) )
             throw new ViewerException( is_string( $r['error'] ?? null ) ? $this->hidePaths( $r['error'] ) : 'the references could not be read', 500 );
         $objects = array();
@@ -4312,13 +4335,16 @@ class ViewerApp
         // an object of a template (Panorama): pan-os-php takes location=any with template= (the vsys of the template is
         // no location of the configuration) - the row is matched by its vsys and template
         $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + ( $template !== '' ? array( 'location' => 'any' ) : array() ) + $in, PHP_INT_MAX, FALSE, TRUE );
+        // a DNS rule / threat rule: the one of this security profile
+        $profile = is_string( $in['profile'] ?? null ) ? $in['profile'] : '';
         foreach( $r['rows'] as $row )
-            if( ( $row['name'] ?? null ) === $name && ( $location === 'any' || ( $row['location'] ?? null ) === $location ) && ( $template === '' || ( $row['template'] ?? '' ) === $template ) )
+            if( ( $row['name'] ?? null ) === $name && ( $location === 'any' || ( $row['location'] ?? null ) === $location ) && ( $template === '' || ( $row['template'] ?? '' ) === $template )
+                && ( $profile === '' || ( $row['profile'] ?? '' ) === $profile ) )
             {
                 $model = is_array( $row['model']['item'] ?? null ) ? $row['model']['item'] : null;
                 unset( $row['model'] );
                 // its XML and its history (git, the commits that changed its entry - the unsaved ones first)
-                $x = $r['xml'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . $name] ?? null;
+                $x = $r['xml'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . $name] ?? null;
                 $path = is_array( $x ) && is_string( $x['path'] ?? null ) ? $x['path'] : null;
                 return array( 'row' => $row, 'model' => $model, 'xml' => is_array( $x ) && is_string( $x['xml'] ?? null ) ? $x['xml'] : null,
                     'history' => $path !== null ? $this->objectHistory( $user, $pid, $cid, $path, ( $row['location'] ?? '' ) . ':' . $name ) : null, 'status' => $r['status'] );

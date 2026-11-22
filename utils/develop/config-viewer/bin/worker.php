@@ -208,6 +208,21 @@ function viewerUsers( $o )
  * 'rules' - RULEUTIL and also SECURITYPROFILEUTIL / PROFILEUTIL keep theirs there. Before only 'objects' was read: rules
  * and security profiles had no XML / history in the window, no count of references ("?") and no references.
  */
+/**
+ * the key of an object as the rows of the viewer name it (ViewerApp::rows): "location|template|name" - the shared part
+ * of a template has location "shared" (pan-os-php: location = the template); a DNS rule / threat rule "…|profile/name"
+ */
+function viewerRowKey( $o ): string
+{
+    $loc = PH::getLocationString( $o );
+    $loc = is_string( $loc ) ? $loc : '';
+    $tpl = PH::findTemplateOwner( $o );
+    $tpl = is_object( $tpl ) && method_exists( $tpl, 'name' ) ? (string)$tpl->name() : '';
+    if( $tpl !== '' && $loc === $tpl )
+        $loc = 'shared';
+    return $loc . '|' . $tpl . '|' . PH::jsonObjectKey( $o );
+}
+
 function viewerSetObjects( $set ): array
 {
     if( !is_array( $set ) )
@@ -217,7 +232,7 @@ function viewerSetObjects( $set ): array
     return is_array( $set['rules'] ?? null ) ? $set['rules'] : array();
 }
 
-function viewerReferences( $type, array $args, $name )
+function viewerReferences( $type, array $args, $name, $profile = null )
 {
     global $configFile;
     // the run only selects the objects of the location (no object has this name, so nothing is shown)
@@ -234,6 +249,8 @@ function viewerReferences( $type, array $args, $name )
         foreach( viewerSetObjects( $set ) as $o )
         {
             if( !is_object( $o ) || !method_exists( $o, 'name' ) || $o->name() !== $name )
+                continue;
+            if( $profile !== null && PH::jsonObjectKey( $o ) !== $profile . '/' . $name )
                 continue;
             $refs = viewerUsers( $o );
             $loc = PH::getLocationString( $o );
@@ -492,10 +509,8 @@ function viewerRun( $type, array $args )
         foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
             foreach( viewerSetObjects( $set ) as $o )
                 if( is_object( $o ) && isset( $o->refrules ) && method_exists( $o, 'name' ) )
-                {
-                    $loc = PH::getLocationString( $o );
-                    $GLOBALS['viewerRefcounts'][( is_string( $loc ) ? $loc : '' ) . '|' . $o->name()] = count( viewerUsers( $o ) );
-                }
+                    // "location|template|name" - a DNS rule / threat rule "…|profile/name" (PH::jsonObjectKey)
+                    $GLOBALS['viewerRefcounts'][viewerRowKey( $o )] = count( viewerUsers( $o ) );
     }
     if( $withXml )
     {
@@ -513,10 +528,7 @@ function viewerRun( $type, array $args )
                 if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' )
                     && ( $xmlName === null ? count( $GLOBALS['viewerXml'] ) < 20 : $o->name() === $xmlName ) && count( $GLOBALS['viewerXml'] ) < 50 )
                 {
-                    $loc = PH::getLocationString( $o );
-                    $tpl = PH::findTemplateOwner( $o );
-                    $key = ( is_string( $loc ) ? $loc : '' ) . '|' . ( is_object( $tpl ) && method_exists( $tpl, 'name' ) ? $tpl->name() : '' ) . '|' . $o->name();
-                    $GLOBALS['viewerXml'][$key] = array( 'path' => ConfigObjectSplit::entryPath( $o->xmlroot ),
+                    $GLOBALS['viewerXml'][viewerRowKey( $o )] = array( 'path' => ConfigObjectSplit::entryPath( $o->xmlroot ),
                         'xml' => substr( ConfigObjectSplit::canonical( $o->xmlroot ), 0, 200000 ) );
                 }
     }
@@ -693,6 +705,8 @@ while( TRUE )
     {
         // in a child, like a read: whatever pan-os-php does on the way can not hurt the loaded configuration
         $name = isset( $cmd['name'] ) && is_string( $cmd['name'] ) ? $cmd['name'] : '';
+        // a DNS rule / threat rule: the one of this security profile (the same name is in several profiles)
+        $profile = isset( $cmd['profile'] ) && is_string( $cmd['profile'] ) && $cmd['profile'] !== '' ? $cmd['profile'] : null;
         $child = pcntl_fork();
         if( $child === 0 )
         {
@@ -707,7 +721,7 @@ while( TRUE )
                     viewerSend( $conn, array( 'ok' => FALSE, 'error' => 'the references could not be read' ) );
                 posix_kill( getmypid(), SIGKILL );
             } );
-            try { $r = array( 'ok' => TRUE, 'objects' => viewerReferences( $type, $args, $name ) ); }
+            try { $r = array( 'ok' => TRUE, 'objects' => viewerReferences( $type, $args, $name, $profile ) ); }
             catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'references: ' . $e->getMessage() ); }
             while( ob_get_level() > 0 )
                 ob_end_clean();
