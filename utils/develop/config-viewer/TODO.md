@@ -58,6 +58,55 @@ Counted from [action-classes.json](action-classes.json), class `change`.
   (`name=`); limited to a location / template; the hits with their XPath and a link to the object window
 * more network / device types editable as soon as their actions are reviewed (`action-classes.json` `reviewed`)
 
+### 1.3b Menu areas of PAN-OS still missing in the viewer (checked 2026-11-22)
+
+Compared with the PAN-OS menus Objects / Policies / Network / Device (screenshots of Sven, PAN-OS 11.x).
+
+**Objects**
+
+| Area | pan-os-php today | Viewer: what is needed |
+|---|---|---|
+| Regions | in the AddressStore (`Region`, filter `object is.region`); only custom regions (with `<address>`) | menu entry type=address with `(object is.region)`; Addresses also with `!(object is.region)` |
+| HIP Objects / HIP Profiles | loaded (`HipObjectsProfileStore` / `HipProfilesProfileStore`); `type=profile profiletype=hip-objects / hip-profiles` | menu entries type=profile + profiletype (as securityprofiletype) |
+| Decryption Profile | loaded (`DecryptionProfileStore`); `type=profile profiletype=decryption` | as above |
+| Custom Objects > Data Patterns | loaded (`DataObjectsProfileStore`, `<profiles><data-objects>`), not in `PROFILEUTIL::$profileTypeStores` | pan-os-php: profiletype `data-objects`; then menu entry |
+| Custom Objects > Spyware / Vulnerability | not loaded: ThreatStore has only the predefined threats of predefined.xml; `<threats><spyware|vulnerability>` of shared / vsys / device group / container is not read | pan-os-php: load the custom signatures (Threat with "custom"), type=threat filter `object is.custom`, references (exceptions in profiles) |
+| Security Profiles > DoS Protection | not loaded (`DoSProtectionProfile` in SecurityProfileStore with xpathRoot `XYZ`) | pan-os-php: load `<profiles><dos-protection>`, references from DoS rules; then profiletype |
+| Dynamic User Groups | not loaded (only in ConfigObjectSplit / the container template) | pan-os-php: new class + store (filter on tags as a dynamic address group), references from rules (source user) |
+| Authentication (objects) | not loaded (`<authentication-object>`, authentication enforcement) | pan-os-php: new class + store, references from authentication rules |
+| Devices (objects, IoT device objects) | not loaded - not the same as the managed devices of type=device | pan-os-php: new class + store; low priority |
+| more: GTP, SCEP, Packet Broker, SD-WAN Path Quality / SaaS Quality / Traffic Distribution / Error Correction | loaded (stores of VirtualSystem / Container), not in `type=profile` | add to `PROFILEUTIL::$profileTypeStores`; SD-WAN link management as a submenu |
+
+SCM: the same areas exist in SCM (folders / snippets); for each one check on pan.dev the resource of the Config API
+(regions, dynamic-user-groups, hip-objects, hip-profiles, decryption-profiles, authentication enforcement, data
+patterns (DLP), custom spyware / vulnerability signatures, DoS protection) and add it to `SCM_RESOURCES` /
+PanSCMAPIConnector (today hip-* and decryption are commented out there).
+
+**Policies**
+
+* Captive Portal was replaced by Authentication (PAN-OS 8.0): Captive Portal only for a configuration below 8.0, from
+  8.0 on and for SCM only Authentication (the entry depends on the version of the configuration).
+* Policy Optimizer (new app viewer, rules without app controls, unused apps, rule usage): live data of a device, not of
+  the configuration - see 8b.
+
+**Network**: almost complete. Missing: VLANs, Routing Profiles of the logical router (BGP, BFD, OSPF, OSPFv3, RIPv2,
+Filters, Multicast), DNS Proxy, GlobalProtect MDM / Clientless Apps / Clientless App Groups, QoS, LLDP, GlobalProtect
+IPSec Crypto, Monitor / QoS / LLDP profiles, SD-WAN Interface Profile - check which ones pan-os-php reads.
+
+**Device** - the tab is still almost empty (Devices, Certificates, Certificate Profiles, SSL/TLS Service Profiles, the
+button System settings). Plan: the menu like PAN-OS, the entries from what exists:
+
+| PAN-OS entry | Source |
+|---|---|
+| Setup, High Availability, Administrators, Admin Roles, Access Domain, Password Profiles, Authentication Profile / Sequence, Log Settings, Server Profiles (LDAP, RADIUS, TACACS+, Kerberos, SAML IdP, Syslog, SNMP Trap, Email) | type=config-section (already there - as own menu entries instead of one button) |
+| Certificates, Certificate Profile, SSL/TLS Service Profile | already there |
+| SCEP | SCEPProfileStore (loaded) - profiletype `scep` |
+| Virtual Systems, Shared Gateways | locations of the configuration; a list with the settings of each vsys |
+| OCSP Responder, SSL Decryption Exclusion, SSH Service Profile, Response Pages, Server Profiles HTTP / Netflow / SCP / DNS / MFA, Local User Database (users, groups), Scheduled Log Export, User Identification, VM Information Sources, Data Redistribution, Device Quarantine, IoT Security | new config-section sections (read, later set) |
+| Config Audit, Software, GlobalProtect Client, Dynamic Updates, Plugins, Licenses, Support, Master Key and Diagnostics, Policy Recommendation, Troubleshooting | not configuration: live data of a device (op commands, support file) - see 8b |
+
+Monitor (logs, ACC, App Scope, reports, …): not part of the configuration; only live data (see 8b).
+
 ### 1.4 object-merger / rule-merger in the viewer
 
 * ~~step 1~~ built 2026-11-21: tab **Merger** - object-merger, rule-merger, merger-possible-report as runs on a copy;
