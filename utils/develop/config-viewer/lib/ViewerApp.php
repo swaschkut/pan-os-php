@@ -43,6 +43,18 @@ class ViewerException extends Exception
 {
 }
 
+/** an error with a debug text for the user (e.g. the key generation: the call, TLS, the answer - never a secret) */
+class ViewerDetailException extends ViewerException
+{
+    public $details;
+
+    public function __construct( string $message, int $code, string $details )
+    {
+        parent::__construct( $message, $code );
+        $this->details = $details;
+    }
+}
+
 class ViewerApp
 {
     const ROLES = array( 'read', 'write' );
@@ -926,43 +938,112 @@ class ViewerApp
         // tests only: a plain HTTP device simulation (never set in an installation - the password would go unencrypted)
         $scheme = getenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP' ) === '1' ? 'http' : 'https';
         $verify = !empty( $in['verify'] ) && $in['verify'] !== 'false';
-        $ch = curl_init( $scheme . '://' . $host . ( $port !== null ? ':' . $port : '' ) . '/api/' );
+        $url = $scheme . '://' . $host . ( $port !== null ? ':' . $port : '' ) . '/api/';
+        // the debug trace for the user (as pan-os-php debugapi): the call, TLS, the answer - never the password, the key
+        // only shortened as pan-os-php prints it
+        $trace = array( " * generating an API key from '" . $target . "'" . ( $port !== null ? ' port ' . $port : '' ) . '...',
+            'API call through POST: "' . $url . '?type=keygen"',
+            'RAW HTTP POST Content: user=' . rawurlencode( $name ) . '&password=********',
+            'TLS certificate check: ' . ( $scheme === 'http' ? 'plain HTTP (test simulation)' : ( $verify ? 'on' : 'off (as pan-os-php)' ) ) );
+        // as pan-os-php (12 ... 12) for a key of usual length, a short one less (never more than a third of it)
+        $short = function( string $k ) { $n = strlen( $k ) >= 72 ? 12 : ( strlen( $k ) >= 24 ? 4 : 0 );
+            return $n > 0 ? substr( $k, 0, $n ) . '...' . substr( $k, -$n ) : str_repeat( '*', strlen( $k ) ); };
+        $fail = function( string $msg, int $code ) use ( &$trace ) {
+            $trace[] = ' FAILED: ' . $msg;
+            throw new ViewerDetailException( $msg, $code, implode( "\n", $trace ) );
+        };
+        $verbose = fopen( 'php://temp', 'w+' );
+        $ch = curl_init( $url );
         curl_setopt_array( $ch, array(
             CURLOPT_POST => TRUE,
-            CURLOPT_POSTFIELDS => http_build_query( array( 'type' => 'keygen', 'user' => $name, 'password' => $password ), '', '&', PHP_QUERY_RFC3986 ),
+            CURLOPT_POSTFIELDS => 'type=keygen&user=' . rawurlencode( $name ) . '&password=' . rawurlencode( $password ),
             CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_FOLLOWLOCATION => FALSE, CURLOPT_CONNECTTIMEOUT => 7, CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => $verify, CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS | CURLPROTO_HTTP, CURLOPT_MAXFILESIZE => 1000000,
+            CURLOPT_HEADER => TRUE, CURLOPT_CERTINFO => TRUE, CURLOPT_VERBOSE => TRUE, CURLOPT_STDERR => $verbose,
         ) );
         $raw = curl_exec( $ch );
         $err = curl_error( $ch );
+        $errno = curl_errno( $ch );
         $code = (int)curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+        $hsize = (int)curl_getinfo( $ch, CURLINFO_HEADER_SIZE );
+        $ip = (string)curl_getinfo( $ch, CURLINFO_PRIMARY_IP );
+        $time = (float)curl_getinfo( $ch, CURLINFO_TOTAL_TIME );
+        $sslv = curl_getinfo( $ch, CURLINFO_SSL_VERIFYRESULT );
+        $certs = curl_getinfo( $ch, CURLINFO_CERTINFO );
         curl_close( $ch );
         unset( $password, $in['password'] );
+        rewind( $verbose );
+        $vlog = (string)stream_get_contents( $verbose, 64000 );
+        fclose( $verbose );
+        // the connection as curl saw it (TLS handshake, certificate, HTTP status) - the request body is not in it;
+        // a password / key pattern is masked anyway
+        $vlog = preg_replace( array( '/(password=)[^&\s]*/i', '/(key=)[^&\s]*/i' ), '$1********', $vlog );
+        $trace[] = 'connection: ' . ( $ip !== '' ? $ip : '-' ) . ', ' . sprintf( '%.2f', $time ) . 's, HTTP ' . ( $code ?: '-' )
+            . ( $scheme === 'https' && $sslv !== FALSE ? ', certificate verify result ' . (int)$sslv . ( (int)$sslv === 0 ? ' (ok)' : ( $verify ? ' (not trusted)' : ' (not trusted - ignored, check off)' ) ) : '' );
+        foreach( is_array( $certs ) ? $certs : array() as $i => $c )
+            if( is_array( $c ) )
+                $trace[] = 'certificate ' . $i . ': subject ' . ( $c['Subject'] ?? '?' ) . ' | issuer ' . ( $c['Issuer'] ?? '?' )
+                    . ' | valid ' . ( $c['Start date'] ?? '?' ) . ' - ' . ( $c['Expire date'] ?? '?' );
+        $trace[] = '--- curl ---';
+        foreach( preg_split( '/\r?\n/', trim( $vlog ) ) as $l )
+            if( $l !== '' && !preg_match( '/^[<>] *$/', $l ) )
+                // the list of hosts without proxy is long and says little: only that it is set
+                $trace[] = substr( preg_replace( "/^(\\* Uses proxy env variable no_proxy) == .*/i", '$1 (set)', $l ), 0, 300 );
+        $trace[] = '---';
+        // what usually helps with the error of curl
+        $hint = array( 6 => 'the name does not resolve on the server of the viewer (DNS) - try the IP address',
+            7 => 'connection refused / no route - management IP, port, the interface management profile (HTTPS) and permitted IPs of the device, firewalls between',
+            28 => 'timeout - the device does not answer: routing, a firewall between, the permitted IPs of the management interface',
+            35 => 'TLS handshake failed - TLS version / ciphers of the device (SSL/TLS service profile of the management) and of the server, or not HTTPS on that port',
+            51 => 'the certificate does not match the name / IP - use the name of the certificate or turn the certificate check off',
+            60 => 'the certificate is not trusted by the server of the viewer (self-signed / own CA) - turn the certificate check off or add the CA on the server',
+            56 => 'the connection was closed - proxy, TLS inspection between, or the device', 52 => 'empty answer - not the XML API on that port?' )[$errno] ?? null;
+        if( $hint !== null )
+            $trace[] = 'hint: ' . $hint;
         if( $raw === FALSE )
-            throw new ViewerException( 'no answer from ' . $target . ( $port !== null ? ':' . $port : '' ) . ': ' . substr( $err, 0, 200 ), 502 );
+            $fail( 'no answer from ' . $target . ( $port !== null ? ':' . $port : '' ) . ': ' . ( $errno ? '[' . $errno . '] ' : '' ) . substr( $err, 0, 200 ), 502 );
+        $body = substr( (string)$raw, $hsize );
+        // the answer for the trace: the key shortened, at most 4000 characters
+        $shown = preg_replace_callback( '#(<key>)(.*?)(</key>)#s', function( $m ) use ( $short ) { return $m[1] . $short( trim( $m[2] ) ) . $m[3]; }, $body );
+        $trace[] = 'answer (' . strlen( $body ) . ' bytes): ' . substr( preg_replace( '/\s+/', ' ', $shown ), 0, 4000 );
         $doc = new DOMDocument();
-        $ok = $raw !== '' && @$doc->loadXML( (string)$raw, LIBXML_NONET );
+        $ok = trim( $body ) !== '' && @$doc->loadXML( trim( $body ), LIBXML_NONET );
         $resp = $ok ? $doc->documentElement : null;
         if( $resp === null || $resp->nodeName !== 'response' )
-            throw new ViewerException( $target . ' did not answer as a PAN-OS XML API (HTTP ' . $code . ')', 502 );
+            $fail( $target . ' did not answer as a PAN-OS XML API (HTTP ' . $code . ')', 502 );
         if( $resp->getAttribute( 'status' ) !== 'success' )
         {
             // the message of the device (e.g. "Invalid Credentials.") - a little pause against guessing passwords
             usleep( 1000000 );
             $msg = trim( preg_replace( '/\s+/', ' ', $resp->textContent ) );
-            throw new ViewerException( $target . ': ' . ( $msg !== '' ? substr( $msg, 0, 200 ) : 'key generation refused' ), 400 );
+            $fail( $target . ': ' . ( $msg !== '' ? substr( $msg, 0, 200 ) : 'key generation refused' ), 400 );
         }
-        $key = '';
-        foreach( $doc->getElementsByTagName( 'key' ) as $k )
-            $key = trim( $k->textContent );
-        if( strlen( $key ) < 8 || preg_match( '/[\s:%]/', $key ) )
-            throw new ViewerException( $target . ' answered without a usable API key', 502 );
-        $this->keyStore( $user, 'panos', $target, $port, (string)( $in['label'] ?? '' ), $key );
+        // as pan-os-php: response / result / key
+        $key = null;
+        foreach( $resp->childNodes as $r )
+            if( $r instanceof DOMElement && $r->nodeName === 'result' )
+                foreach( $r->childNodes as $k )
+                    if( $k instanceof DOMElement && $k->nodeName === 'key' && $key === null )
+                        $key = trim( $k->textContent );
+        if( $key === null || $key === '' )
+            $fail( $target . ' answered without <result><key> - see the answer in the debug output', 502 );
+        if( preg_match( '/[\x00-\x20\x7F]/', $key ) || substr_count( $key, ':' ) > 1 || strlen( $key ) > 4000 )
+            $fail( $target . ' answered a key the key store can not hold (' . strlen( $key ) . ' characters'
+                . ( preg_match( '/[\x00-\x20\x7F]/', $key ) ? ', with spaces / line breaks' : '' ) . ( substr_count( $key, ':' ) > 1 ? ', more than one ":"' : '' ) . ')', 502 );
+        $trace[] = ' OK, key is ' . $short( $key );
+        try
+        {
+            $this->keyStore( $user, 'panos', $target, $port, (string)( $in['label'] ?? '' ), $key );
+        }
+        catch( ViewerException $e )
+        {
+            $fail( 'key received, but not stored: ' . $e->getMessage(), $e->getCode() ?: 400 );
+        }
         foreach( $this->keyList( $user ) as $k )
             if( $k['kind'] === 'panos' && $k['target'] === $target )
-                return $k;
-        throw new ViewerException( 'key not stored', 500 );
+                return $k + array( 'debug' => implode( "\n", $trace ) );
+        $fail( 'key not stored', 500 );
     }
 
     /**

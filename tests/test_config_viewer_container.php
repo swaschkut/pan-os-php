@@ -470,6 +470,8 @@ file_put_contents( dirname( __DIR__ ) . "/got.log", json_encode( array( $_SERVER
 header( "Content-Type: application/xml" );
 if( ( $_POST["type"] ?? "" ) === "keygen" && ( $_POST["user"] ?? "" ) === "admin" && ( $_POST["password"] ?? "" ) === "pw:with&special%chars" )
     echo "<response status=\"success\"><result><key>LUFRPT-from-device-geheim-9876</key></result></response>";
+elseif( ( $_POST["user"] ?? "" ) === "nokey" )
+    echo "<response status=\"success\"><result><msg>something else</msg></result></response>";
 else
     echo "<response status=\"error\" code=\"403\"><result><msg>Invalid Credentials.</msg></result></response>";
 ' );
@@ -478,19 +480,25 @@ $kgSrv = proc_open( array( PHP_BINARY, '-S', '127.0.0.1:' . $kgPort, '-t', $kgDi
 usleep( 400000 );
 $alice = $app->userByName( 'alice' );
 $gen = function( array $in ) use ( $app, $alice ) {
-    try { return array( 201, $app->keyGenerate( $alice, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+    try { return array( 201, $app->keyGenerate( $alice, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage(), $e instanceof ViewerDetailException ? $e->details : '' ); } };
 $kgIn = array( 'target' => '127.0.0.1', 'port' => $kgPort, 'username' => 'admin', 'password' => 'pw:with&special%chars', 'label' => 'lab fw' );
 putenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP=1' );
 $r = $gen( $kgIn );
 eq( array( $r[0], strpos( (string)$r[1], 'not on the allow list' ) !== FALSE ), array( 403, TRUE ), 'key from the device: only to a host the administrator allows' );
 $app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com' ) );
 $r = $gen( array( 'password' => 'wrong-password' ) + $kgIn );
-eq( array( $r[0], $r[1] ), array( 400, '127.0.0.1: Invalid Credentials.' ), 'key from the device: the message of the device (wrong password)' );
+eq( array( $r[0], $r[1], strpos( $r[2] ?? '', 'API call through POST: "http://127.0.0.1:' . $kgPort . '/api/?type=keygen"' ) !== FALSE,
+    strpos( $r[2] ?? '', 'RAW HTTP POST Content: user=admin&password=********' ) !== FALSE, strpos( $r[2] ?? '', 'Invalid Credentials' ) !== FALSE, strpos( $r[2] ?? '', 'wrong-password' ) ),
+    array( 400, '127.0.0.1: Invalid Credentials.', TRUE, TRUE, TRUE, FALSE ), 'key from the device: the message of the device (wrong password), debug output without the password' );
+$r = $gen( array( 'username' => 'nokey' ) + $kgIn );
+eq( array( $r[0], strpos( $r[1], 'without <result><key>' ) !== FALSE, strpos( $r[2] ?? '', 'something else' ) !== FALSE ), array( 502, TRUE, TRUE ), 'key from the device: an answer without key - the answer in the debug output' );
 $r = $gen( $kgIn );
 $got = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $kgDir . '/got.log', FILE_IGNORE_NEW_LINES ) ?: array() );
 eq( array( $r[0], $r[1]['kind'] ?? null, $r[1]['target'] ?? null, $r[1]['port'] ?? null, $r[1]['label'] ?? null, $r[1]['hint'] ?? null, strpos( json_encode( $r[1] ), 'geheim' ), end( $got ) ),
     array( 201, 'panos', '127.0.0.1', $kgPort, 'lab fw', '…9876', FALSE, array( 'POST', '', 'keygen', 'admin' ) ),
     'key from the device: keygen by POST (password not in the URL), stored as own PAN-OS key, only its end shown' );
+eq( array( strpos( $r[1]['debug'] ?? '', ' OK, key is LUFR...9876' ) !== FALSE, strpos( $r[1]['debug'] ?? '', 'special' ), strpos( $r[1]['debug'] ?? '', 'device-geheim' ) ),
+    array( TRUE, FALSE, FALSE ), 'key from the device: debug output as pan-os-php (key shortened, no password)' );
 $sec = $db->query( "SELECT secret FROM user_keys WHERE target = '127.0.0.1'" )->fetchColumn();
 eq( array( 'n/a', strpos( (string)$sec, 'geheim' ), strpos( (string)file_get_contents( $data . '/viewer.sqlite' ), 'special%chars' ),
     strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array() ) ), 'special' ) ),

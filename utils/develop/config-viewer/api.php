@@ -567,7 +567,7 @@ catch( ViewerException $e )
     // a refused download is logged as well
     if( $viewerAudit['method'] === 'GET' && preg_match( '#/download$|/runs/[0-9a-f]+/files/#', $viewerAudit['route'] ) )
         $viewerAudit['download'] = TRUE;
-    viewerOut( array( 'error' => $e->getMessage() ), $code >= 400 && $code < 600 ? $code : 400 );
+    viewerOut( array( 'error' => $e->getMessage() ) + ( $e instanceof ViewerDetailException ? array( 'details' => $e->details ) : array() ), $code >= 400 && $code < 600 ? $code : 400 );
 }
 catch( Throwable $e )
 {

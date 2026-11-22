@@ -22,6 +22,12 @@ nothing is written to the device. The result becomes a new version of the projec
      not saved, not logged, not in the audit log. The host must be on the allow list (step 1). TLS: the certificate is
      checked only with *Check the TLS certificate* (firewalls mostly have their own certificate; pan-os-php does not
      check it either). A wrong password gives the message of the device (e.g. "Invalid Credentials.").
+     **Debug output** (below the form, open after an error): the call as pan-os-php shows it with `debugapi`
+     (`API call through POST`, `RAW HTTP POST Content: user=…&password=********`), the TLS check, the connection,
+     the certificate of the device (subject, issuer, validity, verify result), the curl log (TLS version / cipher,
+     HTTP status), the answer of the device (the key shortened as pan-os-php prints it) and a hint for the usual errors
+     (name does not resolve, connection refused, timeout, TLS handshake, certificate not trusted / name does not match).
+     It contains no password and no complete key - it can be passed on for support.
    - SCM: TSG id, client id and client secret of a service account
 
    - LDAP accounts: bind user + password (`ldap_user<bind user>`, see *LDAP*)

@@ -43,7 +43,7 @@ async function api(method, path, body) {
     let data = null;
     try { data = await res.json(); } catch (e) { data = null; }
     if (res.status === 401 && state.user) { leave(); showLogin(); throw new Error('session ended - please log in again'); }
-    if (!res.ok) throw new Error(data && data.error ? data.error : 'request failed (' + res.status + ')');
+    if (!res.ok) { const e = new Error(data && data.error ? data.error : 'request failed (' + res.status + ')'); if (data && data.details) e.details = data.details; throw e; }
     return data;
 }
 async function run(fn) {
@@ -238,10 +238,23 @@ async function showAccount() {
         const gUser = el('input', { required: true, autocomplete: 'off', size: 14 });
         const gPw = el('input', { type: 'password', required: true, autocomplete: 'new-password', size: 14 });
         const gVerify = el('input', { type: 'checkbox' });
+        // debug output of the last attempt (the call, TLS / certificate, curl, the answer - never the password)
+        const gDebug = el('details', { class: 'keygendebug', hidden: true }, el('summary', { text: 'Debug output' }), el('pre', { class: 'log' }));
+        const showDebug = (text, failed) => { gDebug.hidden = !text; gDebug.open = !!failed; gDebug.lastChild.textContent = text || ''; };
         const genForm = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
             const body = { target: gHost.value.trim(), username: gUser.value, password: gPw.value, label: gLabel.value.trim(), verify: gVerify.checked };
             if (gPort.value.trim()) body.port = gPort.value.trim();
-            try { const k = await api('POST', 'keys/generate', body); gPw.value = ''; await showAccount(); message('API key of ' + k.target + ' received and saved (…' + String(k.hint).replace(/^…/, '') + ')'); }
+            showDebug('', false);
+            try {
+                const k = await api('POST', 'keys/generate', body);
+                gPw.value = '';
+                await showAccount();
+                message('API key of ' + k.target + ' received and saved (…' + String(k.hint).replace(/^…/, '') + ')');
+                // the page is drawn again: the debug output of the success below the new form
+                const d = document.querySelector('details.keygendebug');
+                if (d && k.debug) { d.hidden = false; d.lastChild.textContent = k.debug; }
+            }
+            catch (e) { showDebug(e.details || '', true); throw e; }
             finally { gPw.value = ''; }
         }); } }, field('Firewall / Panorama (management IP or name)', gHost), field('Port', gPort), field('Label', gLabel), field('Administrator', gUser), field('Password', gPw),
             field('Check the TLS certificate', gVerify), el('button', { class: 'primary', type: 'submit', text: 'Get API key' }));
@@ -260,7 +273,7 @@ async function showAccount() {
             }); } }, field('Kind', kKind), fTarget, fNamed, fPort, field('Label', kLabel), fKey, fId, fSecret, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
             el('h3', { text: 'Get the API key from a firewall / Panorama' }),
             el('p', { class: 'muted', text: 'As pan-os-php key-manager add=<host>: the viewer asks the firewall / Panorama for the API key of the administrator (XML API keygen) and saves it as your key of kind PAN-OS. The password is only sent to the device - it is not saved and not logged. The host must be allowed by the administrator (Network for runs).' + (ks.network ? '' : ' Network for runs is off at the moment - this does not work now.') }),
-            genForm,
+            genForm, gDebug,
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const fd = new FormData(); fd.append('keystore', ksFile.files[0]);
                 const r = await api('POST', 'keys/import', fd);
