@@ -64,9 +64,9 @@ class IPMap
 
         for( $i = 0; $i < count($key1); $i++ )
         {
-            if( $ref1[$key1[$i]]['start'] != $ref2[$key2[$i]]['start'] )
+            if( cidr::ipCmp($ref1[$key1[$i]]['start'], $ref2[$key2[$i]]['start']) != 0 )
                 return FALSE;
-            if( $ref1[$key1[$i]]['end'] != $ref2[$key2[$i]]['end'] )
+            if( cidr::ipCmp($ref1[$key1[$i]]['end'], $ref2[$key2[$i]]['end']) != 0 )
                 return FALSE;
         }
 
@@ -152,12 +152,19 @@ class IPMap
 
         foreach( $this->_map as &$entry )
         {
-            if( strpos( $entry['network'], "-" ) !== false )
-                $ex = explode('-', $entry['network']);
+            // entries created by substract() have no 'network': IPv4 values are int, IPv6 values decimal strings
+            if( isset($entry['network']) )
+            {
+                if( strpos( $entry['network'], "-" ) !== false )
+                    $ex = explode('-', $entry['network']);
+                else
+                    $ex = explode('/', $entry['network']);
+                $isIPv4 = filter_var($ex[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE;
+            }
             else
-                $ex = explode('/', $entry['network']);
+                $isIPv4 = is_int($entry['start']);
 
-            if( filter_var($ex[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE )
+            if( $isIPv4 )
             {
                 if( $entry['start'] == $entry['end'] )
                     $ret[] = long2ip($entry['start']);
@@ -169,7 +176,7 @@ class IPMap
             }
             else
             {
-                if( $entry['start'] == $entry['end'] )
+                if( cidr::ipCmp($entry['start'], $entry['end']) == 0 )
                     $ret[] = cidr::inet_itop($entry['start']);
                 else
                     $ret[] = cidr::inet_itop($entry['start']) . '-' . cidr::inet_itop($entry['end']);
@@ -222,10 +229,10 @@ class IPMap
 
                 //PH::print_stdout(  "   vs ".long2ip($compare['start']).'-'.long2ip($compare['end']) );
 
-                if( $compare['start'] > $current['end'] + 1 )
+                if( cidr::ipCmp($compare['start'], cidr::ipInc($current['end'])) > 0 )
                     break;
 
-                if( $current['end'] < $compare['end'] )
+                if( cidr::ipCmp($current['end'], $compare['end']) < 0 )
                     $current['end'] = $compare['end'];
 
                 //PH::print_stdout(  "     upgraded to ".long2ip($current['start']).'-'.long2ip($current['end']) );

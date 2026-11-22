@@ -1443,6 +1443,9 @@ trait StatCollectorTrait
             return TRUE;
 
         $version = ( isset( $this->version ) && is_numeric( $this->version ) ) ? intval( $this->version ) : 0;
+        // SCM / Prisma Access always has the current feature set (as SecurityProfile2::inlineVersion())
+        if( in_array( get_class( $this ), array( 'BuckbeakConf', 'FawkesConf', 'Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet' ), TRUE ) )
+            $version = 121;
 
         return self::bp_check_applies( $parsed[0], $parsed[1], $version );
     }

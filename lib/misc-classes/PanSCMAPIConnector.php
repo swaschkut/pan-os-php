@@ -9,6 +9,31 @@
 
 class PanSCMAPIConnector
 {
+    /**
+     * a text field of an SCM object (description, …) as a string: a string as it is; a list of strings / numbers (SCM
+     * sends some descriptions as an array) - its lines joined with a line break; anything else - null (not taken)
+     */
+    public static function scmText( $value )
+    {
+        if( is_string( $value ) )
+            return $value;
+        if( is_int( $value ) || is_float( $value ) )
+            return (string)$value;
+        if( is_array( $value ) )
+        {
+            $lines = array();
+            foreach( $value as $v )
+            {
+                if( is_string( $v ) || is_int( $v ) || is_float( $v ) )
+                    $lines[] = (string)$v;
+                elseif( $v !== null )
+                    return null;
+            }
+            return implode( "\n", $lines );
+        }
+        return null;
+    }
+
     public $name = 'connector';
 
     /** @var string */
@@ -37,6 +62,27 @@ class PanSCMAPIConnector
     private $_curl_count = 0;
 
     private $loadedSnippets = array();
+
+    /**
+     * internal UI API (used by the SCM web UI, accepts the service account token): the public API does not return
+     * all sections of some security profiles (vulnerability: mica-engine-vulnerability-enabled; WildFire / AV:
+     * decoder, mlav-engine-filebased-enabled, mica-engine-wildfire-rules; rule action "default" as []) - these
+     * types are taken from the internal API, which returns the PAN-OS XML structure as JSON
+     */
+    const UI_API_HOST_DEFAULT = 'paas-3.prod.eu.panorama.paloaltonetworks.com';
+    const INTERNAL_PROFILE_TYPES = array(
+        'vulnerability-protection-profiles' => 'VulnerabilityProtectionSecurityProfiles',
+        'wildfire-anti-virus-profiles' => 'WildFireAndAntivirusSecurityProfiles',
+        'anti-spyware-profiles' => 'AntiSpywareSecurityProfiles',
+        'dns-security-profiles' => 'DnsSecurityProfiles',
+    );
+    /** protocols of the antivirus decoder (enforcement actions) of a virus-and-wildfire-analysis profile */
+    const SCM_AV_DECODERS = array( 'ftp', 'http', 'http2', 'imap', 'pop3', 'smb', 'smtp' );
+    /** @var array type => folder|type => uuid => internal entry | FALSE (not available) */
+    private $internalProfileCache = array();
+    /** @var array|null folder used for internal lookups: array( name, type container|cloud ) */
+    private $internalLookupFolder = null;
+    private $internalApiWarned = false;
 
 
     /**
@@ -114,6 +160,10 @@ class PanSCMAPIConnector
         foreach( $responseArray['data'] as $folder )
         {
             $folderNameArray[] = $folder['name'];
+
+            // entries without 'type' (seen in exports): a device has a serial number, everything else is a folder
+            if( !isset($folder['type']) || $folder['type'] === null || $folder['type'] === '' )
+                $folder['type'] = isset($folder['serial_number']) ? 'on-prem' : 'container';
 
             $display_more = false;
             if( $this->showApiCalls && $display_more )
@@ -199,7 +249,7 @@ class PanSCMAPIConnector
                 if( $sub === null )
                     $sub = $pan->createDeviceCloud( $folder['name'], $parent );
             }
-            $sub->setSaseID($folder['id']);
+            $sub->setSaseID(isset($folder['id']) ? $folder['id'] : null);
 
             $this->Connector_addSnippet($pan, $sub, $folder);
         }
@@ -217,7 +267,7 @@ class PanSCMAPIConnector
             else
                 $sub = $pan->createContainer( $folder['name'], $parent );
         }
-        $sub->setSaseID($folder['id']);
+        $sub->setSaseID(isset($folder['id']) ? $folder['id'] : null);
 
         $this->Connector_addSnippet($pan, $sub, $folder);
 
@@ -269,7 +319,7 @@ class PanSCMAPIConnector
             $sub = $pan->findSnippet( $folder['name'] );
             if( $sub == null )
                 $sub = $pan->createSnippet( $folder['name'] );
-            $sub->setSaseID($folder['id']);
+            $sub->setSaseID(isset($folder['id']) ? $folder['id'] : null);
             if( isset($folder['type']) && $folder['type'] == "predefined" )
                 $sub->setPredefined( true );
 
@@ -315,7 +365,7 @@ class PanSCMAPIConnector
 
         foreach(PanAPIConnector::$savedConnectors as $connector )
         {
-            if( strpos($connector->apihost, $host) !== FALSE )
+            if( strpos($connector->apihost, $host) === 0 )
             {
                 $key = $connector->apikey;
                 $test = explode("%", $key);
@@ -604,6 +654,11 @@ class PanSCMAPIConnector
         elseif( $utilType == "device" )
         {
             #mwarning("only local offline config validation", null, FALSE);
+            // variables of the folders / snippets / devices (interface variables of a firewall: on its device)
+            $this->typeArray[] = "variables";
+            // NGFW device settings (/config/device/v1) - shown by type=config-section (section scm-<type>)
+            foreach( self::DEVICE_SETTINGS_TYPES as $t )
+                $this->typeArray[] = $t;
         }
         elseif( $utilType == "custom" )
         {
@@ -658,6 +713,8 @@ class PanSCMAPIConnector
             $this->typeArray[] = "security-rules";
 
             $this->typeArray[] = "log-forwarding-profiles";
+
+            $this->typeArray[] = "variables";
         }
         elseif( $utilType == "zone" )
         {
@@ -666,6 +723,10 @@ class PanSCMAPIConnector
         elseif( $utilType == "zone-protection-profile" )
         {
             $this->typeArray[] = "zone-protection-profiles";
+        }
+        elseif( $utilType == "edl" )
+        {
+            $this->typeArray[] = "external-dynamic-lists";
         }
         else
         {
@@ -684,6 +745,19 @@ class PanSCMAPIConnector
         #"dns-security-profiles",
         #"file-blocking-profiles",
         #"decryption-profiles",
+
+        // external dynamic lists next to the addresses (rules refer to them), NAT rules next to the security rules
+        // (they refer to addresses / services - the mergers must see these references)
+        $extended = array();
+        foreach( $this->typeArray as $t )
+        {
+            $extended[] = $t;
+            if( $t === "address-groups" && !in_array("external-dynamic-lists", $this->typeArray, TRUE) )
+                $extended[] = "external-dynamic-lists";
+            if( $t === "security-rules" && !in_array("nat-rules", $this->typeArray, TRUE) )
+                $extended[] = "nat-rules";
+        }
+        $this->typeArray = $extended;
 
         return $this->typeArray;
     }
@@ -823,7 +897,15 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        if( $type !== null
+        if( $type === "nat-rules" )
+            $url .= "/config/network/v1/" . $type . "?".$foldertype."=" . $folderName;
+        // variables of a folder / snippet / device (Configuration Setup API)
+        elseif( $type === "variables" )
+            $url .= "/config/setup/v1/" . $type . "?".$foldertype."=" . urlencode( $folderName );
+        // NGFW device settings
+        elseif( in_array( $type, self::DEVICE_SETTINGS_TYPES, TRUE ) )
+            $url .= "/config/device/v1/" . $type . "?".$foldertype."=" . urlencode( $folderName );
+        elseif( $type !== null
             && ( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
             && $type !== "log-forwarding-profiles"
         )
@@ -1106,7 +1188,26 @@ class PanSCMAPIConnector
 
     function loadSCMConfig($folder, $sub, $utilType, $ruleType = "security")
     {
+        //internal UI API lookups (security profiles) are done with the folder being loaded - its answer contains
+        //the entries of the attached snippets and the parent folders as well
+        $cls = get_class($sub);
+        if( $cls == "Container" )
+            $this->internalLookupFolder = array( $folder, 'container' );
+        elseif( $cls == "DeviceCloud" )
+            $this->internalLookupFolder = array( $folder, 'cloud' );
+        else
+            $this->internalLookupFolder = null;
+
         $typeArray = $this->getTypeArray($utilType);
+        // referenced types first, so the objects that refer to them get their references while loading
+        // (zone -> zone protection profile / log forwarding profile, rule -> log forwarding profile, tags)
+        $first = array( 'tags' => 0, 'zone-protection-profiles' => 1, 'log-forwarding-profiles' => 1 );
+        $pos = array_flip( array_values($typeArray) );
+        usort( $typeArray, function( $a, $b ) use( $first, $pos ){
+            $ra = isset($first[$a]) ? $first[$a] : 2;
+            $rb = isset($first[$b]) ? $first[$b] : 2;
+            return $ra != $rb ? $ra - $rb : $pos[$a] - $pos[$b];
+        } );
         foreach( $typeArray as $type )
         {
             if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
@@ -1200,6 +1301,108 @@ class PanSCMAPIConnector
 
             }
         }
+    }
+
+    /**
+     * a variable of SCM (/config/setup/v1/variables: name, type, value, description, exactly one of folder / snippet /
+     * device) into the XML of its folder / snippet / device, as PAN-OS keeps variables of a template:
+     * <variable><entry name="$name"><type><ip-netmask>value</ip-netmask></type><description>…</description></entry></variable>
+     * - a variable of a device overrides the one of the same name in its folders (SCM: "overridden"); the value of
+     * a folder is not copied to the folders / devices below
+     */
+    /** NGFW device settings of SCM (/config/device/v1/<type>), loaded with utilType device */
+    const DEVICE_SETTINGS_TYPES = array( 'general-settings', 'management-interface-settings', 'service-settings', 'service-route-settings',
+        'authentication-settings', 'login-banner-settings', 'session-settings', 'session-timeouts-settings', 'tcp-settings',
+        'content-id-settings', 'vpn-settings', 'update-schedule-settings' );
+
+    /**
+     * an NGFW device setting of SCM into the XML of its folder / snippet / device: device-settings/<type> with the
+     * fields of the answer as elements (key_name -> key-name; a list of texts -> <member>, a list of objects with a
+     * name -> <entry name=…>; TRUE / FALSE -> yes / no) - read generically by type=config-section (section scm-<type>).
+     * Several answers for one folder are merged (a later one adds its fields).
+     */
+    function SCM_API_settings_import( $type, $object, $sub )
+    {
+        if( !isset( $sub->xmlroot ) || !$sub->xmlroot instanceof DOMElement || !is_array( $object ) )
+            return null;
+        $root = DH::findFirstElementOrCreate( 'device-settings', $sub->xmlroot );
+        $node = DH::findFirstElementOrCreate( $type, $root );
+        foreach( array( 'id', 'folder', 'snippet', 'device', 'overridden' ) as $k )
+            unset( $object[$k] );
+        self::jsonToXml( $node, $object );
+        return $node;
+    }
+
+    /** JSON (array) into the children of $node - see SCM_API_settings_import */
+    public static function jsonToXml( DOMElement $node, $value )
+    {
+        $doc = $node->ownerDocument;
+        if( !is_array( $value ) )
+        {
+            $node->appendChild( $doc->createTextNode( is_bool( $value ) ? ( $value ? 'yes' : 'no' ) : (string)$value ) );
+            return;
+        }
+        $isList = array_keys( $value ) === range( 0, count( $value ) - 1 );
+        if( $isList )
+        {
+            foreach( $value as $item )
+            {
+                if( is_array( $item ) && isset( $item['name'] ) && is_scalar( $item['name'] ) )
+                {
+                    $e = $doc->createElement( 'entry' );
+                    $e->setAttribute( 'name', (string)$item['name'] );
+                    unset( $item['name'] );
+                    $node->appendChild( $e );
+                    self::jsonToXml( $e, $item );
+                }
+                else
+                {
+                    $m = $doc->createElement( 'member' );
+                    $node->appendChild( $m );
+                    self::jsonToXml( $m, is_array( $item ) ? $item : $item );
+                }
+            }
+            return;
+        }
+        foreach( $value as $k => $v )
+        {
+            $name = str_replace( '_', '-', (string)$k );
+            if( !preg_match( '/^[A-Za-z][A-Za-z0-9.\-]*$/', $name ) )
+                $name = 'x-' . preg_replace( '/[^A-Za-z0-9.\-]/', '-', $name );
+            $existing = DH::findFirstElement( $name, $node );
+            $e = $existing !== FALSE && is_array( $v ) ? $existing : $doc->createElement( $name );
+            if( $e !== $existing )
+                $node->appendChild( $e );
+            self::jsonToXml( $e, $v );
+        }
+    }
+
+    function SCM_API_variable_import( $object, $sub )
+    {
+        if( !isset( $object['name'] ) || !is_string( $object['name'] ) || $object['name'] === '' || !isset( $sub->xmlroot ) || !$sub->xmlroot instanceof DOMElement )
+            return null;
+        $type = isset( $object['type'] ) && is_string( $object['type'] ) && preg_match( '/^[a-z][a-z0-9-]*$/', $object['type'] ) ? $object['type'] : 'ip-netmask';
+        $value = isset( $object['value'] ) && is_scalar( $object['value'] ) ? (string)$object['value'] : '';
+
+        $doc = $sub->xmlroot->ownerDocument;
+        $root = DH::findFirstElementOrCreate( 'variable', $sub->xmlroot );
+        if( DH::findFirstElementByNameAttr( 'entry', $object['name'], $root ) !== null )
+            return null;
+        $entry = $doc->createElement( 'entry' );
+        $entry->setAttribute( 'name', $object['name'] );
+        $typeNode = $doc->createElement( 'type' );
+        $valueNode = $doc->createElement( $type );
+        $valueNode->appendChild( $doc->createTextNode( $value ) );
+        $typeNode->appendChild( $valueNode );
+        $entry->appendChild( $typeNode );
+        if( isset( $object['description'] ) && is_string( $object['description'] ) && $object['description'] !== '' )
+        {
+            $d = $doc->createElement( 'description' );
+            $d->appendChild( $doc->createTextNode( $object['description'] ) );
+            $entry->appendChild( $d );
+        }
+        $root->appendChild( $entry );
+        return $entry;
     }
 
     function importConfig($baseSub, $folder, $type, $jsonArray)
@@ -1467,15 +1670,21 @@ class PanSCMAPIConnector
                 }
                 $tmp_schedule->setSaseID( $object['id'] );
             }
-            elseif( $type === "application-groups" )
+            elseif( $type === "nat-rules" || $type === "external-dynamic-lists" )
             {
-                //pan-os-php has no newApplicationGroup method
-                PH::print_stdout($type . " - not implemented yet");
+                $this->SCM_API_xml_import( $type, $object, $sub );
             }
-            elseif( $type === "application-filters" )
+            elseif( $type === "application-groups" || $type === "application-filters" )
             {
-                //pan-os-php has no newApplicationFilters method
-                PH::print_stdout($type . " - not implemented yet");
+                $this->SCM_API_app_import( $type, $object, $sub );
+            }
+            elseif( $type === "variables" )
+            {
+                $this->SCM_API_variable_import( $object, $sub );
+            }
+            elseif( in_array( $type, self::DEVICE_SETTINGS_TYPES, TRUE ) )
+            {
+                $this->SCM_API_settings_import( $type, $object, $sub );
             }
             elseif( $type === "regions" )
             {
@@ -1484,8 +1693,8 @@ class PanSCMAPIConnector
             }
             elseif( $type === "applications" )
             {
-                //pan-os-php has no newApplication method
-                PH::print_stdout($type . " - not implemented yet");
+                // custom applications only (the answer also contains the predefined catalog: folder 'predefined')
+                $this->SCM_API_app_import( $type, $object, $sub );
             }
             elseif( $type === "hip-objects" )
             {
@@ -1596,8 +1805,9 @@ class PanSCMAPIConnector
                         $tmp_obj = $sub->tagStore->findOrCreate($obj);
                         $tmp_rule->tags->addTag($tmp_obj);
                     }
-                if( isset($object['description']) )
-                    $tmp_rule->setDescription($object['description']);
+                // SCM: the description of a rule can come as a list (e.g. [] or several lines) - only text is taken
+                if( isset($object['description']) && ( $tmp_desc = self::scmText( $object['description'] ) ) !== null )
+                    $tmp_rule->setDescription($tmp_desc);
                 if( isset($object['category']) )
                     foreach( $object['category'] as $obj )
                     {
@@ -1666,7 +1876,9 @@ class PanSCMAPIConnector
             elseif( $type === "anti-spyware-profiles" )
             {
                 $profileStoreName = "AntiSpywareProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -1674,7 +1886,9 @@ class PanSCMAPIConnector
             elseif( $type === "dns-security-profiles" )
             {
                 $profileStoreName = "DNSSecurityProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -1698,7 +1912,9 @@ class PanSCMAPIConnector
             elseif( $type === "vulnerability-protection-profiles" )
             {
                 $profileStoreName = "VulnerabilityProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -1706,7 +1922,9 @@ class PanSCMAPIConnector
             elseif( $type === "wildfire-anti-virus-profiles" )
             {
                 $profileStoreName = "VirusAndWildfireProfileStore";
-                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+                $return = $this->SCM_API_internal_profile_import($type, $object, $sub, $profileStoreName);
+                if( $return === null )
+                    $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
                 if( $return === "continue" )
                     continue;
@@ -2134,8 +2352,19 @@ class PanSCMAPIConnector
     }
 
 
-    public function sendSCMAPIRequest($requestMethod, $url, $body = false  )
+    /**
+     * sends a request to the SCM API
+     *
+     * @param string $requestMethod GET|POST|PUT|DELETE
+     * @param string $url full URL
+     * @param string|false $body JSON body
+     * @param bool $exitOnError TRUE: derr() on SCM '_errors' (old behaviour) | FALSE: return error to caller
+     * @return array ['http_code' => int, 'response' => string|false, 'json' => array|null, 'errors' => array|null]
+     */
+    public function sendSCMAPIRequest($requestMethod, $url, $body = false, $exitOnError = TRUE )
     {
+        $url = str_replace(' ', '%20', $url);
+
         if( $this->showApiCalls )
         {
             PH::print_stdout( "URL: ".$url);
@@ -2147,6 +2376,8 @@ class PanSCMAPIConnector
         $this->getAccessToken();
 
         $header = array( "Authorization: Bearer {$this->access_token}");
+        if( $body !== false )
+            $header[] = "Content-Type: application/json";
 
         $this->curlRequest( $url, $header );
 
@@ -2159,8 +2390,479 @@ class PanSCMAPIConnector
         }
 
         $response = curl_exec($this->_curl_handle);
+        $httpCode = (int)curl_getinfo($this->_curl_handle, CURLINFO_HTTP_CODE);
+        $jsonArray = ( $response !== false && $response !== '' ) ? json_decode($response, TRUE) : null;
 
-        $this->displayCurlResponse( $response, $url );
+        $errors = null;
+        if( $response === false )
+            $errors = array( array( 'message' => 'curl error: '.curl_error($this->_curl_handle) ) );
+        elseif( isset($jsonArray['_errors']) )
+            $errors = $jsonArray['_errors'];
+        elseif( $httpCode >= 400 )
+            $errors = array( array( 'message' => 'HTTP '.$httpCode, 'details' => $jsonArray !== null ? $jsonArray : $response ) );
+
+        if( $exitOnError )
+            $this->displayCurlResponse( $response, $url, $jsonArray );
+        elseif( $this->showApiCalls )
+            PH::print_stdout( "HTTP: ".$httpCode." RESPONSE: '".$response."'" );
+
+        return array( 'http_code' => $httpCode, 'response' => $response, 'json' => $jsonArray, 'errors' => $errors );
+    }
+
+    /**
+     * list part of a SCM API answer:
+     *   {"data": [...], "total": n}   config APIs
+     *   {"items": [...], "count": n}  IAM
+     *   [...]                         some deployment endpoints (e.g. locations)
+     * @return array|null ['list' => array, 'total' => int|null] or null for a single object answer
+     */
+    public static function listOfAnswer( $json, $pageSize = null )
+    {
+        if( !is_array($json) )
+            return null;
+        if( $json === array() || array_keys($json) === range(0, count($json) - 1) )
+            return array( 'list' => $json, 'total' => null );
+        foreach( array('data', 'items') as $k )
+        {
+            if( array_key_exists($k, $json) && is_array($json[$k]) && ( $json[$k] === array() || array_keys($json[$k]) === range(0, count($json[$k]) - 1) ) )
+            {
+                $total = null;
+                if( isset($json['total']) && is_numeric($json['total']) )
+                    $total = (int)$json['total'];
+                //"count" is a total only if it is bigger than the page (otherwise it may be the page size)
+                elseif( isset($json['count']) && is_numeric($json['count']) && (int)$json['count'] > count($json[$k]) )
+                    $total = (int)$json['count'];
+                return array( 'list' => $json[$k], 'total' => $total );
+            }
+        }
+        return null;
+    }
+
+    /**
+     * GET all entries of a SCM API list endpoint (limit/offset pagination), without stopping the script on errors
+     *
+     * @param string $url_config path incl. optional query, e.g. "/config/network/v1/ike-gateways?folder=Remote Networks",
+     *                           or an absolute URL (other host, e.g. IAM / Prisma Browser on api.sase.paloaltonetworks.com)
+     * @param int $limit page size
+     * @return array ['http_code' => int, 'data' => array|null, 'total' => int|null, 'is_list' => bool, 'raw' => mixed, 'errors' => array|null]
+     *               'is_list' FALSE: endpoint returns a single object (e.g. bgp-routing) -> it is stored in 'raw' and 'data'
+     */
+    public function getSCMResourceAll( $url_config, $limit = 200 )
+    {
+        $base = ( strpos($url_config, "https://") === 0 ) ? "" : $this->url_api;
+        $offset = 0;
+        $allData = array();
+        $total = null;
+        $previousFirst = null;
+        $httpCode = null;
+
+        for( $page = 0; $page < 10000; $page++ )
+        {
+            $url = $base . $url_config;
+            $url .= ( strpos($url, "?") !== FALSE ) ? "&" : "?";
+            $url .= "limit=" . $limit . "&offset=" . $offset;
+
+            $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            //rate limit / server error: retry with backoff
+            // HTTP 500 is usually not transient (endpoint not available for the tenant): one retry only;
+            // 429 / 502 / 503 / 504 / connection problems: up to 4 retries with backoff
+            for( $attempt = 0; $attempt < ( $result['http_code'] == 500 ? 1 : 4 ) && ( $result['http_code'] == 429 || $result['http_code'] >= 500 || $result['response'] === false ); $attempt++ )
+            {
+                sleep( (int)pow(2, $attempt + 1) );
+                $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            }
+            $httpCode = $result['http_code'];
+
+            //some deployment endpoints answer 'Access denied' / 400 on limit/offset - retry the first page without them
+            if( $result['errors'] !== null && $offset == 0 && in_array($result['http_code'], array(400, 403), TRUE) )
+            {
+                if( $this->showApiCalls )
+                    PH::print_stdout( "   retry without limit/offset: " . $url_config );
+                $retry = $this->sendSCMAPIRequest( "GET", $base . $url_config, false, FALSE );
+                if( $retry['errors'] === null )
+                {
+                    $list = self::listOfAnswer( $retry['json'] );
+                    if( $list !== null )
+                        return array( 'http_code' => $retry['http_code'], 'data' => $list['list'], 'total' => $list['total'] !== null ? $list['total'] : count($list['list']), 'is_list' => true, 'raw' => null, 'errors' => null, 'paginated' => false );
+                    return array( 'http_code' => $retry['http_code'], 'data' => $retry['json'], 'total' => null, 'is_list' => false, 'raw' => $retry['json'], 'errors' => null, 'paginated' => false );
+                }
+            }
+
+            if( $result['errors'] !== null )
+                return array( 'http_code' => $result['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => $result['errors'] );
+
+            $list = self::listOfAnswer( $result['json'] );
+            if( $list === null )
+            {
+                //single object endpoint (no list wrapper)
+                return array( 'http_code' => $result['http_code'], 'data' => $result['json'], 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => null );
+            }
+
+            $entries = $list['list'];
+            //endpoint ignores offset: the same page again -> stop
+            $first = count($entries) > 0 ? json_encode($entries[0]) : null;
+            if( $page > 0 && $first !== null && $first === $previousFirst )
+                break;
+            $previousFirst = $first;
+
+            foreach( $entries as $entry )
+                $allData[] = $entry;
+            if( $list['total'] !== null )
+                $total = $list['total'];
+
+            if( count($entries) == 0 )
+                break;
+            if( $total !== null && count($allData) >= $total )
+                break;
+            if( $total === null && count($entries) < $limit )
+                break;
+            //the server may cap the page size below $limit: continue after the entries really received
+            $offset += count($entries);
+        }
+
+        return array( 'http_code' => $httpCode, 'data' => $allData, 'total' => $total !== null ? $total : count($allData), 'is_list' => true, 'raw' => null, 'errors' => null );
+    }
+
+    /** @var int number of HTTP requests sent by getSCMResourceAllParallel() (statistics) */
+    public $parallelRequests = 0;
+
+    /**
+     * GET all entries of several SCM API list endpoints in parallel (curl_multi, limit/offset pagination)
+     *
+     * - the first page of every URL is requested in parallel (max. $parallel requests at the same time)
+     * - when the first page returns 'total', the remaining pages are requested in parallel as well
+     *   (offsets based on the number of entries really received - works if the server caps the page size)
+     * - HTTP 429 / 5xx / curl errors: retried up to 4 times with backoff (Retry-After honoured)
+     * - first page answers 400 / 403 or no list: the URL is fetched again sequentially with getSCMResourceAll()
+     *   (retry without limit / offset, single object answers)
+     *
+     * @param string[] $urls key => path incl. query (or absolute URL)
+     * @param int $limit page size
+     * @param int $parallel max. concurrent requests
+     * @return array key => same structure as getSCMResourceAll()
+     */
+    public function getSCMResourceAllParallel( $urls, $limit = 200, $parallel = 8 )
+    {
+        $parallel = max( 1, (int)$parallel );
+        $results = array();
+        $state = array();      // key => ['pages' => offset => entries, 'total' => int|null, 'http_code' => int, 'page_size' => int]
+        $queue = array();      // [key, offset, attempt, not_before]
+        $sequential = array();
+
+        foreach( $urls as $key => $u )
+        {
+            $state[$key] = array( 'pages' => array(), 'total' => null, 'http_code' => null, 'page_size' => null, 'error' => null );
+            $queue[] = array( $key, 0, 0, 0 );
+        }
+
+        $mh = curl_multi_init();
+        $running = array();    // (int)handle id => [handle, key, offset, attempt]
+
+        while( count($queue) > 0 || count($running) > 0 )
+        {
+            //start requests
+            $now = microtime(TRUE);
+            foreach( $queue as $i => $job )
+            {
+                if( count($running) >= $parallel )
+                    break;
+                if( $job[3] > $now )
+                    continue;
+                list( $key, $offset, $attempt ) = $job;
+                unset( $queue[$i] );
+                if( $state[$key]['error'] !== null )
+                    continue;
+
+                $this->getAccessToken();
+                $base = ( strpos($urls[$key], "https://") === 0 ) ? "" : $this->url_api;
+                $url = str_replace( ' ', '%20', $base . $urls[$key] );
+                $url .= ( strpos($url, "?") !== FALSE ) ? "&" : "?";
+                $url .= "limit=" . $limit . "&offset=" . $offset;
+                if( $this->showApiCalls )
+                    PH::print_stdout( "URL: " . $url . "\nMETHOD: GET (parallel)" );
+
+                $ch = curl_init();
+                curl_setopt( $ch, CURLOPT_URL, $url );
+                curl_setopt( $ch, CURLOPT_HTTPHEADER, array( "Authorization: Bearer {$this->access_token}" ) );
+                curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, FALSE );
+                curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE );
+                curl_setopt( $ch, CURLOPT_HEADER, TRUE );
+                curl_setopt( $ch, CURLOPT_TIMEOUT, 300 );
+                curl_multi_add_handle( $mh, $ch );
+                $running[(int)$ch] = array( $ch, $key, $offset, $attempt );
+                $this->parallelRequests++;
+            }
+            $queue = array_values( $queue );
+
+            if( count($running) == 0 )
+            {
+                usleep( 200000 );
+                continue;
+            }
+
+            do {
+                $status = curl_multi_exec( $mh, $active );
+            } while( $status === CURLM_CALL_MULTI_PERFORM );
+            if( $active )
+                curl_multi_select( $mh, 1.0 );
+
+            while( ( $info = curl_multi_info_read($mh) ) !== FALSE )
+            {
+                $ch = $info['handle'];
+                list( , $key, $offset, $attempt ) = $running[(int)$ch];
+                unset( $running[(int)$ch] );
+
+                $raw = curl_multi_getcontent( $ch );
+                $httpCode = (int)curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+                $headerSize = (int)curl_getinfo( $ch, CURLINFO_HEADER_SIZE );
+                $curlError = $info['result'] !== CURLE_OK ? curl_error($ch) : null;
+                curl_multi_remove_handle( $mh, $ch );
+
+                $headers = $raw !== null && $raw !== false ? substr( $raw, 0, $headerSize ) : '';
+                $body = $raw !== null && $raw !== false ? substr( $raw, $headerSize ) : '';
+                $json = $body !== '' && $body !== false ? json_decode( $body, TRUE ) : null;
+                if( $this->showApiCalls )
+                    PH::print_stdout( "HTTP: " . $httpCode . " (parallel) " . $urls[$key] . " offset " . $offset );
+
+                //retry: rate limit, server errors, connection problems
+                if( ( $curlError !== null || $httpCode == 429 || $httpCode >= 500 ) && $attempt < ( $httpCode == 500 ? 1 : 4 ) )
+                {
+                    $wait = pow( 2, $attempt + 1 );
+                    if( preg_match( '/^Retry-After:\s*(\d+)/mi', $headers, $m ) )
+                        $wait = max( $wait, (int)$m[1] );
+                    $queue[] = array( $key, $offset, $attempt + 1, microtime(TRUE) + $wait );
+                    continue;
+                }
+
+                $list = ( $curlError === null && $httpCode < 400 && !isset($json['_errors']) ) ? self::listOfAnswer( $json ) : null;
+                if( $list === null )
+                {
+                    if( $offset == 0 && $curlError === null && ( $httpCode < 400 || in_array($httpCode, array(400, 403), TRUE) ) )
+                    {
+                        //single object or limit/offset not accepted: sequential path
+                        $sequential[$key] = true;
+                        $state[$key]['error'] = 'sequential';
+                        continue;
+                    }
+                    if( $curlError !== null )
+                        $errors = array( array( 'message' => 'curl error: ' . $curlError ) );
+                    elseif( isset($json['_errors']) )
+                        $errors = $json['_errors'];
+                    else
+                        $errors = array( array( 'message' => 'HTTP ' . $httpCode, 'details' => $json !== null ? $json : $body ) );
+                    $state[$key]['error'] = $errors;
+                    $state[$key]['http_code'] = $httpCode;
+                    continue;
+                }
+
+                $entries = $list['list'];
+                $state[$key]['pages'][$offset] = $entries;
+                $state[$key]['http_code'] = $httpCode;
+                if( $list['total'] !== null )
+                    $state[$key]['total'] = $list['total'];
+
+                if( $offset == 0 )
+                {
+                    $n = count($entries);
+                    $total = $state[$key]['total'];
+                    if( $n > 0 && $total !== null && $total > $n )
+                    {
+                        //all remaining pages at once
+                        $state[$key]['page_size'] = $n;
+                        for( $o = $n; $o < $total; $o += $n )
+                            $queue[] = array( $key, $o, 0, 0 );
+                    }
+                    elseif( $n > 0 && $total === null && $n >= $limit )
+                        $queue[] = array( $key, $n, 0, 0 );
+                }
+                elseif( $state[$key]['total'] === null && count($entries) >= $limit )
+                    $queue[] = array( $key, $offset + count($entries), 0, 0 );
+            }
+        }
+        curl_multi_close( $mh );
+
+        foreach( $urls as $key => $u )
+        {
+            if( isset($sequential[$key]) )
+            {
+                $results[$key] = $this->getSCMResourceAll( $u, $limit );
+                continue;
+            }
+            $st = $state[$key];
+            if( $st['error'] !== null )
+            {
+                $results[$key] = array( 'http_code' => $st['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => null, 'errors' => $st['error'] );
+                continue;
+            }
+            ksort( $st['pages'] );
+            $data = array();
+            foreach( $st['pages'] as $entries )
+                foreach( $entries as $e )
+                    $data[] = $e;
+            //incomplete (page missing / total changed while reading): sequential
+            if( $st['total'] !== null && count($data) < $st['total'] )
+            {
+                $results[$key] = $this->getSCMResourceAll( $u, $limit );
+                continue;
+            }
+            $results[$key] = array( 'http_code' => $st['http_code'], 'data' => $data, 'total' => $st['total'] !== null ? $st['total'] : count($data), 'is_list' => true, 'raw' => null, 'errors' => null );
+        }
+        return $results;
+    }
+
+    /**
+     * GET all entries of a cursor paginated list endpoint (e.g. Prisma Browser /seb-api/v1/*), without stopping on errors
+     * list key: data | items | results; next cursor: pageInfo.nextCursor | pageInfo.endCursor | pageInfo.cursor | next_cursor
+     *
+     * @param string $url absolute URL or path below url_api
+     * @return array same structure as getSCMResourceAll()
+     */
+    public function getCursorResourceAll( $url, $limit = 1000, $maxPages = 1000 )
+    {
+        if( strpos($url, "https://") !== 0 )
+            $url = $this->url_api . $url;
+
+        $all = array();
+        $cursor = null;
+        $httpCode = null;
+        for( $page = 0; $page < $maxPages; $page++ )
+        {
+            $pageUrl = $url . ( strpos($url, "?") !== FALSE ? "&" : "?" ) . "limit=" . $limit;
+            if( $cursor !== null )
+                $pageUrl .= "&cursor=" . rawurlencode($cursor);
+
+            $result = $this->sendSCMAPIRequest( "GET", $pageUrl, false, FALSE );
+            $httpCode = $result['http_code'];
+
+            //limit not accepted: first page without it
+            if( $result['errors'] !== null && $page == 0 && $httpCode == 400 )
+                $result = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+
+            if( $result['errors'] !== null )
+                return array( 'http_code' => $result['http_code'], 'data' => null, 'total' => null, 'is_list' => false, 'raw' => $result['json'], 'errors' => $result['errors'] );
+
+            $json = $result['json'];
+            $listKey = null;
+            foreach( array('data', 'items', 'results') as $k )
+            {
+                if( is_array($json) && isset($json[$k]) && is_array($json[$k]) && ( $json[$k] === array() || array_keys($json[$k]) === range(0, count($json[$k]) - 1) ) )
+                {
+                    $listKey = $k;
+                    break;
+                }
+            }
+            if( $listKey === null )
+                return array( 'http_code' => $httpCode, 'data' => $json, 'total' => null, 'is_list' => false, 'raw' => $json, 'errors' => null );
+
+            foreach( $json[$listKey] as $entry )
+                $all[] = $entry;
+
+            $next = null;
+            $pageInfo = isset($json['pageInfo']) && is_array($json['pageInfo']) ? $json['pageInfo'] : array();
+            foreach( array('nextCursor', 'endCursor', 'cursor', 'next') as $k )
+            {
+                if( isset($pageInfo[$k]) && is_string($pageInfo[$k]) && $pageInfo[$k] !== "" )
+                {
+                    $next = $pageInfo[$k];
+                    break;
+                }
+            }
+            if( $next === null && isset($json['next_cursor']) && is_string($json['next_cursor']) && $json['next_cursor'] !== "" )
+                $next = $json['next_cursor'];
+            if( isset($pageInfo['hasNextPage']) && !$pageInfo['hasNextPage'] )
+                $next = null;
+
+            if( $next === null || $next === $cursor || count($json[$listKey]) == 0 )
+                break;
+            $cursor = $next;
+        }
+
+        return array( 'http_code' => $httpCode, 'data' => $all, 'total' => count($all), 'is_list' => true, 'raw' => null, 'errors' => null );
+    }
+
+    ///////Prisma Access egress IP API (separate API key, not OAuth)
+    //https://docs.paloaltonetworks.com/prisma-access/administration/prisma-access-setup/retrieve-ip-addresses-for-prisma-access/retrieve-ip-addresses-for-prisma-access-cloud-management
+
+    static public $egressIPKeystorePrefix = "egressip_tsg_id";
+
+    /**
+     * reads the tenant egress-IP API key from .panconfkeystore (entry 'egressip_tsg_id<TSG>'), asks for it if not available and stores it
+     */
+    public function getEgressIPApiKey( $TSGid = null, $promptForKey = TRUE )
+    {
+        if( $TSGid === null )
+            $TSGid = $this->apihost;
+        $host = self::$egressIPKeystorePrefix . $TSGid;
+
+        PanAPIConnector::loadConnectorsFromUserHome();
+
+        foreach( PanAPIConnector::$savedConnectors as $connector )
+        {
+            if( $connector->apihost == $host )
+                return $connector->apikey;
+        }
+
+        if( !$promptForKey )
+            return null;
+
+        PH::print_stdout(" ** Please enter Prisma Access egress-IP API key (header-api-key) for TSG: ".$TSGid);
+        PH::print_stdout("    [Prisma Access > Infrastructure Settings > Egress IP API]");
+        $handle = fopen("php://stdin", "r");
+        $key = trim( (string)fgets($handle) );
+
+        if( $key === "" )
+            return null;
+
+        PanAPIConnector::$savedConnectors[] = new PanAPIConnector($host, $key);
+        PanAPIConnector::saveConnectorsToUserHome();
+
+        return $key;
+    }
+
+    /**
+     * @param string $apiKey
+     * @param string $serviceType all|remote_network|gp_gateway|gp_portal|swg_proxy|rbi
+     * @param string $addrType all|active|service_ip|auth_cache_service|network_load_balancer
+     * @param string $location all|deployed
+     * @param string $environment prod8 (default) | prod6 | prod (older tenants) | prod<N>
+     * @return array ['http_code' => int, 'json' => array|null, 'errors' => array|null, 'url' => string]
+     */
+    public function getPrismaAccessEgressIP( $apiKey, $serviceType = "remote_network", $addrType = "all", $location = "all", $environment = "prod8" )
+    {
+        if( PH::$saseQAapi )
+            $url = "https://api.lab.datapath.prismaaccess.com/getPrismaAccessIP/v2";
+        elseif( preg_match( '/^prod[0-9]{0,2}$/', (string)$environment ) )
+            $url = "https://api." . $environment . ".datapath.prismaaccess.com/getPrismaAccessIP/v2";
+        else
+            derr( "egress-IP API environment: prod8 | prod6 | prod | prod<N> - not '" . $environment . "'", null, FALSE );
+
+        $body = json_encode( array( 'serviceType' => $serviceType, 'addrType' => $addrType, 'location' => $location ) );
+        $header = array( "header-api-key: ".$apiKey, "Content-Type: application/json" );
+
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout( "URL: ".$url );
+            PH::print_stdout( "BODY: ".$body );
+        }
+
+        $this->curlRequest( $url, $header );
+        curl_setopt($this->_curl_handle, CURLOPT_POST, 1 );
+        curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $body );
+
+        $response = curl_exec($this->_curl_handle);
+        $httpCode = (int)curl_getinfo($this->_curl_handle, CURLINFO_HTTP_CODE);
+        $json = ( $response !== false && $response !== '' ) ? json_decode($response, TRUE) : null;
+
+        if( $this->showApiCalls )
+            PH::print_stdout( "HTTP: ".$httpCode." RESPONSE: '".$response."'" );
+
+        $errors = null;
+        if( $response === false )
+            $errors = array( array( 'message' => 'curl error: '.curl_error($this->_curl_handle) ) );
+        elseif( $httpCode >= 400 || !is_array($json) || ( isset($json['status']) && $json['status'] !== 'success' ) )
+            $errors = array( array( 'message' => 'HTTP '.$httpCode, 'details' => $json !== null ? $json : $response ) );
+
+        return array( 'http_code' => $httpCode, 'json' => $json, 'errors' => $errors, 'url' => $url );
     }
 
 
@@ -2270,12 +2972,333 @@ class PanSCMAPIConnector
             $entry->setAttribute( 'uuid', $data['id'] );
     }
 
+    /** SCM field -> PAN-OS tag of custom applications / application filters (booleans yes / no) */
+    const SCM_APP_FLAGS = array(
+        'applications' => array( 'evasive' => 'evasive-behavior', 'excessive_bandwidth_use' => 'consume-big-bandwidth',
+            'used_by_malware' => 'used-by-malware', 'transfers_files' => 'able-to-transfer-file',
+            'has_known_vulnerabilities' => 'has-known-vulnerability', 'tunnels_other_apps' => 'tunnel-other-application',
+            'prone_to_misuse' => 'prone-to-misuse', 'pervasive' => 'pervasive-use', 'no_appid_caching' => 'no-appid-caching',
+            'file_type_ident' => 'file-type-ident', 'virus_ident' => 'virus-ident', 'data_ident' => 'data-ident' ),
+        'application-filters' => array( 'evasive' => 'evasive', 'excessive_bandwidth_use' => 'excessive-bandwidth-use',
+            'used_by_malware' => 'used-by-malware', 'transfers_files' => 'transfers-files',
+            'has_known_vulnerabilities' => 'has-known-vulnerabilities', 'tunnels_other_apps' => 'tunnels-other-apps',
+            'prone_to_misuse' => 'prone-to-misuse', 'pervasive' => 'pervasive', 'is_saas' => 'is-saas',
+            'new_appid' => 'new-appid' ),
+    );
+
+    /**
+     * application group / application filter / custom application: SCM JSON -> PAN-OS XML entry below the container
+     * (application-group / application-filter / application) and into its appStore
+     */
+    private function SCM_API_app_import( $type, $object, $sub )
+    {
+        if( !isset($object['name']) || !isset($sub->appStore) )
+            return;
+        if( isset($object['folder']) && $object['folder'] === 'predefined' )
+            return;
+        if( $sub->appStore->find($object['name'], null, false) !== null )
+            return;
+
+        $tags = array( 'application-groups' => 'application-group', 'application-filters' => 'application-filter', 'applications' => 'application' );
+        $root = DH::findFirstElementOrCreate( $tags[$type], $sub->xmlroot );
+        $entry = DH::createElement( $root, 'entry' );
+        $entry->setAttribute( 'name', $object['name'] );
+
+        $flags = isset(self::SCM_APP_FLAGS[$type]) ? self::SCM_APP_FLAGS[$type] : array();
+        $members = function( DOMElement $parent, $tag, $list ){
+            $n = DH::createElement( $parent, $tag );
+            foreach( (array)$list as $v )
+                DH::createElement( $n, 'member', is_bool($v) ? ( $v ? 'yes' : 'no' ) : (string)$v );
+        };
+        foreach( $object as $k => $v )
+        {
+            if( in_array($k, array('id', 'name', 'folder', 'snippet', 'device'), TRUE) )
+                continue;
+            if( $type == 'application-groups' && $k == 'members' )
+                $members( $entry, 'members', $v );
+            elseif( isset($flags[$k]) )
+                DH::createElement( $entry, $flags[$k], $v ? 'yes' : 'no' );
+            elseif( $type == 'application-filters' && in_array($k, array('category', 'sub_category', 'technology', 'risk', 'saas_certifications', 'saas_risk', 'exclude'), TRUE) )
+                $members( $entry, $k == 'sub_category' ? 'subcategory' : str_replace('_', '-', $k), $v );
+            elseif( $type == 'application-filters' && $k == 'tagging' && is_array($v) )
+            {
+                $t = DH::createElement( $entry, 'tagging' );
+                if( isset($v['no_tag']) )
+                    DH::createElement( $t, 'no-tag', $v['no_tag'] ? 'yes' : 'no' );
+                if( isset($v['tag']) )
+                    $members( $t, 'tag', $v['tag'] );
+            }
+            elseif( $type == 'applications' && in_array($k, array('category', 'subcategory', 'technology', 'description', 'parent_app', 'alg_disable_capability'), TRUE) )
+                DH::createElement( $entry, str_replace('_', '-', $k), (string)$v );
+            elseif( $type == 'applications' && in_array($k, array('risk', 'timeout', 'tcp_timeout', 'udp_timeout', 'tcp_half_closed_timeout', 'tcp_time_wait_timeout'), TRUE) )
+                DH::createElement( $entry, str_replace('_', '-', $k), (string)$v );
+            elseif( $type == 'applications' && $k == 'default' && is_array($v) )
+            {
+                $d = DH::createElement( $entry, 'default' );
+                if( isset($v['port']) )
+                    $members( $d, 'port', $v['port'] );
+                if( isset($v['ident_by_ip_protocol']) )
+                    DH::createElement( $d, 'ident-by-ip-protocol', (string)$v['ident_by_ip_protocol'] );
+                foreach( array('ident_by_icmp_type' => 'ident-by-icmp-type', 'ident_by_icmp6_type' => 'ident-by-icmp6-type') as $sk => $tag )
+                    if( isset($v[$sk]) && is_array($v[$sk]) )
+                    {
+                        $ic = DH::createElement( $d, $tag );
+                        foreach( array('type', 'code') as $f )
+                            if( isset($v[$sk][$f]) )
+                                DH::createElement( $ic, $f, (string)$v[$sk][$f] );
+                    }
+            }
+            // other fields (signatures …): not translated - the object exists for the references
+        }
+
+        $store = $sub->appStore;
+        if( $type == 'application-groups' )
+        {
+            $store->appGroupRoot = $root;
+            $app = new AppGroup( $object['name'], $store );
+            $app->type = 'application-group';
+            $store->app_groups[$app->name()] = $app;
+        }
+        elseif( $type == 'application-filters' )
+        {
+            $store->appFilterRoot = $root;
+            $app = new AppFilter( $object['name'], $store );
+            $app->type = 'application-filter';
+            $store->app_filters[$app->name()] = $app;
+        }
+        else
+        {
+            $store->appCustomRoot = $root;
+            $app = new AppCustom( $object['name'], $store );
+            $app->type = 'application-custom';
+            $store->apps_custom[$app->name()] = $app;
+        }
+        $app->xmlroot = $entry;
+        $store->addApp( $app );
+        $app->load_from_domxml( $entry );
+        if( isset($object['id']) && method_exists($app, 'setSaseID') )
+            $app->setSaseID( $object['id'] );
+    }
+
+    /**
+     * NAT rule / external dynamic list: SCM JSON -> PAN-OS XML entry, loaded with the pan-os-php classes (references to
+     * zones, addresses, services, tags are resolved like for an XML configuration)
+     */
+    private function SCM_API_xml_import( $type, $object, $sub )
+    {
+        if( !isset($object['name']) )
+            return;
+        $data = $object;
+        foreach( array('position', 'id', 'folder', 'snippet', 'device') as $k )
+            unset( $data[$k] );
+
+        if( $type === 'nat-rules' )
+        {
+            if( $sub->natRules->find($object['name']) !== null )
+                return;
+            // SCM: translated_address / translated_port / dns_rewrite at the rule = PAN-OS destination-translation
+            $dt = array();
+            foreach( array('translated_address', 'translated_port', 'dns_rewrite') as $k )
+                if( isset($data[$k]) )
+                {
+                    $dt[$k] = $data[$k];
+                    unset( $data[$k] );
+                }
+            if( count($dt) > 0 )
+                $data['destination_translation'] = $dt;
+            if( isset($data['disabled']) )
+                $data['disabled'] = $data['disabled'] ? 'yes' : 'no';
+            if( isset($data['source_translation']['static_ip']['bi_directional']) )
+            {
+                $b = $data['source_translation']['static_ip']['bi_directional'];
+                $data['source_translation']['static_ip']['bi_directional'] = ( $b === true || $b === 'yes' ) ? 'yes' : 'no';
+            }
+            if( isset($data['translated_port']) )
+                $data['translated_port'] = (string)$data['translated_port'];
+        }
+        elseif( $type === 'external-dynamic-lists' )
+        {
+            if( $sub->EDLStore->find($object['name'], null, false) !== null )
+                return;
+        }
+
+        $dom = null;
+        $root = null;
+        $this->SCM_API_prepareMethodForImport( $object, $dom, $root );
+        $this->SCM_API_arrayToXml( $dom, $root, $data );
+        if( isset($object['description']) && ( $tmp_desc = self::scmText( $object['description'] ) ) !== null && $tmp_desc !== '' )
+            DH::createElement( $root, 'description', $tmp_desc );
+        $node = $sub->xmlroot->ownerDocument->importNode( $root, TRUE );
+
+        if( $type === 'nat-rules' )
+        {
+            $post = isset($object['position']) && $object['position'] === 'post';
+            $rule = new NatRule( $sub->natRules );
+            $rule->load_from_domxml( $node );
+            $rule->owner = null;
+            $sub->natRules->addRule( $rule, $post );
+        }
+        else
+        {
+            $edl = new EDL( $object['name'], $sub->EDLStore );
+            $edl->xmlroot = $node;
+            $edl->load_from_domxml( $node );
+            $edl->owner = null;
+            $sub->EDLStore->addEDL( $edl );
+        }
+    }
+
+    /**
+     * security profile from the internal UI API (complete PAN-OS structure), matched by id = @uuid
+     * @return string|bool|null "continue" (already loaded), TRUE (imported), null (not available - use the public API)
+     */
+    private function SCM_API_internal_profile_import( $type, $object, $sub, $profileStoreName )
+    {
+        if( !isset($object['id']) || !isset($object['name']) )
+            return null;
+        $entry = $this->SCM_API_internal_profile_lookup( $type, $object['id'] );
+        if( $entry === null )
+            return null;
+
+        if( self::SCM_profileAlreadyLoaded( $sub, $profileStoreName, $object['name'] ) )
+            return "continue";
+
+        // virus-and-wildfire-analysis without decoder (e.g. created through the public API): SCM applies the
+        // default action per protocol - written explicitly, so the checks see the actions SCM uses
+        if( $type === 'wildfire-anti-virus-profiles' && !isset($entry['decoder']) )
+        {
+            $decoder = array();
+            foreach( self::SCM_AV_DECODERS as $protocol )
+                $decoder[] = array( '@name' => $protocol, 'action' => 'default', 'wildfire-action' => 'default', 'mlav-action' => 'default' );
+            $entry['decoder'] = array( 'entry' => $decoder );
+        }
+
+        $dom = self::SCM_internalEntryToDom( $entry, $object['name'], $object['id'] );
+        $this->SCM_API_SP_object_import( $dom, $sub, $profileStoreName, $object );
+        return TRUE;
+    }
+
+    /**
+     * internal entry of a security profile by uuid; the internal answer of the folder being loaded is read once per
+     * type and folder
+     */
+    protected function SCM_API_internal_profile_lookup( $type, $uuid )
+    {
+        if( PH::$shadow_scm_no_internal_api || !isset(self::INTERNAL_PROFILE_TYPES[$type]) || $this->internalLookupFolder === null )
+            return null;
+
+        list( $folderName, $folderType ) = $this->internalLookupFolder;
+        $cacheKey = $folderName . "|" . $folderType;
+        if( !isset($this->internalProfileCache[$type][$cacheKey]) )
+        {
+            $host = PH::$shadow_scm_ui_api_host !== null ? PH::$shadow_scm_ui_api_host : self::UI_API_HOST_DEFAULT;
+            $url = "https://" . $host . "/api/config/v9.2/Objects/" . self::INTERNAL_PROFILE_TYPES[$type]
+                . "?" . http_build_query( array( 'folder' => $folderName, 'type' => $folderType ), '', '&', PHP_QUERY_RFC3986 );
+            $r = $this->sendSCMAPIRequest( "GET", $url, false, FALSE );
+            $byUuid = FALSE;
+            if( $r['errors'] === null && $r['http_code'] < 400 && is_array($r['json'])
+                && ( !isset($r['json']['@status']) || $r['json']['@status'] === 'success' ) )
+            {
+                $byUuid = array();
+                $entries = isset($r['json']['result']['entry']) && is_array($r['json']['result']['entry']) ? $r['json']['result']['entry'] : array();
+                if( isset($entries['@name']) )
+                    $entries = array( $entries );
+                foreach( $entries as $e )
+                    if( isset($e['@uuid']) )
+                        $byUuid[$e['@uuid']] = $e;
+            }
+            elseif( !$this->internalApiWarned )
+            {
+                $this->internalApiWarned = true;
+                PH::print_stdout( " ! SCM internal UI API not available (HTTP " . $r['http_code'] . ", host " . $host . ") - "
+                    . "security profiles only from the public API (decoder / inline ML / inline cloud analysis missing); "
+                    . "region specific host: shadow-scmuiapihost=<host>" );
+            }
+            $this->internalProfileCache[$type][$cacheKey] = $byUuid;
+        }
+
+        $byUuid = $this->internalProfileCache[$type][$cacheKey];
+        if( $byUuid === FALSE || !isset($byUuid[$uuid]) )
+            return null;
+        return $byUuid[$uuid];
+    }
+
+    /**
+     * internal UI API entry (PAN-OS XML structure as JSON) -> DOMDocument <entry name="" uuid="">...</entry>
+     * - "@name" -> attribute name; other "@..." keys (loc, snippet-loc, type, uuid, plugin-predefined) are meta data
+     * - "entry": [ {...} ] -> <entry name="..."> per element, "member": [ ... ] -> <member> per element
+     * - empty object / empty list -> empty element (e.g. action reset-both)
+     */
+    public static function SCM_internalEntryToDom( $entry, $name, $uuid = null )
+    {
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $dom->formatOutput = true;
+        $root = $dom->createElement('entry');
+        $root->setAttribute('name', $name);
+        if( $uuid !== null )
+            $root->setAttribute('uuid', $uuid);
+        $dom->appendChild($root);
+        self::SCM_internalArrayToXml( $dom, $root, $entry );
+        return $dom;
+    }
+
+    private static function SCM_internalArrayToXml( $dom, $parent, $data )
+    {
+        foreach( $data as $key => $value )
+        {
+            $key = (string)$key;
+            if( $key !== '' && $key[0] === '@' )
+                continue;
+
+            if( ( $key === 'entry' || $key === 'member' ) && is_array($value) )
+            {
+                $items = ( $value === array() || array_keys($value) === range(0, count($value) - 1) ) ? $value : array( $value );
+                foreach( $items as $item )
+                {
+                    $el = $dom->createElement($key);
+                    $parent->appendChild($el);
+                    if( is_array($item) )
+                    {
+                        if( isset($item['@name']) )
+                            $el->setAttribute('name', $item['@name']);
+                        self::SCM_internalArrayToXml( $dom, $el, $item );
+                    }
+                    else
+                        $el->appendChild( $dom->createTextNode( (string)$item ) );
+                }
+                continue;
+            }
+
+            $el = $dom->createElement($key);
+            $parent->appendChild($el);
+            if( is_array($value) )
+                self::SCM_internalArrayToXml( $dom, $el, $value );
+            elseif( is_bool($value) )
+                $el->appendChild( $dom->createTextNode( $value ? 'yes' : 'no' ) );
+            elseif( $value !== null )
+                $el->appendChild( $dom->createTextNode( (string)$value ) );
+        }
+    }
+
+    /**
+     * a profile of this name is already loaded here or in a parent (folder answers contain the inherited objects as
+     * well) - a pan-os-php predefined profile (predefined.xml, PAN-OS content) does not count: SCM profiles with the
+     * name of a PAN-OS predefined profile (e.g. 'default' created as copy by the Panorama import) are loaded
+     */
+    public static function SCM_profileAlreadyLoaded( $sub, $profileStoreName, $name )
+    {
+        $f = $sub->$profileStoreName->find( $name );
+        if( $f === null )
+            return FALSE;
+        $root = is_object($f->owner) ? $f->owner->owner : null;
+        return !( $root instanceof BuckbeakConf || $root instanceof FawkesConf );
+    }
+
     private function SCM_API_object_import_preperation($object, $sub, $profileStoreName)
     {
         if( isset( $object['id'] ) )
         {
-            $tmp_url = $sub->$profileStoreName->find($object['name']);
-            if ($tmp_url !== null)
+            if( self::SCM_profileAlreadyLoaded( $sub, $profileStoreName, $object['name'] ) )
                 return "continue";
 
 

@@ -27,6 +27,8 @@ class RuleCallContext extends CallContext
     public static $supportedActions = array();
 
     public $fields;
+    /** ruleFieldValue(): enclose() gives the value itself (string / list of strings) instead of an HTML cell */
+    private $encloseRaw = FALSE;
     public $ruleList;
     public $cachedList;
 
@@ -253,6 +255,25 @@ class RuleCallContext extends CallContext
     {
         $output = '';
 
+        if( $this->encloseRaw )
+        {
+            if( is_array($value) )
+            {
+                $list = array();
+                foreach( $value as $subValue )
+                {
+                    if( is_string($subValue) || is_numeric($subValue) )
+                        $list[] = (string)$subValue;
+                    elseif( is_object($subValue) )
+                        $list[] = $subValue->name();
+                }
+                return $list;
+            }
+            if( is_string($value) || is_numeric($value) )
+                return (string)$value;
+            return '';
+        }
+
         if( is_string($value) )
             $output = PH::panosphp_htmlspecialchars($value);
         elseif( is_array($value) )
@@ -296,6 +317,32 @@ class RuleCallContext extends CallContext
      * @param $fieldName
      * @return string
      */
+    /**
+     * the value of a field of a rule as data (string or list of strings) - the same field logic as
+     * ruleFieldHtmlExport(), without the HTML cell (merger report as JSON, exportToExcel and the report as HTML from
+     * the same values)
+     * @return string|string[]
+     */
+    public function ruleFieldValue($rule, $fieldName, $rule_hitcount_array = array(), $sp_best_practice = false, $sp_visibility = false, $sp_adoption = false)
+    {
+        $this->encloseRaw = TRUE;
+        try
+        {
+            $v = $this->ruleFieldHtmlExport($rule, $fieldName, TRUE, $rule_hitcount_array, $sp_best_practice, $sp_visibility, $sp_adoption);
+        }
+        finally
+        {
+            $this->encloseRaw = FALSE;
+        }
+        return $v === null ? '' : $v;
+    }
+
+    /** a field value of ruleFieldValue() as the HTML cell ruleFieldHtmlExport() gives */
+    public function htmlCell($value, $nowrap = TRUE)
+    {
+        return $this->enclose($value, $nowrap);
+    }
+
     public function ruleFieldHtmlExport($rule, $fieldName, $wrap = TRUE, $rule_hitcount_array = array(), $sp_best_practice = false, $sp_visibility = false, $sp_adoption = false)
     {
         $bp_text_yes = "yes";
@@ -2379,11 +2426,6 @@ class RuleCallContext extends CallContext
                     $port_mapping = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
                     $mapping_texts = $port_mapping->mappingToText();
 
-                    //TODO: handle predefined service objects in a different way
-                    if( $tmp_member->name() == 'service-http' )
-                        $mapping_texts = 'tcp/80';
-                    if( $tmp_member->name() == 'service-https' )
-                        $mapping_texts = 'tcp/443';
 
                     $strMapping[] = $mapping_texts;
                     #$strMapping[] = "group";
@@ -2397,11 +2439,6 @@ class RuleCallContext extends CallContext
                 $port_mapping = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
                 $mapping_texts = $port_mapping->mappingToText();
 
-                //TODO: handle predefined service objects in a different way
-                if( $tmp_member->name() == 'service-http' )
-                    $mapping_texts = 'tcp/80';
-                if( $tmp_member->name() == 'service-https' )
-                    $mapping_texts = 'tcp/443';
 
                 $strMapping[] = $mapping_texts;
 

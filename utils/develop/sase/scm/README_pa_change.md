@@ -1,0 +1,178 @@
+# scm_pa_change.php – change an SCM tenant from a small change request file
+
+One command instead of the manual chain export → copy → edit JSON → compare → plan → dry-run → execute → re-export →
+compare. The script only chains the existing building blocks (`scm_pa_export.php`, `scm_pa_compare.php`,
+`scm_pa_sync.php`); all safety steps stay:
+
+* without `execute` nothing is sent (dry-run, including the hash check of the target objects)
+* `execute` asks for the TSG id (unless `yes`)
+* `execute` is refused if the dry-run has blocked requests or conflicts
+* push only with `push` (and only folders with a push target)
+* after `execute`: export again and check every change against the tenant
+
+`execute` prints one line per request while it runs (number / total, seconds since the start, status, request; then
+the internal UI API edits) – a long run is never silent – and at the end the requests that did not work together.
+
+```
+php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.json>             # dry-run
+php utils/develop/sase/scm/scm_pa_change.php in=scm-api://<TSG> changes=<file.json> execute     # send + verify
+    [outdir=change] [yes] [push] [continue-on-error] [config-parallel=8] [psk-list=<file>] [secret-list=<file>] [debugapi]
+```
+
+## Change request file
+
+```json
+{
+  "description": "test: sub folder with one address",
+  "folders": [
+    { "name": "pan-os-php-sub", "parent": "pan-os-php-test", "description": "created by pan-os-php" }
+  ],
+  "tags": [
+    { "folder": "pan-os-php-sub", "name": "pan-os-php-sub", "color": "Blue" }
+  ],
+  "addresses": [
+    { "folder": "pan-os-php-sub",  "name": "h-10.1.1.1", "ip_netmask": "10.1.1.1/32", "tag": ["pan-os-php-sub"] },
+    { "folder": "pan-os-php-test", "name": "pan-os-php-addr1", "_append": { "tag": ["pan-os-php"] } },
+    { "folder": "pan-os-php-test", "name": "pan-os-php-old", "_delete": true }
+  ]
+}
+```
+
+| key | content |
+|---|---|
+| `folders` | `name`, `parent`, optional `description` / `labels`. New folders only below `ngfw-shared` (All Firewalls), max. 4 levels below it (as Panorama device-groups below shared); a new parent must come first in the list. Existing folder: fields are updated, moving (other `parent`) is refused. |
+| `snippets` | `name`, optional `description` / `labels`. Predefined snippets cannot be changed. |
+| `<config type>` | a list per type, e.g. `addresses`, `address-groups`, `tags`, `services`, `service-groups`, `external-dynamic-lists`, `url-categories`, security profiles, `profile-groups`, identity objects, rule bases (`security-rules`, `nat-rules` …) … (all types of the groups `objects`, `identity` and `policies` of `scm_pa_export.php`) |
+| `objects` | the same as one list, with `"type": "<config type>"` per entry – for a type with an SCM field `type` (e.g. `url-categories`) the config type goes into `"_type"` and `type` stays the SCM field |
+
+Per object:
+
+* `name` and exactly one of `folder` / `snippet` – the container must exist or be created in the same file
+* all other fields are SCM API fields (snake_case, as in the export). Object does not exist → created with these fields.
+  Object exists → these fields **replace** the current values, all other fields stay.
+* `_append`: `{ "field": [values] }` – add values to a list (e.g. a tag), existing values stay
+* `_remove`: `{ "field": [values] }` – remove values from a list
+* `_delete: true` – delete the object (only `name` + container in the entry)
+* `id` is set by SCM and must not be in the file
+
+The request is idempotent: a second run with the same file finds nothing to do ("unchanged" / "absent").
+
+Rules (`security-rules`, `nat-rules`, `decryption-rules` …): `"position": "pre"` (default) or `"post"` in a folder, no
+position in a snippet. New rules are added at the end of the rule base in file order; the verification also checks the
+order of the rules of the file in the tenant. Moving existing rules is not part of this tool (sync workflow).
+
+`_internal` (security profiles in folders): `{ "prefix": "profiles/vulnerability|spyware|dns-security|virus-and-wildfire-analysis", "entry": { PAN-OS structure as JSON } }`
+– sections the public API does not have (inline ML, inline cloud analysis, decoder actions, rule action `default` …).
+After the public requests the script reads the profile through the internal UI API
+(`GET /api/config/v9.2/Objects/<type>?folder=&type=container|cloud&name=`) and, if a section differs, writes the
+complete entry (`POST /api/config/v9.2/multiConfigure`, `command: edit`, `prefix`, `subPath: entry[@name='…']` – the
+call of the SCM UI, HAR 2026-11-14) with the `@uuid` / `@loc` of the live entry. The dry-run shows `edit` /
+`unchanged` / `after create`; the verification compares the sections; `push` pushes after these edits.
+Optional `"base": { … }` (written by scm_pa_xml_to_change.php: the entry of the export the change was made on): a
+section the change touches that differs in SCM from `base` is reported as `conflict` and not overwritten.
+`ui-api-host=` sets the host of the tenant region (default `paas-3.prod.eu.panorama.paloaltonetworks.com`).
+
+`applications`: the export does not read the application list (the answer contains the PAN-OS predefined catalog of
+every folder, ~45000 objects); only the applications of the change file are looked up by name
+(`GET /config/objects/v1/applications?folder=&name=`). Predefined / cloud App-ID applications are never part of a
+change file.
+
+Network types a change request can contain: zones, zone protection profiles, interface management profiles,
+interfaces (ethernet, layer2 / layer3 sub interfaces, loopback, tunnel, VLAN), IKE / IPsec crypto profiles, IKE
+gateways, IPsec tunnels, virtual routers, logical routers.
+
+`psk-list=<file>` / `secret-list=<file>`: secrets (IKE pre-shared keys: `ike_gateway`, `psk_new` / `psk_current`;
+others: `endpoint`, `object`, `path`, `secret_new` / `secret_current` – formats of the export lists). In the change
+file a secret field holds `from-secret-list`; the apply takes the cleartext from the list (copied into the run
+folder, chmod 600). An existing object keeps its secret; the verification does not compare secrets.
+
+Not supported (refused with a message; use the sync workflow): other network / device settings, Prisma Access
+infrastructure, deleting folders / snippets.
+
+Examples in `examples/` (lab folder `pan-os-php-test`, run in this order): `change-sub-folder.json` (sub folder, tag,
+address – verified live), `change-append-tag.json` (`_append` of a tag from the parent folder),
+`change-delete-address.json`, `change-delete-tag.json` (`_delete`; the tag after the address that uses it).
+
+## What happens
+
+| step | what | files in `<outdir>/<TSG>/change-<timestamp>/` |
+|---|---|---|
+| 1 | export of only the containers and types of the request (read only) | `ist/` |
+| 2 | soll = ist + changes; checks: containers exist, folder below `ngfw-shared`, type allowed in the folder | `soll/` |
+| 3 | compare soll ↔ ist, plan (`additive`, with `_delete`: `mirror` + allow-delete – only the deleted objects differ) | `compare/`, `plan.json`, `PLAN_REPORT.md` |
+| 4 | apply dry-run: every request (method, URL, body), hash check of updated / deleted objects | `apply-log-dry-run.json` |
+| 5 | `execute`: requests in plan order (new folder before its objects), optional push | `apply-log-execute.json` |
+| 6 | export again, check each change (fields, `_append` / `_remove` values, deleted objects) | `verify/`, `verify.json`, `compare-verify/` |
+
+Example output (dry-run):
+
+```
+ * [2/4] changes
+   create    folder pan-os-php-sub
+   create    addresses h-10.1.1.1 [folder pan-os-php-sub]
+   update    addresses pan-os-php-addr1 [folder pan-os-php-test]
+ * [3/4] requests (dry-run)
+   op-0001  create  POST   /config/setup/v1/folders pan-os-php-sub
+            body {"name":"pan-os-php-sub","parent":"pan-os-php-test","description":"created by pan-os-php"}
+   op-0002  create  POST   /config/objects/v1/addresses h-10.1.1.1
+   …
+ * dry-run - nothing was sent. Same command with 'execute' to apply.
+```
+
+The folder / snippet list of the public API does not return `description` / `labels` (live 2026-11-13; the UI shows
+them, the single `GET /config/setup/v1/folders/{id}` returns them): for the folders / snippets of the request these
+fields are read with the single GET, in the first export and in the verification export.
+
+`verify` reports `verified` per change, or `failed` with the field that differs. A newly created folder has no
+firewall – push is neither possible nor needed (`not_pushable`); the candidate configuration is stored anyway.
+
+## Differences report and selection (`diff=`, `select=`) – e.g. for the CDSS portal
+
+A change file (e.g. from scm_pa_xml_to_change.php) holds the wanted state of every object a utility touched. What
+really differs from the tenant is only known after the export of the dry-run. `diff=<file>` writes exactly that:
+
+```
+php scm_pa_change.php in=scm-api://<TSG> changes=change.json diff=diff.json            # dry-run, nothing sent
+```
+
+```json
+{ "format": "pan-os-php-scm-diff", "version": 1, "tsg_id": "…", "change_file": "change.json",
+  "summary": { "update": 40, "create": 12, "update (internal)": 2, "blocked": 0, "internal": 27 },
+  "objects": [
+    { "id": "wildfire-anti-virus-profiles|folder|dg1|Inbound-AV", "type": "wildfire-anti-virus-profiles",
+      "position": null, "container_kind": "folder", "container": "dg1", "name": "Inbound-AV", "action": "update",
+      "fields": [ { "field": "rules", "before": null, "after": [ … ] } ],
+      "internal": { "status": "edit", "sections": { "decoder": { "before": { … }, "after": { … } } } } } ] }
+```
+
+* only objects that change (`create`, `update`, `delete`, `update (internal)` = only internal UI API sections);
+  unchanged objects of the change file are left out
+* `fields`: top-level fields with the tenant value (`before`) and the new value (`after`)
+* `internal`: internal UI API sections that differ (live value / new value), status `edit` / `after create` /
+  `conflict`
+* `blocked`: reason when the request would be refused (e.g. delete of a referenced object)
+
+The portal keeps the objects to implement (or writes a list of ids) and the same change file is applied with only
+those:
+
+```
+php scm_pa_change.php in=scm-api://<TSG> changes=change.json select=diff_selected.json [execute]
+```
+
+`select=` takes a diff file (its `objects[].id`) or a JSON list of ids; ids that match no object of the change file
+are reported. Folders / snippets of the change file are always kept. The dependency check of the dry-run stays: a
+selected group that refers to a profile that was not selected and does not exist is blocked.
+
+## Relation to the other tools
+
+* Panorama device-groups → SCM: [README_pa_panorama_import.md](README_pa_panorama_import.md)
+  (`scm_pa_panorama_to_change.php` writes the change file)
+* pan-os-php utilities (merger, playbooks, actions) on an export: [README_pa_xml_to_change.md](README_pa_xml_to_change.md)
+  (`in=scm-export://`, `scm_pa_xml_to_change.php` writes the change file)
+
+* bigger changes, reordering rule bases, Prisma Access areas, tenant → tenant: export / edit / `scm_pa_compare.php` /
+  `scm_pa_sync.php` ([README_pa_sync.md](README_pa_sync.md))
+* gap remediation (best practice / visibility fixes for the CDSS portal): change file `pan-os-php-scm-changes`
+  ([todo/scm-gap-remediation.md](../../../../todo/scm-gap-remediation.md)) – there the requests are generated
+  from findings; here the consultant writes the wanted state of a few objects by hand. Both end in the same
+  apply logic.

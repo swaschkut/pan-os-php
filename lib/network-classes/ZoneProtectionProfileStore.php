@@ -115,7 +115,7 @@ class ZoneProtectionProfileStore extends ObjStore
             $xml = DH::findFirstElementOrCreate('network', $xml);
             $xml = DH::findFirstElementOrCreate('profiles', $xml);
 
-            $this->xmlroot = DH::findFirstElementOrCreate('zone-protection-profiles', $xml);
+            $this->xmlroot = DH::findFirstElementOrCreate('zone-protection-profile', $xml);
         }
     }
 

@@ -367,41 +367,47 @@ class FileBlockingProfile extends SecurityProfile2
     }
 
 
+    /**
+     * alert-only-set of the file-blocking rules: when no rule passes the BP JSON file-blocking -> rule -> visibility
+     * check (fileblocking_rules_visibility()), a rule is added with its values: the action is the key of the first
+     * entry (e.g. 'alert'), direction, application and file type as listed. Nothing listed in the BP JSON: no change.
+     * @param bool $add_FB_alert out: TRUE when a rule was added
+     */
     public function rules_AlertOnlySet(&$add_FB_alert)
     {
-        foreach( $this->rules_obj as $rule )
-        {
-            /** @var ThreatPolicyFileBlocking $rule */
-            if( $rule->action() == "alert"
-                && $rule->direction() == "both"
-                && in_array("any", $rule->application() )
-                && in_array("any", $rule->filetype() )
-            )
-            {
-                $add_FB_alert = false;
-                break;
-            }
+        $add_FB_alert = false;
 
-        }
+        $check_array = PH::getBPjsonFile()['file-blocking']['rule']['visibility'] ?? array();
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return;
+        if( $this->fileblocking_rules_visibility() === TRUE )
+            return;
 
-        if( $add_FB_alert )
-        {
-            $tmp_name = "alert_vcp";
-            $threadPolicy_obj = new ThreatPolicyFileBlocking( $tmp_name, $this);
-            $threadPolicy_obj->type = "ThreatPolicyFileBlocking";
+        $action = (string)array_key_first( $check_array );
+        $entry = is_array( $check_array[$action] ) ? $check_array[$action] : array();
 
-            $threadPolicy_obj->action = "alert";
-            $threadPolicy_obj->direction = "both";
-            $threadPolicy_obj->filetype[] = "any";
-            $threadPolicy_obj->application[] = "any";
+        $tmp_name = ThreatPolicy::uniqueRuleName( $this->xmlroot, "alert_vcp" );
+        $threadPolicy_obj = new ThreatPolicyFileBlocking( $tmp_name, $this);
+        $threadPolicy_obj->type = "ThreatPolicyFileBlocking";
 
-            $this->rules_obj[] = $threadPolicy_obj;
-            $threadPolicy_obj->addReference( $this );
+        $threadPolicy_obj->action = $action;
+        $direction = $entry['direction'] ?? 'both';
+        $threadPolicy_obj->direction = is_array( $direction ) ? (string)reset( $direction ) : (string)$direction;
+        // keyed by name, as loaded rules (the check looks the application up by name)
+        foreach( (array)( $entry['filetype'] ?? array( 'any' ) ) as $filetype )
+            $threadPolicy_obj->filetype[$filetype] = $filetype;
+        foreach( (array)( $entry['application'] ?? array( 'any' ) ) as $application )
+            $threadPolicy_obj->application[$application] = $application;
 
-            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+        $this->rules_obj[] = $threadPolicy_obj;
+        $threadPolicy_obj->addReference( $this );
 
-            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
-        }
+        $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+        $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+        $add_FB_alert = true;
+
+        $this->bpSetVerify( 'visibility', 'FB rules', $this->fileblocking_rules_visibility() );
     }
     public function AlertOnlySet()
     {

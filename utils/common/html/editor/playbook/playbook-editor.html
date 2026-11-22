@@ -349,17 +349,27 @@
         });
     }
 
+    function loadPlaybook(raw) {
+        playbook.stagename = raw.stagename || "";
+        playbook['header-comment'] = raw['header-comment'] || "";
+        playbook['footer-comment'] = raw['footer-comment'] || "";
+        playbook.command = (raw.command || []).map(cmd => parseSingleCommand(cmd)); render();
+    }
     document.getElementById('filePicker').addEventListener('change', function(e) {
         const reader = new FileReader();
         reader.onload = function(event) {
             try {
-                const raw = JSON.parse(event.target.result);
-                playbook.stagename = raw.stagename || "";
-                playbook['header-comment'] = raw['header-comment'] || "";
-                playbook['footer-comment'] = raw['footer-comment'] || "";
-                playbook.command = (raw.command || []).map(cmd => parseSingleCommand(cmd)); render();
+                loadPlaybook(JSON.parse(event.target.result));
             } catch (err) { }
         }; reader.readAsText(e.target.files[0]);
+    });
+
+    // embedded in the pan-os-php config viewer (sandboxed frame): the viewer sends the file, SAVE gives the result back
+    // (the viewer stores it as a new project file) - opened on its own the editor works as before
+    const inViewer = window.parent !== window;
+    window.addEventListener('message', function(e) {
+        if (e.source !== window.parent || !e.data || e.data.type !== 'panosphp-editor-load') return;
+        try { loadPlaybook(typeof e.data.json === 'string' ? JSON.parse(e.data.json) : (e.data.json || {})); } catch (err) { }
     });
 
     function updateMultiArg(cIdx, aIdx, key, selectEl) { playbook.command[cIdx]._uiActions[aIdx].args[key] = Array.from(selectEl.selectedOptions).map(opt => opt.value).join('|'); updatePreviews(cIdx); }
@@ -388,10 +398,12 @@
             return cleanObject(cmd, typeLib, cmd.type);
         });
 
+        if (inViewer) { window.parent.postMessage({ type: 'panosphp-editor-save', json: JSON.stringify(out, null, 2) }, '*'); return; }
         const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "playbook.json"; a.click();
     }
     render();
+    if (inViewer) window.parent.postMessage({ type: 'panosphp-editor-ready' }, '*');
 </script>
 </body>
 </html>

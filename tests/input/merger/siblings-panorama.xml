@@ -1,0 +1,16 @@
+<config version="10.1.0">
+  <mgt-config/>
+  <shared><address><entry name="other"><ip-netmask>9.9.9.9</ip-netmask></entry></address></shared>
+  <devices><entry name="localhost.localdomain">
+    <device-group>
+      <entry name="DG-A"><address><entry name="web01"><ip-netmask>10.1.1.1</ip-netmask></entry></address>
+        <pre-rulebase><security><rules><entry name="ra"><from><member>any</member></from><to><member>any</member></to><source><member>web01</member></source><destination><member>any</member></destination><service><member>any</member></service><application><member>any</member></application><action>allow</action></entry></rules></security></pre-rulebase></entry>
+      <entry name="DG-B"><address><entry name="web01"><ip-netmask>10.1.1.1</ip-netmask></entry></address>
+        <pre-rulebase><security><rules><entry name="rb"><from><member>any</member></from><to><member>any</member></to><source><member>web01</member></source><destination><member>any</member></destination><service><member>any</member></service><application><member>any</member></application><action>allow</action></entry></rules></security></pre-rulebase></entry>
+    </device-group>
+    <template/>
+  </entry></devices>
+  <readonly><devices><entry name="localhost.localdomain"><device-group>
+    <entry name="DG-A"><id>11</id></entry><entry name="DG-B"><id>12</id></entry>
+  </device-group></entry></devices></readonly>
+</config>

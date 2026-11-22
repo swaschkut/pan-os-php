@@ -40,7 +40,9 @@ class IP6Map extends IPMap
     public function intersection(IP6Map $otherMap)
     {
         $invertedMap = IP6Map::mapFromText('::/0');
-        $invertedMap->substract($otherMap);
+        // everything outside $this, removed from $otherMap = $this ∩ $otherMap (was: $otherMap substracted, so the
+        // result was always $otherMap)
+        $invertedMap->substract($this);
 
         $result = clone $otherMap;
         $result->substract($invertedMap);
@@ -57,38 +59,38 @@ class IP6Map extends IPMap
 
         foreach( $arrayCopy as &$entry )
         {
-            if( $subEntry['start'] > $entry['end'] )
+            if( cidr::ipCmp($subEntry['start'], $entry['end']) > 0 )
             {
                 $this->_map[] = &$entry;
                 continue;
             }
-            elseif( $subEntry['end'] < $entry['start'] )
+            elseif( cidr::ipCmp($subEntry['end'], $entry['start']) < 0 )
             {
                 $this->_map[] = &$entry;
                 continue;
             }
-            else if( $subEntry['start'] <= $entry['start'] && $subEntry['end'] >= $entry['end'] )
+            else if( cidr::ipCmp($subEntry['start'], $entry['start']) <= 0 && cidr::ipCmp($subEntry['end'], $entry['end']) >= 0 )
             {
 
             }
-            elseif( $subEntry['start'] > $entry['start'] )
+            elseif( cidr::ipCmp($subEntry['start'], $entry['start']) > 0 )
             {
-                if( $subEntry['end'] >= $entry['end'] )
+                if( cidr::ipCmp($subEntry['end'], $entry['end']) >= 0 )
                 {
-                    $entry['end'] = $subEntry['start'] - 1;
+                    $entry['end'] = cidr::ipDec($subEntry['start']);
                     $this->_map[] = &$entry;
                 }
                 else
                 {
                     $oldEnd = $entry['end'];
-                    $entry['end'] = $subEntry['start'] - 1;
+                    $entry['end'] = cidr::ipDec($subEntry['start']);
                     $this->_map[] = &$entry;
-                    $this->_map[] = array('start' => $subEntry['end'] + 1, 'end' => $oldEnd);
+                    $this->_map[] = array('start' => cidr::ipInc($subEntry['end']), 'end' => $oldEnd);
                 }
             }
             else
             {
-                $entry['start'] = $subEntry['end'] + 1;
+                $entry['start'] = cidr::ipInc($subEntry['end']);
                 $this->_map[] = &$entry;
             }
             $affectedRows++;

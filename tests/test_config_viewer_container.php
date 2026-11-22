@@ -1,0 +1,841 @@
+<?php
+/**
+ * Tests of the config-viewer prototype (utils/develop/config-viewer): login, separation between users, project
+ * permissions (read / write / owner), CSRF, input checks, load-once worker, change in memory, save, autosave recovery,
+ * service stop.
+ *
+ *   cd tests && php test_config_viewer.php
+ *
+ * Starts the PHP built-in web server on a free local port with a temporary data directory. Needs the PHP
+ * extensions pdo_sqlite, pcntl, posix. Exit code 0 = all passed.
+ */
+
+/**
+ * config-viewer: one container per run (utils/develop/config-viewer/lib/ViewerContainer.php, bin/jobs.php).
+ * No container runtime is needed: a stand-in program "docker" records how it is called and runs pan-os-php with the
+ * folders that the call mounts. This checks the call (isolation options, mounts, nothing free from the job) and the
+ * flow start / result / cancel - NOT that a real docker / podman accepts the call.
+ *   php tests/test_config_viewer_container.php
+ */
+$repo = dirname( __FILE__, 2 );
+$viewer = $repo . '/utils/develop/config-viewer';
+require_once $viewer . '/lib/ViewerContainer.php';
+require_once $viewer . '/lib/ViewerApp.php';
+foreach( array( 'pdo_sqlite', 'pcntl', 'posix' ) as $ext )
+    if( !extension_loaded( $ext ) )
+    {
+        print "SKIPPED: PHP extension " . $ext . " missing\n";
+        exit( 0 );
+    }
+$failed = array();
+$checks = 0;
+function eq( $actual, $expected, $msg )
+{
+    global $failed, $checks;
+    $checks++;
+    if( $actual !== $expected )
+        $failed[] = $msg . "\n      expected " . json_encode($expected) . "\n      got      " . json_encode($actual);
+}
+function withEnv( array $env, callable $fn )
+{
+    $all = array( 'PANOSPHP_VIEWER_CONTAINER', 'PANOSPHP_VIEWER_CONTAINER_IMAGE', 'PANOSPHP_VIEWER_CONTAINER_DATA', 'PANOSPHP_VIEWER_CONTAINER_TOOL',
+        'PANOSPHP_VIEWER_CONTAINER_MEMORY', 'PANOSPHP_VIEWER_CONTAINER_CPUS', 'PANOSPHP_VIEWER_CONTAINER_USER', 'PANOSPHP_VIEWER_CONTAINER_PLUGINS', 'PANOSPHP_VIEWER_CONTAINER_NETWORK', 'PANOSPHP_VIEWER_CONTAINER_DNS' );
+    foreach( $all as $k )
+        putenv( isset( $env[$k] ) ? $k . '=' . $env[$k] : $k );
+    try { return $fn(); }
+    catch( Exception $e ) { return 'error: ' . $e->getMessage(); }
+    finally { foreach( $all as $k ) putenv( $k ); }
+}
+
+// ---- 1. the call
+$pid = str_repeat( 'a', 32 ); $jid = str_repeat( 'b', 32 ); $file = str_repeat( 'c', 32 ) . '.xml';
+$job = array( 'pid' => $pid, 'jid' => $jid, 'file' => $file, 'type' => 'playbook',
+    'rawArgs' => array( 'json=%FILES%/' . str_repeat( 'd', 32 ) . '.json', 'out=%JOB%/result.xml', '--network=host', '-v', '/:/host' ) );
+eq( withEnv( array(), function() { return ViewerContainer::fromEnv( '/data' ); } ), null, 'not configured: no container' );
+$base = array( 'PANOSPHP_VIEWER_CONTAINER' => 'docker', 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => 'swaschkut/pan-os-php:develop', 'PANOSPHP_VIEWER_CONTAINER_USER' => '1000:1000' );
+$cmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/srv/viewer-data' )->runCommand( $job ); } );
+// type=diff: two versions of the project as file1 / file2 under /project, no in=
+$dcmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/srv/viewer-data' )->runCommand( array( 'type' => 'diff', 'file' => null,
+    'rawArgs' => array( 'file1=%PROJECT%/' . str_repeat( 'c', 32 ) . '.xml', 'file2=%PROJECT%/' . str_repeat( 'e', 32 ) . '.xml', 'outputformatset=set-commands.txt' ) ) + $job ); } );
+eq( array( array_slice( $dcmd, -3 ), count( preg_grep( '/^in=/', $dcmd ) ), in_array( 'type=diff', $dcmd, TRUE ) ),
+    array( array( 'file1=/project/' . str_repeat( 'c', 32 ) . '.xml', 'file2=/project/' . str_repeat( 'e', 32 ) . '.xml', 'outputformatset=set-commands.txt' ), 0, TRUE ),
+    'diff in a container: both versions from /project (read-only), no in=' );
+$image = array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE );
+$opts = array_slice( $cmd, 0, $image );
+eq( array_slice( $cmd, 0, 5 ), array( 'docker', 'run', '--rm', '--name', 'panosphp-run-' . $jid ), 'docker run --rm with the name of the run' );
+foreach( array( array( '--network', 'none' ), array( '--cap-drop', 'ALL' ), array( '--security-opt', 'no-new-privileges' ), array( '--pids-limit', '256' ), array( '--memory', '2g' ),
+    array( '--cpus', '2' ), array( '--user', '1000:1000' ), array( '--workdir', '/job' ), array( '--entrypoint', 'php' ) ) as $o )
+{
+    $i = array_search( $o[0], $opts, TRUE );
+    eq( $i !== FALSE ? $opts[$i + 1] : null, $o[1], 'option ' . implode( ' ', $o ) );
+}
+eq( in_array( '--read-only', $opts, TRUE ), TRUE, 'option --read-only' );
+$mounts = array();
+foreach( $opts as $i => $o )
+    if( $o === '--mount' )
+        $mounts[] = $opts[$i + 1];
+eq( $mounts, array( 'type=bind,src=/srv/viewer-data/projects/' . $pid . ',dst=/project,readonly', 'type=bind,src=/srv/viewer-data/projects/' . $pid . '/jobs/' . $jid . ',dst=/job' ),
+    'host path: only the project (read-only) and the folder of the run are mounted' );
+eq( array_slice( $cmd, $image + 1 ), array( '/tools/pan-os-php/utils/pan-os-php.php', 'type=playbook', 'in=/project/' . $file, 'json=/project/files/' . str_repeat( 'd', 32 ) . '.json',
+    'out=/job/result.xml', '--network=host', '-v', '/:/host' ), 'arguments of the job come after the image (arguments of pan-os-php, never options of the runtime), paths as in the container' );
+eq( count( array_filter( $opts, function( $o ) { return in_array( $o, array( '--privileged', '-v', '--volume', '--network=host', '--pid', '--device' ), TRUE ); } ) ), 0, 'no option from the job before the image' );
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DATA' => 'viewer-data', 'PANOSPHP_VIEWER_CONTAINER_MEMORY' => '512m' ), function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
+eq( array( in_array( 'type=volume,src=viewer-data,dst=/project,volume-subpath=projects/' . $pid . ',readonly', $cmd, TRUE ),
+    in_array( 'type=volume,src=viewer-data,dst=/job,volume-subpath=projects/' . $pid . '/jobs/' . $jid, $cmd, TRUE ), in_array( '512m', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ), 'volume name: sub paths of the volume' );
+$cmd = withEnv( $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'file' => null, 'tool' => 'vendor-migration' ) + $job ); } );
+eq( array( in_array( 'type=vendor-migration', $cmd, TRUE ), count( preg_grep( '/^in=/', $cmd ) ) ), array( TRUE, 0 ), 'a run without a version: the type the plug-in names, no in=' );
+// a run type of a plug-in with files of its own: the folder of the plug-in read-only, the environment with its path there
+$pj = array( 'file' => null, 'tool' => 'vendor-migration', 'plugin' => 'migration', 'pluginBuiltin' => FALSE, 'rawEnv' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' ) ) + $job;
+eq( substr( (string)withEnv( $base, function() use ( $pj ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pj ); } ), 0, 6 ), 'error:', 'plug-in with files, PANOSPHP_VIEWER_CONTAINER_PLUGINS not set: refused' );
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pj ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pj ); } );
+eq( array( in_array( 'type=bind,src=/srv/plugins/migration,dst=/plugin,readonly', $cmd, TRUE ), in_array( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ),
+    array_search( 'PANOSPHP_MIGRATION_PARSERS=/plugin/parser', $cmd, TRUE ) < array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE ) ), array( TRUE, TRUE, TRUE ),
+    'plug-in with files: its folder read-only at /plugin, environment before the image' );
+// an encrypted plug-in: the package file read-only, the licence (one line) and %PLUGIN% = ppp://<name>
+$pp = array( 'pluginPackage' => '/plugins/migration.ppp', 'licence' => '-----BEGIN PAN-OS-PHP LICENSE-----' . str_repeat( 'QUJD', 20 ) . '-----END PAN-OS-PHP LICENSE-----' ) + $pj;
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pp ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $pp ); } );
+eq( array( in_array( 'type=bind,src=/srv/plugins/migration.ppp,dst=/plugins/migration.ppp,readonly', $cmd, TRUE ), in_array( 'PANOSPHP_PLUGIN_PACKAGES=/plugins/migration.ppp', $cmd, TRUE ),
+    in_array( $pp['licence'], array_map( function( $a ) { return substr( $a, strlen( 'PANOSPHP_LICENSE=' ) ); }, preg_grep( '/^PANOSPHP_LICENSE=/', $cmd ) ), TRUE ),
+    in_array( 'PANOSPHP_MIGRATION_PARSERS=ppp://migration/parser', $cmd, TRUE ), in_array( 'type=bind,src=/srv/plugins/migration,dst=/plugin,readonly', $cmd, TRUE ) ),
+    array( TRUE, TRUE, TRUE, TRUE, FALSE ), 'encrypted plug-in: package file, licence, files of the plug-in from ppp:// - no folder of clear text' );
+eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/plugins' ), function() use ( $pp ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'licence' => "x\n--privileged" ) + $pp ); } ), 0, 6 ),
+    'error:', 'encrypted plug-in: a licence value that is no licence block is refused' );
+// DNS servers (VIEWER_RUN_DNS): only for a step with network
+$cmd = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DNS' => '10.0.0.10, 10.0.0.11' ), function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( 'network' => TRUE ) + $job ); } );
+$dns = array(); foreach( $cmd as $i => $o ) if( $o === '--dns' ) $dns[] = $cmd[$i + 1];
+$cmd2 = withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DNS' => '10.0.0.10' ), function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
+eq( array( $dns, in_array( '--dns', $cmd2, TRUE ), array_search( '--dns', $cmd, TRUE ) < array_search( 'swaschkut/pan-os-php:develop', $cmd, TRUE ),
+    substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_DNS' => '10.0.0.10 --privileged' ), function() { ViewerContainer::fromEnv( '/data' ); return 'x'; } ), 0, 6 ) ),
+    array( array( '10.0.0.10', '10.0.0.11' ), FALSE, TRUE, 'error:' ), 'DNS servers: --dns for a step with network only, before the image, only IP addresses' );
+eq( substr( (string)withEnv( $base + array( 'PANOSPHP_VIEWER_CONTAINER_PLUGINS' => '/srv/../etc' ), function() { ViewerContainer::fromEnv( '/data' ); return 'x'; } ), 0, 6 ), 'error:', 'refused setting: plug-in folder with ..' );
+$cmd = withEnv( array( 'PANOSPHP_VIEWER_CONTAINER' => 'podman' ) + $base, function() use ( $job ) { return ViewerContainer::fromEnv( '/data' )->runCommand( $job ); } );
+eq( $cmd[0], 'podman', 'podman: same call' );
+foreach( array( 'pid' => '../../etc', 'jid' => 'x', 'file' => '../viewer.sqlite', 'type' => 'stats --privileged' ) as $k => $v )
+    eq( substr( (string)withEnv( $base, function() use ( $job, $k, $v ) { return ViewerContainer::fromEnv( '/data' )->runCommand( array( $k => $v ) + $job ); } ), 0, 6 ), 'error:', 'refused: ' . $k . ' = ' . $v );
+foreach( array( array( 'PANOSPHP_VIEWER_CONTAINER' => 'sh' ), array( 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => '' ), array( 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => '--privileged' ),
+    array( 'PANOSPHP_VIEWER_CONTAINER_DATA' => '/data/../etc' ), array( 'PANOSPHP_VIEWER_CONTAINER_DATA' => 'vol,readonly=false' ), array( 'PANOSPHP_VIEWER_CONTAINER_MEMORY' => 'all' ),
+    array( 'PANOSPHP_VIEWER_CONTAINER_USER' => 'root' ), array( 'PANOSPHP_VIEWER_CONTAINER_NETWORK' => 'host' ), array( 'PANOSPHP_VIEWER_CONTAINER_NETWORK' => 'a b' ) ) as $bad )
+    eq( substr( (string)withEnv( $bad + $base, function() { ViewerContainer::fromEnv( '/data' ); return 'accepted'; } ), 0, 6 ), 'error:', 'refused setting: ' . json_encode( $bad ) );
+
+// ---- 2. the flow with a stand-in "docker"
+$data = sys_get_temp_dir() . '/viewer-container-test-' . getmypid();
+$bin = $data . '-bin';
+mkdir( $bin );
+file_put_contents( $bin . '/docker', '#!' . PHP_BINARY . "\n" . <<<'FAKE'
+<?php
+// stand-in for docker: records the call; "run" starts pan-os-php with the mounted folders instead of a container
+$a = array_slice( $argv, 1 );
+file_put_contents( __DIR__ . '/calls.log', json_encode( $a ) . "\n", FILE_APPEND | LOCK_EX );
+if( $a[0] === 'version' || $a[0] === 'ps' )
+    exit( 0 );
+if( $a[0] === 'rm' )
+{
+    $f = __DIR__ . '/' . end( $a ) . '.pid';
+    if( is_file( $f ) )
+        posix_kill( (int)file_get_contents( $f ), SIGKILL );
+    exit( 0 );
+}
+$map = array(); $name = null;
+foreach( $a as $i => $o )
+{
+    if( $o === '--mount' && preg_match( '#src=([^,]+),dst=([^,]+)#', $a[$i + 1], $m ) )
+        $map[$m[2]] = $m[1];
+    if( $o === '--name' )
+        $name = $a[$i + 1];
+    if( $o === '--entrypoint' )
+        $rest = array_slice( $a, $i + 4 );
+}
+// longest target first: /project/files before /project
+foreach( $rest as $i => $r )
+    $rest[$i] = preg_replace_callback( '#(?<==|^)/(project|job)(?=/|$)#', function( $m ) use ( $map ) { return $map['/' . $m[1]]; }, $r );
+file_put_contents( __DIR__ . '/' . $name . '.pid', getmypid() );
+// an import step (download / conversion): no device here - note network and key store, write the result, print the key
+// (the viewer must take it out of run.log)
+$tool0 = '';
+foreach( $rest as $x )
+    if( strpos( $x, 'type=' ) === 0 )
+        $tool0 = substr( $x, 5 );
+// the environment of the run (--env): App-ID database / MaxMind data, paths of the container -> folders here
+$envs = array();
+foreach( $a as $i => $o )
+    if( $o === '--env' && preg_match( '/^(PANOSPHP_PREDEFINED_XML|PANOSPHP_GEOIP_DIR)=(.*)$/', $a[$i + 1], $m ) )
+        $envs[$m[1]] = $m[2];
+if( count( $envs ) )
+    file_put_contents( __DIR__ . '/env.log', json_encode( array( $tool0, $envs, preg_grep( '#dst=/central#', $a ) ) ) . "\n", FILE_APPEND );
+foreach( $envs as $k => $v )
+    putenv( $k . '=' . preg_replace_callback( '#^/(project|job)(?=/|$)#', function( $m ) use ( $map ) { return $map['/' . $m[1]]; }, $v ) );
+if( $tool0 === 'download-predefined' )
+{
+    $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
+    file_put_contents( __DIR__ . '/import.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
+    foreach( $rest as $x )
+        if( strpos( $x, 'predefined-out=' ) === 0 )
+            copy( __DIR__ . '/predefined-device.xml', substr( $x, 15 ) );
+    exit( 0 );
+}
+// LDAP: no directory here - note network, key store and arguments; a result as type=ldap-query writes it
+$ldapRule = $tool0 === 'rule' && count( preg_grep( '/^actions=user-check-ldap:/', $rest ) ) > 0;
+if( $tool0 === 'ldap-query' || $ldapRule )
+{
+    $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
+    file_put_contents( __DIR__ . '/ldap.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
+    print "LDAP bind with " . trim( substr( $ks, strpos( $ks, ':' ) + 1 ) ) . "\n";
+    foreach( $rest as $x )
+    {
+        if( strpos( $x, 'out=' ) === 0 && $ldapRule )
+            copy( substr( (string)current( preg_grep( '/^in=/', $rest ) ), 3 ), substr( $x, 4 ) );
+        elseif( strpos( $x, 'out=' ) === 0 && in_array( 'mode=discover', $rest, TRUE ) )
+            file_put_contents( substr( $x, 4 ), json_encode( array( 'mode' => 'discover', 'domain' => 'example.com', 'servers' => array(
+                array( 'uri' => 'ldaps://bad.example.com:636', 'host' => 'bad.example.com', 'priority' => 0, 'weight' => 100 ),
+                array( 'uri' => 'ldaps://dc1.example.com:636', 'host' => 'dc1.example.com', 'priority' => 0, 'weight' => 50 ),
+                array( 'uri' => 'ldaps://dc9.other.org:636', 'host' => 'dc9.other.org', 'priority' => 0, 'weight' => 10 ) ),
+                'rootDse' => array( 'server' => 'ldaps://dc1.example.com:636', 'defaultNamingContext' => 'DC=example,DC=com' ),
+                'suggestion' => array( 'server' => 'ldaps://dc1.example.com:636', 'base_dn' => 'DC=example,DC=com', 'base_from' => 'rootdse', 'bind_user' => '@example.com' ) ) ) );
+        elseif( strpos( $x, 'out=' ) === 0 )
+            file_put_contents( substr( $x, 4 ), json_encode( array( 'mode' => 'validation', 'rows' => array( array( 'user' => 'alice', 'found' => TRUE, 'status' => 'active' ), array( 'user' => 'gone', 'found' => FALSE ) ), 'missing' => 1 ) ) );
+        if( strpos( $x, 'csv=' ) === 0 )
+            file_put_contents( substr( $x, 4 ), "user,found\nalice,yes\ngone,no\n" );
+    }
+    exit( 0 );
+}
+if( in_array( $tool0, array( 'upload', 'scm-export', 'scm-export-xml' ), TRUE ) )
+{
+    $ks = (string)@file_get_contents( $map['/job'] . '/.panconfkeystore' );
+    file_put_contents( __DIR__ . '/import.log', json_encode( array( $tool0, $a[array_search( '--network', $a ) + 1], $ks, array_slice( $rest, 1 ) ) ) . "\n", FILE_APPEND );
+    print "connecting with key " . trim( substr( $ks, strpos( $ks, ':' ) + 1 ) ) . "\n";
+    // a conversion that stops (as the TypeError of an SCM description as a list)
+    if( $tool0 === 'scm-export-xml' && is_file( __DIR__ . '/fail-scm-xml' ) )
+    {
+        print "PHP Fatal error:  Uncaught TypeError: strlen(): Argument #1 (\$string) must be of type string, array given\n";
+        exit( 255 );
+    }
+    foreach( $rest as $x )
+    {
+        if( strpos( $x, 'out=' ) === 0 )
+            copy( __DIR__ . '/import-' . $tool0 . '.xml', substr( $x, 4 ) );
+        if( strpos( $x, 'outdir=' ) === 0 )
+        {
+            @mkdir( substr( $x, 7 ) . '/1234567890/20261121', 0777, TRUE );
+            file_put_contents( substr( $x, 7 ) . '/1234567890/20261121/manifest.json', '{"tsg_id":"1234567890"}' );
+        }
+    }
+    exit( 0 );
+}
+// a container the kernel stops for its memory limit ends with 137 (SIGKILL); a run with this marker plays that
+if( in_array( 'memorythreshold=999936', $a, TRUE ) )
+{
+    print "Killed\n";
+    exit( 137 );
+}
+if( in_array( 'memorythreshold=999872', $a, TRUE ) )
+{
+    print "some other error\n";
+    exit( 1 );
+}
+chdir( $map['/job'] );
+pcntl_exec( PHP_BINARY, array_merge( array( trim( file_get_contents( __DIR__ . '/tool' ) ) ), $rest ) );
+FAKE
+);
+chmod( $bin . '/docker', 0755 );
+file_put_contents( $bin . '/tool', $repo . '/utils/pan-os-php.php' );
+copy( $repo . '/tests/input/panorama-10.0-merger.xml', $bin . '/import-upload.xml' );
+copy( $repo . '/tests/input/SCM-import.xml', $bin . '/import-scm-export-xml.xml' );
+file_put_contents( $bin . '/predefined-device.xml', '<predefined><application-version>9999-9999</application-version><application/></predefined>' );
+
+$env = array( 'PANOSPHP_VIEWER_DATA' => $data, 'PATH' => $bin . ':' . getenv('PATH') );
+$p = proc_open( array( PHP_BINARY, $viewer . '/bin/user.php', 'add', 'alice' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null, $env + array( 'VIEWER_PASSWORD' => 'alice-secret-1' ) );
+stream_get_contents( $pipes[1] );
+proc_close( $p );
+$null = array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', '/dev/null', 'w' ), 2 => array( 'file', '/dev/null', 'w' ) );
+$cenv = $env + array( 'PANOSPHP_VIEWER_JOBS' => '1', 'PANOSPHP_VIEWER_CONTAINER' => 'docker', 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => 'pan-os-php:test' );
+
+// a wrong setting stops the job runner - no silent fall back to runs without a container
+$p = proc_open( array( PHP_BINARY, $viewer . '/bin/jobs.php' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, $viewer, array( 'PANOSPHP_VIEWER_CONTAINER_IMAGE' => '' ) + $cenv );
+$err = stream_get_contents( $pipes[2] );
+eq( array( proc_close( $p ), strpos( $err, 'PANOSPHP_VIEWER_CONTAINER_IMAGE' ) !== FALSE ), array( 1, TRUE ), 'job runner: stops without the image setting' );
+$p = proc_open( array( PHP_BINARY, $viewer . '/bin/jobs.php' ), array( 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, $viewer, array( 'PANOSPHP_VIEWER_CONTAINER' => 'podman' ) + $cenv );
+$err = stream_get_contents( $pipes[2] );
+eq( proc_close( $p ), 1, 'job runner: stops when the runtime is not there (podman is not installed here: ' . trim( $err ) . ')' );
+
+$jobs = proc_open( array( PHP_BINARY, $viewer . '/bin/jobs.php' ), $null, $pipes, $viewer, $cenv );
+$sock = stream_socket_server( 'tcp://127.0.0.1:0' );
+$port = (int)substr( strrchr( stream_socket_get_name( $sock, FALSE ), ':' ), 1 );
+fclose( $sock );
+$server = proc_open( array( PHP_BINARY, '-S', '127.0.0.1:' . $port, '-t', $viewer ), $null, $pipes, $viewer, $env + array( 'PHP_CLI_SERVER_WORKERS' => '2' ) );
+$base = 'http://127.0.0.1:' . $port . '/';
+for( $i = 0; $i < 50 && @file_get_contents( $base . 'index.html' ) === FALSE; $i++ )
+    usleep( 100000 );
+register_shutdown_function( function() use ( $server, $jobs, $data, $bin ) {
+    foreach( array( $server, $jobs ) as $proc )
+        if( is_resource( $proc ) ) { proc_terminate( $proc ); proc_close( $proc ); }
+    exec( 'rm -rf ' . escapeshellarg( $data ) . ' ' . escapeshellarg( $bin ) );
+} );
+
+$cookie = ''; $csrf = null;
+function call( $method, $path, $body = null, $upload = null )
+{
+    global $base, $cookie, $csrf;
+    $headers = array();
+    if( $cookie !== '' ) $headers[] = 'Cookie: ' . $cookie;
+    if( $method !== 'GET' && $csrf !== null ) $headers[] = 'X-CSRF-Token: ' . $csrf;
+    $content = null;
+    if( $upload !== null )
+    {
+        $b = '----viewertest' . bin2hex( random_bytes( 6 ) );
+        $headers[] = 'Content-Type: multipart/form-data; boundary=' . $b;
+        $content = "--" . $b . "\r\nContent-Disposition: form-data; name=\"" . $upload[2] . "\"; filename=\"" . $upload[0] . "\"\r\nContent-Type: text/plain\r\n\r\n" . $upload[1] . "\r\n--" . $b . "--\r\n";
+    }
+    elseif( $body !== null )
+    {
+        $headers[] = 'Content-Type: application/json';
+        $content = json_encode( $body );
+    }
+    $raw = file_get_contents( $base . 'api.php/' . $path, FALSE, stream_context_create( array( 'http' => array( 'method' => $method, 'header' => implode( "\r\n", $headers ),
+        'content' => $content, 'ignore_errors' => TRUE, 'timeout' => 120 ) ) ) );
+    $status = 0;
+    foreach( $http_response_header ?? array() as $h )
+    {
+        if( preg_match( '#^HTTP/\S+ (\d+)#', $h, $m ) ) $status = (int)$m[1];
+        if( preg_match( '#^Set-Cookie: (PANOSPHPVIEWER=[^;]*)#i', $h, $m ) ) $cookie = $m[1];
+    }
+    $json = json_decode( (string)$raw, TRUE );
+    return array( $status, is_array( $json ) ? $json : $raw );
+}
+function waitRun( $path, $until = array( 'queued', 'running' ) )
+{
+    for( $i = 0; $i < 900; $i++ )
+    {
+        $r = call( 'GET', $path );
+        if( !in_array( $r[1]['state'] ?? '', $until, TRUE ) )
+            return $r;
+        usleep( 200000 );
+    }
+    return $r;
+}
+function calls()
+{
+    global $bin;
+    return array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/calls.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+}
+
+$r = call( 'POST', 'login', array( 'user' => 'alice', 'password' => 'alice-secret-1' ) );
+$csrf = $r[1]['csrf'] ?? null;
+$r = call( 'POST', 'projects', array( 'name' => 'Container runs' ) );
+$pid = $r[1]['pid'];
+$P = 'projects/' . $pid;
+$r = call( 'POST', $P . '/configs', null, array( 'c.xml', file_get_contents( $repo . '/tests/input/panorama-10.0-merger.xml' ), 'config' ) );
+$cid = $r[1]['cid'];
+eq( strlen( (string)$cid ), 32, 'configuration uploaded' );
+
+// stats
+$r = call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() );
+$jid = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $jid );
+eq( $r[1]['state'] ?? null, 'done', 'stats run in the "container": done' );
+eq( in_array( 'json/debugAPI_string.json', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ), TRUE, 'stats run: result file in the folder of the run' );
+$run = array_values( array_filter( calls(), function( $c ) use ( $jid ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jid, $c, TRUE ); } ) );
+eq( count( $run ), 1, 'stats run: one container was started for it' );
+$c = $run[0] ?? array();
+$i = array_search( 'pan-os-php:test', $c, TRUE );
+eq( array( in_array( 'none', $c, TRUE ), in_array( '--read-only', $c, TRUE ), in_array( 'type=bind,src=' . $data . '/projects/' . $pid . ',dst=/project,readonly', $c, TRUE ),
+    in_array( 'type=bind,src=' . $data . '/projects/' . $pid . '/jobs/' . $jid . ',dst=/job', $c, TRUE ) ), array( TRUE, TRUE, TRUE, TRUE ), 'stats run: no network, read-only, the two mounts' );
+eq( count( array_filter( array_slice( $c, (int)$i + 1 ), function( $a ) use ( $data ) { return strpos( $a, $data ) !== FALSE; } ) ), 0, 'stats run: no path of the server in the arguments of pan-os-php' );
+eq( preg_match( '#^in=/project/[0-9a-f]{32}\.xml$#', $c[(int)$i + 3] ?? '' ), 1, 'stats run: in= is the version file in the container' );
+
+// playbook with a BP JSON, result as version
+$r = call( 'POST', $P . '/files?kind=playbook', null, array( 'pb.json', json_encode( array( 'command' => array(
+    array( 'type' => 'address', 'actions' => 'actions=exportToExcel:addresses.html', 'location' => 'location=any' ),
+    array( 'type' => 'rule', 'actions' => 'actions=logend-Enable', 'location' => 'location=any' ) ) ) ), 'file' ) );
+$pb = $r[1]['fid'] ?? '';
+$r = call( 'POST', $P . '/files?kind=bp', null, array( 'bp.json', file_get_contents( $repo . '/utils/api/v1/bp/scm_bp_sp_panw.json' ), 'file' ) );
+$bp = $r[1]['fid'] ?? '';
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'bp' => $bp ) );
+$jid2 = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $jid2 );
+eq( $r[1]['state'] ?? null, 'done', 'playbook run in the "container": done' );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( in_array( 'addresses.html', $names, TRUE ), in_array( 'out.xml', $names, TRUE ) ), array( TRUE, TRUE ), 'playbook run: export and result configuration in the folder of the run (' . implode( ', ', $names ) . ')' );
+$c = array_values( array_filter( calls(), function( $c ) use ( $jid2 ) { return $c[0] === 'run' && in_array( 'panosphp-run-' . $jid2, $c, TRUE ); } ) )[0] ?? array();
+$tail = array_slice( $c, (int)array_search( 'pan-os-php:test', $c, TRUE ) + 1 );
+eq( count( preg_grep( '#=/project/files/[0-9a-f]{32}\.json$#', $tail ) ), 2, 'playbook run: playbook and BP JSON from /project/files (' . implode( ' ', $tail ) . ')' );
+eq( count( preg_grep( '#=/job/#', $tail ) ) >= 1, TRUE, 'playbook run: result goes to /job' );
+eq( call( 'POST', $P . '/runs/' . $jid2 . '/save' )[0], 201, 'playbook run: result taken as a new version' );
+
+// playbook options for large configurations go to type=playbook; a run killed for memory is told apart
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'subprocess' => TRUE, 'memorythreshold' => '512', 'debugmemory' => TRUE, 'removestagefiles' => TRUE ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, array_slice( $r[1]['args'] ?? array(), 4 ) ), array( 'done', array( 'subprocess', 'debugmemory', 'removestagefiles', 'memorythreshold=512' ) ),
+    'playbook options: subprocess, memorythreshold, debugmemory, removestagefiles - the run works with them' );
+$log = (string)call( 'GET', $P . '/runs/' . $r[1]['jid'] . '/files/run.log' )[1];
+eq( strpos( $log, 'Running step as subprocess' ) !== FALSE, TRUE, 'playbook options: the steps ran as subprocesses (debugmemory in run.log)' );
+foreach( array( array( 'memorythreshold' => '10' ), array( 'memorythreshold' => 'x' ), array( 'subprocess' => 'yes' ) ) as $bad )
+    eq( call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb ) + $bad )[0], 400, 'playbook options checked: ' . json_encode( $bad ) );
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'memorythreshold' => 999936 ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, strpos( $r[1]['error'] ?? '', 'out of memory' ) === 0, strpos( $r[1]['error'] ?? '', 'limit per run: 2g' ) !== FALSE ),
+    array( 'failed', 'memory', TRUE, TRUE ), 'container killed (137): failed, reason memory, with the limit per run' );
+$r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'memorythreshold' => 999872 ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, strpos( $r[1]['error'] ?? '', 'pan-os-php ended with an error' ) === 0 ), array( 'failed', 'error', TRUE ),
+    'other error: reason error' );
+eq( array( ViewerApp::runFailure( 1, null, "x\nERROR: egress-IP API (https://api.prod.datapath.prismaaccess.com/getPrismaAccessIP/v2): [{\"message\":\"HTTP 401\"}] - check the key\n", null )[1],
+    ViewerApp::runFailure( 1, null, "a\n\033[1m\n* ** ERROR ** * \033[0mno such object\n", null )[1], ViewerApp::lastErrorLine( "ERROR: login failed password=geheim1 key: abc\n" ),
+    ViewerApp::runFailure( 1, null, "nothing\n", null )[1] ),
+    array( 'pan-os-php ended with an error: egress-IP API (https://api.prod.datapath.prismaaccess.com/getPrismaAccessIP/v2): [{"message":"HTTP 401"}] - check the key (see run.log)',
+        'pan-os-php ended with an error: no such object (see run.log)', 'login failed password=*** key: ***', 'pan-os-php ended with an error (see run.log)' ),
+    'failed run: the last error line of run.log in the message (without colours, secrets masked)' );
+eq( array( ViewerApp::runFailure( 1, null, "x\n ** step type=rule ended with exit code 137 - the process was killed, most likely out of memory - the playbook stops here", null )[0],
+    ViewerApp::runFailure( 255, null, "PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes)", null )[0],
+    ViewerApp::runFailure( -1, 9, '', null )[0], ViewerApp::runFailure( 1, null, 'derr: no such object', '4g' )[0] ),
+    array( 'memory', 'memory', 'memory', 'error' ), 'out of memory also from the log (killed subprocess step, PHP memory_limit) and from signal 9' );
+
+// cancel: the container is removed
+$r = call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() );
+$jid3 = $r[1]['jid'] ?? '';
+waitRun( $P . '/runs/' . $jid3, array( 'queued' ) );
+eq( call( 'DELETE', $P . '/runs/' . $jid3 )[0], 200, 'cancel a running run' );
+for( $i = 0; $i < 50; $i++ )
+{
+    $rm = array_filter( calls(), function( $c ) use ( $jid3 ) { return $c === array( 'rm', '--force', 'panosphp-run-' . $jid3 ); } );
+    if( count( $rm ) )
+        break;
+    usleep( 100000 );
+}
+eq( count( $rm ) >= 1, TRUE, 'cancel: the container of the run is removed (rm --force)' );
+$fpid = (int)@file_get_contents( $bin . '/panosphp-run-' . $jid3 . '.pid' );
+usleep( 300000 );
+eq( $fpid > 0 && !posix_kill( $fpid, 0 ), TRUE, 'cancel: the run does not go on' );
+eq( in_array( array( 'ps', '--all', '--quiet', '--filter', 'label=panosphp-viewer=' . substr( hash( 'sha256', $data ), 0, 16 ) ), calls(), TRUE ), TRUE, 'start of the job runner: looks for containers left over' );
+
+// ---- import from a device: personal API keys, network only when allowed (administrator + owner), download only
+$app = new ViewerApp( $data );
+$app->userCreate( 'root', 'root-secret-123', TRUE );
+$app->userCreate( 'bob', 'bob-secret-1234' );
+$aliceCookie = $cookie; $aliceCsrf = $csrf;
+$as = function( string $u, string $pw ) use ( &$cookie, &$csrf ) { $cookie = ''; $csrf = null; $csrf = call( 'POST', 'login', array( 'user' => $u, 'password' => $pw ) )[1]['csrf'] ?? null; };
+$secret = 'LUFRPT1-geheim-0815:abcd';
+$r = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'FW1.example.com', 'key' => $secret ) );
+$kid = $r[1]['kid'] ?? '';
+eq( array( $r[0], $r[1]['target'] ?? null, $r[1]['hint'] ?? null, strpos( json_encode( $r[1] ), 'geheim' ) ), array( 201, 'fw1.example.com', '…abcd', FALSE ), 'my API key: stored, only its end shown' );
+eq( strpos( json_encode( call( 'GET', 'keys' )[1] ), 'geheim' ), FALSE, 'my API keys: the secret never comes back' );
+$db = new PDO( 'sqlite:' . $data . '/viewer.sqlite' );
+eq( array( strpos( (string)$db->query( 'SELECT secret FROM user_keys' )->fetchColumn(), 'geheim' ), strpos( (string)file_get_contents( $data . '/viewer.sqlite' ), 'geheim' ), decoct( fileperms( $data . '/keys.secret' ) & 0777 ) ),
+    array( FALSE, FALSE, '600' ), 'my API key: encrypted in the database, key of the installation only for the viewer' );
+eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array() ) ), 'geheim' ), FALSE, 'my API key: not in the audit log' );
+foreach( array( array( 'kind' => 'panos', 'target' => 'a b', 'key' => $secret ), array( 'kind' => 'panos', 'target' => 'fw', 'key' => 'short' ),
+    array( 'kind' => 'scm', 'target' => 'fw1', 'client_id' => 'id-12345678', 'client_secret' => 'sec-12345678' ), array( 'kind' => 'x', 'target' => 'fw' ) ) as $bad )
+    eq( call( 'POST', 'keys', $bad )[0], 400, 'my API key: checked (' . json_encode( array_diff_key( $bad, array( 'key' => 1, 'client_secret' => 1 ) ) ) . ')' );
+$imp = function( array $body ) use ( $P ) { return call( 'POST', $P . '/import/runs', $body ); };
+$r = $imp( array( 'kid' => $kid ) );
+eq( array( $r[0], strpos( $r[1]['error'] ?? '', 'network for runs is off' ) !== FALSE ), array( 403, TRUE ), 'import: refused while network for runs is off (default)' );
+eq( call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => '*' ) )[0], 404, 'network for runs: only an administrator' );
+$as( 'root', 'root-secret-123' );
+eq( call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => 'no host!' ) )[0], 400, 'network: entries checked' );
+$r = call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8", 'deny' => 'bad.example.com' ) );
+eq( array( $r[0], $r[1] ), array( 200, array( 'enabled' => TRUE, 'allow' => array( '*.example.com', 'tsg:1234567890', '10.0.0.0/8' ), 'deny' => array( 'bad.example.com' ), 'users' => 'all', 'conntest' => 'selected' ) ), 'network: on, allow list, deny list' );
+eq( array( $app->networkRefusal( 'panos', '10.1.2.3' ), $app->networkRefusal( 'panos', '11.1.2.3' ) !== null, $app->networkRefusal( 'panos', 'example.com' ) !== null,
+    $app->networkRefusal( 'scm', '1234567890' ), $app->networkRefusal( 'scm', '99' ) !== null ), array( null, TRUE, TRUE, null, TRUE ), 'network: network / *.domain / tsg entries' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+$r = $imp( array( 'kid' => $kid ) );
+eq( array( $r[0], strpos( $r[1]['error'] ?? '', 'network is off for this project' ) !== FALSE ), array( 403, TRUE ), 'import: refused while the project has no network' );
+eq( array( call( 'PUT', $P . '/network', array( 'enabled' => TRUE ) )[1]['network'] ?? null, call( 'GET', $P )[1]['network_global'] ?? null ), array( TRUE, TRUE ), 'project network: the owner turns it on' );
+$r = $imp( array( 'kid' => $kid, 'source' => 'running' ) );
+$ijid = $r[1]['jid'] ?? '';
+eq( array( $r[0], $r[1]['args'] ?? null ), array( 202, array( 'x-import-key=' . $kid, 'x-import-target=panos:fw1.example.com', 'x-import-source=running' ) ), 'import: queued, only references in the run (no key)' );
+$r = waitRun( $P . '/runs/' . $ijid );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$log = (string)call( 'GET', $P . '/runs/' . $ijid . '/files/run.log' )[1];
+$vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), null, 'name' );
+eq( array( $r[1]['state'] ?? null, $il[0][0] ?? null, $il[0][1] ?? null, $il[0][2] ?? null, $il[0][3] ?? null ),
+    array( 'done', 'upload', 'bridge', 'fw1.example.com:' . $secret . "\n", array( 'in=api://fw1.example.com/running-config', 'out=' . $data . '/projects/' . $pid . '/jobs/' . $ijid . '/out.xml' ) ),
+    'import PAN-OS: type=upload in=api://<host>/running-config (download only), network, key store with only this key' );
+eq( array( file_exists( $data . '/projects/' . $pid . '/jobs/' . $ijid . '/.panconfkeystore' ), strpos( $log, 'geheim' ), strpos( $log, '********' ) !== FALSE,
+    in_array( '.panconfkeystore', array_column( $r[1]['files'] ?? array(), 'name' ), TRUE ) ), array( FALSE, FALSE, TRUE, FALSE ), 'import: key store gone after the run, key taken out of run.log' );
+eq( array( isset( $vers['fw1.example.com.xml'] ), strpos( $vers['fw1.example.com.xml']['note'] ?? '', 'import run' ) === 0 ), array( TRUE, TRUE ), 'import: the configuration is a new version' );
+$k = array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' );
+eq( array( isset( $k[$kid] ), ( $k[$kid]['last_used'] ?? 0 ) > 0 ), array( TRUE, TRUE ), 'import: the key stays with the user (last used set)' );
+// deny list, not on the allow list, another user's key, read permission
+$bad = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'bad.example.com', 'key' => $secret ) )[1];
+$other = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'fw.other.org', 'key' => $secret ) )[1];
+eq( array( strpos( (string)$bad['refused'], 'deny list' ) !== FALSE, $imp( array( 'kid' => $bad['kid'] ) )[0], $imp( array( 'kid' => $other['kid'] ) )[0] ), array( TRUE, 403, 403 ), 'import: deny list wins, a host not on the allow list is refused' );
+call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
+$as( 'bob', 'bob-secret-1234' );
+eq( $imp( array( 'kid' => $kid ) )[0], 400, 'import: only with an own key - not with the key of another user' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
+$as( 'bob', 'bob-secret-1234' );
+$bk = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'fw2.example.com', 'key' => $secret ) )[1]['kid'] ?? '';
+eq( $imp( array( 'kid' => $bk ) )[0], 403, 'import: not with read permission' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+// the API key from the device: management address + administrator + password (XML API keygen, as key-manager add=)
+$kgDir = sys_get_temp_dir() . '/viewer-keygen-' . bin2hex( random_bytes( 4 ) );
+mkdir( $kgDir . '/api', 0700, TRUE );
+file_put_contents( $kgDir . '/api/index.php', '<?php
+// a PAN-OS XML API that knows one administrator; records what it got (method, query string, user - never the password)
+file_put_contents( dirname( __DIR__ ) . "/got.log", json_encode( array( $_SERVER["REQUEST_METHOD"], $_SERVER["QUERY_STRING"] ?? "", $_POST["type"] ?? "", $_POST["user"] ?? "" ) ) . "\n", FILE_APPEND );
+header( "Content-Type: application/xml" );
+if( ( $_POST["type"] ?? "" ) === "keygen" && ( $_POST["user"] ?? "" ) === "admin" && ( $_POST["password"] ?? "" ) === "pw:with&special%chars" )
+    echo "<response status=\"success\"><result><key>LUFRPT-from-device-geheim-9876</key></result></response>";
+elseif( ( $_POST["type"] ?? "" ) === "op" )
+    echo ( $_SERVER["HTTP_X_PAN_KEY"] ?? "" ) === "LUFRPT-from-device-geheim-9876" ? "<response status=\"success\"><result><system><hostname>lab-fw</hostname><model>PA-440</model><sw-version>11.1.4</sw-version></system></result></response>"
+        : "<response status=\"error\" code=\"403\"><result><msg>Invalid credentials.</msg></result></response>";
+elseif( ( $_POST["user"] ?? "" ) === "nokey" )
+    echo "<response status=\"success\"><result><msg>something else</msg></result></response>";
+else
+    echo "<response status=\"error\" code=\"403\"><result><msg>Invalid Credentials.</msg></result></response>";
+' );
+$kgPort = 18000 + random_int( 0, 999 );
+$kgSrv = proc_open( array( PHP_BINARY, '-S', '127.0.0.1:' . $kgPort, '-t', $kgDir ), array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', '/dev/null', 'w' ), 2 => array( 'file', '/dev/null', 'w' ) ), $kgPipes );
+usleep( 400000 );
+$alice = $app->userByName( 'alice' );
+$gen = function( array $in ) use ( $app, $alice ) {
+    try { return array( 201, $app->keyGenerate( $alice, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage(), $e instanceof ViewerDetailException ? $e->details : '' ); } };
+$kgIn = array( 'target' => '127.0.0.1', 'port' => $kgPort, 'username' => 'admin', 'password' => 'pw:with&special%chars', 'label' => 'lab fw' );
+putenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP=1' );
+$r = $gen( $kgIn );
+eq( array( $r[0], strpos( (string)$r[1], 'not on the allow list' ) !== FALSE ), array( 403, TRUE ), 'key from the device: only to a host the administrator allows' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com' ) );
+$r = $gen( array( 'password' => 'wrong-password' ) + $kgIn );
+eq( array( $r[0], $r[1], strpos( $r[2] ?? '', 'API call through POST: "http://127.0.0.1:' . $kgPort . '/api/?type=keygen"' ) !== FALSE,
+    strpos( $r[2] ?? '', 'RAW HTTP POST Content: user=admin&password=********' ) !== FALSE, strpos( $r[2] ?? '', 'Invalid Credentials' ) !== FALSE, strpos( $r[2] ?? '', 'wrong-password' ) ),
+    array( 400, '127.0.0.1: Invalid Credentials.', TRUE, TRUE, TRUE, FALSE ), 'key from the device: the message of the device (wrong password), debug output without the password' );
+$r = $gen( array( 'username' => 'nokey' ) + $kgIn );
+eq( array( $r[0], strpos( $r[1], 'without <result><key>' ) !== FALSE, strpos( $r[2] ?? '', 'something else' ) !== FALSE ), array( 502, TRUE, TRUE ), 'key from the device: an answer without key - the answer in the debug output' );
+$r = $gen( $kgIn );
+$got = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $kgDir . '/got.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[0], $r[1]['kind'] ?? null, $r[1]['target'] ?? null, $r[1]['port'] ?? null, $r[1]['label'] ?? null, $r[1]['hint'] ?? null, strpos( json_encode( $r[1] ), 'geheim' ), end( $got ) ),
+    array( 201, 'panos', '127.0.0.1', $kgPort, 'lab fw', '…9876', FALSE, array( 'POST', '', 'keygen', 'admin' ) ),
+    'key from the device: keygen by POST (password not in the URL), stored as own PAN-OS key, only its end shown' );
+eq( array( strpos( $r[1]['debug'] ?? '', ' OK, key is LUFR...9876' ) !== FALSE, strpos( $r[1]['debug'] ?? '', 'special' ), strpos( $r[1]['debug'] ?? '', 'device-geheim' ) ),
+    array( TRUE, FALSE, FALSE ), 'key from the device: debug output as pan-os-php (key shortened, no password)' );
+$sec = $db->query( "SELECT secret FROM user_keys WHERE target = '127.0.0.1'" )->fetchColumn();
+eq( array( 'n/a', strpos( (string)$sec, 'geheim' ), strpos( (string)file_get_contents( $data . '/viewer.sqlite' ), 'special%chars' ),
+    strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array() ) ), 'special' ) ),
+    array( 'n/a', FALSE, FALSE, FALSE ), 'key from the device: the key encrypted, the password nowhere (database, audit log)' );
+// network per user, own hosts, requests to the administrators, the connection test
+$bob = $app->userByName( 'bob' );
+$root = $app->userByName( 'root' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com', 'users' => 'selected', 'conntest' => 'selected' ) );
+$bgen = function( array $in ) use ( $app, $bob ) { try { return array( 201, $app->keyGenerate( $bob, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+$r = $bgen( $kgIn );
+eq( array( $r[0], strpos( (string)$r[1], 'network is not allowed for you' ) !== FALSE, strpos( (string)$r[1], 'Account, Requests' ) !== FALSE, $gen( $kgIn )[0], $app->networkRefusal( 'panos', '127.0.0.1', $root ) ),
+    array( 403, TRUE, TRUE, 403, null ), 'network per user: allow list only for selected users - bob and alice not, the administrator yes' );
+$req = function( callable $f ) { try { return array( 200, $f() ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+eq( array( $req( function() use ( $app, $bob ) { return $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => '*', 'reason' => 'x' ) ); } )[0],
+    $req( function() use ( $app, $bob ) { return $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => '127.0.0.1', 'reason' => '' ) ); } )[0],
+    $req( function() use ( $app, $bob ) { return $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => '', 'reason' => 'lab' ) ); } )[0] ), array( 400, 400, 400 ),
+    'request: hosts named (no *), a reason' );
+$rq = $app->requestCreate( $bob, array( 'kind' => 'network', 'hosts' => "127.0.0.1\n192.0.2.7", 'reason' => 'lab firewall for the as-is report' ) );
+$all = $app->requestList( $root, TRUE );
+eq( array( $rq['state'], $rq['hosts'], $all[0]['user'] ?? null, count( $app->requestList( $bob, FALSE ) ), $app->accessInfo( $root )['access']['openRequests'] ),
+    array( 'open', array( '127.0.0.1', '192.0.2.7' ), 'bob', 1, 1 ), 'request: open, the administrator sees it' );
+$d = $app->requestDecide( $root, $rq['rid'], array( 'decision' => 'approve', 'hosts' => '127.0.0.1', 'note' => 'only the lab firewall' ) );
+$r = $bgen( $kgIn );
+eq( array( $d['state'], $d['hosts'], $d['decided_by'], $app->userHosts( $bob ), $r[0], $req( function() use ( $app, $root, $rq ) { return $app->requestDecide( $root, $rq['rid'], array( 'decision' => 'reject' ) ); } )[0] ),
+    array( 'approved', array( '127.0.0.1' ), 'root', array( '127.0.0.1' ), 201, 400 ), 'request approved (hosts changed by the administrator): bob reaches his own host' );
+$app->userPermissions( 'bob', array( 'hosts' => "127.0.0.1\nbad.example.com" ) );
+eq( array( strpos( (string)$app->networkRefusal( 'panos', 'bad.example.com', $bob ), 'deny list' ) !== FALSE, strpos( (string)$app->networkRefusal( 'panos', '10.1.2.3', $bob ), 'not allowed for you' ) !== FALSE,
+    $app->networkRefusal( 'panos', '10.1.2.3', $root ), $app->userPermissions( 'bob', array( 'network' => TRUE ) )['network'], $app->networkRefusal( 'panos', '10.1.2.3', $bob ) ),
+    array( TRUE, TRUE, null, TRUE, null ), 'network per user: the deny list wins over own hosts; the allow list for a selected user' );
+$app->userPermissions( 'bob', array( 'network' => FALSE ) );
+// the connection test: only the administrators and selected users; by request
+$ct = function( array $u, array $in ) use ( $app ) { try { return array( 200, $app->connTest( $u, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+$ctIn = array( 'target' => '127.0.0.1', 'port' => $kgPort, 'path' => '/' );
+eq( array( $ct( $bob, $ctIn )[0], $ct( $root, $ctIn )[0] ), array( 403, 200 ), 'connection test: administrators, not bob' );
+$rq = $app->requestCreate( $bob, array( 'kind' => 'conntest', 'reason' => 'TLS problem with the lab firewall' ) );
+$app->requestDecide( $root, $rq['rid'], array( 'decision' => 'approve' ) );
+$r = $ct( $bob, $ctIn );
+eq( array( $r[0], $r[1]['ok'] ?? null, strpos( $r[1]['summary'][0] ?? '', 'reached 127.0.0.1' ) === 0, strpos( $r[1]['curl'] ?? '', "curl -v -k 'http://127.0.0.1:" . $kgPort . "/'" ) === 0,
+    strpos( $r[1]['debug'] ?? '', 'connection: 127.0.0.1' ) !== FALSE, $ct( $bob, array( 'target' => '10.9.9.9' ) + $ctIn )[0] ),
+    array( 200, TRUE, TRUE, TRUE, TRUE, 403 ), 'connection test: after the request; trace, curl line; only hosts bob may reach' );
+$bk = array_values( array_filter( $app->keyList( $bob ), function( $k ) { return $k['target'] === '127.0.0.1'; } ) )[0]['kid'] ?? '';
+$r = $ct( $bob, array( 'target' => '127.0.0.1', 'port' => $kgPort, 'mode' => 'api', 'kid' => $bk ) );
+eq( array( $r[1]['ok'] ?? null, $r[1]['summary'][1] ?? null, strpos( json_encode( $r[1] ), 'geheim' ), strpos( $r[1]['curl'] ?? '', '<your API key>' ) !== FALSE,
+    $ct( $bob, array( 'target' => '127.0.0.1', 'port' => $kgPort, 'mode' => 'api', 'kid' => $kid ) )[0] ),
+    array( TRUE, 'XML API with your key: ok - hostname lab-fw, model PA-440, sw-version 11.1.4', FALSE, TRUE, 400 ),
+    'connection test: XML API with an own key (header, never shown); not with the key of another user' );
+foreach( array( array( 'path' => '/etc/passwd' ), array( 'target' => 'file:///etc/passwd' ), array( 'tls' => '1.0' ), array( 'servername' => 'a b' ) ) as $bad )
+    eq( $ct( $bob, $bad + $ctIn )[0], 400, 'connection test: fixed fields (' . key( $bad ) . ')' );
+$r = call( 'POST', 'conntest', $ctIn );
+eq( array( $r[0], strpos( $r[1]['error'] ?? '', 'request it' ) !== FALSE, call( 'POST', 'requests', array( 'kind' => 'conntest', 'reason' => 'route test' ) )[0], count( call( 'GET', 'requests?all=1' )[1]['requests'] ?? array() ) ),
+    array( 403, TRUE, 201, 1 ), 'routes: POST conntest (alice not allowed), POST / GET requests (only her own without admin)' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com', 'users' => 'all' ) );
+putenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP' );
+eq( $gen( $kgIn )[0], 502, 'key from the device: https by default (the plain HTTP simulation answers no TLS)' );
+foreach( array( array( 'username' => '' ), array( 'password' => '' ), array( 'target' => 'a b' ), array( 'port' => '99999' ) ) as $bad )
+    eq( $gen( $bad + $kgIn )[0], 400, 'key from the device: checked (' . key( $bad ) . ')' );
+eq( call( 'POST', 'keys/generate', array( 'target' => 'fw9.other.org', 'username' => 'admin', 'password' => 'x' ) )[0], 403, 'key from the device: route POST keys/generate (host not allowed)' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8", 'deny' => 'bad.example.com' ) );
+proc_terminate( $kgSrv );
+proc_close( $kgSrv );
+exec( 'rm -rf ' . escapeshellarg( $kgDir ) );
+
+// SCM: export with network, then the conversion without
+$r = call( 'POST', 'keys', array( 'kind' => 'scm', 'target' => '1234567890', 'client_id' => 'sa-client@1234567890.iam', 'client_secret' => 'scm-geheim-4711' ) );
+$skid = $r[1]['kid'] ?? '';
+// the project is bound to PAN-OS by its imports: an SCM tenant is refused until an administrator releases the binding
+$bnd = call( 'GET', $P )[1]['binding'] ?? null;
+$r = $imp( array( 'kid' => $skid ) );
+$rel = $app->projectBindingReset( $app->userByName( 'root' ), $pid );
+$g = call( 'GET', $P )[1];
+eq( array( $bnd, $r[0], strpos( $r[1]['error'] ?? '', 'bound to PAN-OS' ) !== FALSE, $rel, array_key_exists( 'binding', $g ) ? $g['binding'] : 'x' ),
+    array( array( 'kind' => 'panos', 'target' => null ), 403, TRUE, array( 'ok' => TRUE ), null ), 'binding: PAN-OS by the imports, SCM refused, released by an administrator' );
+eq( $imp( array( 'kid' => $skid, 'source' => 'running' ) )[0], 400, 'import SCM: no running / candidate choice' );
+@unlink( $bin . '/import.log' );
+$r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $skid ) )[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), null, 'name' );
+eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, $il[0][3][0] ?? null, isset( $vers['scm-1234567890.xml'] ) ),
+    array( 'done', array( 'scm-export', 'scm-export-xml' ), array( 'bridge', 'none' ), 'tsg_id1234567890:sa-client@1234567890.iam%scm-geheim-4711' . "\n", 'in=scm-api://1234567890', TRUE ),
+    'import SCM: scm-export with network (read only), scm-export-xml without, new version' );
+// scope of the SCM import: none chosen = every area + egress IPs; chosen with the import (configuration only, objects
+// and policies) - saved with the project, fixed in the arguments of the run
+$a0 = $il[0][3] ?? array();
+$sc = $imp( array( 'kid' => $skid, 'scope' => array( 'kind' => 'config', 'config_scope' => array( 'objects', 'policies' ) ) ) );
+@unlink( $bin . '/import.log' );
+$r = waitRun( $P . '/runs/' . ( $sc[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$a1 = $il[0][3] ?? array();
+$bad = $imp( array( 'kid' => $skid, 'scope' => array( 'kind' => 'areas', 'areas' => array( 'nothing' ) ) ) );
+$kindSaved = call( 'GET', $P )[1]['import_scope']['kind'] ?? null;
+$sa = call( 'PUT', $P . '/import-scope', array( 'kind' => 'areas', 'areas' => array( 'remote-networks' ), 'egress' => TRUE ) );
+eq( array( in_array( 'area=config,' . implode( ',', array( 'infra', 'remote-networks', 'service-connections', 'mobile-users', 'explicit-proxy', 'prisma-browser', 'iam' ) ), $a0, TRUE ) || (bool)preg_grep( '/^area=config,infra,/', $a0 ),
+    in_array( 'egressip', $a0, TRUE ), $r[1]['state'] ?? null, array_values( preg_grep( '/^(area|config-scope|egressip)/', $a1 ) ), $kindSaved,
+    $bad[0], $sa[1]['import_scope']['areas'] ?? null, $sa[1]['import_scope']['egress'] ?? null ),
+    array( TRUE, TRUE, 'done', array( 'area=config', 'config-scope=objects,policies' ), 'config', 400, array( 'infra', 'remote-networks' ), TRUE ),
+    'scope of the SCM import: all by default, configuration only (objects, policies) with the import, saved; egress IPs add Infrastructure' );
+// the conversion fails: only it again, on the export the run has (no download, no network, no key)
+$doneJid = $r[1]['jid'] ?? '';
+touch( $bin . '/fail-scm-xml' );
+$r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $skid ) )[1]['jid'] ?? '' ) );
+$fjid = $r[1]['jid'] ?? '';
+$nVers = count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() );
+eq( array( $r[1]['state'] ?? null, is_dir( $data . '/projects/' . $pid . '/jobs/' . $fjid . '/scm-export/1234567890' ) ), array( 'failed', TRUE ), 'import SCM: conversion failed, the export stays with the run' );
+eq( array( call( 'POST', $P . '/runs/' . $doneJid . '/convert' )[0], call( 'POST', $P . '/runs/' . $ijid . '/convert' )[0], call( 'POST', $P . '/runs/' . str_repeat( '0', 32 ) . '/convert' )[0] ),
+    array( 409, 400, 404 ), 'convert again: only a failed SCM import' );
+unlink( $bin . '/fail-scm-xml' );
+@unlink( $bin . '/import.log' );
+$r = call( 'POST', $P . '/runs/' . $fjid . '/convert' );
+eq( array( $r[0], $r[1]['state'] ?? null ), array( 202, 'queued' ), 'convert again: queued' );
+$r = waitRun( $P . '/runs/' . $fjid );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$names = array_column( $r[1]['files'] ?? array(), 'name' );
+eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, in_array( 'run-1.log', $names, TRUE ), in_array( 'run.log', $names, TRUE ),
+    count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() ) ),
+    array( 'done', array( 'scm-export-xml' ), array( 'none' ), '', TRUE, TRUE, $nVers + 1 ), 'convert again: only scm-export-xml, no network, no key store, the old log as run-1.log, a new version' );
+eq( call( 'POST', $P . '/runs/' . $fjid . '/convert' )[0], 409, 'convert again: not a second time once it is done' );
+$bnd = call( 'GET', $P )[1]['binding'] ?? null;
+$r = $imp( array( 'kid' => $kid ) );
+eq( array( $bnd, $r[0] ), array( array( 'kind' => 'scm', 'target' => '1234567890' ), 403 ), 'binding: the SCM tenant by its import, a firewall refused' );
+$app->projectBindingReset( $app->userByName( 'root' ), $pid );
+// an existing .panconfkeystore of a customer: every kind of entry pan-os-php knows, and unknown names as they are
+$ksText = "fw1.example.com%443:LUFRPT1-neu-0815:zweiter\r\nfw9.example.com%8443:LUFRPT9-port-4711\ntsg_id1234567890:sa-two@x.iam%scm-zwei-4711\negressip_tsg_id1234567890:egress-key-4711\n"
+    . "ldap-password:altes passwort\nbpa-apikey:bpa-key-4711\n# a comment\n\ncustom-entry_1:wert-4711\nno colon here\nfw5.example.com:a:b:c\nldap_userAlice@Example.com:mein ldap passwort\n";
+$r = call( 'POST', 'keys/import', null, array( '.panconfkeystore', $ksText, 'keystore' ) );
+eq( array( $r[0], count( $r[1]['imported'] ?? array() ), array_column( $r[1]['skipped'] ?? array(), 'line' ), strpos( json_encode( $r[1] ), '4711' ), strpos( json_encode( $r[1] ), 'passwort' ) ),
+    array( 200, 8, array( 10, 11 ), FALSE, FALSE ), 'key store import: 8 entries, 2 lines skipped (line number and reason, never the content)' );
+$all = array();
+foreach( call( 'GET', 'keys' )[1]['keys'] ?? array() as $k )
+    $all[$k['kind'] . '|' . $k['target']] = $k;
+eq( array( $all['panos|fw9.example.com']['port'] ?? null, $all['panos|fw1.example.com']['hint'] ?? null, isset( $all['scm|1234567890'], $all['egressip|1234567890'], $all['named|ldap-password'], $all['named|bpa-apikey'], $all['other|custom-entry_1'], $all['ldap|alice@example.com'] ),
+    $all['named|ldap-password']['import'] ?? null, array_key_exists( 'refused', $all['other|custom-entry_1'] ?? array() ) ? $all['other|custom-entry_1']['refused'] : 'x' ),
+    array( 8443, '…iter', TRUE, FALSE, null ), 'key store import: PAN-OS with port, a key with ":" replaces the old one, SCM, egress IP, named, other (stored, not for imports), LDAP account ldap_user<user> (lower case)' );
+eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array( 'limit' => 1000 ) ) ), 'passwort' ), FALSE, 'key store import: nothing of it in the audit log' );
+eq( $imp( array( 'kid' => $all['named|ldap-password']['kid'] ?? '' ) )[0], 400, 'import: not with a named entry' );
+@unlink( $bin . '/import.log' );
+$r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $all['panos|fw9.example.com']['kid'] ?? '' ) )[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, $il[0][2] ?? null ), array( 'done', "fw9.example.com%8443:LUFRPT9-port-4711\n" ), 'import with a port: the key store line host%port:key' );
+foreach( array( array( 'kind' => 'named', 'target' => 'foo', 'key' => 'x' ), array( 'kind' => 'other', 'target' => 'tsg_id1', 'key' => 'x' ), array( 'kind' => 'panos', 'target' => 'fw1.example.com', 'port' => '70000', 'key' => 'LUFRPT1-12345678' ),
+    array( 'kind' => 'named', 'target' => 'ldap-password', 'key' => "zwei\nzeilen" ), array( 'kind' => 'ldap', 'target' => 'al ice', 'key' => 'x' ), array( 'kind' => 'ldap', 'target' => 'a:b', 'key' => 'x' ),
+    array( 'kind' => 'ldap', 'target' => 'CN=a,OU=b', 'key' => 'x' ) ) as $bad )
+    eq( call( 'POST', 'keys', $bad )[0], 400, 'key checked: ' . json_encode( array_diff_key( $bad, array( 'key' => 1 ) ) ) );
+
+// ---- App-ID database and MaxMind data: installation (administrator) and project
+$as( 'root', 'root-secret-123' );
+call( 'PUT', 'network', array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\ndownload.maxmind.com", 'deny' => 'bad.example.com' ) );
+$r = call( 'GET', 'central' );
+eq( array( $r[0], array_key_exists( 'appid', $r[1] ) ? $r[1]['appid'] : 'x', array_key_exists( 'geoip', $r[1] ) ? $r[1]['geoip'] : 'x', (bool)preg_match( '/^[0-9]+-[0-9]+$/', (string)( $r[1]['image']['version'] ?? '' ) ) ), array( 200, null, null, TRUE ),
+    'installation: App-ID of the image, nothing of its own yet' );
+$rk = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'appid.example.com', 'key' => 'LUFRPT1-root-4711' ) )[1]['kid'] ?? '';
+$r = call( 'POST', 'central/appid/runs', array( 'kid' => $rk ) );
+eq( $r[0], 202, 'installation App-ID: download run of the administrator (own key)' );
+@unlink( $bin . '/import.log' );
+$r = waitRun( 'projects/' . ViewerApp::SYSTEM_PID . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$c = call( 'GET', 'central' )[1];
+eq( array( $r[1]['state'] ?? null, $il[0][0] ?? null, $il[0][1] ?? null, $il[0][3][0] ?? null, $c['appid']['version'] ?? null, file_exists( $data . '/central/predefined.xml' ) ),
+    array( 'done', 'download-predefined', 'bridge', 'in=api://appid.example.com', '9999-9999', TRUE ), 'installation App-ID: type=download-predefined predefined-out=, with network; in place, version shown' );
+eq( array( call( 'GET', 'projects/' . ViewerApp::SYSTEM_PID )[0], in_array( ViewerApp::SYSTEM_PID, array_column( call( 'GET', 'projects' )[1]['projects'] ?? array(), 'pid' ), TRUE ) ),
+    array( 404, FALSE ), 'the project of the installation is not a project to open or list' );
+// MaxMind from an uploaded zip (air gap): the real pan-os-php run, without network
+$zipFile = $bin . '/geo.zip';
+$z = new ZipArchive(); $z->open( $zipFile, ZipArchive::CREATE );
+$z->addFromString( 'GeoLite2-Country-CSV_20261121/GeoLite2-Country-Locations-en.csv', "geoname_id,locale_code,continent_code,continent_name,country_iso_code,country_name,is_in_european_union\n2921044,en,EU,Europe,DE,Germany,1\n" );
+$z->addFromString( 'GeoLite2-Country-CSV_20261121/GeoLite2-Country-Blocks-IPv4.csv', "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,is_anycast\n2.16.0.0/13,2921044,2921044,,0,0,\n" );
+$z->addFromString( 'GeoLite2-Country-CSV_20261121/GeoLite2-Country-Blocks-IPv6.csv', "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,is_anycast\n2a00:1:2::/48,2921044,2921044,,0,0,\n" );
+$z->close();
+eq( call( 'POST', 'central/geoip', null, array( 'x.zip', 'not a zip', 'file' ) )[0], 400, 'MaxMind upload: only the GeoLite2-Country-CSV zip' );
+@unlink( $bin . '/env.log' );
+$r = call( 'POST', 'central/geoip', null, array( 'GeoLite2-Country-CSV.zip', file_get_contents( $zipFile ), 'file' ) );
+$r = waitRun( 'projects/' . ViewerApp::SYSTEM_PID . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$c = call( 'GET', 'central' )[1];
+$run = array_values( array_filter( calls(), function( $x ) { return $x[0] === 'run' && in_array( 'type=maxmind-update', $x, TRUE ); } ) );
+eq( array( $r[1]['state'] ?? null, $c['geoip']['countries'] ?? null, json_decode( (string)@file_get_contents( $data . '/central/geoip/data/RegionCCipv4.json' ), TRUE ),
+    end( $run )[array_search( '--network', end( $run ) ) + 1] ?? null ),
+    array( 'done', 1, array( 'DE' => array( '2.16.0.0-2.23.255.255' ) ), 'none' ), 'MaxMind from an uploaded zip: real run without network, data in place' );
+eq( array( call( 'POST', 'central/geoip/runs', array( 'kid' => $rk ) )[0] ), array( 400 ), 'MaxMind download: only with the maxmind-licensekey entry' );
+$mk = call( 'POST', 'keys', array( 'kind' => 'named', 'target' => 'maxmind-licensekey', 'key' => 'mm-key-4711' ) )[1]['kid'] ?? '';
+$r = call( 'POST', 'central/geoip/runs', array( 'kid' => $mk ) );
+$r2 = waitRun( 'projects/' . ViewerApp::SYSTEM_PID . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+$run = array_values( array_filter( calls(), function( $x ) { return $x[0] === 'run' && in_array( 'type=maxmind-update', $x, TRUE ); } ) );
+eq( array( $r[0], end( $run )[array_search( '--network', end( $run ) ) + 1] ?? null ), array( 202, 'bridge' ), 'MaxMind download: with the licence key, network (download.maxmind.com on the allow list)' );
+// every other run: the data of the installation, read only at /central
+@unlink( $bin . '/env.log' );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() )[1]['jid'] ?? '' ) );
+$el = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/env.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $el[0][1] ?? null, count( $el[0][2] ?? array() ) === 1 && strpos( implode( '', $el[0][2] ), 'readonly' ) !== FALSE ),
+    array( array( 'PANOSPHP_PREDEFINED_XML' => '/central/predefined.xml', 'PANOSPHP_GEOIP_DIR' => '/central/geoip' ), TRUE ), 'runs: App-ID and MaxMind of the installation, /central read only' );
+// App-ID of the project (write): upload or download; it wins over the one of the installation
+eq( call( 'GET', $P . '/appid' )[1]['from'] ?? null, 'installation', 'project: uses the App-ID of the installation' );
+eq( call( 'POST', $P . '/appid', null, array( 'p.xml', '<config/>', 'file' ) )[0], 400, 'project App-ID upload: only a predefined.xml' );
+$r = call( 'POST', $P . '/appid', null, array( 'predefined.xml', '<predefined><application-version>8888-1234</application-version></predefined>', 'file' ) );
+eq( array( $r[0], $r[1]['version'] ?? null, call( 'GET', $P . '/appid' )[1]['from'] ?? null ), array( 200, '8888-1234', 'project' ), 'project App-ID: uploaded, the project uses it' );
+@unlink( $bin . '/env.log' );
+waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/stats/runs', array() )[1]['jid'] ?? '' ) );
+$el = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/env.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( $el[0][1]['PANOSPHP_PREDEFINED_XML'] ?? null, '/project/predefined.xml', 'runs of the project: its own App-ID database' );
+$r = call( 'POST', $P . '/appid/runs', array( 'kid' => $kid ) );
+$r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
+eq( array( $r[1]['state'] ?? null, call( 'GET', $P . '/appid' )[1]['meta']['version'] ?? null ), array( 'done', '9999-9999' ), 'project App-ID: downloaded from a firewall with the own key' );
+eq( call( 'DELETE', $P . '/appid' )[0] === 200 && ( call( 'GET', $P . '/appid' )[1]['from'] ?? null ) === 'installation', TRUE, 'project App-ID: back to the one of the installation' );
+eq( call( 'POST', 'central/appid', null, array( 'predefined.xml', '<predefined><application-version>1-1</application-version></predefined>', 'file' ) )[0], 404, 'installation App-ID: only an administrator' );
+
+// ---- my API keys: change the label (and port) after an import, optionally a new secret
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+$all = array();
+foreach( call( 'GET', 'keys' )[1]['keys'] ?? array() as $k )
+    $all[$k['kind'] . '|' . $k['target']] = $k;
+$fk = $all['panos|fw9.example.com'];
+$r = call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => 'Lab firewall 9', 'port' => '9443' ) );
+$after = array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' )[$fk['kid']] ?? array();
+eq( array( $r[0], $after['label'] ?? null, $after['port'] ?? null, $after['hint'] ?? null, $after['created'] ?? null ), array( 200, 'Lab firewall 9', 9443, $fk['hint'], $fk['created'] ),
+    'key edit: label and port changed, the secret stays' );
+$r = call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => 'Lab firewall 9', 'key' => 'LUFRPT9-neu-9999' ) );
+$after = array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' )[$fk['kid']] ?? array();
+eq( array( $r[0], $after['hint'] ?? null, $after['port'] ?? null, strpos( json_encode( $r[1] ), 'neu-9999' ) ), array( 200, '…9999', 9443, FALSE ), 'key edit: a new secret (same entry, never sent back)' );
+eq( array( call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => str_repeat( 'x', 81 ) ) )[0], call( 'PUT', 'keys/' . $fk['kid'], array( 'port' => '70000' ) )[0], call( 'PUT', 'keys/nope', array( 'label' => 'x' ) )[0] ),
+    array( 400, 400, 404 ), 'key edit: checked; unknown entry 404' );
+$as( 'root', 'root-secret-123' );
+eq( call( 'PUT', 'keys/' . $fk['kid'], array( 'label' => 'mine now' ) )[0], 404, 'key edit: only the own entries (also not an administrator)' );
+eq( strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array( 'limit' => 1000 ) ) ), 'neu-9999' ), FALSE, 'key edit: the secret is not in the audit log' );
+eq( call( 'GET', 'ldap' )[1]['queries'] ?? null, array(), 'LDAP queries: personal (root sees none of alice)' );
+
+// ---- LDAP: saved queries of the user, a run with the own LDAP account (key store entry ldap_user<bind user>)
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+$lq = array( 'name' => 'still there?', 'server' => 'ldaps://dc1.example.com:636', 'bind_user' => 'alice@example.com', 'base_dn' => 'OU=Users,DC=example,DC=com',
+    'attribute' => 'sAMAccountName', 'mode' => 'validation', 'users' => "alice\ngone" );
+foreach( array( array( 'server' => 'dc1.example.com' ), array( 'server' => 'ldaps://dc1.example.com:99999' ), array( 'mode' => 'drop' ), array( 'attribute' => 'a b' ),
+    array( 'bind_user' => 'CN=a,OU=b' ), array( 'name' => '' ), array( 'mode' => 'group-members', 'group' => '' ), array( 'mode' => 'user-groups', 'users' => '' ) ) as $bad )
+    eq( call( 'POST', 'ldap', $bad + $lq )[0], 400, 'LDAP query checked: ' . json_encode( $bad ) );
+$r = call( 'POST', 'ldap', $lq );
+$qid = $r[1]['qid'] ?? '';
+eq( array( $r[0], $r[1]['users'] ?? null, $r[1]['server'] ?? null ), array( 201, array( 'alice', 'gone' ), 'ldaps://dc1.example.com:636' ), 'LDAP query saved' );
+$l = call( 'GET', 'ldap' )[1];
+eq( array( count( $l['queries'] ?? array() ), $l['accounts'] ?? null, isset( $l['modes']['common-groups'] ) ), array( 1, array( 'alice@example.com' ), TRUE ), 'LDAP queries: mine, my LDAP accounts (key store import)' );
+$r = call( 'PUT', 'ldap/' . $qid, array( 'name' => 'cleanup' ) + $lq );
+eq( array( $r[0], $r[1]['name'] ?? null, call( 'PUT', 'ldap/nope', $lq )[0] ), array( 200, 'cleanup', 404 ), 'LDAP query changed; unknown 404' );
+@unlink( $bin . '/ldap.log' );
+$r = call( 'POST', $P . '/ldap/runs', array( 'qid' => $qid ) );
+$ljid = $r[1]['jid'] ?? '';
+eq( array( $r[0], strpos( json_encode( $r[1] ), 'passwort' ), $r[1]['args'][0] ?? null ), array( 202, FALSE, 'x-ldap-key=' . $all['ldap|alice@example.com']['kid'] ), 'LDAP run: queued with the account of the bind user, no password in it' );
+$r = waitRun( $P . '/runs/' . $ljid );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$jd = $data . '/projects/' . $pid . '/jobs/' . $ljid;
+eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, $ll[0][2] ?? null, $ll[0][3] ?? null ),
+    array( 'done', 'ldap-query', 'bridge', "ldap_useralice@example.com:mein ldap passwort\n", array( 'mode=validation', 'ldapServer=ldaps://dc1.example.com:636', 'ldapUser=alice@example.com',
+        'dn=OU=Users,DC=example,DC=com', 'filtercriteria=sAMAccountName', 'users=alice,gone', 'out=' . $jd . '/ldap.json', 'csv=' . $jd . '/ldap.csv' ) ),
+    'LDAP run: type=ldap-query, network, key store with only ldap_user<bind user>' );
+$log = (string)call( 'GET', $P . '/runs/' . $ljid . '/files/run.log' )[1];
+$res = call( 'GET', $P . '/runs/' . $ljid . '/files/ldap.json' )[1];
+$res = is_array( $res ) ? $res : json_decode( (string)$res, TRUE );
+eq( array( file_exists( $jd . '/.panconfkeystore' ), strpos( $log, 'passwort' ), $res['missing'] ?? null, array_column( $r[1]['files'] ?? array(), 'name' ) ),
+    array( FALSE, FALSE, 1, array( 'ldap.csv', 'ldap.json', 'run.log' ) ), 'LDAP run: key store gone, password not in run.log, the result as JSON / CSV' );
+foreach( array( 'bad.example.com' => 'deny list', 'ldap.other.org' => 'not on the allow list' ) as $h => $why )
+{
+    call( 'PUT', 'ldap/' . $qid, array( 'server' => 'ldap://' . $h ) + $lq );
+    eq( call( 'POST', $P . '/ldap/runs', array( 'qid' => $qid ) )[0], 403, 'LDAP run: refused, server on the ' . $why );
+}
+call( 'PUT', 'ldap/' . $qid, $lq );
+$r = call( 'PUT', 'ldap/' . $qid, array( 'bind_user' => 'bob@example.com' ) + $lq );
+eq( array( $r[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => $qid ) )[0] ), array( 200, 400 ), 'LDAP run: refused without an LDAP account of the bind user' );
+call( 'PUT', 'ldap/' . $qid, $lq );
+// the users of the security rules of a version: user-check-ldap (show / remove -> result configuration)
+@unlink( $bin . '/ldap.log' );
+$r = waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/ldap-users/runs', array( 'qid' => $qid, 'action' => 'remove' ) )[1]['jid'] ?? '' ) );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, count( preg_grep( '/^in=/', $ll[0][3] ?? array() ) ), current( preg_grep( '/^actions=/', $ll[0][3] ?? array() ) ), in_array( 'location=any', $ll[0][3] ?? array(), TRUE ) ),
+    array( 'done', 'rule', 'bridge', 1, 'actions=user-check-ldap:remove,alice@example.com,ldaps%dc1.example.com%636,OU=Users;DC=example;DC=com,sAMAccountName,false', TRUE ),
+    'rule users: type=rule actions=user-check-ldap with the query (server as ldaps%host%port, DN with ;), network' );
+eq( call( 'POST', $P . '/runs/' . ( $r[1]['jid'] ?? '' ) . '/save' )[0], 201, 'rule users remove: the result configuration as a new version' );
+eq( array( call( 'POST', $P . '/configs/' . $cid . '/ldap/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap-users/runs', array( 'qid' => $qid ) )[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => 'nope' ) )[0] ),
+    array( 404, 404, 400 ), 'LDAP runs: query without a version, rule check with a version, only own queries' );
+// automatic server: no fixed server, the domain - pan-os-php takes the first domain controller from DNS that works
+eq( call( 'POST', 'ldap', array( 'server' => '' ) + $lq )[0], 400, 'LDAP query: without a server the domain is needed' );
+$r = call( 'POST', 'ldap', array( 'name' => 'auto', 'server' => '', 'domain' => 'Example.com' ) + $lq );
+$aq = $r[1]['qid'] ?? '';
+eq( array( $r[0], $r[1]['auto'] ?? null, $r[1]['domain'] ?? null, $r[1]['ldaps'] ?? null ), array( 201, TRUE, 'example.com', TRUE ), 'LDAP query: automatic server for the domain' );
+@unlink( $bin . '/ldap.log' );
+$r = waitRun( $P . '/runs/' . ( call( 'POST', $P . '/ldap/runs', array( 'qid' => $aq ) )[1]['jid'] ?? '' ) );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, array_values( preg_grep( '/^(ldapServer|domain)=/', $ll[0][3] ?? array() ) ), in_array( 'x-ldap-target=auto:example.com', $r[1]['args'] ?? array(), TRUE ) ),
+    array( 'done', array( 'ldapServer=auto', 'domain=example.com' ), TRUE ), 'LDAP run, automatic: ldapServer=auto domain=<domain>' );
+@unlink( $bin . '/ldap.log' );
+call( 'PUT', 'ldap/' . $aq, array( 'name' => 'auto', 'server' => '', 'domain' => 'example.com', 'ldaps' => FALSE ) + $lq );
+$r = waitRun( $P . '/runs/' . ( call( 'POST', $P . '/configs/' . $cid . '/ldap-users/runs', array( 'qid' => $aq ) )[1]['jid'] ?? '' ) );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, current( preg_grep( '/^actions=/', $ll[0][3] ?? array() ) ) ),
+    array( 'done', 'actions=user-check-ldap:show,alice@example.com,auto-ldap%example.com,OU=Users;DC=example;DC=com,sAMAccountName,false' ), 'rule users, automatic: auto-ldap%<domain> (LDAP)' );
+$r = call( 'PUT', 'ldap/' . $aq, array( 'name' => 'auto', 'server' => '', 'domain' => 'corp.other.org' ) + $lq );
+eq( array( $r[0], call( 'POST', $P . '/ldap/runs', array( 'qid' => $aq ) )[0] ), array( 200, 403 ), 'LDAP run, automatic: refused when the allow list does not cover the domain' );
+
+// help for the first query: the LDAP servers of a domain (DNS SRV) and the base DN - no key, no password
+eq( array( call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'no domain' ) )[0], call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'corp.other.org' ) )[0] ),
+    array( 400, 403 ), 'LDAP servers: domain checked; a domain the allow list does not cover is refused' );
+@unlink( $bin . '/ldap.log' );
+$r = call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'Example.com' ) );
+$djid = $r[1]['jid'] ?? '';
+$r = waitRun( $P . '/runs/' . $djid );
+$ll = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/ldap.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[1]['state'] ?? null, $ll[0][0] ?? null, $ll[0][1] ?? null, $ll[0][2] ?? null, $ll[0][3] ?? null ),
+    array( 'done', 'ldap-query', 'bridge', '', array( 'mode=discover', 'domain=example.com', 'out=' . $data . '/projects/' . $pid . '/jobs/' . $djid . '/ldap.json' ) ),
+    'LDAP servers: type=ldap-query mode=discover, network, no key store' );
+$d = call( 'GET', $P . '/runs/' . $djid . '/ldap-servers' )[1];
+eq( array( array_column( $d['servers'] ?? array(), 'refused', 'host' ) === array( 'bad.example.com' => $d['servers'][0]['refused'] ?? 'x', 'dc1.example.com' => null, 'dc9.other.org' => $d['servers'][2]['refused'] ?? 'x' ),
+    is_string( $d['servers'][0]['refused'] ?? null ), is_string( $d['servers'][2]['refused'] ?? null ), $d['suggestion'] ?? null ),
+    array( TRUE, TRUE, TRUE, array( 'name' => 'example.com', 'server' => 'ldaps://dc1.example.com:636', 'base_dn' => 'DC=example,DC=com', 'base_from' => 'rootdse',
+        'bind_user' => 'alice@example.com', 'bind_hint' => '<user>@example.com', 'attribute' => 'sAMAccountName' ) ),
+    'LDAP servers: what the network rules allow per server; suggestion: the allowed server that answered, its base DN, my LDAP account of the domain' );
+eq( array( call( 'GET', $P . '/runs/' . $ljid . '/ldap-servers' )[0], call( 'POST', $P . '/ldap-discover/runs', array( 'domain' => 'example.com', 'ldaps' => FALSE ) )[1]['args'] ?? null ),
+    array( 400, array( 'x-ldap-discover-target=example.com', 'mode=discover', 'domain=example.com', 'out=%JOB%/ldap.json', 'ldaps=no' ) ), 'LDAP servers: only for a search run; ldaps=no' );
+call( 'DELETE', 'ldap/' . $aq );
+eq( array( call( 'DELETE', 'ldap/' . $qid )[0], count( call( 'GET', 'ldap' )[1]['queries'] ?? array( 1 ) ) ), array( 200, 0 ), 'LDAP query deleted' );
+
+// stats / playbook runs never get a network
+eq( count( array_filter( calls(), function( $c ) { return $c[0] === 'run' && $c[array_search( '--network', $c ) + 1] !== 'none' && !in_array( 'type=upload', $c, TRUE ) && !in_array( 'type=scm-export', $c, TRUE )
+    && !in_array( 'type=download-predefined', $c, TRUE ) && !in_array( 'type=maxmind-update', $c, TRUE ) && !in_array( 'type=ldap-query', $c, TRUE ) && !count( preg_grep( '/^actions=user-check-ldap:/', $c ) ); } ) ), 0,
+    'all other runs: --network none (only import, App-ID and MaxMind downloads get one)' );
+$as( 'root', 'root-secret-123' );
+call( 'PUT', 'network', array( 'enabled' => FALSE, 'allow' => '*' ) );
+$cookie = $aliceCookie; $csrf = $aliceCsrf;
+eq( array( $imp( array( 'kid' => $kid ) )[0], strpos( (string)( array_column( call( 'GET', 'keys' )[1]['keys'] ?? array(), null, 'kid' )[$kid]['refused'] ?? '' ), 'off' ) !== FALSE ),
+    array( 403, TRUE ), 'network off again: no import, the keys say why' );
+
+print "\n" . $checks . " checks, " . count($failed) . " failed\n";
+if( count($failed) )
+{
+    foreach( $failed as $m ) print " - " . $m . "\n";
+    exit( 1 );
+}
+exit( 0 );

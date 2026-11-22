@@ -46,7 +46,8 @@ pan-os-php already encodes many such cases on purpose (section 4). They must be 
   SQL Injection and Command Injection in every profile with inline cloud analysis (PANW names Command Injection; a 12.2.2
   configuration has the element for both models). 12.1 has no security profile
   changes (PANW: New Features PAN-OS 12.1). `sp_spg-create` passes the PAN-OS version from 12.1 on (before: fixed
-  `"12.1"`). Not yet: the URL HTTP header logging options of 12.2 (XML element names to verify with a 12.2 configuration).
+  `"12.1"`). Not yet: the URL HTTP header logging options of 12.2 (XML element names to verify with a 12.2 configuration) –
+  [todo/ironskillet-url-http-header-logging-12.2.md](../../../todo/ironskillet-url-http-header-logging-12.2.md).
 - **Check tool:** `utils/develop/ironskillet/url_categories_check.php` (read-only) reports, per iron-skillet version, the
   predefined URL categories the URL profiles do not list.
 

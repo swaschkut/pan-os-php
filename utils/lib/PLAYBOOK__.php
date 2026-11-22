@@ -22,9 +22,11 @@ class PLAYBOOK__
 {
 
     public $isAPI = false;
+    public $isSCM = false;
     public $debugAPI = false;
     public $debugMemory = false;
     public $outputformatset = false;
+    public $outputformatscmjsonFile = null;
     public $subprocessMode = false;
     public $memoryThreshold = 0;
     public $removeStageFiles = false;
@@ -54,6 +56,7 @@ class PLAYBOOK__
         $this->supportedArguments['subprocess'] = array('niceName' => 'subprocess', 'shortHelp' => 'run each playbook step as a separate PHP process (slower but uses less memory)');
         $this->supportedArguments['memorythreshold'] = array('niceName' => 'memorythreshold', 'shortHelp' => 'memory threshold in MB before switching to subprocess mode (e.g., memorythreshold=512)', 'argDesc' => 'memorythreshold=MB');
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
+        $this->supportedArguments['outputformatscmjson'] = array('niceName' => 'outputformatscmjson', 'shortHelp' => 'SCM only (in= is an SCM XML from in=scm-api://): store one SCM API request per changed object in FILENAME, see type=scm-changes / type=scm-apply', 'argDesc' => 'FILENAME');
         $this->supportedArguments['removestagefiles'] = array('niceName' => 'removestagefiles', 'shortHelp' => 'remove each stage file (stagename<N>.xml) the playbook passed to a step as in=, once that step has written its own; the input and the last stage file are kept (the last is copied to out=); a later step that names an earlier stage file itself will not find it');
 
 
@@ -183,6 +186,18 @@ class PLAYBOOK__
 
 
 
+        if( isset(PH::$args['outputformatscmjson']) )
+        {
+            if( is_bool(PH::$args['outputformatscmjson']) )
+                derr("'outputformatscmjson' needs a file name: outputformatscmjson=FILENAME", null, FALSE);
+            if( !isset(PH::$args['out']) )
+                derr("'outputformatscmjson' needs 'out=': the SCM API requests are calculated from in= and out=", null, FALSE);
+
+            $this->outputformatscmjsonFile = PH::$args['outputformatscmjson'];
+            if( $this->projectFolder !== null && strpos($this->outputformatscmjsonFile, $this->projectFolder) === FALSE )
+                $this->outputformatscmjsonFile = $this->projectFolder."/".$this->outputformatscmjsonFile;
+        }
+
         if( isset(PH::$args['json']) )
         {
             $jsonFile = PH::$args['json'];
@@ -284,6 +299,14 @@ class PLAYBOOK__
         {
             $this->mainLocation = PH::$args['location'];
         }
+
+        // SCM (Strata Cloud Manager / Prisma Access) input: per step "scm" overrides the step arguments
+        // ({"actions": ..., "filter": ..., "securityprofiletype": ...}) or is false (step not run on SCM);
+        // "platform": "scm" | "panos" runs a step only on that platform
+        $this->isSCM = self::inputIsSCM( $input );
+        if( $this->isSCM )
+            PH::print_stdout( "SCM configuration: SCM variants of the playbook steps are used" );
+        $command_array = self::platformCommands( $command_array, $this->isSCM );
 
 ###############################################################################
 //EXECUTION
@@ -706,6 +729,17 @@ class PLAYBOOK__
             copy( $out, $output );
         }
 
+        if( $this->outputformatscmjsonFile !== null && $finaloutput != null && $finaloutput !== "/dev/null" && !$this->isAPI )
+        {
+            PH::print_stdout();
+            PH::print_stdout( PH::boldText( "[ pan-os-php type=scm-changes file1=".$input." file2=".$output." out=".$this->outputformatscmjsonFile." ]" ) );
+            PH::print_stdout();
+            SCMCHANGES::generate( $input, $output, $this->outputformatscmjsonFile );
+            PH::print_stdout( "send them with: pan-os-php type=scm-apply changes=".$this->outputformatscmjsonFile." tsg=TSG_ID [dry-run]" );
+            PH::print_stdout();
+            PH::print_stdout( "############################################################################");
+        }
+
 
         if( isset($details['footer-comment']) && !empty($details['footer-comment']) )
         {
@@ -802,6 +836,66 @@ class PLAYBOOK__
             if( $currentContainerTotalMemory !== null )
                 PH::print_stdout(" - currentTotalContainer-Memory=".$memMBtotal." MB");
         }
+    }
+
+    /**
+     * in= is an SCM configuration: scm-api:// / sase-api:// / scm-export://, or an XML file whose <config> carries the
+     * buckbeak / fawkes attributes
+     */
+    public static function inputIsSCM( $input )
+    {
+        if( !is_string($input) || $input === "" )
+            return FALSE;
+        foreach( array( 'scm-api://', 'sase-api://', 'scm-export://' ) as $prefix )
+            if( stripos($input, $prefix) !== FALSE )
+                return TRUE;
+        if( !is_file($input) )
+            return FALSE;
+        $fh = fopen($input, 'r');
+        if( $fh === FALSE )
+            return FALSE;
+        $head = fread($fh, 4096);
+        fclose($fh);
+        return preg_match('/<config\b[^>]*\b(buckbeak|fawkes-config-version|fawkes-config)=/', $head) === 1;
+    }
+
+    /**
+     * drop the steps of the other platform, apply the "scm" overrides on SCM; the keys "scm" and "platform" are never
+     * passed to the utilities
+     */
+    public static function platformCommands( $commands, $isSCM )
+    {
+        $ret = array();
+        foreach( $commands as $command )
+        {
+            if( isset($command['platform']) )
+            {
+                $platform = strtolower($command['platform']);
+                unset($command['platform']);
+                if( ($platform == 'scm') !== $isSCM )
+                    continue;
+            }
+            if( array_key_exists('scm', $command) )
+            {
+                $scm = $command['scm'];
+                unset($command['scm']);
+                if( $isSCM )
+                {
+                    if( $scm === FALSE )
+                        continue;
+                    if( is_array($scm) )
+                        foreach( $scm as $k => $v )
+                        {
+                            if( $v === null || $v === FALSE )
+                                unset($command[$k]);
+                            else
+                                $command[$k] = $v;
+                        }
+                }
+            }
+            $ret[] = $command;
+        }
+        return $ret;
     }
 
     function printCOMMENTS( $string )

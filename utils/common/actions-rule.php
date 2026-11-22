@@ -2993,7 +2993,8 @@ RuleCallContext::$supportedActions[] = Array(
 
         $rule_secprof = $rule->owner->owner->securityProfileGroupStore->calculateHash( $profiles );
 
-        $secprofgroup = $rule->owner->owner->securityProfileGroupStore->findByHash( $rule_secprof );
+        // also the profile groups of the parent device-groups / shared (same profile objects only)
+        $secprofgroup = $rule->owner->owner->securityProfileGroupStore->findByHash( $rule_secprof, TRUE, $profiles_obj );
         if( $secprofgroup == null )
         {
             #PH::print_stdout( PH::boldText(  "SecurityProfileGroup not found\n" );
@@ -3696,16 +3697,21 @@ RuleCallContext::$supportedActions[] = array(
         }
 
         $dnattype = $context->arguments['DNATtype'];
+        // the translated port (servicePort, 1-65535; *nodefault* / empty: none)
         $port = $context->arguments['servicePort'];
+        if( $port === '*nodefault*' || $port === '' )
+            $port = null;
+        elseif( !ctype_digit( (string)$port ) || (int)$port < 1 || (int)$port > 65535 )
+            derr( "servicePort: a port 1-65535", null, FALSE );
 
         $objectFind = $rule->source->parentCentralStore->find($context->arguments['objName']);
         if( $objectFind === null )
             derr("address-type object named '{$context->arguments['objName']}' not found", null, FALSE);
 
         if( $context->isAPI )
-            $rule->API_setDNAT( $objectFind, null, $dnattype  );
+            $rule->API_setDNAT( $objectFind, $port, $dnattype  );
         else
-            $rule->setDNAT( $objectFind, null, $dnattype );
+            $rule->setDNAT( $objectFind, $port, $dnattype );
 
     },
     'args' => array(
@@ -3723,6 +3729,90 @@ RuleCallContext::$supportedActions[] = array(
     )
 );
 
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'DNat-remove',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "it's not a NAT rule" );
+            return;
+        }
+        /** @var NatRule $rule */
+        if( $rule->dnathost === null )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "no destination translation" );
+            return;
+        }
+        if( $context->isAPI )
+            $rule->API_setNoDNAT();
+        else
+            $rule->setNoDNAT();
+        $rule->dnattype = 'none';
+    }
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'SNat-set',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "it's not a NAT rule" );
+            return;
+        }
+        /** @var NatRule $rule */
+        $type = $context->arguments['SNATtype'];
+        $hosts = array();
+        $names = $context->arguments['addresses'];
+        if( $names !== '-' && $names !== '' )
+            foreach( explode( '|', $names ) as $name )
+            {
+                $name = trim( $name );
+                if( $name === '' )
+                    continue;
+                $o = $rule->source->parentCentralStore->find( $name );
+                if( $o === null )
+                    derr( "address-type object named '" . $name . "' not found", null, FALSE );
+                $hosts[] = $o;
+            }
+        $interface = $context->arguments['interface'];
+        $interface = ( $interface === '-' || $interface === '' ) ? null : str_replace( '$$', '/', $interface );
+        $rule->setSourceNat( $type, $hosts, $interface, $context->arguments['bidirectional'] );
+        if( $context->isAPI )
+            $rule->API_sync();
+    },
+    'args' => array(
+        'SNATtype' => array( 'type' => 'string', 'default' => '*nodefault*',
+            'help' => "dynamic-ip-and-port, dynamic-ip, static-ip or none" ),
+        'addresses' => array( 'type' => 'string', 'default' => '-',
+            'help' => "the translated address objects, separated by '|' (static-ip: one; dynamic-ip-and-port with an interface: optional, the IP of the interface); - = none" ),
+        'interface' => array( 'type' => 'string', 'default' => '-',
+            'help' => "dynamic-ip-and-port: the interface whose address is used (ethernet1//1 or ethernet1\$\$1 for ethernet1/1)" ),
+        'bidirectional' => array( 'type' => 'bool', 'default' => 'no',
+            'help' => "static-ip: bi-directional" ),
+    )
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'SNat-remove',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "it's not a NAT rule" );
+            return;
+        }
+        /** @var NatRule $rule */
+        if( $rule->sourceNatTypeIs_None() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "no source translation" );
+            return;
+        }
+        if( $context->isAPI )
+            $rule->API_setNoSNAT();
+        else
+            $rule->setNoSNAT();
+    }
+);
 RuleCallContext::$supportedActions[] = array(
     'name' => 'SNat-set-interface',
     'MainFunction' => function (RuleCallContext $context) {
@@ -6390,21 +6480,32 @@ RuleCallContext::$supportedActions[] = Array(
             $ldapUser = $context->arguments['ldapUser'];
 
             //check if available via .panconfigkeystore
-            $connector = PanAPIConnector::findOrCreateConnectorFromHost( 'ldap-password' );
-            $ldapPassword = $connector->apikey;
+            $ldapPassword = PanAPIConnector::ldapPassword( $ldapUser );
 
             $ldapServer = $context->arguments['ldapServer'];
-
-
-            $context->ldapconn = ldap_connect( $ldapServer )
-            or die("Could not connect to LDAP server.");
-
-            if ($context->ldapconn)
+            // auto / auto-ldap: the domain controllers of the domain of dn (DC=…) from DNS, LDAPS / LDAP - the first that works
+            // auto%<domain>: that domain instead of the one of dn
+            if( preg_match( '/^(auto|auto-ldap)(?:%([A-Za-z0-9.-]+))?$/i', $ldapServer, $am ) )
             {
-                $context->ldapbind = ldap_bind($context->ldapconn, $ldapUser, $ldapPassword);
-                if( !$context->ldapbind )
-                    derr( "LDAP connection not working", null, FALSE);
+                $domain = isset( $am[2] ) && $am[2] !== '' ? $am[2] : LDAPQUERY__::domainOfDn( $context->arguments['dn'] );
+                if( $domain === null )
+                    derr( "ldapServer=auto: the domain is taken from the DC= parts of dn - there are none (or auto%<domain>)", null, FALSE );
+                $uris = array();
+                foreach( LDAPQUERY__::domainServers( $domain, strtolower( $am[1] ) === 'auto' ) as $sv )
+                    if( $sv['inDomain'] )
+                        $uris[] = $sv['uri'];
             }
+            else
+            {
+                // ldaps%host[%port] / ldap%host[%port]: an LDAP URI in the arguments of an action (':' and '/' can not be used there)
+                if( preg_match( '/^(ldaps?)%([A-Za-z0-9.-]+)(?:%([0-9]{1,5}))?$/i', $ldapServer, $m ) )
+                    $ldapServer = strtolower( $m[1] ) . '://' . $m[2] . ( isset( $m[3] ) && $m[3] !== '' ? ':' . $m[3] : '' );
+                elseif( strpos( $ldapServer, '://' ) === FALSE )
+                    $ldapServer = 'ldap://' . $ldapServer;
+                $uris = array( $ldapServer );
+            }
+            list( $context->ldapconn, $used ) = LDAPQUERY__::bindFirst( $uris, $ldapUser, $ldapPassword );
+            $context->ldapbind = TRUE;
             $context->first = false;
         }
 
@@ -6547,7 +6648,7 @@ RuleCallContext::$supportedActions[] = Array(
         'ldapUser' => Array( 'type' => 'string', 'default' => '*nodefault*',
             'help' => "define LDAP user for authentication to server" ),
         'ldapServer' => Array( 'type' => 'string', 'default' => '*nodefault*',
-            'help' => "LDAP server fqdn / IP" ),
+            'help' => "LDAP server fqdn / IP, or ldaps%fqdn[%port] / ldap%fqdn[%port], or auto / auto-ldap[%domain]: the domain controllers of the domain (default: the DC= parts of dn) from DNS (LDAPS / LDAP), the first that works" ),
         'dn' => Array( 'type' => 'string', 'default' => 'OU=TEST;DC=domain;DC=local',
             'help' => "full OU to an LDAP part, sparated with ';' - this is a specific setting" ),
         'filtercriteria' => Array( 'type' => 'string', 'default' => 'mailNickname',
@@ -6584,8 +6685,7 @@ RuleCallContext::$supportedActions[] = Array(
             $ldapUser = $context->arguments['ldapUser'];
 
             // Check if available via .panconfigkeystore
-            $connector = PanAPIConnector::findOrCreateConnectorFromHost( 'ldap-password' );
-            $ldapPassword = $connector->apikey;
+            $ldapPassword = PanAPIConnector::ldapPassword( $ldapUser );
 
             // --- LDAP SERVER DISCOVERY & CONNECTION LOGIC ---
             $ldapServers = array();

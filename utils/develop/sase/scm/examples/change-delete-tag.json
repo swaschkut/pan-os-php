@@ -1,0 +1,6 @@
+{
+  "description": "lab test 4: delete the tag pan-os-php-sub in pan-os-php-sub (after test 3 - the address used it)",
+  "tags": [
+    { "folder": "pan-os-php-sub", "name": "pan-os-php-sub", "_delete": true }
+  ]
+}

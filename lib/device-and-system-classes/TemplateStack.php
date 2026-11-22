@@ -182,7 +182,8 @@ class TemplateStack
                     foreach( $vsys->certificateProfileStore->getAll() as $certificateProfile )
                         $certificateProfile->resolveCACertificates();
 
-
+        // who uses the certificates / certificate profiles (SSL/TLS service profiles, GlobalProtect, IKE, …)
+        CertificateUsage::link( $this );
     }
 
     public function name()
@@ -245,6 +246,9 @@ class TemplateStack
             $newObject->addReference($this);
             if( $rewriteXml && $this->owner !== null )
             {
+                // a stack without <templates> yet
+                if( !$this->templateRoot instanceof DOMElement )
+                    $this->templateRoot = DH::findFirstElementOrCreate( 'templates', $this->xmlroot );
                 DH::createElement($this->templateRoot, 'member', $newObject->name());
             }
 
@@ -259,6 +263,38 @@ class TemplateStack
      * @param Template $newObject Object to be added
      * @return bool
      */
+    /**
+     * a template out of this stack (<templates><member>); the template no longer references the stack
+     * @param Template $template
+     * @return bool TRUE when it was in the stack
+     */
+    public function removeTemplate( $template, $rewriteXml = TRUE )
+    {
+        $pos = array_search( $template, $this->templates, TRUE );
+        if( $pos === FALSE )
+            return FALSE;
+        unset( $this->templates[$pos] );
+        $this->templates = array_values( $this->templates );
+        $template->removeReference( $this );
+        if( $rewriteXml && $this->templateRoot instanceof DOMElement )
+            foreach( iterator_to_array( $this->templateRoot->childNodes ) as $node )
+                if( $node instanceof DOMElement && $node->textContent === $template->name() )
+                    $this->templateRoot->removeChild( $node );
+        return TRUE;
+    }
+
+    public function API_removeTemplate( $template )
+    {
+        $ret = $this->removeTemplate( $template );
+        if( $ret )
+        {
+            $con = findConnector( $this );
+            if( $con->isAPI() )
+                $con->sendDeleteRequest( $this->getXPath() . "/templates/member[text()='" . $template->name() . "']" );
+        }
+        return $ret;
+    }
+
     public function API_addTemplate($newObject, $position)
     {
         $ret = $this->addTemplate($newObject, $position);
@@ -308,29 +344,50 @@ class TemplateStack
                                         <devices/>
 									</entry>';
 
+    /**
+     * a firewall (serial) into this template stack: <devices><entry name="serial"/>; FirewallsSerials holds the
+     * firewall (ManagedDevice, as when the configuration is loaded) and the firewall knows its stack. Before: an array
+     * instead of the firewall (display of the stack: fatal error), no <devices> - fatal error, the entry added twice.
+     */
     public function addDevice( $serial, $vsys = "vsys1" )
     {
-        if( isset( $this->FirewallsSerials[$serial] ) && $vsys !== "vsys1" )
+        if( !$this->devicesRoot instanceof DOMElement )
+            $this->devicesRoot = DH::findFirstElementOrCreate( 'devices', $this->xmlroot );
+        $found = FALSE;
+        foreach( $this->devicesRoot->childNodes as $node )
+            if( $node instanceof DOMElement && $node->getAttribute( 'name' ) === (string)$serial )
+                $found = TRUE;
+        if( !$found )
         {
-            $this->FirewallsSerials[$serial]['vsyslist'][$vsys] = $vsys;
+            $entry = $this->xmlroot->ownerDocument->createElement( 'entry' );
+            $entry->setAttribute( 'name', (string)$serial );
+            $this->devicesRoot->appendChild( $entry );
         }
-        else
+
+        $managedFirewall = $this->owner->managedFirewallsStore->find( $serial );
+        $this->FirewallsSerials[$serial] = $managedFirewall;
+        if( $managedFirewall !== null )
         {
-            $vsyslist['vsys1'] = 'vsys1';
-            $this->FirewallsSerials[$serial] = array('serial' => $serial, 'vsyslist' => $vsyslist);
+            $managedFirewall->addTemplateStack( $this->name );
+            $managedFirewall->addReference( $this );
+            $this->addReference( $managedFirewall );
         }
-        //XML manipulation missing
-        $newXmlNode = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, "<entry name='{$serial}'/>");
-        $devicenode = $this->devicesRoot->appendChild($newXmlNode);
     }
 
 
     public function removeDevice( $serial, $debug = false )
     {
-        if( isset( $this->FirewallsSerials[$serial] ) )
+        if( array_key_exists( $serial, $this->FirewallsSerials ) )
         {
+            $managedFirewall = $this->FirewallsSerials[$serial];
             unset( $this->FirewallsSerials[$serial] );
-            //missing XML manipulation
+            // the firewall: no longer in this stack
+            if( is_object( $managedFirewall ) )
+            {
+                $managedFirewall->removeTemplateStack( $this->name );
+                $managedFirewall->removeReference( $this );
+                $this->removeReference( $managedFirewall );
+            }
 
             $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
             if( $user_group_source_node !== false )
@@ -370,6 +427,13 @@ class TemplateStack
 
     public function removeDeviceAny( )
     {
+        foreach( $this->FirewallsSerials as $managedFirewall )
+            if( is_object( $managedFirewall ) )
+            {
+                $managedFirewall->removeTemplateStack( $this->name );
+                $managedFirewall->removeReference( $this );
+                $this->removeReference( $managedFirewall );
+            }
         $this->FirewallsSerials = array();
 
         if( $this->devicesRoot !== FALSE )

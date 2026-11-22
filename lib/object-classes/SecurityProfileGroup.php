@@ -405,8 +405,21 @@ class SecurityProfileGroup
         return $ret;
     }
 
+    /**
+     * SCM (Strata Cloud Manager / Prisma Access): no antivirus and no wildfire profiles - one
+     * virus-and-wildfire-analysis profile; the DNS part of anti-spyware is a dns-security profile
+     */
+    public function isSCM()
+    {
+        $sub = $this->owner->owner;
+        return is_object($sub) && property_exists($sub, 'VirusAndWildfireProfileStore') && !property_exists($sub, 'AntiVirusProfileStore');
+    }
+
     public function setSecProf_AV($newAVprof)
     {
+        if( $this->isSCM() )
+            return $this->setSecProf_AVWF($newAVprof);
+
         if( $newAVprof == null )
         {
             unset($this->secprofiles['virus']);
@@ -595,7 +608,9 @@ class SecurityProfileGroup
 
     public function setSecProf_Wildfire($newAVprof)
     {
-       
+        if( $this->isSCM() )
+            return $this->setSecProf_AVWF($newAVprof);
+
         if( $newAVprof == null )
         {
             unset($this->secprofiles['wildfire-analysis']);
@@ -629,439 +644,67 @@ class SecurityProfileGroup
         return $counter;
     }
 
-    public function is_best_practice()
+    /**
+     * profile slots a group needs for the BP / visibility / adoption checks: PAN-OS antivirus, anti-spyware,
+     * vulnerability, url-filtering, file-blocking, wildfire-analysis; SCM virus-and-wildfire-analysis (antivirus +
+     * wildfire), anti-spyware + dns-security (the DNS part of PAN-OS anti-spyware), vulnerability, url-filtering,
+     * file-blocking
+     * @return string[] slot => label
+     */
+    public function checkSlots()
+    {
+        if( $this->isSCM() )
+            return array( 'virus-and-wildfire-analysis' => 'AVWF', 'spyware' => 'AS', 'dns-security' => 'DNSSEC',
+                'vulnerability' => 'VP', 'url-filtering' => 'URL', 'file-blocking' => 'FB' );
+        return array( 'virus' => 'AV', 'spyware' => 'AS', 'vulnerability' => 'VP', 'url-filtering' => 'URL',
+            'file-blocking' => 'FB', 'wildfire-analysis' => 'WF' );
+    }
+
+    /**
+     * @param string $method is_best_practice | is_visibility | is_adoption
+     * @return bool|null TRUE: every slot set and passed; null: every slot set, every profile N/A (not for adoption);
+     *                   FALSE: a slot not set, a profile not found or failed
+     */
+    private function checkProfiles( $method, $label )
     {
         $checked = FALSE;
-        //Todo: continue extending check for URL/FB/WF aso.
-        $bp_av_set = false;
-        $bp_as_set = false;
-        $bp_vp_set = false;
-        $bp_url_set = false;
-        $bp_fb_set = false;
-        $bp_wf_set = false;
-        if(isset($this->secprofProfiles_obj['virus']))
+        foreach( $this->checkSlots() as $slot => $short )
         {
-            /** @var AntiVirusProfile $profile */
-            /*if( is_string($this->secprofiles['virus']) )
-                $profile = $this->owner->owner->AntiVirusProfileStore->find($this->secprofiles['virus']);
-            else*/
-                $profile = $this->secprofProfiles_obj['virus'];
-            if( is_object($profile) )
+            if( !isset($this->secprofProfiles_obj[$slot]) )
+                return FALSE;
+            $profile = $this->secprofProfiles_obj[$slot];
+            if( !is_object($profile) )
             {
-                $ret = $profile->is_best_practice();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_av_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "BP SPG check not possible - SecurityProfile AV ".$this->secprofiles['virus']." not found", null, false );
+                $name = isset($this->secprofiles[$slot]) ? $this->secprofiles[$slot] : $profile;
+                mwarning( $label . " SPG check not possible - profile " . $short . " " . $name . " not found", null, false );
                 return FALSE;
             }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['spyware']))
-        {
-            /** @var AntiSpywareProfile $profile */
-            /*if( is_string($this->secprofiles['spyware']) )
-                $profile = $this->owner->owner->AntiSpywareProfileStore->find($this->secprofiles['spyware']);
-            else*/
-                $profile = $this->secprofProfiles_obj['spyware'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_best_practice();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_as_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "BP SPG check not possible - profile AS ".$this->secprofiles['spyware']." not found", null, false );
+            if( !method_exists($profile, $method) )
                 return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['vulnerability']))
-        {
-            /** @var VulnerabilityProfile $profile */
-            /*if( is_string($this->secprofiles['vulnerability']) )
-                $profile = $this->owner->owner->VulnerabilityProfileStore->find($this->secprofiles['vulnerability']);
-            else*/
-                $profile = $this->secprofProfiles_obj['vulnerability'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_best_practice();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_vp_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "BP SPG check not possible - profile VP ".$this->secprofiles['vulnerability']." not found", null, false );
+            $ret = $profile->$method();
+            if( $ret === FALSE )
                 return FALSE;
-            }
-
+            if( $ret === TRUE )     // null: N/A, does not fail
+                $checked = TRUE;
         }
+        if( $method == 'is_adoption' )
+            return TRUE;
+        return $checked ? TRUE : null;     // every profile N/A: N/A
+    }
 
-        if(isset($this->secprofProfiles_obj['url-filtering']))
-        {
-            /** @var URLProfile $profile */
-            $profile = $this->secprofProfiles_obj['url-filtering'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_best_practice();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_url_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "BP SPG check not possible - profile URL ".$this->secprofiles['url-filtering']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-        if(isset($this->secprofProfiles_obj['file-blocking']))
-        {
-            /** @var FileBlockingProfile $profile */
-            $profile = $this->secprofProfiles_obj['file-blocking'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_best_practice();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_fb_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "BP SPG check not possible - profile VP ".$this->secprofiles['file-blocking']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-        if(isset($this->secprofProfiles_obj['wildfire-analysis']))
-        {
-            /** @var WildfireProfile $profile */
-            $profile = $this->secprofProfiles_obj['wildfire-analysis'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_best_practice();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_wf_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "BP SPG check not possible - profile VP ".$this->secprofiles['wildfire-analysis']." not found", null, false );
-                return FALSE;
-            }
-        }
-
-        if( $bp_av_set && $bp_as_set && $bp_vp_set && $bp_url_set && $bp_fb_set && $bp_wf_set )
-            return $checked ? TRUE : null;     // every profile N/A: N/A
-        else
-            return FALSE;
+    public function is_best_practice()
+    {
+        return $this->checkProfiles( 'is_best_practice', 'BP' );
     }
 
     public function is_visibility()
     {
-        $checked = FALSE;
-        //Todo: continue implementing more checks URL/WF/FB aso.
-        $bp_av_set = false;
-        $bp_as_set = false;
-        $bp_vp_set = false;
-        $bp_url_set = false;
-        $bp_fb_set = false;
-        $bp_wf_set = false;
-        if(isset($this->secprofProfiles_obj['virus']))
-        {
-            /** @var AntiVirusProfile $profile */
-            /*
-            if( is_string($this->secprofiles['virus']) )
-                $profile = $this->owner->owner->AntiVirusProfileStore->find($this->secprofiles['virus']);
-            else
-                */
-            $profile = $this->secprofProfiles_obj['virus'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_visibility();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_av_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - SecurityProfile AV ".$this->secprofiles['virus']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['spyware']))
-        {
-            /** @var AntiSpywareProfile $profile */
-            /*if( is_string($this->secprofiles['spyware']) )
-                $profile = $this->owner->owner->AntiSpywareProfileStore->find($this->secprofiles['spyware']);
-            else*/
-            $profile = $this->secprofProfiles_obj['spyware'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_visibility();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_as_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile AS ".$this->secprofiles['spyware']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['vulnerability']))
-        {
-            /** @var VulnerabilityProfile $profile */
-            /*if( is_string($this->secprofiles['vulnerability']) )
-                $profile = $this->owner->owner->VulnerabilityProfileStore->find($this->secprofiles['vulnerability']);
-            else*/
-                $profile = $this->secprofProfiles_obj['vulnerability'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_visibility();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_vp_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['vulnerability']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['url-filtering']))
-        {
-            /** @var URLProfile $profile */
-            $profile = $this->secprofProfiles_obj['url-filtering'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_visibility();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_url_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile URL ".$this->secprofiles['url-filtering']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-        if(isset($this->secprofProfiles_obj['file-blocking']))
-        {
-            /** @var FileBlockingProfile $profile */
-            $profile = $this->secprofProfiles_obj['file-blocking'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_visibility();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_fb_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['file-blocking']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-        if(isset($this->secprofProfiles_obj['wildfire-analysis']))
-        {
-            /** @var WildfireProfile $profile */
-            $profile = $this->secprofProfiles_obj['wildfire-analysis'];
-            if( is_object($profile) )
-            {
-                $ret = $profile->is_visibility();
-                if( $ret === FALSE )
-                    return FALSE;
-                $bp_wf_set = TRUE;     // null: N/A, does not fail
-                if( $ret === TRUE )
-                    $checked = TRUE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['wildfire-analysis']." not found", null, false );
-                return FALSE;
-            }
-        }
-
-        if( $bp_av_set && $bp_as_set && $bp_vp_set && $bp_url_set && $bp_fb_set && $bp_wf_set )
-            return $checked ? TRUE : null;     // every profile N/A: N/A
-        else
-            return FALSE;
+        return $this->checkProfiles( 'is_visibility', 'Visibility' );
     }
 
     public function is_adoption()
     {
-        //Todo: continue implementing more checks URL/WF/FB aso.
-        $bp_av_set = false;
-        $bp_as_set = false;
-        $bp_vp_set = false;
-        $bp_url_set = false;
-        $bp_fb_set = false;
-        $bp_wf_set = false;
-        if(isset($this->secprofProfiles_obj['virus']))
-        {
-            /** @var AntiVirusProfile $profile */
-            /*
-            if( is_string($this->secprofiles['virus']) )
-                $profile = $this->owner->owner->AntiVirusProfileStore->find($this->secprofiles['virus']);
-            else
-                */
-            $profile = $this->secprofProfiles_obj['virus'];
-            if( is_object($profile) )
-            {
-                if ($profile->is_adoption())
-                    $bp_av_set = TRUE;
-                else
-                    return FALSE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - SecurityProfile AV ".$this->secprofiles['virus']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['spyware']))
-        {
-            /** @var AntiSpywareProfile $profile */
-            /*if( is_string($this->secprofiles['spyware']) )
-                $profile = $this->owner->owner->AntiSpywareProfileStore->find($this->secprofiles['spyware']);
-            else*/
-            $profile = $this->secprofProfiles_obj['spyware'];
-            if( is_object($profile) )
-            {
-                if ($profile->is_adoption())
-                    $bp_as_set = TRUE;
-                else
-                    return FALSE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile AS ".$this->secprofiles['spyware']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['vulnerability']))
-        {
-            /** @var VulnerabilityProfile $profile */
-            /*if( is_string($this->secprofiles['vulnerability']) )
-                $profile = $this->owner->owner->VulnerabilityProfileStore->find($this->secprofiles['vulnerability']);
-            else*/
-            $profile = $this->secprofProfiles_obj['vulnerability'];
-            if( is_object($profile) )
-            {
-                if ($profile->is_adoption())
-                    $bp_vp_set = TRUE;
-                else
-                    return FALSE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['vulnerability']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-
-        if(isset($this->secprofProfiles_obj['url-filtering']))
-        {
-            /** @var URLProfile $profile */
-            $profile = $this->secprofProfiles_obj['url-filtering'];
-            if( is_object($profile) )
-            {
-                if ($profile->is_adoption())
-                    $bp_url_set = TRUE;
-                else
-                    return FALSE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile URL ".$this->secprofiles['url-filtering']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-        if(isset($this->secprofProfiles_obj['file-blocking']))
-        {
-            /** @var FileBlockingProfile $profile */
-            $profile = $this->secprofProfiles_obj['file-blocking'];
-            if( is_object($profile) )
-            {
-                if ($profile->is_adoption())
-                    $bp_fb_set = TRUE;
-                else
-                    return FALSE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['file-blocking']." not found", null, false );
-                return FALSE;
-            }
-
-        }
-        if(isset($this->secprofProfiles_obj['wildfire-analysis']))
-        {
-            /** @var WildfireProfile $profile */
-            $profile = $this->secprofProfiles_obj['wildfire-analysis'];
-            if( is_object($profile) )
-            {
-                if ($profile->is_adoption())
-                    $bp_wf_set = TRUE;
-                else
-                    return FALSE;
-            }
-            else
-            {
-                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['wildfire-analysis']." not found", null, false );
-                return FALSE;
-            }
-        }
-
-        if( $bp_av_set && $bp_as_set && $bp_vp_set && $bp_url_set && $bp_fb_set && $bp_wf_set )
-            return TRUE;
-        else
-            return FALSE;
+        return $this->checkProfiles( 'is_adoption', 'Adoption' );
     }
 
     /*

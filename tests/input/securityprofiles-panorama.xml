@@ -1,0 +1,17 @@
+<config version="10.2.0">
+  <mgt-config/>
+  <shared>
+    <profiles>
+      <virus><entry name="AV-shared"><decoder><entry name="http"><action>reset-both</action></entry></decoder></entry></virus>
+      <url-filtering><entry name="URL-shared"><block><member>malware</member></block></entry></url-filtering>
+    </profiles>
+    <profile-group><entry name="PG"><virus><member>AV-shared</member></virus><url-filtering><member>URL-shared</member></url-filtering></entry></profile-group>
+  </shared>
+  <devices><entry name="localhost.localdomain"><device-group>
+    <entry name="DG1">
+      <profiles><spyware><entry name="AS-dg"><rules><entry name="r"><action><default/></action><severity><member>any</member></severity><threat-name>any</threat-name><category>any</category><packet-capture>disable</packet-capture></entry></rules></entry></spyware></profiles>
+      <pre-rulebase><security><rules><entry name="r1"><from><member>any</member></from><to><member>any</member></to><source><member>any</member></source><destination><member>any</member></destination><service><member>any</member></service><application><member>any</member></application><action>allow</action><profile-setting><profiles><spyware><member>AS-dg</member></spyware><virus><member>AV-shared</member></virus></profiles></profile-setting></entry></rules></security></pre-rulebase>
+    </entry>
+  </device-group></entry></devices>
+  <readonly><devices><entry name="localhost.localdomain"><device-group><entry name="DG1"><id>11</id></entry></device-group></entry></devices></readonly>
+</config>

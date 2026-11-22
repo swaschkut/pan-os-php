@@ -100,6 +100,17 @@ class PREDEFINED extends UTIL
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/application-version', $xmlDoc);
         $exernal_version = $cursor->nodeValue;
 
+        // predefined-out=<file>: the predefined content of the device is written there, whatever its version (the
+        // config viewer keeps App-ID databases outside the installation)
+        if( isset(PH::$args['predefined-out']) && is_string(PH::$args['predefined-out']) && PH::$args['predefined-out'] !== '' )
+        {
+            PH::print_stdout( " - device App-ID version: " . $exernal_version );
+            PH::print_stdout( " *** predefined.xml is saved to '" . PH::$args['predefined-out'] . "'" );
+            if( file_put_contents( PH::$args['predefined-out'], $xmlDoc->saveXML() ) === FALSE )
+                derr( "predefined.xml can not be written to '" . PH::$args['predefined-out'] . "'", null, FALSE );
+            return;
+        }
+
         $panc_version = $this->pan->predefinedappStore->predefinedStore_appid_version;
 
 
@@ -119,8 +130,7 @@ class PREDEFINED extends UTIL
         {
             PH::print_stdout( " - PAN-OS-PHP has an old app-id version '" . $panc_version . "' available. Device App-ID version: " . $exernal_version );
 
-            #$predefined_path = __DIR__ . '/../lib/object-classes/predefined.xml';
-            $predefined_path = __DIR__ . '/../../lib/object-classes/predefined.xml';
+            $predefined_path = PH::predefinedXmlPath();
 
             PH::print_stdout( " *** predefined.xml is saved to '" . $predefined_path . "''" );
             file_put_contents( $predefined_path, $xmlDoc->saveXML());
@@ -132,6 +142,7 @@ class PREDEFINED extends UTIL
         $this->supportedArguments['in'] = array('niceName' => 'in', 'shortHelp' => 'input file or api. ie: in=config.xml  or in=api://192.168.1.1 or in=api://0018CAEC3@panorama.company.com', 'argDesc' => '[filename]|[api://IP]|[api://serial@IP]');
         $this->supportedArguments['location'] = array('niceName' => 'location', 'shortHelp' => 'specify if you want to limit your query to a VSYS. By default location=vsys1 for PANOS. ie: location=any or location=vsys2,vsys1', 'argDesc' => 'sub1[,sub2]');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
+        $this->supportedArguments['predefined-out'] = array('niceName' => 'predefined-out', 'shortHelp' => 'write the predefined content of the device to this file, whatever its App-ID version (default: replace lib/object-classes/predefined.xml - or PANOSPHP_PREDEFINED_XML - only when the device has a newer one)', 'argDesc' => '[filename]');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
     }
 

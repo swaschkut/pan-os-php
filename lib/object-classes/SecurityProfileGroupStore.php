@@ -126,7 +126,15 @@ class SecurityProfileGroupStore extends ObjStore
     }
 
 
-    public function findByHash( $hash)
+    /**
+     * profile group with these profiles (hash of calculateHash())
+     * @param string $hash
+     * @param bool $nested also the stores of the parent device-groups / containers and shared (nearest first)
+     * @param array|null $profilesObj profile objects of the rule (securityProfiles_obj()): a group of a parent store is
+     *        only taken if its profiles are the same objects - a profile overridden below (same name) is not the same
+     * @return SecurityProfileGroup|null
+     */
+    public function findByHash( $hash, $nested = FALSE, $profilesObj = null )
     {
         foreach( $this->all() as $securityProfileGroup )
         {
@@ -134,7 +142,42 @@ class SecurityProfileGroupStore extends ObjStore
                 return $securityProfileGroup;
         }
 
+        if( !$nested )
+            return null;
+
+        $seen = array( spl_object_id($this) => TRUE );
+        for( $store = $this->parentCentralStore; $store !== null && !isset($seen[spl_object_id($store)]); $store = $store->parentCentralStore )
+        {
+            $seen[spl_object_id($store)] = TRUE;
+            foreach( $store->all() as $securityProfileGroup )
+                if( $hash == $securityProfileGroup->hash
+                    && ( $profilesObj === null || self::sameProfileObjects($securityProfileGroup, $profilesObj) ) )
+                    return $securityProfileGroup;
+        }
+
         return null;
+    }
+
+    /** the profiles of the group are the profile objects of the rule (names compared where one side is not an object) */
+    static private function sameProfileObjects( SecurityProfileGroup $group, array $profilesObj )
+    {
+        foreach( $profilesObj as $type => $obj )
+        {
+            $gobj = isset($group->secprofProfiles_obj[$type]) ? $group->secprofProfiles_obj[$type] : null;
+            if( is_object($obj) && is_object($gobj) )
+            {
+                if( $obj !== $gobj )
+                    return FALSE;
+            }
+            else
+            {
+                $n1 = is_object($obj) ? $obj->name() : (string)$obj;
+                $n2 = is_object($gobj) ? $gobj->name() : (string)$gobj;
+                if( $n1 !== $n2 )
+                    return FALSE;
+            }
+        }
+        return TRUE;
     }
 
     public function calculateHash( $secprofArray )

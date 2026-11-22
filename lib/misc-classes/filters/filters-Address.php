@@ -319,7 +319,7 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
         if( !isset($context->cachedList) )
         {
             $list = array();
-            $filename = dirname(__FILE__) . '/../../object-classes/predefined.xml';
+            $filename = PH::predefinedXmlPath();
 
             $xmlDoc_region = PH::getPredefinedXmlDoc($filename, array('region'));
 

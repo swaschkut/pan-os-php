@@ -776,169 +776,247 @@ class URLProfile extends SecurityProfile2
     ////////////////////////////
     /// alert only setting
 
+    /**
+     * alert-only-set of the site access: as the BP JSON url -> site_access -> visibility asks ('!allow': no
+     * predefined category allowed - each moves to alert; custom URL categories are left, the check skips them too)
+     */
     public function url_siteaccess_set_alertonly()
     {
-        $allow_xmlnode = DH::findFirstElement("allow", $this->xmlroot);
-        if( $allow_xmlnode !== False )
-        {
-            // copy of the node list: removing from the live childNodes while iterating skipped every second member
-            foreach( iterator_to_array( $allow_xmlnode->childNodes ) as $allow_node )
-            {
-                if( $allow_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmp_name = $allow_node->textContent;
-
-                if( isset( $this->owner->owner->customURLProfileStore) )
-                {
-                    //Todo: not working correclty
-                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
-                    if ($custom_url_category_obj !== NULL)
-                        continue;
-                }
-                //workaround
-                if(isset( $this->allow_custom[$tmp_name] ) )
-                    continue;
-
-                $clone_node = $allow_node->cloneNode(true);
-                $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
-                $alert_xmlnode->appendChild($clone_node);
-                $allow_xmlnode->removeChild($allow_node);
-
-
-                $key = array_search ($tmp_name, $this->allow);
-                unset($this->allow[$key]);
-            }
-            if( empty($this->allow) and empty($this->allow_custom) )
-                $this->xmlroot->removeChild($allow_xmlnode);
-        }
-
-        foreach( $this->allow as $allow )
-        {
-
-            if( isset( $this->owner->owner->customURLProfileStore) )
-            {
-                //Todo: not working correclty
-                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
-                if ($custom_url_category_obj !== NULL)
-                    continue;
-            }
-            //workaround
-            if(isset( $this->allow_custom[$allow] ) )
-                continue;
-
-            $this->alert[] = $allow;
-
-            $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
-            if( DH::findFirstElementByValue( 'member', $allow, $alert_xmlnode ) === null )
-            {
-                $xmlString = '<member>'.$allow.'</member>';
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                $alert_xmlnode->appendChild($xmlElement);
-            }
-        }
-        $this->allow = array();
-
-        // no empty <alert/> / <allow/>: outputformatset would write an incomplete "set ... alert"
-        $this->url_removeEmptyActionNodes();
-    }
-
-    public function url_credential_set_alertonly()
-    {
-        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
-        $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
-        if( $allow_credential_xmlnode !== False )
-        {
-            // copy of the node list: removing from the live childNodes while iterating skipped every second member
-            foreach( iterator_to_array( $allow_credential_xmlnode->childNodes ) as $allow_node )
-            {
-                if( $allow_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmp_name = $allow_node->textContent;
-
-                if( isset( $this->owner->owner->customURLProfileStore) )
-                {
-                    //Todo: not working correclty
-                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
-                    if ($custom_url_category_obj !== NULL)
-                        continue;
-                }
-                //workaround
-                if(isset( $this->allow_credential_custom[$tmp_name] ) )
-                    continue;
-
-                $clone_node = $allow_node->cloneNode(true);
-                $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-                $alert_credential_xmlnode->appendChild($clone_node);
-                $allow_credential_xmlnode->removeChild($allow_node);
-
-                $key = array_search ($tmp_name, $this->allow_credential);
-                unset($this->allow_credential[$key]);
-            }
-            if( empty($this->allow_credential) and empty($this->allow_credential_custom) )
-                $credential_xmlnode->removeChild($allow_credential_xmlnode);
-        }
-
-        foreach( $this->allow_credential as $allow )
-        {
-            if( isset( $this->owner->owner->customURLProfileStore) )
-            {
-                //Todo: not working correclty
-                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
-                if ($custom_url_category_obj !== NULL)
-                    continue;
-            }
-            //workaround
-            if(isset( $this->allow_credential_custom[$allow] ) )
-                continue;
-
-            $this->alert_credential[] = $allow;
-
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-            $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-            if( DH::findFirstElementByValue( 'member', $allow, $alert_credential_xmlnode ) === null )
-                $alert_credential_xmlnode->appendChild($xmlElement);
-        }
-        $this->allow_credential = array();
-
-        $this->url_removeEmptyActionNodes();
+        $this->url_siteaccess_setFromJSON( 'visibility' );
     }
 
     /**
-     * remove action lists without a member (site access and credential enforcement: allow, alert, block, continue,
-     * override) - an empty element gives an incomplete "set ... profiles url-filtering <name> alert" with
-     * outputformatset and is no valid configuration
-     * @return bool TRUE when something was removed
+     * predefined URL category $category to action $to (site access, or credential enforcement with $credential):
+     * removed from every other action list, XML and object, and added to $to
      */
-    public function url_removeEmptyActionNodes(): bool
+    private function url_category_setAction( string $category, string $to, bool $credential ): void
     {
-        $removed = FALSE;
-        $parents = array( $this->xmlroot );
-        $credential = DH::findFirstElement( 'credential-enforcement', $this->xmlroot );
-        if( $credential !== FALSE )
-            $parents[] = $credential;
-        foreach( $parents as $parent )
-            foreach( $this->tmp_url_prof_array as $action )
+        $parent = $credential ? DH::findFirstElementOrCreate( 'credential-enforcement', $this->xmlroot ) : $this->xmlroot;
+        $suffix = $credential ? '_credential' : '';
+        foreach( $this->tmp_url_prof_array as $action )
+        {
+            if( $action == $to )
+                continue;
+            $property = $action.$suffix;
+            $list = $this->$property;
+            if( is_array( $list ) )
             {
-                $node = DH::findFirstElement( $action, $parent );
-                if( $node === FALSE )
-                    continue;
-                $hasMember = FALSE;
-                foreach( $node->childNodes as $c )
-                    if( $c->nodeType == XML_ELEMENT_NODE )
-                    {
-                        $hasMember = TRUE;
-                        break;
-                    }
-                if( !$hasMember )
+                foreach( array_keys( $list, $category, TRUE ) as $key )
+                    unset( $list[$key] );
+                $this->$property = $list;
+            }
+            $node = DH::findFirstElement( $action, $parent );
+            if( $node === FALSE )
+                continue;
+            $member = DH::findFirstElementByValue( 'member', $category, $node );
+            if( $member !== null )
+                $node->removeChild( $member );
+            if( DH::firstChildElement( $node ) === FALSE || DH::firstChildElement( $node ) === null )
+                $parent->removeChild( $node );
+        }
+
+        $property = $to.$suffix;
+        $list = is_array( $this->$property ) ? $this->$property : array();
+        $list[$category] = $category;
+        $this->$property = $list;
+        $node = DH::findFirstElementOrCreate( $to, $parent );
+        if( DH::findFirstElementByValue( 'member', $category, $node ) === null )
+            $node->appendChild( DH::importXmlStringOrDie( $this->xmlroot->ownerDocument, '<member>'.$category.'</member>' ) );
+    }
+
+    /** predefined categories of an action list (site access or credential enforcement); custom URL categories left out */
+    private function url_predefinedOf( string $action, bool $credential ): array
+    {
+        $property = $action.( $credential ? '_credential' : '' );
+        $ret = array();
+        foreach( (array)( $this->$property ?? array() ) as $category )
+        {
+            if( isset( $this->owner->owner->customURLProfileStore ) && $this->owner->owner->customURLProfileStore->find( $category ) !== null )
+                continue;
+            $ret[] = $category;
+        }
+        return $ret;
+    }
+
+    /**
+     * Set-actions for site access ($credential false) or credential enforcement categories ($credential true):
+     *  visibility '!x' (string): every predefined category of action x moves to alert
+     *  bp list of array( type => categories, action => block|alert ): block categories to block, alert categories to
+     *  alert unless blocked; allowed predefined categories move to alert (the check asks for none)
+     * Nothing listed in the BP JSON: no change.
+     */
+    private function url_categories_setFromJSON( string $section, $condition, bool $credential ): void
+    {
+        if( empty( $condition ) )
+            return;
+
+        if( is_string( $condition ) )
+        {
+            if( strpos( $condition, '!' ) !== 0 )
+            {
+                mwarning( "'".$this->name()."' URL ".( $credential ? "credential" : "site access" )." ".$section." '".$condition."' is not a negated condition - not changed", null, FALSE );
+                return;
+            }
+            $from = substr( $condition, 1 );
+            if( $from == 'alert' || !in_array( $from, $this->tmp_url_prof_array, TRUE ) )
+                return;
+            foreach( $this->url_predefinedOf( $from, $credential ) as $category )
+                $this->url_category_setAction( $category, 'alert', $credential );
+            return;
+        }
+
+        // bp: no predefined category allowed
+        foreach( $this->url_predefinedOf( 'allow', $credential ) as $category )
+            $this->url_category_setAction( $category, 'alert', $credential );
+
+        $suffix = $credential ? '_credential' : '';
+        foreach( (array)$condition as $entry )
+        {
+            $action = $entry['action'] ?? null;
+            if( $action !== 'block' && $action !== 'alert' )
+                continue;
+            foreach( (array)( $entry['type'] ?? array() ) as $category )
+            {
+                $blocked = in_array( $category, (array)$this->{'block'.$suffix}, TRUE );
+                $alerted = in_array( $category, (array)$this->{'alert'.$suffix}, TRUE );
+                if( $action == 'block' && !$blocked )
+                    $this->url_category_setAction( $category, 'block', $credential );
+                elseif( $action == 'alert' && !$blocked && !$alerted )
+                    $this->url_category_setAction( $category, 'alert', $credential );
+            }
+        }
+    }
+
+    /** site access from the BP JSON url -> site_access -> $section (url_categories_setFromJSON()) */
+    public function url_siteaccess_setFromJSON( string $section ): void
+    {
+        $condition = $this->url_siteaccess_bp_visibility_JSON( $section, "url" );
+        if( empty( $condition ) )
+            return;
+        $this->url_categories_setFromJSON( $section, $condition, false );
+        $this->bpSetVerify( $section, 'URL site access', $section == 'bp' ? $this->url_siteaccess_best_practice() : $this->url_siteaccess_visibility() );
+    }
+
+    /** credential enforcement categories from the BP JSON url -> user_credential_submission -> $section -> category */
+    public function url_credential_setFromJSON( string $section ): void
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( $section, "url" );
+        if( empty( $check_array['category'] ) )
+            return;
+        $this->url_categories_setFromJSON( $section, $check_array['category'], true );
+        $this->bpSetVerify( $section, 'URL credential categories', $section == 'bp' ? $this->url_usercredentialsubmission_best_practice() : $this->url_usercredentialsubmission_visibility() );
+    }
+
+    /**
+     * credential enforcement mode from the BP JSON url -> user_credential_submission -> $section -> tab:
+     * a mode ('ip-user') is set; '!disabled' keeps another mode, else 'ip-user'.
+     * log-severity: BP JSON tab -> log-severity, a string or a list ('medium', or '!informational', '!low'):
+     * a compliant value is kept (e.g. 'high'), else the positive value the JSON gives, else 'medium'.
+     * Nothing in the JSON: 'medium' where none is set and the mode is changed (the best-practice check asks for one).
+     */
+    public function url_credential_tab_setFromJSON( string $section ): void
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( $section, "url" );
+        $mode = $check_array['tab']['mode'] ?? null;
+        if( empty( $mode ) || !is_string( $mode ) )
+            return;
+
+        $target = null;
+        if( strpos( $mode, '!' ) === 0 )
+        {
+            if( $this->credential_mode === null || $this->credential_mode === substr( $mode, 1 ) )
+                $target = ( substr( $mode, 1 ) == 'ip-user' ) ? 'domain-credentials' : 'ip-user';
+        }
+        elseif( $this->credential_mode !== $mode )
+            $target = $mode;
+
+        $credential_xmlnode = DH::findFirstElementOrCreate( "credential-enforcement", $this->xmlroot );
+        if( $target !== null )
+        {
+            $mode_xmlnode = DH::findFirstElementOrCreate( "mode", $credential_xmlnode );
+            while( ( $child = DH::firstChildElement( $mode_xmlnode ) ) !== FALSE && $child !== null )
+                $mode_xmlnode->removeChild( $child );
+            DH::findFirstElementOrCreate( $target, $mode_xmlnode );
+            $this->credential_mode = $target;
+        }
+
+        $log = $check_array['tab']['log-severity'] ?? null;
+        if( $log === '' || $log === array() )
+            $log = null;
+        $needed = ( $log !== null ) ? !$this->credential_log_complies( $log ) : ( $this->credential_log === null && $target !== null );
+        if( $needed )
+        {
+            $value = "medium";
+            foreach( (array)$log as $condition )
+                if( is_string( $condition ) && $condition !== '' && strpos( $condition, '!' ) !== 0 )
                 {
-                    $parent->removeChild( $node );
-                    $removed = TRUE;
+                    $value = $condition;
+                    break;
+                }
+            if( $log !== null )
+            {
+                $previous = $this->credential_log;
+                $this->credential_log = $value;
+                if( !$this->credential_log_complies( $log ) )
+                {
+                    $this->credential_log = $previous;
+                    mwarning( "BP JSON url -> user_credential_submission -> ".$section." -> tab -> log-severity: the value '".$value."' the action would set does not comply - '".$this->name()."' not changed", null, FALSE );
+                    $value = null;
                 }
             }
-        return $removed;
+            if( $value !== null )
+            {
+                DH::findFirstElementOrCreate( "log-severity", $credential_xmlnode )->textContent = $value;
+                $this->credential_log = $value;
+            }
+        }
+
+        $this->bpSetVerify( $section, 'URL credential mode', $section == 'bp' ? $this->url_usercredentialsubmission_best_practice_tab() : $this->url_usercredentialsubmission_visibility_tab() );
+    }
+
+    /** alert-only-set of the credential enforcement categories, as the BP JSON url -> user_credential_submission -> visibility -> category asks */
+    public function url_credential_set_alertonly()
+    {
+        $this->url_credential_setFromJSON( 'visibility' );
+    }
+
+    /**
+     * Set-actions (alert-only-set: $section 'visibility', best-practice-set: 'bp') for local-inline-cat and
+     * cloud-inline-cat: each gets the value the BP JSON url -> mica-engine -> $section gives for it (the check
+     * compares equality; '!no' means 'yes', '!yes' means 'no'). A key not in the BP JSON, or a PAN-OS version
+     * without inline categorization: that setting is not changed.
+     */
+    public function url_inline_cat_setFromJSON( string $section ): void
+    {
+        if( !$this->bpFeatureSupported( 'url-mica' ) )
+            return;
+
+        $check_array = $this->url_mica_engine_bp_visibility_JSON( $section, "url" );
+        if( empty( $check_array ) || !is_array( $check_array ) )
+            return;
+
+        foreach( array( 'local-inline-cat' => 'local_inline_cat', 'cloud-inline-cat' => 'cloud_inline_cat' ) as $key => $property )
+        {
+            if( !isset( $check_array[$key] ) || !is_string( $check_array[$key] ) || $check_array[$key] === '' )
+                continue;
+
+            $value = $check_array[$key];
+            if( strpos( $value, '!' ) === 0 )
+                $value = ( substr( $value, 1 ) == 'yes' ) ? 'no' : 'yes';
+            if( $value !== 'yes' && $value !== 'no' )
+            {
+                mwarning( "BP JSON url -> mica-engine -> ".$section." -> ".$key.": '".$check_array[$key]."' is not yes / no - '".$this->name()."' not changed", null, FALSE );
+                continue;
+            }
+
+            $xmlnode = DH::findFirstElementOrCreate( $key, $this->xmlroot );
+            $xmlnode->textContent = $value;
+            $this->$property = $value;
+            $isDefault = $property.'_isDefault';
+            $this->$isDefault = false;
+        }
+
+        $this->bpSetVerify( $section, 'URL inline ML', $section == 'bp' ? $this->url_mica_engine_best_practice() : $this->url_mica_engine_visibility() );
     }
 
     public function url_inline_cat_set( $bool = true )
@@ -962,24 +1040,10 @@ class URLProfile extends SecurityProfile2
         }
     }
 
+    /** alert-only-set of the credential enforcement mode, as the BP JSON url -> user_credential_submission -> visibility -> tab asks */
     public function url_credential_mode_alertonly()
     {
-        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
-        $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
-        $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
-        if( $mode_child_xmlnode == false )
-        {
-            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
-            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
-            $logseverity_credential_xmlnode->textContent = "medium";
-        }
-        elseif( $mode_child_xmlnode !== false && $mode_child_xmlnode->nodeName == "disabled" )
-        {
-            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
-            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
-            $logseverity_credential_xmlnode->textContent = "medium";
-            $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
-        }
+        $this->url_credential_tab_setFromJSON( 'visibility' );
     }
 
     ////////////////////////////
@@ -1170,7 +1234,8 @@ class URLProfile extends SecurityProfile2
         {
             $finding = str_replace("!", "", $check_array['category']);
 
-            $sanitized_action = $this->$finding;
+            // the credential enforcement list of that action (allow_credential, ...), not the site access one
+            $sanitized_action = $this->{$finding.'_credential'} ?? array();
             foreach( $sanitized_action as $key => $url_category)
             {
                 if( isset( $this->owner->owner->customURLProfileStore) )
@@ -1195,7 +1260,8 @@ class URLProfile extends SecurityProfile2
 
         $finding = str_replace("!", "", $check_array['category']);
 
-        $sanitized_action = $this->$finding;
+        // the credential enforcement list of that action (allow_credential, ...), not the site access one
+        $sanitized_action = $this->{$finding.'_credential'} ?? array();
         foreach( $sanitized_action as $key => $url_category)
         {
             if( isset($this->owner->owner->customURLProfileStore) )
@@ -1214,7 +1280,7 @@ class URLProfile extends SecurityProfile2
 
     public function check_mica_engine_visibility_json( $check_array )
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->bpFeatureSupported( 'url-mica' ) )
         {
             //Todo: this is visible and bp
             foreach( $check_array as $key => $validation )
@@ -1258,18 +1324,36 @@ class URLProfile extends SecurityProfile2
             return False;
         }
 
-        #if( isset($check_array['tab']['log-severity']) && $check_array['tab']['log-severity'] !== $this->credential_log )
-        #{
-        #    PH::print_stdout("wrong log-severity");
-        #    return False;
-        #}
+        if( isset( $check_array['tab']['log-severity'] ) && !$this->credential_log_complies( $check_array['tab']['log-severity'] ) )
+            return False;
 
+        return TRUE;
+    }
+
+    /**
+     * credential log-severity against the BP JSON tab -> log-severity: a string or a list of conditions,
+     * all must hold - 'x': equal x, '!x': not x. No log-severity set: FALSE.
+     */
+    private function credential_log_complies( $condition ): bool
+    {
+        if( $this->credential_log === null || $this->credential_log === '' )
+            return FALSE;
+        foreach( (array)$condition as $c )
+        {
+            if( !is_string( $c ) || $c === '' )
+                continue;
+            if( strpos( $c, '!' ) === 0 ? $this->credential_log === substr( $c, 1 ) : $this->credential_log !== $c )
+                return FALSE;
+        }
         return TRUE;
     }
 
     public function check_usercredentialsubmission_visibility_tab_json( $check_array )
     {
         if( $this->credential_mode == null)
+            return False;
+
+        if( isset( $check_array['tab']['log-severity'] ) && !$this->credential_log_complies( $check_array['tab']['log-severity'] ) )
             return False;
 
         $finding = $check_array['tab']['mode'];
@@ -1444,9 +1528,11 @@ class URLProfile extends SecurityProfile2
 
     public function credential_is_adoption()
     {
-        if( $this->credential_mode !== null && $this->credential_mode !== "disabled")
-            return TRUE;
-        return False;
+        #if( $this->credential_mode !== null && $this->credential_mode !== "disabled")
+        #    return TRUE;
+        #return False;
+
+        return TRUE;
     }
 
     /** @return bool|null null: not listed in the visibility JSON (N/A) */
@@ -1610,81 +1696,15 @@ class URLProfile extends SecurityProfile2
         return $xml . '</' . $tag . '>';
     }
 
+    /**
+     * best-practice-set of site access and credential enforcement (categories and mode), as the BP JSON
+     * url -> site_access -> bp and url -> user_credential_submission -> bp ask
+     */
     public function site_access_BestPracticeSet()
     {
-        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
-
-        $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-        if( isset($check_array[0]['type']) )
-            $block_categories = $check_array[0]['type'];
-        else
-            $block_categories = $this->block_array_defined;
-
-        $block_xmlnode = DH::findFirstElementOrCreate("block", $this->xmlroot);
-        foreach( $block_categories as $block_category )
-        {
-            if( !in_array( $block_category, $this->block ) )
-            {
-                if( in_array( $block_category, $this->alert ) )
-                {
-                    $key = array_search ($block_category, $this->alert);
-                    unset( $this->alert[$key] );
-                    $alert_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $alert_xmlnode );
-                    $alert_xmlnode->removeChild($alert_category_xmlnode);
-
-                    $this->block[$block_category] = $block_category;
-
-                    $xmlString = '<member>'.$block_category.'</member>';
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                    $block_xmlnode->appendChild($xmlElement);
-                }
-            }
-        }
-
-        //credential all from alert to block
-        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
-
-        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-        $block_credential_xmlnode = DH::findFirstElementOrCreate("block", $credential_xmlnode);
-
-        if( $alert_credential_xmlnode !== False )
-        {
-            foreach( $alert_credential_xmlnode->childNodes as $alert_node )
-            {
-                if( $alert_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmp_name = $alert_node->textContent;
-
-                $clone_node = $alert_node->cloneNode(true);
-                if( !in_array($tmp_name, $this->block_credential) )
-                {
-                    $block_credential_xmlnode->appendChild($clone_node);
-                    $this->block_credential[$tmp_name] = $tmp_name;
-                }
-
-                $alert_credential_xmlnode->removeChild($alert_node);
-
-
-                $key = array_search ($tmp_name, $this->allow_credential);
-                unset($this->alert_credential[$key]);
-            }
-            $credential_xmlnode->removeChild($alert_credential_xmlnode);
-        }
-
-
-        foreach( $this->alert_credential as $alert )
-        {
-            if( !in_array($alert, $this->block_credential) )
-            {
-                $this->block_credential[$alert] = $alert;
-
-                $xmlString = '<member>'.$alert.'</member>';
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-                $block_credential_xmlnode->appendChild($xmlElement);
-            }
-        }
-        $this->alert_credential = array();
+        $this->url_siteaccess_setFromJSON( 'bp' );
+        $this->url_credential_setFromJSON( 'bp' );
+        $this->url_credential_tab_setFromJSON( 'bp' );
     }
 
     public function AlertOnlySet(): void
@@ -1695,7 +1715,8 @@ class URLProfile extends SecurityProfile2
         $this->url_credential_set_alertonly();
 
         ////////////////////////////
-        $this->url_inline_cat_set(true);
+        // inline categorization: what the BP JSON url -> mica-engine -> visibility asks for
+        $this->url_inline_cat_setFromJSON( 'visibility' );
 
         ////////////
         $this->url_credential_mode_alertonly();
@@ -1707,7 +1728,8 @@ class URLProfile extends SecurityProfile2
 
         $this->site_access_BestPracticeSet();
 
-        $this->url_removeEmptyActionNodes();
+        // inline categorization: what the BP JSON url -> mica-engine -> bp asks for
+        $this->url_inline_cat_setFromJSON( 'bp' );
     }
 }
 

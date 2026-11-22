@@ -1,0 +1,87 @@
+# Config viewer: access to devices (import, later write / SSH)
+
+**Status:** step 1 (import, read only) built 2026-11-21; writing and SSH open.
+**Related:** [config-viewer-api.md](config-viewer-api.md), [config-viewer-encryption.md](config-viewer-encryption.md),
+[docs/6-import-from-devices.md](../utils/develop/config-viewer/docs/6-import-from-devices.md)
+
+## Decisions (Sven, 2026-11-21)
+
+| # | Topic | Decision |
+|---|---|---|
+| 1 | Network | own permission area of the administrator: **global switch** (off by default) **plus per project** (owner) |
+| 2 | Targets | administrator keeps an **allow list** and a **deny list** (deny wins) |
+| 3 | Keys | **personal**: a user has his own key for a firewall / Panorama / SCM tenant; never shared between users |
+| 4 | Key life | keys are **not** removed after a run - the user needs them again (next import, later writing, SSH) |
+| 5 | Direction | **import only** for now - an important setting so that no wrong data leaves the viewer |
+| 6 | Scope | firewall / Panorama (XML API) and SCM |
+
+## Built (step 1)
+
+* settings `network` (enabled, allow, deny) - `GET|PUT network` (admin); `projects.network` - `PUT projects/<pid>/network`
+  (owner)
+* table `user_keys` (kind `panos` / `scm`, target, label, secret encrypted with `keys.secret` of the data directory -
+  sodium secretbox, hint = last 4 characters) - `GET|POST keys`, `DELETE keys/<kid>`; not with an API token; the
+  secret is never sent back and never in the audit log
+* run type `import` (`POST projects/<pid>/import/runs`, body `kid`, `source` candidate / running): write permission,
+  checks at start and again when the run starts; steps with `network` only for the download (container:
+  `PANOSPHP_VIEWER_CONTAINER_NETWORK`, default `bridge`; all other runs `none`); key store `.panconfkeystore` with
+  only this entry in the folder of the run, removed at the end (also on cancel / runner restart), never a result
+  file; the secret is replaced in `run.log`; `out.xml` becomes a new version
+
+## Built (step 1b, 2026-11-21): the whole key store
+
+* kinds `panos` (with port), `scm`, `egressip`, `named` (`ldap-password`, `bpa-apikey`, `license-apikey`,
+  `maxmind-licensekey`, `gcp-mysql-password`), `other` (any further entry name, kept as it is)
+* `POST keys/import`: an existing `.panconfkeystore` of a customer is taken over (upsert per kind + target)
+* imports use `panos` / `scm`; the other entries are stored for the runs that need them (open: which runs get which
+  entries - G below)
+
+## Built (step 2, 2026-11-21): App-ID database and MaxMind data
+
+Decisions (Sven): App-ID - administrator for the installation and per project; MaxMind - administrator; both also as an
+upload (air gap).
+
+* pan-os-php: `PH::predefinedXmlPath()` (`PANOSPHP_PREDEFINED_XML`), `PH::geoipPath()` (`PANOSPHP_GEOIP_DIR`) in every
+  place that read the fixed paths; `type=download-predefined predefined-out=<file>`; `type=maxmind-update
+  maxmind-zip=<zip>` (and its arguments are read at all now - `maxmind-licensekey=` was never seen before)
+* viewer: `central/` in the data directory; runs of the installation in a project that is not listed (only
+  administrators, only its runs); run types `appid` / `geoip`; every other run and every worker gets the data
+
+### Built - step 3: LDAP (and keys editable)
+
+Decisions (Sven): the firewall administrator asks the LDAP with his own account - key store entry
+`ldap_user<bind user>:<password>` (bind user and password; the old `ldap-password` is not used for LDAP any more);
+group membership and the cleanup check (do the users still exist?); saved queries per user; the scripts of
+`utils/develop/ldap` without questions; an own tab.
+
+* pan-os-php: `type=ldap-query mode=validation|user-groups|common-groups|group-members` (`utils/lib/LDAPQUERY__.php`,
+  a copy of the logic of `utils/develop/ldap`, which stay as they are): all values as arguments, `ldap_escape` in the
+  filters, explicit server (no DNS SRV), `out=` JSON / `csv=`; `user-check-ldap` takes `ldaps%host[%port]`;
+  `PanAPIConnector::ldapUserEntry()` / `ldapPassword()` / `isNamedEntry()` - used by `ldap-query`, `user-check-ldap`,
+  `user-check-ldap_new`, `utils/develop/ldap/*`, `key-manager`
+* viewer: key kind `ldap` (LDAP account: bind user + password); table `ldap_queries` (per user), `GET|POST ldap`, `PUT|DELETE ldap/<qid>`; run types `ldap` (no version)
+  and `ldap-users` (a version: `type=rule actions=user-check-ldap`, `remove` → result configuration); network rules
+  as for an import (LDAP host on the allow list); project tab **LDAP**
+* `PUT keys/<kid>`: label / port, optionally a new secret; **Edit** in *My API keys*
+* network per user + own hosts + requests + connection test (2026-11-22): settings `users` (all / selected) and
+  `conntest` (all / selected), users.network / users.conntest, table `user_hosts`, table `access_requests`
+  (`GET|POST requests`, `DELETE requests/<rid>`, admin `GET requests?all=1`, `PUT requests/<rid>`), `PUT users/<name>`
+  (network, conntest, hosts), `POST conntest`; `networkRefusal($kind, $target, $user)` everywhere (start + run)
+* open: a mail / notice to the administrators on a new request (today: number of open requests in Account);
+  expiry of own hosts (valid until); the connection test for SCM / LDAP (today PAN-OS HTTPS)
+* `POST keys/generate` (2026-11-22): the PAN-OS API key from management address + administrator + password (XML API
+  keygen by POST, as key-manager add=<host>) - only to allowed hosts, password not stored / logged / audited, TLS
+  check optional (`verify`); form *Get the API key from a firewall / Panorama* in *My API keys*
+
+## Open
+
+| # | Topic | Notes |
+|---|---|---|
+| A | Writing to a device (`out=api://`, `type=upload`, `config-commit`) | own administrator switch "write to devices" (off), per project, maybe per user; a review step (diff / set commands shown before), audit; never by a playbook |
+| B | Set commands per SSH (`type=ssh-connector`) | personal SSH credentials (password / key) as a new key kind; same switches as A; only the set commands of a chosen run result |
+| C | Firewall through Panorama (`api://<serial>@<panorama>`) | key of the Panorama, target serial; allow list on the Panorama host |
+| D | Key generation from user + password (`type=key-manager`) | needs network from the web part - today the user brings the API key |
+| E | Network limited to the targets | today: the container gets a normal network; the allow list is checked by the viewer, not by a firewall rule - a dedicated docker network with egress rules would be stronger |
+| G | Named entries in runs | done for `maxmind-licensekey` (MaxMind) and `ldap_user<user>` (LDAP runs); open: e.g. `bpa-apikey` for bpa-generator - the run gets only the entry it needs, like an import |
+| F | Encryption of the key store | today the key of the installation lies in the volume (protects a copied database, not a copied volume) - see config-viewer-encryption.md |
+| H | DNS servers per project and per user (Sven, 2026-11-21) | everything that needs DNS: address objects of type FQDN (resolve / check them), LDAP (find the domain controllers), device names of an import. Today only installation-wide `VIEWER_RUN_DNS` (`--dns`, only for run steps with network). Wanted: both - the owner sets the DNS servers of the customer per project (the customer's internal names), and a user sets own ones (e.g. the DNS of the network the user works in); order to decide: user before project before installation, or the user's only for the user's own runs (LDAP, import with own keys); a run that only resolves gets a network for DNS alone (port 53 to these servers - see E, today the allow list is checked by the viewer, not enforced in the network); the DNS servers count as targets of the allow / deny list; per run in run.log which DNS servers were used |

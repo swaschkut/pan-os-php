@@ -62,19 +62,18 @@ class InterfaceContainer extends ObjRuleContainer
                 get_class( $this->owner->owner->owner ) === "DeviceOnPrem" )
             )
             {
-                if( strpos( $interfaceString, "$" ) !== FALSE )
-                {
-                    //Todo: 20220801 swaschkut
-                    // - Buckbeak snippet issue with loading config as now network part was defined
-                    #DH::DEBUGprintDOMDocument($node);
-                    print get_class( $this->owner->owner->owner ).": ".$this->owner->owner->owner->name()." | ";
-                    print "Snippet interface variable: ".$interfaceString."\n";
-                }
-                else
-                {
-                    mwarning( "not a correct Snippet interface variable", $xml, false );
-                }
-
+                // SCM: interface variables ($ethernet1_1) of the snippets, physical names on a device; the interface
+                // objects are not loaded from SCM (yet) - a tmp interface of the container keeps the reference
+                $scmSub = $this->owner->owner->owner;
+                $interface = null;
+                if( get_class($scmSub) !== "Snippet" && method_exists($scmSub, 'getAttachedSnippets') )
+                    foreach( $scmSub->getAttachedSnippets() as $snippet )
+                        if( isset($snippet->network) && ($interface = $snippet->network->findInterface($interfaceString)) !== null )
+                            break;
+                if( $interface === null && isset($scmSub->network) )
+                    $interface = $scmSub->network->findInterfaceOrCreateTmp($interfaceString);
+                if( $interface !== null )
+                    $this->add($interface);
             }
             else
             {

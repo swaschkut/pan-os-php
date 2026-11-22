@@ -204,6 +204,10 @@ RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['av-prof
 
         $profiles = $secprofgroup->securityProfiles();
 
+        // SCM: antivirus and wildfire are one virus-and-wildfire-analysis profile
+        if( $secprofgroup->isSCM() )
+            return isset($profiles['virus-and-wildfire-analysis']);
+
         return isset($profiles['virus']);
     },
     'arg' => FALSE,
@@ -248,6 +252,10 @@ RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['wf-prof
         
 
         $profiles = $secprofgroup->securityProfiles();
+
+        // SCM: antivirus and wildfire are one virus-and-wildfire-analysis profile
+        if( $secprofgroup->isSCM() )
+            return isset($profiles['virus-and-wildfire-analysis']);
 
         return isset($profiles['wildfire-analysis']);
     },

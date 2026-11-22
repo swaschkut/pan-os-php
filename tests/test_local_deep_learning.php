@@ -21,7 +21,9 @@
  * local deep learning (LDL) per PAN-OS version: SecurityProfile2::$localDeepLearningMinVersion
  * - AS: HTTP / HTTP2 C2 detectors from 11.2 (SSL, Unknown-TCP, Unknown-UDP never)
  * - VP: SQL Injection / Command Injection from 12.2
- * load (missing element), alert-only-set, best-practice-set, iron-skillet anti-spyware snippet.
+ * load: read only, never written (no element: not set - PANW documents no default, the 12.1 GUI has no setting);
+ * alert-only-set / best-practice-set: written only for the models the BP JSON lists (enable / disable), nothing else;
+ * iron-skillet snippets: no local-deep-learning (set from the BP JSON by AlertOnlySet() / BestPracticeSet()).
  *
  *   php tests/test_local_deep_learning.php
  */
@@ -98,52 +100,84 @@ check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'spyware', 'HTTP 
 check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'spyware', 'SSL Command and Control detector', 122 ), 'AS SSL never' );
 check( SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'Command Injection', 122 ), 'VP Command Injection 12.2' );
 check( SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'SQL Injection', 122 ), 'VP SQL Injection 12.2' );
-check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'Command Injection', 121 ), 'VP Command Injection not 12.1' );
+check( !SecurityProfile2::localDeepLearningSupportedInVersion( 'vulnerability', 'SQL Injection', 121 ), 'VP SQL Injection not 12.1' );
 
-foreach( array(
-             // version => array( after load AS, after load VP, after alert-only-set AS, after alert-only-set VP )
-             '11.1' => array( $asNone, $vpNone, $asNone, $vpNone ),
-             '11.2' => array( array( 'HTTP' => 'disable', 'HTTP2' => 'disable' ) + $asNone, $vpNone,
-                              array( 'HTTP' => 'enable', 'HTTP2' => 'enable' ) + $asNone, $vpNone ),
-             '12.1' => array( array( 'HTTP' => 'disable', 'HTTP2' => 'disable' ) + $asNone, $vpNone,
-                              array( 'HTTP' => 'enable', 'HTTP2' => 'enable' ) + $asNone, $vpNone ),
-             '12.2' => array( array( 'HTTP' => 'disable', 'HTTP2' => 'disable' ) + $asNone, array( 'SQL Injection' => 'disable', 'Command Injection' => 'disable' ),
-                              array( 'HTTP' => 'enable', 'HTTP2' => 'enable' ) + $asNone, array( 'SQL Injection' => 'enable', 'Command Injection' => 'enable' ) ),
-         ) as $version => $expect )
+// BP JSON: the shipped file with explicit local-deep-learning entries ($ldlValue: 'enable' / 'disable' / null = no entry)
+config( '12.2' );   // loading a configuration sets the shipped BP JSON file (SecurityProfileStore)
+$shipped = PH::getBPjsonFile();
+function bpJson( $shipped, $ldlValue )
 {
-    list( $as, $vp ) = config( $version );
-    eq( ldl( $as, 'mica-engine-spyware-enabled' ), $expect[0], $version . ' AS after load' );
-    eq( ldl( $vp, 'mica-engine-vulnerability-enabled' ), $expect[1], $version . ' VP after load' );
-
-    ob_start();
-    $as->inlineML_AlertOnlySet();
-    $sendAPI = false;
-    $vp->inlineML_AlertOnlySet( $sendAPI );
-    ob_end_clean();
-    eq( ldl( $as, 'mica-engine-spyware-enabled' ), $expect[2], $version . ' AS after alert-only-set' );
-    eq( ldl( $vp, 'mica-engine-vulnerability-enabled' ), $expect[3], $version . ' VP after alert-only-set' );
-    if( $version == '12.2' )
-        eq( $vp->additional['mica-engine-vulnerability-enabled']['Command Injection']['local-deep-learning'] ?? null, 'enable', '12.2 VP additional[] updated' );
-
-    // best-practice-set: same local deep learning result
-    list( $as, $vp ) = config( $version );
-    ob_start();
-    $as->inlineML_BestPracticeSet();
-    $vp->inlineML_BestPracticeSet();
-    ob_end_clean();
-    eq( ldl( $as, 'mica-engine-spyware-enabled' ), $expect[2], $version . ' AS after best-practice-set' );
-    eq( ldl( $vp, 'mica-engine-vulnerability-enabled' ), $expect[3], $version . ' VP after best-practice-set' );
+    $j = $shipped;
+    foreach( array( 'spyware' => array( 'HTTP Command and Control detector', 'HTTP2 Command and Control detector' ),
+                    'vulnerability' => array( 'SQL Injection', 'Command Injection' ) ) as $type => $models )
+        foreach( array( 'bp', 'visibility' ) as $section )
+        {
+            $entries = array();
+            foreach( $j[$type]['cloud-inline'][$section]['inline-policy-action'] ?? array() as $entry )
+                if( !isset( $entry['local-deep-learning'] ) )
+                    $entries[] = $entry;
+            if( $ldlValue !== null )
+                $entries[] = array( 'type' => $models, 'local-deep-learning' => array( $ldlValue ) );
+            $j[$type]['cloud-inline'][$section]['inline-policy-action'] = $entries;
+        }
+    return $j;
 }
 
-// iron-skillet anti-spyware snippet: local-deep-learning only for HTTP / HTTP2 from 11.2
-foreach( array( '11.1' => 0, '11.2' => 2, '12.1' => 2 ) as $version => $count )
+foreach( array( 'enable', 'disable', null ) as $ldlValue )
 {
-    $d = new DOMDocument();
-    $d->loadXML( AntiSpywareProfile::ironSkilletXml( $version ) );
-    $x = new DOMXPath( $d );
-    $per = $x->query( '//entry[mica-engine-spyware-enabled][1]/mica-engine-spyware-enabled/entry[local-deep-learning]' );
-    eq( $per->length, $count, 'iron-skillet ' . $version . ': detectors with local-deep-learning in the first profile' );
-    eq( $x->query( '//mica-engine-spyware-enabled/entry[local-deep-learning][not(starts-with(@name,"HTTP"))]' )->length, 0, 'iron-skillet ' . $version . ': only HTTP / HTTP2' );
+    PH::$shadow_bp_jsonfile = bpJson( $shipped, $ldlValue );
+    $tag = 'JSON ' . ( $ldlValue === null ? 'without local-deep-learning' : $ldlValue );
+    $as112 = $ldlValue === null ? $asNone : array( 'HTTP' => $ldlValue, 'HTTP2' => $ldlValue ) + $asNone;
+    $vp122 = $ldlValue === null ? $vpNone : array( 'SQL Injection' => $ldlValue, 'Command Injection' => $ldlValue );
+    foreach( array(
+                 // version => array( after load AS, after load VP, after alert-only-set AS, after alert-only-set VP )
+                 '11.1' => array( $asNone, $vpNone, $asNone, $vpNone ),
+                 '11.2' => array( $asNone, $vpNone, $as112, $vpNone ),
+                 '12.1' => array( $asNone, $vpNone, $as112, $vpNone ),
+                 '12.2' => array( $asNone, $vpNone, $as112, $vp122 ),
+             ) as $version => $expect )
+    {
+        list( $as, $vp ) = config( $version );
+        eq( ldl( $as, 'mica-engine-spyware-enabled' ), $expect[0], $tag . ' ' . $version . ' AS after load' );
+        eq( ldl( $vp, 'mica-engine-vulnerability-enabled' ), $expect[1], $tag . ' ' . $version . ' VP after load' );
+        eq( $as->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['local-deep-learning'] ?? null, null, $tag . ' ' . $version . ' AS additional[] after load: not set' );
+
+        ob_start();
+        $as->inlineML_AlertOnlySet();
+        $sendAPI = false;
+        $vp->inlineML_AlertOnlySet( $sendAPI );
+        ob_end_clean();
+        eq( ldl( $as, 'mica-engine-spyware-enabled' ), $expect[2], $tag . ' ' . $version . ' AS after alert-only-set' );
+        eq( ldl( $vp, 'mica-engine-vulnerability-enabled' ), $expect[3], $tag . ' ' . $version . ' VP after alert-only-set' );
+        if( $version == '12.2' )
+            eq( $vp->additional['mica-engine-vulnerability-enabled']['Command Injection']['local-deep-learning'] ?? null, $ldlValue, $tag . ' 12.2 VP additional[] updated' );
+
+        // best-practice-set: same local deep learning result
+        list( $as, $vp ) = config( $version );
+        ob_start();
+        $as->inlineML_BestPracticeSet();
+        $vp->inlineML_BestPracticeSet();
+        ob_end_clean();
+        eq( ldl( $as, 'mica-engine-spyware-enabled' ), $expect[2], $tag . ' ' . $version . ' AS after best-practice-set' );
+        eq( ldl( $vp, 'mica-engine-vulnerability-enabled' ), $expect[3], $tag . ' ' . $version . ' VP after best-practice-set' );
+    }
+
+    // validation: a missing element is not set - it complies with neither 'enable' nor 'disable'
+    list( $as, $vp ) = config( '12.2' );
+    eq( $as->inlineML_localDeepLearningDetectorComplies( 'visibility', 'HTTP Command and Control detector' ), $ldlValue === null ? null : FALSE, $tag . ' 12.2 AS validation of a missing element' );
+    eq( $vp->inlineML_localDeepLearningDetectorComplies( 'visibility', 'Command Injection', 'vulnerability' ), $ldlValue === null ? null : FALSE, $tag . ' 12.2 VP validation of a missing element' );
+}
+PH::$shadow_bp_jsonfile = $shipped;
+
+// iron-skillet snippets: no local-deep-learning in any version (as the firewall writes a new profile)
+foreach( array( '11.1', '11.2', '12.1', '12.2' ) as $version )
+{
+    foreach( array( 'AntiSpywareProfile', 'VulnerabilityProfile' ) as $class )
+    {
+        $d = new DOMDocument();
+        $d->loadXML( $class::ironSkilletXml( $version ) );
+        eq( (new DOMXPath( $d ))->query( '//local-deep-learning' )->length, 0, 'iron-skillet ' . $class . ' ' . $version . ': no local-deep-learning' );
+    }
 }
 
 print "\n" . $checks . " checks, " . count($failed) . " failed\n";

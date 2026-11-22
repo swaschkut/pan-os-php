@@ -201,6 +201,9 @@ class MERGER extends UTIL
         $this->inDebugapiArgument();
         $this->inputValidation();
         $this->location_provided();
+        // SCM / Prisma Access (API or scm_pa_export.php folder): containers and objects are loaded per location
+        if( in_array($this->configInput['type'], array('sase-api', 'scm-api', 'scm-export'), TRUE) )
+            $this->location_filter_scm_object();
 
         $this->load_config();
 
@@ -864,6 +867,7 @@ class MERGER extends UTIL
         $this->supportedArguments[] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 
         $this->supportedArguments[] = array('niceName' => 'exportCSV', 'shortHelp' => 'when this argument is specified, it instructs the script to display the kept and removed objects per value');
+        $this->supportedArguments[] = array('niceName' => 'exportJSON', 'shortHelp' => 'the same report as JSON (merged, skipped with the reason, summary)', 'argDesc' => 'report.json');
     }
 
     function merger_arguments( )
@@ -1118,9 +1122,20 @@ class MERGER extends UTIL
         $this->genericObjectMerging( $this->customUrlCategoryMergeSpec() );
     }
 
+    /** the report of this merger run as data (MergerReport): merged, skipped with the reason, summary */
+    function mergerReport(): array
+    {
+        return MergerReport::fromObjectMerger( (string)$this->utilType, isset( $this->deletedObjects ) ? (array)$this->deletedObjects : array(),
+            isset( $this->skippedObjects ) ? (array)$this->skippedObjects : array() );
+    }
+
     function merger_final_step()
     {
         $this->save_our_work( true );
+
+        // exportJSON=<file> and / or the JSON output (shadow-json): the same data as the HTML of exportCSV
+        if( PH::$shadow_json || MergerReport::fileArgument() !== null )
+            MergerReport::write( $this->mergerReport(), MergerReport::fileArgument( $this->projectFolder ) );
 
         if( $this->exportcsv )
         {
@@ -1191,21 +1206,10 @@ class MERGER extends UTIL
             return '<td>' . $output . '</td>';
         };
 
-        $obj_Array = array();
-        if( !$skipped )
-        {
-            if( isset($this->deletedObjects) )
-                $obj_Array = $this->deletedObjects;
-        }
-        else
-        {
-            if( isset($this->skippedObjects) )
-                $obj_Array = $this->skippedObjects;
-        }
-
-
+        // the rows from the report as data (MergerReport) - the same data as exportJSON / shadow-json
+        $report = $this->mergerReport();
         $count = 0;
-        foreach( $obj_Array as $index => $line )
+        foreach( $report[$skipped ? 'skipped' : 'merged'] as $e )
             {
                 $count++;
 
@@ -1215,26 +1219,13 @@ class MERGER extends UTIL
                     $lines .= "<tr bgcolor=\"#DDDDDD\">";
 
                 $lines .= $encloseFunction( (string)$count );
+                $lines .= $encloseFunction( $e['kept'] !== null ? $e['kept']['text'] : "" );
+                $lines .= $encloseFunction( array_column( $e[$skipped ? 'notMergedWith' : 'removed'], 'text' ) );
 
-                if( isset( $line['kept'] ) )
-                    $lines .= $encloseFunction( $line['kept'] );
-                else
-                    $lines .= $encloseFunction( "" );
+                if( $skipped )
+                    $lines .= $encloseFunction( $e['reason'] );
 
-                $removedArray = explode( "|", $line['removed'] );
-                $lines .= $encloseFunction( $removedArray );
-
-                if( isset( $line['reason'] ) && $skipped )
-                {
-                    $tmp_array = explode(PHP_EOL, $line['reason']);
-                    $lines .= $encloseFunction( $tmp_array );
-                }
-                elseif( $skipped )
-                    $lines .= $encloseFunction( "" );
-
-                $tmp_array = explode( "./.", $index );
-                $lines .= $encloseFunction( $tmp_array );
-                #$lines .= $encloseFunction( (string)$index );
+                $lines .= $encloseFunction( explode( "./.", $e['index'] ) );
 
                 $lines .= "</tr>\n";
 

@@ -1,0 +1,375 @@
+<?php
+/**
+ * ISC License
+ *
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/**
+ * scm_pa_xml_to_change.php
+ *
+ *   scm_pa_export.php ──► export folder ──► pan-os-php utilities (in=scm-export://<folder> … out=changed.xml)
+ *   ──► scm_pa_xml_to_change.php ──► change.json ──► scm_pa_change.php (dry-run, execute, verify)
+ *
+ * The original is loaded from the same export with the same loader (all containers, all types), so only the changes
+ * of the utilities show up. Deletes: only where the changed XML still holds objects of that type in that container
+ * (a type a utility did not load is never deleted); without allow-delete they stay in the dry-run of scm_pa_change.
+ */
+
+set_include_path(dirname(__FILE__) . '/../../../../' . PATH_SEPARATOR . get_include_path());
+require_once("lib/pan_php_framework.php");
+require_once("utils/lib/UTIL.php");
+require_once(dirname(__FILE__) . "/lib/SCMPrismaAccessExport.php");
+if( !class_exists("SCMCHANGES") )
+    require_once("utils/lib/SCMCHANGES.php");
+
+$usage = "USAGE: php " . basename(__FILE__) . " in=scm-export://<export folder> file2=changed.xml out=change.json [original=original.xml]\n"
+    . "  in        folder written by scm_pa_export.php (the original - the same folder the utilities read with\n"
+    . "            in=scm-export://)\n"
+    . "  file2     result of the pan-os-php utilities (out=… of the last one; chains with in=<previous out> work)\n"
+    . "  out       change request for scm_pa_change.php\n"
+    . "  original  optional: also write the original XML (for checks / a second comparison)\n"
+    . "\n"
+    . "  example (address merger of one folder):\n"
+    . "    php utils/pan-os-php.php type=address-merger in=scm-export://export/1234 location=Lab out=merged.xml\n"
+    . "    php " . basename(__FILE__) . " in=scm-export://export/1234 file2=merged.xml out=change.json\n"
+    . "    php scm_pa_change.php in=scm-api://1234 changes=change.json            (dry-run, then execute)\n";
+
+$args = array();
+foreach( array_slice($argv, 1) as $a )
+{
+    $p = strpos($a, "=");
+    $args[strtolower($p === false ? $a : substr($a, 0, $p))] = $p === false ? true : substr($a, $p + 1);
+}
+foreach( array_keys($args) as $a )
+    if( !in_array($a, array('in', 'file2', 'out', 'original', 'help'), TRUE) )
+    {
+        print "unknown argument '" . $a . "'\n\n" . $usage;
+        exit(1);
+    }
+if( isset($args['help']) || !isset($args['in']) || !isset($args['file2']) || !isset($args['out']) )
+{
+    print $usage;
+    exit( isset($args['help']) ? 0 : 1 );
+}
+$dir = strpos($args['in'], 'scm-export://') === 0 ? substr($args['in'], strlen('scm-export://')) : $args['in'];
+if( !is_file($args['file2']) )
+    derr( "file2 not found: " . $args['file2'], null, FALSE );
+
+$connector = new PanSCMExportConnector($dir);
+$dir = $connector->exportDir;
+PH::print_stdout( PH::boldText(" * [1/3] original from the export: " . $dir) );
+$pan = new BuckbeakConf();
+$doc = new DOMDocument();
+if( !$doc->load(dirname(__FILE__) . "/../../buckbeak_baseconfig.xml", XML_PARSE_BIG_LINES) )
+    derr( "buckbeak base configuration not readable", null, FALSE );
+$pan->load_from_domxml($doc);
+ob_start();
+$loaded = $connector->loadAll($pan);
+ob_end_clean();
+$origFile = isset($args['original']) ? $args['original'] : tempnam(sys_get_temp_dir(), "scm-orig-") . ".xml";
+$pan->save_to_file($origFile, FALSE);
+PH::print_stdout( "   " . count($loaded) . " container(s) loaded" . ( isset($args['original']) ? ", written to " . $origFile : "" ) );
+
+PH::print_stdout( PH::boldText(" * [2/3] difference original <-> " . $args['file2']) );
+// security profile sections only the internal UI API has (SCMImporter::INTERNAL_GAPS): removed from both sides
+// before the public difference; a difference in them -> _internal (complete entry, written by scm_pa_change.php
+// through the internal UI API after the public request)
+$internalSide = function( $file, $outFile ){
+    $doc = new DOMDocument();
+    $doc->load($file, XML_PARSE_BIG_LINES);
+    $xp = new DOMXPath($doc);
+    $profiles = array();
+    foreach( SCMImporter::INTERNAL_GAPS as $xmlType => $paths )
+        foreach( $xp->query("/config/devices/entry/*/entry/profiles/" . $xmlType . "/entry") as $prof )
+        {
+            $owner = $prof->parentNode->parentNode->parentNode;
+            $kind = $owner->parentNode->nodeName;
+            $scopeType = ( $kind == 'container' || $kind == 'cloud' ) ? 'folder' : ( $kind == 'snippet' ? 'snippet' : 'device' );
+            $full = SCMImporter::domToInternal( $prof->cloneNode(TRUE) );
+            $removed = SCMImporter::stripInternalGaps( $xp, $prof, $xmlType );
+            $stripped = SCMImporter::domToInternal( $prof->cloneNode(TRUE) );
+            // the internal-only part: top-level sections that differ between complete and stripped entry
+            $gaps = array();
+            foreach( (array)$full as $k => $v )
+                if( $k !== '@name' && ( !is_array($stripped) || !array_key_exists($k, $stripped) || $stripped[$k] != $v ) )
+                    $gaps[$k] = $v;
+            $profiles[SCMImporter::INTERNAL_GAP_RESOURCES[$xmlType] . "|" . $scopeType . "|" . $owner->getAttribute('name') . "|" . $prof->getAttribute('name')] = array(
+                'type' => $xmlType, 'uuid' => $prof->getAttribute('uuid'), 'entry' => $full, 'gaps' => $gaps, 'removed' => $removed );
+        }
+    $doc->save($outFile);
+    return $profiles;
+};
+$normInternal = function( $v ) use( &$normInternal ){
+    if( is_object($v) )
+        $v = (array)$v;
+    if( !is_array($v) )
+        return (string)$v;
+    $out = array();
+    foreach( $v as $k => $x )
+        $out[$k] = $normInternal($x);
+    if( array_keys($out) !== range(0, count($out) - 1) )
+        ksort($out);
+    return $out;
+};
+$origStripped = tempnam(sys_get_temp_dir(), "scm-orig-pub-") . ".xml";
+$newStripped = tempnam(sys_get_temp_dir(), "scm-new-pub-") . ".xml";
+$origProfiles = $internalSide( $origFile, $origStripped );
+$newProfiles = $internalSide( $args['file2'], $newStripped );
+$internalChanges = array();     // resource|scope_type|scope|name => ['prefix', 'entry']
+$internalNotChanged = array();
+foreach( $newProfiles as $k => $np )
+{
+    $op = isset($origProfiles[$k]) ? $origProfiles[$k] : null;
+    if( $op === null ? count($np['gaps']) == 0 : $normInternal($op['gaps']) == $normInternal($np['gaps']) )
+        continue;
+    list( $resource, $scopeType, $scope, $name ) = explode("|", $k, 4);
+    $reason = null;
+    if( $scopeType != 'folder' )
+        $reason = "internal UI API sections changed (" . implode(", ", array_keys($np['gaps'])) . ") - only for objects in folders";
+    elseif( $op !== null )
+    {
+        // the original must be the complete internal entry of the export, else the edit would overwrite SCM values
+        // pan-os-php never saw
+        $index = $connector->internalIndex( $resource );
+        if( $index === FALSE || $op['uuid'] === '' || !isset($index[$op['uuid']]) )
+            $reason = "internal UI API sections changed (" . implode(", ", array_keys($np['gaps'])) . ") - the export has no internal UI API answer of this profile: export again (scm_pa_export.php, config-internal, ui-api-host=)";
+    }
+    if( $reason !== null )
+    {
+        $internalNotChanged[$k] = array( 'type' => $resource, 'name' => $name, $scopeType => $scope, 'reasons' => array( $reason ) );
+        continue;
+    }
+    $internalChanges[$k] = array( 'prefix' => "profiles/" . $np['type'], 'entry' => $np['entry'] );
+    // the export entry the change was made on: scm_pa_change.php reports a section changed in SCM since then as
+    // conflict instead of overwriting it
+    if( $op !== null )
+    {
+        $base = $connector->internalIndex( $resource )[$op['uuid']];
+        foreach( array_keys($base) as $bk )
+            if( is_string($bk) && $bk !== '' && $bk[0] == '@' && $bk !== '@name' )
+                unset( $base[$bk] );
+        $internalChanges[$k]['base'] = $base;
+    }
+}
+ob_start();
+$json = SCMCHANGES::generate( $origStripped, $newStripped );
+ob_end_clean();
+unlink($origStripped);
+unlink($newStripped);
+$gen = json_decode($json, TRUE);
+$newDoc = new DOMDocument();
+$newDoc->load($args['file2'], XML_PARSE_BIG_LINES);
+$counter = new SCMChangeGenerator();
+$newCounts = $counter->objectCounts($newDoc);
+$xpNew = new DOMXPath($newDoc);
+if( !isset($args['original']) )
+    unlink($origFile);
+
+// references from types the pan-os-php loader does not read (e.g. NAT / decryption rules): the utilities do not see
+// them (no reference replacement) - such an object is never deleted, it is listed instead
+$loadedTypes = array();
+foreach( PanSCMExportConnector::ALL_UTIL_TYPES as $ut )
+    foreach( $connector->getTypeArray($ut) as $t )
+        $loadedTypes[$t] = TRUE;
+$foreignRefs = array();     // value => list of "type 'name' [container]"
+$collect = function( $v, $where ) use( &$collect, &$foreignRefs ){
+    if( is_string($v) )
+        $foreignRefs[$v][$where] = TRUE;
+    elseif( is_array($v) )
+        foreach( $v as $k => $x )
+            if( $k !== 'name' && $k !== 'id' && $k !== 'folder' && $k !== 'snippet' && $k !== 'device' )
+                $collect( $x, $where );
+};
+foreach( array('folders', 'snippets', 'devices') as $sub )
+    foreach( glob(rtrim($dir, "/") . "/config/" . $sub . "/*/*.json") as $f )
+    {
+        $t = preg_replace(array('/^\d+_/', '/-(pre|post)$/'), '', basename($f, ".json"));
+        if( isset($loadedTypes[$t]) )
+            continue;
+        $j = json_decode(file_get_contents($f), TRUE);
+        foreach( isset($j['data']) && is_array($j['data']) ? $j['data'] : array() as $o )
+            if( isset($o['name']) )
+                $collect( $o, $t . " '" . $o['name'] . "' [" . basename(dirname($f)) . "]" );
+    }
+
+PH::print_stdout( PH::boldText(" * [3/3] change request") );
+$known = array();
+foreach( SCMPrismaAccessExport::getConfigTypes() as $t )
+    $known[$t['name']] = $t;
+$change = array(
+    'format' => 'pan-os-php-scm-change-request',
+    'description' => "pan-os-php utilities on export " . basename(rtrim($dir, "/")) . ": " . basename($args['file2']),
+    'source' => array( 'export' => $dir, 'tsg_id' => isset($connector->manifest['tsg_id']) ? $connector->manifest['tsg_id'] : null,
+        'export_created_at' => isset($connector->manifest['created_at']) ? $connector->manifest['created_at'] : null,
+        'file2' => basename($args['file2']), 'created_at' => date('c'), 'tool' => basename(__FILE__) . " " . PH::frameworkVersion() ),
+);
+$notChanged = array();
+$skippedDeletes = 0;
+$counts = array();
+foreach( $gen['requests'] as $r )
+{
+    $obj = $r['object'];
+    $resource = $obj['resource'];
+    $label = $resource . " '" . $obj['name'] . "' [" . $obj['scope_type'] . " " . $obj['scope'] . "]";
+    if( in_array($resource, array('folders', 'snippets', 'devices'), TRUE) )
+    {
+        $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], 'reasons' => array( $r['method'] . ": folders / snippets / devices are not changed from utility results" ) );
+        continue;
+    }
+    if( !in_array($obj['scope_type'], array('folder', 'snippet'), TRUE) || !isset($known[$resource]) )
+    {
+        $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], 'reasons' => array( "scope " . $obj['scope_type'] . " / type not supported by scm_pa_change.php" ) );
+        continue;
+    }
+    $scopeKey = $obj['scope_type'];
+    $item = array( $scopeKey => $obj['scope'], 'name' => $obj['name'] );
+    if( !empty($known[$resource]['position']) && $scopeKey == 'folder' && $obj['position'] !== null )
+        $item['position'] = $obj['position'];
+
+    if( $r['method'] == 'DELETE' )
+    {
+        // a type that is not in the changed XML for this container was not loaded by the utility - never deleted
+        if( !isset($newCounts[$obj['scope_type'] . "|" . $obj['scope'] . "|" . $resource]) )
+        {
+            $skippedDeletes++;
+            continue;
+        }
+        // still referenced in the changed XML (e.g. file2 made from an XML of an older loader that did not have the
+        // object, the reference resolved to a predefined object of the same name): not deleted
+        $q = strpos($obj['name'], "'") === FALSE ? "'" . $obj['name'] . "'" : '"' . $obj['name'] . '"';
+        $stillRef = $xpNew->query("/config/devices/entry/*/entry//member[normalize-space(text())=" . $q . "]")->length;
+        if( $stillRef > 0 )
+        {
+            $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], $scopeKey => $obj['scope'],
+                'reasons' => array( "not deleted: the name is still referenced " . $stillRef . "x in " . basename($args['file2'])
+                    . " - was file2 made from the same export with the same pan-os-php version (type=scm-export-xml)?" ) );
+            continue;
+        }
+        if( isset($foreignRefs[$obj['name']]) )
+        {
+            $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], $scopeKey => $obj['scope'],
+                'reasons' => array( "not deleted: referenced by " . implode(", ", array_slice(array_keys($foreignRefs[$obj['name']]), 0, 5))
+                    . ( count($foreignRefs[$obj['name']]) > 5 ? " …" : "" ) . " - types pan-os-php does not load (references not replaced by the utility)" ) );
+            continue;
+        }
+        $item['_delete'] = true;
+    }
+    else
+    {
+        if( $r['review'] )
+        {
+            $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], $scopeKey => $obj['scope'], 'reasons' => $r['warnings'] );
+            continue;
+        }
+        $body = is_array($r['body']) ? $r['body'] : array();
+        if( $r['method'] == 'PUT' && isset($body['name']) && $body['name'] !== $obj['name'] )
+        {
+            $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], $scopeKey => $obj['scope'], 'reasons' => array( "renamed (" . json_encode($r['before']) . ") - scm_pa_change.php does not rename" ) );
+            continue;
+        }
+        $before = isset($r['before']) && is_array($r['before']) ? $r['before'] : array();
+        $skip = false;
+        foreach( $body as $k => $v )
+        {
+            if( in_array($k, array('folder', 'snippet', 'device', 'name', 'id'), TRUE) )
+                continue;
+            if( $v === null )
+            {
+                // field removed: a list becomes empty, a removed scalar / object cannot be expressed as "replace"
+                if( isset($before[$k]) && is_array($before[$k]) && array_values($before[$k]) === $before[$k] )
+                    $v = array();
+                else
+                {
+                    $notChanged[] = array( 'type' => $resource, 'name' => $obj['name'], $scopeKey => $obj['scope'], 'reasons' => array( "field '" . $k . "' removed - not expressible in the change request" ) );
+                    $skip = true;
+                    break;
+                }
+            }
+            $item[$k] = $v;
+        }
+        if( $skip )
+            continue;
+        // custom URL category without entries: SCM refuses an empty list ("list is invalid") - placeholder entry
+        // empty.empty, as the Panorama import (SCMImporter) and the SCM UI do
+        if( $resource == 'url-categories' && isset($item['list']) && $item['list'] === array() )
+        {
+            $item['list'] = array( 'empty.empty' );
+            $bl = isset($before['list']) ? $before['list'] : null;
+            if( $r['method'] == 'PUT' && $bl == array( 'empty.empty' ) && count( array_diff_key( $item, array_flip( array( $scopeKey, 'name', 'list' ) ) ) ) == 0 )
+                continue;     // only the placeholder differed: no change
+        }
+    }
+    $ik = $resource . "|" . $obj['scope_type'] . "|" . $obj['scope'] . "|" . $obj['name'];
+    if( $r['method'] != 'DELETE' && isset($internalChanges[$ik]) )
+    {
+        $item['_internal'] = $internalChanges[$ik];
+        unset( $internalChanges[$ik] );
+    }
+    $change[$resource][] = $item;
+    $c = $r['method'] == 'DELETE' ? 'delete' : ( $r['method'] == 'POST' ? 'create' : 'update' );
+    $counts[$resource][$c] = ( isset($counts[$resource][$c]) ? $counts[$resource][$c] : 0 ) + 1;
+}
+// profiles changed only in internal UI API sections: no public request, the internal edit alone
+foreach( $internalChanges as $ik => $in )
+{
+    list( $resource, $scopeType, $scope, $name ) = explode("|", $ik, 4);
+    $change[$resource][] = array( 'folder' => $scope, 'name' => $name, '_internal' => $in );
+    $counts[$resource]['update (internal only)'] = ( isset($counts[$resource]['update (internal only)']) ? $counts[$resource]['update (internal only)'] : 0 ) + 1;
+}
+$internalCount = 0;
+foreach( $change as $res => $items )
+    if( is_array($items) )
+        foreach( $items as $it )
+            if( is_array($it) && isset($it['_internal']) )
+                $internalCount++;
+foreach( $internalNotChanged as $nc )
+    $notChanged[] = $nc;
+if( count($notChanged) > 0 )
+    $change['not_imported'] = $notChanged;
+// "changes below <x>" of a part the utility did not load (not in the changed XML at all): no change, not reported
+$gen['warnings'] = array_values(array_filter( isset($gen['warnings']) ? $gen['warnings'] : array(), function( $w ) use( $xpNew ){
+    if( !preg_match("/^(folder|snippet|device) '(.*)': changes below <([^>]+)>/", $w, $m) )
+        return TRUE;
+    $kind = array( 'folder' => 'container', 'snippet' => 'snippet', 'device' => 'device/*' );
+    $q = "/config/devices/entry/" . $kind[$m[1]] . "/entry[@name=" . ( strpos($m[2], "'") === FALSE ? "'" . $m[2] . "'" : '"' . $m[2] . '"' ) . "]/" . $m[3];
+    return $xpNew->query($q)->length > 0;
+} ));
+if( !empty($gen['warnings']) )
+    $change['warnings'] = $gen['warnings'];
+
+file_put_contents($args['out'], json_encode($change, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+
+foreach( $counts as $res => $c )
+{
+    $parts = array();
+    foreach( $c as $k => $n )
+        $parts[] = $k . " " . $n;
+    PH::print_stdout( sprintf("   %-34s %s", $res, implode(", ", $parts)) );
+}
+if( count($counts) == 0 )
+    PH::print_stdout( "   no changes" );
+if( $internalCount > 0 )
+    PH::print_stdout( "   internal UI API sections (decoder, inline ML, inline cloud analysis, rule action default, advanced DNS): " . $internalCount . " profile(s) ('_internal')" );
+if( $skippedDeletes > 0 )
+    PH::print_stdout( "   (" . $skippedDeletes . " object(s) of types the utility did not load - unchanged, no delete)" );
+if( count($notChanged) > 0 )
+    PH::print_stdout( "   not in the change request: " . count($notChanged) . " (list 'not_imported' in " . $args['out'] . ")" );
+foreach( isset($gen['warnings']) ? $gen['warnings'] : array() as $w )
+    PH::print_stdout( "   ! " . $w );
+PH::print_stdout( " * written: " . $args['out'] );
+$tsg = isset($connector->manifest['tsg_id']) ? $connector->manifest['tsg_id'] : '<TSG>';
+PH::print_stdout( " * next: php scm_pa_change.php in=scm-api://" . $tsg . " changes=" . $args['out'] . "   (dry-run"
+    . ", then 'execute')" );

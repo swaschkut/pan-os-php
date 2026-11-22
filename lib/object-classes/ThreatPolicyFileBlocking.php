@@ -33,20 +33,32 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
         $tmp_rules_xmlroot = DH::findFirstElementOrCreate('rules', $xmlroot);
         $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
 
-        $this->xmlroot = $tmp_rules_xmlroot;
+        // the rule entry (not the <rules> element): later changes of this rule go to its own XML
+        $this->xmlroot = $tmp_entry;
 
+        // the values set on the object (e.g. from the BP JSON); both / any where none is set
+        if( empty( $this->direction ) )
+            $this->direction = "both";
+        if( empty( $this->application ) )
+            $this->application = array( "any" => "any" );
+        if( empty( $this->filetype ) )
+            $this->filetype = array( "any" => "any" );
 
         $tmp_action = DH::findFirstElementOrCreate('action', $tmp_entry);
         $tmp_action->textContent = $action;
 
         $tmp_direction = DH::findFirstElementOrCreate('direction', $tmp_entry);
-        $tmp_direction->textContent = "both";
+        $tmp_direction->textContent = $this->direction;
 
         $tmp_application = DH::findFirstElementOrCreate('application', $tmp_entry);
-        $tmp_app_member = DH::createElement( $tmp_application, 'member', 'any' );
+        foreach( $this->application as $application )
+            DH::createElement( $tmp_application, 'member', $application );
 
         $tmp_file_type = DH::findFirstElementOrCreate('file-type', $tmp_entry);
-        $tmp_file_type_member = DH::createElement( $tmp_file_type, 'member', 'any' );
+        foreach( $this->filetype as $filetype )
+            DH::createElement( $tmp_file_type, 'member', $filetype );
+
+        return $tmp_entry;
 
     }
 

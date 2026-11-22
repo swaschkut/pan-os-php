@@ -52,6 +52,15 @@ php tests/test_mergers.php in=tests/input/panorama-10.0-merger.xml out=/dev/null
 cd tests && bash run_api_test.sh <MGMT_IP>
 ```
 
+## Open Work and Concepts
+
+- `TODO.md` is the central list of planned work; one file per topic in `todo/<area>-<topic>.md` (status, code
+  reference, plan, open decisions). New concepts and plans go there, not next to the code.
+- Finished topics move to `todo/done/` with their status updated; small items without their own file are listed in
+  `TODO.md`.
+- Documentation of an existing tool (`README_*.md`, guides) stays next to its code; `utils/develop/` keeps the code
+  under development.
+
 ## Architecture
 
 ### Library Entry Point

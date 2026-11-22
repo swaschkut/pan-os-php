@@ -100,6 +100,19 @@ class ManagedDevice
         $this->template_stack = $template_stack;
     }
 
+    /** the firewall is no longer in this device group (DeviceGroup::removeDevice) */
+    public function removeDeviceGroup($devicegroup)
+    {
+        unset( $this->devicegroup[$devicegroup] );
+    }
+
+    /** the firewall is no longer in this template stack (TemplateStack::removeDevice) */
+    public function removeTemplateStack($template_stack)
+    {
+        if( $this->template_stack === $template_stack )
+            $this->template_stack = null;
+    }
+
     public function getDeviceGroup()
     {
         return $this->devicegroup;

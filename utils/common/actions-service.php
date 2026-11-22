@@ -335,7 +335,7 @@ ServiceCallContext::$supportedActions[] = array(
                         if( $object->name() == "service-http" )
                         {
                             $lines .= $context->encloseFunction('service-tcp');
-                            $lines .= $context->encloseFunction('40');
+                            $lines .= $context->encloseFunction('80,8080');
                         }
                         elseif( $object->name() == "service-https" )
                         {
@@ -410,11 +410,6 @@ ServiceCallContext::$supportedActions[] = array(
                     $port_mapping = $object->dstPortMapping();
                     $mapping_texts = $port_mapping->mappingToText();
 
-                    //TODO: handle predefined service objects in a different way
-                    if( $object->name() == 'service-http' )
-                        $mapping_texts = 'tcp/80';
-                    if( $object->name() == 'service-https' )
-                        $mapping_texts = 'tcp/443';
 
 
                     if( strpos($mapping_texts, " ") !== FALSE )
@@ -1453,7 +1448,7 @@ ServiceCallContext::$supportedActions[] = array(
         if( $description != "" )
             $textToAppend = " ";
 
-        $newName = $context->arguments['stringFormula'];
+        $newName = PH::textAliases( $context->arguments['stringFormula'] );
 
         if( strpos($newName, '$$current.name$$') !== FALSE )
         {
@@ -1490,7 +1485,8 @@ ServiceCallContext::$supportedActions[] = array(
             'default' => '*nodefault*',
             'help' =>
                 "This string is used to compose a name. You can use the following aliases :\n" .
-                "  - \$\$current.name\$\$ : current name of the object\n")
+                "  - \$\$current.name\$\$ : current name of the object\n" .
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=description-append:\$\$comma\$\$word1'\n")
     ),
     'help' => ''
 );

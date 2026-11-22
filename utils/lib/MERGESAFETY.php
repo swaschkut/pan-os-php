@@ -60,6 +60,14 @@ class MergeSafety
     /** set by the last failed check */
     public $lastReason = null;
 
+    /**
+     * the last failed check as data (the "Explain" of the config viewer, exportJSON of the mergers): the firewall
+     * location, the name and its user, the content before / after and how the name resolves for these firewalls before
+     * and after (each level of the hierarchy: found / removed by the merge / placed by the merge / nothing), the
+     * simulated changes
+     */
+    public $lastDetail = null;
+
     public function __construct( $root, string $storeProp, bool $allowWiden )
     {
         $this->root = $root;
@@ -260,6 +268,7 @@ class MergeSafety
                 $units[] = $unit;
 
         $this->lastReason = null;
+        $this->lastDetail = null;
         // the configuration may have changed since the last check
         $this->cache = array();
         $afterCache = array();
@@ -290,6 +299,17 @@ class MergeSafety
                 $this->lastReason = "effective policy would change for firewalls of '" . self::locationName( $fw ) . "'"
                     . " (name '" . implode("','", $unit['before']) . "'" . ( $refText !== '' ? " used by " . $refText : "" ) . ")"
                     . ": before [" . self::contentText( $before ) . "] after [" . self::contentText( $after ) . "]";
+                $this->lastDetail = array(
+                    'reason' => $this->lastReason,
+                    'store' => $this->storeProp,
+                    'firewalls' => self::locationName( $fw ),
+                    'names' => array_values( $unit['before'] ), 'afterNames' => array_values( $unit['after'] ),
+                    'usedBy' => $this->refInfo( $unit['ref'], $refText ),
+                    'via' => $unit['via'] !== null ? $this->refInfo( $unit['via'], '' ) : null,
+                    'before' => array( 'content' => self::contentList( $before ), 'resolution' => $this->traceNames( $unit['before'], $fw, array() ) ),
+                    'after' => array( 'content' => self::contentList( $after ), 'resolution' => $this->traceNames( $unit['after'], $fw, $overlay ) ),
+                    'changes' => $this->overlaySummary( $overlay ),
+                );
                 return $this->lastReason;
             }
         }
@@ -928,7 +948,7 @@ class MergeSafety
             if( $object->isTmpSrv() )
             {
                 if( $object->name() == 'service-http' )
-                    $c['ports']['tcp||||'] = array( array( 80, 80 ) );
+                    $c['ports']['tcp||||'] = array( array( 80, 80 ), array( 8080, 8080 ) );
                 elseif( $object->name() == 'service-https' )
                     $c['ports']['tcp||||'] = array( array( 443, 443 ) );
                 else
@@ -1022,6 +1042,162 @@ class MergeSafety
             }
         }
         return TRUE;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // explain (lastDetail)
+    // ------------------------------------------------------------------------------------------
+
+    /** a user of a name: kind, location, name (and the text of pan-os-php) */
+    private function refInfo( $ref, string $text ): array
+    {
+        if( !is_object($ref) )
+            return array( 'kind' => '', 'location' => '', 'name' => '', 'text' => $text );
+        $kind = $ref instanceof Rule ? 'rule' : ( $this->isGroupObject( $ref ) ? 'group' : strtolower( get_class($ref) ) );
+        $loc = $this->locationOf( $ref );
+        $info = array( 'kind' => $kind, 'class' => get_class($ref), 'location' => $loc !== null ? self::locationName( $loc ) : '',
+            'name' => method_exists($ref, 'name') ? (string)$ref->name() : '', 'text' => $text );
+        if( $ref instanceof Rule )
+        {
+            $info['ruletype'] = strtolower( str_replace( 'Rule', '', get_class($ref) ) );
+            $info['rulebase'] = $ref->isPreRule() ? 'pre' : ( $ref->isPostRule() ? 'post' : '' );
+        }
+        return $info;
+    }
+
+    /**
+     * how each name resolves for the firewalls of $fw: every level of the hierarchy (in the order the firewall looks)
+     * with what it finds there, and the object that wins (a group with its members, resolved one level)
+     */
+    private function traceNames( array $names, $fw, array $overlay ): array
+    {
+        $out = array();
+        foreach( $names as $name )
+            $out[] = $this->traceName( (string)$name, $fw, $overlay, TRUE );
+        return $out;
+    }
+
+    private function traceName( string $name, $fw, array $overlay, bool $members ): array
+    {
+        $prop = $this->storeProp;
+        $steps = array();
+        $seen = array();
+        foreach( PH::firewallResolutionLevels( $fw ) as $level )
+        {
+            if( !isset($level->$prop) || $level->$prop === null )
+                continue;
+            $store = $level->$prop;
+            $sid = spl_object_id($store);
+            if( isset($seen[$sid]) )
+                continue;
+            $seen[$sid] = TRUE;
+            $step = array( 'location' => self::locationName( $level ), 'state' => 'none' );
+            if( isset($overlay['placed'][$sid][$name]) )
+                $step = array( 'location' => self::locationName( $level ), 'state' => 'placed', 'value' => self::contentList( $this->leafContent( $overlay['placed'][$sid][$name] ) ) );
+            else
+            {
+                $found = $store->find( $name, null, FALSE );
+                if( $found !== null )
+                    $step = array( 'location' => self::locationName( $level ), 'state' => isset($overlay['removed'][spl_object_id($found)]) ? 'removed' : 'found',
+                        'value' => $this->isGroupObject( $found ) && !( $found instanceof AddressGroup && $found->isDynamic() ) ? array( 'group' ) : self::contentList( $this->leafContent( $found ) ) );
+            }
+            $steps[] = $step;
+        }
+        $object = $this->resolve( $name, $fw, $overlay );
+        $ret = array( 'name' => $name, 'levels' => $steps, 'precedence' => $this->precedence ? 'ancestor' : 'nearest' );
+        if( $object === null )
+        {
+            $ret['result'] = null;
+            return $ret;
+        }
+        $loc = $this->locationOf( $object );
+        $visited = array();
+        $ret['result'] = array( 'location' => $loc !== null ? self::locationName( $loc ) : 'predefined', 'name' => $object->name(),
+            'group' => $this->isGroupObject( $object ), 'content' => self::contentList( $this->objectContent( $object, $fw, $overlay, $visited ) ) );
+        // a static group: its members as the firewall resolves them (the member names after the simulated renames)
+        if( $members && $this->isGroupObject( $object ) && !( $object instanceof AddressGroup && $object->isDynamic() ) )
+        {
+            $id = spl_object_id($object);
+            $list = array();
+            foreach( $object->members() as $member )
+            {
+                $n = $member->name();
+                if( isset($overlay['memberRemove'][$id][$n]) )
+                {
+                    $list[] = array( 'name' => $n, 'removed' => TRUE );
+                    continue;
+                }
+                $renamed = $overlay['memberRename'][$id][$n] ?? null;
+                $t = $this->traceName( $renamed ?? $n, $fw, $overlay, FALSE );
+                $m = array( 'name' => $n, 'renamedTo' => $renamed, 'result' => $t['result'] );
+                // the member resolves to the group itself (e.g. a group G-B = [G-A] merged with G-A: G-B would contain
+                // G-B) - a loop, the firewall gets nothing from it
+                $r = $this->resolve( $renamed ?? $n, $fw, $overlay );
+                if( $r !== null && spl_object_id($r) === $id )
+                    $m['loop'] = TRUE;
+                $list[] = $m;
+            }
+            foreach( $overlay['memberAdd'][$id] ?? array() as $n )
+                $list[] = array( 'name' => $n, 'added' => TRUE, 'result' => $this->traceName( $n, $fw, $overlay, FALSE )['result'] );
+            $ret['result']['members'] = $list;
+        }
+        return $ret;
+    }
+
+    /** the simulated changes of the operation: removed objects, placed copies, member renames / additions / removals */
+    private function overlaySummary( array $overlay ): array
+    {
+        $out = array( 'removed' => array(), 'placed' => array(), 'memberRenamed' => array(), 'memberAdded' => array(), 'memberRemoved' => array() );
+        foreach( $overlay['removedObjects'] ?? array() as $o )
+        {
+            $loc = $this->locationOf( $o );
+            $out['removed'][] = ( $loc !== null ? self::locationName( $loc ) : '?' ) . ':' . $o->name();
+        }
+        foreach( $overlay['placed'] ?? array() as $sid => $byName )
+            foreach( $byName as $name => $o )
+            {
+                $loc = $this->storeLocation( $sid, $o );
+                $out['placed'][] = ( $loc !== null ? self::locationName( $loc ) : '?' ) . ':' . $name;
+            }
+        $groupName = function( $gid ) {
+            foreach( $this->allLocations() as $loc )
+            {
+                $prop = $this->storeProp;
+                if( !isset($loc->$prop) || $loc->$prop === null )
+                    continue;
+                foreach( $loc->$prop->all() as $o )
+                    if( spl_object_id($o) === $gid )
+                        return self::locationName( $loc ) . ':' . $o->name();
+            }
+            return '?';
+        };
+        foreach( $overlay['memberRename'] ?? array() as $gid => $map )
+            foreach( $map as $old => $new )
+                $out['memberRenamed'][] = array( 'group' => $groupName( $gid ), 'from' => (string)$old, 'to' => (string)$new );
+        foreach( $overlay['memberAdd'] ?? array() as $gid => $names )
+            foreach( $names as $n )
+                $out['memberAdded'][] = array( 'group' => $groupName( $gid ), 'name' => (string)$n );
+        foreach( $overlay['memberRemove'] ?? array() as $gid => $names )
+            foreach( $names as $n => $v )
+                $out['memberRemoved'][] = array( 'group' => $groupName( $gid ), 'name' => (string)$n );
+        return $out;
+    }
+
+    /** the content as a list of parts (IP ranges, ports, tokens) */
+    private static function contentList( array $c ): array
+    {
+        $parts = array();
+        foreach( array( 'ip4', 'ip6' ) as $k )
+            foreach( explode( ',', $c[$k]->dumpToString() ) as $r )
+                if( trim( $r ) !== '' )
+                    $parts[] = trim( $r );
+        $rest = self::emptyContent();
+        $rest['ports'] = $c['ports'];
+        $rest['other'] = $c['other'];
+        $t = self::contentText( $rest );
+        foreach( $t === '' ? array() : explode( ', ', $t ) as $p )
+            $parts[] = $p;
+        return $parts;
     }
 
     private static function contentText( array $c ): string

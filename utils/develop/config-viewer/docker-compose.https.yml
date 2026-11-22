@@ -1,0 +1,37 @@
+# HTTPS for the config viewer: a reverse proxy (Caddy) in front, the web part is no longer published itself.
+# VIEWER_DOMAIN must be the name the users type into the browser:
+#
+#   VIEWER_DOMAIN=viewer.example.com docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+#
+# Certificate (VIEWER_TLS, see docker/Caddyfile):
+#   default "internal": Caddy makes its own CA and certificate - works without internet (air gap). Browsers warn
+#       until the CA is trusted; export it with
+#       docker compose -f ... -f ... exec proxy cat /data/caddy/pki/authorities/local/root.crt
+#   own certificate:  VIEWER_CERTS=/path/with/cert.pem+key.pem  VIEWER_TLS="/certs/cert.pem /certs/key.pem"
+#   Let's Encrypt (public name, internet):  VIEWER_TLS=name@example.com
+services:
+  web:
+    ports: !reset []
+    environment:
+      PANOSPHP_VIEWER_ALLOW_HTTP: "0"
+      PANOSPHP_VIEWER_TLS_PROXY: "1"
+
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [ web ]
+    ports:
+      - "${VIEWER_HTTPS_PORT:-443}:443"
+      - "${VIEWER_HTTP_PORT:-80}:80"
+    environment:
+      VIEWER_DOMAIN: "${VIEWER_DOMAIN:-localhost}"
+      VIEWER_TLS: "${VIEWER_TLS:-internal}"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - "${VIEWER_CERTS:-./docker/certs}:/certs:ro"
+      - proxy-data:/data
+      - proxy-config:/config
+
+volumes:
+  proxy-data:
+  proxy-config:

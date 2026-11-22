@@ -63,6 +63,58 @@ class ServiceStore
         $this->setParentCentralStore( 'serviceStore' );
     }
 
+    /** @var ServiceStore|null predefined PAN-OS service objects (not part of any configuration / predefined.xml) */
+    public static $predefinedStore = null;
+
+    /** predefined service objects of PAN-OS / Panorama / SCM: name => array( protocol, destination ports ) */
+    const PREDEFINED_SERVICES = array(
+        'service-http' => array( 'tcp', '80,8080' ),
+        'service-https' => array( 'tcp', '443' ),
+    );
+
+    /**
+     * store with the predefined service objects service-http / service-https - found by find() of every service store
+     * after the configuration (a service object of the same name in the configuration wins)
+     * @param PANConf|PanoramaConf|FawkesConf|BuckbeakConf|null $owner
+     * @return ServiceStore
+     */
+    public static function getPredefinedStore( $owner = null )
+    {
+        if( self::$predefinedStore !== null )
+            return self::$predefinedStore;
+
+        $store = new ServiceStore( null );
+        $store->owner = $owner;
+        $store->name = 'predefined';
+
+        $doc = new DOMDocument();
+        $root = $doc->createElement( 'service' );
+        $doc->appendChild( $root );
+        foreach( self::PREDEFINED_SERVICES as $name => $def )
+        {
+            $entry = $doc->createElement( 'entry' );
+            $entry->setAttribute( 'name', $name );
+            $protocol = $doc->createElement( 'protocol' );
+            $proto = $doc->createElement( $def[0] );
+            $proto->appendChild( $doc->createElement( 'port', $def[1] ) );
+            $protocol->appendChild( $proto );
+            $entry->appendChild( $protocol );
+            $root->appendChild( $entry );
+        }
+        $store->load_services_from_domxml( $root );
+
+        self::$predefinedStore = $store;
+        return $store;
+    }
+
+    /**
+     * @return bool TRUE for the store of the predefined service objects
+     */
+    public function isPredefinedStore()
+    {
+        return self::$predefinedStore !== null && $this === self::$predefinedStore;
+    }
+
 
     /**
      * @param DOMElement $xml
@@ -454,6 +506,10 @@ class ServiceStore
 
             if( $this->parentCentralStore !== null )
                 $f = $this->parentCentralStore->find($objectName, $ref, $nested);
+
+            // top of the hierarchy: predefined service objects (service-http, service-https)
+            if( $f === null && $this->parentCentralStore === null && !$this->isPredefinedStore() && isset(self::PREDEFINED_SERVICES[$objectName]) )
+                $f = self::getPredefinedStore( $this->owner )->find($objectName, $ref, FALSE);
         }
 
         return $f;

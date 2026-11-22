@@ -1,0 +1,12 @@
+{
+  "description": "lab test: sub folder below pan-os-php-test with one tag and one address",
+  "folders": [
+    { "name": "pan-os-php-sub", "parent": "pan-os-php-test", "description": "created by pan-os-php" }
+  ],
+  "tags": [
+    { "folder": "pan-os-php-sub", "name": "pan-os-php-sub", "color": "Blue" }
+  ],
+  "addresses": [
+    { "folder": "pan-os-php-sub", "name": "h-10.1.1.1", "ip_netmask": "10.1.1.1/32", "tag": ["pan-os-php-sub"] }
+  ]
+}

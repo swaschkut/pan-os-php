@@ -32,7 +32,15 @@ class MAXMIND__
 //CSV
 //https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=YOUR_LICENSE_KEY&suffix=zip
 
-        if( !isset(PH::$args['maxmind-licensekey']) )
+        // maxmind-zip=<GeoLite2-Country-CSV zip>: a file downloaded before (no internet here) - no licence key needed
+        $localZip = isset(PH::$args['maxmind-zip']) && is_string(PH::$args['maxmind-zip']) && PH::$args['maxmind-zip'] !== '' ? PH::$args['maxmind-zip'] : null;
+        $licensekey = null;
+        if( $localZip !== null )
+        {
+            if( !is_file($localZip) )
+                derr( "maxmind-zip: file '" . $localZip . "' not found", null, FALSE );
+        }
+        elseif( !isset(PH::$args['maxmind-licensekey']) )
         {
             //check if available via .panconfigkeystore
             $connector = PanAPIConnector::findOrCreateConnectorFromHost( 'maxmind-licensekey' );
@@ -48,8 +56,10 @@ class MAXMIND__
             //add it to panconfkeystore
         }
 
-        #$filepath = dirname(__FILE__)."/../lib/resources/geoip";
-        $filepath = dirname(__FILE__)."/../../lib/resources/geoip";
+        // lib/resources/geoip, or PANOSPHP_GEOIP_DIR
+        $filepath = PH::geoipPath();
+        if( !is_dir($filepath . "/data") )
+            mkdir($filepath . "/data", 0777, TRUE);
 
         $folderExpression = $filepath."/"."GeoLite2-Country-CSV";
 
@@ -67,7 +77,13 @@ class MAXMIND__
 
 //DOWNLOAD ZIP
 //cert check fail if SSL interception is done
-        if( file_put_contents( $file_name,file_get_contents($url, false, stream_context_create($arrContextOptions))) )
+        if( $localZip !== null )
+        {
+            if( !copy( $localZip, $file_name ) )
+                derr( "maxmind-zip: '" . $localZip . "' can not be copied to '" . $file_name . "'", null, FALSE );
+            echo "File: ".$file_name." taken from ".$localZip."\n";
+        }
+        elseif( file_put_contents( $file_name,file_get_contents($url, false, stream_context_create($arrContextOptions))) )
             echo "File: ".$file_name." downloaded successfully\n";
         else
             echo "File: ".$file_name." downloading failed.\n";

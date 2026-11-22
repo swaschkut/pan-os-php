@@ -2563,11 +2563,6 @@ class Rule
             $port_mapping = $object->dstPortMapping( array(), $this->owner->owner );
             $mapping_texts = $port_mapping->mappingToText();
 
-            //TODO: handle predefined service objects in a different way
-            if( $object->name() == 'service-http' )
-                $mapping_texts = 'tcp/80';
-            if( $object->name() == 'service-https' )
-                $mapping_texts = 'tcp/443';
 
 
             if( strpos($mapping_texts, " ") !== FALSE )

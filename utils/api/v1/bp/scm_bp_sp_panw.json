@@ -267,8 +267,7 @@
                     },
                     {
                         "type": [
-                            "HTTP Command and Control detector",
-                            "HTTP2 Command and Control detector"
+                            "any"
                         ],
                         "local-deep-learning": [
                             "enable"
@@ -288,8 +287,7 @@
                     },
                     {
                         "type": [
-                            "HTTP Command and Control detector",
-                            "HTTP2 Command and Control detector"
+                            "any"
                         ],
                         "local-deep-learning": [
                             "enable"
@@ -346,6 +344,14 @@
                         "action": [
                             "reset-both"
                         ]
+                    },
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
+                        ]
                     }
                 ]
             },
@@ -357,6 +363,14 @@
                         ],
                         "action": [
                             "!allow"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
                         ]
                     }
                 ]
@@ -411,7 +425,8 @@
             "visibility": {
                 "category": "!allow",
                 "tab": {
-                    "mode": "!disabled"
+                    "mode": "!disabled",
+                    "log-severity": ["!informational", "!low"]
                 }
             },
             "bp": {
@@ -430,7 +445,8 @@
                     }
                 ],
                 "tab": {
-                    "mode": "ip-user"
+                    "mode": "ip-user",
+                    "log-severity": ["!informational", "!low"]
                 }
             }
         },

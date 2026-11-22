@@ -29,6 +29,64 @@
 // - templatestack-movetofirsttemplate
 // - delete manageddevice with decommission reference on DG, template-stack
 
+/**
+ * the Panorama of an action that assigns firewalls (device group, template stack): subSystem is the store of the
+ * managed devices when it runs on devicetype=manageddevice (the window of a firewall in the config viewer)
+ */
+/**
+ * the variables of a folder / snippet / device of SCM (<variable><entry name="$x"><type><ip-netmask>…), printed and as
+ * name => array( type, value, description ) for shadow-json
+ */
+function deviceDisplayVariables( DeviceCallContext $context, $object )
+{
+    $holder = DeviceVariables::holder( $object );
+    $list = DeviceVariables::listOf( $holder );
+    if( count( $list ) )
+    {
+        PH::print_stdout( $context->padding."- variables:" );
+        foreach( $list as $name => $v )
+            PH::print_stdout( $context->padding."  ".$name." [".$v['type']."] = ".$v['value'] );
+    }
+    return $list;
+}
+
+/**
+ * variables of a device for shadow-json: 'variables' (own) and 'effective' (the value of each variable for it and
+ * where it comes from - Panorama: firewall, template stack, templates; SCM: device / folder, snippets, parents)
+ */
+function deviceDisplayVariablesJson( DeviceCallContext $context, $object ): void
+{
+    $j = &PH::$JSON_TMP['sub']['object'][$object->name()];
+    $j['variables'] = deviceDisplayVariables( $context, $object );
+    $eff = DeviceVariables::effective( $object );
+    $j['effective'] = $eff;
+    if( count( $j['variables'] ) === 0 && count( $eff ) > 0 )
+        PH::print_stdout( $context->padding."- variables:" );
+    foreach( $eff as $name => $v )
+        if( !$v['own'] )
+            PH::print_stdout( $context->padding."  ".$name." [".$v['type']."] = ".$v['value']."   (from ".$v['from'].")" );
+    // a template stack: the overrides of its firewalls
+    if( $object instanceof TemplateStack )
+    {
+        $j['devicevariables'] = array();
+        foreach( array_keys( $object->FirewallsSerials ) as $serial )
+        {
+            $list = DeviceVariables::listOf( DeviceVariables::holder( $object, (string)$serial ) );
+            if( count( $list ) )
+                $j['devicevariables'][(string)$serial] = $list;
+        }
+    }
+    unset( $j );
+}
+
+function deviceActionPanorama( DeviceCallContext $context )
+{
+    $pan = $context->subSystem;
+    if( !method_exists( $pan, 'isPanorama' ) && isset( $pan->owner ) && is_object( $pan->owner ) )
+        $pan = $pan->owner;
+    return $pan;
+}
+
 DeviceCallContext::$supportedActions['display'] = array(
     'name' => 'display',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -64,11 +122,16 @@ DeviceCallContext::$supportedActions['display'] = array(
 
             foreach( $object->FirewallsSerials as $serial => $managedFirewall )
             {
+                // the firewalls of the stack (shadow-json: 'devices', with their device group in 'devicegroups')
+                PH::$JSON_TMP['sub']['object'][$object->name()]['devices'][] = (string)$serial;
                 if( $managedFirewall !== null )
                 {
                     $deviceGroups = $managedFirewall->getDeviceGroup();
                     foreach( $deviceGroups as $deviceGroup )
+                    {
                         PH::print_stdout( $context->padding." - serial: ".$serial." - DG: ".$deviceGroup);
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['devicegroups'][(string)$serial] = $deviceGroup;
+                    }
                 }
 
             }
@@ -92,6 +155,16 @@ DeviceCallContext::$supportedActions['display'] = array(
                 $tmp_padding .= "  ";
                 PH::$JSON_TMP['sub']['object'][$object->name()]['hierarchy'][] = $key;
             }
+            // the device groups below (direct children) and the number of firewalls (also of the ones below) - for
+            // shadow-json / the config viewer, which shows the hierarchy in the window of a device group
+            $children = array();
+            foreach( $object->childDeviceGroups() as $child )
+                $children[] = $child->name();
+            if( count( $children ) )
+                PH::print_stdout( $context->padding."- child device groups: ".implode( ', ', $children ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['children'] = $children;
+            PH::$JSON_TMP['sub']['object'][$object->name()]['firewalls'] = count( $object->getDevicesInGroup() );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['firewalls-below'] = count( $object->getDevicesInGroup( TRUE ) );
             foreach( $object->getDevicesInGroup() as $key => $device )
             {
                 #PH::print_stdout( $context->padding."- ".$key );
@@ -109,6 +182,9 @@ DeviceCallContext::$supportedActions['display'] = array(
                             $template_name_array[] = $template->name();
                         }
                         PH::print_stdout( $context->padding."  - Templates: ".implode( ", ", $template_name_array ) );
+                        // shadow-json: the template stack of each firewall and the templates of the stack (priority order)
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['templatestacks'][(string)$key] = $template_stack_obj->name();
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['stacktemplates'][$template_stack_obj->name()] = $template_name_array;
                     }
                 }
 
@@ -285,6 +361,54 @@ DeviceCallContext::$supportedActions['display'] = array(
                 PH::$JSON_TMP['sub']['object'][$object->name()]['serial'][$serial] = $serial;
             }
         }
+        elseif( get_class($object) == "LogCollector" )
+        {
+            /** @var LogCollector $object */
+            // where the log collector is used: the collector groups it is a member of, and the firewalls that have it
+            // in their preference list (Device Log Forwarding of a collector group)
+            $padding = "       ";
+            $hostname = $object->xmlroot instanceof DOMElement ? DH::findFirstElement( 'deviceconfig', $object->xmlroot ) : FALSE;
+            $hostname = $hostname !== FALSE ? DH::findFirstElement( 'system', $hostname ) : FALSE;
+            $hostname = $hostname !== FALSE ? DH::findFirstElement( 'hostname', $hostname ) : FALSE;
+            if( $hostname !== FALSE )
+            {
+                PH::print_stdout( $padding."hostname: ".$hostname->textContent );
+                PH::$JSON_TMP['sub']['object'][$object->name()]['hostname'] = $hostname->textContent;
+            }
+            $groups = array();
+            $firewalls = array();
+            if( method_exists( $object->owner, 'getLogCollectorGroup' ) )
+                foreach( $object->owner->getLogCollectorGroup() as $group )
+                {
+                    if( in_array( $object->name(), $group->getCollectors(), TRUE ) )
+                        $groups[] = $group->name();
+                    foreach( $group->getDevices() as $serial => $device )
+                        if( isset( $device['collectorlist'][$object->name()] ) )
+                            $firewalls[] = (string)$serial;
+                }
+            PH::print_stdout( $padding."collector groups: ".( count( $groups ) ? implode( ", ", $groups ) : "---" ) );
+            PH::print_stdout( $padding."firewalls that send logs to it: ".( count( $firewalls ) ? implode( ", ", $firewalls ) : "---" ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['collectorgroups'] = $groups;
+            PH::$JSON_TMP['sub']['object'][$object->name()]['devices'] = array_values( array_unique( $firewalls ) );
+        }
+        elseif( get_class($object) == "LogCollectorGroup" )
+        {
+            /** @var LogCollectorGroup $object */
+            // the log collectors of the group and the firewalls that send their logs to it (Device Log Forwarding),
+            // each with its preference list of collectors
+            $padding = "       ";
+            $collectors = $object->getCollectors();
+            PH::print_stdout( $padding."collectors: ".( count( $collectors ) ? implode( ", ", $collectors ) : "---" ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['collectors'] = $collectors;
+            PH::$JSON_TMP['sub']['object'][$object->name()]['devices'] = array();
+            foreach( $object->getDevices() as $serial => $device )
+            {
+                $list = array_values( $device['collectorlist'] );
+                PH::print_stdout( $padding."- serial: ".$serial." - log collectors: ".( count( $list ) ? implode( ", ", $list ) : "---" ) );
+                PH::$JSON_TMP['sub']['object'][$object->name()]['devices'][] = (string)$serial;
+                PH::$JSON_TMP['sub']['object'][$object->name()]['logforwarding'][(string)$serial] = $list;
+            }
+        }
         elseif( get_class($object) == "Snippet" )
         {
             /** @var Snippet $object */
@@ -299,6 +423,76 @@ DeviceCallContext::$supportedActions['display'] = array(
             foreach( $references as $ref )
                 PH::print_stdout( $padding."  - ".get_class($ref).": name: ".$ref->name());
         }
+
+        // SCM: the connections of a container / cloud device / on-prem device (parent, children, attached snippets)
+        // and of a snippet (the containers / devices it is attached to) - shadow-json for the config viewer
+        $scmClasses = array( 'Container' => 'container', 'DeviceCloud' => 'devicecloud', 'DeviceOnPrem' => 'deviceonprem' );
+        if( isset( $scmClasses[get_class($object)] ) )
+        {
+            $j = &PH::$JSON_TMP['sub']['object'][$object->name()];
+            $parent = $object->parentContainer ?? null;
+            if( is_object( $parent ) )
+                $j['parent'] = $parent->name();
+            elseif( is_string( $parent ) && $parent !== '' )
+                $j['parent'] = $parent;
+            if( get_class($object) === 'Container' )
+            {
+                $j['children'] = array();
+                $j['clouds'] = array();
+                $j['onprem'] = array();
+                foreach( $object->childContainers() as $child )
+                {
+                    $key = get_class( $child ) === 'DeviceCloud' ? 'clouds' : ( get_class( $child ) === 'DeviceOnPrem' ? 'onprem' : 'children' );
+                    $j[$key][] = $child->name();
+                }
+                foreach( array( 'children' => 'child containers', 'clouds' => 'cloud devices', 'onprem' => 'on-prem devices' ) as $key => $text )
+                    if( count( $j[$key] ) )
+                        PH::print_stdout( $context->padding."- ".$text.": ".implode( ", ", $j[$key] ) );
+            }
+            $j['snippets'] = array_values( array_map( function( $x ) { return is_object( $x ) ? $x->name() : (string)$x; }, $object->attachedSnippets ?? array() ) );
+            // an on-prem device is a firewall: its name is the serial of the managed device
+            if( get_class($object) === 'DeviceOnPrem' && isset( $object->owner->managedFirewallsStore ) && $object->owner->managedFirewallsStore->find( $object->name() ) !== null )
+                $j['manageddevice'] = $object->name();
+            unset( $j );
+            deviceDisplayVariablesJson( $context, $object );
+        }
+        elseif( get_class($object) == "Snippet" )
+        {
+            $attached = array( 'containers' => array(), 'clouds' => array(), 'onprem' => array() );
+            $conf = $object->owner;
+            $lists = array( 'containers' => method_exists( $conf, 'getContainers' ) ? $conf->getContainers() : array(),
+                'clouds' => method_exists( $conf, 'getDeviceClouds' ) ? $conf->getDeviceClouds() : array(),
+                'onprem' => method_exists( $conf, 'getDeviceOnPrems' ) ? $conf->getDeviceOnPrems() : array() );
+            foreach( $lists as $key => $list )
+                foreach( $list as $sub )
+                    foreach( $sub->attachedSnippets ?? array() as $sn )
+                        if( ( is_object( $sn ) ? $sn->name() : (string)$sn ) === $object->name() )
+                            $attached[$key][] = $sub->name();
+            foreach( $attached as $key => $names )
+                PH::$JSON_TMP['sub']['object'][$object->name()][$key] = array_values( array_unique( $names ) );
+            deviceDisplayVariablesJson( $context, $object );
+        }
+
+        // the level in the hierarchy (as the level of objects: shared = 1, top device group = 2, …) - a firewall / template
+        // stack / template: the levels of its device groups (PH::deviceLevels)
+        $levels = PH::deviceLevels( $object );
+        if( count( $levels ) )
+        {
+            $own = get_class( $object ) === 'DeviceGroup' || get_class( $object ) === 'Container' || get_class( $object ) === 'DeviceCloud' || get_class( $object ) === 'DeviceOnPrem';
+            $vals = array_values( array_unique( array_values( $levels ) ) );
+            sort( $vals );
+            $dgl = array();
+            foreach( $levels as $n => $l )
+                $dgl[] = $n . ' (' . $l . ')';
+            PH::print_stdout( $context->padding . "- level: " . ( $own ? $vals[0] : implode( ', ', $dgl ) ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['level'] = $own ? $vals[0] : $vals;
+            if( !$own )
+                PH::$JSON_TMP['sub']['object'][$object->name()]['dglevels'] = $dgl;
+        }
+
+        // Panorama: variables of a template, a template stack (and its firewalls), a firewall (override in its stack)
+        if( $object instanceof Template || $object instanceof TemplateStack || ( $object instanceof ManagedDevice && DeviceVariables::stackOf( $object ) !== null ) )
+            deviceDisplayVariablesJson( $context, $object );
 
         $length = &DH::dom_get_config_size($object->xmlroot);
         PH::print_stdout($context->padding."---");
@@ -593,7 +787,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -606,6 +800,17 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
         }
         else
         {
+            // a firewall (vsys1) is in one device group only (PAN-OS) - before, it was added to the second one
+            foreach( $pan->getDeviceGroups() as $otherDG )
+            {
+                $devs = $otherDG->getDevicesInGroup();
+                if( $otherDG !== $tmp_dg && isset( $devs[$serial] ) && isset( $devs[$serial]['vsyslist']['vsys1'] ) )
+                {
+                    $string = "serial: " . $serial . " is in DeviceGroup: " . $otherDG->name() . " - remove it there first (devicegroup-removeserial)";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+            }
             $string = "DeviceGroup with name: " . $dgName . " got serial: ".$serial." added!";
             PH::ACTIONlog( $context, $string );
             if( $context->isAPI )
@@ -642,7 +847,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-removeSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -792,33 +997,18 @@ DeviceCallContext::$supportedActions['Template-delete'] = array(
                 return null;
             }
             /** @var Template $object */
-            //if template is used in Template-Stack -> skip
-            /*
-            $childDG = $object->_childDeviceGroups;
-            if( count($childDG) != 0 )
+            // a template used by a template stack is refused by removeTemplate() as well
+            $string ="     * delete Template: " . $name;
+            PH::ACTIONlog( $context, $string );
+
+            $xpath = DH::elementToPanXPath($object->xmlroot);
+            if( !$pan->removeTemplate($object) )
             {
-                $string = "Template with name: '" . $name . "' is used in TemplateStack. Template can not removed";
-                PH::ACTIONstatus($context, "SKIPPED", $string);
+                PH::ACTIONstatus( $context, "SKIPPED", "Template '" . $name . "' is used in a TemplateStack and can NOT be removed" );
+                return null;
             }
-            else
-            {
-            */
-                $string ="     * delete Template: " . $name;
-                PH::ACTIONlog( $context, $string );
-
-
-                if( $context->isAPI )
-                {
-                    $con = findConnectorOrDie($object);
-                    $xpath = DH::elementToPanXPath($object->xmlroot);
-
-                    $pan->removeTemplate($object);
-                    $con->sendDeleteRequest($xpath);
-                }
-                else
-                    $pan->removeTemplate($object);
-
-            //}
+            if( $context->isAPI )
+                findConnectorOrDie($pan)->sendDeleteRequest($xpath);
         }
     }
 );
@@ -971,34 +1161,13 @@ DeviceCallContext::$supportedActions['TemplateStack-delete'] = array(
                 PH::ACTIONlog( $context, $string );
                 return null;
             }
-            /** @var Template $object */
-            //if template is used in Template-Stack -> skip
-            /*
-            $childDG = $object->_childDeviceGroups;
-            if( count($childDG) != 0 )
-            {
-                $string = "Template with name: '" . $name . "' is used in TemplateStack. Template can not removed";
-                PH::ACTIONstatus($context, "SKIPPED", $string);
-            }
-            else
-            {
-            */
+            /** @var TemplateStack $object */
             $string ="     * delete TemplateStack: " . $name;
             PH::ACTIONlog( $context, $string );
 
-
-            if( $context->isAPI )
-            {
-                $con = findConnectorOrDie($object);
-                $xpath = DH::elementToPanXPath($object->xmlroot);
-
-                $pan->removeTemplateStack($object);
-                $con->sendDeleteRequest($xpath);
-            }
-            else
-                $pan->removeTemplateStack($object);
-
-            //}
+            $xpath = DH::elementToPanXPath($object->xmlroot);
+            if( $pan->removeTemplateStack($object) && $context->isAPI )
+                findConnectorOrDie($pan)->sendDeleteRequest($xpath);
         }
     }
 );
@@ -1049,7 +1218,8 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
-        if( $context->object !== null && get_class($context->object) !== "TemplateStack" )
+        // also from a firewall (devicetype=manageddevice: the stack of this firewall)
+        if( $context->object !== null && get_class($context->object) !== "TemplateStack" && get_class($context->object) !== "ManagedDevice" )
         {
             $string = "devicetype=templatestack missing";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -1062,7 +1232,7 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -1075,6 +1245,14 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
         }
         else
         {
+            // a firewall is in one template stack only (PAN-OS) - before, it was added to the second one
+            foreach( $pan->getTemplatesStacks() as $otherTS )
+                if( $otherTS !== $tmp_dg && array_key_exists( $serial, $otherTS->FirewallsSerials ) )
+                {
+                    $string = "serial: " . $serial . " is in TemplateStack: " . $otherTS->name() . " - remove it there first (templatestack-removeserial)";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
             $string = "TemplateStack with name: " . $dgName . " got serial: ".$serial." added!";
             PH::ACTIONlog( $context, $string );
             if( $context->isAPI )
@@ -1105,7 +1283,8 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
-        if( $context->object !== null && get_class($context->object) !== "TemplateStack" )
+        // also from a firewall (devicetype=manageddevice: the stack of this firewall)
+        if( $context->object !== null && get_class($context->object) !== "TemplateStack" && get_class($context->object) !== "ManagedDevice" )
         {
             $string = "devicetype=templatestack missing";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -1118,7 +1297,7 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -2018,6 +2197,116 @@ DeviceCallContext::$supportedActions['template-add'] = array(
         'position' => array('type' => 'string', 'default' => 'bottom'),
     ),
 );
+/**
+ * a variable set / removed: on a template, a template stack, a firewall of Panorama (its override in the template stack:
+ * template-stack/devices/entry[serial]/variable) or a folder / snippet / device of SCM. On a template stack, serial=<serial>
+ * is the override of that firewall. The value: $$comma$$ $$forwardslash$$ $$colon$$ … (PH::textAliases) for , / :
+ */
+DeviceCallContext::$supportedActions['variable-set'] = array(
+    'name' => 'variable-set',
+    'MainFunction' => function (DeviceCallContext $context) {
+        if( $context->isAPI )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "not supported in API mode yet - offline configuration only" );
+            return;
+        }
+        $object = $context->object;
+        $name = $context->arguments['name'];
+        $serial = $context->arguments['serial'] === '*nodefault*' ? null : $context->arguments['serial'];
+        $holder = DeviceVariables::holder( $object, $serial, TRUE );
+        if( $holder === null )
+        {
+            $string = "no variables here (" . get_class( $object ) . ( $object instanceof ManagedDevice ? " without template stack" : "" ) . ")";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $value = PH::textAliases( (string)$context->arguments['value'] );
+        $desc = $context->arguments['description'] === '*nodefault*' ? null : PH::textAliases( (string)$context->arguments['description'] );
+        try
+        {
+            DeviceVariables::set( $holder, $name, strtolower( $context->arguments['type'] ), $value, $desc );
+        }
+        catch( Exception $e )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", $e->getMessage() );
+            return;
+        }
+        $string = "variable '" . $name . "' [" . $context->arguments['type'] . "] = " . $value . " on " . get_class( $object ) . " '" . $object->name() . "'" . ( $serial !== null ? " for firewall " . $serial : "" );
+        PH::ACTIONlog( $context, $string );
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => '*nodefault*'),
+        'type' => array('type' => 'string', 'default' => 'ip-netmask'),
+        'value' => array('type' => 'string', 'default' => '*nodefault*'),
+        'serial' => array('type' => 'string', 'default' => '*nodefault*', 'help' => 'template stack: the variable of this firewall (override)'),
+        'description' => array('type' => 'string', 'default' => '*nodefault*'),
+    ),
+);
+
+DeviceCallContext::$supportedActions['variable-remove'] = array(
+    'name' => 'variable-remove',
+    'MainFunction' => function (DeviceCallContext $context) {
+        if( $context->isAPI )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "not supported in API mode yet - offline configuration only" );
+            return;
+        }
+        $object = $context->object;
+        $name = $context->arguments['name'];
+        $serial = $context->arguments['serial'] === '*nodefault*' ? null : $context->arguments['serial'];
+        $holder = DeviceVariables::holder( $object, $serial );
+        if( $holder === null || !DeviceVariables::remove( $holder, $name ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "variable '" . $name . "' is not set here" );
+            return;
+        }
+        PH::ACTIONlog( $context, "variable '" . $name . "' removed from " . get_class( $object ) . " '" . $object->name() . "'" . ( $serial !== null ? " for firewall " . $serial : "" ) );
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => '*nodefault*'),
+        'serial' => array('type' => 'string', 'default' => '*nodefault*'),
+    ),
+);
+
+DeviceCallContext::$supportedActions['template-remove'] = array(
+    'name' => 'template-remove',
+    'MainFunction' => function (DeviceCallContext $context) {
+
+        /** @var TemplateStack $object */
+        $object = $context->object;
+
+        $pan = $context->subSystem;
+        if( !$pan->isPanorama() )
+            derr( "only supported on Panorama config" );
+
+        if( get_class($object) == "TemplateStack" )
+        {
+            $templateName = $context->arguments['templateName'];
+            $template = $object->owner->findTemplate( $templateName );
+            if( $template === null || !in_array( $template, $object->templates, TRUE ) )
+            {
+                $string = "template '".$templateName."' is not in this template stack";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return null;
+            }
+
+            $string = "template '".$templateName."' removed from TemplateStack '".$object->name()."'";
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+                $object->API_removeTemplate( $template );
+            else
+                $object->removeTemplate( $template );
+        }
+        else
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+        }
+    },
+    'args' => array(
+        'templateName' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
 
 DeviceCallContext::$supportedActions['AddressStore-rewrite'] = array(
     'name' => 'addressstore-rewrite',
@@ -2723,7 +3012,7 @@ DeviceCallContext::$supportedActions['geoIP-check'] = array(
             derr("not a valid IP: " . $prefix);
 
 
-        $filepath = dirname(__FILE__)."/../../lib/resources/geoip/data/";
+        $filepath = PH::geoipPath()."/data/";
         $file = $filepath."RegionCC" . $filename . ".json";
         if ( !file_exists($file) )
         {
@@ -3373,6 +3662,36 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
 
                 $context->first = false;
             }
+            elseif( $classtype == "Container" && $context->subSystem->isBuckbeak() )
+            {
+                // SCM: profile 'default' in folder 'All' (every folder sees it); SCM always logs to Strata Logging
+                // Service - one match list per log type, 'All Logs', as the predefined profile 'Cortex Data Lake'
+                if( $object->name() != "All" )
+                    return;
+                $context->first = false;
+
+                $lfp = $object->LogProfileStore->find( "default", null, FALSE );
+                if( $lfp !== null )
+                {
+                    PH::ACTIONstatus( $context, "SKIPPED", "LogForwardingProfile 'default' already available. BestPractise LogForwardingProfile 'default' not created" );
+                    return;
+                }
+                $lfp = $object->LogProfileStore->createLogProfile( "default" );
+                // createLogProfile() adds a traffic match list 'all traffic' - replaced by the SLS match lists
+                foreach( $lfp->type_available as $logType )
+                    $lfp->type[$logType] = array( 'notSet' => '--' );
+                $matchList = DH::findFirstElement( 'match-list', $lfp->xmlroot );
+                if( $matchList !== FALSE )
+                    DH::clearDomNodeChilds( $matchList );
+                foreach( SCMImporter::SLS_LOG_TYPES as $logType )
+                    $lfp->add_log_filter( $logType, $logType . "-sls", "All Logs", TRUE );
+                // no SCM field (SCM sends every match list to Strata Logging Service)
+                foreach( iterator_to_array( $lfp->xmlroot->getElementsByTagName('send-to-panorama') ) as $node )
+                    $node->parentNode->removeChild( $node );
+                PH::print_stdout( " * LogForwardingProfile create: 'default' (folder All, Strata Logging Service: " . implode(", ", SCMImporter::SLS_LOG_TYPES) . ")" );
+                if( $context->isAPI )
+                    derr( "LogForwardingProfile create via API not supported for SCM - use the offline XML and scm_pa_xml_to_change.php", null, false );
+            }
         }
     },
     'args' => array(
@@ -3496,6 +3815,51 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
 
                 //create for all VSYS and all templates
                 #$context->first = false;
+            }
+            elseif( $classtype == "Container" && $context->subSystem->isBuckbeak() )
+            {
+                // SCM: profile in folder 'All' (every folder sees it)
+                if( $object->name() != "All" )
+                    return;
+                $context->first = false;
+
+                $store = $object->network->zoneProtectionProfileStore;
+                if( $validateZPPavailable )
+                {
+                    $create = FALSE;
+                    foreach( array_merge( $context->subSystem->getContainers(), $context->subSystem->getSnippets(),
+                                 $context->subSystem->getDeviceClouds(), $context->subSystem->getDeviceOnPrems() ) as $scmSub )
+                        if( isset($scmSub->zoneStore) )
+                            foreach( $scmSub->zoneStore->zones() as $zoneOBJ )
+                                if( !$zoneOBJ->isTmp() && $zoneOBJ->zoneProtectionProfile == null )
+                                    $create = TRUE;
+                    if( !$create )
+                    {
+                        PH::ACTIONstatus( $context, "SKIPPED", "every zone has a ZoneProtectionProfile - '" . $entryProfileName . "' not created" );
+                        return;
+                    }
+                }
+                if( $store->find( $entryProfileName ) !== null )
+                {
+                    PH::ACTIONstatus( $context, "SKIPPED", "ZoneProtectionProfile '" . $entryProfileName . "' already available. BestPractise ZoneProtectionProfile '" . $entryProfileName . "' not created" );
+                    return;
+                }
+
+                $newdoc = new DOMDocument;
+                $newdoc->loadXML($zpp_bp_xmlstring, XML_PARSE_BIG_LINES);
+                $node = DH::findFirstElementByNameAttr("entry", $entryProfileName, $newdoc->firstChild);
+                if( $node === false || $node === null )
+                    derr("there is an error with the Iron-Skillet update - Profile: " . $entryProfileName . " does not exist", null, false);
+                $node = $object->xmlroot->ownerDocument->importNode($node, TRUE);
+
+                $zpp = new ZoneProtectionProfile( $entryProfileName, $store );
+                $zpp->load_from_domxml( $node );
+                $zpp->owner = null;
+                $store->addProfil( $zpp );
+                PH::print_stdout( " * ZoneProtectionProfile create: '" . $entryProfileName . "' (folder All)" );
+
+                if( $context->isAPI )
+                    derr( "ZoneProtectionProfile create via API not supported for SCM - use the offline XML and scm_pa_xml_to_change.php", null, false );
             }
         }
     }
@@ -4780,13 +5144,13 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
         }
 
 
-        $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
-        //Todo: IPv6 not implemented yet
+        $resolvedZonesv4 = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
         $resolvedZonesv6 = &$addressContainer->calculateZonesFromIP6Mapping($ipMapping['ipv6']);
+        $resolvedZones = $resolvedZonesv4 + $resolvedZonesv6;
 
         if( count($resolvedZones) == 0 )
         {
-            $string = "no zone resolved (FQDN? IPv6?)";
+            $string = "no zone resolved (FQDN?)";
             PH::ACTIONstatus($context, "WARNING", $string);
             return;
         }

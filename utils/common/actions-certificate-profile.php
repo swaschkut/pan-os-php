@@ -125,3 +125,12 @@ CertificateProfileCallContext::$supportedActions['exportToExcel'] = array(
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'))
 );
 CertificateProfileCallContext::$supportedActions['exportToHtml'] = array_merge(CertificateProfileCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
+
+CertificateProfileCallContext::$supportedActions['displayreferences'] = array(
+    'name' => 'displayReferences',
+    'MainFunction' => function (CertificateProfileCallContext $context) {
+        $object = $context->object;
+
+        $object->display_references(7);
+    },
+);

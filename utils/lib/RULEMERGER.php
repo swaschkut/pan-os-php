@@ -320,6 +320,11 @@ class RULEMERGER extends UTIL
             }
         }
 
+        // the same report as data: exportJSON=<file> and / or the JSON output (shadow-json)
+        if( PH::$shadow_json || MergerReport::fileArgument() !== null )
+            MergerReport::write( MergerReport::fromRuleMerger( $this->deletedObjects, $this->skippedObjects ),
+                MergerReport::fileArgument( $this->projectFolder ) );
+
         
     }
     
@@ -685,10 +690,8 @@ class RULEMERGER extends UTIL
 
 
 
-            $line = "";
-            foreach( $this->context->fields as $fieldName => $fieldID )
-                $line .= $this->context->ruleFieldHtmlExport($rule, $fieldID);
-            $this->deletedObjects[$rule->name()]['manipulated'] = $line;
+            // the rule before the merge - the field values as data (the HTML and the JSON report are made from them)
+            $this->deletedObjects[$rule->name()]['manipulated'] = $this->ruleFields( $rule );
 
             $nextDenyRule = FALSE;
             if( $this->UTIL_stopMergingIfDenySeen )
@@ -741,27 +744,7 @@ class RULEMERGER extends UTIL
                 if( $string != null )
                 {
                     PH::print_stdout( $string );
-
-                    $line = "";
-                    foreach( $this->context->fields as $fieldName => $fieldID )
-                        $line .= $this->context->ruleFieldHtmlExport($rule, $fieldID);
-                    $this->skippedObjects[$rule->name()]['kept'] = $line;
-
-                    $line = "";
-                    foreach( $this->context->fields as $fieldName => $fieldID )
-                        $line .= $this->context->ruleFieldHtmlExport($ruleToCompare, $fieldID);
-                    $this->skippedObjects[$rule->name()]['removed'][$ruleToCompare->name()] =  $line;
-
-                    #unset( $this->deletedObjects[$rule->name()] );
-                    #$mergedRulesCount--;
-
-                    if( $nextDenyRule !== FALSE )
-                    {
-                        $line = "";
-                        foreach( $this->context->fields as $fieldName => $fieldID )
-                            $line .= $this->context->ruleFieldHtmlExport($nextDenyRule, $fieldID);
-                        $this->skippedObjects[$rule->name()]['skippedreason'][$nextDenyRule->name()] =  $line;
-                    }
+                    $this->skippedRule( $rule, $ruleToCompare, $string, $nextDenyRule );
                 }
 
             }
@@ -789,7 +772,9 @@ class RULEMERGER extends UTIL
 
                     if( $adjacencyPositionDiff > 1 )
                     {
-                        PH::print_stdout( "    - ignored '{$ruleToCompare->name()}' because of option 'mergeAdjacentOnly'");
+                        $string = "    - ignored '{$ruleToCompare->name()}' because of option 'mergeAdjacentOnly'";
+                        PH::print_stdout( $string );
+                        $this->skippedRule( $rule, $ruleToCompare, $string );
                         break;
                     }
                     //PH::print_stdout( "    - adjacencyDiff={$adjacencyPositionDiff}" );
@@ -803,7 +788,9 @@ class RULEMERGER extends UTIL
                     {
                         if( !$ruleToCompare->services->isApplicationDefault() )
                         {
-                            PH::print_stdout( "    - ignored '{$ruleToCompare->name()}' because it is not Application-Default");
+                            $string = "    - ignored '{$ruleToCompare->name()}' because it is not Application-Default";
+                            PH::print_stdout( $string );
+                            $this->skippedRule( $rule, $ruleToCompare, $string );
                             break;
                         }
                     }
@@ -811,7 +798,9 @@ class RULEMERGER extends UTIL
                     {
                         if( $ruleToCompare->services->isApplicationDefault() )
                         {
-                            PH::print_stdout( "    - ignored '{$ruleToCompare->name()}' because it is Application-Default");
+                            $string = "    - ignored '{$ruleToCompare->name()}' because it is Application-Default";
+                            PH::print_stdout( $string );
+                            $this->skippedRule( $rule, $ruleToCompare, $string );
                             break;
                         }
                     }
@@ -823,10 +812,7 @@ class RULEMERGER extends UTIL
 
 
 
-                $line = "";
-                foreach( $this->context->fields as $fieldName => $fieldID )
-                    $line .= $this->context->ruleFieldHtmlExport($ruleToCompare, $fieldID);
-                $this->deletedObjects[$rule->name()]['removed'][$ruleToCompare->name()] = $line;
+                $this->deletedObjects[$rule->name()]['removed'][$ruleToCompare->name()] = $this->ruleFields( $ruleToCompare );
 
                 #self::deletedObjectSetRemoved( $rule, $ruleToCompare );
                 $this->UTIL_mergeRules($rule, $ruleToCompare);
@@ -836,10 +822,7 @@ class RULEMERGER extends UTIL
             PH::print_stdout( "    - Rule after merge:");
             $rule->display(5);
 
-            $line = "";
-            foreach( $this->context->fields as $fieldName => $fieldID )
-                $line .= $this->context->ruleFieldHtmlExport($rule, $fieldID);
-            $this->deletedObjects[$rule->name()]['kept'] = $line;
+            $this->deletedObjects[$rule->name()]['kept'] = $this->ruleFields( $rule );
 
             if( $this->action === "merge" )
             {
@@ -852,6 +835,36 @@ class RULEMERGER extends UTIL
         PH::print_stdout( "*** MERGING DONE : {$mergedRulesCount} rules merged over " . count($this->UTIL_rulesToProcess) . " in total (" . (count($this->UTIL_rulesToProcess) - $mergedRulesCount) . " remaining) ***");
     }
     
+    /** the fields of the report (context->fields) of a rule as values: field => string | list of strings */
+    private function ruleFields( $rule ): array
+    {
+        $f = array();
+        foreach( $this->context->fields as $fieldName => $fieldID )
+            $f[$fieldID] = $this->context->ruleFieldValue( $rule, $fieldID );
+        return $f;
+    }
+
+    /** a rule that was not merged with $rule, with the reason (and the deny rule that stopped it) */
+    private function skippedRule( $rule, $ruleToCompare, $reason, $nextDenyRule = FALSE )
+    {
+        $this->skippedObjects[$rule->name()]['kept'] = $this->ruleFields( $rule );
+        $this->skippedObjects[$rule->name()]['removed'][$ruleToCompare->name()] = $this->ruleFields( $ruleToCompare );
+        $this->skippedObjects[$rule->name()]['reason'][$ruleToCompare->name()] = trim( preg_replace( '/^\s*-\s*/', '', $reason ) );
+        if( $nextDenyRule !== FALSE )
+            $this->skippedObjects[$rule->name()]['skippedreason'][$nextDenyRule->name()] = $this->ruleFields( $nextDenyRule );
+    }
+
+    /** the fields of a rule as the cells of the HTML report */
+    private function fieldsHtml( $fields ): string
+    {
+        if( !is_array( $fields ) )
+            return '';
+        $out = '';
+        foreach( $fields as $v )
+            $out .= $this->context->htmlCell( $v );
+        return $out;
+    }
+
     function supportedMethods()
     {
         //
@@ -892,6 +905,7 @@ class RULEMERGER extends UTIL
         $this->supportedArguments[] = array('niceName' => 'additionalMatch', 'shortHelp' => 'add additional matching criteria', 'argDesc' => '[tag,secprof,user,urlcategory,target,logsetting,schedule]');
         $this->supportedArguments[] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments[] = array('niceName' => 'exportCSV', 'shortHelp' => 'when this argument is specified, it instructs the script to display the kept and removed objects per value');
+        $this->supportedArguments[] = array('niceName' => 'exportJSON', 'shortHelp' => 'the same report as JSON (merged rules, skipped rules with the reason)', 'argDesc' => 'report.json');
     }
 
     function mergerArguments()
@@ -1263,7 +1277,7 @@ class RULEMERGER extends UTIL
             #$lines .= $encloseFunction( $line['removed'] );
 
             if( isset($line['kept']) )
-                $lines .= $line['kept'];
+                $lines .= $this->fieldsHtml( $line['kept'] );
             elseif( isset($line['skipped']) )
             {
                 #$lines .= $encloseFunction( $line['skipped'] );
@@ -1278,7 +1292,7 @@ class RULEMERGER extends UTIL
             if( !isset($line['removed']) )
                 continue;
 
-            foreach( $line['removed'] as  $removed )
+            foreach( $line['removed'] as $removedName => $removed )
             {
                 if( $first )
                 {
@@ -1294,7 +1308,7 @@ class RULEMERGER extends UTIL
 
                         #$lines .= $encloseFunction( (string)$index );
 
-                        $lines .=  $line['manipulated'] ;
+                        $lines .= $this->fieldsHtml( $line['manipulated'] );
 
                         $lines .= "</tr>\n";
                     }
@@ -1315,12 +1329,17 @@ class RULEMERGER extends UTIL
 
                 #$lines .= $encloseFunction( (string)$index );
 
-                $lines .=  $removed ;
-
-
-
+                $lines .= $this->fieldsHtml( $removed );
 
                 $lines .= "</tr>\n";
+
+                // why this rule was not merged
+                if( $skipped && isset( $line['reason'][$removedName] ) )
+                {
+                    $lines .= $color === false ? "<tr>\n" : "<tr bgcolor=\"#DDDDDD\">";
+                    $lines .= $encloseFunction( "---" ) . $encloseFunction( "reason" ) . $encloseFunction( $line['reason'][$removedName], FALSE );
+                    $lines .= "</tr>\n";
+                }
             }
 
 
@@ -1336,9 +1355,9 @@ class RULEMERGER extends UTIL
 
                 $lines .= $encloseFunction( "---" );
                 if( $skipped )
-                    $lines .= $encloseFunction( "reason" );
+                    $lines .= $encloseFunction( "deny rule" );
 
-                $lines .=  $removed ;
+                $lines .= $this->fieldsHtml( $removed );
 
                 $lines .= "</tr>\n";
             }

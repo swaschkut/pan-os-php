@@ -119,23 +119,18 @@ foreach( $snippets as $label => $s )
     {
         $s121 = call_user_func( array( $class, $fn ), '12.1' );
         $s122 = call_user_func( array( $class, $fn ), '12.2' );
-        if( $class == 'VulnerabilityProfile' )
-            eq( str_replace( '<local-deep-learning>enable</local-deep-learning>', '', $s122 ), $s121, $label . ': 12.2 = 12.1 + local-deep-learning' );
-        else
-            eq( $s122, $s121, $label . ': 12.2 snippet = 12.1 snippet' );
+        // local-deep-learning is not in any snippet (set from the BP JSON), so also VP 12.2 = 12.1
+        eq( $s122, $s121, $label . ': 12.2 snippet = 12.1 snippet' );
     }
 }
 
-// VP 12.2: local-deep-learning enable for SQL Injection and Command Injection, in every profile with inline cloud analysis
+// VP 12.1 / 12.2: no local-deep-learning in the snippet (as the firewall writes a new profile; set from the BP JSON)
 $d = new DOMDocument();
-$d->loadXML( VulnerabilityProfile::ironSkilletXml( '12.2' ) );
-$x = new DOMXPath( $d );
-$profiles = $x->query( '/*/entry[mica-engine-vulnerability-enabled]' )->length;
-check( $profiles > 0, 'VP 12.2: profiles with inline cloud analysis' );
-eq( $x->query( '//mica-engine-vulnerability-enabled/entry[@name="Command Injection"][local-deep-learning="enable"]' )->length, $profiles, 'VP 12.2: Command Injection local-deep-learning enable in every profile' );
-eq( $x->query( '//mica-engine-vulnerability-enabled/entry[@name="SQL Injection"][local-deep-learning="enable"]' )->length, $profiles, 'VP 12.2: SQL Injection local-deep-learning enable in every profile' );
-$d->loadXML( VulnerabilityProfile::ironSkilletXml( '12.1' ) );
-eq( (new DOMXPath( $d ))->query( '//local-deep-learning' )->length, 0, 'VP 12.1: no local-deep-learning' );
+foreach( array( '12.1', '12.2' ) as $version )
+{
+    $d->loadXML( VulnerabilityProfile::ironSkilletXml( $version ) );
+    eq( (new DOMXPath( $d ))->query( '//local-deep-learning' )->length, 0, 'VP ' . $version . ': no local-deep-learning' );
+}
 
 print "\n" . $checks . " checks, " . count($failed) . " failed\n";
 if( count($failed) )

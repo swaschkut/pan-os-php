@@ -127,7 +127,7 @@ class PanSaseAPIConnector
 
         foreach(PanAPIConnector::$savedConnectors as $connector )
         {
-            if( strpos($connector->apihost, $host) !== FALSE )
+            if( strpos($connector->apihost, $host) === 0 )
             {
                 $key = $connector->apikey;
                 $test = explode("%", $key);

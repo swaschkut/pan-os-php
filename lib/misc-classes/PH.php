@@ -187,6 +187,25 @@ class PH
                     $argc--;
                 continue;
             }
+            elseif( strpos( $arg, 'shadow-scmuiapihost=' ) === 0 )
+            {
+                //SCM: host of the internal UI API (region specific), e.g. paas-3.prod.eu.panorama.paloaltonetworks.com
+                $arg_array = explode( "=", $arg, 2 );
+                PH::$shadow_scm_ui_api_host = preg_replace( '#^https?://#', '', rtrim( $arg_array[1], "/" ) );
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
+            elseif( $arg == 'shadow-noscminternalapi' )
+            {
+                //SCM: do not use the internal UI API (security profiles only from the public API)
+                PH::$shadow_scm_no_internal_api = TRUE;
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
             elseif( $arg == 'shadow-multivsys' )
             {
                 PH::$shadow_multivsys = TRUE;
@@ -234,6 +253,11 @@ class PH
 
     public static $saseQAapi = FALSE;
 
+    /** SCM internal UI API host (shadow-scmuiapihost=), null = default of PanSCMAPIConnector */
+    public static $shadow_scm_ui_api_host = null;
+    /** SCM: do not use the internal UI API (shadow-noscminternalapi) */
+    public static $shadow_scm_no_internal_api = FALSE;
+
     public static $shadow_reducexml = FALSE;
 
     public static $shadow_json = FALSE;
@@ -260,8 +284,9 @@ class PH
     private static $library_version_sub = 1;
 
 
-    private static $library_version_bugfix = 62;
-    private static $library_version_release = "dev";
+    private static $library_version_bugfix = 63;
+    private static $library_version_release = "beta";
+
 
 
 
@@ -580,9 +605,34 @@ class PH
      * $sections === null or another $filename: the whole file, parsed on every call, as before.
      * The returned document is read-only for the callers.
      */
+    /**
+     * predefined.xml (App-ID, threats, regions, …): lib/object-classes/predefined.xml, or the file named by the
+     * environment variable PANOSPHP_PREDEFINED_XML (e.g. a newer App-ID database kept outside the installation - the
+     * config viewer sets it for its runs). type=download-predefined writes it there too.
+     */
+    public static function predefinedXmlPath(): string
+    {
+        $env = getenv('PANOSPHP_PREDEFINED_XML');
+        if( is_string($env) && $env !== '' )
+            return $env;
+        return dirname(__FILE__) . '/../object-classes/predefined.xml';
+    }
+
+    /**
+     * folder of the MaxMind GeoLite2 data (data/RegionCCipv4.json, data/RegionCCipv6.json): lib/resources/geoip, or the
+     * folder named by PANOSPHP_GEOIP_DIR. type=maxmind-update writes it there too.
+     */
+    public static function geoipPath(): string
+    {
+        $env = getenv('PANOSPHP_GEOIP_DIR');
+        if( is_string($env) && $env !== '' )
+            return rtrim($env, '/');
+        return dirname(__FILE__) . '/../resources/geoip';
+    }
+
     public static function getPredefinedXmlDoc( $filename = null, $sections = null ): DOMDocument
     {
-        $default = dirname(__FILE__) . '/../object-classes/predefined.xml';
+        $default = self::predefinedXmlPath();
         if( $filename === null )
             $filename = $default;
 
@@ -615,7 +665,7 @@ class PH
     public static function eachPredefinedEntry( array $path, callable $callback, $expand = TRUE, $filename = null ): bool
     {
         if( $filename === null )
-            $filename = dirname(__FILE__) . '/../object-classes/predefined.xml';
+            $filename = self::predefinedXmlPath();
 
         $reader = new XMLReader();
         if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
@@ -879,10 +929,16 @@ class PH
         PH::$loadArrayMem = array( "0", "b");
         PH::print_DEBUG_loadtime_reset();
 
-        // Force garbage collection multiple times to handle circular references
+        // Force garbage collection multiple times to handle circular references. The released configurations'
+        // rule containers are destroyed here; their references to the predefined objects were dropped above, so their
+        // destructors (ObjRuleContainer: removeReference) would only warn 'tried to unreference an object that is not
+        // referenced' - skipped for these, the configuration is gone anyway
+        $ignoreDestructors = PH::$ignoreDestructors;
+        PH::$ignoreDestructors = TRUE;
         gc_collect_cycles();
         gc_collect_cycles();
         gc_collect_cycles();
+        PH::$ignoreDestructors = $ignoreDestructors;
 
         // Release cached memory back to system (PHP 7.0+)
         if( function_exists('gc_mem_caches') )
@@ -967,6 +1023,16 @@ class PH
     {
         $ret = array('status' => 'fail');
         $ret['filename'] = null;
+
+        // offline SCM configuration: folder written by scm_pa_export.php
+        if( strpos($str, 'scm-export://') === 0 )
+        {
+            $dir = substr($str, strlen('scm-export://'));
+            $ret['status'] = 'ok';
+            $ret['type'] = 'scm-export';
+            $ret['connector'] = new PanSCMExportConnector($dir);
+            return $ret;
+        }
 
         $pos_sase = strpos($str, 'sase-api://');
         $pos_scm = strpos($str, 'scm-api://');
@@ -2087,6 +2153,140 @@ class PH
      * HIGHEST one with 'ancestor-objects-take-precedence yes'. Firewall: vsys before shared.
      * Names outside the hierarchy (predefined objects, ...) fall back to the normal lookup.
      */
+    /**
+     * The level of a device in the hierarchy, counted as the level of objects (effective view): the number of levels
+     * a firewall there gets objects from (firewallResolutionLevels) - Panorama: shared = 1, a top device group = 2, its
+     * child = 3, …; SCM: the folder chain with the snippets of each folder.
+     *   device group / SCM folder, cloud / on-prem device: array( its name => level )
+     *   firewall (managed device): its device group(s)       -> array( device group => level, … )
+     *   template stack: the device groups of its firewalls   -> array( device group => level, … )
+     *   template: the device groups of the firewalls of every stack that holds it (and of firewalls with this template)
+     * @return array name => level (empty: not connected to a device group / folder)
+     */
+    public static function deviceLevels( $object ): array
+    {
+        $out = array();
+        $class = get_class( $object );
+        if( $class === 'DeviceGroup' || $class === 'Container' || $class === 'DeviceCloud' || $class === 'DeviceOnPrem' )
+            return array( $object->name() => count( self::firewallResolutionLevels( $object ) ) );
+        if( $class === 'ManagedDevice' )
+        {
+            $root = isset($object->owner->owner) && is_object($object->owner->owner) ? $object->owner->owner : null;
+            foreach( $object->getDeviceGroup() as $dgName )
+            {
+                $dg = $root !== null && method_exists( $root, 'findDeviceGroup' ) && is_string($dgName) && $dgName !== '' ? $root->findDeviceGroup( $dgName ) : null;
+                if( $dg !== null )
+                    $out[$dg->name()] = count( self::firewallResolutionLevels( $dg ) );
+            }
+            // SCM: the on-prem device of the firewall
+            if( $root !== null && method_exists( $root, 'findDeviceOnPrem' ) )
+            {
+                $d = $root->findDeviceOnPrem( $object->name() );
+                if( $d !== null )
+                    $out[$d->name()] = count( self::firewallResolutionLevels( $d ) );
+            }
+            return $out;
+        }
+        if( $class === 'TemplateStack' )
+        {
+            foreach( $object->FirewallsSerials as $fw )
+                if( is_object( $fw ) )
+                    $out = $out + self::deviceLevels( $fw );
+            return $out;
+        }
+        if( $class === 'Template' )
+        {
+            $root = $object->owner;
+            if( is_object( $root ) && method_exists( $root, 'getTemplatesStacks' ) )
+                foreach( $root->getTemplatesStacks() as $stack )
+                    if( in_array( $object, $stack->templates, TRUE ) )
+                        $out = $out + self::deviceLevels( $stack );
+            if( is_object( $root ) && isset( $root->managedFirewallsStore ) )
+                foreach( $root->managedFirewallsStore->getAll() as $fw )
+                    if( isset( $fw->template ) && $fw->template === $object->name() )
+                        $out = $out + self::deviceLevels( $fw );
+            return $out;
+        }
+        return $out;
+    }
+
+    /** filter (level >,<,=,! n): one of the levels of the device (deviceLevels) */
+    public static function deviceLevelMatch( $object, string $op, $value ): bool
+    {
+        $value = (int)$value;
+        foreach( self::deviceLevels( $object ) as $l )
+            if( ( $op === '>' && $l > $value ) || ( $op === '<' && $l < $value ) || ( $op === '==' && $l == $value ) || ( $op === '!=' && $l != $value )
+                || ( $op === '>=' && $l >= $value ) || ( $op === '<=' && $l <= $value ) )
+                return TRUE;
+        return FALSE;
+    }
+
+    /**
+     * Same name as the firewalls of one location see it (filters is.overriden.for / is.overriding.for X): the location
+     * X (device group, vsys, SCM folder / device; 'shared' = Panorama / firewall shared) and every level above it
+     * (firewallResolutionLevels). Which copy of the object's name a firewall of X gets: resolveNameForFirewalls (the
+     * lookup of the store - an EDL before region / address group / address; ancestor-objects-take-precedence).
+     *
+     * @return array|null  null: the object is not on a level of X (or X / the store is not found); else
+     *         array( 'winner' => the object X gets, 'copies' => objects of that name on the levels of X, nearest first )
+     */
+    public static function sameNameForLocation( $object, string $locationName ): ?array
+    {
+        if( !isset($object->owner) || !is_object($object->owner) || !isset($object->owner->owner) || !is_object($object->owner->owner) || !method_exists($object, 'name') )
+            return null;
+        $store = $object->owner;
+        $own = $store->owner;
+        $root = self::findRootObjectOrDie( $own );
+
+        $location = null;
+        if( $locationName === 'shared' )
+            $location = $root;
+        else
+            foreach( array( 'findDeviceGroup', 'findVirtualSystem', 'findContainer', 'findDeviceCloud', 'findDeviceOnPrem' ) as $f )
+                if( $location === null && method_exists($root, $f) )
+                    $location = $root->$f( $locationName );
+        if( $location === null )
+            return null;
+
+        // the store property of the object's location (addressStore, serviceStore, tagStore, ...); an EDL is found by
+        // the address lookup (EDL before address / group / region)
+        $prop = null;
+        if( get_class($object) === 'EDL' )
+            $prop = 'addressStore';
+        else
+            foreach( get_object_vars($own) as $k => $v )
+                if( $v === $store )
+                {
+                    $prop = $k;
+                    break;
+                }
+        if( $prop === null )
+            return null;
+
+        $levels = self::firewallResolutionLevels( $location );
+        $onLevel = FALSE;
+        foreach( $levels as $l )
+            if( $l === $own )
+                $onLevel = TRUE;
+        if( !$onLevel )
+            return null;
+
+        $copies = array();
+        foreach( $levels as $l )
+        {
+            if( !isset($l->$prop) || !is_object($l->$prop) )
+                continue;
+            $f = $l->$prop->find( $object->name(), null, FALSE );
+            if( $f !== null && !in_array( $f, $copies, TRUE ) )
+                $copies[] = $f;
+            // an object hidden on its own level (an EDL / region of the same name there)
+            if( $l === $own && $f !== $object )
+                $copies[] = $object;
+        }
+        $winner = self::resolveNameForFirewalls( $prop, $object->name(), $location );
+        return array( 'winner' => $winner, 'copies' => $copies );
+    }
+
     public static function resolveNameForFirewalls( string $storeProperty, string $name, $location )
     {
         $levels = self::firewallResolutionLevels($location);
@@ -2197,6 +2397,36 @@ class PH
      * @return string
      * @throws Exception
      */
+    /**
+     * the key of an object in the JSON output (shadow-json: ['sub']['object'][<key>]): its name - but a DNS rule /
+     * threat rule (DNSPolicy, ThreatPolicy*) is one entry of one security profile (the same name in several profiles,
+     * e.g. default-paloalto-dns): "<profile>/<name>", so each has its own entry (before they overwrote each other)
+     */
+    /** after display() of a DNS / threat rule: its values (display() writes them under the profile, as in the display
+     * of the profile) into its own entry of the JSON output (jsonObjectKey) */
+    public static function ruleJsonMove( $threat ): void
+    {
+        $owner = $threat->owner->name();
+        $key = self::jsonObjectKey( $threat );
+        if( $key === $owner || !isset( self::$JSON_TMP['sub']['object'][$owner]['rule'][$threat->name()] ) )
+            return;
+        foreach( self::$JSON_TMP['sub']['object'][$owner]['rule'][$threat->name()] as $k => $v )
+            self::$JSON_TMP['sub']['object'][$key][$k] = $v;
+        unset( self::$JSON_TMP['sub']['object'][$owner]['rule'][$threat->name()] );
+        if( empty( self::$JSON_TMP['sub']['object'][$owner]['rule'] ) )
+            unset( self::$JSON_TMP['sub']['object'][$owner]['rule'] );
+        if( empty( self::$JSON_TMP['sub']['object'][$owner] ) )
+            unset( self::$JSON_TMP['sub']['object'][$owner] );
+    }
+
+    public static function jsonObjectKey( $object ): string
+    {
+        $name = (string)$object->name();
+        if( ( $object instanceof DNSPolicy || $object instanceof ThreatPolicy ) && is_object( $object->owner ?? null ) && method_exists( $object->owner, 'name' ) )
+            return $object->owner->name() . '/' . $name;
+        return $name;
+    }
+
     public static function getLocationString($panConfObject)
     {
         /** @var PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container $panConfObject */
@@ -2297,6 +2527,11 @@ class PH
         "rule-merger",
         "override-finder",
         "diff",
+        "scm-changes",
+        "scm-apply",
+        "scm-export-xml",
+        "scm-export", "scm-egress-ip", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync", "scm-report", "panorama-move",
+        "scm-import",
         "upload",
         "xml-issue",
         "appid-enabler",
@@ -2309,6 +2544,8 @@ class PH
         "playbook",
         "playbook-validation",
         "maxmind-update",
+        "ldap-query",
+        "config-split",
         "util_get-action-filter",
         "software-remove",
         "traffic-log",
@@ -2337,12 +2574,19 @@ class PH
         "securityprofilegroup-merger",
         "object-merger",
         "merger-possible-report",
-        "device-config-bundle"
+        "device-config-bundle",
+        "config-section",
+        "master-key",
+        "config-anonymize",
+        "support-file",
+        "support-file-read"
         );
 
 
     public static $in_exclude = array(
         "maxmind-update",
+        "ldap-query",
+        "config-split",
         "util_get-action-filter",
         "protocoll-number-download",
         "gcp"
@@ -2355,6 +2599,8 @@ class PH
         "xml-op-json",
         "bpa-generator",
         "maxmind-update",
+        "ldap-query",
+        "config-split",
         "util_get-action-filter",
         "software-remove",
         "software-download",
@@ -2368,11 +2614,50 @@ class PH
         "tsf",
         "xpath",
         "gcp",
-        "device-config-bundle"
+        "device-config-bundle",
+        "config-section",
+        "master-key",
+        "config-anonymize",
+        "support-file",
+        "support-file-read"
     );
+
+    /**
+     * SCM tool scripts (utils/develop/sase/scm/) started with pan-os-php type=...: run as their own PHP process with
+     * the remaining arguments (they are standalone scripts with their own argument handling, exit codes and the
+     * confirmation prompt of execute)
+     */
+    const SCM_SCRIPT_TYPES = array(
+        'scm-export' => 'scm_pa_export.php',
+        'scm-xml-to-change' => 'scm_pa_xml_to_change.php',
+        'scm-change' => 'scm_pa_change.php',
+        'scm-panorama-to-change' => 'scm_pa_panorama_to_change.php',
+        'scm-compare' => 'scm_pa_compare.php',
+        'scm-sync' => 'scm_pa_sync.php',
+        'scm-report' => 'scm_pa_report.php',
+        'scm-egress-ip' => 'scm_egress_ip.php',
+        // path relative to utils/develop/ when it contains a '/'
+        'panorama-move' => 'panorama_move/panorama_to_panorama_move.php',
+    );
+
+    public static function runSCMScript( $type, $argv )
+    {
+        $root = realpath( dirname(__FILE__) . "/../.." );
+        $file = self::SCM_SCRIPT_TYPES[$type];
+        $script = $root . ( strpos($file, '/') !== FALSE ? "/utils/develop/" : "/utils/develop/sase/scm/" ) . $file;
+        // the repository root on the include path: some scripts require "lib/pan_php_framework.php" relative to it
+        $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " " . escapeshellarg($script);
+        foreach( array_slice($argv, 1) as $a )
+            $cmd .= " " . escapeshellarg($a);
+        passthru( $cmd, $rc );
+        exit( $rc );
+    }
 
     public static function callPANOSPHP( $type, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectfolder = "" )
     {
+        if( isset(self::SCM_SCRIPT_TYPES[$type]) )
+            self::runSCMScript( $type, $argv );
+
         if( $type == "rule" )
             $util = new RULEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
@@ -2438,6 +2723,14 @@ class PH
             $util = new OVERRIDEFINDER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "diff" )
             $util = new DIFF($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-changes" )
+            $util = new SCMCHANGES($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-export-xml" )
+            $util = new SCMEXPORTXML($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-apply" )
+            $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-import" )
+            $util = new SCMIMPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "upload" )
             $util = new UPLOAD($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "xml-issue" )
@@ -2474,8 +2767,27 @@ class PH
 
 
         elseif( $type == "maxmind-update" )
+        {
+            // its arguments (maxmind-licensekey=, maxmind-zip=): pan-os-php.php has emptied PH::$args before
+            PH::resetCliArgs( $argv );
+            PH::processCliArgs();
             $util = new MAXMIND__( );
+        }
 
+        elseif( $type == "ldap-query" )
+        {
+            // the LDAP tools of utils/develop/ldap without questions; its arguments: pan-os-php.php has emptied PH::$args
+            PH::resetCliArgs( $argv );
+            PH::processCliArgs();
+            $util = new LDAPQUERY__( );
+        }
+        elseif( $type == "config-split" )
+        {
+            // one entry per object (git on object level); in= / out= are a file or a folder: pan-os-php.php has emptied PH::$args
+            PH::resetCliArgs( $argv );
+            PH::processCliArgs();
+            $util = new CONFIGSPLIT__( );
+        }
         elseif( $type == "protocoll-number-download" )
             $util = new PROTOCOLL_NUMBERS__( );
 
@@ -2529,6 +2841,18 @@ class PH
         elseif( $type == "xpath" )
             $util = new XPATH($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
+        elseif( $type == "config-section" )
+            $util = new CONFIG_SECTION__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "master-key" )
+            $util = new MASTER_KEY__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "config-anonymize" )
+            $util = new CONFIG_ANONYMIZE__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "support-file" || $type == "support-file-read" )
+            $util = new SUPPORTFILE__($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
         elseif( $type == "ssh-connector" )
             $util = new SSH_CONNECTOR__( $type, $argv, $argc, $PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
@@ -2561,6 +2885,18 @@ class PH
         $util->endOfScript();
 
         return $util;
+    }
+
+    /**
+     * the aliases of an action argument for characters that can not be written in it
+     * ("," separates the arguments, ":" the action from them, "/" the actions):
+     * $$comma$$ $$forwardslash$$ $$colon$$ $$pipe$$ $$newline$$ $$space$$
+     */
+    public static function textAliases( string $text ): string
+    {
+        return str_replace(
+            array( '$$comma$$', '$$forwardslash$$', '$$colon$$', '$$pipe$$', '$$newline$$', '$$space$$' ),
+            array( ',', '/', ':', '|', "\n", ' ' ), $text );
     }
 
     public static function find_string_between($line, $needle1, $needle2 = "--END--")

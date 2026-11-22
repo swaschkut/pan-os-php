@@ -1,0 +1,456 @@
+{
+  "schema": "pan-os-php-config-sections",
+  "version": 1,
+  "description": "device / Panorama / SCM settings handled generically by pan-os-php type=config-section (utils/common/ConfigSection.php). 'kind': entries (named entries, default) or settings (one container of fields). 'base': device (default - relative to the device entry /config/devices/entry[@name='localhost.localdomain'], or the template config) or config (relative to <config>: mgt-config, shared, panorama; a template: its <config>). 'paths': a path per scope (panorama / firewall / template / scm) instead of 'path'. 'scope': panorama, firewall, template, scm (relative to the entry of the SCM folder / snippet / device, location=). 'exclude': child elements left out of a settings section (sections of their own). 'group': heading in the config viewer (System). 'references': yes = text values are matched against device group / template / template stack names and managed firewall serials (Panorama). Values of secret fields (password hash, keys, PSK, community) and values encrypted with the master key are never shown.",
+  "sections": {
+    "deployment-update-schedule": {
+      "description": "Panorama: Device Deployment > Dynamic Updates > Schedules (content updates of managed firewalls: app-and-threat, anti-virus, wildfire, ... - devices = serials)",
+      "path": "deviceconfig/system/deployment-update-schedule",
+      "scope": [
+        "panorama"
+      ],
+      "references": true,
+      "group": "Updates and schedules"
+    },
+    "config-bundle-export-schedule": {
+      "description": "Panorama: scheduled config bundle export (SCP / FTP server)",
+      "path": "deviceconfig/system/config-bundle-export-schedule",
+      "scope": [
+        "panorama"
+      ],
+      "references": true,
+      "group": "Updates and schedules"
+    },
+    "permitted-ip": {
+      "description": "permitted IP addresses of the management interface",
+      "path": "deviceconfig/system/permitted-ip",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Management"
+    },
+    "management-settings": {
+      "description": "Device > Setup > Management > Management settings: ancestor-objects-take-precedence (Panorama), rule-require-audit-comment, idle timeout, admin lockout, …",
+      "path": "deviceconfig/setting/management",
+      "kind": "settings",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Management"
+    },
+    "device-settings": {
+      "description": "deviceconfig/setting without management (session, TCP, config, WildFire, …)",
+      "path": "deviceconfig/setting",
+      "kind": "settings",
+      "exclude": [
+        "management"
+      ],
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "system": {
+      "description": "Device > Setup: hostname, management IP / netmask / gateway, DNS, NTP, timezone, domain, login banner, Panorama servers (firewall), update server, services (sections of their own left out)",
+      "path": "deviceconfig/system",
+      "kind": "settings",
+      "exclude": [
+        "permitted-ip",
+        "update-schedule",
+        "deployment-update-schedule",
+        "config-bundle-export-schedule"
+      ],
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": true,
+      "group": "System"
+    },
+    "update-schedule": {
+      "description": "Device > Dynamic Updates of a firewall (app-threat, anti-virus, wildfire, …)",
+      "path": "deviceconfig/system/update-schedule",
+      "kind": "settings",
+      "scope": [
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Updates and schedules"
+    },
+    "high-availability": {
+      "description": "Device > High Availability",
+      "path": "deviceconfig/high-availability",
+      "kind": "settings",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "administrators": {
+      "description": "local administrators (mgt-config/users): role, access domain, authentication profile - the password hash is never shown",
+      "path": "mgt-config/users",
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": true,
+      "group": "Administrators"
+    },
+    "password-complexity": {
+      "description": "minimum password complexity of local administrators",
+      "path": "mgt-config/password-complexity",
+      "base": "config",
+      "kind": "settings",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Administrators"
+    },
+    "access-domains": {
+      "description": "Panorama: access domains of administrators (device groups, templates, firewalls)",
+      "path": "mgt-config/access-domain",
+      "base": "config",
+      "scope": [
+        "panorama"
+      ],
+      "references": true,
+      "group": "Administrators"
+    },
+    "admin-roles": {
+      "description": "administrator role profiles",
+      "path": "shared/admin-role",
+      "paths": {
+        "panorama": "panorama/admin-role",
+        "firewall": "shared/admin-role"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Administrators"
+    },
+    "authentication-profiles": {
+      "description": "authentication profiles (administrators, GlobalProtect, captive portal, …)",
+      "path": "shared/authentication-profile",
+      "paths": {
+        "panorama": "panorama/authentication-profile",
+        "firewall": "shared/authentication-profile",
+        "scm": "authentication-profile"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template",
+        "scm"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "authentication-sequences": {
+      "description": "authentication sequences",
+      "path": "shared/authentication-sequence",
+      "paths": {
+        "panorama": "panorama/authentication-sequence",
+        "firewall": "shared/authentication-sequence"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "server-profile-ldap": {
+      "description": "LDAP server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/ldap",
+      "paths": {
+        "panorama": "panorama/server-profile/ldap",
+        "firewall": "shared/server-profile/ldap"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "server-profile-radius": {
+      "description": "RADIUS server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/radius",
+      "paths": {
+        "panorama": "panorama/server-profile/radius",
+        "firewall": "shared/server-profile/radius"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "server-profile-tacplus": {
+      "description": "TACACS+ server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/tacplus",
+      "paths": {
+        "panorama": "panorama/server-profile/tacplus",
+        "firewall": "shared/server-profile/tacplus"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "server-profile-kerberos": {
+      "description": "Kerberos server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/kerberos",
+      "paths": {
+        "panorama": "panorama/server-profile/kerberos",
+        "firewall": "shared/server-profile/kerberos"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "server-profile-saml-idp": {
+      "description": "SAML identity provider server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/saml-idp",
+      "paths": {
+        "panorama": "panorama/server-profile/saml-idp",
+        "firewall": "shared/server-profile/saml-idp"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Authentication"
+    },
+    "server-profile-syslog": {
+      "description": "syslog server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/syslog",
+      "paths": {
+        "panorama": "panorama/server-profile/syslog",
+        "firewall": "shared/server-profile/syslog"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Logging"
+    },
+    "server-profile-snmptrap": {
+      "description": "SNMP trap server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/snmptrap",
+      "paths": {
+        "panorama": "panorama/server-profile/snmptrap",
+        "firewall": "shared/server-profile/snmptrap"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Logging"
+    },
+    "server-profile-email": {
+      "description": "email server profiles - secrets (bind password, shared secret, community) never shown",
+      "path": "shared/server-profile/email",
+      "paths": {
+        "panorama": "panorama/server-profile/email",
+        "firewall": "shared/server-profile/email"
+      },
+      "base": "config",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template"
+      ],
+      "references": false,
+      "group": "Logging"
+    },
+    "log-settings": {
+      "description": "Device > Log Settings (system, config, user-id, HIP, correlation … forwarding)",
+      "path": "shared/log-settings",
+      "paths": {
+        "panorama": "panorama/log-settings",
+        "firewall": "shared/log-settings",
+        "scm": "log-settings"
+      },
+      "base": "config",
+      "kind": "settings",
+      "scope": [
+        "panorama",
+        "firewall",
+        "template",
+        "scm"
+      ],
+      "references": false,
+      "group": "Logging"
+    },
+    "scm-general-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/general-settings): general: hostname, timezone, domain, login banner, …",
+      "path": "device-settings/general-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-management-interface-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/management-interface-settings): management interface: IP, permitted IP, services",
+      "path": "device-settings/management-interface-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-service-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/service-settings): services: DNS, NTP servers",
+      "path": "device-settings/service-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-service-route-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/service-route-settings): service routes",
+      "path": "device-settings/service-route-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-authentication-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/authentication-settings): authentication settings of administrators (profile, lockout, idle timeout)",
+      "path": "device-settings/authentication-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "Management"
+    },
+    "scm-login-banner-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/login-banner-settings): login banner",
+      "path": "device-settings/login-banner-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "Management"
+    },
+    "scm-session-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/session-settings): session settings",
+      "path": "device-settings/session-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-session-timeouts-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/session-timeouts-settings): session timeouts",
+      "path": "device-settings/session-timeouts-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-tcp-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/tcp-settings): TCP settings",
+      "path": "device-settings/tcp-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-content-id-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/content-id-settings): Content-ID settings",
+      "path": "device-settings/content-id-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-vpn-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/vpn-settings): VPN settings",
+      "path": "device-settings/vpn-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "System"
+    },
+    "scm-update-schedule-settings": {
+      "description": "SCM NGFW device setting (/config/device/v1/update-schedule-settings): dynamic updates schedules",
+      "path": "device-settings/update-schedule-settings",
+      "kind": "settings",
+      "scope": [
+        "scm"
+      ],
+      "references": false,
+      "group": "Updates and schedules"
+    }
+  }
+}

@@ -400,6 +400,11 @@ EDLCallContext::$supportedActions['display'] = array(
             $tmp_recurring = $object->recurring;
         $string = "type: ".$object->type." | recurring: ".$tmp_recurring. " | url: ".$object->url;
         PH::print_stdout( "       - ".$string );
+        // the same as data (shadow-json, config viewer): before only name and class - the viewer showed no list type,
+        // recurring and URL
+        PH::$JSON_TMP['sub']['object'][$object->name()]['edl-type'] = $object->type;
+        PH::$JSON_TMP['sub']['object'][$object->name()]['recurring'] = $object->recurring;
+        PH::$JSON_TMP['sub']['object'][$object->name()]['url'] = $object->url;
 
 
     },

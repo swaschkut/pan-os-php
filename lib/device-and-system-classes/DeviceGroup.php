@@ -1345,20 +1345,51 @@ class DeviceGroup
     }
 
 
+    /**
+     * a firewall (serial) into this device group: <devices><entry name="serial"/> (a vsys other than vsys1:
+     * <vsys><entry name="vsysX"/></vsys>), and the firewall knows its device group (references both ways, as when
+     * the configuration is loaded). Before: no <devices> in the device group - fatal error; the entry was added again
+     * for a firewall already in it; the firewall still showed no / the old device group.
+     */
     public function addDevice( $serial, $vsys = "vsys1" )
     {
-        if( isset( $this->devices[$serial] ) && $vsys !== "vsys1" )
+        if( !$this->devicesRoot instanceof DOMElement )
+            $this->devicesRoot = DH::findFirstElementOrCreate( 'devices', $this->xmlroot );
+
+        $entry = null;
+        foreach( $this->devicesRoot->childNodes as $node )
+            if( $node instanceof DOMElement && $node->getAttribute( 'name' ) === (string)$serial )
+                $entry = $node;
+        if( $entry === null )
         {
+            $entry = $this->xmlroot->ownerDocument->createElement( 'entry' );
+            $entry->setAttribute( 'name', (string)$serial );
+            $this->devicesRoot->appendChild( $entry );
+        }
+
+        if( isset( $this->devices[$serial] ) )
             $this->devices[$serial]['vsyslist'][$vsys] = $vsys;
-        }
         else
+            $this->devices[$serial] = array( 'serial' => $serial, 'vsyslist' => array( $vsys => $vsys ) );
+        if( $vsys !== "vsys1" || DH::findFirstElement( 'vsys', $entry ) !== FALSE )
         {
-            $vsyslist['vsys1'] = 'vsys1';
-            $this->devices[$serial] = array('serial' => $serial, 'vsyslist' => $vsyslist);
+            $vsysRoot = DH::findFirstElementOrCreate( 'vsys', $entry );
+            foreach( $this->devices[$serial]['vsyslist'] as $v )
+                if( DH::findFirstElementByNameAttr( 'entry', $v, $vsysRoot ) === null )
+                {
+                    $node = $this->xmlroot->ownerDocument->createElement( 'entry' );
+                    $node->setAttribute( 'name', $v );
+                    $vsysRoot->appendChild( $node );
+                }
         }
-        //XML manipulation missing
-        $newXmlNode = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, "<entry name='{$serial}'/>");
-        $devicenode = $this->devicesRoot->appendChild($newXmlNode);
+
+        $managedFirewall = $this->owner->managedFirewallsStore->find( $serial );
+        if( $managedFirewall !== null )
+        {
+            $managedFirewall->addDeviceGroup( $this->name );
+            $managedFirewall->addReference( $this );
+            $this->addReference( $managedFirewall );
+        }
     }
 
 
@@ -1367,7 +1398,14 @@ class DeviceGroup
         if( isset( $this->devices[$serial] ) )
         {
             unset( $this->devices[$serial] );
-            //missing XML manipulation
+            // the firewall: no longer in this device group
+            $managedFirewall = $this->owner->managedFirewallsStore->find( $serial );
+            if( $managedFirewall !== null )
+            {
+                $managedFirewall->removeDeviceGroup( $this->name );
+                $managedFirewall->removeReference( $this );
+                $this->removeReference( $managedFirewall );
+            }
 
             $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
             if( $user_group_source_node !== false )
@@ -1407,7 +1445,18 @@ class DeviceGroup
 
     public function removeDeviceAny( )
     {
-        $this->FirewallsSerials = array();
+        // before: $this->FirewallsSerials (a property of the template stack) - the list of the device group stayed
+        foreach( array_keys( $this->devices ) as $serial )
+        {
+            $managedFirewall = $this->owner->managedFirewallsStore->find( $serial );
+            if( $managedFirewall !== null )
+            {
+                $managedFirewall->removeDeviceGroup( $this->name );
+                $managedFirewall->removeReference( $this );
+                $this->removeReference( $managedFirewall );
+            }
+        }
+        $this->devices = array();
 
         if( $this->devicesRoot !== FALSE )
             $this->devicesRoot->parentNode->removeChild( $this->devicesRoot );

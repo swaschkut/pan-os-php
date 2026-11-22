@@ -1,0 +1,1878 @@
+{
+    "_about": "risk class per pan-os-php action - built by bin/action-classes.php (see there); \"reviewed\": types a person has checked, only these can be changed in the config-viewer; \"override\": corrections that survive a rebuild",
+    "reviewed": [
+        "address",
+        "service",
+        "tag",
+        "rule",
+        "zone",
+        "schedule",
+        "securityprofile",
+        "securityprofilegroup",
+        "device:devicegroup-addserial",
+        "device:devicegroup-removeserial",
+        "device:devicegroup-setparentdg",
+        "device:templatestack-addserial",
+        "device:templatestack-removeserial",
+        "device:template-add",
+        "device:template-remove",
+        "device:variable-set",
+        "device:variable-remove",
+        "config-section:management-settings",
+        "config-section:device-settings",
+        "config-section:system",
+        "config-section:update-schedule",
+        "config-section:permitted-ip",
+        "config-section:password-complexity",
+        "config-section:log-settings",
+        "config-section:deployment-update-schedule",
+        "config-section:config-bundle-export-schedule",
+        "config-section:scm-general-settings",
+        "config-section:scm-management-interface-settings",
+        "config-section:scm-service-settings",
+        "config-section:scm-service-route-settings",
+        "config-section:scm-login-banner-settings",
+        "config-section:scm-session-settings",
+        "config-section:scm-session-timeouts-settings",
+        "config-section:scm-tcp-settings",
+        "config-section:scm-content-id-settings",
+        "config-section:scm-update-schedule-settings"
+    ],
+    "override": {},
+    "types": {
+        "address": {
+            "add-member": {
+                "class": "change"
+            },
+            "addobjectwhereused": {
+                "class": "change"
+            },
+            "address-group-create-edl-fqdn": {
+                "class": "reads-file"
+            },
+            "address-group-create-edl-ip": {
+                "class": "reads-file"
+            },
+            "addtogroup": {
+                "class": "change"
+            },
+            "combine-addressgroups": {
+                "class": "change"
+            },
+            "create-address": {
+                "class": "change"
+            },
+            "create-address-from-file": {
+                "class": "reads-file"
+            },
+            "create-addressgroup": {
+                "class": "change"
+            },
+            "decommission": {
+                "class": "network"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "description-append": {
+                "class": "change"
+            },
+            "description-delete": {
+                "class": "change"
+            },
+            "description-replace-character": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "display-nat-usage": {
+                "class": "read"
+            },
+            "display-xpath-usage": {
+                "class": "read"
+            },
+            "display_lower_level_object": {
+                "class": "read"
+            },
+            "display_upper_level_object": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "move": {
+                "class": "change"
+            },
+            "move-range2network": {
+                "class": "change"
+            },
+            "move-wildcard2network": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-rename": {
+                "class": "network"
+            },
+            "name-rename-location": {
+                "class": "change"
+            },
+            "name-rename-wrong-characters": {
+                "class": "change"
+            },
+            "name-replace-character": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "removewhereused": {
+                "class": "change"
+            },
+            "replace-ip-by-mt-like-object": {
+                "class": "change"
+            },
+            "replace-object-by-ip": {
+                "class": "change"
+            },
+            "replacebymembers": {
+                "class": "change"
+            },
+            "replacebymembersanddelete": {
+                "class": "change"
+            },
+            "replacewithobject": {
+                "class": "change"
+            },
+            "showip4mapping": {
+                "class": "change"
+            },
+            "split-large-address-groups": {
+                "class": "change"
+            },
+            "tag-add": {
+                "class": "change"
+            },
+            "tag-add-force": {
+                "class": "change"
+            },
+            "tag-add_lower_level_object": {
+                "class": "change"
+            },
+            "tag-remove": {
+                "class": "change"
+            },
+            "tag-remove-all": {
+                "class": "change"
+            },
+            "tag-remove-regex": {
+                "class": "change"
+            },
+            "upload-address-2cloudmanager": {
+                "class": "network"
+            },
+            "upload-addressgroup-2cloudmanager": {
+                "class": "network"
+            },
+            "value-host-object-add-netmask-m32": {
+                "class": "change"
+            },
+            "value-replace": {
+                "class": "change"
+            },
+            "value-set-ip-for-fqdn": {
+                "class": "network"
+            },
+            "value-set-reverse-dns": {
+                "class": "network"
+            },
+            "z_beta_summarize": {
+                "class": "change"
+            }
+        },
+        "application": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "move": {
+                "class": "change"
+            }
+        },
+        "certificate": {
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "certificate-profile": {
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "device": {
+            "addressstore-rewrite": {
+                "class": "change"
+            },
+            "authkey-add": {
+                "class": "network"
+            },
+            "authkey-display-all": {
+                "class": "network"
+            },
+            "authkey-display-default": {
+                "class": "network"
+            },
+            "authkey-set": {
+                "class": "network"
+            },
+            "cleanuprule-create-bp": {
+                "class": "change"
+            },
+            "defaultsecurityrule-create-bp": {
+                "class": "change"
+            },
+            "defaultsecurityrule-remove-override": {
+                "class": "change"
+            },
+            "defaultsecurityrule-securityprofile-setalert": {
+                "class": "change"
+            },
+            "devicegroup-addserial": {
+                "class": "change"
+            },
+            "devicegroup-create": {
+                "class": "change"
+            },
+            "devicegroup-delete": {
+                "class": "change"
+            },
+            "devicegroup-removeserial": {
+                "class": "change"
+            },
+            "devicegroup-removeserial-any": {
+                "class": "change"
+            },
+            "devicegroup-setparentdg": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "display-ancestor-precedence-impact": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "display-shadowrule": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exportinventorytoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exportlicensetoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "find-zone-from-ip": {
+                "class": "change"
+            },
+            "geoip-check": {
+                "class": "network"
+            },
+            "logforwardingprofile-create-bp": {
+                "class": "change"
+            },
+            "manageddevice-create": {
+                "class": "change"
+            },
+            "manageddevice-delete": {
+                "class": "change"
+            },
+            "manageddevice-delete-any": {
+                "class": "change"
+            },
+            "rename-wrong-characters": {
+                "class": "change"
+            },
+            "sharedgateway-delete": {
+                "class": "change"
+            },
+            "sharedgateway-migrate-to-vsys": {
+                "class": "change"
+            },
+            "sp_spg-create-alert-only-bp": {
+                "class": "change"
+            },
+            "sp_spg-create-bp": {
+                "class": "change"
+            },
+            "system-admin-session": {
+                "class": "network"
+            },
+            "system-mgt-config_users": {
+                "class": "network"
+            },
+            "system-restart": {
+                "class": "network"
+            },
+            "telemetry-enable": {
+                "class": "change"
+            },
+            "template-add": {
+                "class": "change"
+            },
+            "template-clone": {
+                "class": "change"
+            },
+            "template-create": {
+                "class": "change"
+            },
+            "template-create-vsys": {
+                "class": "change"
+            },
+            "template-delete": {
+                "class": "change"
+            },
+            "template-remove": {
+                "class": "change"
+            },
+            "templatestack-addserial": {
+                "class": "change"
+            },
+            "templatestack-clone": {
+                "class": "change"
+            },
+            "templatestack-create": {
+                "class": "change"
+            },
+            "templatestack-delete": {
+                "class": "change"
+            },
+            "templatestack-removeserial": {
+                "class": "change"
+            },
+            "templatestack-removeserial-any": {
+                "class": "change"
+            },
+            "threat-report-bp-change-plan": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "variable-remove": {
+                "class": "change"
+            },
+            "variable-set": {
+                "class": "change"
+            },
+            "virtualsystem-delete": {
+                "class": "change"
+            },
+            "xml-extract": {
+                "class": "change"
+            },
+            "zoneprotectionprofile-create-bp": {
+                "class": "change"
+            },
+            "zpp-create-alert-only-bp": {
+                "class": "change"
+            },
+            "zpp-create-bp": {
+                "class": "change"
+            }
+        },
+        "dhcp": {
+            "dhcp-server-reservation": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "dns-rule": {
+            "display": {
+                "class": "read"
+            },
+            "display-xml": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "edl": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "move": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            }
+        },
+        "gp-gateway": {
+            "display": {
+                "class": "read"
+            }
+        },
+        "gp-portal": {
+            "display": {
+                "class": "read"
+            }
+        },
+        "gpgateway-tunnel": {
+            "display": {
+                "class": "read"
+            }
+        },
+        "gre-tunnel": {
+            "display": {
+                "class": "read"
+            }
+        },
+        "ike-gateway": {
+            "display": {
+                "class": "network"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "ike-profile": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "interface": {
+            "ae-group-set": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "display-migration-warning": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "name-rename": {
+                "class": "change"
+            },
+            "remove": {
+                "class": "change"
+            },
+            "replace_ipv4_objects_by_value": {
+                "class": "change"
+            },
+            "replace_ipv6_objects_by_value": {
+                "class": "change"
+            },
+            "type-aggregate-ethernet-set": {
+                "class": "change"
+            }
+        },
+        "interface-management-profile": {
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "ipsec-profile": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "ipsec-tunnel": {
+            "display": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "log-profile": {
+            "create": {
+                "class": "change"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "move": {
+                "class": "change"
+            }
+        },
+        "profile": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            }
+        },
+        "routing": {
+            "display": {
+                "class": "read"
+            },
+            "display-route-table-fast": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "rule": {
+            "action-set": {
+                "class": "change"
+            },
+            "app-add": {
+                "class": "change"
+            },
+            "app-add-force": {
+                "class": "change"
+            },
+            "app-fix-dependencies": {
+                "class": "change"
+            },
+            "app-postgres-fix": {
+                "class": "change"
+            },
+            "app-remove": {
+                "class": "change"
+            },
+            "app-remove-force-any": {
+                "class": "change"
+            },
+            "app-set-any": {
+                "class": "change"
+            },
+            "app-usage-clear": {
+                "class": "change"
+            },
+            "appid-toolbox-cleanup": {
+                "class": "change"
+            },
+            "bidirnat-split": {
+                "class": "change"
+            },
+            "clone": {
+                "class": "change"
+            },
+            "cloneforappoverride": {
+                "class": "change"
+            },
+            "copy": {
+                "class": "change"
+            },
+            "create-new-rule-from-file-fastapi": {
+                "class": "network"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "description-append": {
+                "class": "change"
+            },
+            "description-prepend": {
+                "class": "change"
+            },
+            "description-replace-character": {
+                "class": "change"
+            },
+            "disabled-set": {
+                "class": "change"
+            },
+            "disabled-set-fastapi": {
+                "class": "network"
+            },
+            "display": {
+                "class": "read"
+            },
+            "display-app-id-change": {
+                "class": "read"
+            },
+            "display-app-seen": {
+                "class": "read"
+            },
+            "dnat-remove": {
+                "class": "change"
+            },
+            "dnat-set": {
+                "class": "change"
+            },
+            "dsri-set": {
+                "class": "change"
+            },
+            "dsri-set-fastapi": {
+                "class": "network"
+            },
+            "dst-add": {
+                "class": "change"
+            },
+            "dst-add-from-file": {
+                "class": "reads-file"
+            },
+            "dst-calculate-by-zones": {
+                "class": "change"
+            },
+            "dst-negate-set": {
+                "class": "change"
+            },
+            "dst-remove": {
+                "class": "change"
+            },
+            "dst-remove-force-any": {
+                "class": "change"
+            },
+            "dst-remove-objects-matching-filter": {
+                "class": "change"
+            },
+            "dst-set-any": {
+                "class": "change"
+            },
+            "enabled-set": {
+                "class": "change"
+            },
+            "enabled-set-fastapi": {
+                "class": "network"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "from-add": {
+                "class": "change"
+            },
+            "from-add-force": {
+                "class": "change"
+            },
+            "from-calculate-zones": {
+                "class": "change"
+            },
+            "from-remove": {
+                "class": "change"
+            },
+            "from-remove-force-any": {
+                "class": "change"
+            },
+            "from-remove-from-file": {
+                "class": "reads-file"
+            },
+            "from-remove-objects-matching-filter": {
+                "class": "change"
+            },
+            "from-replace": {
+                "class": "change"
+            },
+            "from-set-any": {
+                "class": "change"
+            },
+            "group-tag-remove": {
+                "class": "change"
+            },
+            "group-tag-set": {
+                "class": "change"
+            },
+            "hip-set": {
+                "class": "change"
+            },
+            "invertpreandpost": {
+                "class": "change"
+            },
+            "logend-disable": {
+                "class": "change"
+            },
+            "logend-disable-fastapi": {
+                "class": "network"
+            },
+            "logend-enable": {
+                "class": "change"
+            },
+            "logend-enable-fastapi": {
+                "class": "network"
+            },
+            "logsetting-disable": {
+                "class": "change"
+            },
+            "logsetting-set": {
+                "class": "change"
+            },
+            "logsetting-set-fastapi": {
+                "class": "network"
+            },
+            "logsetting-set-force": {
+                "class": "change"
+            },
+            "logstart-disable": {
+                "class": "change"
+            },
+            "logstart-disable-fastapi": {
+                "class": "network"
+            },
+            "logstart-enable": {
+                "class": "change"
+            },
+            "logstart-enable-fastapi": {
+                "class": "network"
+            },
+            "move": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-append": {
+                "class": "change"
+            },
+            "name-prepend": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-rename": {
+                "class": "change"
+            },
+            "name-rename-wrong-characters": {
+                "class": "change"
+            },
+            "name-replace-character": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "position-move-after": {
+                "class": "change"
+            },
+            "position-move-before": {
+                "class": "change"
+            },
+            "position-move-to-bottom": {
+                "class": "change"
+            },
+            "position-move-to-top": {
+                "class": "change"
+            },
+            "qosmarking-remove": {
+                "class": "change"
+            },
+            "qosmarking-set": {
+                "class": "change"
+            },
+            "rule-hit-count-clear": {
+                "class": "change"
+            },
+            "rule-hit-count-show": {
+                "class": "change"
+            },
+            "ruletype-change": {
+                "class": "change"
+            },
+            "schedule-remove": {
+                "class": "change"
+            },
+            "schedule-set": {
+                "class": "change"
+            },
+            "securityprofile-group-set": {
+                "class": "change"
+            },
+            "securityprofile-group-set-fastapi": {
+                "class": "network"
+            },
+            "securityprofile-group-set-force": {
+                "class": "change"
+            },
+            "securityprofile-profile-set": {
+                "class": "change"
+            },
+            "securityprofile-remove": {
+                "class": "change"
+            },
+            "securityprofile-remove-fastapi": {
+                "class": "network"
+            },
+            "securityprofile-replace-by-group": {
+                "class": "change"
+            },
+            "service-add": {
+                "class": "change"
+            },
+            "service-remove": {
+                "class": "change"
+            },
+            "service-remove-force-any": {
+                "class": "change"
+            },
+            "service-remove-objects-matching-filter": {
+                "class": "change"
+            },
+            "service-set-any": {
+                "class": "change"
+            },
+            "service-set-appdefault": {
+                "class": "change"
+            },
+            "snat-remove": {
+                "class": "change"
+            },
+            "snat-set": {
+                "class": "change"
+            },
+            "snat-set-interface": {
+                "class": "change"
+            },
+            "src-add": {
+                "class": "change"
+            },
+            "src-add-from-file": {
+                "class": "reads-file"
+            },
+            "src-calculate-by-zones": {
+                "class": "change"
+            },
+            "src-dst-swap": {
+                "class": "change"
+            },
+            "src-negate-set": {
+                "class": "change"
+            },
+            "src-remove": {
+                "class": "change"
+            },
+            "src-remove-force-any": {
+                "class": "change"
+            },
+            "src-remove-objects-matching-filter": {
+                "class": "change"
+            },
+            "src-set-any": {
+                "class": "change"
+            },
+            "stats-address-destination-fastapi": {
+                "class": "network"
+            },
+            "stats-address-fastapi": {
+                "class": "network"
+            },
+            "stats-address-source-fastapi": {
+                "class": "network"
+            },
+            "stats-appid-fastapi": {
+                "class": "network"
+            },
+            "stats-service-fastapi": {
+                "class": "network"
+            },
+            "stats-traffic-fastapi": {
+                "class": "network"
+            },
+            "tag-add": {
+                "class": "change"
+            },
+            "tag-add-force": {
+                "class": "change"
+            },
+            "tag-remove": {
+                "class": "change"
+            },
+            "tag-remove-all": {
+                "class": "change"
+            },
+            "tag-remove-regex": {
+                "class": "change"
+            },
+            "target-add-device": {
+                "class": "change"
+            },
+            "target-negate-set": {
+                "class": "change"
+            },
+            "target-remove-device": {
+                "class": "change"
+            },
+            "target-set-any": {
+                "class": "change"
+            },
+            "to-add": {
+                "class": "change"
+            },
+            "to-add-force": {
+                "class": "change"
+            },
+            "to-calculate-zones": {
+                "class": "change"
+            },
+            "to-remove": {
+                "class": "change"
+            },
+            "to-remove-force-any": {
+                "class": "change"
+            },
+            "to-remove-from-file": {
+                "class": "reads-file"
+            },
+            "to-remove-objects-matching-filter": {
+                "class": "change"
+            },
+            "to-replace": {
+                "class": "change"
+            },
+            "to-set-any": {
+                "class": "change"
+            },
+            "user-add": {
+                "class": "change"
+            },
+            "user-check-ldap": {
+                "class": "network"
+            },
+            "user-check-ldap_new": {
+                "class": "network"
+            },
+            "user-remove": {
+                "class": "change"
+            },
+            "user-replace": {
+                "class": "change"
+            },
+            "user-replace-from-file": {
+                "class": "reads-file"
+            },
+            "user-set-any": {
+                "class": "change"
+            },
+            "xml-extract": {
+                "class": "change"
+            }
+        },
+        "schedule": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "replacewithobject": {
+                "class": "change"
+            }
+        },
+        "securityprofile": {
+            "alert-only-set": {
+                "class": "change"
+            },
+            "best-practice-set": {
+                "class": "change"
+            },
+            "clone-predefined-and-change-references": {
+                "class": "change"
+            },
+            "custom-url-category-add-ending-token": {
+                "class": "change"
+            },
+            "custom-url-category-fix-leading-dot": {
+                "class": "change"
+            },
+            "custom-url-category-remove-ending-token": {
+                "class": "change"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "display-xml": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "dns-security.alert-only-set": {
+                "class": "change"
+            },
+            "dns-security.best-practice-set": {
+                "class": "change"
+            },
+            "exportsptohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "file-blocking.alert-only-set": {
+                "class": "change"
+            },
+            "file-blocking.rules.alert-only-set": {
+                "class": "change"
+            },
+            "move": {
+                "class": "change"
+            },
+            "move_from-shared_to_lowest_possible_dg": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "spyware.alert-only-set": {
+                "class": "change"
+            },
+            "spyware.best-practice-set": {
+                "class": "change"
+            },
+            "spyware.botnet.alert-only-set": {
+                "class": "change"
+            },
+            "spyware.botnet.best-practice-set": {
+                "class": "change"
+            },
+            "spyware.dns.alert-only-set": {
+                "class": "change"
+            },
+            "spyware.dns.best-practice-set": {
+                "class": "change"
+            },
+            "spyware.inline-ml.alert-only-set": {
+                "class": "change"
+            },
+            "spyware.inline-ml.best-practice-set": {
+                "class": "change"
+            },
+            "spyware.rules.alert-only-set": {
+                "class": "change"
+            },
+            "spyware.rules.best-practice-set": {
+                "class": "change"
+            },
+            "url-filtering-action-set": {
+                "class": "change"
+            },
+            "url.action-set": {
+                "class": "change"
+            },
+            "url.alert-only-set": {
+                "class": "change"
+            },
+            "url.best-practice-set": {
+                "class": "change"
+            },
+            "url.credential-enforcement.alert-only-set": {
+                "class": "change"
+            },
+            "url.credential-enforcement.log-severity": {
+                "class": "change"
+            },
+            "url.credential-enforcement.mode": {
+                "class": "change"
+            },
+            "url.credential-enforcement.mode.alert-only-set": {
+                "class": "change"
+            },
+            "url.inline-ml.alert-only-set": {
+                "class": "change"
+            },
+            "url.siteaccess.alert-only-set": {
+                "class": "change"
+            },
+            "virus-and-wildfire.alert-only-set": {
+                "class": "change"
+            },
+            "virus-and-wildfire.best-practice-set": {
+                "class": "change"
+            },
+            "virus.alert-only-set": {
+                "class": "change"
+            },
+            "virus.best-practice-set": {
+                "class": "change"
+            },
+            "virus.decoder.alert-only-set": {
+                "class": "change"
+            },
+            "virus.decoder.best-practice-set": {
+                "class": "change"
+            },
+            "virus.inline-ml.alert-only-set": {
+                "class": "change"
+            },
+            "virus.inline-ml.best-practice-set": {
+                "class": "change"
+            },
+            "vulnerability.alert-only-set": {
+                "class": "change"
+            },
+            "vulnerability.best-practice-set": {
+                "class": "change"
+            },
+            "vulnerability.inline-ml.alert-only-set": {
+                "class": "change"
+            },
+            "vulnerability.inline-ml.best-practice-set": {
+                "class": "change"
+            },
+            "vulnerability.rules.alert-only-set": {
+                "class": "change"
+            },
+            "vulnerability.rules.best-practice-set": {
+                "class": "change"
+            },
+            "wildfire.alert-only-set": {
+                "class": "change"
+            },
+            "wildfire.best-practice-set": {
+                "class": "change"
+            },
+            "wildfire.inline-ml.alert-only-set": {
+                "class": "change"
+            },
+            "wildfire.inline-ml.best-practice-set": {
+                "class": "change"
+            },
+            "wildfire.rules.alert-only-set": {
+                "class": "change"
+            }
+        },
+        "securityprofilegroup": {
+            "create": {
+                "class": "change"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "securityprofile-remove": {
+                "class": "change"
+            },
+            "securityprofile-set": {
+                "class": "change"
+            }
+        },
+        "service": {
+            "addobjectwhereused": {
+                "class": "change"
+            },
+            "create-service": {
+                "class": "change"
+            },
+            "create-servicegroup": {
+                "class": "change"
+            },
+            "decommission": {
+                "class": "network"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "description-append": {
+                "class": "change"
+            },
+            "description-delete": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "move": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-rename": {
+                "class": "change"
+            },
+            "name-rename-location": {
+                "class": "change"
+            },
+            "name-rename-wrong-characters": {
+                "class": "change"
+            },
+            "name-replace-character": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "removewhereused": {
+                "class": "change"
+            },
+            "replacebymembers": {
+                "class": "change"
+            },
+            "replacebymembersanddelete": {
+                "class": "change"
+            },
+            "replacegroupbyservice": {
+                "class": "change"
+            },
+            "replacewithobject": {
+                "class": "change"
+            },
+            "show-dstportmapping": {
+                "class": "change"
+            },
+            "sourceport-delete": {
+                "class": "change"
+            },
+            "sourceport-set": {
+                "class": "change"
+            },
+            "split-large-service-groups": {
+                "class": "change"
+            },
+            "tag-add": {
+                "class": "change"
+            },
+            "tag-add-force": {
+                "class": "change"
+            },
+            "tag-remove": {
+                "class": "change"
+            },
+            "tag-remove-all": {
+                "class": "change"
+            },
+            "tag-remove-regex": {
+                "class": "change"
+            },
+            "timeout-halfclose-set": {
+                "class": "change"
+            },
+            "timeout-inherit": {
+                "class": "change"
+            },
+            "timeout-set": {
+                "class": "change"
+            },
+            "timeout-timewait-set": {
+                "class": "change"
+            }
+        },
+        "ssl-tls-service-profile": {
+            "display": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "static-route": {
+            "delete": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "display-nexthop-ips": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "tag": {
+            "color-set": {
+                "class": "change"
+            },
+            "comments-add": {
+                "class": "change"
+            },
+            "comments-delete": {
+                "class": "change"
+            },
+            "create": {
+                "class": "change"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "move": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-rename": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "replace-with-object": {
+                "class": "change"
+            }
+        },
+        "threat": {
+            "display": {
+                "class": "read"
+            },
+            "display-xml": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "threat-rule": {
+            "display": {
+                "class": "read"
+            },
+            "display-xml": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            }
+        },
+        "virtualwire": {
+            "display": {
+                "class": "read"
+            }
+        },
+        "zone": {
+            "delete": {
+                "class": "change"
+            },
+            "delete-force": {
+                "class": "change"
+            },
+            "deleteforce": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "logsetting-set": {
+                "class": "change"
+            },
+            "name-addprefix": {
+                "class": "change"
+            },
+            "name-addsuffix": {
+                "class": "change"
+            },
+            "name-removeprefix": {
+                "class": "change"
+            },
+            "name-removesuffix": {
+                "class": "change"
+            },
+            "name-rename": {
+                "class": "change"
+            },
+            "name-replace-character": {
+                "class": "change"
+            },
+            "name-tolowercase": {
+                "class": "change"
+            },
+            "name-toucwords": {
+                "class": "change"
+            },
+            "name-touppercase": {
+                "class": "change"
+            },
+            "packetbufferprotection-set": {
+                "class": "change"
+            },
+            "replacewithobject": {
+                "class": "change"
+            },
+            "userid-enable": {
+                "class": "change"
+            },
+            "zpp-set": {
+                "class": "change"
+            }
+        },
+        "zone-protection-profile": {
+            "alert-only-set": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "exporttoexcel": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "exporttohtml": {
+                "class": "writes-file",
+                "file_arg": 0
+            },
+            "scan.alert-only-set": {
+                "class": "change"
+            },
+            "scan.whitelist.add": {
+                "class": "change"
+            }
+        }
+    }
+}

@@ -1,0 +1,48 @@
+#!/bin/bash
+# Start of one part of the config viewer in a container: web | service | jobs  (see ../docker-compose.yml)
+set -eu
+cd "$(dirname "$0")/.."
+: "${PANOSPHP_VIEWER_DATA:=/data}"; export PANOSPHP_VIEWER_DATA
+RUNAS="${VIEWER_RUN_AS:-ubuntu}"
+
+# as the runtime user; started as root only to hand over the data volume and (jobs) the group of the docker socket
+as_user() {
+    if [ "$(id -u)" != "0" ]; then exec "${@:2}"; fi
+    exec setpriv --reuid "$RUNAS" --regid "$RUNAS" --groups "${1}" "${@:2}"
+}
+groups_default="$(id -g "$RUNAS" 2>/dev/null || echo 0)"
+if [ "$(id -u)" = "0" ]; then chown "$RUNAS:$RUNAS" "$PANOSPHP_VIEWER_DATA"; fi
+# the home of the runtime user, not the one of root (the docker client looks for its settings there)
+if [ "$(id -u)" = "0" ]; then export HOME="$(getent passwd "$RUNAS" | cut -d: -f6)"; fi
+
+case "${1:-web}" in
+web)
+    # first start: the first administrator is made in the browser with a one-time code (./panosphp-viewer start shows
+    # it). For installations without questions: VIEWER_ADMIN_USER + VIEWER_ADMIN_PASSWORD make it right away.
+    if [ "$(id -u)" = "0" ] && [ -n "${VIEWER_ADMIN_PASSWORD:-}" ]; then
+        users="$(setpriv --reuid "$RUNAS" --regid "$RUNAS" --clear-groups php bin/user.php list)"
+        if [ -z "$users" ]; then
+            name="${VIEWER_ADMIN_USER:-admin}"
+            VIEWER_PASSWORD="$VIEWER_ADMIN_PASSWORD" setpriv --reuid "$RUNAS" --regid "$RUNAS" --clear-groups php bin/user.php add "$name" admin >/dev/null
+            echo "config-viewer: first start - administrator \"$name\" created with VIEWER_ADMIN_PASSWORD"
+        fi
+    fi
+    echo "config-viewer: web part on port 8080"
+    # uploads: the limit of the viewer (PANOSPHP_VIEWER_MAX_UPLOAD_MB, default 200) instead of PHP's 2 MB
+    mb="${PANOSPHP_VIEWER_MAX_UPLOAD_MB:-200}"
+    as_user "$groups_default" php -d upload_max_filesize="${mb}M" -d post_max_size="$((mb + 8))M" -S 0.0.0.0:8080 -t .
+    ;;
+service)
+    as_user "$groups_default" php bin/service.php
+    ;;
+jobs)
+    g="$groups_default"
+    # the group that owns the docker socket (differs per host; root on Docker Desktop)
+    if [ -S /var/run/docker.sock ]; then g="$g,$(stat -c %g /var/run/docker.sock)"; fi
+    as_user "$g" php bin/jobs.php
+    ;;
+*)
+    echo "usage: start.sh web | service | jobs" >&2
+    exit 2
+    ;;
+esac

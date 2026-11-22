@@ -1,0 +1,393 @@
+{
+ "setup": {
+  "folders": [
+   {
+    "id": "f-all",
+    "name": "All",
+    "parent": "",
+    "type": "container"
+   },
+   {
+    "id": "f-ngfw",
+    "name": "ngfw-shared",
+    "parent": "All",
+    "type": "container"
+   },
+   {
+    "id": "f-br",
+    "name": "Branches",
+    "parent": "ngfw-shared",
+    "type": "container",
+    "snippets": [
+     "branch-snippet"
+    ]
+   },
+   {
+    "id": "d-1",
+    "name": "012345678901",
+    "parent": "Branches",
+    "type": "on-prem"
+   }
+  ],
+  "snippets": [
+   {
+    "id": "s-pre",
+    "name": "predefined-snippet",
+    "type": "predefined"
+   },
+   {
+    "id": "s-br",
+    "name": "branch-snippet",
+    "type": "custom"
+   }
+  ]
+ },
+ "res": {
+  "addresses|folder|ngfw-shared|": [
+   {
+    "id": "a-1",
+    "name": "web-srv",
+    "folder": "ngfw-shared",
+    "ip_netmask": "10.1.1.10/32",
+    "description": "web server"
+   },
+   {
+    "id": "a-2",
+    "name": "unused-addr",
+    "folder": "ngfw-shared",
+    "ip_netmask": "10.9.9.9/32"
+   }
+  ],
+  "zones|folder|ngfw-shared|": [
+   {
+    "id": "z-1",
+    "name": "trust",
+    "folder": "ngfw-shared",
+    "network": {
+     "layer3": [
+      "$trust-if"
+     ]
+    },
+    "enable_user_identification": true
+   },
+   {
+    "id": "z-2",
+    "name": "untrust",
+    "folder": "ngfw-shared",
+    "network": {
+     "layer3": [
+      "$untrust-if"
+     ],
+     "zone_protection_profile": "zpp-existing"
+    }
+   }
+  ],
+  "zone-protection-profiles|folder|ngfw-shared|": [
+   {
+    "id": "zp-1",
+    "name": "zpp-existing",
+    "folder": "ngfw-shared",
+    "scan": [
+     {
+      "name": "8001",
+      "action": {
+       "block": {}
+      },
+      "interval": 2,
+      "threshold": 100
+     },
+     {
+      "name": "8002",
+      "action": {
+       "block-ip": {
+        "track_by": "source",
+        "duration": 300
+       }
+      },
+      "interval": 10,
+      "threshold": 100
+     }
+    ],
+    "flood": {
+     "tcp_syn": {
+      "enable": true,
+      "red": {
+       "alarm_rate": 10000,
+       "activate_rate": 10000,
+       "maximal_rate": 40000
+      }
+     }
+    }
+   }
+  ],
+  "profile-groups|folder|ngfw-shared|": [
+   {
+    "id": "pg-1",
+    "name": "best-practice",
+    "folder": "ngfw-shared",
+    "spyware": [
+     "strict-as"
+    ],
+    "vulnerability": [
+     "strict-vp"
+    ]
+   }
+  ],
+  "anti-spyware-profiles|folder|ngfw-shared|": [
+   {
+    "id": "as-1",
+    "name": "strict-as",
+    "folder": "ngfw-shared",
+    "description": "strict",
+    "rules": [
+     {
+      "name": "crit",
+      "severity": [
+       "critical",
+       "high"
+      ],
+      "category": "any",
+      "threat_name": "any",
+      "packet_capture": "disable",
+      "action": {
+       "reset_both": {}
+      }
+     }
+    ],
+    "cloud_inline_analysis": false
+   }
+  ],
+  "vulnerability-protection-profiles|folder|ngfw-shared|": [
+   {
+    "id": "vp-1",
+    "name": "strict-vp",
+    "folder": "ngfw-shared",
+    "rules": [
+     {
+      "name": "crit",
+      "severity": [
+       "critical",
+       "high"
+      ],
+      "category": "any",
+      "threat_name": "any",
+      "host": "any",
+      "cve": [
+       "any"
+      ],
+      "vendor_id": [
+       "any"
+      ],
+      "packet_capture": "disable",
+      "action": {
+       "reset_both": {}
+      }
+     }
+    ]
+   }
+  ],
+  "security-rules|folder|ngfw-shared|pre": [
+   {
+    "id": "r-1",
+    "name": "allow-web",
+    "folder": "ngfw-shared",
+    "position": "pre",
+    "action": "allow",
+    "from": [
+     "trust"
+    ],
+    "to": [
+     "untrust"
+    ],
+    "source": [
+     "any"
+    ],
+    "destination": [
+     "web-srv"
+    ],
+    "source_user": [
+     "any"
+    ],
+    "category": [
+     "any"
+    ],
+    "application": [
+     "web-browsing"
+    ],
+    "service": [
+     "application-default"
+    ],
+    "log_end": true,
+    "log_start": false,
+    "disabled": false,
+    "tag": []
+   },
+   {
+    "id": "r-2",
+    "name": "deny-all",
+    "folder": "ngfw-shared",
+    "position": "pre",
+    "action": "deny",
+    "from": [
+     "any"
+    ],
+    "to": [
+     "any"
+    ],
+    "source": [
+     "any"
+    ],
+    "destination": [
+     "any"
+    ],
+    "source_user": [
+     "any"
+    ],
+    "category": [
+     "any"
+    ],
+    "application": [
+     "any"
+    ],
+    "service": [
+     "any"
+    ],
+    "log_end": true,
+    "disabled": false
+   },
+   {
+    "id": "r-3",
+    "name": "allow-bp",
+    "folder": "ngfw-shared",
+    "position": "pre",
+    "action": "allow",
+    "from": [
+     "trust"
+    ],
+    "to": [
+     "untrust"
+    ],
+    "source": [
+     "any"
+    ],
+    "destination": [
+     "any"
+    ],
+    "source_user": [
+     "any"
+    ],
+    "category": [
+     "any"
+    ],
+    "application": [
+     "ssl"
+    ],
+    "service": [
+     "application-default"
+    ],
+    "log_setting": "lfp-existing",
+    "log_end": true,
+    "disabled": false,
+    "profile_setting": {
+     "group": [
+      "best-practice"
+     ]
+    }
+   }
+  ],
+  "log-forwarding-profiles|folder|ngfw-shared|": [
+   {
+    "id": "lf-1",
+    "name": "lfp-existing",
+    "folder": "ngfw-shared",
+    "match_list": [
+     {
+      "name": "traffic",
+      "log_type": "traffic",
+      "filter": "All Logs",
+      "send_http": [],
+      "send_syslog": []
+     }
+    ]
+   }
+  ],
+  "security-rules|folder|Branches|pre": [
+   {
+    "id": "r-10",
+    "name": "branch-allow",
+    "folder": "Branches",
+    "position": "pre",
+    "action": "allow",
+    "from": [
+     "trust"
+    ],
+    "to": [
+     "untrust"
+    ],
+    "source": [
+     "any"
+    ],
+    "destination": [
+     "any"
+    ],
+    "source_user": [
+     "any"
+    ],
+    "category": [
+     "any"
+    ],
+    "application": [
+     "dns"
+    ],
+    "service": [
+     "application-default"
+    ],
+    "log_end": false,
+    "disabled": false
+   }
+  ],
+  "addresses|snippet|branch-snippet|": [
+   {
+    "id": "a-20",
+    "name": "snip-addr",
+    "snippet": "branch-snippet",
+    "ip_netmask": "192.168.20.0/24"
+   }
+  ],
+  "security-rules|snippet|branch-snippet|pre": [
+   {
+    "id": "r-20",
+    "name": "snip-allow",
+    "snippet": "branch-snippet",
+    "position": "pre",
+    "action": "allow",
+    "from": [
+     "trust"
+    ],
+    "to": [
+     "untrust"
+    ],
+    "source": [
+     "snip-addr"
+    ],
+    "destination": [
+     "any"
+    ],
+    "source_user": [
+     "any"
+    ],
+    "category": [
+     "any"
+    ],
+    "application": [
+     "ntp"
+    ],
+    "service": [
+     "application-default"
+    ],
+    "log_end": true,
+    "disabled": false
+   }
+  ]
+ }
+}

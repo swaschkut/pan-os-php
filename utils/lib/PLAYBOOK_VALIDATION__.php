@@ -53,20 +53,25 @@ class PLAYBOOK_VALIDATION__
         $this->supportedArguments['dev'] = array('niceName' => 'run pan-os-php dev related part');
         $this->supportedArguments['beta'] = array('niceName' => 'run pan-os-php beta related beta part');
         $this->supportedArguments['latest'] = array('niceName' => 'run pan-os-php latest related beta part');
+        $this->supportedArguments['alpha'] = array('niceName' => 'run pan-os-php alpha related part');
         $this->supportedArguments['compare-dev-beta'] = array('niceName' => 'compare XML files from dev and beta folder');
         $this->supportedArguments['compare-latest-dev'] = array('niceName' => 'compare XML files from latest and dev folder');
+        $this->supportedArguments['compare-dev-alpha'] = array('niceName' => 'compare XML files from dev and alpha folder');
+        $this->supportedArguments['compare-beta-alpha'] = array('niceName' => 'compare XML files from beta and alpha folder');
 
         $this->supportedArguments['compare-stats-dev-beta'] = array('niceName' => 'compare stats JSON files from dev and beta folder');
         $this->supportedArguments['compare-stats-latest-dev'] = array('niceName' => 'compare stats JSON files from latest and dev folder');
+        $this->supportedArguments['compare-stats-dev-alpha'] = array('niceName' => 'compare stats JSON files from dev and alpha folder');
+        $this->supportedArguments['compare-stats-beta-alpha'] = array('niceName' => 'compare stats JSON files from beta and alpha folder');
 
         //stats-not-100
         $this->supportedArguments['stats-not-100'] = array('niceName' => 'search in stats JSON file where percentage value NOT 100; exclud ZPP/APP-ID/User-ID/ServicePort/DataFiltering');
 
         $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp - generate securityprofile HTML overview actions=exportSPtoHTML');
-        $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta');
+        $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta / latest / alpha');
 
         $this->supportedArguments['generate-stats'] = array('niceName' => 'generate-stats - generate type=stats actions=display-bpa shadow-json - JSON output');
-        $this->supportedArguments['generate-stats-only'] = array('niceName' => 'generate-stats-only - in combination with argument dev / beta');
+        $this->supportedArguments['generate-stats-only'] = array('niceName' => 'generate-stats-only - in combination with argument dev / beta / latest / alpha');
 
         $this->supportedArguments['tool'] = array('niceName' => 'tool usage: tool=docker-outsite/tool=docker/tool=local');
 
@@ -144,12 +149,15 @@ class PLAYBOOK_VALIDATION__
         $generate_dev = false;
         $generate_beta = false;
         $generate_latest = false;
+        $generate_alpha = false;
 
         $generate_spr = false;
         $generate_spr_only = false;
 
         $compare_dev_beta = false;
         $compare_latest_dev = false;
+        $compare_dev_alpha = false;
+        $compare_beta_alpha = false;
 
         $compare_stats_not_100 = false;
 
@@ -158,6 +166,8 @@ class PLAYBOOK_VALIDATION__
 
         $compare_stats_dev_beta = false;
         $compare_stats_latest_dev = false;
+        $compare_stats_dev_alpha = false;
+        $compare_stats_beta_alpha = false;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // CLI Argument Validation
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,11 +185,20 @@ class PLAYBOOK_VALIDATION__
         if( isset(PH::$args['latest']) )
             $generate_latest = true;
 
+        if( isset(PH::$args['alpha']) )
+            $generate_alpha = true;
+
         if( isset(PH::$args['compare-dev-beta']) )
             $compare_dev_beta = true;
 
         if( isset(PH::$args['compare-latest-dev']) )
             $compare_latest_dev = true;
+
+        if( isset(PH::$args['compare-dev-alpha']) )
+            $compare_dev_alpha = true;
+
+        if( isset(PH::$args['compare-beta-alpha']) )
+            $compare_beta_alpha = true;
 
 
         if( isset(PH::$args['compare-stats-dev-beta']) )
@@ -187,6 +206,12 @@ class PLAYBOOK_VALIDATION__
 
         if( isset(PH::$args['compare-stats-latest-dev']) )
             $compare_stats_latest_dev = true;
+
+        if( isset(PH::$args['compare-stats-dev-alpha']) )
+            $compare_stats_dev_alpha = true;
+
+        if( isset(PH::$args['compare-stats-beta-alpha']) )
+            $compare_stats_beta_alpha = true;
 
         if( isset(PH::$args['stats-not-100']) )
             $compare_stats_not_100 = true;
@@ -401,6 +426,40 @@ class PLAYBOOK_VALIDATION__
                 }
             }
 
+            if( $generate_alpha )
+                $folder = "alpha";
+            if( $generate_alpha && !$generate_spr_only && !$generate_stats_only && !$compare_stats_not_100 )
+            {
+                $commands = array();
+                print "\n\n";
+                print $inline . "====================================\n";
+                print $inline . "ALPHA\n";
+                print $inline . "====================================\n";
+
+                $folder = "alpha";
+
+                if( $tool == "docker-outside" )
+                    $panosphp_tool = 'docker run --name panosphp-alpha-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:alpha';
+                elseif( $tool == "docker" )
+                    $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
+                elseif( $tool == "local" )
+                    $panosphp_tool = "pan-os-php";
+
+                $command = $panosphp_tool . " type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $commands[] = $command;
+                $command_array[] = $command;
+
+                foreach( $commands as $command )
+                {
+                    if ($script_validation)
+                        print $command . "\n";
+                    else {
+                        print $inline . $inline . "run CLI command\n";
+                        $this->request_CLI_command($command, $config);
+                    }
+                }
+            }
+
             //todo:
             //validate if dev and beta folder has all files available
 
@@ -413,6 +472,7 @@ class PLAYBOOK_VALIDATION__
                 print "\n\n";
                 print $inline."====================================\n";
                 print $inline."GENERATE SP\n";
+                $commands = array();
                 print $inline."====================================\n";
 
 
@@ -430,9 +490,11 @@ class PLAYBOOK_VALIDATION__
 
                     $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=beta 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                     $command_array[] = $command;
+                    $commands[] = $command;
 
                     $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=beta 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                     $command_array[] = $command;
+                    $commands[] = $command;
                 }
 
 
@@ -442,9 +504,11 @@ class PLAYBOOK_VALIDATION__
                         $panosphp_tool = 'docker run --name panosphp-develop-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
                     $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=dev 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                     $command_array[] = $command;
+                    $commands[] = $command;
 
                     $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=dev 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                     $command_array[] = $command;
+                    $commands[] = $command;
                 }
 
 
@@ -452,29 +516,47 @@ class PLAYBOOK_VALIDATION__
                 {
                     if( $tool == "docker-outside" )
                         $panosphp_tool = 'docker run --name panosphp-latest-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
-                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=latest 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command = $panosphp_tool." type=securityprofile 'in=latest/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=latest 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                     $command_array[] = $command;
+                    $commands[] = $command;
 
                     $command = $panosphp_tool." type=securityprofile 'in=latest/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=latest 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                     $command_array[] = $command;
+                    $commands[] = $command;
                 }
 
 
-                if( !$generate_beta && !$generate_dev && !$generate_latest )
+                if( $generate_alpha )
                 {
-                    print "nothing choosen: 'beta' / 'dev' / 'latest' or a combination\n";
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-alpha-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:alpha';
+                    $command = $panosphp_tool." type=securityprofile 'in=alpha/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=alpha 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
+                    $commands[] = $command;
+
+                    $command = $panosphp_tool." type=securityprofile 'in=alpha/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=alpha 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
+                    $commands[] = $command;
+                }
+
+
+                if( !$generate_beta && !$generate_dev && !$generate_latest && !$generate_alpha )
+                {
+                    print "nothing choosen: 'beta' / 'dev' / 'latest' / 'alpha' or a combination\n";
                     exit();
                 }
 
 
-
-                if( $script_validation )
-                    print $command."\n";
-                else
+                //run every generated command once (before: only the last one, executed twice)
+                foreach( $commands as $command )
                 {
-                    print $inline.$inline."run CLI command\n";
-                    $this->compare_command( $command, $config );
-                    $this->request_CLI_command($command, $config);
+                    if( $script_validation )
+                        print $command."\n";
+                    else
+                    {
+                        print $inline.$inline."run CLI command\n";
+                        $this->request_CLI_command($command, $config);
+                    }
                 }
 
             }
@@ -537,9 +619,21 @@ class PLAYBOOK_VALIDATION__
                     $commands[] = $command;
                 }
 
-                if( !$generate_beta && !$generate_dev && !$generate_latest )
+                if( $generate_alpha )
                 {
-                    print "nothing choosen: 'beta' / 'dev' / 'latest' or a combination\n";
+                    $folder = "alpha";
+
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-alpha-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:alpha';
+
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+                    $command_array[] = $command;
+                    $commands[] = $command;
+                }
+
+                if( !$generate_beta && !$generate_dev && !$generate_latest && !$generate_alpha )
+                {
+                    print "nothing choosen: 'beta' / 'dev' / 'latest' / 'alpha' or a combination\n";
                     exit();
                 }
 
@@ -560,8 +654,9 @@ class PLAYBOOK_VALIDATION__
             /////////////
             /// COMPARE
             //////////////////////////////////////////////////////////
-            if( $compare_dev_beta || $compare_latest_dev)
+            if( $compare_dev_beta || $compare_latest_dev || $compare_dev_alpha || $compare_beta_alpha )
             {
+                $commands = array();
                 print "\n\n";
                 print $inline."====================================\n";
                 print $inline."COMPARE XML\n";
@@ -580,26 +675,47 @@ class PLAYBOOK_VALIDATION__
                     //compare_dev_beta
                     $command = $panosphp_tool." type=diff 'file1=dev/{$config}' 'file2=beta/{$config}'";
                     $command_array[] = $command;
+                    $commands[] = $command;
                 }
 
                 if( $compare_latest_dev )
                 {
                     $command = $panosphp_tool." type=diff 'file1=latest/{$config}' 'file2=dev/{$config}'";
                     $command_array[] = $command;
+                    $commands[] = $command;
                 }
 
-
-                if( $script_validation )
-                    print $command."\n";
-                else
+                if( $compare_dev_alpha )
                 {
-                    print $inline.$inline."run CLI command\n";
-                    $validation[$config]['xml'] = $this->compare_command( $command, $config );
+                    $command = $panosphp_tool." type=diff 'file1=dev/{$config}' 'file2=alpha/{$config}'";
+                    $command_array[] = $command;
+                    $commands[] = $command;
+                }
+
+                if( $compare_beta_alpha )
+                {
+                    $command = $panosphp_tool." type=diff 'file1=beta/{$config}' 'file2=alpha/{$config}'";
+                    $command_array[] = $command;
+                    $commands[] = $command;
+                }
+
+                //every requested comparison is run; the config is marked as diff if one of them differs
+                foreach( $commands as $command )
+                {
+                    if( $script_validation )
+                        print $command."\n";
+                    else
+                    {
+                        print $inline.$inline."run CLI command\n";
+                        $equal = $this->compare_command( $command, $config );
+                        if( $validation[$config]['xml'] !== false )
+                            $validation[$config]['xml'] = $equal;
+                    }
                 }
             }
 
 
-            if( $compare_stats_dev_beta || $compare_stats_latest_dev )
+            if( $compare_stats_dev_beta || $compare_stats_latest_dev || $compare_stats_dev_alpha || $compare_stats_beta_alpha )
             {
                 print "\n\n";
                 print $inline."====================================\n";
@@ -610,12 +726,20 @@ class PLAYBOOK_VALIDATION__
 
                 $file_dev_beta = array( "file1" => "dev/{$configname}_stats.txt", "file2" => "beta/{$configname}_stats.txt" );
                 $file_latest_dev = array( "file1" => "latest/{$configname}_stats.txt", "file2" => "dev/{$configname}_stats.txt" );
+                $file_dev_alpha = array( "file1" => "dev/{$configname}_stats.txt", "file2" => "alpha/{$configname}_stats.txt" );
+                $file_beta_alpha = array( "file1" => "beta/{$configname}_stats.txt", "file2" => "alpha/{$configname}_stats.txt" );
 
                 if( $compare_stats_dev_beta )
                     $compare_stats_array[] = $file_dev_beta;
 
                 if( $compare_stats_latest_dev )
                     $compare_stats_array[] = $file_latest_dev;
+
+                if( $compare_stats_dev_alpha )
+                    $compare_stats_array[] = $file_dev_alpha;
+
+                if( $compare_stats_beta_alpha )
+                    $compare_stats_array[] = $file_beta_alpha;
 
 
                 foreach( $compare_stats_array as $compare_stats_file )
@@ -665,7 +789,8 @@ class PLAYBOOK_VALIDATION__
 
                     if( empty($diff) )
                     {
-                        $validation[$config]['stats'] = true;
+                        if( $validation[$config]['stats'] !== false )
+                            $validation[$config]['stats'] = true;
                     }
                     else
                     {
@@ -696,6 +821,12 @@ class PLAYBOOK_VALIDATION__
                 if( $generate_latest )
                 {
                     $file1 = "latest/{$configname}_stats.txt";
+                    $file_array[] = $file1;
+                }
+
+                if( $generate_alpha )
+                {
+                    $file1 = "alpha/{$configname}_stats.txt";
                     $file_array[] = $file1;
                 }
 

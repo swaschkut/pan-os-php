@@ -1,0 +1,438 @@
+# scm_pa_export.php – next steps and verification
+
+Status: the export covers all planned areas (`infra`, `config`, `remote-networks`, `service-connections`,
+`mobile-users`, `prisma-browser`, `iam`) and writes `MIGRATION_CHECKLIST.md`. It has only been tested offline against simulated API
+answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
+
+Details of the export itself: [README_pa_export.md](../utils/develop/sase/scm/README_pa_export.md). Compare: [README_pa_compare.md](../utils/develop/sase/scm/README_pa_compare.md).
+Sync: [README_pa_sync.md](../utils/develop/sase/scm/README_pa_sync.md).
+Step-by-step guide for consultants: [CONSULTANT_GUIDE_pa_export_compare.md](../utils/develop/sase/scm/CONSULTANT_GUIDE_pa_export_compare.md).
+
+---
+
+## 1. Apply the patches (branch `beta_scm-extension`)
+
+Order matters, each patch builds on the previous one:
+
+```bash
+git checkout beta_scm-extension
+git am scm-rn-export_beta.patch \
+       scm-rn-export-psk-list_beta.patch \
+       scm-pa-export-infra_beta.patch \
+       scm-pa-export-sc_beta.patch \
+       scm-pa-export-mu_beta.patch \
+       scm-pa-export-pb-iam-checklist_beta.patch \
+       scm-pa-export-next-steps_beta.patch \
+       scm-pa-export-config_beta.patch \
+       scm-pa-compare_beta.patch \
+       scm-pa-sync_beta.patch \
+       scm-pa-export-ngfw_beta.patch \
+       scm-pa-livefix-1_beta.patch
+```
+
+Quick check:
+
+```bash
+php -l utils/develop/sase/scm/scm_pa_export.php
+php -l utils/develop/sase/scm/lib/SCMPrismaAccessExport.php
+php -l lib/misc-classes/PanSCMAPIConnector.php
+```
+
+## 2. Prerequisites for the first live run
+
+- [ ] **Test tenant** (TSG) with Prisma Access – ideally one with RN, SC and MU configured.
+- [ ] **Service account** with read access to the tenant. For `iam` and `prisma-browser` the account needs the
+      corresponding roles; without them these areas show `unavailable` (not an error).
+- [ ] **`.panconfkeystore`**: entry `tsg_id<TSG>` exists or is created on the first run (client_id / client_secret prompt).
+- [ ] **Egress-IP API key** (optional): either entry `egressip_tsg_id<TSG>` in `.panconfkeystore`, or the run takes
+      `api_key` from `shared-infrastructure-settings`, or it asks once.
+- [ ] Output directory outside of git (the secret lists contain cleartext).
+
+## 3. First live run
+
+Full export with all extras and API debug output (keep the log):
+
+```bash
+php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG> \
+    outdir=/share/export egressip psk-list debugapi 2>&1 | tee /share/export/run-<TSG>.log
+```
+
+If the full run is too noisy, run the areas one by one:
+
+```bash
+php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG> area=infra egressip debugapi
+php utils/develop/sase/scm/scm_rn_export.php  in=scm-api://<TSG> psk-list debugapi
+php utils/develop/sase/scm/scm_sc_export.php  in=scm-api://<TSG> psk-list debugapi
+php utils/develop/sase/scm/scm_mu_export.php  in=scm-api://<TSG> psk-list debugapi
+php utils/develop/sase/scm/scm_pb_export.php  in=scm-api://<TSG> debugapi
+php utils/develop/sase/scm/scm_iam_export.php in=scm-api://<TSG> debugapi
+php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> debugapi
+```
+
+The `config` area queries every type for every container – on a large tenant start with a filter:
+
+```bash
+php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG> container="Mobile Users" config-types=addresses,security-rules debugapi
+```
+
+Note: `debugapi` prints the bearer token and full API answers – do not share the raw log.
+
+## 3a. Results of the first live run (Prisma Access tenant, areas infra, RN, SC, MU, IAM)
+
+| finding | change |
+|---|---|
+| 0 errors, all endpoints of infra / RN / SC / MU answered; egress mapping matched for all RNs and MU locations | – |
+| all PSKs `-AQ==…` (PAN-OS format v1, 77 chars), none decryptable with the default master key → SCM tenant key | SHA1 of the cleartext used: `psk_sha1` column, `scm_pa_secret_check.php`, compare by SHA1, plan notes; checklist item "PSKs not decryptable" |
+| IAM lists come as `{"items": [...], "count": n}` → were stored as single object, IAM summary empty | list detection for `data` / `items` / top-level arrays (`PanSCMAPIConnector::listOfAnswer()`) |
+| `locations`, `mobile-agent/locations` return a top-level array → counted as 1 entry | same fix |
+| `area=config` too slow on a large tenant | `config-mode=leaf` (default) + skip of unavailable types |
+| `config-scope=objects,policies` leaf: 101 queries for 134 containers per type, `tags` very slow (each answer repeats all inherited / predefined objects, 200 per page, one request after the other) | patch 14: parallel queries and pages (`config-parallel`, default 8), page size 1000 (`config-page-size`), retry on 429 / 5xx, objects / seconds per type on the console, `config.http_requests` / `seconds` in the manifest; pagination continues after the entries really received (server page cap) |
+| full run `config-scope=objects,policies`, patch 16, `config-parallel=16`: 507 s, 4,048 queries / 5,600 HTTP requests, peak 322 MB, 0 errors; 277 folders, 35 snippets, 134 containers, 21,408 owned objects, 142 devices | – |
+| checklist "Endpoints not available" listed `config/auto-tag-actions` 134 times | one line per type with the number of containers |
+| 5 objects owned by `folder:Shared`, which is not in the folder list → only counted, i.e. lost | patch 17: objects of owners not in the folder / snippet list are stored in `config/owners-not-in-hierarchy.json`, checklist item, `config.owners_not_in_hierarchy` |
+| 95 "HA pairs" for 142 devices, many `<serial> / unknown` | standalone devices report `ha_peer_serial` "unknown" → ignored; peers not in the tenant marked |
+| console "owner_not_exported: 4 object(s)" counted owners | prints objects and owners |
+| **leaf vs all compare** (`config-scope=objects,policies`): 5,225 entries only in `all`: rule bases of 4 attached snippets (2,604 security / decryption rules) and 17 variables of `PALFINGER-Internal-Sites`; 56 changed: only `overridden` / `override_*` fields | patch 20: rule bases (`policies` group) query attached snippets directly – folder answers do not contain snippet rules; `variables` queried for every folder (an override in the child hides the parent value); `overridden` / `override_id` / `override_loc` / `override_type` ignored in compare and removed from sync bodies |
+| Prisma Access deployment folders (Mobile Users GlobalProtect / Explicit Proxy, Remote Networks, Service Connections) are folders whose type is not `container` → treated like NGFW device folders and skipped without `config-devices`; their objects / rules were missing in both leaf and all mode (only `Prisma Access` and `Mobile Users Container` exported) | patch 23: only NGFW device folders (in the device inventory or a non-cloud type) count as devices; deployment folders are always exported |
+| **leaf vs all compare after patch 20 / 21**: 5,307 endpoints, 24,167 equal entries, 0 only left / right, 2 changed (2 variable values of one folder, exports 2 h apart) | leaf mode confirmed; remaining difference = configuration change between the exports (to confirm in the SCM audit log) |
+| snippet rule bases: `pre` and `post` answers identical (e.g. 1,250 / 1,250 rules) | snippets have **no** pre / post rule base (confirmed): patch 21 queries snippet rule bases once without `position` → file `83_security-rules.json` (endpoint without suffix); folders keep `-pre` / `-post`; sync creates snippet rules without `position`, moves without `rulebase` |
+| run with patch 17 / 18 (448 s, 47 HA pairs): `snippet:predefined` is not in the snippet list → reported as unknown owner; `folder:Shared` (1 url-category, 4 post security rules) visible only in the one leaf below `Prisma Access` | patch 19: `snippet:predefined` / `folder:predefined` counted as predefined; `folder:Shared` mapped to `folder:Prisma Access` (legacy name), exported / compared / synced there |
+| run with patch 15: peak memory 326 MB; `addresses` 894,923 objects in 191 s, `services` 193,521 in 18 s; `applications`: every folder answer contains the whole predefined catalog (~100,000, with SaaS ~1,000,000) → not feasible for 101 leaves | patch 16: `applications` skipped by default (`config-heavy-types` or `config-types=applications` to export, best with `container=`), checklist item; objects of not exported owners only counted (no id sets) |
+| run with patch 14: `variables` 2,891 objects in 2.6 s, `tags` 506,839 objects (101 leaf answers, mostly inherited) in 49.5 s | patch 15: answers are fetched in chunks (2 × `config-parallel`) while processing, so only a few answers are in memory at a time; peak memory per type on the console |
+
+Re-run `area=iam` after patch 12: 0 errors, roles 35, permission sets 643, service accounts 4, access policies 122,
+permissions 6414 – list detection confirmed. Follow-ups (patch 13):
+
+| finding | change |
+|---|---|
+| `manifest.json` → `iam.permission_sets` listed all 643 names | counts only (`roles`, `permission_sets`, `permissions`); names stay in `iam/*.json` |
+| no overview users vs. service accounts | `access_policies_by_principal_type`; `principal_type` derived from the principal when the API has none (`*.iam.panserviceaccount.com` → `service_account`, e-mail → `user`) |
+| checklist item IAM without numbers | detail lists the access policies per role, hint to review superuser assignments; extra item for custom roles |
+| export without `infra` listed `infra/egress-ip` as `skipped` and a ZTNA connector item | egress-IP only with `infra` or `egressip`; ZTNA item only with `infra` |
+| checklist "objects and security policy" pointed to `in=scm-api://` | points to `area=config` |
+
+## 4. Verification
+
+Work through the list with the export directory `<outdir>/<TSG>/<timestamp>/`. For every item note **OK** or what
+was found; wrong items are fixed in the code afterwards.
+
+### 4.1 General
+
+- [ ] `manifest.json` → `errors` is 0. For every endpoint with `status: error`: note `http_code` and `error`
+      (wrong path, wrong folder, missing permission?).
+- [ ] `manifest.json` → `unavailable`: only products that are really not licensed / not permitted.
+- [ ] Log: does the "retry without limit/offset" line appear? For which endpoints? (They really reject
+      `limit` / `offset`.)
+- [ ] Endpoints with many objects (> 200): count in `manifest.json` = count in the SCM UI (pagination works).
+- [ ] `infra/01_shared-infrastructure-settings.json`: `api_key` is `***REDACTED***`;
+      `grep -r "<real api key>" <export dir>` finds nothing.
+- [ ] Secret lists have mode 600: `ls -l */psk-list.csv */bgp-secret-list.csv */secret-list.csv`.
+
+### 4.2 infra
+
+- [ ] `shared-infrastructure-settings`: `infrastructure_subnet`, `infra_bgp_as`, `loopback_ips` match the UI.
+- [ ] `bgp-routing`: field names as used in the `infra` summary of `manifest.json` (`routing_preference`,
+      `backbone_routing`, `accept_route_over_SC`, `outbound_routes_for_services`, `add_host_route_to_ike_peer`,
+      `withdraw_static_route`) – summary values not `null` where set in the UI.
+- [ ] `internal-dns-servers`: field names `domain_name`, `primary`, `secondary`.
+- [ ] `locations`: entries have `value` and `display` (used for all IP mappings).
+- [ ] `92_egress-ip.json`: request worked; if HTTP error → try `egressip-env=prod6`.
+- [ ] Egress API accepted the `api_key` of `shared-infrastructure-settings` (log line
+      "using api_key of shared-infrastructure-settings").
+- [ ] Egress `addrType=all` contains pre-allocated GlobalProtect addresses (`addressType` values in the file).
+
+### 4.3 remote-networks
+
+- [ ] `remote-networks` and `bandwidth-allocations` return data without a `folder` parameter.
+- [ ] `05_qos-profiles.json`: path `/config/network/v1/qos-profiles?folder=Remote Networks` works.
+- [ ] IKE / IPsec objects: folder `Remote Networks` returns the expected objects; predefined profiles are listed in
+      `import_hints` as `inherited_or_predefined`.
+- [ ] `ike-gateways`: PSK under `authentication.pre_shared_key.key`, format `-AQ==…`.
+- [x] `ike-gateways` PSK format `-AQ==…` – confirmed; not decryptable with the default master key (3a).
+- [ ] fill `psk_new` for a few gateways with known PSKs → `scm_pa_secret_check.php` reports `OK new = secret of the
+      source tenant`; a deliberately wrong value reports `NEW`.
+- [ ] `bgp-secret-list.csv`: BGP secret under `protocol.bgp.secret`, decrypted.
+- [ ] `ip-mapping.csv`: `service_ip_address`, `fqdn`, `branch_peer_address` filled; `egress_match = location` for
+      most rows (if `none`: compare `region` with `infra/90_locations.json` `value`).
+
+### 4.4 service-connections
+
+- [ ] `service-connections`, `service-connection-groups`, `traffic-steering-rules`: paths work, without `folder`
+      parameter.
+- [ ] `05_qos-profiles.json` for folder `Service Connections`.
+- [ ] Field names in `ip-mapping.csv`: `backup_SC`, `subnets`, `nat_pool`, `source_nat`, `qos`, `bgp_peer.*`.
+- [ ] `psk-list.csv` / `bgp-secret-list.csv`: decrypted; `bgp_peer.secret` uses the same encryption as the PSK.
+- [ ] `import_hints` `intra_dependency` lists the service connections with `backup_SC`.
+
+### 4.5 mobile-users
+
+- [ ] Identity endpoints (`/config/identity/v1/*?folder=Mobile Users`): do they also return objects of parent
+      folders (`Prisma Access`, `All`)? Compare e.g. authentication profiles with the UI.
+- [ ] `mobile-agent/*`: `agent-versions`, `enable`, `global-settings` accept the `folder` parameter.
+- [ ] `21_mobile-agent-locations.json`: structure (used only as fallback for the MU IP mapping).
+- [ ] `20_mobile-agent-infrastructure-settings.json`: `name` = portal hostname, `ip_pools`, `deployment.region[]`.
+- [ ] `secret-list.csv`: which fields are really found (LDAP `bind_password`, RADIUS `secret`, local user
+      `password` = `HASHED`, GP app passwords in `gp_app_config`)? Any false positives (non-secret values)?
+      Any secret that is missing?
+- [ ] `ip-mapping.csv`: gateway / portal egress IPs per location, active and pre-allocated split correctly.
+- [ ] `import_hints` `certificate_private_key`: does the certificate list contain private key fields at all?
+
+### 4.6 prisma-browser
+
+- [ ] The SCM service account token is accepted on `api.sase.paloaltonetworks.com/seb-api/v1` (no 401).
+- [ ] Lists: response key (`data` / `items` / `results`) and cursor field in `pageInfo` – a list with more than
+      1000 entries is complete.
+- [ ] Policy GETs return the active configuration without `configurationVersion=active` (otherwise the parameter
+      has to be added).
+- [ ] `user-groups`: field / values for IdP-synced groups (`source`, `type`, …) → `idp_synced_groups` hint correct.
+- [ ] `applications`: field / value for catalog applications (`type: catalog`?).
+- [ ] `prisma_browser` summary in `manifest.json`: rule / section counts match the UI.
+
+### 4.7 iam
+
+- [x] List format of the IAM endpoints: `items` / `count` (3a) – confirmed by the re-run (122 access policies,
+      4 service accounts, 643 permission sets).
+- [x] Paths `custom_roles` / `permission_sets`: HTTP 200 (custom roles: 0 in the test tenant).
+- [ ] Pagination of the IAM endpoints (more than 200 access policies complete?).
+- [x] `role` filled (counts per role in `manifest.json` → `iam.access_policies_by_role`).
+- [ ] `access-policies.csv`: `principal`, `principal_type`, `resource` filled; `access_policies_by_principal_type`
+      without `unknown`.
+- [ ] Access policy count matches the UI (Identity & Access → access policies), i.e. pagination complete.
+
+### 4.8 config
+
+- [ ] **`config-mode=leaf` vs `all`**: export a part of the tenant twice (e.g. `config-scope=objects,policies`, once
+      with `config-mode=all`) and compare the two exports → **no differences** expected. A difference means a folder
+      answer does not contain all inherited objects (→ use `all` and report).
+- [ ] `manifest.json` → `config.api_queries` / runtime of `leaf` acceptable; `config.warnings` empty (objects
+      without owner field).
+- [ ] Parallel export (patch 14): `config.seconds` / `config.http_requests` compared to the first run; no HTTP 429
+      errors in the console (otherwise `config-parallel=4`); page size: does the API accept `limit=1000`
+      (`debugapi`: number of entries in the first answer)?
+- [ ] Same slice with `config-parallel=1` and with default → compare → no differences.
+- [ ] After patch 23: `config/hierarchy.txt` – type of the Prisma Access deployment folders; `config/folders/Mobile_Users*/`,
+      `Remote_Networks/`, `Service_Connections/` exist with objects / rules (MU security rules!).
+- [x] After patch 20 / 21: leaf vs all compare → identical except 2 variable values changed between the exports.
+- [x] Snippet rule bases: no pre / post (patch 21).
+- [x] `area=explicit-proxy` (lab tenant): all 13 endpoints `ok`, 0 errors (EP settings, auth, block settings, users,
+      9 forwarding destinations, 2 proxies, 1 forwarding profile).
+- [ ] `01_ep-settings.json` matches the EP setup page in the UI.
+- [x] Patch 32 / 33 (lab tenant, Prisma Access Agent): `gp-portals` 1 (Clientless VPN), `gp-clientless-apps` /
+      `-app-groups` 0, `gp-trusted-zones` 1, `pa-agent-app-settings` 1, `pa-agent-client-auth` 2,
+      `pa-agent-global-settings`, `-token-lifetime`, tenant settings, project based access ok, staged rollout empty;
+      0 errors.
+- [ ] Classic GlobalProtect agent with split tunnel (`tunnel-profiles.split_tunneling`) – only on a tenant that still
+      uses the GlobalProtect agent.
+- [x] `area=mobile-users` (lab tenant): all endpoints `ok`, 0 errors; trusted CAs (346, mostly `snippet=predefined`)
+      are summarised in the import hint (patch 26).
+- [ ] Certificates in the checklist: which of them (Authentication Cookie CA / Cert, Forward-Trust / -UnTrust CA …)
+      Prisma Access creates on a new tenant – those need no import.
+- [ ] Snippet rule order in `83_security-rules.json` matches the SCM UI.
+- [x] `folder:Shared`: only below `Prisma Access` → legacy name of the Prisma Access folder (patch 19 maps it).
+- [ ] After patch 19: the url-category and the 4 post rules of `Shared` in `config/folders/Prisma_Access/`; check in the
+      SCM UI that they are shown in the Prisma Access folder; `owners-not-in-hierarchy.json` no longer written.
+- [x] HA pairs after patch 17 plausible: 47 for 142 devices.
+- [ ] `config/hierarchy.txt` matches the folder tree in SCM, incl. the order of the attached snippets per folder.
+- [ ] Every object returned for a container carries `folder` or `snippet` (otherwise it stays in the queried container
+      – check files with `data` entries without these fields).
+- [ ] No object appears twice on disk: per type, the names over all `config/*/*/NN_<type>.json` files are unique
+      per owner.
+- [ ] Owned counts per container (`manifest.json` → `config.owned_objects_by_container`) match the UI for a few
+      containers / types.
+- [ ] `config.types_unavailable`: only types that really do not exist / are not licensed (e.g. `ai-security-profiles`).
+      A type that exists in the UI but is listed there has a wrong path.
+- [ ] Rules: `-pre` / `-post` split as in the UI; order of the rules inside a file = rule order in the UI.
+- [ ] Predefined objects (applications, profiles): owner value (`snippet: predefined`?) → counted under
+      `config.owners_not_exported`, not stored.
+- [ ] Runtime / number of API calls acceptable on a large tenant (containers × types) – the config area has now
+      ~110 types; use `config-scope=` / `container=` for the first runs.
+- [ ] NGFW groups: which of the derived paths answer 404 (`config.types_unavailable`) although the type exists in the
+      UI → correct the path in `getConfigTypes()`. Especially: `layer2-subinterfaces`, `layer3-subinterfaces`,
+      `ospf-auth-profiles`, `bgp-*`, `route-*-lists`, `sdwan-*`, all `/config/device/v1/*` and `*-match-list`.
+- [ ] `nat-rules`, `pbf-rules`, `qos-policy-rules`, `sdwan-rules` accept `position=pre|post` (otherwise: one rule base).
+- [ ] Device folders: does `folder=<serial>` work, or is the `device=<serial>` fallback used (see the `url` in
+      `config/folders/<serial>/*.json`)? Which owner field do device objects carry (`folder` / `device`)?
+- [ ] Device settings (`general-settings` …): list with `name` or single object? (key in `ENDPOINT_META`)
+- [ ] `config/devices.csv` matches SCM device management (serials, folder, connected, version, HA peer);
+      `grep` for a known authcode in the export finds nothing.
+- [ ] Prisma Access folders: no network / identity files in `config/folders/<PA folder>/` (covered by the PA areas).
+
+### 4.9 compare (two real exports)
+
+- [ ] Export the same tenant twice without changes in between and compare: **no differences** expected. Every
+      difference is a field that changes by itself (timestamps, counters, runtime state) → add it to `ignore` in
+      `ENDPOINT_META` (or report it).
+- [ ] Change one known value in the UI (e.g. a remote network BGP peer AS, an address, rule order), export again,
+      compare: exactly these changes are reported.
+- [ ] Compare two different tenants: are the keys right (no mass "only left / only right" for objects that exist on
+      both sides)? Endpoints without a `name` field show up in the warnings.
+- [ ] Secrets: a changed PSK shows `secret` with `***`; `grep` for a known PSK in the compare output finds nothing.
+- [ ] Lists reported as `order` where the order is irrelevant in SCM → note the path (candidate for normalisation).
+
+### 4.10 sync on a lab tenant
+
+Use two lab tenants (or one lab tenant and an export of another tenant). Export both with `psk-list`.
+
+- [ ] `plan` with `mode=additive`: `PLAN_REPORT.md` lists exactly the expected operations; dependencies are in the
+      right order (crypto profile → gateway → tunnel → RN / SC; parent folder → folder → objects).
+- [ ] `apply` dry-run: no write request in the SCM audit log; hash check reads work (no `conflict` on unchanged
+      objects – otherwise the single object GET returns another shape than the list → report).
+- [ ] `apply execute` for **one** operation (`ops=op-…`) per action type and endpoint family, check the result in SCM:
+      - [ ] create config object (`POST /config/objects/v1/addresses` with `folder` in the body)
+      - [ ] create security rule with `?position=pre`
+      - [ ] update by id (`PUT …/{id}`), incl. one with folder query (`ike-gateways?folder=Remote Networks`)
+      - [ ] PSK / BGP secret sent in cleartext from the list → tunnel comes up with the expected key
+      - [ ] singleton update (`PUT /config/mobile-agent/v1/global-settings?folder=Mobile Users`)
+      - [ ] create folder (`POST /config/setup/v1/folders` with `parent`)
+      - [ ] rule move (`POST …/security-rules/{id}:move`, body `destination` / `destination_rule` / `rulebase`)
+      - [ ] delete (`DELETE …/{id}`)
+      - [ ] NGFW (with `allow-network`, lab firewall only): update of an interface / zone / NAT rule in a device
+            folder (owner field `folder` or `device`), push to the device
+      - [ ] service connection with `backup_SC` (create + follow-up update)
+- [ ] `push`: job id field of `candidate:push`, job status values (`FIN` / …) – adjust `push()` if different.
+- [ ] full `mirror allow-delete` run on the lab tenant, re-export, compare: identical except blocked / excluded.
+- [ ] merge: both plans and the conflict list are plausible.
+
+### 4.11 MIGRATION_CHECKLIST.md
+
+- [ ] All `action_required` items are plausible for this tenant.
+- [ ] License item shows the RN bandwidth sum of the source tenant.
+- [ ] ZTNA connector item: lists the connector blocks if ZTNA is used.
+- [ ] Anything missing that you would do manually during a migration?
+
+## 5. What to send back for the fixes
+
+Safe to share (no secrets):
+
+- `manifest.json`
+- `MIGRATION_CHECKLIST.md`
+- the filled-in verification list (section 4)
+- one endpoint file per failing or suspicious endpoint – names / IPs may be anonymised
+
+Never share: `psk-list.csv`, `bgp-secret-list.csv`, `secret-list.csv`, the raw `debugapi` log.
+
+## 6. Explicit Proxy (internal SCM API)
+
+No documented public API exists. To add it as an area:
+
+1. Log in to Strata Cloud Manager, open Prisma Access → Mobile Users → Explicit Proxy.
+2. Browser developer tools → Network, filter `Fetch/XHR`, reload and open each Explicit Proxy page / tab.
+3. Note per request: method, path, query parameters, response structure (or save a HAR file).
+4. Remove `Authorization` headers and cookies from the HAR before sharing.
+5. The calls are added as area `mobile-users-explicit-proxy` with endpoints marked `internal`
+   (may change without notice).
+
+Alternative: open SCM in the Claude browser pane and capture the calls together.
+
+### 6.1 Captured (HAR, Mobile Users setup / GP setup / EP setup / security profiles)
+
+The UI uses a region specific host (e.g. `paas-3.prod.eu.panorama.paloaltonetworks.com`) with the header
+`x-auth-jwt` (UI session token). Folder names are the API names (`Mobile Users`, `Mobile Users Explicit Proxy`,
+`Mobile Users Container`) plus `type=cloud|container`; the UI routes `mobile-users-gp` / `mobile-users-ep` are not
+folder names. The deployment folders have `type=cloud` (patch 23).
+
+| page | internal calls (GET) |
+|---|---|
+| Explicit Proxy setup | `/api/config/v9.2/Plugins/CloudServices/MobileUsersExplicitProxy` (proxy URL, cookie lifetime, DNS, TLS termination, Prisma Access Browser, deployment / locations), `…/MobileUsersExplicitProxy/AuthSettings`, `…/AuthIPAccess`, `configByPath?prefix=plugins/cloud_services/mobile-users-explicit-proxy/block-settings`, `configByPath?subPath=mobile-users-explicit-proxy/users`, `/api/sase/config/v1/device-config/policies/proxy-server-profile`, `…/upstream-proxy-policy-rule`, `Device/SAMLIdPProfiles` |
+| forwarding profiles (GP proxy / PAC) | `/api/sase/config/v1/device-config/sase-forwarding-profiles/forwarding-profile`, `…/destinations`, `…/regional-and-custom-proxies`, `…/user-locations`, `…/source-applications`, summary `/api/sase/config/v1/forwarding-profiles/summary` |
+| Mobile Users / GP setup | `/api/config/v9.2/Plugins/CloudServices/MobileUsers` (portal hostname, IP pools, DNS, deployment – overlaps the public `mobile-agent/infrastructure-settings`), `configByPath?prefix=plugins/cloud_services/mobile-users` (`ipv6`, `multi-portal-multi-auth`), GP portal / gateway via `configByPath?prefix=global-protect/...` and `Network/GlobalProtectGateways`, `/api/sase/config/v1/device-config/global-protect/portals`, `…/general-settings`, `/api/sase/config/v1/global-settings`, `/api/sase/config/v1/jupiter/*`, `Device/ZTNAAgent/AppSettings` |
+| security profiles | `/api/config/v9.2/Objects/VulnerabilityProtectionSecurityProfiles`, `…/WildFireAndAntivirusSecurityProfiles` (PAN-OS XML structure as JSON: `rules.entry`, `decoder.entry`, `@loc`, `@snippet-loc`), `Objects/CustomVulnerabilitySignatures`, `Profile/CustomSignature` |
+| runtime / status (not configuration) | `/api/extensions/gpcs/*` (users, PAC URLs, regions, gateways, IP allow list status) |
+
+Result of `scm_internal_api_probe.php` on a live tenant: all probed calls answer HTTP 200 with the service account
+token (as `Authorization: Bearer` and as `x-auth-jwt`) → area `explicit-proxy` added (patch 25, `ui-api-host=`).
+Probe: `scm_internal_api_probe.php in=scm-api://<TSG> [host=…]` – checks whether these calls accept the service
+account token (`Authorization: Bearer` or `x-auth-jwt`). Only then an area `mobile-users-explicit-proxy` is possible;
+otherwise Explicit Proxy stays a manual / documented item.
+
+### 6.2 Coverage of the items missing in 2023 (public API vs. internal)
+
+| item | source now |
+|---|---|
+| Explicit Proxy setup (URL, auth, PAC / forwarding, advanced security, locations) | internal UI API – area `explicit-proxy` |
+| GP infrastructure settings, locations | public `mobile-agent/infrastructure-settings` (`deployment.region[].locations`) |
+| GP app settings, HIP data collection, gateways | public `mobile-agent/agent-profiles` (`gp_app_config`, `hip_collection`, `gateways`) |
+| GP tunnel settings, split tunnel | public `mobile-agent/tunnel-profiles` (`split_tunneling` – to verify with a configured split tunnel) |
+| GP network services | DNS / IP pools public (`infrastructure-settings`); trusted zones internal (`gp-trusted-zones`) |
+| Prisma Access Agent (successor of the GP agent): app settings, client auth, auth timers, token lifetime, staged rollout | internal UI API – `mobile-users/pa-agent-*` |
+| agent traffic steering with forwarding profiles (Prisma Access Agent, GlobalProtect with forwarding profiles) | internal UI API – `explicit-proxy/forwarding-*` |
+| GP Clientless VPN | internal UI API – `mobile-users/gp-portals` (`clientless-vpn`), `gp-clientless-apps`, `gp-clientless-app-groups` |
+| DNS proxy in remote networks | public `deployment/internal-dns-servers` (infra) |
+| retrieve the IP addresses | egress-IP API (`egressip`) |
+| outbound routes of service connections | public `service-connections` (`subnets`, `protocol.bgp.do_not_export_routes`) and `infra/bgp-routing` (routing preference); the UI reads `configByPath …/routing-preference` (empty = default) |
+
+Captured from the UI (HAR, lab tenant): the UI itself saved two changes while recording (PUT `…/clientless-vpn`, PUT
+`Plugins/CloudServices/ServiceConnection`) – the internal API is writable as well; not used by the sync.
+
+## 7. Next development steps
+
+Status 2026-11-13 – done and verified on a live tenant: export of all areas (infra, config in leaf mode incl. parallel
+queries, RN, SC, MU, Explicit Proxy, Prisma Browser, IAM), leaf vs. all compare without differences, internal UI API
+for Explicit Proxy / GlobalProtect portal / Clientless VPN / Prisma Access Agent, pan-os-php loader with complete
+vulnerability / WildFire-AV profiles from the internal API. **Not yet tested on a live tenant: everything that
+writes** (sync apply, push).
+
+### 7.1 Next steps (in this order)
+
+First live write test (2026-11-13, lab tenant, folder `pan-os-php-test` below `ngfw-shared`): export → edited copy →
+compare → plan `additive` → dry-run (hash check) → execute: `POST /config/objects/v1/addresses` 201,
+`PUT …/addresses/{id}` 200 (body incl. `folder`, `tag`) → re-export → compare: no differences. Push of a folder without
+firewalls: HTTP 400 `push-to unexpected node` → push limited to folders with a push target (patch 40).
+
+One-step changes: `scm_pa_change.php changes=<file.json> [execute]` chains export → soll → compare → plan → dry-run →
+execute → verification for folders, snippets and objects ([README_pa_change.md](../utils/develop/sase/scm/README_pa_change.md)). Live (2026-11-13):
+`examples/change-sub-folder.json` – folder `PUT` (description), tag + address `POST` in the sub folder, all verified;
+second run "nothing to do". Folder list without `description` / `labels` → read with the single GET (patch 43).
+Next: `change-append-tag.json`, `change-delete-address.json`, `change-delete-tag.json` (in this order).
+
+| # | step | what exactly | input from you | result |
+|---|---|---|---|---|
+| 1 | **Sync – first write test** | lab tenant: export a test folder (`container=<test folder> config-types=addresses,tags,security-rules`), second export with a few changes (1 create, 1 update, 1 delete, 1 rule moved), `scm_pa_compare.php`, `scm_pa_sync.php plan mode=mirror allow-delete`, `apply` dry-run, `apply execute` **without** push, re-export + compare (expect "No differences"), then `push` | lab test folder; `apply-log-*.json` + `PLAN_REPORT.md` (no secrets inside) | request formats of POST / PUT / DELETE / `:move` / `candidate:push` confirmed or fixed (4.10) |
+| 2 | **Sync – Prisma Access areas** | same as 1 for `remote-networks` (IKE / IPsec crypto, gateway with PSK from `psk-list.csv`, tunnel, RN) and `service-connections` incl. `backup_SC` follow-up | lab RN / SC that may be created / deleted | PSK handling via secret lists confirmed |
+| 3 | **Migration run** (4a) | export an empty target tenant, compare with the source, plan `additive`, apply in import order; checklist items as manual work list | target tenant (lab 2 or customer) | end-to-end migration procedure for the consultant guide |
+| 4 | **Config references in the metadata** | `refs` for rules → addresses / groups / services / profiles / tags / zones, so that the sync plan adds missing objects as dependencies and blocks deletes of referenced objects | – (offline) | sync safe for single-rule transfers |
+| 5 | **Export: complete security profiles** | in `area=config` add the sections missing in the public API (`decoder`, `mlav-engine-filebased-enabled`, `mica-engine-*`, rule action `default`) from the internal API, matched by `id` = `@uuid` (same mechanism as the loader) | – | export / compare of VP / WF-AV complete |
+| 6 | **`scm_pa_verify.php`** | compare pan-os-php's SCM loading (`in=scm-api://… out=…`) with the raw export: count / names / fields / owner per container and type | one export + XML of the same tenant | list of what pan-os-php does not load correctly |
+| 7 | **Classic GlobalProtect agent** | verify `tunnel-profiles.split_tunneling`, more `gp_app_config` options on a tenant with the GlobalProtect agent | customer / other tenant with GP agent | 6.2 complete |
+| 8 | **Region of the internal UI API** | find the `ui-api-host` per region automatically (e.g. from a tenant / region API) instead of `ui-api-host=` / `shadow-scmuiapihost=` | a non-EU tenant (HAR or probe) | no manual host for non-EU tenants |
+| 9 | Prisma Browser sync | rule / section API, draft publish | 1 done | – |
+| 10 | Certificates checklist | mark the certificates Prisma Access creates on a new tenant (cookie CA / cert, forward trust / untrust …) as "created automatically" | list of auto-created certificates | shorter manual list |
+
+Rules for all steps: patches on `beta_scm-extension` (no push from this side), documentation in English, secrets /
+tokens never in shared files (HAR: "Export HAR (sanitized)", no `debugapi` logs, no secret lists).
+
+### 7.2 Done (history)
+
+| step | what |
+|---|---|
+| ✅ | endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` ([README_pa_compare.md](../utils/develop/sase/scm/README_pa_compare.md)) |
+| ✅ | `scm_pa_sync.php plan` / `apply` ([README_pa_sync.md](../utils/develop/sase/scm/README_pa_sync.md)) – offline / mock only |
+| ✅ | config export: leaf mode, parallel queries, chunks, heavy types, owner aliases, snippet rule bases, PA deployment folders |
+| ✅ | area `explicit-proxy`, GlobalProtect portal / Clientless VPN / trusted zones, Prisma Access Agent (internal UI API) |
+| ✅ | pan-os-php loader: vulnerability / WildFire-AV profiles from the internal API ([SECURITY_PROFILES_public_vs_internal_api.md](../utils/develop/sase/scm/SECURITY_PROFILES_public_vs_internal_api.md)) |
+
+### Production export findings (2026-11-14)
+
+* Folder `Colo Connect`: in the folder list, the configuration API answers "Folder Colo Connect doesn't exist" →
+  detected once, reported as folder without configuration (manifest `config.folders_without_configuration`,
+  checklist info), not queried for the other types.
+* Leaf mode: a failing leaf query marked all containers it covers (All, ngfw-shared, snippets) as error with the
+  message of the leaf → now only the queried container gets the error; containers covered only by failed queries
+  are queried directly at the end.
+* Validation answers ("folder must be one of [Remote Networks, Service Connections]", "fails to match the required
+  pattern" – e.g. qos-profiles, Service Connections rules / profile groups) → unavailable, not error.
+* Mobile users internal endpoints: HTTP 500 "configuration cannot be loaded right now … ENOTFOUND paas-cfgserv-…" –
+  SCM backend answer for that tenant (retry later / open a case), not a tool error.
+
+## 8. Known limitations
+
+- Private keys of certificates are not exported (manual import on the target tenant).
+- Service account secrets cannot be read (new service accounts on the target tenant).
+- IAM is documentation / compare only.
+- Not exported: ZTNA connector, Cloud Identity Engine, Strata Logging Service, license allocation, Prisma Browser
+  assets (logos).
+- Internal UI API (Explicit Proxy, GP portal / Clientless VPN, Prisma Access Agent, security profile sections): may
+  change without notice, region specific host, export / compare only – no sync.
+- `config` references in the endpoint metadata are partial (groups, profile groups) – dependencies of rules on
+  objects are not resolved by the sync plan yet (7.1 step 4).
+- Sync of Prisma Browser is blocked in the plan; IAM is never written.

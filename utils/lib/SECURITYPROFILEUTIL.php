@@ -292,11 +292,16 @@ class SECURITYPROFILEUTIL extends UTIL
                         //Panorama
                         if( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
                         {
-                            if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virus-and-wildfire-analysis', $this->securityProfileTypes) !== FALSE )
+                            // SCM: no antivirus / wildfire profiles - securityprofiletype=virus or wildfire-analysis
+                            // select the virus-and-wildfire-analysis profiles (the virus.* / wildfire.* actions
+                            // support them); spyware: the DNS part of PAN-OS anti-spyware is a dns-security profile
+                            if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virus-and-wildfire-analysis', $this->securityProfileTypes) !== FALSE
+                                || array_search('virus', $this->securityProfileTypes) !== FALSE || array_search('wildfire-analysis', $this->securityProfileTypes) !== FALSE )
                             {
                                 $this->objectsToProcess[] = array('store' => $sub->VirusAndWildfireProfileStore, 'rules' => $sub->VirusAndWildfireProfileStore->securityProfiles());
                             }
-                            if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('dns-security', $this->securityProfileTypes) !== FALSE )
+                            if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('dns-security', $this->securityProfileTypes) !== FALSE
+                                || array_search('spyware', $this->securityProfileTypes) !== FALSE )
                             {
                                 $this->objectsToProcess[] = array('store' => $sub->DNSSecurityProfileStore, 'rules' => $sub->DNSSecurityProfileStore->securityProfiles());
                             }

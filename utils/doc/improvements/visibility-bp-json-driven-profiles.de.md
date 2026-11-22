@@ -49,7 +49,8 @@ müssen erhalten bleiben, und zwar an einer Stelle.
   eine 12.2.2-Konfiguration hat das Element bei beiden Modellen). 12.1 hat keine
   Änderungen an Security-Profilen (PANW: New Features PAN-OS 12.1). `sp_spg-create` übergibt ab 12.1 die PAN-OS-Version
   (vorher fest `"12.1"`). Noch nicht: die URL-Optionen für HTTP-Header-Logging von 12.2 (XML-Elementnamen mit einer
-  12.2-Konfiguration prüfen).
+  12.2-Konfiguration prüfen) –
+  [todo/ironskillet-url-http-header-logging-12.2.md](../../../todo/ironskillet-url-http-header-logging-12.2.md).
 - **Prüfwerkzeug:** `utils/develop/ironskillet/url_categories_check.php` (nur lesend) meldet je iron-skillet-Version
   die vordefinierten URL-Kategorien, die in den URL-Profilen fehlen.
 

@@ -86,16 +86,30 @@ class CallContext
         $this->object = $object;
 
         $name = $object->name();
+        // the key in the JSON output: the name (a DNS rule / threat rule: "<profile>/<name>" - PH::jsonObjectKey)
+        $key = PH::jsonObjectKey( $object );
         $saseID = "";
         if( $object->getSaseID() !== null )
         {
-            PH::$JSON_TMP['sub']['object'][$object->name()]['id'] = $object->getSaseID();
+            PH::$JSON_TMP['sub']['object'][$key]['id'] = $object->getSaseID();
             $saseID = "Sase-ID: '" . $object->getSaseID()."'";
         }
         $tmp_txt = "   - object '" . PH::boldText($name) . "' ".$saseID." passing through Action='{$this->actionRef['name']}'";
 
-        PH::$JSON_TMP['sub']['object'][$name]['name'] = $name;
-        PH::$JSON_TMP['sub']['object'][$name]['actions'][$this->actionRef['name']]['name'] = $this->actionRef['name'];
+        PH::$JSON_TMP['sub']['object'][$key]['name'] = $name;
+        // an object of a Panorama template / template stack (certificates, IKE, GlobalProtect, interfaces, …): its
+        // template - the location alone (shared / vsys1) does not say which one
+        $tpl = PH::findTemplateOwner( $object );
+        if( $tpl !== null )
+            PH::$JSON_TMP['sub']['object'][$key]['template'] = $tpl->name();
+        if( $key !== $name )
+            PH::$JSON_TMP['sub']['object'][$key]['profile'] = $object->owner->name();
+        PH::$JSON_TMP['sub']['object'][$key]['actions'][$this->actionRef['name']]['name'] = $this->actionRef['name'];
+
+        // API object model (SCM shape, todo/json-object-model.md): with shadow-json, 'display' adds it for every
+        // class ApiObjectModel knows - the one place for all types
+        if( PH::$shadow_json && $this->actionRef['name'] === 'display' && ( $apiModel = ApiObjectModel::item( $object ) ) !== null )
+            PH::$JSON_TMP['sub']['object'][$key]['model'] = $apiModel;
 
         if( count($this->arguments) != 0 )
         {
@@ -110,7 +124,7 @@ class CallContext
                 else
                     $tmp_arg = $argValue;
 
-                PH::$JSON_TMP['sub']['object'][$object->name()]['actions'][$this->actionRef['name']]['arg'][$argName] = $tmp_arg;
+                PH::$JSON_TMP['sub']['object'][$key]['actions'][$this->actionRef['name']]['arg'][$argName] = $tmp_arg;
                 $tmp_txt .= $argName . "=" . $tmp_arg . ", ";
             }
         }

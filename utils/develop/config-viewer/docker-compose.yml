@@ -1,0 +1,83 @@
+# pan-os-php config viewer (prototype) - everything with one command (needs only this file and the image):
+#
+#   docker compose -f docker-compose.yml up -d
+#   (or simply: ./panosphp-viewer start - shows the one-time code for the first administrator)
+#
+# then http://127.0.0.1:8080/ on this computer. Stop: ... down   (the data stays in the volume; "down -v" deletes it)
+# New version of the image: ... pull  and  ... up -d
+#
+# Image: the normal pan-os-php image (VIEWER_IMAGE, default swaschkut/pan-os-php:alpha). Own build from the
+# repository root:  docker build -t swaschkut/pan-os-php:alpha -f docker/Dockerfile .
+#
+# The page is reachable from this computer only (127.0.0.1) and without HTTPS. For other computers add
+# docker-compose.https.yml (reverse proxy with HTTPS). Without internet: airgap/ (bundle with the images).
+#
+# Plug-ins that are not part of the image (e.g. the migration plug-in): the folder that holds them, as an absolute path:
+#   VIEWER_PLUGINS_DIR=/path/to/plugins docker compose -f docker-compose.yml up -d
+name: panosphp-viewer
+
+x-viewer: &viewer
+  image: "${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}"
+  restart: unless-stopped
+  # starts as root only to hand over the data volume (and, jobs, the group of the docker socket); the PHP processes
+  # run as the user "ubuntu" (docker/start.sh)
+  user: "0:0"
+  entrypoint: [ "/bin/bash", "/tools/pan-os-php/utils/develop/config-viewer/docker/start.sh" ]
+  volumes:
+    - data:/data
+    # plug-ins that are not part of the image: VIEWER_PLUGINS_DIR = absolute path of the folder that holds them
+    - "${VIEWER_PLUGINS_DIR:-./plugins}:/plugins:ro"
+
+services:
+  web:
+    <<: *viewer
+    command: [ "web" ]
+    ports:
+      - "127.0.0.1:${VIEWER_PORT:-8080}:8080"
+    environment:
+      PANOSPHP_VIEWER_DATA: "/data"
+      PANOSPHP_VIEWER_PLUGINS: "/plugins"
+      PANOSPHP_VIEWER_ALLOW_HTTP: "1"
+      PHP_CLI_SERVER_WORKERS: "4"
+      VIEWER_ADMIN_USER: "${VIEWER_ADMIN_USER:-admin}"
+      VIEWER_ADMIN_PASSWORD: "${VIEWER_ADMIN_PASSWORD:-}"
+
+  service:
+    <<: *viewer
+    command: [ "service" ]
+    depends_on: [ web ]
+    network_mode: "none"
+    environment:
+      PANOSPHP_VIEWER_DATA: "/data"
+      PANOSPHP_VIEWER_PLUGINS: "/plugins"
+
+  # the only part with the docker socket: starts one container per run (no network, read-only, only the project folder)
+  jobs:
+    <<: *viewer
+    command: [ "jobs" ]
+    depends_on: [ web ]
+    network_mode: "none"
+    volumes:
+      - data:/data
+      - "${VIEWER_PLUGINS_DIR:-./plugins}:/plugins:ro"
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      PANOSPHP_VIEWER_DATA: "/data"
+      PANOSPHP_VIEWER_PLUGINS: "/plugins"
+      PANOSPHP_VIEWER_CONTAINER: "docker"
+      PANOSPHP_VIEWER_CONTAINER_IMAGE: "${VIEWER_IMAGE:-swaschkut/pan-os-php:alpha}"
+      PANOSPHP_VIEWER_CONTAINER_DATA: "panosphp-viewer-data"
+      # memory and CPUs of one run (large configurations need more; Docker Desktop: the VM needs at least this much)
+      PANOSPHP_VIEWER_CONTAINER_MEMORY: "${VIEWER_RUN_MEMORY:-2g}"
+      PANOSPHP_VIEWER_CONTAINER_CPUS: "${VIEWER_RUN_CPUS:-2}"
+      PANOSPHP_VIEWER_JOB_TIMEOUT: "${VIEWER_RUN_TIMEOUT:-3600}"
+      # the network of an import step (download from a firewall / Panorama / SCM - only when an administrator allows it)
+      PANOSPHP_VIEWER_CONTAINER_NETWORK: "${VIEWER_RUN_NETWORK:-bridge}"
+      # DNS servers of such a step, e.g. the AD domain controllers for internal names (LDAP: find the servers of a domain)
+      PANOSPHP_VIEWER_CONTAINER_DNS: "${VIEWER_RUN_DNS:-}"
+      # the same folder as the Docker of the host sees it (a run of a plug-in gets its folder read-only)
+      PANOSPHP_VIEWER_CONTAINER_PLUGINS: "${VIEWER_PLUGINS_DIR:-}"
+
+volumes:
+  data:
+    name: panosphp-viewer-data

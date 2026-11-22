@@ -608,6 +608,51 @@ RQuery::registerFilter( array(
     )
 ) );
 
+// same name as the firewalls of ONE location see it (the location and the levels above it - Panorama: device group,
+// parents, shared; firewall: vsys, shared; SCM: folder, snippets, parents): is.overriden / is.overriding look at the
+// whole hierarchy (also sibling and child device groups); these two only at the levels of the location in the argument
+RQuery::registerFilter( array(
+    'address',
+    'edl',
+    'log-profile',
+    'schedule',
+    'securityprofilegroup',
+    'service',
+    'tag'
+), 'object', 'is.overriden.for', array(
+    'Function' => function (RQueryContext $context) {
+        $info = PH::sameNameForLocation( $context->object, (string)$context->value );
+        return $info !== null && $info['winner'] !== null && $info['winner'] !== $context->object;
+    },
+    'arg' => TRUE,
+    'help' => 'TRUE when a firewall of the location in the argument (device group / vsys / SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)',
+    'ci' => array(
+        'fString' => '(%PROP% shared)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
+RQuery::registerFilter( array(
+    'address',
+    'edl',
+    'log-profile',
+    'schedule',
+    'securityprofilegroup',
+    'service',
+    'tag'
+), 'object', 'is.overriding.for', array(
+    'Function' => function (RQueryContext $context) {
+        $info = PH::sameNameForLocation( $context->object, (string)$context->value );
+        return $info !== null && $info['winner'] === $context->object && count( $info['copies'] ) > 1;
+    },
+    'arg' => TRUE,
+    'help' => 'TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)',
+    'ci' => array(
+        'fString' => '(%PROP% shared)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+) );
+
 RQuery::registerFilter( array(
     'address',
     'edl',
@@ -838,13 +883,24 @@ RQuery::registerFilter( array(
     )
 ) );
 
+// (refcount >|<|=|! n): for every type with references (action displayreferences) - also application, certificate,
+// device, ike-gateway, ike-profile, interface, ipsec-profile, threat; an object of a type without counted references
+// (no countReferences) never matches
 RQuery::registerFilter( array(
     'address',
+    'application',
+    'certificate',
+    'certificate-profile',
+    'device',
     'dns-rule',
     'edl',
     'gp-gateway',
     'gp-portal',
+    'ike-gateway',
+    'ike-profile',
+    'interface',
     'interface-management-profile',
+    'ipsec-profile',
     'log-profile',
     'profile',
     'schedule',
@@ -852,11 +908,12 @@ RQuery::registerFilter( array(
     'securityprofilegroup',
     'service',
     'tag',
+    'threat',
     'threat-rule',
     'zone',
     'zone-protection-profile'
 ), 'refcount', '>,<,=,!', array(
-    'eval' => '$object->countReferences() !operator! !value!',
+    'eval' => 'method_exists( $object, "countReferences" ) && $object->countReferences() !operator! !value!',
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',

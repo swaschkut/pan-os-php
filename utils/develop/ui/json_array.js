@@ -161,7 +161,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=description-append:$$comma$$word1'\n"
                     }
                 },
                 "help": ""
@@ -801,6 +801,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -951,7 +969,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1725,6 +1743,18 @@ var subjectObject =
                     }
                 }
             },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "risk": {
                 "operators": {
                     ">,<,=,!": {
@@ -2094,6 +2124,18 @@ var subjectObject =
                         }
                     }
                 }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
             }
         }
     },
@@ -2102,6 +2144,10 @@ var subjectObject =
         "action": {
             "display": {
                 "name": "display",
+                "MainFunction": {}
+            },
+            "displayreferences": {
+                "name": "displayReferences",
                 "MainFunction": {}
             },
             "exporttoexcel": {
@@ -2218,6 +2264,18 @@ var subjectObject =
                     }
                 }
             },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "setting": {
                 "operators": {
                     "is.yes": {
@@ -2233,6 +2291,11 @@ var subjectObject =
             }
         }
     },
+    "config-anonymize": {
+        "name": "config-anonymize",
+        "action": [],
+        "filter": []
+    },
     "config-commit": {
         "name": "config-commit",
         "action": [],
@@ -2243,8 +2306,18 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "config-section": {
+        "name": "config-section",
+        "action": [],
+        "filter": []
+    },
     "config-size": {
         "name": "config-size",
+        "action": [],
+        "filter": []
+    },
+    "config-split": {
+        "name": "config-split",
         "action": [],
         "filter": []
     },
@@ -2764,6 +2837,16 @@ var subjectObject =
                 "name": "template-delete",
                 "MainFunction": {}
             },
+            "template-remove": {
+                "name": "template-remove",
+                "MainFunction": {},
+                "args": {
+                    "templateName": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
+            },
             "templatestack-addserial": {
                 "name": "templatestack-addserial",
                 "MainFunction": {},
@@ -2839,6 +2922,47 @@ var subjectObject =
                 },
                 "help": "enable function: possible values: 'yes' or 'no'"
             },
+            "variable-remove": {
+                "name": "variable-remove",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "variable-set": {
+                "name": "variable-set",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "type": {
+                        "type": "string",
+                        "default": "ip-netmask"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "template stack: the variable of this firewall (override)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "virtualsystem-delete": {
                 "name": "virtualsystem-delete",
                 "MainFunction": {}
@@ -2909,6 +3033,19 @@ var subjectObject =
                     }
                 }
             },
+            "level": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "PH::deviceLevelMatch( $object, '!operator!', !value! )",
+                        "arg": true,
+                        "help": "level in the hierarchy (shared = 1, top device group = 2, \u2026); a firewall \/ template stack \/ template: one of the levels of its device groups. ie: (level >= 3)",
+                        "ci": {
+                            "fString": "(%PROP% 2)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "manageddevice": {
                 "operators": {
                     "with-no-dg": {
@@ -2950,6 +3087,18 @@ var subjectObject =
                         "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3331,7 +3480,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3635,6 +3784,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -3688,7 +3855,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3909,7 +4076,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4081,7 +4248,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4288,6 +4455,18 @@ var subjectObject =
                         }
                     }
                 }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
             }
         }
     },
@@ -4418,6 +4597,18 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4633,6 +4824,18 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4881,7 +5084,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5069,6 +5272,18 @@ var subjectObject =
                         }
                     }
                 }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
             }
         }
     },
@@ -5142,6 +5357,11 @@ var subjectObject =
     },
     "key-manager": {
         "name": "key-manager",
+        "action": [],
+        "filter": []
+    },
+    "ldap-query": {
+        "name": "ldap-query",
         "action": [],
         "filter": []
     },
@@ -5351,6 +5571,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -5412,7 +5650,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5513,6 +5751,11 @@ var subjectObject =
             }
         }
     },
+    "master-key": {
+        "name": "master-key",
+        "action": [],
+        "filter": []
+    },
     "maxmind-update": {
         "name": "maxmind-update",
         "action": [],
@@ -5530,6 +5773,11 @@ var subjectObject =
     },
     "override-finder": {
         "name": "override-finder",
+        "action": [],
+        "filter": []
+    },
+    "panorama-move": {
+        "name": "panorama-move",
         "action": [],
         "filter": []
     },
@@ -5788,7 +6036,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -6196,6 +6444,10 @@ var subjectObject =
             },
             "display-app-seen": {
                 "name": "display-app-seen",
+                "MainFunction": {}
+            },
+            "dnat-remove": {
+                "name": "DNat-remove",
                 "MainFunction": {}
             },
             "dnat-set": {
@@ -7064,6 +7316,36 @@ var subjectObject =
                 "section": "service",
                 "MainFunction": {}
             },
+            "snat-remove": {
+                "name": "SNat-remove",
+                "MainFunction": {}
+            },
+            "snat-set": {
+                "name": "SNat-set",
+                "MainFunction": {},
+                "args": {
+                    "SNATtype": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "dynamic-ip-and-port, dynamic-ip, static-ip or none"
+                    },
+                    "addresses": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "the translated address objects, separated by '|' (static-ip: one; dynamic-ip-and-port with an interface: optional, the IP of the interface); - = none"
+                    },
+                    "interface": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "dynamic-ip-and-port: the interface whose address is used (ethernet1\/\/1 or ethernet1$$1 for ethernet1\/1)"
+                    },
+                    "bidirectional": {
+                        "type": "bool",
+                        "default": "no",
+                        "help": "static-ip: bi-directional"
+                    }
+                }
+            },
             "snat-set-interface": {
                 "name": "SNat-set-interface",
                 "MainFunction": {},
@@ -7517,7 +7799,7 @@ var subjectObject =
                     "ldapServer": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "LDAP server fqdn \/ IP"
+                        "help": "LDAP server fqdn \/ IP, or ldaps%fqdn[%port] \/ ldap%fqdn[%port], or auto \/ auto-ldap[%domain]: the domain controllers of the domain (default: the DC= parts of dn) from DNS (LDAPS \/ LDAP), the first that works"
                     },
                     "dn": {
                         "type": "string",
@@ -9714,6 +9996,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -9779,7 +10079,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -9836,9 +10136,74 @@ var subjectObject =
             }
         }
     },
+    "scm-apply": {
+        "name": "scm-apply",
+        "action": [],
+        "filter": []
+    },
+    "scm-change": {
+        "name": "scm-change",
+        "action": [],
+        "filter": []
+    },
+    "scm-changes": {
+        "name": "scm-changes",
+        "action": [],
+        "filter": []
+    },
+    "scm-compare": {
+        "name": "scm-compare",
+        "action": [],
+        "filter": []
+    },
+    "scm-export": {
+        "name": "scm-export",
+        "action": [],
+        "filter": []
+    },
+    "scm-export-xml": {
+        "name": "scm-export-xml",
+        "action": [],
+        "filter": []
+    },
+    "scm-import": {
+        "name": "scm-import",
+        "action": [],
+        "filter": []
+    },
+    "scm-panorama-to-change": {
+        "name": "scm-panorama-to-change",
+        "action": [],
+        "filter": []
+    },
+    "scm-report": {
+        "name": "scm-report",
+        "action": [],
+        "filter": []
+    },
+    "scm-sync": {
+        "name": "scm-sync",
+        "action": [],
+        "filter": []
+    },
+    "scm-xml-to-change": {
+        "name": "scm-xml-to-change",
+        "action": [],
+        "filter": []
+    },
     "securityprofile": {
         "name": "securityprofile",
         "action": {
+            "alert-only-set": {
+                "name": "alert-only-set",
+                "MainFunction": {},
+                "help": "runs the alert-only-set action of the profile's type for every profile selected with securityprofiletype= (any: all types): virus, spyware, vulnerability, url, file-blocking, wildfire, virus-and-wildfire, dns-security. Predefined profiles and types without alert-only-set are skipped."
+            },
+            "best-practice-set": {
+                "name": "best-practice-set",
+                "MainFunction": {},
+                "help": "runs the best-practice-set action of the profile's type for every profile selected with securityprofiletype= (any: all types): virus, spyware, vulnerability, url, wildfire, virus-and-wildfire, dns-security. Predefined profiles and types without best-practice-set (e.g. file-blocking) are skipped."
+            },
             "clone-predefined-and-change-references": {
                 "name": "clone-predefined-and-change-references",
                 "MainFunction": {}
@@ -10227,6 +10592,10 @@ var subjectObject =
                 "name": "virus-and-wildfire.alert-only-set",
                 "MainFunction": {}
             },
+            "virus-and-wildfire.best-practice-set": {
+                "name": "virus-and-wildfire.best-practice-set",
+                "MainFunction": {}
+            },
             "virus.alert-only-set": {
                 "name": "virus.alert-only-set",
                 "MainFunction": {}
@@ -10271,10 +10640,6 @@ var subjectObject =
                 "name": "vulnerability.rules.alert-only-set",
                 "MainFunction": {}
             },
-            "vulnerability.rules.alert-only-set_old": {
-                "name": "vulnerability.rules.alert-only-set_OLD",
-                "MainFunction": {}
-            },
             "vulnerability.rules.best-practice-set": {
                 "name": "vulnerability.rules.best-practice-set",
                 "MainFunction": {}
@@ -10317,6 +10682,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware"
                     }
                 }
             },
@@ -10331,6 +10706,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as.mica-engine is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware"
                     }
                 }
             },
@@ -10345,6 +10730,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware"
                     }
                 }
             },
@@ -10364,6 +10759,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10378,6 +10783,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10392,6 +10807,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10406,6 +10831,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10420,6 +10855,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10434,6 +10879,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10453,6 +10908,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -10476,6 +10941,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware,vulnerability,virus,wildfire"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware,vulnerability,virus,wildfire"
                     }
                 }
             },
@@ -10511,6 +10986,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=data-filtering' e.g. 'filter=(df is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=data-filtering"
                     }
                 }
             },
@@ -10530,6 +11010,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware,dns-security"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware,dns-security"
                     }
                 }
             },
@@ -10584,6 +11074,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=spyware,dns-security"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=spyware,dns-security"
                     }
                 }
             },
@@ -10629,6 +11129,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=dns-security"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=dns-security"
                     }
                 }
             },
@@ -10682,6 +11192,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=file-blocking"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=file-blocking"
                     }
                 }
             },
@@ -10696,6 +11216,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=file-blocking"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=file-blocking"
                     }
                 }
             },
@@ -10885,7 +11415,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11045,6 +11575,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11064,6 +11604,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11088,6 +11638,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11128,6 +11688,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(user-credential-detection allow.is.set)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=url-filtering"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=url-filtering"
                     }
                 }
             },
@@ -11147,6 +11717,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=vulnerability"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=vulnerability"
                     }
                 }
             },
@@ -11161,6 +11741,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.mica-engine is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=vulnerability"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=vulnerability"
                     }
                 }
             },
@@ -11175,6 +11765,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=vulnerability"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=vulnerability"
                     }
                 }
             },
@@ -11194,6 +11794,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -11208,6 +11818,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
                     }
                 }
             },
@@ -11222,6 +11842,16 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.visibility)'"
+                    },
+                    "is.visibility.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.visibility' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
+                    },
+                    "is.best-practice.na": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "N\/A: the BP JSON lists nothing to check for this profile ('is.best-practice' returns null); securityprofiletype=wildfire,virus-and-wildfire-analysis"
                     }
                 }
             }
@@ -11369,7 +11999,9 @@ var subjectObject =
                             "data-filtering",
                             "file-blocking",
                             "spyware",
-                            "wildfire"
+                            "wildfire",
+                            "virus-and-wildfire",
+                            "dns-security"
                         ]
                     }
                 }
@@ -11510,6 +12142,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -11595,7 +12245,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11894,7 +12544,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=description-append:$$comma$$word1'\n"
                     }
                 },
                 "help": ""
@@ -12396,6 +13046,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -12550,7 +13218,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -13085,6 +13753,16 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "support-file": {
+        "name": "support-file",
+        "action": [],
+        "filter": []
+    },
+    "support-file-read": {
+        "name": "support-file-read",
+        "action": [],
+        "filter": []
+    },
     "system-log": {
         "name": "system-log",
         "action": [],
@@ -13129,7 +13807,8 @@ var subjectObject =
                 "args": {
                     "comments": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "possible aliases: $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=comments-add:a$$comma$$b'"
                     }
                 }
             },
@@ -13269,6 +13948,17 @@ var subjectObject =
                     "suffix": {
                         "type": "string",
                         "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-rename": {
+                "name": "name-Rename",
+                "MainFunction": {},
+                "args": {
+                    "stringFormula": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$location$$ : name of the location where this object is based\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$space$$\n"
                     }
                 }
             },
@@ -13429,6 +14119,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.overriden.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when a firewall of the location in the argument (device group \/ vsys \/ SCM folder, or shared) gets another object of this name - the object is on a level of the location (its parents, shared) and is hidden by a nearer copy (or a higher one with ancestor-objects-take-precedence; an EDL before an address of the same name). ie: (object is.overriden.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.overriding.for": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "TRUE when this object is the one a firewall of the location in the argument gets and another object of the same name is on a level of that location (it hides it). ie: (object is.overriding.for DG-Berlin)",
+                        "ci": {
+                            "fString": "(%PROP% shared)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.overriden": {
                         "Function": {},
                         "arg": false,
@@ -13482,7 +14190,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -13750,6 +14458,18 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14129,7 +14849,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -14688,7 +15408,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15040,7 +15760,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",

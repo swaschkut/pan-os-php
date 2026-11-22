@@ -263,9 +263,9 @@ class Zone
                 {
                     $this->logsetting = $node->textContent;
 
-                    if( get_class($this->owner->owner) == "VirtualSystem" || get_class($this->owner->owner) == "DeviceCloud" )
+                    if( get_class($this->owner->owner) == "VirtualSystem" || in_array( get_class($this->owner->owner), array( "DeviceCloud", "DeviceOnPrem", "Container", "Snippet" ), TRUE ) )
                     {
-                        if( isset($this->owner->owner->owner->owner) && in_array( get_class($this->owner->owner->owner->owner), array( "Template", "TemplateStack" ), TRUE ) )
+                        if( get_class($this->owner->owner) == "VirtualSystem" && isset($this->owner->owner->owner->owner) && in_array( get_class($this->owner->owner->owner->owner), array( "Template", "TemplateStack" ), TRUE ) )
                         {
                             // template / template stack: only a log forwarding profile of Panorama shared, resolved by
                             // PanoramaConf once shared is loaded

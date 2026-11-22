@@ -160,6 +160,7 @@ require_once $basedir . '/misc-classes/trait/ObjectWithDescription.php';
 require_once $basedir . '/misc-classes/trait/PathableName.php';
 require_once $basedir . '/misc-classes/DH.php';
 require_once $basedir . '/misc-classes/PH.php';
+require_once $basedir . '/misc-classes/ConfigObjectSplit.php';
 
 require_once $basedir . '/misc-classes/RQuery.php';
 require_once $basedir . '/misc-classes/RQueryContext.php';
@@ -211,6 +212,15 @@ require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
 require_once $basedir . '/misc-classes/PanAPIConnector.php';
 require_once $basedir . '/misc-classes/PanSaseAPIConnector.php';
 require_once $basedir . '/misc-classes/PanSCMAPIConnector.php';
+require_once $basedir . '/misc-classes/PanSCMExportConnector.php';
+require_once $basedir . '/misc-classes/SCMChangeGenerator.php';
+require_once $basedir . '/misc-classes/ApiObjectModel.php';
+require_once $basedir . '/misc-classes/PluginLicense.php';
+require_once $basedir . '/misc-classes/SupportFile.php';
+require_once $basedir . '/misc-classes/PluginPackage.php';
+// encrypted plug-in packages of a run (PANOSPHP_PLUGIN_PACKAGES + PANOSPHP_LICENSE): mounted as ppp://<name>/…
+PluginPackage::bootFromEnv();
+require_once $basedir . '/misc-classes/SCMImporter.php';
 require_once $basedir . '/misc-classes/trait/StatCollectorTrait.php';
 
 
@@ -341,6 +351,7 @@ require_once $basedir . '/device-and-system-classes/Snippet.php';
 require_once $basedir . '/device-and-system-classes/Sub.php';
 
 require_once $basedir . '/network-classes/trait/InterfaceType.php';
+require_once $basedir . '/network-classes/trait/RouteZoneMapping.php';
 require_once $basedir . '/network-classes/Zone.php';
 require_once $basedir . '/network-classes/ZoneStore.php';
 require_once $basedir . '/network-classes/InterfaceContainer.php';
@@ -395,6 +406,8 @@ require_once $basedir . '/network-classes/Certificate.php';
 require_once $basedir . '/network-classes/CertificateStore.php';
 
 require_once $basedir . '/network-classes/CertificateProfile.php';
+require_once $basedir . '/network-classes/CertificateUsage.php';
+require_once $basedir . '/device-and-system-classes/DeviceVariables.php';
 require_once $basedir . '/network-classes/CertificateProfileStore.php';
 
 require_once $basedir . '/network-classes/SSL_TLSServiceProfile.php';
@@ -965,7 +978,14 @@ function &sortArrayByStartValue(&$arrayToSort)
         $tmp[$incl['start']][] = $incl;
     }
     unset($incl);
-    ksort($tmp, SORT_NUMERIC);
+    // IPv6 start values are 128 bit integers as decimal strings: SORT_NUMERIC would compare them as float
+    $exact = FALSE;
+    foreach( array_keys($tmp) as $k )
+        if( !is_int($k) ) { $exact = TRUE; break; }
+    if( $exact )
+        uksort($tmp, array('cidr', 'ipCmp'));
+    else
+        ksort($tmp, SORT_NUMERIC);
     foreach( $tmp as $start => &$ends )
     {
         foreach( $ends as &$end )

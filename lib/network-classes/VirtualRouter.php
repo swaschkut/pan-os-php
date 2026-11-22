@@ -24,6 +24,7 @@ class VirtualRouter
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use RouteZoneMapping;
 
     /** @var VirtualRouterStore */
     public $owner;
@@ -497,7 +498,8 @@ class VirtualRouter
         $ipv4 = array();
         $ipv6 = array();
 
-        $ipv4sort = array();
+        // all records, sorted per address family at the end (RouteZoneMapping::sortZoneRecords - exact for IPv6)
+        $zoneRecords = array();
 
         if( $loopFilter === null )
         {
@@ -530,7 +532,7 @@ class VirtualRouter
 
                     $ipv4Mapping = cidr::stringToStartEnd($interfaceIP);
                     $record = array('network' => $interfaceIP, 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'connected', 'priority' => 1);
-                    $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    $zoneRecords[] = $record;
                     unset($record);
                 }
             }
@@ -555,7 +557,7 @@ class VirtualRouter
 
                     $ipv4Mapping = cidr::stringToStartEnd($interfaceIP);
                     $record = array('network' => $interfaceIP, 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'connected', 'priority' => 1);
-                    $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    $zoneRecords[] = $record;
                     unset($record);
                 }
             }
@@ -586,7 +588,7 @@ class VirtualRouter
                     {
 
                         $record = array('network' => $route->destination(), 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'static', 'priority' => 2);
-                        $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                        $zoneRecords[] = $record;
                         unset($record);
                     }
                 }
@@ -608,12 +610,12 @@ class VirtualRouter
                     }
 
                     $record = array('network' => $route->destination(), 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $externalZone->name(), 'origin' => 'static', 'priority' => 2);
-                    $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    $zoneRecords[] = $record;
                     unset($record);
                 }
 
             }
-            else if( $route->nexthopType() == 'ip-address' )
+            else if( $route->nexthopType() == 'ip-address' || $route->nexthopType() == 'ipv6-address' )
             {
                 $nextHopType = $route->nexthopType();
                 $nexthopIP = $route->nexthopIP();
@@ -637,6 +639,9 @@ class VirtualRouter
 
                         foreach( $ips as &$interfaceIP )
                         {
+                            // same address family only
+                            if( (strpos($nexthopIP, ':') !== FALSE) != (strpos($interfaceIP, ':') !== FALSE) )
+                                continue;
                             if( cidr::netMatch($nexthopIP, $interfaceIP) > 0 )
                             {
                                 $findZone = $contextVSYS->zoneStore->findZoneMatchingInterfaceName($if->name());
@@ -667,7 +672,7 @@ class VirtualRouter
                 }
 
                 $record = array('network' => $route->destination(), 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'static', 'priority' => 2);
-                $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                $zoneRecords[] = $record;
                 unset($record);
             }
             else if( $route->nexthopType() == 'next-vr' )
@@ -691,66 +696,9 @@ class VirtualRouter
                     continue;
 
                 $obj = $nextvrObject->getIPtoZoneRouteMapping($contextVSYS, $orderByNarrowest, $loopFilter);
-                $currentRouteRemains = IP4Map::mapFromText($route->destination());
-
-                foreach( $obj['ipv4'] as &$v4recordFromOtherVr )
-                {
-                    $ex = explode('/', $v4recordFromOtherVr['network']);
-                    if( filter_var($ex[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE )
-                        $intersection = $currentRouteRemains->intersection(IP4Map::mapFromText(long2ip($v4recordFromOtherVr['start']) . '-' . long2ip($v4recordFromOtherVr['end'])));
-                    else
-                    {
-                        //IPv6
-                        $intersection = $currentRouteRemains->intersection(IP4Map::mapFromText(cidr::inet_itop($v4recordFromOtherVr['start']) . '-' . cidr::inet_itop($v4recordFromOtherVr['end'])));
-                    }
-
-
-
-
-                    $foundMatches = $currentRouteRemains->substractSingleIP4Entry($v4recordFromOtherVr);
-                    if( $intersection->count() > 0 )
-                    {
-                        foreach( $intersection->getMapArray() as $mapEntry )
-                        {
-                            $ex = explode('/', $mapEntry['network']);
-                            if( filter_var($ex[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE )
-                            {
-                                $network = long2ip($mapEntry['start']) . '-' . long2ip($mapEntry['end']);
-
-                                $record = array('network' => $network,
-                                    'start' => $mapEntry['start'],
-                                    'end' => $mapEntry['end'],
-                                    'zone' => $v4recordFromOtherVr['zone'],
-                                    'origin' => 'static',
-                                    'priority' => 2);
-                            }
-
-                            else
-                            {
-                                #$network = cidr::inet_itop($mapEntry['start']) . '-' . cidr::inet_itop($mapEntry['end']);
-
-                                $network = cidr::inet_itop($mapEntry['start']);
-                                $record = array();
-                                $record = array('network' => $network,
-                                    'start' => $mapEntry['start'],
-                                    'end' => $mapEntry['end'],
-                                    'zone' => $v4recordFromOtherVr['zone'],
-                                    'origin' => 'static',
-                                    'priority' => 2);
-                            }
-
-                            if( !empty( $record ) )
-                            {
-                                $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
-                            }
-
-                            unset($record);
-                        }
-                    }
-
-                    if( $currentRouteRemains->count() == 0 )
-                        break;
-                }
+                // destination intersected with the records of the next router - per address family (IP4Map / IP6Map)
+                foreach( self::nextVrZoneRecords( $route->destination(), $obj ) as $record )
+                    $zoneRecords[] = $record;
             }
             else
             {
@@ -759,28 +707,11 @@ class VirtualRouter
             }
         }
 
-        ksort($ipv4sort);
+        $sorted = self::sortZoneRecords( $zoneRecords );
+        $ipv4 = $sorted['ipv4'];
+        $ipv6 = $sorted['ipv6'];
 
-        foreach( $ipv4sort as &$record )
-        {
-            ksort($record);
-            foreach( $record as &$subRecord )
-            {
-                foreach( $subRecord as &$subSubRecord )
-                {
-                    //only IPv4
-                    if( isset($subSubRecord['network']) && strpos( $subSubRecord['network'], ":" ) !== FALSE )
-                    {
-                        $ipv6[] = &$subSubRecord;
-                        continue;
-                    }
-                    else
-                        $ipv4[] = &$subSubRecord;
-                }
-            }
-        }
-
-        $result = array('ipv4' => &$ipv4);
+        $result = array('ipv4' => $ipv4, 'ipv6' => $ipv6);
 
         return $result;
     }

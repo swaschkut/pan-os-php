@@ -44,6 +44,7 @@ ThreatRuleCallContext::$supportedActions[] = array(
             $locationName = $useInLocation->name();
         PH::print_stdout( "          - used in SecurityProfile: ".$threat->owner->name()." | DG: '".$locationName."'" );
         $threat->display();
+        PH::ruleJsonMove( $threat );
     }
 );
 

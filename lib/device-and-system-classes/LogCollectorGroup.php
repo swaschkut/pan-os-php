@@ -127,6 +127,33 @@ class LogCollectorGroup
         }
     }
 
+    /**
+     * the firewalls that send their logs to this collector group (Device Log Forwarding), each with its preference
+     * list of log collectors: serial => array( 'serial' => ..., 'collectorlist' => array( collector serial, … ) )
+     */
+    public function getDevices()
+    {
+        return $this->devices;
+    }
+
+    /** the log collectors of this group (logfwd-setting/collectors) - serials */
+    public function getCollectors()
+    {
+        $list = array();
+        $root = $this->logfwdRoot !== null ? DH::findFirstElement( 'collectors', $this->logfwdRoot ) : FALSE;
+        if( $root === FALSE )
+            return $list;
+        foreach( $root->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $n = $node->nodeName === 'entry' ? DH::findAttribute( 'name', $node ) : trim( $node->textContent );
+            if( is_string( $n ) && $n !== '' )
+                $list[$n] = $n;
+        }
+        return array_values( $list );
+    }
+
     public function removeDevice( $serial, $debug = false )
     {
         if( isset( $this->devices[$serial] ) )

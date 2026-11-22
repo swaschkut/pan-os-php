@@ -288,188 +288,138 @@ trait sp_action_wildfire
             return false;
     }
 
+    /**
+     * alert-only-set of the WF inline cloud analysis (mica-engine-wildfire-rules).
+     * The action comes from the BP JSON wildfire -> cloud-inline -> visibility (entry with type 'any', as the checks);
+     * a negated condition ('!allow') keeps a compliant value, else 'alert'. Nothing listed in the BP JSON or a
+     * PAN-OS version without inline ML: no change.
+     * Inline analysis still off: it is enabled and a compliant value is kept as well - a blocking action the BP JSON
+     * accepts stays as the customer set it (same rule for AS, VP and WF).
+     */
     public function wf_inlineML_AlertOnlySet(): void
     {
-        $sendAPI = false;
-        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $this->xmlroot);
-        if ($this->owner->owner->version >= 112)
-        {
-            if ($tmp_mlav_engine === False)
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-
-            $tmp_mlav_engine->textContent = "yes";
-            $sendAPI = true;
-        }
-
-
-        $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $this->xmlroot);
-        if ($this->owner->owner->version >= 112)
-        {
-            if ($tmp_mlav_engine === False)
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $this->xmlroot);
-        }
-        if ($tmp_mlav_engine !== False)
-        {
-            if (!$tmp_mlav_engine->hasChildNodes())
-            {
-                $xmlString1 = '<entry name="wf_inline_alert">
-   <application>
-    <member>any</member>
-   </application>
-   <file-type>
-    <member>any</member>
-   </file-type>
-   <direction>both</direction>
-   <action>alert</action>
-  </entry>';
-                $xmlString2 = '<entry name="wf_inline_allow">
-   <application>
-    <member>any</member>
-   </application>
-   <file-type>
-    <member>any</member>
-   </file-type>
-   <direction>both</direction>
-   <action>allow</action>
-  </entry>';
-                //if ($this->owner->owner->version == 111 )
-                //    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString2);
-                //else
-                if ($this->owner->owner->version >= 112 )
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString1);
-
-                $tmp_mlav_engine->appendChild($xmlElement);
-
-                $sendAPI = true;
-            }
-
-            $action_other_then_allow_alert = false;
-            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
-            {
-                if ($mlav_engine_entry->nodeType != XML_ELEMENT_NODE)
-                    continue;
-
-                $name = DH::findAttribute("name", $mlav_engine_entry);
-
-                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
-                if ($action_xmlNode->textContent == "allow")
-                {
-                    if ($this->owner->owner->version >= 112)
-                    {
-                        $action_xmlNode->textContent = "alert";
-                        $this->additional['mica-engine-wildfire-rules'][$name]['action'] = "alert";
-
-                        $sendAPI = true;
-                    }
-                }
-                elseif ($action_xmlNode->textContent == "alert")
-                {
-
-                }
-                else
-                {
-                    $action_other_then_allow_alert = true;
-                }
-            }
-
-            if (!$action_other_then_allow_alert)
-            {
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-
-                $sendAPI = true;
-            }
-        }
+        $this->wf_inlineML_setFromJSON( 'visibility', 'alert' );
     }
 
+    /**
+     * alert-only-set of the WildFire rules: when no rule passes the BP JSON wildfire -> rule -> visibility check
+     * (wildfire_rules_visibility()), a rule is added with the values of its first entry: application, file type,
+     * direction and analysis ('!x' for analysis: the other cloud). Nothing listed in the BP JSON: no change.
+     * @param bool $add_WF_alert out: TRUE when a rule was added
+     */
     public function wf_rules_AlertOnlySet(&$add_WF_alert): void
     {
-        foreach( $this->rules_obj as $rule )
+        $add_WF_alert = false;
+
+        $check_array = PH::getBPjsonFile()['wildfire']['rule']['visibility'] ?? array();
+        $entry = is_array( $check_array ) ? reset( $check_array ) : null;
+        if( empty( $entry ) || !is_array( $entry ) )
+            return;
+        if( $this->wildfire_rules_visibility() === TRUE )
+            return;
+
+        $first = function( $value, $default )
         {
-            /** @var ThreatPolicyWildfire $rule */
-            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
-                && $rule->direction() == "both"
-                && in_array("any", $rule->application() )
-                && in_array("any", $rule->filetype() )
-            )
-            {
-                $add_WF_alert = false;
-                break;
-            }
+            if( is_array( $value ) )
+                return isset( $value[0] ) ? (string)$value[0] : $default;
+            return ( $value === null || $value === '' ) ? $default : (string)$value;
+        };
+        $analysis = $first( $entry['analysis'] ?? null, 'public-cloud' );
+        if( strpos( $analysis, '!' ) === 0 )
+            $analysis = ( substr( $analysis, 1 ) == 'public-cloud' ) ? 'private-cloud' : 'public-cloud';
 
+        $tmp_name = ThreatPolicy::uniqueRuleName( $this->xmlroot, "alert_vcp" );
+        $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $this);
+        $threadPolicy_obj->type = "ThreatPolicyWildfire";
 
-        }
+        $threadPolicy_obj->analysis = $analysis;
+        $threadPolicy_obj->direction = $first( $entry['direction'] ?? null, 'both' );
+        foreach( (array)( $entry['filetype'] ?? array( 'any' ) ) as $filetype )
+            $threadPolicy_obj->filetype[] = $filetype;
+        foreach( (array)( $entry['application'] ?? array( 'any' ) ) as $application )
+            $threadPolicy_obj->application[] = $application;
 
-        if( $add_WF_alert )
-        {
-            $tmp_name = "alert_vcp";
-            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $this);
-            $threadPolicy_obj->type = "ThreatPolicyWildfire";
+        $this->rules_obj[] = $threadPolicy_obj;
+        $threadPolicy_obj->addReference( $this );
 
-            $threadPolicy_obj->analysis = "public-cloud";
-            $threadPolicy_obj->direction = "both";
-            $threadPolicy_obj->filetype[] = "any";
-            $threadPolicy_obj->application[] = "any";
+        $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-            $this->rules_obj[] = $threadPolicy_obj;
-            $threadPolicy_obj->addReference( $this );
+        $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+        $add_WF_alert = true;
 
-            $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-            $threadPolicy_obj->newThreatPolicyXML($this->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
-
-        }
+        if( $this->secprof_type == 'wildfire' )
+            $this->bpSetVerify( 'visibility', 'WF rules', $this->wildfire_rules_visibility() );
     }
 
+    /**
+     * best-practice-set of the WF inline cloud analysis (mica-engine-wildfire-rules).
+     * The action comes from the BP JSON wildfire -> cloud-inline -> bp (entry with type 'any', as the checks);
+     * a negated condition ('!allow') keeps a compliant value, else 'block'. Nothing listed in the BP JSON or a
+     * PAN-OS version without inline ML: no change.
+     * The direction of every rule is set as well where the BP JSON gives one (the best-practice check compares it).
+     */
     public function wf_inlineML_BestPracticeSet(): void
     {
-        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $this->xmlroot);
-        if( $this->owner->owner->version >= 111 )
-        {
-            if( $tmp_mlav_engine === False )
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+        $this->wf_inlineML_setFromJSON( 'bp', 'block' );
+    }
 
-            $tmp_mlav_engine->textContent = "yes";
-        }
+    private function wf_inlineML_setFromJSON( string $section, string $fallback ): void
+    {
+        $validate = $this->inlineML_jsonAction( $section, 'wildfire' );
+        if( $validate === null )
+            return;
 
-
-        $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $this->xmlroot);
-        if( $this->owner->owner->version >= 111 )
-        {
-            if ($tmp_mlav_engine === False)
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $this->xmlroot);
-        }
-        if( $tmp_mlav_engine !== False )
-        {
-            if( !$tmp_mlav_engine->hasChildNodes() )
+        // direction of the BP JSON entry with type 'any' (string or list)
+        $direction = null;
+        $check_array = $this->bp_visibility_JSON( $section, 'wildfire' );
+        foreach( $check_array['inline-policy-action'] as $entry )
+            if( isset( $entry['type'][0] ) && $entry['type'][0] == 'any' && isset( $entry['direction'] ) )
             {
-                $xmlString1 = '<entry name="wf_inline_block">
-   <application>
-    <member>any</member>
-   </application>
-   <file-type>
-    <member>any</member>
-   </file-type>
-   <direction>both</direction>
-   <action>block</action>
-  </entry>';
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString1);
-                $tmp_mlav_engine->appendChild($xmlElement);
+                $direction = is_array( $entry['direction'] ) ? (string)$entry['direction'][0] : (string)$entry['direction'];
+                break;
             }
+        if( $direction !== null && strpos( $direction, '!' ) === 0 )
+            $direction = null;
 
-            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+        $container = DH::findFirstElementOrCreate( 'mica-engine-wildfire-rules', $this->xmlroot );
+        if( !$container->hasChildNodes() )
+        {
+            $value = self::inlineML_newValue( $validate, $fallback );
+            $ruleDirection = $direction !== null ? $direction : 'both';
+            $ruleName = 'wf_inline_'.$value;
+            $xmlString = '<entry name="'.$ruleName.'"><application><member>any</member></application><file-type><member>any</member></file-type>'
+                .'<direction>'.$ruleDirection.'</direction><action>'.$value.'</action></entry>';
+            $container->appendChild( DH::importXmlStringOrDie( $this->xmlroot->ownerDocument, $xmlString ) );
+            $this->additional['mica-engine-wildfire-rules'][$ruleName]['action'] = $value;
+            $this->additional['mica-engine-wildfire-rules'][$ruleName]['direction'] = $ruleDirection;
+        }
+        else
+        {
+            $this->inlineML_setEntriesFromJSON( $section, 'wildfire', 'mica-engine-wildfire-rules', 'action', $fallback );
+
+            if( $section == 'bp' && $direction !== null )
             {
-                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $name = DH::findAttribute( "name", $mlav_engine_entry);
-
-                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
-                $action_xmlNode->textContent = "block";
-
-                $this->additional['mica-engine-wildfire-rules'][$name]['action'] = "block";
+                foreach( $container->childNodes as $rule )
+                {
+                    if( $rule->nodeType != XML_ELEMENT_NODE )
+                        continue;
+                    $name = DH::findAttribute( "name", $rule );
+                    $directionNode = DH::findFirstElementOrCreate( 'direction', $rule );
+                    if( $directionNode->textContent !== $direction )
+                    {
+                        $directionNode->textContent = $direction;
+                        $this->additional['mica-engine-wildfire-rules'][$name]['direction'] = $direction;
+                    }
+                }
             }
         }
+
+        $tmp_enable = DH::findFirstElementOrCreate( 'cloud-inline-analysis', $this->xmlroot );
+        $tmp_enable->textContent = "yes";
+        $this->cloud_inline_analysis_enabled = true;
+
+        if( $this->secprof_type == 'wildfire' )
+            $this->bpSetVerify( $section, 'WF inline ML', $section == 'bp' ? $this->cloud_inline_analysis_best_practice() : $this->cloud_inline_analysis_visibility() );
     }
 
     public function wf_rules_BestPracticeSet(): void

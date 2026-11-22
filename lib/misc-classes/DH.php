@@ -631,16 +631,37 @@ class DH
         if( $debug )
             PH::print_stdout( "|".$fullpath."|");
 
-        if( strpos( $xpath, " member" ) !== FALSE )
-        {
-            if( strpos( $xpath, " members member" ) !== FALSE )
-                $xpath = str_replace( " members member", " members", $xpath );
-            elseif( strpos( $xpath, " members" ) !== FALSE )
-            {
+        //explanation:
+        //" member" must only be removed where it is a step of the path, never inside a quoted object name
+        //e.g. profile "Board member VP" must NOT become "Board VP"
+        //split into parts: even index => outside of quotes (path steps) / odd index => quoted object name
+        $xpathParts = preg_split( '/("[^"]*")/', $xpath, -1, PREG_SPLIT_DELIM_CAPTURE );
 
+        $xpathSteps = "";
+        foreach( $xpathParts as $partIndex => $part )
+        {
+            if( $partIndex % 2 == 0 )
+                $xpathSteps .= $part . '""';
+        }
+
+        if( strpos( $xpathSteps, " member" ) !== FALSE )
+        {
+            foreach( $xpathParts as $partIndex => $part )
+            {
+                if( $partIndex % 2 != 0 )
+                    continue;
+
+                if( strpos( $xpathSteps, " members member" ) !== FALSE )
+                    $xpathParts[$partIndex] = str_replace( " members member", " members", $part );
+                elseif( strpos( $xpathSteps, " members" ) !== FALSE )
+                {
+
+                }
+                else
+                    $xpathParts[$partIndex] = str_replace( " member", "", $part );
             }
-            else
-                $xpath = str_replace( " member", "", $xpath );
+
+            $xpath = implode( "", $xpathParts );
         }
 
         if( $element->nodeType == XML_ELEMENT_NODE ) //1

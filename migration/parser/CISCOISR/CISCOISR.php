@@ -1,6 +1,6 @@
 <?php
 
-require_once("parser/CISCOISR/CISCOISRmisc.php");
+require_once dirname(__FILE__) . "/CISCOISRmisc.php";
 
 class CISCOISR extends PARSER
 {

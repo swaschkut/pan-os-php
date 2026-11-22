@@ -1,0 +1,7 @@
+<config version="11.1.0"><mgt-config/><shared>
+<profiles><spyware>
+<entry name="AS-1"><botnet-domains><lists><entry name="default-paloalto-dns"><action><sinkhole/></action><packet-capture>disable</packet-capture></entry></lists><dns-security-categories><entry name="pan-dns-sec-malware"><log-level>default</log-level><action>sinkhole</action><packet-capture>disable</packet-capture></entry></dns-security-categories></botnet-domains></entry>
+<entry name="AS-2"><botnet-domains><lists><entry name="default-paloalto-dns"><action><alert/></action><packet-capture>disable</packet-capture></entry></lists></botnet-domains></entry>
+</spyware></profiles></shared>
+<devices><entry name="localhost.localdomain"><device-group><entry name="DG1"><profiles><spyware><entry name="AS-3"><botnet-domains><lists><entry name="default-paloalto-dns"><action><block/></action><packet-capture>disable</packet-capture></entry></lists></botnet-domains></entry></spyware></profiles></entry></device-group></entry></devices>
+<readonly><devices><entry name="localhost.localdomain"><device-group><entry name="DG1"><id>11</id></entry></device-group></entry></devices></readonly></config>

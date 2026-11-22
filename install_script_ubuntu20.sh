@@ -13,7 +13,7 @@ echo "START \"install PAN-OS-PHP on UBUNTU\"" \
 && echo "\"install tzdata\"" \
 && apt-get -y install tzdata bash-completion \
 && echo "" \
-&& apt install -y git php${PHP_VAR} vim php${PHP_VAR}-curl php${PHP_VAR}-dom php${PHP_VAR}-mbstring php${PHP_VAR}-bcmath php${PHP_VAR}-yaml \
+&& apt install -y git php${PHP_VAR} vim php${PHP_VAR}-curl php${PHP_VAR}-zip php${PHP_VAR}-dom php${PHP_VAR}-mbstring php${PHP_VAR}-bcmath php${PHP_VAR}-yaml \
 && echo "" \
 && apt install -y python3 python3-pandas python3-xlsxwriter python3-netaddr python3-requests \
 && echo "" \

@@ -436,3 +436,15 @@ RQuery::$defaultFilters['device']['template']['operators']['manageddevice.with-n
 );
 
 // </editor-fold>
+// the level of a device in the hierarchy, counted as the level of objects (shared = 1, a top device group = 2, …; SCM:
+// the folder chain with its snippets): a device group / SCM folder / device its own, a firewall / template stack /
+// template the levels of its device groups (one of them matches) - PH::deviceLevels
+RQuery::$defaultFilters['device']['level']['operators']['>,<,=,!'] = array(
+    'eval' => "PH::deviceLevelMatch( \$object, '!operator!', !value! )",
+    'arg' => TRUE,
+    'help' => 'level in the hierarchy (shared = 1, top device group = 2, …); a firewall / template stack / template: one of the levels of its device groups. ie: (level >= 3)',
+    'ci' => array(
+        'fString' => '(%PROP% 2)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);

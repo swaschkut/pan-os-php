@@ -1308,14 +1308,16 @@ class Container
     {
         if( $nested )
         {
-            $dgs = array();
+            // before: the direct children were collected in $dgs, the ones below in $containers - only those were
+            // returned (and $containers was undefined without grandchildren)
+            $containers = array();
 
             foreach( $this->_childContainers as $dg )
             {
-                $dgs[$dg->name()] = $dg;
-                $tmp = $dg->childContainers(TRUE);
-                foreach( $tmp as $sub )
-                    $containers[$sub->name()] = $sub;
+                $containers[$dg->name()] = $dg;
+                if( method_exists( $dg, 'childContainers' ) )
+                    foreach( $dg->childContainers(TRUE) as $sub )
+                        $containers[$sub->name()] = $sub;
             }
 
             return $containers;

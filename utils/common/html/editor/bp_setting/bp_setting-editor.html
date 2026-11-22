@@ -333,7 +333,21 @@
         }
     }
 
+    // embedded in the pan-os-php config viewer (sandboxed frame): the viewer sends the file, Export gives the result back
+    // (the viewer stores it as a new project file) - opened on its own the editor works as before
+    const inViewer = window.parent !== window;
+    window.addEventListener('message', (e) => {
+        if (e.source !== window.parent || !e.data || e.data.type !== 'panosphp-editor-load') return;
+        try {
+            jsonData = typeof e.data.json === 'string' ? JSON.parse(e.data.json) : e.data.json;
+            document.getElementById('downloadBtn').style.display = 'block';
+            setMode(appMode);
+        } catch (err) { }
+    });
+    if (inViewer) window.parent.postMessage({ type: 'panosphp-editor-ready' }, '*');
+
     document.getElementById('downloadBtn').onclick = () => {
+        if (inViewer) { window.parent.postMessage({ type: 'panosphp-editor-save', json: JSON.stringify(jsonData, null, 4) }, '*'); return; }
         const blob = new Blob([JSON.stringify(jsonData, null, 4)], {type: "application/json"});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
