@@ -1287,15 +1287,15 @@ async function egressPage(base, canWrite, redraw) {
         const x = await api('POST', base + '/scm/egress', fd);
         message(x.count + ' egress IP(s) imported'); await redraw();
     }); } }, field('Import: its infra/92_egress-ip.json, a snapshot (scm_egress_ip.php save=) or an export (zip)', file), el('button', { type: 'submit', text: 'Import' })) : null;
-    // live: run egress-ip with an egress-IP key of the user (Account, My API keys, kind egress IP); most tenants prod6
+    // live: run egress-ip with an egress-IP key of the user (Account, My API keys, kind egress IP); default prod8
     // (default), older tenants prod - a login error (HTTP 401) names the other one
     let live = null;
     if (canWrite) {
         const sel = (name, list) => el('select', { 'aria-label': name }, list.map(v => el('option', { value: v, text: v })));
         const st = sel('service type', r.options.servicetype), at = sel('address type', r.options.addrtype), lo = sel('location', r.options.location);
-        // the environment: the known ones (prod6 most tenants, prod older tenants, prod8) or another prod<N>
-        const envs = (r.options.env || ['prod6', 'prod', 'prod8']);
-        const envSel = el('select', { 'aria-label': 'environment', title: 'most tenants prod6, older tenants prod' }, envs.map(v => el('option', { value: v, text: v + (v === 'prod' ? ' (older tenants)' : '') })),
+        // the environment: the known ones (prod8 default, prod6, prod older tenants) or another prod<N>
+        const envs = (r.options.env || ['prod8', 'prod6', 'prod']);
+        const envSel = el('select', { 'aria-label': 'environment', title: 'default prod8, then prod6, older tenants prod' }, envs.map(v => el('option', { value: v, text: v + (v === 'prod' ? ' (older tenants)' : '') })),
             el('option', { value: '', text: 'other …' }));
         const envOther = el('input', { type: 'text', placeholder: 'prod<N>', pattern: 'prod[0-9]{0,2}', size: 8, 'aria-label': 'other environment', hidden: true });
         envSel.addEventListener('change', () => { envOther.hidden = envSel.value !== ''; });

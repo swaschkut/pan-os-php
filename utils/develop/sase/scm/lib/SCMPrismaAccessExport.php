@@ -533,7 +533,7 @@ class SCMPrismaAccessExport
     /**
      * @param string|null $apiKey egress-IP API key; null = skip
      */
-    public function exportEgressIP( $apiKey, $environment = "prod6" )
+    public function exportEgressIP( $apiKey, $environment = "prod8" )
     {
         $meta = array( 'area' => self::AREA_INFRA, 'order' => 92, 'name' => 'egress-ip', 'category' => 'context', 'scope' => 'tenant',
             'url' => 'getPrismaAccessIP/v2', 'depends_on' => array(), 'file' => self::AREA_INFRA . '/92_egress-ip.json', 'fetched_as' => 'selected' );
@@ -550,8 +550,8 @@ class SCMPrismaAccessExport
             mkdir($this->exportDir . "/" . self::AREA_INFRA, 0700, TRUE);
 
         PH::print_stdout( " - [infra 92] egress-ip (serviceType=all) ... " );
-        // auto: prod6 (most tenants), on a login error (HTTP 401 / 403) prod (older tenants), then prod8
-        $tries = $environment === 'auto' ? array( 'prod6', 'prod', 'prod8' ) : array( $environment );
+        // auto: prod8, on a login error (HTTP 401 / 403) prod6, then prod (older tenants)
+        $tries = $environment === 'auto' ? array( 'prod8', 'prod6', 'prod' ) : array( $environment );
         foreach( $tries as $i => $environment )
         {
             if( $i > 0 )
@@ -569,10 +569,10 @@ class SCMPrismaAccessExport
         {
             $meta['status'] = 'error';
             $meta['error'] = self::errorMessage($result['errors']);
-            // HTTP 401 / 403: wrong key or the other environment (prod6 / prod)
+            // HTTP 401 / 403: wrong key or another environment (prod8 / prod6 / prod)
             if( in_array( (int)$result['http_code'], array( 401, 403 ), TRUE ) )
                 $meta['error'] .= ' - login failed: check the egress-IP API key and the environment: now ' . $environment
-                    . ', try another egressip-env (prod6 / prod / prod8 / prod<N>) or auto';
+                    . ', try another egressip-env (prod8 / prod6 / prod / prod<N>) or auto';
             PH::print_stdout( "     x ERROR: " . $meta['error'] );
             $data = null;
         }

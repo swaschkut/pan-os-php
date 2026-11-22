@@ -292,7 +292,7 @@ remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch 
 | `problem with SCM API connection - not possible to get 'access_token'` | wrong `client_id` / `client_secret` or TSG → fix the line in `~/.panconfkeystore`; QA tenant: add `shadow-saseapiqa` |
 | many endpoints `unavailable` | product not licensed or service account without role → expected / add role |
 | endpoint `error` with HTTP 400 / 404 | API path or parameter not valid for this tenant → note it in the verification list ([NEXT_STEPS](../../../../todo/scm-pa-export-next-steps.md) §4) |
-| egress IP error | try `egressip-env=prod6`; check the egress API key |
+| egress IP error | try `egressip-env=auto` (prod8, prod6, prod); check the egress API key |
 | `psk-list.csv` shows `DECRYPT_FAILED` | normal for SCM tenants (own master key) → fill `psk_new`, check with `scm_pa_secret_check.php` (4.2); a known master key: `master-key=<key>` |
 | export of `config` takes long | default `config-mode=leaf` already queries only the deepest folders and runs 8 requests in parallel; further: `config-scope=` / `container=` / `config-types=`; try `config-parallel=16` if no HTTP 429 occurs |
 | compare: "not comparable – not exported in right" | the two exports used different areas / filters → export again with the same options |

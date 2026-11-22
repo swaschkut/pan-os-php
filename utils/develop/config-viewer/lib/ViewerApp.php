@@ -2091,9 +2091,9 @@ class ViewerApp
             {
                 throw new ViewerException( $e->getMessage(), 400 );
             }
-            $env = (string)( $in['env'] ?? 'prod6' );
+            $env = (string)( $in['env'] ?? 'prod8' );
             if( !SCMEgressIP::validEnv( $env ) )
-                throw new ViewerException( 'env: prod6 (default), prod (older tenants), prod8 or another prod<N>', 400 );
+                throw new ViewerException( 'env: prod8 (default), prod6, prod (older tenants) or another prod<N>', 400 );
             $args = array( 'x-egress-key=' . $k['kid'], 'x-egress-target=egressip:' . $k['target'], 'servicetype=' . $req['serviceType'],
                 'addrtype=' . $req['addrType'], 'location=' . $req['location'], 'env=' . $env );
         }
@@ -3575,7 +3575,7 @@ class ViewerApp
         if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) )
         {
             $this->paCollect( $p, $dir, $host, $j['jid'], 'import', $u['name'] ?? '?', time(), array_keys( self::SCM_PA_PAGES ) );
-            // the egress IPs (scm-export egressip with the api_key of the tenant, prod6 / prod): a state of Egress IP
+            // the egress IPs (scm-export egressip with the api_key of the tenant, prod8 / prod6 / prod): a state of Egress IP
             $this->egressFromExport( $p, $dir, $host, $j['jid'], $u['name'] ?? '?' );
         }
     }

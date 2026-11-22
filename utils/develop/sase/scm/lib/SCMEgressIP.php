@@ -34,12 +34,12 @@ class SCMEgressIP
     const COLUMNS = array( 'service_type', 'location', 'address', 'address_type', 'zone_subnet', 'create_time', 'allow_listed' );
 
     /**
-     * environment of the egress-IP API (host api.<env>.datapath.prismaaccess.com): prod6 for most tenants (default),
-     * prod for older tenants, prod8; any other prod<N> can be given (new environments). The known ones in the order
+     * environment of the egress-IP API (host api.<env>.datapath.prismaaccess.com): prod8 (default), prod6, prod for
+     * older tenants; any other prod<N> can be given (new environments). The known ones in the order
      * egressip-env=auto tries them.
      */
-    const ENVIRONMENTS = array( 'prod6', 'prod', 'prod8' );
-    const ENV_DEFAULT = 'prod6';
+    const ENVIRONMENTS = array( 'prod8', 'prod6', 'prod' );
+    const ENV_DEFAULT = 'prod8';
     const ENV_PATTERN = '/^prod[0-9]{0,2}$/';
 
     public static function validEnv( string $env ): bool
@@ -47,7 +47,7 @@ class SCMEgressIP
         return preg_match( self::ENV_PATTERN, $env ) === 1;
     }
 
-    /** the URL of the egress-IP API of an environment (prod, prod6, prod8, prod<N>) */
+    /** the URL of the egress-IP API of an environment (prod8, prod6, prod, prod<N>) */
     public static function url( string $env ): string
     {
         if( !self::validEnv( $env ) )
@@ -57,7 +57,7 @@ class SCMEgressIP
 
     /**
      * Hint for an error of the egress-IP API: HTTP 401 / 403 (login) - a wrong key, a key of another tenant or the other
-     * environment (most tenants prod6, older tenants prod); '' for other errors
+     * environment (prod8, prod6, older tenants prod); '' for other errors
      */
     public static function loginHint( string $error, string $env, string $tsg = '' ): string
     {
@@ -66,7 +66,7 @@ class SCMEgressIP
         $other = array_values( array_diff( self::ENVIRONMENTS, array( $env ) ) );
         return ' - login failed: check the egress-IP API key' . ( $tsg !== '' ? ' of TSG ' . $tsg : '' )
             . ' (Prisma Access > Infrastructure Settings > Egress IP API) and the environment: now ' . $env
-            . ', try env=' . implode( ' / env=', $other ) . ' (most tenants prod6, older tenants prod)';
+            . ', try env=' . implode( ' / env=', $other ) . ' (default prod8, then prod6, older tenants prod)';
     }
 
     /**

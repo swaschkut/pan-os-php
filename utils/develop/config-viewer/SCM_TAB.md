@@ -46,8 +46,8 @@ Folders / snippets / hierarchy are not a menu entry here: they are the SCM confi
    as the SCM API gives them (only what scm_pa_export.php itself redacts: api_key of shared-infrastructure-settings).
    The egress-IP API key (that api_key) goes into the key store of the user (kind egress IP, target TSG):
    `scm_pa_export.php egressip-key-out=<file>`.
-   With that key the import reads the egress IPs as well (`egressip egressip-env=auto`: prod6, on HTTP 401 / 403
-   prod, then prod8; any other environment prod<N> can be given): a state of Prisma Access > Egress IP (source "SCM import", the environment that answered).
+   With that key the import reads the egress IPs as well (`egressip egressip-env=auto`: prod8, on HTTP 401 / 403
+   prod6, then prod; any other environment prod<N> can be given): a state of Prisma Access > Egress IP (source "SCM import", the environment that answered).
 2. **Live refresh** - a button per page: the same call as the export, with the personal key of the user (key store,
    kind SCM / egress IP; network for runs per user, as today). The result is a new version of that area.
 3. **Compare** - every page shows what changed between two versions (default: the last import against the live
@@ -98,7 +98,7 @@ Nothing is written to SCM directly from the viewer (neither the SCM API nor the 
 ## Egress IP (built)
 
 CLI: `php utils/develop/sase/scm/scm_egress_ip.php tsg=<TSG> [servicetype=all] [addrtype=all] [location=all]
-[env=prod6|prod|prod8|prod<N>] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json]
+[env=prod8|prod6|prod|prod<N>] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json]
 [compare=previous.json|export-dir] [in=export-dir|92_egress-ip.json]`
 
 - `option=` reads the request body of the Palo Alto documentation ("API examples for retrieving Prisma Access IP
