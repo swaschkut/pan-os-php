@@ -32,7 +32,9 @@ class ViewerGit
 {
     const TRAILERS = array( 'type' => 'Type', 'location' => 'Location', 'template' => 'Template', 'ruletype' => 'Ruletype',
         'securityprofiletype' => 'Securityprofiletype', 'filter' => 'Filter', 'actions' => 'Action', 'field' => 'Field', 'user' => 'User',
-        'reverts' => 'Reverts', 'run' => 'Run', 'settings' => 'Settings' );
+        'reverts' => 'Reverts', 'run' => 'Run', 'settings' => 'Settings',
+        // the first commit of a version (its state when it was first opened - no change)
+        'version' => 'Version' );
 
     private $dir;
     private $git;

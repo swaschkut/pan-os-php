@@ -497,6 +497,17 @@ $av = $alice->call( 'GET', $SPC . '/object?type=securityprofile&location=shared&
 eq( array( $rows['AV-shared']['refcount'] ?? null, $rows['AS-dg']['refcount'] ?? null, status( $refs ), count( $refs[1]['objects'][0]['references'] ?? $refs[1]['references'] ?? array() ),
     strpos( (string)( $av['xml'] ?? '' ), '<entry name="AV-shared">' ) === 0, is_array( $av['history'] ?? null ) ),
     array( 2, 1, 200, 2, TRUE, TRUE ), 'security profiles: count of references, references (profile group, rule), XML and history' );
+// an object after the first 20 of its location (before: only the first 20 objects of a location had their XML - an
+// address group after 30 addresses had none); the first commit of a version is its start (subject "version …")
+$r = $alice->call( 'POST', $SP . '/configs', null, array( 'many.xml', file_get_contents( $here . '/input/many-objects-panorama.xml' ) ) );
+$gl = $alice->call( 'GET', $SP . '/configs/' . $r[1]['cid'] . '/object?type=address&location=DG1&name=G-late' )[1];
+eq( array( strpos( (string)( $gl['xml'] ?? '' ), '<entry name="G-late">' ) === 0, count( $gl['history']['commits'] ?? array() ), isset( $gl['history']['commits'][0]['change']['version'] ) ),
+    array( TRUE, 1, TRUE ), 'object window: the XML of an object after the first 20 of its location; the only commit is the start of the version' );
+// EDL: list type, recurring and URL in the list (before: only in the text output of pan-os-php)
+$r = $alice->call( 'POST', $SP . '/configs', null, array( 'edl.xml', file_get_contents( $here . '/input/edl-firewall.xml' ) ) );
+$edl = array_column( $alice->call( 'GET', $SP . '/configs/' . $r[1]['cid'] . '/objects?type=edl&location=any' )[1]['rows'] ?? array(), null, 'name' );
+eq( array( $edl['EDL1']['edl-type'] ?? null, $edl['EDL1']['recurring'] ?? null, $edl['EDL2']['recurring'] ?? null, $edl['EDL2']['url'] ?? null ),
+    array( 'ip', 'hourly', 'daily', 'https://lists.example.com/u.txt' ), 'EDL: list type, recurring, URL' );
 eq( status( $alice->call( 'DELETE', $SP ) ), 200, 'security profiles: project deleted (its worker stops)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );

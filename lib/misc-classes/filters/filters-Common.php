@@ -838,13 +838,23 @@ RQuery::registerFilter( array(
     )
 ) );
 
+// (refcount >|<|=|! n): for every type with references (action displayreferences) - also application, certificate,
+// device, ike-gateway, ike-profile, interface, ipsec-profile, threat; an object of a type without counted references
+// (no countReferences) never matches
 RQuery::registerFilter( array(
     'address',
+    'application',
+    'certificate',
+    'device',
     'dns-rule',
     'edl',
     'gp-gateway',
     'gp-portal',
+    'ike-gateway',
+    'ike-profile',
+    'interface',
     'interface-management-profile',
+    'ipsec-profile',
     'log-profile',
     'profile',
     'schedule',
@@ -852,11 +862,12 @@ RQuery::registerFilter( array(
     'securityprofilegroup',
     'service',
     'tag',
+    'threat',
     'threat-rule',
     'zone',
     'zone-protection-profile'
 ), 'refcount', '>,<,=,!', array(
-    'eval' => '$object->countReferences() !operator! !value!',
+    'eval' => 'method_exists( $object, "countReferences" ) && $object->countReferences() !operator! !value!',
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',

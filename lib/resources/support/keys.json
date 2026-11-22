@@ -1,5 +1,6 @@
 {
     "about": "public keys of the support of pan-os-php: support files (SupportFile) are encrypted for the last key of this list. Add the entry that 'license.php support-keygen' prints (licence tool, private repository). Only public keys here - never the key pair.",
     "keys": [
+        {"kid":"sven-support-2026","public":"oquVwNHBSnarJYBLRdU6RBBADlrWO8zHvIqECF0V2EI="}
     ]
 }

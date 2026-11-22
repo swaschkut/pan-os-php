@@ -1,0 +1,11 @@
+<config version="10.2.0">
+  <mgt-config/>
+  <shared/>
+  <devices><entry name="localhost.localdomain"><device-group>
+    <entry name="DG1">
+      <address><entry name="h1"><ip-netmask>10.0.0.1</ip-netmask></entry><entry name="h2"><ip-netmask>10.0.0.2</ip-netmask></entry><entry name="h3"><ip-netmask>10.0.0.3</ip-netmask></entry><entry name="h4"><ip-netmask>10.0.0.4</ip-netmask></entry><entry name="h5"><ip-netmask>10.0.0.5</ip-netmask></entry><entry name="h6"><ip-netmask>10.0.0.6</ip-netmask></entry><entry name="h7"><ip-netmask>10.0.0.7</ip-netmask></entry><entry name="h8"><ip-netmask>10.0.0.8</ip-netmask></entry><entry name="h9"><ip-netmask>10.0.0.9</ip-netmask></entry><entry name="h10"><ip-netmask>10.0.0.10</ip-netmask></entry><entry name="h11"><ip-netmask>10.0.0.11</ip-netmask></entry><entry name="h12"><ip-netmask>10.0.0.12</ip-netmask></entry><entry name="h13"><ip-netmask>10.0.0.13</ip-netmask></entry><entry name="h14"><ip-netmask>10.0.0.14</ip-netmask></entry><entry name="h15"><ip-netmask>10.0.0.15</ip-netmask></entry><entry name="h16"><ip-netmask>10.0.0.16</ip-netmask></entry><entry name="h17"><ip-netmask>10.0.0.17</ip-netmask></entry><entry name="h18"><ip-netmask>10.0.0.18</ip-netmask></entry><entry name="h19"><ip-netmask>10.0.0.19</ip-netmask></entry><entry name="h20"><ip-netmask>10.0.0.20</ip-netmask></entry><entry name="h21"><ip-netmask>10.0.0.21</ip-netmask></entry><entry name="h22"><ip-netmask>10.0.0.22</ip-netmask></entry><entry name="h23"><ip-netmask>10.0.0.23</ip-netmask></entry><entry name="h24"><ip-netmask>10.0.0.24</ip-netmask></entry><entry name="h25"><ip-netmask>10.0.0.25</ip-netmask></entry><entry name="h26"><ip-netmask>10.0.0.26</ip-netmask></entry><entry name="h27"><ip-netmask>10.0.0.27</ip-netmask></entry><entry name="h28"><ip-netmask>10.0.0.28</ip-netmask></entry><entry name="h29"><ip-netmask>10.0.0.29</ip-netmask></entry><entry name="h30"><ip-netmask>10.0.0.30</ip-netmask></entry></address>
+      <address-group><entry name="G-late"><static><member>h30</member></static></entry></address-group>
+    </entry>
+  </device-group></entry></devices>
+  <readonly><devices><entry name="localhost.localdomain"><device-group><entry name="DG1"><id>11</id></entry></device-group></entry></devices></readonly>
+</config>

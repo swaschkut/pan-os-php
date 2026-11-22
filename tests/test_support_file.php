@@ -101,10 +101,12 @@ $ok( $rc === 0 && isset( $map['names']['web2'] ) && $left === array() && count( 
     && json_decode( $z['manifest.json'], TRUE )['anonymized'] === TRUE && isset( json_decode( $z['config/objects.json'], TRUE )[$map['names']['web2']] ),
     'support-file anonymize: mapping only in mapping=, no original name / address in the support file, objects under their pseudonyms' );
 
-// ---- no support key: no support file
+// ---- the shipped support key is valid; a support file is made for the last key of the list
 putenv( 'PANOSPHP_SUPPORT_TEST_KEYS' );
+$shipped = SupportFile::trustedKeys();
 list( $rc, $o ) = $run( 'type=support-file in=in.xml out=n.tsf' );
-$ok( strpos( $o, 'no support key' ) !== FALSE && !is_file( $dir . '/n.tsf' ), 'support-file: without a support key nothing is written' );
+$ok( count( $shipped ) >= 1 && $rc === 0 && SupportFile::header( (string)file_get_contents( $dir . '/n.tsf' ) )['kid'] === array_key_last( $shipped ),
+    'support-file: the shipped support key (lib/resources/support/keys.json) is valid, the file is made for the last one' );
 
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 echo $count . " checks, " . $fail . " failed\n";

@@ -499,10 +499,19 @@ function viewerRun( $type, array $args )
     }
     if( $withXml )
     {
+        // only the object of the window: objectsToProcess holds every object of the location (the filter is applied
+        // by the actions) - before, the first 20 of the location were taken: an object further back (e.g. an address
+        // group after the addresses) had no XML, and every read paid the paths of 20 objects (ConfigObjectSplit::
+        // entryPath walks the whole document - about 1 s on a big configuration)
+        $xmlName = null;
+        foreach( $args as $a )
+            if( preg_match( '/^filter=\(name eq (.+)\)$/s', $a, $m ) )
+                $xmlName = $m[1];
         $GLOBALS['viewerXml'] = array();
         foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
             foreach( viewerSetObjects( $set ) as $o )
-                if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' ) && count( $GLOBALS['viewerXml'] ) < 20 )
+                if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' )
+                    && ( $xmlName === null ? count( $GLOBALS['viewerXml'] ) < 20 : $o->name() === $xmlName ) && count( $GLOBALS['viewerXml'] ) < 50 )
                 {
                     $loc = PH::getLocationString( $o );
                     $tpl = PH::findTemplateOwner( $o );

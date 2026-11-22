@@ -950,7 +950,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1724,6 +1724,18 @@
                     }
                 }
             },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "risk": {
                 "operators": {
                     ">,<,=,!": {
@@ -2086,6 +2098,18 @@
                 "operators": {
                     ">,<,=,!": {
                         "eval": "$object->hasPublicKey() && $object->getPkeyBits() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -2969,6 +2993,18 @@
                     }
                 }
             },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "template": {
                 "operators": {
                     "has-multi-vsys": {
@@ -3345,7 +3381,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3702,7 +3738,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3923,7 +3959,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4095,7 +4131,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4302,6 +4338,18 @@
                         }
                     }
                 }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
             }
         }
     },
@@ -4432,6 +4480,18 @@
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4647,6 +4707,18 @@
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -4895,7 +4967,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5079,6 +5151,18 @@
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5431,7 +5515,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5817,7 +5901,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -9842,7 +9926,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11178,7 +11262,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11990,7 +12074,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -12945,7 +13029,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -13480,6 +13564,16 @@
         "action": [],
         "filter": []
     },
+    "support-file": {
+        "name": "support-file",
+        "action": [],
+        "filter": []
+    },
+    "support-file-read": {
+        "name": "support-file-read",
+        "action": [],
+        "filter": []
+    },
     "system-log": {
         "name": "system-log",
         "action": [],
@@ -13889,7 +13983,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -14157,6 +14251,18 @@
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14536,7 +14642,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15095,7 +15201,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15447,7 +15553,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countReferences() !operator! !value!",
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",

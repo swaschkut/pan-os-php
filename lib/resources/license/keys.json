@@ -1,7 +1,6 @@
 {
     "about": "public keys that may sign licences of pan-os-php plug-ins (PluginLicense). Add the entry that 'license.php keygen' prints (licence tool, private repository). Only public keys here - never a signing key.",
     "keys": [
-        {"kid":"sven-2026","public":"ocbwlyS6+2Mna32PvV4ikAHRr0unVhT5aH6MBHi3rQs="},
-        {"kid":"sven-support-2026","public":"oquVwNHBSnarJYBLRdU6RBBADlrWO8zHvIqECF0V2EI="}
+        {"kid":"sven-2026","public":"ocbwlyS6+2Mna32PvV4ikAHRr0unVhT5aH6MBHi3rQs="}
     ]
 }
