@@ -48,7 +48,7 @@ Old detailed information
 
 **Requirements** :
  - PHP 8.3 with curl module [ tested with PHP 8.1 / 8.2 / 8.3 ]
- - php-curl php-dom php-mbstring php-bcmath
+ - php-curl php-dom php-mbstring php-bcmath php-zip
 
 **Usage**: include the file lib/pan_php_framework.php in your own script to load the necessary classes.
 ```php

@@ -3284,12 +3284,21 @@ class ViewerApp
         return array( 'from' => 'image', 'meta' => array( 'version' => $this->imageAppidVersion() ) );
     }
 
+    /** the PHP extension zip (ZipArchive) on the server: a clear error instead of "Class ZipArchive not found" */
+    public static function needZip(): void
+    {
+        if( !class_exists( 'ZipArchive' ) )
+            throw new ViewerException( 'the PHP extension zip is missing on the server (php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION
+                . '-zip / docker-php-ext-install zip) - a zip can not be read; JSON files can still be imported', 500 );
+    }
+
     /** MaxMind data from an uploaded GeoLite2-Country-CSV zip (air gap): a run without network makes the data */
     public function geoipUpload( array $user, ?array $upload ): array
     {
         $p = $this->systemProject( $user );
         if( $upload === null || ( $upload['error'] ?? 1 ) !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
             throw new ViewerException( 'file: the GeoLite2-Country-CSV zip of MaxMind', 400 );
+        self::needZip();
         $zip = new ZipArchive();
         $ok = $zip->open( $upload['tmp_name'] ) === TRUE;
         $names = array();
@@ -3421,7 +3430,25 @@ class ViewerApp
             return array( 'memory', 'out of memory: the run was stopped because it needed more memory than it may use'
                 . ( $memoryLimit !== null ? ' (limit per run: ' . $memoryLimit . ' - setting VIEWER_RUN_MEMORY)' : '' )
                 . '. For a playbook: options "subprocess" or "memory threshold"; see run.log' );
-        return array( 'error', 'pan-os-php ended with an error (see run.log)' );
+        $line = self::lastErrorLine( $logTail );
+        return array( 'error', 'pan-os-php ended with an error' . ( $line !== null ? ': ' . $line : '' ) . ' (see run.log)' );
+    }
+
+    /**
+     * The last error pan-os-php wrote into run.log ("ERROR: …" of a script, "* ** ERROR ** * …" of derr, "PHP Fatal
+     * error: …"), shown with a failed run: without colours, one line, at most 400 characters, values of key / password /
+     * secret / token masked (an error never carries the secret itself, but to be sure).
+     */
+    public static function lastErrorLine( string $logTail ): ?string
+    {
+        $text = preg_replace( '/\x1b\[[0-9;]*[A-Za-z]/', '', $logTail );
+        if( preg_match_all( '/^\s*(?:\* \*\* ERROR \*\* \*|ERROR:|PHP Fatal error:)\s*(.+)$/m', $text, $m ) === 0 )
+            return null;
+        $line = trim( preg_replace( '/\s+/', ' ', end( $m[1] ) ) );
+        $line = preg_replace( '/\b(api[_-]?key|key|password|passwd|secret|client_secret|token)(\s*[=:]\s*)("?)[^\s",&]+/i', '$1$2$3***', $line );
+        if( $line === '' )
+            return null;
+        return strlen( $line ) > 400 ? substr( $line, 0, 400 ) . ' …' : $line;
     }
 
     /** after a restart of the runner: nothing is running any more */
@@ -4940,6 +4967,7 @@ class ViewerApp
             if( $head === "PK\x03\x04" )
             {
                 // a zip of the export: only its infra/92_egress-ip.json is read (no secrets of the export are kept)
+                self::needZip();
                 $z = new ZipArchive();
                 if( $z->open( $src ) !== TRUE )
                     throw new ViewerException( 'file: the zip can not be read', 400 );

@@ -74,12 +74,21 @@ class SUPPORTFILE__ extends UTIL
         $this->help( PH::$args );
         try
         {
+            self::needZip();
             $read ? $this->read() : $this->create();
         }
         catch( Exception $e )
         {
             derr( $e->getMessage(), null, FALSE );
         }
+    }
+
+    /** the PHP extension zip (class ZipArchive): a clear error instead of "Class ZipArchive not found" */
+    public static function needZip(): void
+    {
+        if( !class_exists( 'ZipArchive' ) )
+            throw new Exception( 'the PHP extension zip is missing (Debian / Ubuntu: apt-get install php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION
+                . '-zip; image php:*: docker-php-ext-install zip; check with: php -m | grep zip)' );
     }
 
     // ------------------------------------------------------------------ create

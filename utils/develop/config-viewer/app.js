@@ -1177,12 +1177,13 @@ async function egressPage(base, canWrite, redraw) {
             const status = el('span', { class: 'muted' });
             live = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const job = await api('POST', base + '/egress-ip/runs', { kid: key.value, servicetype: st.value, addrtype: at.value, location: lo.value, env: env.value });
-                status.textContent = 'reading live …';
+                status.className = 'muted'; status.textContent = 'reading live …';
                 const t = setInterval(async () => {
                     const x = await api('GET', base + '/runs/' + job.jid).catch(() => null);
                     if (!x || (x.state !== 'done' && x.state !== 'failed')) return;
                     clearInterval(t);
-                    if (x.state === 'failed') { status.textContent = ''; message('live read failed: ' + (x.error || 'see Runs'), 'error'); return; }
+                    // the error stays next to the button (e.g. HTTP 401 of the egress-IP API: wrong key / other environment)
+                    if (x.state === 'failed') { status.className = 'error'; status.textContent = 'live read failed: ' + (x.error || 'see Runs'); message('live read failed: ' + (x.error || 'see Runs'), 'error'); return; }
                     message('egress IPs read live'); await redraw();
                 }, 1500);
                 state.timers.push(t);

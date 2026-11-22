@@ -90,7 +90,13 @@ try
             throw new Exception( "no egress-IP API key for TSG " . $tsg );
         $r = $connector->getPrismaAccessEgressIP( $key, $request['serviceType'], $request['addrType'], $request['location'], $env );
         if( $r['errors'] !== null )
-            throw new Exception( "egress-IP API (" . $r['url'] . "): " . json_encode( $r['errors'] ) );
+        {
+            $e = json_encode( $r['errors'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+            // 401 / 403: the key is wrong, of another tenant or of the other environment (prod / prod6)
+            $hint = preg_match( '/HTTP 40[13]\b/', $e ) === 1 ? ' - check the egress-IP API key of TSG ' . $tsg
+                . ' (Prisma Access > Infrastructure Settings > Egress IP API) and the environment (env=' . $env . ')' : '';
+            throw new Exception( "egress-IP API (" . $r['url'] . "): " . $e . $hint );
+        }
         $rows = SCMEgressIP::rows( $r['json']['result'] ?? array(), $request['serviceType'] );
         $fetched = date( 'c' );
     }

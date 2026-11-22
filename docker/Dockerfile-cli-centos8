@@ -40,6 +40,7 @@ RUN yum -y install \
         php-json \
         php-intl \
         php-curl \
+        php-zip \
         php-dom \
         php-mbstring \
         php-bcmath \

@@ -28,6 +28,7 @@ RUN apt-get update --fix-missing \
     inetutils-traceroute \
     php$php_var \
     php$php_var-curl \
+    php$php_var-zip \
     php$php_var-dom \
     php$php_var-mbstring \
     php$php_var-bcmath \

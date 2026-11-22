@@ -376,8 +376,14 @@ eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, strpos( $r[1]['error
     array( 'failed', 'memory', TRUE, TRUE ), 'container killed (137): failed, reason memory, with the limit per run' );
 $r = call( 'POST', $P . '/configs/' . $cid . '/playbook/runs', array( 'playbook' => $pb, 'memorythreshold' => 999872 ) );
 $r = waitRun( $P . '/runs/' . ( $r[1]['jid'] ?? '' ) );
-eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, $r[1]['error'] ?? null ), array( 'failed', 'error', 'pan-os-php ended with an error (see run.log)' ),
+eq( array( $r[1]['state'] ?? null, $r[1]['reason'] ?? null, strpos( $r[1]['error'] ?? '', 'pan-os-php ended with an error' ) === 0 ), array( 'failed', 'error', TRUE ),
     'other error: reason error' );
+eq( array( ViewerApp::runFailure( 1, null, "x\nERROR: egress-IP API (https://api.prod.datapath.prismaaccess.com/getPrismaAccessIP/v2): [{\"message\":\"HTTP 401\"}] - check the key\n", null )[1],
+    ViewerApp::runFailure( 1, null, "a\n\033[1m\n* ** ERROR ** * \033[0mno such object\n", null )[1], ViewerApp::lastErrorLine( "ERROR: login failed password=geheim1 key: abc\n" ),
+    ViewerApp::runFailure( 1, null, "nothing\n", null )[1] ),
+    array( 'pan-os-php ended with an error: egress-IP API (https://api.prod.datapath.prismaaccess.com/getPrismaAccessIP/v2): [{"message":"HTTP 401"}] - check the key (see run.log)',
+        'pan-os-php ended with an error: no such object (see run.log)', 'login failed password=*** key: ***', 'pan-os-php ended with an error (see run.log)' ),
+    'failed run: the last error line of run.log in the message (without colours, secrets masked)' );
 eq( array( ViewerApp::runFailure( 1, null, "x\n ** step type=rule ended with exit code 137 - the process was killed, most likely out of memory - the playbook stops here", null )[0],
     ViewerApp::runFailure( 255, null, "PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes)", null )[0],
     ViewerApp::runFailure( -1, 9, '', null )[0], ViewerApp::runFailure( 1, null, 'derr: no such object', '4g' )[0] ),

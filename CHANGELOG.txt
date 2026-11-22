@@ -108,6 +108,10 @@ UTIL:
 * location=shared:includechilddgs / shared:excludemaindg | Panorama: shared + all device groups / all device groups; SCM: location=<container>:includechilddgs / :excludemaindg - the container and the containers / devices below it
 
 BUGFIX:
+* docker / install scripts | the PHP extension zip was not installed (type=support-file: "Class ZipArchive not found"): php$php_var-zip / php-zip in every Dockerfile and install script, the images php:* with libzip-dev + docker-php-ext-install zip; README: php-zip
+* type=support-file / support-file-read, config-viewer (MaxMind zip, egress-IP zip import) | without the PHP extension zip a clear error (what to install) instead of "Class ZipArchive not found"
+* config-viewer | a failed run showed only "pan-os-php ended with an error (see run.log)" - now with the last error of run.log (ERROR: / derr / PHP Fatal error; secrets masked); egress IP "Read live": the error stays next to the button
+* scm_egress_ip.php | HTTP 401 / 403 of the egress-IP API: hint to check the key of the TSG and the environment prod / prod6
 * application filter (App::filteredApps) | SCM folder (Buckbeak): "Attempt to read property appStore on null"; Panorama device group / firewall: the predefined apps were not matched (only the custom apps of the store and of shared) - now its store and every store above it (parentCentralStore: parent device groups / folders, shared / All, predefined)
 * config-viewer | network objects of a template (IKE gateway, GlobalProtect portal / gateway, …) were not in the list (location=shared template=T1: 0 objects) and "Open ↗" of their references showed "the object is not in this version" - pan-os-php puts them under Template / TemplateStack in shadow-json, the viewer read only …Conf; a vsys of a template is opened with location=any + template
 * config-viewer | template stack: its templates were taken as "the template of the object" (badge "template T1,T2", no XML, no references) and not shown - now field templates; firewall: template stack and its templates shown, the direct template as device-template
