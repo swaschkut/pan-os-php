@@ -283,8 +283,10 @@ class PH
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
 
+
     private static $library_version_bugfix = 63;
-    private static $library_version_release = "alpha";
+    private static $library_version_release = "beta";
+
 
 
 
