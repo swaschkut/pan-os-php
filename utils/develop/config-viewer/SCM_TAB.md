@@ -46,6 +46,8 @@ Folders / snippets / hierarchy are not a menu entry here: they are the SCM confi
    as the SCM API gives them (only what scm_pa_export.php itself redacts: api_key of shared-infrastructure-settings).
    The egress-IP API key (that api_key) goes into the key store of the user (kind egress IP, target TSG):
    `scm_pa_export.php egressip-key-out=<file>`.
+   With that key the import reads the egress IPs as well (`egressip egressip-env=auto`: prod6, on HTTP 401 / 403
+   prod): a state of Prisma Access > Egress IP (source "SCM import", the environment that answered).
 2. **Live refresh** - a button per page: the same call as the export, with the personal key of the user (key store,
    kind SCM / egress IP; network for runs per user, as today). The result is a new version of that area.
 3. **Compare** - every page shows what changed between two versions (default: the last import against the live

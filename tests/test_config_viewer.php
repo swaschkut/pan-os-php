@@ -812,6 +812,18 @@ $kl = array_values( array_filter( $alice->call( 'GET', 'keys' )[1]['keys'] ?? ar
 eq( array( $ekr, count( $kl ), $kl[0]['label'] ?? null, $kl[0]['hint'] ?? null, strpos( json_encode( $kl ), 'egress-key-from-scm' ) ),
     array( array( 'added', 'same', 'updated', null ), 1, 'TSG 5550001111 (from SCM)', "\u{2026}cm-2", FALSE ),
     'egress-IP API key of the SCM API into the key store of the user (added / same / updated), never shown' );
+// the SCM import runs egressip (egressip-env=auto) as well: its infra/92_egress-ip.json becomes a state of Egress IP
+@mkdir( $paJob1 . '/scm-export/1234567890/20261122-100000/infra', 0700, TRUE );
+file_put_contents( $paJob1 . '/scm-export/1234567890/20261122-100000/infra/92_egress-ip.json', json_encode( array( 'endpoint' => 'egress-ip', 'environment' => 'prod',
+    'request' => array( 'serviceType' => 'all', 'addrType' => 'all', 'location' => 'all' ), 'status' => 'ok', 'fetched_at' => '2026-11-22T10:00:00+01:00',
+    'data' => array( array( 'zone' => 'Germany Central', 'address_details' => array( array( 'address' => '198.51.100.50', 'serviceType' => 'gp_gateway', 'addressType' => 'active' ) ) ) ) ) ) );
+$ef = new ReflectionMethod( 'ViewerApp', 'egressFromExport' );
+$ef->setAccessible( TRUE );
+$efr = array( $ef->invoke( $va, array( 'pid' => $pid ), $paJob1, '1234567890', 'eeee5555', 'alice' ), $ef->invoke( $va, array( 'pid' => $pid ), $paJob1, '1234567890', 'eeee5555', 'alice' ),
+    $ef->invoke( $va, array( 'pid' => $pid ), $paJob2, '1234567890', 'ffff6666', 'alice' ) );
+$egs = array_values( array_filter( $alice->call( 'GET', $EG . '/scm/egress' )[1]['states'] ?? array(), function( $x ) { return $x['id'] === 'eeee5555'; } ) );
+eq( array( $efr, $egs[0]['source'] ?? null, $egs[0]['name'] ?? null, $egs[0]['count'] ?? null ), array( array( TRUE, FALSE, FALSE ), 'SCM import', 'prod', 1 ),
+    'SCM import with egressip: the egress IPs of the export as a state of Egress IP (once; an export without them: none)' );
 // System: the settings of Panorama / a template / SCM as type=config-section reads them; secrets never
 $SY = $up( 'system-panorama.xml' );
 $sy = $alice->call( 'GET', $SY . '/system' );

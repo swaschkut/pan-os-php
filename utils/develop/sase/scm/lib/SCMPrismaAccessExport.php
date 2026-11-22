@@ -550,7 +550,18 @@ class SCMPrismaAccessExport
             mkdir($this->exportDir . "/" . self::AREA_INFRA, 0700, TRUE);
 
         PH::print_stdout( " - [infra 92] egress-ip (serviceType=all) ... " );
+        // auto: prod6 (most tenants), on a login error (HTTP 401 / 403) prod (older tenants)
+        $auto = $environment === 'auto';
+        if( $auto )
+            $environment = 'prod6';
         $result = $this->connector->getPrismaAccessEgressIP( $apiKey, "all", "all", "all", $environment );
+        if( $auto && $result['errors'] !== null && in_array( (int)$result['http_code'], array( 401, 403 ), TRUE ) )
+        {
+            PH::print_stdout( "     prod6: HTTP " . $result['http_code'] . " - trying prod (older tenants)" );
+            $environment = 'prod';
+            $result = $this->connector->getPrismaAccessEgressIP( $apiKey, "all", "all", "all", $environment );
+        }
+        $meta['environment'] = $environment;
 
         $meta['url'] = $result['url'];
         $meta['http_code'] = $result['http_code'];
@@ -575,7 +586,7 @@ class SCMPrismaAccessExport
         }
 
         $this->writeJson( $meta['file'], array(
-            'endpoint' => 'egress-ip', 'area' => self::AREA_INFRA, 'request' => array( 'serviceType' => 'all', 'addrType' => 'all', 'location' => 'all' ),
+            'endpoint' => 'egress-ip', 'area' => self::AREA_INFRA, 'environment' => $environment, 'request' => array( 'serviceType' => 'all', 'addrType' => 'all', 'location' => 'all' ),
             'url' => $meta['url'], 'tsg_id' => $this->tsg, 'fetched_at' => $meta['fetched_at'],
             'http_code' => $meta['http_code'], 'status' => $meta['status'],
             'error' => $result['errors'], 'data' => $data ) );

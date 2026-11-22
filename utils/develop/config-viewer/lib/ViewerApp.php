@@ -3129,7 +3129,7 @@ class ViewerApp
             return array( $step( 'upload', array( 'in=api://' . $k['target'] . ( ( $x['source'] ?? '' ) === 'running' ? '/running-config' : '' ), 'out=%JOB%/out.xml' ), TRUE ) );
         return array(
             $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config,' . implode( ',', self::scmPaAreas() ), 'outdir=%JOB%/scm-export', 'config-internal=no',
-                'egressip-key-out=%JOB%/.egress-key' ), TRUE ),
+                'egressip-key-out=%JOB%/.egress-key', 'egressip', 'egressip-env=auto' ), TRUE ),
             $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $k['target'], 'out=%JOB%/out.xml' ), FALSE ) );
     }
 
@@ -3478,7 +3478,11 @@ class ViewerApp
         $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target );
         // the SCM import reads the Prisma Access areas as well (scm-export area=config,infra): a state of their pages
         if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) )
+        {
             $this->paCollect( $p, $dir, $host, $j['jid'], 'import', $u['name'] ?? '?', time(), array_keys( self::SCM_PA_PAGES ) );
+            // the egress IPs (scm-export egressip with the api_key of the tenant, prod6 / prod): a state of Egress IP
+            $this->egressFromExport( $p, $dir, $host, $j['jid'], $u['name'] ?? '?' );
+        }
     }
 
     /**
@@ -3499,6 +3503,29 @@ class ViewerApp
             return 'same';
         $this->q( 'UPDATE user_keys SET secret = ?, hint = ?, created = ? WHERE id = ?', array( $this->seal( $key ), substr( $key, -4 ), time(), $old['id'] ) );
         return 'updated';
+    }
+
+    /** infra/92_egress-ip.json of the export of a run (read without error) as a state of the egress IPs */
+    private function egressFromExport( array $p, string $jobDir, string $tsg, string $id, string $user ): bool
+    {
+        $files = glob( $jobDir . '/scm-export/' . $tsg . '/*/infra/92_egress-ip.json' ) ?: array();
+        if( count( $files ) === 0 || is_file( $this->egressDir( $p ) . '/' . $id . '.json' ) )
+            return FALSE;
+        rsort( $files );
+        self::egressLib();
+        try
+        {
+            $state = SCMEgressIP::fromFile( $files[0] );
+        }
+        catch( Exception $e )
+        {
+            return FALSE;
+        }
+        $raw = (array)json_decode( (string)file_get_contents( $files[0] ), TRUE );
+        $this->egressStore( $this->egressDir( $p ), $id, array( 'source' => 'SCM import', 'user' => $user, 'time' => time(), 'tsg' => $tsg,
+            'request' => $state['request'], 'fetched_at' => $state['fetched_at'], 'name' => isset( $raw['environment'] ) && is_string( $raw['environment'] ) ? $raw['environment'] : null,
+            'rows' => $state['rows'] ) );
+        return TRUE;
     }
 
     /** the x-<name>-<field>= arguments of a run (key, target, source, page, …) */
