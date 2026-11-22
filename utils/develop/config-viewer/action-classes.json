@@ -8,7 +8,14 @@
         "zone",
         "schedule",
         "securityprofile",
-        "securityprofilegroup"
+        "securityprofilegroup",
+        "device:devicegroup-addserial",
+        "device:devicegroup-removeserial",
+        "device:devicegroup-setparentdg",
+        "device:templatestack-addserial",
+        "device:templatestack-removeserial",
+        "device:template-add",
+        "device:template-remove"
     ],
     "override": {},
     "types": {
@@ -381,6 +388,9 @@
                 "class": "change"
             },
             "template-delete": {
+                "class": "change"
+            },
+            "template-remove": {
                 "class": "change"
             },
             "templatestack-addserial": {

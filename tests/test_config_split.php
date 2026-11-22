@@ -26,7 +26,12 @@ $files = ConfigObjectSplit::split( $d );
 $ok( isset( $files['shared/address/shared-host1.xml'], $files['shared/address/_order'] ), 'Panorama: shared object and the order of its store' );
 $ok( isset( $files['devices/localhost.localdomain/device-group/DE-Berlin Office/pre-rulebase/nat/rules/219f3d6a-d061-4e3c-9388-7440dfe455a2.xml'] ),
     'Panorama: a rule of a device group by its UUID' );
-$ok( !preg_grep( '#/template/#', array_keys( $files ) ) && strpos( $files['_rest.xml'], '<template>' ) !== FALSE, 'Panorama: templates stay in _rest.xml' );
+// a template is one entry as a whole (nothing below it split); the firewalls of a device group are its store
+$tpl = preg_grep( '#/template/#', array_keys( $files ) );
+$ok( count( $tpl ) > 0 && !preg_grep( '#/template/[^/]+/.#', $tpl ) && !preg_grep( '#^devices/[^/]+/template/[^/]+/#', array_keys( $files ) ),
+    'Panorama: a template is one entry (nothing below it split)' );
+$ok( count( preg_grep( '#^mgt-config/devices/[^/]+\.xml$#', array_keys( $files ) ) ) > 0 && count( preg_grep( '#/device-group/[^/]+/devices/_order$#', array_keys( $files ) ) ) > 0,
+    'Panorama: managed firewalls and the firewalls of a device group are entries' );
 $ok( strpos( $files['_rest.xml'], 'shared-host1' ) === FALSE || strpos( $files['_rest.xml'], '<entry name="shared-host1"' ) === FALSE, 'the split objects are not in _rest.xml' );
 $ok( $files['shared/address/shared-host1.xml'] === "<entry name=\"shared-host1\">\n  <ip-netmask>1.2.2.3/32</ip-netmask>\n  <tag>\n    <member>grp.shared-group1</member>\n  </tag>\n</entry>\n",
     'canonical XML of an object: one element per line, indentation 2' );

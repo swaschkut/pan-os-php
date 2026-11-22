@@ -1779,11 +1779,29 @@ class UTIL
             }
             elseif($this->configType == 'panorama')
             {
-                $DG = $this->pan->findDeviceGroup( $rootDG );
+                // shared: every device group is below it (location=shared:includechilddgs = shared + all device groups)
+                if( $rootDG == "shared" )
+                {
+                    $DG = $this->pan;
+                    $childDGs = $this->pan->getDeviceGroups();
+                }
+                else
+                {
+                    $DG = $this->pan->findDeviceGroup( $rootDG );
+                    if( $DG === null )
+                        $this->locationNotFound($rootDG);
+
+                    $childDGs = $DG->childDeviceGroups( TRUE );
+                }
+            }
+            elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
+            {
+                // SCM: a container (folder) and the containers / cloud / on-prem devices below it
+                $DG = $this->pan->findContainer( $rootDG );
                 if( $DG === null )
                     $this->locationNotFound($rootDG);
 
-                $childDGs = $DG->childDeviceGroups( TRUE );
+                $childDGs = $DG->childContainers( TRUE );
             }
 
 

@@ -1691,13 +1691,25 @@ async function showViewer(config, preset) {
         el('option', { value: 'excludemaindg', text: 'only the child device groups (excludemaindg)' }));
     const dgScopeField = field('Device groups', dgScope);
     dgScopeField.hidden = true;
-    function isDeviceGroup(name) {
+    // the kind of a location for the choice: a device group, shared of Panorama (all device groups are below it) or an
+    // SCM container (folder: containers, cloud / on-prem devices below it); null: no choice (vsys, snippet, any)
+    function scopeKind(name) {
         const o = [...location.options].find(x => x.value === name);
-        return !!o && !!o.parentElement && o.parentElement.tagName === 'OPTGROUP' && o.parentElement.label === 'device groups';
+        const group = o && o.parentElement && o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : '';
+        if (group === 'device groups') return 'dg';
+        if (group === 'containers (folders)') return 'container';
+        if (name === 'shared' && [...location.querySelectorAll('optgroup')].some(g => g.label === 'device groups')) return 'shared';
+        return null;
     }
     function drawDgScope() {
-        dgScopeField.hidden = !!p.scope || !isDeviceGroup(location.value);
-        if (dgScopeField.hidden) dgScope.value = '';
+        const kind = scopeKind(location.value);
+        dgScopeField.hidden = !!p.scope || kind === null;
+        if (dgScopeField.hidden) { dgScope.value = ''; return; }
+        const t = { dg: ['only this device group', '+ all child device groups', 'only the child device groups'],
+            shared: ['only shared', '+ all device groups', 'only the device groups'],
+            container: ['only this container', '+ all child containers / devices', 'only the child containers / devices'] }[kind];
+        [...dgScope.options].forEach((o, i) => { o.text = t[i] + (o.value ? ' (' + o.value + ')' : ''); });
+        dgScopeField.firstChild.textContent = kind === 'container' ? 'Containers' : 'Device groups';
     }
     location.addEventListener('change', drawDgScope);
     const filter = el('input', { placeholder: '(name contains web) and (object is.unused) - type for fields and operators', maxlength: 2000, autocomplete: 'off', spellcheck: false });
@@ -1852,10 +1864,18 @@ async function showViewer(config, preset) {
         TemplateStack: r => [['Templates (first = highest priority)', 'template', r.templates],
             ['Firewalls', 'manageddevice', r.devices, n => r.devicegroups && r.devicegroups[n] ? [['device group', 'devicegroup', r.devicegroups[n]]] : []]],
         ManagedDevice: r => [['Device group', 'devicegroup', r.dg], ['Template stack', 'templatestack', r.templatestack],
-            ['Templates of the stack', 'template', r.templates], ['Template', 'template', r['device-template']]],
+            ['Templates of the stack', 'template', r.templates], ['Template', 'template', r['device-template']],
+            // SCM: the on-prem device (folder of the firewall) and the container of its vsys
+            ['On-prem device', 'deviceonprem', r['on-prem']], ['Vsys container', 'container', r.vsyscontainer]],
         LogCollectorGroup: r => [['Log collectors', 'logcollector', r.collectors],
             ['Firewalls (Device Log Forwarding)', 'manageddevice', r.devices, n => (r.logforwarding && r.logforwarding[n] || []).map(c => ['log collector', 'logcollector', c])]],
         LogCollector: r => [['Collector groups', 'logcollectorgroup', r.collectorgroups], ['Firewalls that send logs to it', 'manageddevice', r.devices]],
+        // SCM: folders (containers) with parent, children, devices below and attached snippets; a snippet: where it is attached
+        Container: r => [['Parent container', 'container', r.parent], ['Child containers', 'container', r.children],
+            ['Cloud devices', 'devicecloud', r.clouds], ['On-prem devices', 'deviceonprem', r.onprem], ['Snippets', 'snippet', r.snippets]],
+        DeviceCloud: r => [['Parent container', 'container', r.parent], ['Snippets', 'snippet', r.snippets]],
+        DeviceOnPrem: r => [['Parent container', 'container', r.parent], ['Snippets', 'snippet', r.snippets], ['Managed device', 'manageddevice', r.manageddevice]],
+        Snippet: r => [['Attached to containers', 'container', r.containers], ['Attached to cloud devices', 'devicecloud', r.clouds], ['Attached to on-prem devices', 'deviceonprem', r.onprem]],
     };
     function openLink(ref) {
         // an object of a template: pan-os-php finds a vsys of a template only with location=any (+ template) - the
@@ -1941,6 +1961,34 @@ async function showViewer(config, preset) {
         if (/[,:\x00-\x1f]/.test(v)) throw new Error('"," and ":" can not be used in a value here (they separate the arguments of a pan-os-php action)');
         return v.replace(/\//g, '//');
     }
+    // the assignments of Panorama as PAN-OS keeps them - on the device group / template stack (<devices>, <templates>),
+    // with the actions of pan-os-php type=device; a firewall: its device group / template stack changed by those
+    // actions (out of the old one, into the new one)
+    function deviceFields(row) {
+        const list = v => Array.isArray(v) ? v.map(String) : (v ? [String(v)] : []);
+        const serial = v => { v = v.trim(); if (!/^[A-Za-z0-9]+$/.test(v)) throw new Error('a serial number: letters and digits'); return v; };
+        if (row.type === 'DeviceGroup')
+            return [{ key: 'dg-devices', label: 'Firewalls', kind: 'list', value: list(row.devices), needs: ['devicegroup-addserial'], needsRemove: ['devicegroup-removeserial'],
+                    add: x => 'devicegroup-addserial:' + actArg(row.name) + ',' + serial(x), remove: x => 'devicegroup-removeserial:' + actArg(row.name) + ',' + x,
+                    note: 'serial number; a firewall is in one device group - remove it from the other one first' },
+                { key: 'dg-parent', label: 'Parent device group', kind: 'text', value: Array.isArray(row.hierarchy) && row.hierarchy.length > 2 ? row.hierarchy[row.hierarchy.length - 2] : '',
+                    placeholder: 'empty = shared', needs: ['devicegroup-setparentdg'], act: (o, n) => 'devicegroup-setparentdg:' + actArg(row.name) + ',' + (n === '' ? 'shared' : actArg(n)) }];
+        if (row.type === 'TemplateStack')
+            return [{ key: 'ts-templates', label: 'Templates', kind: 'list', value: list(row.templates), needs: ['template-add'], needsRemove: ['template-remove'],
+                    add: x => 'template-add:' + actArg(x.trim()), remove: x => 'template-remove:' + actArg(x),
+                    note: 'first = highest priority; a template is added at the bottom (pan-os-php template-add)' },
+                { key: 'ts-devices', label: 'Firewalls', kind: 'list', value: list(row.devices), needs: ['templatestack-addserial'], needsRemove: ['templatestack-removeserial'],
+                    add: x => 'templatestack-addserial:' + actArg(row.name) + ',' + serial(x), remove: x => 'templatestack-removeserial:' + actArg(row.name) + ',' + x,
+                    note: 'serial number; a firewall is in one template stack - remove it from the other one first' }];
+        if (row.type === 'ManagedDevice') {
+            const move = (add, remove) => (o, n) => [o ? remove + ':' + actArg(o) + ',' + row.name : null, n ? add + ':' + actArg(n) + ',' + row.name : null].filter(x => x).join('/');
+            return [{ key: 'md-dg', label: 'Device group', kind: 'text', value: row.dg || '', placeholder: 'none', needs: ['devicegroup-addserial', 'devicegroup-removeserial'],
+                    act: move('devicegroup-addserial', 'devicegroup-removeserial'), note: 'kept in the device group (<devices>): out of the old one, into the new one' },
+                { key: 'md-ts', label: 'Template stack', kind: 'text', value: row.templatestack || '', placeholder: 'none', needs: ['templatestack-addserial', 'templatestack-removeserial'],
+                    act: move('templatestack-addserial', 'templatestack-removeserial'), note: 'kept in the template stack (<devices>): out of the old one, into the new one' }];
+        }
+        return [];
+    }
     function windowFields(kind, row, m) {
         m = m || {};
         const name = { key: 'name', label: 'Name', kind: 'text', value: row.name, needs: ['name-rename'], rename: true,
@@ -1991,15 +2039,16 @@ async function showViewer(config, preset) {
         if (kind === 'generic') {
             // every other type: all its fields, read only - the list row and what the structured model adds
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
+            const edit = deviceFields(row);
             // a device: its connections (device group, template stack, templates, firewalls, log collectors) are in
             // the section "Connections" of the window, with a link each
-            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy', 'templatestacks', 'stacktemplates');
+            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy', 'templatestacks', 'stacktemplates', 'parent', 'clouds', 'onprem', 'snippets', 'containers', 'manageddevice', 'on-prem', 'vsyscontainer');
             const fields = [{ key: 'name', label: 'Name', kind: 'ro', value: row.name }];
             for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? v.join(', ') : (v === null ? '' : String(v))) });
             for (const [k, v] of Object.entries(m)) if (!(k in row) && !['name', 'device_group', 'template', 'vsys', 'folder', 'snippet'].includes(k))
                 fields.push({ key: 'm-' + k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null ? fmtTree(v) : String(v) });
             if (row.template) fields.push({ key: 'template', label: 'Template', kind: 'ro', value: row.template });
-            fields.push(loc);
+            fields.push(...edit, loc);
             return fields;
         }
         if (kind === 'tag') {
@@ -2302,10 +2351,10 @@ async function showViewer(config, preset) {
         function objHierarchy() {
             const h = obj.row.hierarchy;
             if (cur.type !== 'device' || !Array.isArray(h) || !h.length) return null;
-            const lines = h.map((n, i) => '  '.repeat(i) + (i ? '└ ' : '') + n + (i === h.length - 1 ? '   ◀ this device group' : ''));
+            const lines = h.map((n, i) => '  '.repeat(i) + (i ? '└ ' : '') + n + (i === h.length - 1 ? '   ◀ this ' + ({ Container: 'container', DeviceCloud: 'cloud device', DeviceOnPrem: 'on-prem device' }[obj.row.type] || 'device group') : ''));
             for (const c of (obj.row.children || [])) lines.push('  '.repeat(h.length) + '└ ' + c);
             return section('hierarchy', 'Hierarchy', el('div', {}, el('pre', { class: 'objxml', text: lines.join('\n') }),
-                el('p', { class: 'muted', text: 'firewalls: ' + (obj.row.firewalls ?? '?') + ' in this device group, ' + (obj.row['firewalls-below'] ?? '?') + ' with the device groups below' })));
+                obj.row.type !== 'DeviceGroup' ? null : el('p', { class: 'muted', text: 'firewalls: ' + (obj.row.firewalls ?? '?') + ' in this device group, ' + (obj.row['firewalls-below'] ?? '?') + ' with the device groups below' })));
         }
         function objXml() {
             // no XML: a predefined object (applications, URL categories, profiles of PAN-OS - they come from the App-ID

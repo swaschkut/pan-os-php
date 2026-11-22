@@ -3744,9 +3744,19 @@ class ViewerApp
             $filters = self::filterMeta( (array)( $def['filter'] ?? array() ) );
             // a type a person has reviewed (action-classes.json "reviewed") can be changed: its 'read' / 'change' actions
             $actions = array();
-            if( in_array( $type, $this->actionClasses()['reviewed'], TRUE ) )
+            // "reviewed": a whole type, or single actions of a type as "<type>:<action>" (e.g. the assignments of
+            // Panorama: device:devicegroup-addserial) - the other actions of the type stay read only
+            $reviewed = $this->actionClasses()['reviewed'];
+            $whole = in_array( $type, $reviewed, TRUE );
+            $single = array();
+            foreach( $reviewed as $r )
+                if( is_string( $r ) && strpos( $r, $type . ':' ) === 0 )
+                    $single[strtolower( substr( $r, strlen( $type ) + 1 ) )] = TRUE;
+            if( $whole || count( $single ) > 0 )
                 foreach( (array)$def['action'] as $name => $a )
                 {
+                    if( !$whole && !isset( $single[strtolower( (string)$name )] ) )
+                        continue;
                     $class = $this->actionClass( (string)$type, (string)$name );
                     if( $name === 'display' || preg_match( self::ACTION_DENY_NAME, (string)$name ) || $class === null || !in_array( $class['class'], array( 'read', 'change' ), TRUE ) )
                         continue;

@@ -600,12 +600,53 @@ foreach( $refs as $r )
 sort( $open );
 eq( array( $x, $open ), array( array( 'devicegroup' => TRUE, 'templatestack' => TRUE, 'manageddevice' => TRUE ),
     array( 'devicegroup:DG1:open', 'logcollectorgroup:LCG1:open', 'templatestack:TS1:open' ) ), 'devices: XML of device group / template stack, references with a window' );
+// the assignments of Panorama (on the device group / template stack, as PAN-OS keeps them), from the window of the
+// device group, template stack and firewall; the device group has a history (its firewalls)
+$chg = function( $dt, $name, $actions ) use ( $alice, $DV ) {
+    return $alice->call( 'POST', $DV . '/change', array( 'type' => 'device', 'devicetype' => $dt, 'location' => 'shared', 'filter' => '(name eq ' . $name . ')', 'actions' => $actions ) );
+};
+$meta = $alice->call( 'GET', 'meta' )[1]['types']['device']['actions'] ?? array();
+$offered = array_keys( $meta );
+sort( $offered );
+eq( $offered, array( 'devicegroup-addserial', 'devicegroup-removeserial', 'devicegroup-setparentdg', 'template-add', 'template-remove', 'templatestack-addserial', 'templatestack-removeserial' ),
+    'devices: only the reviewed actions (assignments) can be used in the viewer' );
+$r1 = $chg( 'devicegroup', 'DG3', 'devicegroup-addserial:DG3,001122334455' );
+$r2 = $chg( 'manageddevice', '001122334466', 'devicegroup-removeserial:DG2,001122334466/devicegroup-addserial:DG3,001122334466' );
+$r3 = $chg( 'templatestack', 'TS2', 'template-add:T1/template-remove:T2' );
+$r4 = $chg( 'manageddevice', '001122334477', 'templatestack-removeserial:TS2,001122334477/templatestack-addserial:TS1,001122334477' );
+$dg = $dev( 'devicegroup' );
+$ts = $dev( 'templatestack' );
+$md = $dev( 'manageddevice' );
+eq( array( status( $r1 ), status( $r2 ), status( $r3 ), status( $r4 ), $dg['DG3']['devices'] ?? null, $dg['DG1']['devices'] ?? null, $md['001122334466']['dg'] ?? null,
+    $ts['TS2']['templates'] ?? null, $ts['TS1']['devices'] ?? null, $md['001122334477']['templatestack'] ?? null ),
+    array( 200, 200, 200, 200, array( '001122334466' ), array( '001122334455' ), 'DG3', array( 'T1' ), array( '001122334455', '001122334466', '001122334477' ), 'TS1' ),
+    'devices: a firewall in one device group / template stack only (moved: out of the old one, into the new one), templates of a stack' );
+$h = $alice->call( 'GET', $DV . '/object?type=device&devicetype=devicegroup&location=shared&name=DG3' )[1]['history'] ?? array();
+$ht = $alice->call( 'GET', $DV . '/object?type=device&devicetype=templatestack&location=shared&name=TS2' )[1]['history'] ?? array();
+eq( array( $h['path'] ?? null, trim( (string)( $h['commits'][0]['text'] ?? '' ) ), count( $ht['commits'] ?? array() ) >= 2 ),
+    array( 'devices/localhost.localdomain/device-group/DG3/devices/_order', '001122334466', TRUE ), 'devices: history of a device group (its firewalls) and of a template stack' );
+// SCM: containers (folders) with parent, children, devices and snippets; a snippet: where it is attached
+$SC = $up( 'SCM-import.xml' );
+$c = array();
+foreach( $alice->call( 'GET', $SC . '/objects?type=device&devicetype=container&location=any' )[1]['rows'] ?? array() as $x )
+    $c[$x['name']] = $x;
+$sn = array();
+foreach( $alice->call( 'GET', $SC . '/objects?type=device&devicetype=snippet&location=any' )[1]['rows'] ?? array() as $x )
+    $sn[$x['name']] = $x;
+eq( array( $c['All']['children'] ?? null, $c['All']['snippets'] ?? null, $c['Prisma Access']['parent'] ?? null, $c['Prisma Access']['clouds'] ?? null, $sn['Panorama-Shared']['containers'] ?? null ),
+    array( array( 'Prisma Access', 'ngfw-shared' ), array( 'Panorama-Shared' ), 'All', array( 'Service Connections', 'Remote Networks' ), array( 'All' ) ),
+    'SCM: container with child containers, cloud devices, snippets; snippet with its containers' );
+$cnt = function( $loc ) use ( $alice, $SC ) { return count( $alice->call( 'GET', $SC . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() ); };
+eq( array( $cnt( 'ngfw-shared' ), $cnt( 'ngfw-shared:includechilddgs' ) > 0, $cnt( 'ngfw-shared:includechilddgs' ) === $cnt( 'ngfw-shared:excludemaindg' ) ), array( 0, TRUE, TRUE ),
+    'SCM: a container with the containers / devices below it' );
 // location=<DG>:includechilddgs / :excludemaindg (pan-os-php): with / only the device groups below
 $names = function( $loc ) use ( $alice, $DV ) {
     return array_map( function( $r ) { return $r['location'] . ':' . $r['name']; }, $alice->call( 'GET', $DV . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() );
 };
 eq( array( $names( 'DG1' ), $names( 'DG1:includechilddgs' ), $names( 'DG1:excludemaindg' ) ), array( array( 'DG1:A2' ), array( 'DG1:A2', 'DG2:A3' ), array( 'DG2:A3' ) ),
     'location: a device group with its child device groups / only its child device groups' );
+eq( array( $names( 'shared:includechilddgs' ), $names( 'shared:excludemaindg' ) ), array( array( 'shared:A1', 'DG1:A2', 'DG2:A3' ), array( 'DG1:A2', 'DG2:A3' ) ),
+    'location: shared with all device groups / only the device groups' );
 eq( status( $alice->call( 'DELETE', $SP ) ), 200, 'security profiles: project deleted (its worker stops)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );

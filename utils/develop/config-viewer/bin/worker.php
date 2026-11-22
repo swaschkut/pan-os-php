@@ -159,7 +159,9 @@ function viewerTypeOf( $o )
         'VlanInterface' => 'interface', 'VirtualWire' => 'virtualwire', 'VirtualRouter' => 'routing', 'LogicalRouter' => 'routing',
         'StaticRoute' => 'static-route', 'DHCP' => 'dhcp', 'Threat' => 'threat', 'DNSPolicy' => 'dns-rule' );
     static $devices = array( 'DeviceGroup' => 'devicegroup', 'Template' => 'template', 'TemplateStack' => 'templatestack', 'ManagedDevice' => 'manageddevice',
-        'LogCollector' => 'logcollector', 'LogCollectorGroup' => 'logcollectorgroup' );
+        'LogCollector' => 'logcollector', 'LogCollectorGroup' => 'logcollectorgroup',
+        // SCM: folders (containers), cloud / on-prem devices, snippets
+        'Container' => 'container', 'DeviceCloud' => 'devicecloud', 'DeviceOnPrem' => 'deviceonprem', 'Snippet' => 'snippet' );
     $c = get_class( $o );
     if( $o instanceof ThreatPolicy )
         return array( 'type' => 'threat-rule' );
@@ -193,7 +195,8 @@ function viewerUsers( $o )
             $field = $ref->field;
             $owner = $ref->owner;
             $isLocation = !is_object( $owner ) || $owner instanceof PANConf || $owner instanceof PanoramaConf || $owner instanceof Template
-                || $owner instanceof TemplateStack || $owner instanceof VirtualSystem || $owner instanceof DeviceGroup;
+                || $owner instanceof TemplateStack || $owner instanceof VirtualSystem || $owner instanceof DeviceGroup
+                || $owner instanceof Container || $owner instanceof DeviceCloud || $owner instanceof DeviceOnPrem || $owner instanceof Snippet;
             if( !$isLocation )
                 $ref = $owner;
         }
@@ -201,10 +204,15 @@ function viewerUsers( $o )
         {
             if( $first === null && method_exists( $x, 'name' ) && !preg_match( '/Store$/', get_class( $x ) ) )
                 $first = $x;
-            if( $field === null && preg_match( '/Container$/', get_class( $x ) ) && method_exists( $x, 'name' ) && is_string( $x->name() ) && $x->name() !== '' )
+            if( $field === null && preg_match( '/Container$/', get_class( $x ) ) && !$x instanceof Container && method_exists( $x, 'name' ) && is_string( $x->name() ) && $x->name() !== '' )
                 $field = $x->name();
-            if( viewerTypeOf( $x ) !== null )
+            $tx = viewerTypeOf( $x );
+            if( $tx !== null )
             {
+                // a device (device group, container, …) is the user only when it is the reference itself - not the
+                // location of an object without a list in the viewer (then: that object)
+                if( $tx['type'] === 'device' && $first !== null && $first !== $x )
+                    break;
                 $user = $x;
                 break;
             }
@@ -255,6 +263,17 @@ function viewerRowKey( $o ): string
     if( ( $t['type'] ?? null ) === 'device' )
         $loc = 'shared';
     return $loc . '|' . $tpl . '|' . PH::jsonObjectKey( $o );
+}
+
+/**
+ * the path of an object in the history (ConfigObjectSplit): its entry; a device group - the list of its firewalls
+ * (<devices>, …/device-group/<name>/devices/_order: one line per firewall), its objects have their own history
+ */
+function viewerHistoryPath( $o ): ?string
+{
+    if( $o instanceof DeviceGroup && $o->xmlroot instanceof DOMElement )
+        return ConfigObjectSplit::path( $o->xmlroot ) . '/devices/' . ConfigObjectSplit::ORDER;
+    return ConfigObjectSplit::entryPath( $o->xmlroot );
 }
 
 function viewerSetObjects( $set ): array
@@ -566,7 +585,7 @@ function viewerRun( $type, array $args )
                 if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' )
                     && ( $xmlName === null ? count( $GLOBALS['viewerXml'] ) < 20 : $o->name() === $xmlName ) && count( $GLOBALS['viewerXml'] ) < 50 )
                 {
-                    $GLOBALS['viewerXml'][viewerRowKey( $o )] = array( 'path' => ConfigObjectSplit::entryPath( $o->xmlroot ),
+                    $GLOBALS['viewerXml'][viewerRowKey( $o )] = array( 'path' => viewerHistoryPath( $o ),
                         'xml' => substr( ConfigObjectSplit::canonical( $o->xmlroot ), 0, 200000 ) );
                 }
     }

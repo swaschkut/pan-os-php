@@ -29,6 +29,18 @@
 // - templatestack-movetofirsttemplate
 // - delete manageddevice with decommission reference on DG, template-stack
 
+/**
+ * the Panorama of an action that assigns firewalls (device group, template stack): subSystem is the store of the
+ * managed devices when it runs on devicetype=manageddevice (the window of a firewall in the config viewer)
+ */
+function deviceActionPanorama( DeviceCallContext $context )
+{
+    $pan = $context->subSystem;
+    if( !method_exists( $pan, 'isPanorama' ) && isset( $pan->owner ) && is_object( $pan->owner ) )
+        $pan = $pan->owner;
+    return $pan;
+}
+
 DeviceCallContext::$supportedActions['display'] = array(
     'name' => 'display',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -366,6 +378,53 @@ DeviceCallContext::$supportedActions['display'] = array(
                 PH::print_stdout( $padding."  - ".get_class($ref).": name: ".$ref->name());
         }
 
+        // SCM: the connections of a container / cloud device / on-prem device (parent, children, attached snippets)
+        // and of a snippet (the containers / devices it is attached to) - shadow-json for the config viewer
+        $scmClasses = array( 'Container' => 'container', 'DeviceCloud' => 'devicecloud', 'DeviceOnPrem' => 'deviceonprem' );
+        if( isset( $scmClasses[get_class($object)] ) )
+        {
+            $j = &PH::$JSON_TMP['sub']['object'][$object->name()];
+            $parent = $object->parentContainer ?? null;
+            if( is_object( $parent ) )
+                $j['parent'] = $parent->name();
+            elseif( is_string( $parent ) && $parent !== '' )
+                $j['parent'] = $parent;
+            if( get_class($object) === 'Container' )
+            {
+                $j['children'] = array();
+                $j['clouds'] = array();
+                $j['onprem'] = array();
+                foreach( $object->childContainers() as $child )
+                {
+                    $key = get_class( $child ) === 'DeviceCloud' ? 'clouds' : ( get_class( $child ) === 'DeviceOnPrem' ? 'onprem' : 'children' );
+                    $j[$key][] = $child->name();
+                }
+                foreach( array( 'children' => 'child containers', 'clouds' => 'cloud devices', 'onprem' => 'on-prem devices' ) as $key => $text )
+                    if( count( $j[$key] ) )
+                        PH::print_stdout( $context->padding."- ".$text.": ".implode( ", ", $j[$key] ) );
+            }
+            $j['snippets'] = array_values( array_map( function( $x ) { return is_object( $x ) ? $x->name() : (string)$x; }, $object->attachedSnippets ?? array() ) );
+            // an on-prem device is a firewall: its name is the serial of the managed device
+            if( get_class($object) === 'DeviceOnPrem' && isset( $object->owner->managedFirewallsStore ) && $object->owner->managedFirewallsStore->find( $object->name() ) !== null )
+                $j['manageddevice'] = $object->name();
+            unset( $j );
+        }
+        elseif( get_class($object) == "Snippet" )
+        {
+            $attached = array( 'containers' => array(), 'clouds' => array(), 'onprem' => array() );
+            $conf = $object->owner;
+            $lists = array( 'containers' => method_exists( $conf, 'getContainers' ) ? $conf->getContainers() : array(),
+                'clouds' => method_exists( $conf, 'getDeviceClouds' ) ? $conf->getDeviceClouds() : array(),
+                'onprem' => method_exists( $conf, 'getDeviceOnPrems' ) ? $conf->getDeviceOnPrems() : array() );
+            foreach( $lists as $key => $list )
+                foreach( $list as $sub )
+                    foreach( $sub->attachedSnippets ?? array() as $sn )
+                        if( ( is_object( $sn ) ? $sn->name() : (string)$sn ) === $object->name() )
+                            $attached[$key][] = $sub->name();
+            foreach( $attached as $key => $names )
+                PH::$JSON_TMP['sub']['object'][$object->name()][$key] = array_values( array_unique( $names ) );
+        }
+
         $length = &DH::dom_get_config_size($object->xmlroot);
         PH::print_stdout($context->padding."---");
         PH::print_stdout( $context->padding."- config-size: ".$length."kB");
@@ -659,7 +718,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -672,6 +731,17 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
         }
         else
         {
+            // a firewall (vsys1) is in one device group only (PAN-OS) - before, it was added to the second one
+            foreach( $pan->getDeviceGroups() as $otherDG )
+            {
+                $devs = $otherDG->getDevicesInGroup();
+                if( $otherDG !== $tmp_dg && isset( $devs[$serial] ) && isset( $devs[$serial]['vsyslist']['vsys1'] ) )
+                {
+                    $string = "serial: " . $serial . " is in DeviceGroup: " . $otherDG->name() . " - remove it there first (devicegroup-removeserial)";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+            }
             $string = "DeviceGroup with name: " . $dgName . " got serial: ".$serial." added!";
             PH::ACTIONlog( $context, $string );
             if( $context->isAPI )
@@ -708,7 +778,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-removeSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -1079,7 +1149,8 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
-        if( $context->object !== null && get_class($context->object) !== "TemplateStack" )
+        // also from a firewall (devicetype=manageddevice: the stack of this firewall)
+        if( $context->object !== null && get_class($context->object) !== "TemplateStack" && get_class($context->object) !== "ManagedDevice" )
         {
             $string = "devicetype=templatestack missing";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -1092,7 +1163,7 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -1105,6 +1176,14 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
         }
         else
         {
+            // a firewall is in one template stack only (PAN-OS) - before, it was added to the second one
+            foreach( $pan->getTemplatesStacks() as $otherTS )
+                if( $otherTS !== $tmp_dg && array_key_exists( $serial, $otherTS->FirewallsSerials ) )
+                {
+                    $string = "serial: " . $serial . " is in TemplateStack: " . $otherTS->name() . " - remove it there first (templatestack-removeserial)";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
             $string = "TemplateStack with name: " . $dgName . " got serial: ".$serial." added!";
             PH::ACTIONlog( $context, $string );
             if( $context->isAPI )
@@ -1135,7 +1214,8 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
-        if( $context->object !== null && get_class($context->object) !== "TemplateStack" )
+        // also from a firewall (devicetype=manageddevice: the stack of this firewall)
+        if( $context->object !== null && get_class($context->object) !== "TemplateStack" && get_class($context->object) !== "ManagedDevice" )
         {
             $string = "devicetype=templatestack missing";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -1148,7 +1228,7 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
         if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
             derr("Invalid serial number format.");
 
-        $pan = $context->subSystem;
+        $pan = deviceActionPanorama( $context );
 
         if( !$pan->isPanorama() )
             derr("only supported on Panorama config");
@@ -2046,6 +2126,45 @@ DeviceCallContext::$supportedActions['template-add'] = array(
     'args' => array(
         'templateName' => array('type' => 'string', 'default' => 'false'),
         'position' => array('type' => 'string', 'default' => 'bottom'),
+    ),
+);
+DeviceCallContext::$supportedActions['template-remove'] = array(
+    'name' => 'template-remove',
+    'MainFunction' => function (DeviceCallContext $context) {
+
+        /** @var TemplateStack $object */
+        $object = $context->object;
+
+        $pan = $context->subSystem;
+        if( !$pan->isPanorama() )
+            derr( "only supported on Panorama config" );
+
+        if( get_class($object) == "TemplateStack" )
+        {
+            $templateName = $context->arguments['templateName'];
+            $template = $object->owner->findTemplate( $templateName );
+            if( $template === null || !in_array( $template, $object->templates, TRUE ) )
+            {
+                $string = "template '".$templateName."' is not in this template stack";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return null;
+            }
+
+            $string = "template '".$templateName."' removed from TemplateStack '".$object->name()."'";
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+                $object->API_removeTemplate( $template );
+            else
+                $object->removeTemplate( $template );
+        }
+        else
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+        }
+    },
+    'args' => array(
+        'templateName' => array('type' => 'string', 'default' => 'false'),
     ),
 );
 

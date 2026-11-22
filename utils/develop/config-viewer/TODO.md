@@ -203,3 +203,11 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   URL HTTP header logging - the XML element names are not known yet
 * **LDAP:** the query failed at the TLS handshake with a domain controller that was not available at that time - hence
   the automatic choice of the server from DNS; to check on the real installation that another DC answers now
+* **Effective view of a location** (wish 2026-11-22): the list "as this device group / container sees it" - its own
+  objects, then the parents up to shared (Panorama) or All (SCM) with their snippets and the predefined ones; a name
+  that exists on several levels shown once, as the object that wins for this location (Panorama: the lowest level wins,
+  "ancestor precedence" turns it around for the device groups; SCM: own folder, its snippets, then the parents -
+  to check in the SCM documentation); the other copies marked as shadowed. Next to "only this / + children".
+* **Variables of firewalls** (Panorama: template / template stack, device level in template-stack/devices/entry/variable;
+  SCM: folder / snippet / device) - to show and set in the window of the firewall / on-prem device; where SCM keeps
+  them is to be checked

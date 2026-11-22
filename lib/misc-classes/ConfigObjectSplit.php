@@ -32,6 +32,9 @@
  * The path is the XML path from <config>: element names, and the name of every <entry> on the way. Split are the
  * entries of the object stores and rule bases (STORES) of a location: /config/shared and every entry of a device
  * group, vsys, SCM snippet / container (folder) / device. Templates and template stacks stay in _rest.xml (later).
+ * Devices of Panorama (DEVICE_STORES): every managed firewall (mgt-config/devices), template, template stack, log
+ * collector and log collector group is one entry (a template as a whole); the firewalls of a device group
+ * (<devices> of the device group) are a store of it - so they have a history of their own.
  * A store is only split when it holds nothing but named <entry> elements (otherwise it stays whole in _rest.xml).
  *
  * Names in paths: "%" "/" control characters and a leading "." are written as %XX (rawurldecode gives them back).
@@ -57,6 +60,9 @@ class ConfigObjectSplit
     const LOCATIONS = array( 'device-group', 'vsys', 'snippet', 'container', 'device' );
     /** nothing below these is split (yet) */
     const SKIP_BELOW = array( 'template', 'template-stack' );
+    /** stores of Panorama devices, from <config>: '*' = every <entry> (localhost.localdomain) */
+    const DEVICE_STORES = array( 'mgt-config/devices', 'devices/*/template', 'devices/*/template-stack', 'devices/*/log-collector',
+        'devices/*/log-collector-group' );
 
     /**
      * @param DOMDocument $doc the configuration (not changed: split works on a copy)
@@ -237,7 +243,7 @@ class ConfigObjectSplit
                     break 2;
                 }
         }
-        if( $loc === null || !in_array( $store, self::stores( $loc ), TRUE ) )
+        if( ( $loc === null || !in_array( $store, self::stores( $loc ), TRUE ) ) && !in_array( $store, self::deviceStores( $doc->documentElement ), TRUE ) )
             return null;
         // the key of the entry as collect() gives it - only this store (before: the whole document for one entry)
         $keys = array();
@@ -278,27 +284,32 @@ class ConfigObjectSplit
     private static function collect( DOMDocument $doc ): array
     {
         $list = array();
+        $all = array();
         foreach( self::locations( $doc->documentElement ) as $loc )
             foreach( self::stores( $loc ) as $store )
-            {
-                if( !self::splittable( $store ) )
-                    continue;
-                $entries = array();
-                foreach( $store->childNodes as $c )
-                    if( $c instanceof DOMElement )
+                $all[] = $store;
+        foreach( self::deviceStores( $doc->documentElement ) as $store )
+            $all[] = $store;
+        foreach( $all as $store )
+        {
+            if( !self::splittable( $store ) )
+                continue;
+            $entries = array();
+            foreach( $store->childNodes as $c )
+                if( $c instanceof DOMElement )
+                {
+                    $key = self::key( $c );
+                    if( isset( $entries[$key] ) )
                     {
-                        $key = self::key( $c );
-                        if( isset( $entries[$key] ) )
-                        {
-                            $i = 2;
-                            while( isset( $entries[$key . '~' . $i] ) )
-                                $i++;
-                            $key .= '~' . $i;
-                        }
-                        $entries[$key] = $c;
+                        $i = 2;
+                        while( isset( $entries[$key . '~' . $i] ) )
+                            $i++;
+                        $key .= '~' . $i;
                     }
-                $list[self::path( $store )] = array( 'node' => $store, 'entries' => $entries );
-            }
+                    $entries[$key] = $c;
+                }
+            $list[self::path( $store )] = array( 'node' => $store, 'entries' => $entries );
+        }
         return $list;
     }
 
@@ -367,11 +378,37 @@ class ConfigObjectSplit
         return $list;
     }
 
+    /** @return DOMElement[] the stores of the Panorama devices that exist (DEVICE_STORES) */
+    private static function deviceStores( DOMElement $config ): array
+    {
+        $list = array();
+        foreach( self::DEVICE_STORES as $spec )
+        {
+            $nodes = array( $config );
+            foreach( explode( '/', $spec ) as $part )
+            {
+                $next = array();
+                foreach( $nodes as $n )
+                    foreach( $n->childNodes as $c )
+                        if( $c instanceof DOMElement && ( $part === '*' ? $c->nodeName === 'entry' : $c->nodeName === $part ) )
+                            $next[] = $c;
+                $nodes = $next;
+            }
+            foreach( $nodes as $n )
+                $list[] = $n;
+        }
+        return $list;
+    }
+
     /** @return DOMElement[] the stores of a location that exist */
     private static function stores( DOMElement $loc ): array
     {
         $list = array();
-        foreach( self::STORES as $spec )
+        // a device group: its firewalls (<devices><entry name="serial">)
+        $specs = self::STORES;
+        if( $loc->parentNode instanceof DOMElement && $loc->parentNode->nodeName === 'device-group' )
+            $specs[] = 'devices';
+        foreach( $specs as $spec )
         {
             $nodes = array( $loc );
             foreach( explode( '/', $spec ) as $part )
@@ -441,6 +478,15 @@ class ConfigObjectSplit
         return $doc;
     }
 
+    /** the path of a store of the Panorama devices (DEVICE_STORES; '*' = one entry name) */
+    private static function isDeviceStorePath( string $dir ): bool
+    {
+        foreach( self::DEVICE_STORES as $spec )
+            if( preg_match( '#^' . str_replace( '\\*', '[^/]+', preg_quote( $spec, '#' ) ) . '$#', $dir ) )
+                return TRUE;
+        return FALSE;
+    }
+
     /** a location or an element of it (not an entry of a store) */
     private static function insideLocation( DOMElement $n ): bool
     {
@@ -478,8 +524,9 @@ class ConfigObjectSplit
                     }
             if( $next === null )
             {
-                // only the store itself (and the elements above it inside the location) can be created
-                if( !preg_match( '/^[A-Za-z][A-Za-z0-9_.-]*$/', $part ) || !self::insideLocation( $n ) )
+                // only the store itself (and the elements above it inside the location) can be created - or a store
+                // of the Panorama devices (DEVICE_STORES: mgt-config/devices, …/template, …)
+                if( !preg_match( '/^[A-Za-z][A-Za-z0-9_.-]*$/', $part ) || ( !self::insideLocation( $n ) && !self::isDeviceStorePath( $dir ) ) )
                     throw new Exception( "the location of '" . $dir . "' is not in " . self::REST );
                 $next = $n->appendChild( $doc->createElement( $part ) );
             }

@@ -2819,6 +2819,16 @@ var subjectObject =
                 "name": "template-delete",
                 "MainFunction": {}
             },
+            "template-remove": {
+                "name": "template-remove",
+                "MainFunction": {},
+                "args": {
+                    "templateName": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
+            },
             "templatestack-addserial": {
                 "name": "templatestack-addserial",
                 "MainFunction": {},
