@@ -163,6 +163,7 @@ BUGFIX:
 * class PanAPIConnector | key store: hosts with "tsg_id" were compared wrongly (strpos needle was TRUE) - every host with a "1" was stored untested
 * class PanSCMAPIConnector | SCM description sent as a list (array) - TypeError in setDescription(); now its lines as text (scmText())
 * LDAP queries | a warning of an ldap_* function no longer ends the script (myErrorHandler)
+* alpha-mica-alert-only-keep-blocking
 
 
 2.1.62 (20261121)

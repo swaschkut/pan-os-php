@@ -293,7 +293,8 @@ trait sp_action_wildfire
      * The action comes from the BP JSON wildfire -> cloud-inline -> visibility (entry with type 'any', as the checks);
      * a negated condition ('!allow') keeps a compliant value, else 'alert'. Nothing listed in the BP JSON or a
      * PAN-OS version without inline ML: no change.
-     * Inline analysis still off: every rule gets 'alert' before it is enabled (enabling must not start blocking).
+     * Inline analysis still off: it is enabled and a compliant value is kept as well - a blocking action the BP JSON
+     * accepts stays as the customer set it (same rule for AS, VP and WF).
      */
     public function wf_inlineML_AlertOnlySet(): void
     {
@@ -380,7 +381,6 @@ trait sp_action_wildfire
         if( $direction !== null && strpos( $direction, '!' ) === 0 )
             $direction = null;
 
-        $wasEnabled = !empty( $this->cloud_inline_analysis_enabled );
         $container = DH::findFirstElementOrCreate( 'mica-engine-wildfire-rules', $this->xmlroot );
         if( !$container->hasChildNodes() )
         {
@@ -395,8 +395,7 @@ trait sp_action_wildfire
         }
         else
         {
-            $this->inlineML_setEntriesFromJSON( $section, 'wildfire', 'mica-engine-wildfire-rules', 'action', $fallback,
-                $section == 'visibility' && !$wasEnabled );
+            $this->inlineML_setEntriesFromJSON( $section, 'wildfire', 'mica-engine-wildfire-rules', 'action', $fallback );
 
             if( $section == 'bp' && $direction !== null )
             {

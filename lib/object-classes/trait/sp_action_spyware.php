@@ -1091,8 +1091,7 @@ trait sp_action_spyware
                 $this->additional['mica-engine-spyware-enabled'][$detector]['inline-policy-action'] = $value;
         }
         else
-            $this->inlineML_setEntriesFromJSON( $section, 'spyware', 'mica-engine-spyware-enabled', 'inline-policy-action', $fallback,
-                $section == 'visibility' && empty( $this->cloud_inline_analysis_enabled ) );
+            $this->inlineML_setEntriesFromJSON( $section, 'spyware', 'mica-engine-spyware-enabled', 'inline-policy-action', $fallback );
 
         // local-deep-learning of the detectors the BP JSON lists (from PAN-OS 11.2)
         $this->inlineML_localDeepLearningSetFromJSON( $section );
@@ -1229,7 +1228,8 @@ trait sp_action_spyware
      * The action comes from the BP JSON spyware -> cloud-inline -> visibility (entry with type 'any', as the checks);
      * a negated condition ('!allow') keeps a compliant value, else 'alert'. Nothing listed in the BP JSON or a
      * PAN-OS version without inline ML: no change.
-     * Inline analysis still off: every detector gets 'alert' before it is enabled (enabling must not start blocking).
+     * Inline analysis still off: it is enabled and a compliant value is kept as well - a blocking action the BP JSON
+     * accepts stays as the customer set it (same rule for AS, VP and WF).
      * local-deep-learning of the detectors the BP JSON lists is set as well (from PAN-OS 11.2).
      */
     public function inlineML_AlertOnlySet(): void

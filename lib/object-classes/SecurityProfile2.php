@@ -1369,11 +1369,11 @@ class SecurityProfile2
     /**
      * Set-actions for the inline-ML models / detectors of AV, AS, VP: field $field of every entry of $container
      * gets the value the BP JSON asks for (inlineML_jsonAction(), bpTargetValue()).
-     * $forceFallback: every entry that is not $fallback gets $fallback (alert-only-set while inline analysis is
-     * still off: enabling it must not start blocking).
+     * The value of an entry is only driven by the BP JSON: a value that complies is never changed, also not when
+     * inline analysis is still off (a blocking action of the customer is kept).
      * @return bool|null null: the BP JSON asks for nothing / PAN-OS version without inline ML; else TRUE: changed
      */
-    public function inlineML_setEntriesFromJSON( string $section, string $jsonType, string $container, string $field, string $fallback, bool $forceFallback = false ): ?bool
+    public function inlineML_setEntriesFromJSON( string $section, string $jsonType, string $container, string $field, string $fallback ): ?bool
     {
         $validate = $this->inlineML_jsonAction( $section, $jsonType );
         if( $validate === null )
@@ -1392,10 +1392,7 @@ class SecurityProfile2
             $name = DH::findAttribute( "name", $entry );
             $fieldNode = DH::findFirstElementOrCreate( $field, $entry );
 
-            if( $forceFallback )
-                $target = ( $fieldNode->textContent === $fallback ) ? null : $fallback;
-            else
-                $target = $this->bpTargetValue( $section, $fieldNode->textContent, $validate, $fallback );
+            $target = $this->bpTargetValue( $section, $fieldNode->textContent, $validate, $fallback );
 
             if( $target === null )
                 continue;
