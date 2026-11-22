@@ -668,11 +668,31 @@ async function showProject(pid) {
             infraBox[0].addEventListener('change', () => { if (!infraBox[0].checked) egressBox[0].checked = false; });
         }
         areaRow.hidden = sc.kind !== 'areas';
+        const scopeHint = el('span', { class: 'muted', text: p.import_scope ? '' : 'not chosen yet - saved with the first SCM import (or here)' });
         const scopeField = el('div', { class: 'scmscope' }, el('h3', { text: 'SCM import: scope' }), el('div', { class: 'row' }, field('Scope of the SCM import' + (scopeLocked ? ' (the owner changes it)' : ''), sKind),
-            el('span', { class: 'muted', text: p.import_scope ? '' : 'not chosen yet - saved with the first SCM import (or here)' }),
-            scopeLocked ? null : el('button', { type: 'button', text: 'Save scope', onclick: () => run(async () => { await api('PUT', base + '/import-scope', scopeOf()); message('scope of the SCM import saved'); await showProject(pid); }) })), areaRow,
+            scopeHint,
+            scopeLocked ? null : el('button', { type: 'button', text: 'Save scope', onclick: () => run(async () => {
+                // saved without drawing the project again: the key chosen above stays
+                const x = await api('PUT', base + '/import-scope', scopeOf());
+                p.import_scope = x.import_scope; scopeHint.textContent = 'saved'; scopeHint.className = 'ok';
+                message('scope of the SCM import saved'); }) })), areaRow,
             el('div', { class: 'row' }, el('span', { class: 'muted', text: 'configuration:' }), ...cfgBoxes.map(x => x[1]), el('span', { class: 'muted', text: '(none ticked = all)' })));
-        const keyChanged = () => { const k = usable.find(x => x.kid === iKey.value); sourceField.hidden = !k || k.kind === 'scm'; };
+        const importStatus = el('span', { class: 'muted' });
+        const importBtn = el('button', { class: 'primary', type: 'submit', text: 'Import' });
+        // while an import runs: the button is off and the state next to it (one import of a project at a time)
+        const watchImport = (job) => {
+            importBtn.disabled = true;
+            const t = setInterval(async () => {
+                const x = await api('GET', base + '/runs/' + job.jid).catch(() => null);
+                if (!x) return;
+                if (x.state === 'queued' || x.state === 'running') { importStatus.className = 'muted'; importStatus.textContent = 'import ' + x.state + ' …'; return; }
+                clearInterval(t); importBtn.disabled = false;
+                if (x.state === 'done') { importStatus.className = 'ok'; importStatus.textContent = 'import done - a new version'; message('import done - a new version'); await showProject(pid); }
+                else { importStatus.className = 'error'; importStatus.textContent = 'import ' + x.state + ': ' + (x.error || 'see Runs and project files'); }
+            }, 2000);
+            state.timers.push(t);
+        };
+        const keyChanged = () => { const k = usable.find(x => x.kid === iKey.value); sourceField.hidden = !k || k.kind === 'scm'; importStatus.textContent = ''; };
         iKey.addEventListener('change', keyChanged); keyChanged();
         const netOn = el('input', { type: 'checkbox', checked: p.network, disabled: !owner, onchange: (ev) => run(async () => {
             await api('PUT', base + '/network', { enabled: ev.target.checked }); await showProject(pid);
@@ -687,11 +707,23 @@ async function showProject(pid) {
             why ? el('p', { class: 'muted', text: why }) :
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const k = usable.find(x => x.kid === iKey.value);
-                await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : Object.assign({ kid: iKey.value }, scopeLocked ? {} : { scope: scopeOf() }));
+                importStatus.className = 'muted'; importStatus.textContent = 'starting …';
+                let job;
+                try {
+                    job = await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : Object.assign({ kid: iKey.value }, scopeLocked ? {} : { scope: scopeOf() }));
+                } catch (e) { importStatus.className = 'error'; importStatus.textContent = e.message; throw e; }
+                if (k && k.kind === 'scm' && !scopeLocked) { p.import_scope = scopeOf(); scopeHint.textContent = ''; }
+                importStatus.className = 'ok'; importStatus.textContent = 'import queued - it becomes a new version when it is done (Runs and project files)';
                 message('import queued - it becomes a new version when it is done (Runs and project files)');
-            }); } }, field('From (my API key)', iKey), sourceField, el('button', { class: 'primary', type: 'submit', text: 'Import' })),
+                watchImport(job);
+            }); } }, field('From (my API key)', iKey), sourceField, importBtn, importStatus),
             // the scope also without an import now (network off, no key yet): shown, saved by its own button
             !(p.binding && p.binding.kind === 'panos') ? scopeField : null);
+        // an import of this project still queued / running (another page, another member): the button stays off
+        if (!why) {
+            const active = ((await api('GET', base + '/runs').catch(() => ({ runs: [] }))).runs || []).find(r => r.type === 'import' && (r.state === 'queued' || r.state === 'running'));
+            if (active) { importStatus.textContent = 'import ' + active.state + ' …'; watchImport(active); }
+        }
     }
 
     // ---- App-ID database of the project (its own, else the one of the installation)

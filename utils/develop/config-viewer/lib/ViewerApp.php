@@ -2137,6 +2137,10 @@ class ViewerApp
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
             self::bindCheck( $p, $k['kind'], $k['target'] );
+            // one import of a project at a time (a second click while the first is queued / running)
+            $busy = $this->q( "SELECT jid FROM jobs WHERE project_id = ? AND type = 'import' AND state IN ('queued', 'running') ORDER BY id LIMIT 1", array( $p['id'] ) )->fetch();
+            if( $busy )
+                throw new ViewerException( 'an import of this project is already queued / running (run ' . substr( $busy['jid'], 0, 8 ) . ') - see Runs and project files', 409 );
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
             // SCM: the scope of the import - given with the import (chosen the first time / changed by the owner) or the
             // one of the project; fixed in the arguments of the run

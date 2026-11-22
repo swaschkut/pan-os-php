@@ -65,6 +65,7 @@ details.pbopts summary { cursor: pointer; color: var(--accent); }
 input.narrow { width: 7em; }
 .badge.oom { background: #fdecea; color: var(--warn); border-color: #f1b8b2; }
 span.error { color: var(--warn); }
+span.ok { color: var(--ok); }
 .suggestwrap { position: relative; display: block; }
 .suggestwrap > input { width: 100%; box-sizing: border-box; }
 ul.suggest { position: absolute; z-index: 30; left: 0; min-width: 100%; top: 100%; max-height: 300px; overflow: auto; margin: 2px 0 0; padding: 0;
