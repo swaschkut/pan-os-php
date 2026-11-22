@@ -588,6 +588,22 @@ $vers = array_column( call( 'GET', $P . '/configs' )[1]['configs'] ?? array(), n
 eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, $il[0][3][0] ?? null, isset( $vers['scm-1234567890.xml'] ) ),
     array( 'done', array( 'scm-export', 'scm-export-xml' ), array( 'bridge', 'none' ), 'tsg_id1234567890:sa-client@1234567890.iam%scm-geheim-4711' . "\n", 'in=scm-api://1234567890', TRUE ),
     'import SCM: scm-export with network (read only), scm-export-xml without, new version' );
+// scope of the SCM import: none chosen = every area + egress IPs; chosen with the import (configuration only, objects
+// and policies) - saved with the project, fixed in the arguments of the run
+$a0 = $il[0][3] ?? array();
+$sc = $imp( array( 'kid' => $skid, 'scope' => array( 'kind' => 'config', 'config_scope' => array( 'objects', 'policies' ) ) ) );
+@unlink( $bin . '/import.log' );
+$r = waitRun( $P . '/runs/' . ( $sc[1]['jid'] ?? '' ) );
+$il = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $bin . '/import.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+$a1 = $il[0][3] ?? array();
+$bad = $imp( array( 'kid' => $skid, 'scope' => array( 'kind' => 'areas', 'areas' => array( 'nothing' ) ) ) );
+$kindSaved = call( 'GET', $P )[1]['import_scope']['kind'] ?? null;
+$sa = call( 'PUT', $P . '/import-scope', array( 'kind' => 'areas', 'areas' => array( 'remote-networks' ), 'egress' => TRUE ) );
+eq( array( in_array( 'area=config,' . implode( ',', array( 'infra', 'remote-networks', 'service-connections', 'mobile-users', 'explicit-proxy', 'prisma-browser', 'iam' ) ), $a0, TRUE ) || (bool)preg_grep( '/^area=config,infra,/', $a0 ),
+    in_array( 'egressip', $a0, TRUE ), $r[1]['state'] ?? null, array_values( preg_grep( '/^(area|config-scope|egressip)/', $a1 ) ), $kindSaved,
+    $bad[0], $sa[1]['import_scope']['areas'] ?? null, $sa[1]['import_scope']['egress'] ?? null ),
+    array( TRUE, TRUE, 'done', array( 'area=config', 'config-scope=objects,policies' ), 'config', 400, array( 'infra', 'remote-networks' ), TRUE ),
+    'scope of the SCM import: all by default, configuration only (objects, policies) with the import, saved; egress IPs add Infrastructure' );
 // the conversion fails: only it again, on the export the run has (no download, no network, no key)
 $doneJid = $r[1]['jid'] ?? '';
 touch( $bin . '/fail-scm-xml' );

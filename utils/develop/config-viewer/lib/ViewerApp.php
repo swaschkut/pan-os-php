@@ -221,6 +221,9 @@ class ViewerApp
             $this->db->exec( 'ALTER TABLE projects ADD COLUMN network INTEGER NOT NULL DEFAULT 0' );
         // the kind of device a project is bound to by its first import / read from an API: 'panos' (firewall /
         // Panorama) or 'scm' (with the TSG of the tenant in bind_target); set from the runs a project already has
+        // the scope of the SCM import of the project (JSON: kind, areas, egress, config scope; null = all)
+        if( !in_array( 'import_scope', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN import_scope TEXT' );
         $bindNew = !in_array( 'bind_kind', $cols, TRUE );
         if( $bindNew )
         {
@@ -799,7 +802,79 @@ class ViewerApp
     {
         return array( 'pid' => $p['pid'], 'name' => $p['name'], 'owner' => $p['owner'], 'role' => $p['role'], 'created' => (int)$p['created'],
             'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null, 'network' => !empty( $p['network'] ),
-            'binding' => !empty( $p['bind_kind'] ) ? array( 'kind' => $p['bind_kind'], 'target' => $p['bind_target'] ?? null ) : null );
+            'binding' => !empty( $p['bind_kind'] ) ? array( 'kind' => $p['bind_kind'], 'target' => $p['bind_target'] ?? null ) : null,
+            'import_scope' => self::scopeOf( $p ), 'scm_areas' => self::scmPaAreas(), 'scm_config_groups' => self::SCM_CONFIG_GROUPS );
+    }
+
+    // ------------------------------------------------------------------ scope of the SCM import (PROJECT_TYPES.md 1)
+
+    /** groups of the config area (scm_pa_export.php config-scope=, SCMPrismaAccessExport::CONFIG_GROUPS) */
+    const SCM_CONFIG_GROUPS = array( 'objects', 'policies', 'network', 'identity', 'device' );
+
+    /**
+     * a scope as given (import form / PUT): kind config (configuration only), areas (the areas given + egress IPs yes /
+     * no), all (every area the viewer knows now, egress IPs), future (every area of the viewer version that runs the
+     * import); config_scope: groups of the config area (empty = all). The egress IPs need the area infra (the key).
+     */
+    private static function scopeCheck( $in ): array
+    {
+        if( !is_array( $in ) )
+            throw new ViewerException( 'scope: an object (kind, areas, egress, config_scope)', 400 );
+        $kind = (string)( $in['kind'] ?? '' );
+        if( !in_array( $kind, array( 'config', 'areas', 'all', 'future' ), TRUE ) )
+            throw new ViewerException( 'scope.kind: config | areas | all | future', 400 );
+        $areas = array();
+        if( $kind === 'areas' )
+        {
+            foreach( (array)( $in['areas'] ?? array() ) as $a )
+                if( !in_array( $a, self::scmPaAreas(), TRUE ) )
+                    throw new ViewerException( 'scope.areas: ' . implode( ', ', self::scmPaAreas() ), 400 );
+            $areas = array_values( array_intersect( self::scmPaAreas(), (array)( $in['areas'] ?? array() ) ) );
+        }
+        elseif( $kind === 'all' )
+            $areas = self::scmPaAreas();
+        $egress = $kind === 'all' || $kind === 'future' || ( $kind === 'areas' && !empty( $in['egress'] ) && $in['egress'] !== 'false' );
+        if( $egress && $kind === 'areas' && !in_array( 'infra', $areas, TRUE ) )
+            array_unshift( $areas, 'infra' );
+        $cs = array();
+        foreach( (array)( $in['config_scope'] ?? array() ) as $g )
+            if( !in_array( $g, self::SCM_CONFIG_GROUPS, TRUE ) )
+                throw new ViewerException( 'scope.config_scope: ' . implode( ', ', self::SCM_CONFIG_GROUPS ), 400 );
+        $cs = array_values( array_intersect( self::SCM_CONFIG_GROUPS, (array)( $in['config_scope'] ?? array() ) ) );
+        if( count( $cs ) === count( self::SCM_CONFIG_GROUPS ) )
+            $cs = array();
+        return array( 'kind' => $kind, 'areas' => $kind === 'future' ? null : $areas, 'egress' => $egress, 'config_scope' => $cs );
+    }
+
+    /** the scope of the project (null: not chosen yet - an import reads all, as "future") */
+    private static function scopeOf( array $p ): ?array
+    {
+        $s = isset( $p['import_scope'] ) && is_string( $p['import_scope'] ) ? json_decode( $p['import_scope'], TRUE ) : null;
+        return is_array( $s ) && isset( $s['kind'] ) ? $s : null;
+    }
+
+    /** the areas an import with $scope reads (besides config) */
+    private static function scopeAreas( ?array $scope ): array
+    {
+        if( $scope === null || $scope['kind'] === 'future' )
+            return self::scmPaAreas();
+        // an area the viewer does not know any more is left out
+        return array_values( array_intersect( (array)( $scope['areas'] ?? array() ), self::scmPaAreas() ) );
+    }
+
+    /**
+     * the scope of the SCM import of a project: chosen by a writer while there is none, changed later by the owner
+     */
+    public function importScopeSet( array $user, $pid, $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        if( ( $p['bind_kind'] ?? null ) === 'panos' )
+            throw new ViewerException( 'this project is bound to PAN-OS (firewall / Panorama) - the scope is for an SCM import', 403 );
+        if( self::scopeOf( $p ) !== null && $p['role'] !== 'owner' )
+            throw new ViewerException( 'not allowed: the scope of the SCM import is changed by the owner', 403 );
+        $scope = self::scopeCheck( $in );
+        $this->q( 'UPDATE projects SET import_scope = ? WHERE id = ?', array( json_encode( $scope ), $p['id'] ) );
+        return self::projectPublic( $this->projectGet( $user, $pid, 'read' ) );
     }
 
     // ------------------------------------------------------------------ binding of a project (PAN-OS / SCM tenant)
@@ -2063,6 +2138,28 @@ class ViewerApp
             // only references here - the runner builds the steps and the key store of the run when it starts
             self::bindCheck( $p, $k['kind'], $k['target'] );
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+            // SCM: the scope of the import - given with the import (chosen the first time / changed by the owner) or the
+            // one of the project; fixed in the arguments of the run
+            if( $k['kind'] === 'scm' )
+            {
+                if( isset( $in['scope'] ) )
+                {
+                    $given = self::scopeCheck( $in['scope'] );
+                    if( $given !== self::scopeOf( $p ) )
+                    {
+                        if( self::scopeOf( $p ) !== null && $p['role'] !== 'owner' )
+                            throw new ViewerException( 'not allowed: the scope of the SCM import is changed by the owner', 403 );
+                        $this->q( 'UPDATE projects SET import_scope = ? WHERE id = ?', array( json_encode( $given ), $p['id'] ) );
+                    }
+                    $scope = $given;
+                }
+                else
+                    $scope = self::scopeOf( $p );
+                $args[] = 'x-import-areas=' . implode( ',', array_merge( array( 'config' ), self::scopeAreas( $scope ) ) );
+                $args[] = 'x-import-egress=' . ( $scope === null || !empty( $scope['egress'] ) ? 'yes' : 'no' );
+                if( $scope !== null && count( $scope['config_scope'] ?? array() ) > 0 )
+                    $args[] = 'x-import-cscope=' . implode( ',', $scope['config_scope'] );
+            }
         }
         if( $type === 'egress-ip' )
         {
@@ -3107,7 +3204,7 @@ class ViewerApp
         $type = $j['type'];
         $x = array();
         foreach( $args as $a )
-            if( preg_match( '/^x-[a-z-]+?-(key|target|source|zip|resume)=(.*)$/', $a, $m ) )
+            if( preg_match( '/^x-[a-z-]+?-(key|target|source|zip|resume|areas|egress|cscope)=(.*)$/', $a, $m ) )
                 $x[$m[1]] = $m[2];
         $step = function( string $tool, array $raw, bool $network, array $rawEnv = array() ) use ( $jobDir, $j ) {
             return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
@@ -3210,9 +3307,18 @@ class ViewerApp
             return array( $step( 'maxmind-update', array(), TRUE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
         if( $k['kind'] === 'panos' )
             return array( $step( 'upload', array( 'in=api://' . $k['target'] . ( ( $x['source'] ?? '' ) === 'running' ? '/running-config' : '' ), 'out=%JOB%/out.xml' ), TRUE ) );
+        // SCM: the areas of the scope of the run (a run queued before the scope existed: every area + egress IPs)
+        $areas = array( 'config' );
+        foreach( explode( ',', $x['areas'] ?? implode( ',', array_merge( array( 'config' ), self::scmPaAreas() ) ) ) as $a )
+            if( in_array( $a, self::scmPaAreas(), TRUE ) )
+                $areas[] = $a;
+        $egress = ( $x['egress'] ?? 'yes' ) === 'yes' && in_array( 'infra', $areas, TRUE );
+        $cscope = array_values( array_intersect( self::SCM_CONFIG_GROUPS, explode( ',', $x['cscope'] ?? '' ) ) );
         return array(
-            $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config,' . implode( ',', self::scmPaAreas() ), 'outdir=%JOB%/scm-export', 'config-internal=no',
-                'egressip-key-out=%JOB%/.egress-key', 'egressip', 'egressip-env=auto' ), TRUE ),
+            $step( 'scm-export', array_merge( array( 'in=scm-api://' . $k['target'], 'area=' . implode( ',', array_unique( $areas ) ), 'outdir=%JOB%/scm-export', 'config-internal=no' ),
+                count( $cscope ) > 0 ? array( 'config-scope=' . implode( ',', $cscope ) ) : array(),
+                in_array( 'infra', $areas, TRUE ) ? array( 'egressip-key-out=%JOB%/.egress-key' ) : array(),
+                $egress ? array( 'egressip', 'egressip-env=auto' ) : array() ), TRUE ),
             $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $k['target'], 'out=%JOB%/out.xml' ), FALSE ) );
     }
 

@@ -1,6 +1,6 @@
 # config viewer: project types (SCM import scope, tenant migration, tenant sync, Panorama → SCM) - concept
 
-Status: concept 2026-11-22 (Sven), nothing of it built yet. It puts together what already exists on the CLI
+Status: concept 2026-11-22 (Sven); built: 1 (scope of the SCM import). It puts together what already exists on the CLI
 (`utils/develop/sase/scm/`) and what a project of the viewer needs for it. Related:
 
 * [SCM_TAB.md](SCM_TAB.md) - SCM tab, binding of a project, compare / change with review and live compare
@@ -28,8 +28,12 @@ Difference of the last two: "all" keeps the list of the day it was chosen (a lat
 its own); "also future areas" follows the viewer. Additionally for the config area the existing filters of
 `scm_pa_export.php`: `config-scope=` (objects, policies, network, identity, device) and `config-types=`.
 
-Stored with the project (`import_scope`: kind + areas + egress yes / no + config scope); shown in the import form and in
-the SCM tab ("From the SCM imports" says which areas a run has).
+Built: stored with the project (`import_scope`: kind + areas + egress yes / no + config scope), in the card "Import
+from a device" (block "SCM import: scope", also without an import now: "Save scope"; `PUT projects/<pid>/import-scope`).
+Chosen by a writer while there is none (also with the first SCM import: `scope` of `POST …/import/runs`), changed later
+by the owner. Fixed per run in its arguments (`x-import-areas`, `x-import-egress`, `x-import-cscope`): a run started
+before a change keeps its scope. The egress IPs need Infrastructure (the API key is in its settings) - it is added.
+"Read all live" of the SCM tab reads every area (an explicit read).
 
 ## 2. Project types
 

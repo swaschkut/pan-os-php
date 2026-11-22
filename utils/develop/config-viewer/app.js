@@ -645,6 +645,33 @@ async function showProject(pid) {
         const iKey = el('select', {}, usable.map(k => el('option', { value: k.kid, text: (k.kind === 'scm' ? 'SCM TSG ' : '') + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
         const iSource = el('select', {}, el('option', { value: 'candidate', text: 'candidate configuration' }), el('option', { value: 'running', text: 'running configuration' }));
         const sourceField = field('Configuration', iSource);
+        // SCM: the scope of the import (PROJECT_TYPES.md 1) - chosen at the first import, changed later by the owner
+        const sc = p.import_scope || { kind: 'all', areas: p.scm_areas, egress: true, config_scope: [] };
+        const scopeLocked = !!p.import_scope && !owner;
+        const AREA_LABEL = { infra: 'Infrastructure', 'service-connections': 'Service connections', 'remote-networks': 'Remote networks', 'mobile-users': 'Mobile users',
+            'explicit-proxy': 'Explicit proxy', 'prisma-browser': 'Prisma Browser', iam: 'Identity & Access' };
+        const sKind = el('select', { 'aria-label': 'scope of the SCM import', disabled: scopeLocked },
+            [['config', 'configuration only'], ['areas', 'configuration + selected areas'], ['all', 'all (the areas of today)'], ['future', 'all, also future areas']]
+                .map(([v, t]) => el('option', { value: v, text: t, selected: sc.kind === v })));
+        const box = (v, label, on) => { const c = el('input', { type: 'checkbox', value: v, checked: on, disabled: scopeLocked }); return [c, el('label', { class: 'chk' }, c, ' ' + label)]; };
+        const areaBoxes = (p.scm_areas || []).map(a => box(a, AREA_LABEL[a] || a, (sc.areas || p.scm_areas).includes(a)));
+        const egressBox = box('egress', 'egress IPs (needs Infrastructure: its API key)', sc.egress !== false);
+        const cfgBoxes = (p.scm_config_groups || []).map(g => box(g, g, !sc.config_scope || sc.config_scope.length === 0 || sc.config_scope.includes(g)));
+        const areaRow = el('div', { class: 'row scopeareas' }, ...areaBoxes.map(x => x[1]), egressBox[1]);
+        const scopeOf = () => ({ kind: sKind.value, areas: areaBoxes.filter(x => x[0].checked).map(x => x[0].value), egress: egressBox[0].checked,
+            config_scope: cfgBoxes.filter(x => x[0].checked).map(x => x[0].value) });
+        sKind.addEventListener('change', () => { areaRow.hidden = sKind.value !== 'areas'; });
+        // the egress IPs need Infrastructure (the API key comes from its settings)
+        const infraBox = areaBoxes.find(x => x[0].value === 'infra');
+        if (infraBox) {
+            egressBox[0].addEventListener('change', () => { if (egressBox[0].checked) infraBox[0].checked = true; });
+            infraBox[0].addEventListener('change', () => { if (!infraBox[0].checked) egressBox[0].checked = false; });
+        }
+        areaRow.hidden = sc.kind !== 'areas';
+        const scopeField = el('div', { class: 'scmscope' }, el('h3', { text: 'SCM import: scope' }), el('div', { class: 'row' }, field('Scope of the SCM import' + (scopeLocked ? ' (the owner changes it)' : ''), sKind),
+            el('span', { class: 'muted', text: p.import_scope ? '' : 'not chosen yet - saved with the first SCM import (or here)' }),
+            scopeLocked ? null : el('button', { type: 'button', text: 'Save scope', onclick: () => run(async () => { await api('PUT', base + '/import-scope', scopeOf()); message('scope of the SCM import saved'); await showProject(pid); }) })), areaRow,
+            el('div', { class: 'row' }, el('span', { class: 'muted', text: 'configuration:' }), ...cfgBoxes.map(x => x[1]), el('span', { class: 'muted', text: '(none ticked = all)' })));
         const keyChanged = () => { const k = usable.find(x => x.kid === iKey.value); sourceField.hidden = !k || k.kind === 'scm'; };
         iKey.addEventListener('change', keyChanged); keyChanged();
         const netOn = el('input', { type: 'checkbox', checked: p.network, disabled: !owner, onchange: (ev) => run(async () => {
@@ -660,9 +687,11 @@ async function showProject(pid) {
             why ? el('p', { class: 'muted', text: why }) :
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const k = usable.find(x => x.kid === iKey.value);
-                await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : { kid: iKey.value });
+                await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : Object.assign({ kid: iKey.value }, scopeLocked ? {} : { scope: scopeOf() }));
                 message('import queued - it becomes a new version when it is done (Runs and project files)');
-            }); } }, field('From (my API key)', iKey), sourceField, el('button', { class: 'primary', type: 'submit', text: 'Import' })));
+            }); } }, field('From (my API key)', iKey), sourceField, el('button', { class: 'primary', type: 'submit', text: 'Import' })),
+            // the scope also without an import now (network off, no key yet): shown, saved by its own button
+            !(p.binding && p.binding.kind === 'panos') ? scopeField : null);
     }
 
     // ---- App-ID database of the project (its own, else the one of the installation)

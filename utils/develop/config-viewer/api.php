@@ -417,6 +417,9 @@ try
             viewerOut( ViewerApp::projectPublic( $app->projectCreate( $user, viewerBody()['name'] ?? null ) ), 201 );
         if( $n == 2 && $method === 'GET' )
             viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) + array( 'network_global' => $app->networkGet()['enabled'] ) );
+        // scope of the SCM import of the project: PUT {kind, areas, egress, config_scope}
+        if( $n == 3 && $sub === 'import-scope' && $method === 'PUT' )
+            viewerOut( $app->importScopeSet( $user, $pid, viewerBody() ) );
         // binding of the project (PAN-OS / SCM tenant): DELETE = removed (administrator)
         if( $n == 3 && $sub === 'binding' && $method === 'DELETE' )
             viewerOut( $app->projectBindingReset( $user, $pid ) );
