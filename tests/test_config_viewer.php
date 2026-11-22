@@ -707,6 +707,34 @@ eq( $eff( $ED, 'DG2:effective' )[1][2] ?? null, 'DG1:A2:overridden by shared (ED
 $locs = $alice->call( 'GET', $AN . '/locations' )[1] ?? array();
 eq( array( $locs['ancestor'] ?? null, $eff( $AN, 'DG2:effective' )[1][1] ?? null, $eff( $AN, 'DG2:effective' )[1][5] ?? null ),
     array( TRUE, 'shared:dup:used:1', 'DG2:dup:overridden by shared:3' ), 'effective view: with ancestor precedence the highest copy wins' );
+// SCM tab, Prisma Access egress IP: import (92_egress-ip.json of an export, a zip of the export, a snapshot), states,
+// compare, delete; live only with an egress-IP key of the user
+$EG = 'projects/' . $pid;
+$egJson = json_encode( array( 'request' => array( 'serviceType' => 'all', 'addrType' => 'all', 'location' => 'all' ), 'status' => 'ok', 'fetched_at' => '2026-11-01',
+    'data' => array( array( 'zone' => 'Germany Central', 'address_details' => array( array( 'address' => '198.51.100.10', 'serviceType' => 'gp_gateway', 'addressType' => 'active' ),
+        array( 'address' => '198.51.100.11', 'serviceType' => 'remote_network', 'addressType' => 'active' ) ) ) ) ) );
+$e1 = $alice->call( 'POST', $EG . '/scm/egress', null, array( '92_egress-ip.json', $egJson, 'file' ) );
+$zipf = tempnam( sys_get_temp_dir(), 'egz' );
+$z = new ZipArchive();
+$z->open( $zipf, ZipArchive::OVERWRITE );
+$z->addFromString( '1234567890/infra/92_egress-ip.json', str_replace( '198.51.100.11', '198.51.100.12', $egJson ) );
+$z->addFromString( '1234567890/remote-networks/psk-list.csv', 'secret-never-read' );
+$z->close();
+$e2 = $alice->call( 'POST', $EG . '/scm/egress', null, array( 'export.zip', file_get_contents( $zipf ), 'file' ) );
+@unlink( $zipf );
+$e3 = $alice->call( 'POST', $EG . '/scm/egress', null, array( 'x.json', '{"nothing": 1}', 'file' ) );
+$el = $alice->call( 'GET', $EG . '/scm/egress' );
+$ids = array_column( $el[1]['states'] ?? array(), 'id' );
+$cmp = $alice->call( 'GET', $EG . '/scm/egress/' . ( $e2[1]['id'] ?? '' ) . '?compare=' . ( $e1[1]['id'] ?? '' ) );
+$run = $alice->call( 'POST', $EG . '/egress-ip/runs', array( 'kid' => 'nokey' ) );
+$bad = $alice->call( 'GET', $EG . '/scm/egress/' . urlencode( '../x' ) );
+$del = $alice->call( 'DELETE', $EG . '/scm/egress/' . ( $e1[1]['id'] ?? '' ) );
+$el2 = $alice->call( 'GET', $EG . '/scm/egress' );
+eq( array( status( $e1 ), $e1[1]['count'] ?? null, status( $e2 ), status( $e3 ), count( $ids ), array_column( $cmp[1]['compare']['added'] ?? array(), 'address' ),
+    array_column( $cmp[1]['compare']['removed'] ?? array(), 'address' ), status( $run ), status( $bad ), status( $del ), count( $el2[1]['states'] ?? array() ),
+    in_array( 'gp_gateway', $el[1]['options']['servicetype'] ?? array(), TRUE ) ),
+    array( 201, 2, 201, 400, 2, array( '198.51.100.12' ), array( '198.51.100.11' ), 400, 404, 200, 1, TRUE ),
+    'SCM tab egress IP: import (JSON, zip of an export), compare of two states, delete; live only with an egress-IP key' );
 // System: the settings of Panorama / a template / SCM as type=config-section reads them; secrets never
 $SY = $up( 'system-panorama.xml' );
 $sy = $alice->call( 'GET', $SY . '/system' );

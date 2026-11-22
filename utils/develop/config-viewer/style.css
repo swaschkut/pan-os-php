@@ -208,3 +208,14 @@ tr.overridden td:not(:has(.badge)) { text-decoration: line-through; text-decorat
 .locpick { display: flex; flex-direction: row; align-items: center; gap: 4px; }
 .locpick .locfilter { width: 9em; }
 .locpick .loccount { font-size: 11px; white-space: nowrap; }
+
+/* SCM tab: menu on the left, the page on the right */
+.scmlayout { display: flex; gap: 1rem; align-items: flex-start; }
+.scmmenu { flex: 0 0 230px; display: block; background: #f6f7f9; border-radius: 6px; padding: 6px 0; }
+.scmmenu .vsec { display: block; margin-bottom: 6px; }
+.scmmenu .vsechead { padding: 4px 12px; font-size: 11px; text-transform: uppercase; color: var(--muted); }
+.scmmenu .ventry.on { font-weight: 600; }
+.scmpanel { flex: 1; min-width: 0; }
+.diffadd { color: #1d6b35; font-family: monospace; }
+.diffdel { color: #9b2c22; font-family: monospace; }
+.diffchg { color: #7a5a00; font-family: monospace; }

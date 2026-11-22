@@ -1757,7 +1757,7 @@ class ViewerApp
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
     const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover',
-        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file' );
+        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file', 'egress-ip' );
     /** the mergers of the Merger tab: their arguments (checked here, the merger checks their combination again) */
     const MERGER_OBJECTTYPES = array( 'tag', 'address', 'service', 'edl', 'region', 'application-custom', 'application-filter', 'addressgroup',
         'servicegroup', 'application-group', 'custom-url-category', 'schedule', 'log-profile', 'decryption-profile', 'hip-object', 'hip-profile',
@@ -1954,7 +1954,7 @@ class ViewerApp
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
         // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
-        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover' ), TRUE );
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip' ), TRUE );
         // the project of the installation-wide runs has only App-ID / MaxMind runs; MaxMind is installation-wide only
         if( ( $p['pid'] === self::SYSTEM_PID && !in_array( $type, array( 'appid', 'geoip' ), TRUE ) ) || ( $type === 'geoip' && $p['pid'] !== self::SYSTEM_PID ) )
             throw new ViewerException( 'not found', 404 );
@@ -1986,6 +1986,38 @@ class ViewerApp
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+        }
+        if( $type === 'egress-ip' )
+        {
+            // SCM tab: the egress IPs of a Prisma Access tenant, live with the egress-IP API key of this user (key store
+            // kind egress IP, target = TSG). Network as for an import of the tenant (tsg:<TSG> on the allow list).
+            $this->projectGet( $user, $pid, 'write' );
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
+            if( !$k || $k['kind'] !== 'egressip' )
+                throw new ViewerException( 'kid: one of your egress-IP API keys (Account, My API keys, kind egress IP)', 400 );
+            if( !$this->networkGet()['enabled'] )
+                throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
+            if( empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+            if( ( $why = $this->networkRefusal( 'scm', $k['target'], $user ) ) !== null )
+                throw new ViewerException( $why, 403 );
+            self::egressLib();
+            try
+            {
+                $req = SCMEgressIP::request( null, array( 'servicetype' => (string)( $in['servicetype'] ?? 'all' ), 'addrtype' => (string)( $in['addrtype'] ?? 'all' ),
+                    'location' => (string)( $in['location'] ?? 'all' ) ) );
+            }
+            catch( Exception $e )
+            {
+                throw new ViewerException( $e->getMessage(), 400 );
+            }
+            $env = (string)( $in['env'] ?? 'prod' );
+            if( !in_array( $env, array( 'prod', 'prod6' ), TRUE ) )
+                throw new ViewerException( 'env: prod or prod6', 400 );
+            $args = array( 'x-egress-key=' . $k['kid'], 'x-egress-target=egressip:' . $k['target'], 'servicetype=' . $req['serviceType'],
+                'addrtype=' . $req['addrType'], 'location=' . $req['location'], 'env=' . $env );
         }
         if( $type === 'ldap-discover' )
         {
@@ -2875,7 +2907,7 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover' ), TRUE ) ) && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip' ), TRUE ) ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
         // App-ID database / MaxMind data of the installation or of the project: for every run (not for the runs that
@@ -2913,7 +2945,7 @@ class ViewerApp
         // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
         // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
         $steps = null;
-        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover' ), TRUE ) )
+        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
         {
             try
             {
@@ -3007,7 +3039,8 @@ class ViewerApp
                 throw new ViewerException( 'the uploaded zip is not there any more' );
             return array( $step( 'maxmind-update', array( 'maxmind-zip=%JOB%/GeoLite2-Country-CSV-upload.zip' ), FALSE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
         }
-        $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ), 'ldap' => array( 'ldap' ), 'ldap-users' => array( 'ldap' ) )[$type];
+        $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ), 'ldap' => array( 'ldap' ), 'ldap-users' => array( 'ldap' ),
+            'egress-ip' => array( 'egressip' ) )[$type];
         $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
         if( !$k || !in_array( $k['kind'], $kinds, TRUE ) )
             throw new ViewerException( 'the API key of the run does not exist any more' );
@@ -3027,7 +3060,8 @@ class ViewerApp
         $host = $type === 'geoip' ? self::MAXMIND_HOST : ( $type === 'ldap' || $type === 'ldap-users' ? (string)( $x['target'] ?? '' ) : $k['target'] );
         // the rules again when the run starts, for the user who started it (the administrator may have changed them)
         $ju = array( 'id' => (int)$j['user_id'] );
-        $why = $type === 'ldap' || $type === 'ldap-users' ? $this->ldapRefusal( $host, $ju ) : $this->networkRefusal( $type === 'geoip' ? 'panos' : $k['kind'], $host, $ju );
+        $why = $type === 'ldap' || $type === 'ldap-users' ? $this->ldapRefusal( $host, $ju )
+            : $this->networkRefusal( $type === 'geoip' ? 'panos' : ( $k['kind'] === 'egressip' ? 'scm' : $k['kind'] ), $host, $ju );
         if( $why !== null )
             throw new ViewerException( $why );
         $secret = $this->unseal( $k['secret'] );
@@ -3046,6 +3080,12 @@ class ViewerApp
         {
             $raw = array_values( array_filter( $args, function( $a ) { return strpos( $a, 'x-' ) !== 0; } ) );
             return array( $step( $type === 'ldap' ? 'ldap-query' : 'rule', $raw, TRUE, $type === 'ldap-users' ? $this->dataEnv( $j['pid'] ) : array() ) );
+        }
+        // the egress IPs of the tenant: scm_egress_ip.php (pan-os-php type=scm-egress-ip), the request checked at queueing
+        if( $type === 'egress-ip' )
+        {
+            $req = array_values( array_filter( $args, function( $a ) { return preg_match( '/^(servicetype|addrtype|location|env)=[a-z0-9_]{1,40}$/', $a ); } ) );
+            return array( $step( 'scm-egress-ip', array_merge( array( 'tsg=' . $k['target'] ), $req, array( 'save=%JOB%/egress.json', 'format=list', 'out=%JOB%/egress.txt' ) ), TRUE ) );
         }
         if( $type === 'appid' )
             return array( $step( 'download-predefined', array( 'in=api://' . $k['target'], 'predefined-out=%JOB%/predefined.xml' ), TRUE ) );
@@ -4790,6 +4830,169 @@ class ViewerApp
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'change', 'type' => 'config-section', 'args' => $args, 'note' => $note ) );
         return array( 'log' => isset( $r['json']['log'] ) && is_string( $r['json']['log'] ) ? substr( $this->hidePaths( $r['json']['log'] ), 0, 200000 ) : '',
             'status' => $r['status'] ?? null );
+    }
+
+    // ------------------------------------------------------------------ SCM tab (SCM_TAB.md): egress IP
+
+    private static function egressLib(): void
+    {
+        require_once dirname( __FILE__ ) . '/../../sase/scm/lib/SCMEgressIP.php';
+    }
+
+    private function egressDir( array $p ): string
+    {
+        return $this->projectDir( $p['pid'] ) . '/scm/egress';
+    }
+
+    /**
+     * the states of the egress IPs of the project (SCM tab): imports (an export / its 92_egress-ip.json / a snapshot)
+     * and live reads (runs egress-ip - taken over here when they are done), newest first; the egress-IP keys of the user
+     */
+    public function scmEgressList( array $user, $pid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        $dir = $this->egressDir( $p );
+        // live reads that are done: their result into the states of the project (once)
+        foreach( $this->q( "SELECT j.*, u.name AS user FROM jobs j LEFT JOIN users u ON u.id = j.user_id WHERE j.project_id = ? AND j.type = 'egress-ip' AND j.state = 'done'",
+            array( $p['id'] ) )->fetchAll() as $j )
+        {
+            $f = $this->jobDir( $p, $j['jid'] ) . '/egress.json';
+            if( is_file( $dir . '/' . $j['jid'] . '.json' ) || !is_file( $f ) )
+                continue;
+            $snap = json_decode( (string)file_get_contents( $f ), TRUE );
+            if( !is_array( $snap ) || !isset( $snap['rows'] ) || !is_array( $snap['rows'] ) )
+                continue;
+            $this->egressStore( $dir, $j['jid'], array( 'source' => 'live', 'user' => (string)$j['user'], 'time' => (int)( $j['finished'] ?? $j['created'] ?? time() ),
+                'tsg' => isset( $snap['tsg_id'] ) ? (string)$snap['tsg_id'] : null, 'request' => $snap['request'] ?? null, 'fetched_at' => $snap['fetched_at'] ?? null, 'rows' => $snap['rows'] ) );
+        }
+        $states = array();
+        foreach( glob( $dir . '/*.json' ) ?: array() as $f )
+        {
+            $s = json_decode( (string)file_get_contents( $f ), TRUE );
+            if( !is_array( $s ) )
+                continue;
+            $states[] = array( 'id' => basename( $f, '.json' ), 'source' => $s['source'] ?? '', 'user' => $s['user'] ?? '', 'time' => (int)( $s['time'] ?? 0 ),
+                'tsg' => $s['tsg'] ?? null, 'request' => $s['request'] ?? null, 'fetched_at' => $s['fetched_at'] ?? null, 'name' => $s['name'] ?? null,
+                'count' => count( $s['rows'] ?? array() ) );
+        }
+        usort( $states, function( $a, $b ) { return $b['time'] <=> $a['time'] ?: strcmp( $b['id'], $a['id'] ); } );
+        $keys = array();
+        if( !isset( $user['token'] ) )
+            foreach( $this->keyList( $user ) as $k )
+                if( $k['kind'] === 'egressip' )
+                    $keys[] = array( 'kid' => $k['kid'], 'target' => $k['target'], 'label' => $k['label'], 'refused' => $this->networkRefusal( 'scm', $k['target'], $user ) );
+        self::egressLib();
+        return array( 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ),
+            'options' => array( 'servicetype' => SCMEgressIP::SERVICE_TYPES, 'addrtype' => SCMEgressIP::ADDR_TYPES, 'location' => SCMEgressIP::LOCATIONS ) );
+    }
+
+    private function egressStore( string $dir, string $id, array $state ): void
+    {
+        if( !is_dir( $dir ) )
+            mkdir( $dir, 0700, TRUE );
+        $tmp = $dir . '/.' . $id . '.' . getmypid();
+        file_put_contents( $tmp, json_encode( $state, JSON_UNESCAPED_SLASHES ) );
+        rename( $tmp, $dir . '/' . $id . '.json' );
+    }
+
+    /** one state: its rows; with $compare (an older state) the added / removed / changed addresses */
+    public function scmEgressGet( array $user, $pid, $id, $compare = null ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        self::egressLib();
+        $read = function( $id ) use ( $p ) {
+            if( !is_string( $id ) || !preg_match( '/^[0-9a-z]{1,40}$/', $id ) || !is_file( $this->egressDir( $p ) . '/' . $id . '.json' ) )
+                throw new ViewerException( 'not found', 404 );
+            return json_decode( (string)file_get_contents( $this->egressDir( $p ) . '/' . $id . '.json' ), TRUE );
+        };
+        $s = $read( $id );
+        $out = array( 'id' => $id, 'source' => $s['source'] ?? '', 'tsg' => $s['tsg'] ?? null, 'request' => $s['request'] ?? null, 'fetched_at' => $s['fetched_at'] ?? null,
+            'time' => (int)( $s['time'] ?? 0 ), 'rows' => $s['rows'] ?? array() );
+        if( $compare !== null && $compare !== '' )
+        {
+            $o = $read( $compare );
+            $out['compare'] = array( 'with' => $compare ) + SCMEgressIP::compare( $o['rows'] ?? array(), $out['rows'] );
+        }
+        return $out;
+    }
+
+    /**
+     * an import (SCM tab): the egress IPs of an export (zip of a scm_pa_export.php directory, its
+     * infra/92_egress-ip.json) or a snapshot of scm_egress_ip.php save=
+     */
+    public function scmEgressImport( array $user, $pid, $upload ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        self::egressLib();
+        if( !is_array( $upload ) || ( $upload['error'] ?? 1 ) !== 0 || is_array( $upload['tmp_name'] ?? null ) || !is_uploaded_file( (string)$upload['tmp_name'] ) )
+            throw new ViewerException( 'file: the egress IPs (92_egress-ip.json of an export, a zip of the export, or a snapshot of scm_egress_ip.php)', 400 );
+        if( (int)$upload['size'] > 52428800 )
+            throw new ViewerException( 'file: at most 50 MB', 400 );
+        $tmp = $this->projectDir( $p['pid'] ) . '/scm/.import-' . bin2hex( random_bytes( 6 ) );
+        @mkdir( $tmp, 0700, TRUE );
+        try
+        {
+            $src = (string)$upload['tmp_name'];
+            $head = (string)file_get_contents( $src, FALSE, null, 0, 4 );
+            if( $head === "PK\x03\x04" )
+            {
+                // a zip of the export: only its infra/92_egress-ip.json is read (no secrets of the export are kept)
+                $z = new ZipArchive();
+                if( $z->open( $src ) !== TRUE )
+                    throw new ViewerException( 'file: the zip can not be read', 400 );
+                $found = null;
+                for( $i = 0; $i < $z->numFiles; $i++ )
+                {
+                    $n = (string)$z->getNameIndex( $i );
+                    if( preg_match( '#(^|/)infra/92_egress-ip\.json$#', $n ) && strpos( $n, '..' ) === FALSE )
+                        $found = $n;
+                }
+                if( $found === null || ( $z->statName( $found )['size'] ?? 0 ) > 52428800 )
+                {
+                    $z->close();
+                    throw new ViewerException( 'file: the zip has no infra/92_egress-ip.json (export with egressip)', 400 );
+                }
+                file_put_contents( $tmp . '/egress.json', $z->getFromName( $found ) );
+                $z->close();
+            }
+            else
+                copy( $src, $tmp . '/egress.json' );
+            try
+            {
+                $state = SCMEgressIP::fromFile( $tmp . '/egress.json' );
+            }
+            catch( Exception $e )
+            {
+                throw new ViewerException( 'file: ' . preg_replace( '#\S*' . preg_quote( $tmp, '#' ) . '\S*#', 'the file', $e->getMessage() ), 400 );
+            }
+            $raw = json_decode( (string)file_get_contents( $tmp . '/egress.json' ), TRUE );
+            $id = 'i' . time() . bin2hex( random_bytes( 2 ) );
+            $this->egressStore( $this->egressDir( $p ), $id, array( 'source' => 'import', 'user' => (string)$user['name'], 'time' => time(),
+                'tsg' => is_array( $raw ) && isset( $raw['tsg_id'] ) && is_scalar( $raw['tsg_id'] ) ? (string)$raw['tsg_id'] : null,
+                'request' => $state['request'], 'fetched_at' => $state['fetched_at'], 'name' => substr( basename( (string)( $upload['name'] ?? '' ) ), 0, 120 ), 'rows' => $state['rows'] ) );
+        }
+        finally
+        {
+            array_map( 'unlink', glob( $tmp . '/*' ) ?: array() );
+            @rmdir( $tmp );
+        }
+        return array( 'id' => $id, 'count' => count( $state['rows'] ) );
+    }
+
+    /** a state deleted (write permission) */
+    public function scmEgressDelete( array $user, $pid, $id ): void
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        if( !is_string( $id ) || !preg_match( '/^[0-9a-z]{1,40}$/', $id ) || !is_file( $this->egressDir( $p ) . '/' . $id . '.json' ) )
+            throw new ViewerException( 'not found', 404 );
+        unlink( $this->egressDir( $p ) . '/' . $id . '.json' );
+        // a live read stays deleted (not taken over again)
+        if( preg_match( '/^[0-9a-f]{32}$/', $id ) )
+            @file_put_contents( $this->jobDir( $p, $id ) . '/egress.json', '' );
     }
 
     /** state of the loaded configuration: unsaved changes, last autosave. Does not start a worker. */

@@ -906,6 +906,7 @@ async function showProject(pid) {
     if (canWrite && !limited) ldapCard = await ldapTab(base, pid, p, owner, configs.configs);
     // ---- Merger: object-merger / rule-merger / merger-possible-report as runs, their report as tables
     const mergerCard = !limited && configs.configs.length ? await mergerTab(base, pid, canWrite, configs.configs) : null;
+    const scmCard = !limited ? await scmTab(base, pid, canWrite) : null;
     const supportCardEl = canWrite && !limited && configs.configs.length ? await supportCard(base, configs.configs) : null;
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
@@ -917,6 +918,7 @@ async function showProject(pid) {
             ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard, appidCard]],
             ['runs', 'Runs and project files', [runsCard, filesCard]],
             mergerCard ? ['merger', 'Merger', [mergerCard]] : null,
+            scmCard ? ['scm', 'SCM', [scmCard]] : null,
             ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
             supportCardEl ? ['support', 'Support file', [supportCardEl]] : null,
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
@@ -1109,6 +1111,131 @@ async function ldapTab(base, pid, p, owner, versions) {
         el('p', { class: 'muted', text: 'Ask the LDAP / Active Directory with your own account: do the users still exist (cleanup), which groups does a user have, which groups do several users share, who is in a group. The queries are yours (nobody else sees them); the password of the bind user is your LDAP account under My API keys (key store entry ldap_user<user>). The server must be allowed by the administrator (network allow list). "Check the users of the rules" looks up the users of the security rules of a version (pan-os-php user-check-ldap); the run log shows the missing ones, "remove" also makes a result configuration without them.' }),
         why ? el('p', { class: 'muted', text: why }) : null, discover, accounts, form, queries, runList ? el('h3', { text: 'My LDAP runs' }) : null, runList, out);
     return card;
+}
+
+// ---------------------------------------------------------------- SCM tab of a project (SCM_TAB.md)
+// a menu on the left (Prisma Access, Identity & Access, CIE, configuration, deployment, tenant, monitoring, BPA); built:
+// Prisma Access > Egress IP - states from an import (export / 92_egress-ip.json / snapshot) or read live (run egress-ip
+// with the egress-IP key of the user), shown and compared (SCMEgressIP, the same as scm_egress_ip.php on the CLI)
+const SCM_MENU = [
+    ['Prisma Access', [['egress', 'Egress IP'], ['infra', 'Infrastructure'], ['sc', 'Service Connection'], ['rn', 'Remote Networks (RN-SPN)'],
+        ['mugw', 'Mobile User Gateway'], ['mugp', 'Mobile User GlobalProtect'], ['mupaa', 'Mobile User PAA'], ['muep', 'Mobile User Explicit Proxy'], ['pb', 'Prisma Browser']]],
+    ['Identity & Access', [['sa', 'Service accounts']]],
+    ['Cloud Identity Engine', [['cie', 'CIE']]],
+    ['Configuration', [['versions', 'Config versions and push status'], ['vars', 'Variables']]],
+    ['Deployment', [['locations', 'Locations'], ['bandwidth', 'Bandwidth'], ['bgp', 'BGP'], ['steering', 'Traffic steering']]],
+    ['Tenant', [['trusted', 'Trusted tenants'], ['licences', 'Licences and instances']]],
+    ['Monitoring', [['insights', 'Insights'], ['audit', 'Audit logs']]],
+    ['Best practice', [['bpa', 'BPA']]],
+];
+async function scmTab(base, pid, canWrite) {
+    const card = el('div', { class: 'card scmtab' });
+    const panel = el('div', { class: 'scmpanel' });
+    state.scmPage = state.scmPage || {};
+    const menu = el('nav', { class: 'scmmenu', 'aria-label': 'SCM' });
+    function drawMenu() {
+        const cur = state.scmPage[pid] || 'egress';
+        menu.replaceChildren(...SCM_MENU.map(([sec, items]) => el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: sec }),
+            items.map(([id, t]) => el('button', { type: 'button', class: 'ventry' + (id === cur ? ' on' : ''), text: t + (id === 'egress' ? '' : ' ·'),
+                title: id === 'egress' ? '' : 'planned (SCM_TAB.md)', onclick: () => { state.scmPage[pid] = id; drawMenu(); run(page); } })))));
+    }
+    async function page() {
+        const cur = state.scmPage[pid] || 'egress';
+        if (cur !== 'egress') {
+            const t = SCM_MENU.flatMap(x => x[1]).find(x => x[0] === cur);
+            panel.replaceChildren(el('h3', { text: t ? t[1] : cur }), el('p', { class: 'muted', text: 'Planned - see utils/develop/config-viewer/SCM_TAB.md: data from the imported export, a live refresh with your key, compare of two states; changes only through change files, review and a live compare right before the upload.' }));
+            return;
+        }
+        panel.replaceChildren(await egressPage(base, canWrite, page));
+    }
+    drawMenu();
+    await page().catch(e => panel.replaceChildren(el('div', { class: 'error', text: e.message })));
+    card.append(el('h2', { text: 'SCM' }), el('div', { class: 'scmlayout' }, menu, panel));
+    return card;
+}
+
+async function egressPage(base, canWrite, redraw) {
+    const r = await api('GET', base + '/scm/egress');
+    const box = el('div', {});
+    const show = el('div', {});
+    // import: 92_egress-ip.json of an export, a zip of the export, or a snapshot of scm_egress_ip.php save=
+    const file = el('input', { type: 'file', accept: '.json,.zip,application/json,application/zip', required: true });
+    const imp = canWrite ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        const fd = new FormData(); fd.append('file', file.files[0]);
+        const x = await api('POST', base + '/scm/egress', fd);
+        message(x.count + ' egress IP(s) imported'); await redraw();
+    }); } }, field('Import: an export (zip), its infra/92_egress-ip.json or a snapshot (scm_egress_ip.php save=)', file), el('button', { type: 'submit', text: 'Import' })) : null;
+    // live: run egress-ip with an egress-IP key of the user (Account, My API keys, kind egress IP)
+    let live = null;
+    if (canWrite) {
+        if (!r.keys.length) live = el('p', { class: 'muted', text: 'Live: you have no egress-IP API key yet (Account, My API keys, kind "egress IP", target = TSG id; Prisma Access > Infrastructure Settings > Egress IP API).' });
+        else {
+            const key = el('select', { 'aria-label': 'egress-IP key' }, r.keys.map(k => el('option', { value: k.kid, text: 'TSG ' + k.target + (k.label && k.label !== k.target ? ' - ' + k.label : '') + (k.refused ? ' (not allowed: ' + k.refused + ')' : '') })));
+            const sel = (name, list) => el('select', { 'aria-label': name }, list.map(v => el('option', { value: v, text: v })));
+            const st = sel('service type', r.options.servicetype), at = sel('address type', r.options.addrtype), lo = sel('location', r.options.location);
+            const env = el('select', { 'aria-label': 'environment' }, el('option', { value: 'prod', text: 'prod' }), el('option', { value: 'prod6', text: 'prod6' }));
+            const status = el('span', { class: 'muted' });
+            live = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+                const job = await api('POST', base + '/egress-ip/runs', { kid: key.value, servicetype: st.value, addrtype: at.value, location: lo.value, env: env.value });
+                status.textContent = 'reading live …';
+                const t = setInterval(async () => {
+                    const x = await api('GET', base + '/runs/' + job.jid).catch(() => null);
+                    if (!x || (x.state !== 'done' && x.state !== 'failed')) return;
+                    clearInterval(t);
+                    if (x.state === 'failed') { status.textContent = ''; message('live read failed: ' + (x.error || 'see Runs'), 'error'); return; }
+                    message('egress IPs read live'); await redraw();
+                }, 1500);
+                state.timers.push(t);
+            }); } }, field('Live with your key', key), field('serviceType', st), field('addrType', at), field('location', lo), field('environment', env),
+                el('button', { class: 'primary', type: 'submit', text: 'Read live', disabled: !r.network, title: r.network ? '' : 'network is off for this project (the owner turns it on)' }), status);
+        }
+    }
+    const fmtReq = (q) => q ? [q.serviceType, q.addrType, q.location].filter(x => x).join(' / ') : '';
+    const list = r.states.length === 0 ? el('p', { class: 'muted', text: 'No egress IPs yet - import an export or read them live.' }) :
+        table(['When', 'Source', 'By', 'TSG', 'Request', 'Addresses', ''], r.states.map((x, i) => el('tr', {},
+            el('td', { text: fmtTime(x.time) }), el('td', { text: x.source + (x.name ? ' (' + x.name + ')' : '') }), el('td', { text: x.user }), el('td', { text: x.tsg || '' }),
+            el('td', { text: fmtReq(x.request) }), el('td', { text: String(x.count) }),
+            el('td', {}, el('button', { type: 'button', text: 'Show', onclick: () => run(() => showState(x.id, null)) }), ' ',
+                r.states[i + 1] ? el('button', { type: 'button', text: 'Compare with the one before', onclick: () => run(() => showState(x.id, r.states[i + 1].id)) }) : null, ' ',
+                canWrite ? el('button', { type: 'button', class: 'danger', text: 'Delete', onclick: () => run(async () => {
+                    if (!confirm('Delete this state of the egress IPs?')) return;
+                    await api('DELETE', base + '/scm/egress/' + x.id); await redraw(); }) }) : null))));
+    async function showState(id, compare) {
+        const s = await api('GET', base + '/scm/egress/' + id + (compare ? '?compare=' + encodeURIComponent(compare) : ''));
+        const q = el('input', { type: 'search', placeholder: 'filter: address, location, service type …', 'aria-label': 'filter the egress IPs' });
+        const types = [...new Set(s.rows.map(x => x.service_type))].sort();
+        const t = el('select', { 'aria-label': 'service type' }, el('option', { value: '', text: 'all service types' }), types.map(v => el('option', { value: v, text: v })));
+        const out = el('div', {});
+        const rowsOf = () => s.rows.filter(x => (!t.value || x.service_type === t.value) && (!q.value || Object.values(x).join(' ').toLowerCase().includes(q.value.toLowerCase())));
+        const dl = (name, text, mime) => { const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: mime })), download: name }); document.body.append(a); a.click(); a.remove(); };
+        const csv = (rows) => ['service_type,location,address,address_type,allow_listed'].concat(rows.map(x => [x.service_type, x.location, x.address, x.address_type, x.allow_listed]
+            .map(v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','))).join('\n') + '\n';
+        function draw() {
+            const rows = rowsOf();
+            out.replaceChildren(el('p', { class: 'muted', text: rows.length + ' of ' + s.rows.length + ' address(es)' }),
+                table(['Service type', 'Location', 'Address', 'Address type', 'Allow listed'], rows.map(x => el('tr', {},
+                    el('td', { text: x.service_type }), el('td', { text: x.location }), el('td', { text: x.address }), el('td', { text: x.address_type }), el('td', { text: x.allow_listed || '' })))));
+        }
+        q.addEventListener('input', draw); t.addEventListener('change', draw);
+        let cmp = null;
+        if (s.compare) {
+            const line = (sign, x) => el('div', { class: sign === '+' ? 'diffadd' : (sign === '-' ? 'diffdel' : 'diffchg'), text: sign + ' ' + x.service_type + '  ' + x.location + '  ' + x.address + (x.address_type ? '  (' + x.address_type + ')' : '') });
+            cmp = el('div', { class: 'card' }, el('h3', { text: 'Changes against the state before: ' + s.compare.added.length + ' added, ' + s.compare.removed.length + ' removed, ' + s.compare.changed.length + ' changed' }),
+                ...s.compare.added.map(x => line('+', x)), ...s.compare.removed.map(x => line('-', x)),
+                ...s.compare.changed.map(x => line('~', Object.assign({}, x.new, { address_type: x.old.address_type + ' -> ' + x.new.address_type }))),
+                !s.compare.added.length && !s.compare.removed.length && !s.compare.changed.length ? el('p', { class: 'muted', text: 'no change' }) : null);
+        }
+        show.replaceChildren(el('h3', { text: 'Egress IPs - ' + fmtTime(s.time) + ' (' + s.source + (s.tsg ? ', TSG ' + s.tsg : '') + ', ' + fmtReq(s.request) + ')' }), cmp,
+            el('div', { class: 'row' }, q, t,
+                el('button', { type: 'button', text: 'Address list', title: 'one address per line (e.g. an external dynamic list)', onclick: () => dl('egress-ip.txt', [...new Set(rowsOf().map(x => x.address))].join('\n') + '\n', 'text/plain') }),
+                el('button', { type: 'button', text: 'CSV', onclick: () => dl('egress-ip.csv', csv(rowsOf()), 'text/csv') })), out);
+        draw();
+    }
+    box.append(el('h3', { text: 'Prisma Access - Egress IP' }),
+        el('p', { class: 'muted', text: 'The public addresses of Prisma Access (getPrismaAccessIP/v2): from an import or read live with your egress-IP key; compare two states. The same as php utils/develop/sase/scm/scm_egress_ip.php on the CLI. Read only.' }),
+        imp, live, list, show);
+    if (r.states.length) await showState(r.states[0].id, r.states[1] ? r.states[1].id : null);
+    return box;
 }
 
 // ---------------------------------------------------------------- Merger tab of a project

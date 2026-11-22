@@ -126,6 +126,11 @@ class SCMEgressIP
             throw new Exception( "'" . $path . "' is no JSON" );
         if( isset( $j['rows'] ) && is_array( $j['rows'] ) )
             return array( 'rows' => $j['rows'], 'request' => $j['request'] ?? null, 'fetched_at' => $j['fetched_at'] ?? null );
+        // the answer of the API itself ({"status": "success", "result": [...]})
+        if( isset( $j['result'] ) && is_array( $j['result'] ) )
+            return array( 'rows' => self::rows( $j['result'] ), 'request' => null, 'fetched_at' => null );
+        if( !array_key_exists( 'data', $j ) )
+            throw new Exception( "'" . $path . "' holds no egress IPs (rows, data or result)" );
         if( ( $j['status'] ?? 'ok' ) !== 'ok' && ( $j['data'] ?? null ) === null )
             throw new Exception( "'" . $path . "': the egress IPs were not read in this export (" . json_encode( $j['error'] ?? $j['status'] ) . ")" );
         return array( 'rows' => self::rows( $j['data'] ?? array(), $j['request']['serviceType'] ?? 'all' ), 'request' => $j['request'] ?? null, 'fetched_at' => $j['fetched_at'] ?? null );

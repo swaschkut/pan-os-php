@@ -86,4 +86,7 @@ Values (documentation): serviceType `all`, `gp_gateway` (mobile users), `gp_port
 `active` (and the special types of swg_proxy); location `all`, `deployed` (gp_gateway; not for remote_network /
 clean_pipe).
 
-Viewer: next step - menu Prisma Access > Egress IP (from the imported export, live button, compare).
+Viewer (built): project tab SCM > Prisma Access > Egress IP - import (zip of an export: only infra/92_egress-ip.json is
+read; the file; a snapshot; the answer of the API), "Read live" (run egress-ip with the egress-IP key of the user - kind
+egress IP, target TSG; network: tsg:<TSG> on the allow list, network of the project on), the states with their rows,
+compare with the state before, filter, address list / CSV download. States: projects/<pid>/scm/egress/<id>.json.

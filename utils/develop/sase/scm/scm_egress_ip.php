@@ -43,7 +43,8 @@ foreach( array_slice( $argv, 1 ) as $a )
     $p = strpos( $a, '=' );
     $args[strtolower( $p === FALSE ? $a : substr( $a, 0, $p ) )] = $p === FALSE ? TRUE : substr( $a, $p + 1 );
 }
-$known = array( 'tsg', 'servicetype', 'addrtype', 'location', 'env', 'option', 'format', 'out', 'save', 'compare', 'in', 'debugapi', 'help', 'shadow-json' );
+// type= (pan-os-php type=scm-egress-ip passes it on)
+$known = array( 'type', 'tsg', 'servicetype', 'addrtype', 'location', 'env', 'option', 'format', 'out', 'save', 'compare', 'in', 'debugapi', 'help', 'shadow-json' );
 foreach( array_keys( $args ) as $k )
     if( !in_array( $k, $known, TRUE ) )
     {

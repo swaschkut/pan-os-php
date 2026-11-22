@@ -459,6 +459,22 @@ try
             }
         }
 
+        // SCM tab: …/projects/<pid>/scm/egress  GET states (+ keys), POST import (multipart field "file");
+        //         …/projects/<pid>/scm/egress/<id>[?compare=<id>]  GET rows (+ compare), DELETE
+        if( $sub === 'scm' && $n >= 4 && $route[3] === 'egress' )
+        {
+            if( $n == 4 && $method === 'GET' )
+                viewerOut( $app->scmEgressList( $user, $pid ) );
+            if( $n == 4 && $method === 'POST' )
+                viewerOut( $app->scmEgressImport( $user, $pid, $_FILES['file'] ?? null ), 201 );
+            if( $n == 5 && $method === 'GET' )
+                viewerOut( $app->scmEgressGet( $user, $pid, $route[4], $_GET['compare'] ?? null ) );
+            if( $n == 5 && $method === 'DELETE' )
+            {
+                $app->scmEgressDelete( $user, $pid, $route[4] );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+        }
         // project files: …/projects/<pid>/files?kind=playbook|bp   GET list, POST upload (multipart field "file")
         //                …/projects/<pid>/files/<fid>[/download]  DELETE, GET download
         if( $sub === 'files' )
