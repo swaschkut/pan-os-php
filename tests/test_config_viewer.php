@@ -475,6 +475,25 @@ eq( array( strpos( (string)( $o1['xml'] ?? '' ), '<entry name="shared-host1">' )
     array( TRUE, 'shared/address/shared-host1.xml', 'undo', 'tag-add:test-shared', TRUE ), 'object window: the XML of the object and its history with the entry after each commit' );
 $tz = $bob->call( 'GET', $C2 . '/object?type=zone&location=vsys1&template=' . urlencode( 'Datacenter Master Template' ) . '&name=WAN' )[1];
 eq( array( strpos( (string)( $tz['xml'] ?? '' ), '<entry name="WAN">' ) === 0, array_key_exists( 'history', (array)$tz ) && $tz['history'] === null ), array( TRUE, TRUE ), 'object window: an object of a template - its XML, no history (in _rest.xml)' );
+// rules and address groups have their XML too (before: the rules of a rule read were not taken - no XML / history)
+$r1 = $bob->call( 'GET', $C2 . '/objects?type=rule&ruletype=security&location=any' )[1]['rows'][0] ?? array();
+$tr = $bob->call( 'GET', $C2 . '/object?' . http_build_query( array( 'type' => 'rule', 'ruletype' => 'security', 'location' => $r1['location'] ?? '', 'name' => $r1['name'] ?? '' ) ) )[1];
+$tg = $bob->call( 'GET', $C2 . '/object?type=address&location=shared&name=shared-group1' )[1];
+eq( array( strpos( (string)( $tr['xml'] ?? '' ), '<entry name="' . ( $r1['name'] ?? '-' ) . '"' ) === 0, is_array( $tr['history'] ?? null ), strpos( (string)( $tg['xml'] ?? '' ), '<entry name="shared-group1">' ) === 0 ),
+    array( TRUE, TRUE, TRUE ), 'object window: a security rule and an address group with XML and history' );
+// security profiles: the count of references, the references, XML and history (SECURITYPROFILEUTIL keeps its objects
+// under 'rules' - before: "?", "not found", no XML)
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Profiles' ) );
+$SP = 'projects/' . $r[1]['pid'];
+$r = $alice->call( 'POST', $SP . '/configs', null, array( 'sp.xml', file_get_contents( $here . '/input/securityprofiles-panorama.xml' ) ) );
+$SPC = $SP . '/configs/' . $r[1]['cid'];
+$rows = array_column( $alice->call( 'GET', $SPC . '/objects?type=securityprofile&securityprofiletype=any&location=any&' . http_build_query( array( 'filter' => '(name regex /-shared|-dg/)' ) ) )[1]['rows'] ?? array(), null, 'name' );
+$refs = $alice->call( 'GET', $SPC . '/references?type=securityprofile&securityprofiletype=any&location=shared&name=AV-shared' );
+$av = $alice->call( 'GET', $SPC . '/object?type=securityprofile&location=shared&name=AV-shared' )[1];
+eq( array( $rows['AV-shared']['refcount'] ?? null, $rows['AS-dg']['refcount'] ?? null, status( $refs ), count( $refs[1]['objects'][0]['references'] ?? $refs[1]['references'] ?? array() ),
+    strpos( (string)( $av['xml'] ?? '' ), '<entry name="AV-shared">' ) === 0, is_array( $av['history'] ?? null ) ),
+    array( 2, 1, 200, 2, TRUE, TRUE ), 'security profiles: count of references, references (profile group, rule), XML and history' );
+eq( status( $alice->call( 'DELETE', $SP ) ), 200, 'security profiles: project deleted (its worker stops)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
 eq( status( $bob->call( 'POST', $C2 . '/undo', array( 'index' => $n0 ) ) ), 403, 'undo: read only refused' );

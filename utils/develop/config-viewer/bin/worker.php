@@ -203,6 +203,20 @@ function viewerUsers( $o )
  * who uses the objects named $name of a type (in the location of $args): every object found, with its references -
  * the referencing object (type, rule type, location, name, pre / post) and the field (source, destination, member, …)
  */
+/**
+ * the objects of one set of a utility (objectsToProcess): 'objects' (addresses, services, tags, zones, devices, ...) or
+ * 'rules' - RULEUTIL and also SECURITYPROFILEUTIL / PROFILEUTIL keep theirs there. Before only 'objects' was read: rules
+ * and security profiles had no XML / history in the window, no count of references ("?") and no references.
+ */
+function viewerSetObjects( $set ): array
+{
+    if( !is_array( $set ) )
+        return array();
+    if( is_array( $set['objects'] ?? null ) )
+        return $set['objects'];
+    return is_array( $set['rules'] ?? null ) ? $set['rules'] : array();
+}
+
 function viewerReferences( $type, array $args, $name )
 {
     global $configFile;
@@ -217,7 +231,7 @@ function viewerReferences( $type, array $args, $name )
     ob_end_clean();
     $out = array();
     foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
-        foreach( is_array( $set['objects'] ?? null ) ? $set['objects'] : array() as $o )
+        foreach( viewerSetObjects( $set ) as $o )
         {
             if( !is_object( $o ) || !method_exists( $o, 'name' ) || $o->name() !== $name )
                 continue;
@@ -476,7 +490,7 @@ function viewerRun( $type, array $args )
     {
         $GLOBALS['viewerRefcounts'] = array();
         foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
-            foreach( is_array( $set['objects'] ?? null ) ? $set['objects'] : array() as $o )
+            foreach( viewerSetObjects( $set ) as $o )
                 if( is_object( $o ) && isset( $o->refrules ) && method_exists( $o, 'name' ) )
                 {
                     $loc = PH::getLocationString( $o );
@@ -487,7 +501,7 @@ function viewerRun( $type, array $args )
     {
         $GLOBALS['viewerXml'] = array();
         foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
-            foreach( is_array( $set['objects'] ?? null ) ? $set['objects'] : array() as $o )
+            foreach( viewerSetObjects( $set ) as $o )
                 if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' ) && count( $GLOBALS['viewerXml'] ) < 20 )
                 {
                     $loc = PH::getLocationString( $o );

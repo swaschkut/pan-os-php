@@ -64,6 +64,7 @@ UTIL:
 * config-viewer | Explain: wider window (up to 1400px), long values wrap instead of running out on the right; the Explain button in the colour of the primary buttons
 
 BUGFIX:
+* config-viewer | object window: security rules (and NAT / other rules) and security profiles had no XML and no history; security profiles showed "?" as count of references and "not found" for their references - the viewer read only the 'objects' sets of pan-os-php, these utilities keep theirs under 'rules'; a note when an object has no XML (predefined objects)
 * config-viewer | Get the API key from a firewall / Panorama: "answered without a usable API key" for a valid key - the key is now read as pan-os-php does (response / result / key) and only refused when the key store can not hold it (with the reason)
 * type=merger-possible-report mergecheck | fatal error 'Call to undefined method Address::isDynamic()' when the common parent (e.g. shared) has the name of an address group as an address (or the other way round) - now a block with the reason "the common parent has '<name>' as address"
 * SCM export after first production run / IAM patch

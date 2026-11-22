@@ -2110,7 +2110,10 @@ async function showViewer(config, preset) {
             return d;
         }
         function objXml() {
-            return obj.xml ? section('xml', 'XML', el('pre', { class: 'objxml', text: obj.xml })) : null;
+            // no XML: a predefined object (applications, URL categories, profiles of PAN-OS - they come from the App-ID
+            // database, not from the configuration) or an object the read did not give (then: a bug - please report)
+            return obj.xml ? section('xml', 'XML', el('pre', { class: 'objxml', text: obj.xml }))
+                : el('p', { class: 'muted', text: 'XML: not available. Predefined objects of PAN-OS (applications, URL categories, predefined profiles) are not part of the configuration; for any other object please report it.' });
         }
         function objHistory() {
             const h = obj.history;
