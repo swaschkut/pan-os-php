@@ -33,6 +33,24 @@ class SCMEgressIP
     const LOCATIONS = array( 'all', 'deployed' );
     const COLUMNS = array( 'service_type', 'location', 'address', 'address_type', 'zone_subnet', 'create_time', 'allow_listed' );
 
+    /** environment of the egress-IP API: prod6 for most tenants (default), prod only for older tenants */
+    const ENVIRONMENTS = array( 'prod6', 'prod' );
+    const ENV_DEFAULT = 'prod6';
+
+    /**
+     * Hint for an error of the egress-IP API: HTTP 401 / 403 (login) - a wrong key, a key of another tenant or the other
+     * environment (most tenants prod6, older tenants prod); '' for other errors
+     */
+    public static function loginHint( string $error, string $env, string $tsg = '' ): string
+    {
+        if( preg_match( '/HTTP 40[13]\b|\b40[13]\b.*(Unauthori[sz]ed|Forbidden)|Unauthori[sz]ed|Forbidden/i', $error ) !== 1 )
+            return '';
+        $other = $env === 'prod' ? 'prod6' : 'prod';
+        return ' - login failed: check the egress-IP API key' . ( $tsg !== '' ? ' of TSG ' . $tsg : '' )
+            . ' (Prisma Access > Infrastructure Settings > Egress IP API) and the environment: now ' . $env
+            . ', try env=' . $other . ' (most tenants prod6, older tenants prod)';
+    }
+
     /**
      * the request body: $file (option.txt: {"serviceType": …, "addrType": …, "location": …} - also key=value lines),
      * then the arguments (they win). Unknown values: an exception with the known ones (the API may know more: $strict)

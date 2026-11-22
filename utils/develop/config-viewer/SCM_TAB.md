@@ -72,7 +72,7 @@ Nothing is written to SCM directly from the viewer (neither the SCM API nor the 
 ## Egress IP (built)
 
 CLI: `php utils/develop/sase/scm/scm_egress_ip.php tsg=<TSG> [servicetype=all] [addrtype=all] [location=all]
-[env=prod|prod6] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json]
+[env=prod6|prod] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json]
 [compare=previous.json|export-dir] [in=export-dir|92_egress-ip.json]`
 
 - `option=` reads the request body of the Palo Alto documentation ("API examples for retrieving Prisma Access IP

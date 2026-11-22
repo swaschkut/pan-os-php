@@ -533,7 +533,7 @@ class SCMPrismaAccessExport
     /**
      * @param string|null $apiKey egress-IP API key; null = skip
      */
-    public function exportEgressIP( $apiKey, $environment = "prod" )
+    public function exportEgressIP( $apiKey, $environment = "prod6" )
     {
         $meta = array( 'area' => self::AREA_INFRA, 'order' => 92, 'name' => 'egress-ip', 'category' => 'context', 'scope' => 'tenant',
             'url' => 'getPrismaAccessIP/v2', 'depends_on' => array(), 'file' => self::AREA_INFRA . '/92_egress-ip.json', 'fetched_as' => 'selected' );
@@ -559,6 +559,10 @@ class SCMPrismaAccessExport
         {
             $meta['status'] = 'error';
             $meta['error'] = self::errorMessage($result['errors']);
+            // HTTP 401 / 403: wrong key or the other environment (prod6 / prod)
+            if( in_array( (int)$result['http_code'], array( 401, 403 ), TRUE ) )
+                $meta['error'] .= ' - login failed: check the egress-IP API key and the environment: now ' . $environment
+                    . ', try egressip-env=' . ( $environment === 'prod' ? 'prod6' : 'prod' ) . ' (most tenants prod6, older tenants prod)';
             PH::print_stdout( "     x ERROR: " . $meta['error'] );
             $data = null;
         }

@@ -1173,7 +1173,8 @@ async function egressPage(base, canWrite, redraw) {
             const key = el('select', { 'aria-label': 'egress-IP key' }, r.keys.map(k => el('option', { value: k.kid, text: 'TSG ' + k.target + (k.label && k.label !== k.target ? ' - ' + k.label : '') + (k.refused ? ' (not allowed: ' + k.refused + ')' : '') })));
             const sel = (name, list) => el('select', { 'aria-label': name }, list.map(v => el('option', { value: v, text: v })));
             const st = sel('service type', r.options.servicetype), at = sel('address type', r.options.addrtype), lo = sel('location', r.options.location);
-            const env = el('select', { 'aria-label': 'environment' }, el('option', { value: 'prod', text: 'prod' }), el('option', { value: 'prod6', text: 'prod6' }));
+            // most tenants prod6 (default), older tenants prod - a login error (HTTP 401) names the other one
+            const env = el('select', { 'aria-label': 'environment', title: 'most tenants prod6, older tenants prod' }, el('option', { value: 'prod6', text: 'prod6' }), el('option', { value: 'prod', text: 'prod (older tenants)' }));
             const status = el('span', { class: 'muted' });
             live = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const job = await api('POST', base + '/egress-ip/runs', { kid: key.value, servicetype: st.value, addrtype: at.value, location: lo.value, env: env.value });
@@ -1203,21 +1204,44 @@ async function egressPage(base, canWrite, redraw) {
                     await api('DELETE', base + '/scm/egress/' + x.id); await redraw(); }) }) : null))));
     async function showState(id, compare) {
         const s = await api('GET', base + '/scm/egress/' + id + (compare ? '?compare=' + encodeURIComponent(compare) : ''));
-        const q = el('input', { type: 'search', placeholder: 'filter: address, location, service type …', 'aria-label': 'filter the egress IPs' });
-        const types = [...new Set(s.rows.map(x => x.service_type))].sort();
-        const t = el('select', { 'aria-label': 'service type' }, el('option', { value: '', text: 'all service types' }), types.map(v => el('option', { value: v, text: v })));
-        const out = el('div', {});
-        const rowsOf = () => s.rows.filter(x => (!t.value || x.service_type === t.value) && (!q.value || Object.values(x).join(' ').toLowerCase().includes(q.value.toLowerCase())));
+        const q = el('input', { type: 'search', placeholder: 'search all columns …', 'aria-label': 'search the egress IPs' });
+        // the table: a filter field under every header (contains, case-insensitive; "!text" = without; a list of the
+        // values to pick for the columns with few values), a click on a header sorts
+        const cols = [['service_type', 'Service type'], ['location', 'Location'], ['address', 'Address'], ['address_type', 'Address type'], ['allow_listed', 'Allow listed']];
+        const val = (x, k) => String(x[k] ?? '');
+        const colFilter = {}, sort = { key: null, desc: false };
+        const heads = cols.map(([k, label]) => {
+            const values = [...new Set(s.rows.map(x => val(x, k)).filter(v => v !== ''))].sort();
+            const listId = 'egress-col-' + k + '-' + Math.random().toString(36).slice(2, 8);
+            colFilter[k] = el('input', { type: 'search', class: 'colfilter', placeholder: 'filter …', 'aria-label': 'filter ' + label, autocomplete: 'off',
+                list: values.length > 0 && values.length <= 50 ? listId : null, title: 'contains (case-insensitive); !text = without' });
+            colFilter[k].addEventListener('input', draw);
+            const th = el('th', { class: 'sortable', title: 'sort', text: label, onclick: () => { sort.desc = sort.key === k ? !sort.desc : false; sort.key = k; draw(); } });
+            return { k, th, fth: el('th', {}, colFilter[k], values.length > 0 && values.length <= 50 ? el('datalist', { id: listId }, values.map(v => el('option', { value: v }))) : null) };
+        });
+        const tbody = el('tbody', {});
+        const count = el('p', { class: 'muted' });
+        const out = el('div', {}, count, el('table', { class: 'plain egresstable' }, el('thead', {}, el('tr', {}, heads.map(h => h.th)), el('tr', { class: 'filterrow' }, heads.map(h => h.fth))), tbody));
+        const match = (v, f) => { f = f.trim().toLowerCase(); if (!f) return true; v = v.toLowerCase(); return f[0] === '!' ? (f.length === 1 || !v.includes(f.slice(1))) : v.includes(f); };
+        const rowsOf = () => {
+            const all = q.value.trim().toLowerCase();
+            const rows = s.rows.filter(x => cols.every(([k]) => match(val(x, k), colFilter[k].value)) && (!all || cols.map(([k]) => val(x, k)).join(' ').toLowerCase().includes(all)));
+            if (sort.key) rows.sort((a, b) => (sort.key === 'address' ? ipKey(val(a, 'address')).localeCompare(ipKey(val(b, 'address'))) : val(a, sort.key).localeCompare(val(b, sort.key))) * (sort.desc ? -1 : 1));
+            return rows;
+        };
+        // IPv4 sorted by number (10.0.0.9 before 10.0.0.10)
+        const ipKey = (v) => /^\d+\.\d+\.\d+\.\d+/.test(v) ? v.replace(/\d+/g, n => n.padStart(3, '0')) : v;
         const dl = (name, text, mime) => { const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: mime })), download: name }); document.body.append(a); a.click(); a.remove(); };
         const csv = (rows) => ['service_type,location,address,address_type,allow_listed'].concat(rows.map(x => [x.service_type, x.location, x.address, x.address_type, x.allow_listed]
             .map(v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','))).join('\n') + '\n';
         function draw() {
             const rows = rowsOf();
-            out.replaceChildren(el('p', { class: 'muted', text: rows.length + ' of ' + s.rows.length + ' address(es)' }),
-                table(['Service type', 'Location', 'Address', 'Address type', 'Allow listed'], rows.map(x => el('tr', {},
-                    el('td', { text: x.service_type }), el('td', { text: x.location }), el('td', { text: x.address }), el('td', { text: x.address_type }), el('td', { text: x.allow_listed || '' })))));
+            count.textContent = rows.length + ' of ' + s.rows.length + ' address(es)';
+            for (const h of heads) h.th.classList.toggle('sorted', sort.key === h.k), h.th.dataset.dir = sort.key === h.k ? (sort.desc ? '▼' : '▲') : '';
+            tbody.replaceChildren(...rows.map(x => el('tr', {}, cols.map(([k]) => el('td', { text: val(x, k) })))));
         }
-        q.addEventListener('input', draw); t.addEventListener('change', draw);
+        const clear = el('button', { type: 'button', text: 'Clear filters', onclick: () => { q.value = ''; for (const k in colFilter) colFilter[k].value = ''; draw(); } });
+        q.addEventListener('input', draw);
         let cmp = null;
         if (s.compare) {
             const line = (sign, x) => el('div', { class: sign === '+' ? 'diffadd' : (sign === '-' ? 'diffdel' : 'diffchg'), text: sign + ' ' + x.service_type + '  ' + x.location + '  ' + x.address + (x.address_type ? '  (' + x.address_type + ')' : '') });
@@ -1227,7 +1251,7 @@ async function egressPage(base, canWrite, redraw) {
                 !s.compare.added.length && !s.compare.removed.length && !s.compare.changed.length ? el('p', { class: 'muted', text: 'no change' }) : null);
         }
         show.replaceChildren(el('h3', { text: 'Egress IPs - ' + fmtTime(s.time) + ' (' + s.source + (s.tsg ? ', TSG ' + s.tsg : '') + ', ' + fmtReq(s.request) + ')' }), cmp,
-            el('div', { class: 'row' }, q, t,
+            el('div', { class: 'row' }, q, clear,
                 el('button', { type: 'button', text: 'Address list', title: 'one address per line (e.g. an external dynamic list)', onclick: () => dl('egress-ip.txt', [...new Set(rowsOf().map(x => x.address))].join('\n') + '\n', 'text/plain') }),
                 el('button', { type: 'button', text: 'CSV', onclick: () => dl('egress-ip.csv', csv(rowsOf()), 'text/csv') })), out);
         draw();

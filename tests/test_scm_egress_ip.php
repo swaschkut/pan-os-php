@@ -49,6 +49,9 @@ $cli = 'php ' . escapeshellarg( $repo . '/utils/develop/sase/scm/scm_egress_ip.p
 shell_exec( $cli . ' in=' . escapeshellarg( $dir ) . ' save=' . escapeshellarg( $dir . '/snap.json' ) . ' format=list' );
 $csv = (string)shell_exec( $cli . ' in=' . escapeshellarg( $dir . '/snap.json' ) . ' format=csv' );
 eq( array( count( SCMEgressIP::fromFile( $dir . '/snap.json' )['rows'] ), substr_count( $csv, "\n" ) ), array( 3, 4 ), 'CLI: offline from an export, snapshot, CSV' );
+eq( array( SCMEgressIP::ENV_DEFAULT, strpos( SCMEgressIP::loginHint( '[{"message":"HTTP 401","details":{"message":"Unauthorized"}}]', 'prod6', '1234' ), 'try env=prod ' ) !== FALSE,
+    strpos( SCMEgressIP::loginHint( '[{"message":"HTTP 403"}]', 'prod' ), 'try env=prod6 ' ) !== FALSE, SCMEgressIP::loginHint( '[{"message":"HTTP 500"}]', 'prod6' ) ),
+    array( 'prod6', TRUE, TRUE, '' ), 'environment: default prod6; login error (401 / 403): hint to the other environment; other errors: no hint' );
 array_map( 'unlink', array_filter( glob( $dir . '/{,infra/}*', GLOB_BRACE ), 'is_file' ) );
 echo "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 foreach( $failed as $f )

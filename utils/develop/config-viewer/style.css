@@ -219,3 +219,8 @@ tr.overridden td:not(:has(.badge)) { text-decoration: line-through; text-decorat
 .diffadd { color: #1d6b35; font-family: monospace; }
 .diffdel { color: #9b2c22; font-family: monospace; }
 .diffchg { color: #7a5a00; font-family: monospace; }
+/* egress IP table: a filter field under every header, sortable headers */
+table.egresstable tr.filterrow th { padding: 2px 4px; }
+table.egresstable input.colfilter { width: 100%; min-width: 6em; box-sizing: border-box; font-weight: normal; padding: 2px 4px; }
+table.egresstable th.sortable { cursor: pointer; user-select: none; }
+table.egresstable th.sorted::after { content: ' ' attr(data-dir); }

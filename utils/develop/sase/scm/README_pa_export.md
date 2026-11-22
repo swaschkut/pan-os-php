@@ -63,7 +63,7 @@ php utils/develop/sase/scm/scm_config_export.php in=scm-api://<TSG_ID> container
 | `sc-folder=` | SCM folder of the Service Connection IKE/IPsec/QoS objects, default `Service Connections` |
 | `mu-folder=` | SCM folder of the Mobile Users identity / mobile-agent objects, default `Mobile Users` |
 | `egressip` | also download egress IPs via the Prisma Access egress-IP API (`serviceType=all`) |
-| `egressip-env=prod\|prod6` | egress-IP API host (`api.prod…` default, `api.prod6…` for some SCM tenants) |
+| `egressip-env=prod6\|prod` | egress-IP API host (`api.prod6…` default - most tenants, `api.prod…` for older tenants; a login error (HTTP 401 / 403) names the other one) |
 | `psk-list` | write the secret lists with the decrypted values: `psk-list.csv` + `bgp-secret-list.csv` (RN, SC), `secret-list.csv` (MU) – see below |
 | `master-key=` | master key to decrypt the secrets; default: PAN-OS default master key |
 | `debugapi` | print every API call |

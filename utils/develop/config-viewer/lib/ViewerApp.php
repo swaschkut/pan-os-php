@@ -2013,9 +2013,9 @@ class ViewerApp
             {
                 throw new ViewerException( $e->getMessage(), 400 );
             }
-            $env = (string)( $in['env'] ?? 'prod' );
-            if( !in_array( $env, array( 'prod', 'prod6' ), TRUE ) )
-                throw new ViewerException( 'env: prod or prod6', 400 );
+            $env = (string)( $in['env'] ?? 'prod6' );
+            if( !in_array( $env, array( 'prod6', 'prod' ), TRUE ) )
+                throw new ViewerException( 'env: prod6 (default) or prod (older tenants)', 400 );
             $args = array( 'x-egress-key=' . $k['kid'], 'x-egress-target=egressip:' . $k['target'], 'servicetype=' . $req['serviceType'],
                 'addrtype=' . $req['addrType'], 'location=' . $req['location'], 'env=' . $env );
         }

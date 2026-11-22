@@ -2824,10 +2824,10 @@ class PanSCMAPIConnector
      * @param string $serviceType all|remote_network|gp_gateway|gp_portal|swg_proxy|rbi
      * @param string $addrType all|active|service_ip|auth_cache_service|network_load_balancer
      * @param string $location all|deployed
-     * @param string $environment prod|prod6
+     * @param string $environment prod6 (default, most tenants) | prod (older tenants)
      * @return array ['http_code' => int, 'json' => array|null, 'errors' => array|null, 'url' => string]
      */
-    public function getPrismaAccessEgressIP( $apiKey, $serviceType = "remote_network", $addrType = "all", $location = "all", $environment = "prod" )
+    public function getPrismaAccessEgressIP( $apiKey, $serviceType = "remote_network", $addrType = "all", $location = "all", $environment = "prod6" )
     {
         if( PH::$saseQAapi )
             $url = "https://api.lab.datapath.prismaaccess.com/getPrismaAccessIP/v2";
