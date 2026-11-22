@@ -955,7 +955,7 @@ async function showProject(pid) {
         }) }) : null), projectTabs(pid, [
             ['versions', 'Configuration versions (' + configs.configs.length + ')', [versions, importCard, appidCard]],
             ['runs', 'Runs and project files', [runsCard, filesCard]],
-            mergerCard ? ['merger', 'Merger', [mergerCard]] : null,
+            mergerCard ? ['merger', 'Config merger', [mergerCard]] : null,
             scmCard ? ['scm', 'SCM', [scmCard]] : null,
             ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
             supportCardEl ? ['support', 'Support file', [supportCardEl]] : null,
@@ -1559,10 +1559,13 @@ async function mergerTab(base, pid, canWrite, versions) {
         reportTypes: el('input', { value: 'any', placeholder: 'any or address,service,…', autocomplete: 'off', spellcheck: false }), mergecheck: el('input', { type: 'checkbox', checked: true }),
     };
     const groups = {
-        'object-merger': el('div', { class: 'row' }, groupField('Object types (none ticked = any)', f.objecttype), field('Location', f.location), field('DupAlgorithm', f.dup),
+        // first the settings in one row (as rule-merger), then the object types over the whole width, left to right
+        'object-merger': el('div', {}, el('div', { class: 'row' }, field('Location', f.location), field('DupAlgorithm', f.dup),
             field('pickFilter', f.pick), field('excludeFilter', f.exclude), field('mergeCountLimit', f.limit), field('allowMergingWithUpperLevel', f.upper)),
-        'rule-merger': el('div', { class: 'row' }, field('Location', f.rlocation), field('Method', f.method), field('Rule base', f.rulebase), field('mergeDenyRules', f.deny),
-            field('stopMergingIfDenySeen', f.stopDeny), field('mergeAdjacentOnly', f.adjacent), field('filter', f.filter), groupField('additionalMatch (none ticked = none)', f.additional)),
+            el('div', { class: 'row wide' }, groupField('Object types (none ticked = any)', f.objecttype))),
+        'rule-merger': el('div', {}, el('div', { class: 'row' }, field('Location', f.rlocation), field('Method', f.method), field('Rule base', f.rulebase), field('mergeDenyRules', f.deny),
+            field('stopMergingIfDenySeen', f.stopDeny), field('mergeAdjacentOnly', f.adjacent), field('filter', f.filter)),
+            el('div', { class: 'row wide' }, groupField('additionalMatch (none ticked = none)', f.additional))),
         'merger-possible-report': el('div', { class: 'row' }, field('Object types', f.reportTypes), field('mergecheck (would the merge change what a firewall receives)', f.mergecheck)),
     };
     const opts = el('div', {});
@@ -1616,8 +1619,8 @@ async function mergerTab(base, pid, canWrite, versions) {
                         if (out.dataset.jid === r.jid) out.replaceChildren();
                         message(open ? 'run cancelled' : 'run deleted'); await redraw();
                     }) }) : null)))));
-    card.append(el('h2', { text: 'Merger' }),
-        el('p', { class: 'muted', text: 'pan-os-php object-merger / rule-merger on a copy of a version: the report shows what can be merged (kept ← removed) and what was not merged, with the reason. The version itself stays - "Result as new version" takes the merged configuration. merger-possible-report only reports duplicates (and with mergecheck whether a merge would change what a firewall receives).' }),
+    card.append(el('h2', { text: 'Config merger - objects and rules of a version' }),
+        el('p', { class: 'muted', text: 'pan-os-php object-merger (objects) / rule-merger (policies) on a copy of a configuration version of this project: the report shows what can be merged (kept ← removed) and what was not merged, with the reason. The version itself stays - "Result as new version" takes the merged configuration. merger-possible-report only reports duplicates (and with mergecheck whether a merge would change what a firewall receives).' }),
         form, el('h3', { text: 'Merger runs' }), runList, out);
     const open = runs.find(r => r.state === 'queued' || r.state === 'running');
     if (open) state.pendingTimers = (state.pendingTimers || []).concat([setTimeout(() => { if (card.isConnected) redraw().catch(() => {}); }, 4000)]);

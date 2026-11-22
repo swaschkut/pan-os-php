@@ -238,3 +238,5 @@ div.card.scmep { padding: 10px 14px; margin: 8px 0; }
 .scmscope { flex-basis: 100%; }
 label.chk { display: inline-flex; flex-direction: row; align-items: center; gap: 4px; font-weight: normal; margin-right: 10px; }
 .scmscope .row { align-items: center; }
+.row.wide > .groupfield { flex: 1 1 100%; }
+.row.wide .checks { max-width: none; }
