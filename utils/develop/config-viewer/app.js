@@ -1671,10 +1671,12 @@ async function showViewer(config, preset) {
     // snippets), known once the version is loaded; a member limited to locations gets only those
     const location = el('select', {}, (p.scope || ['any']).map(l => el('option', { value: l, text: l })));
     let locationsLoaded = false;
+    const locationInfo = { config: null, ancestor: false };
     async function loadLocations() {
         if (locationsLoaded) return;
         locationsLoaded = true;
         const r = await api('GET', base() + '/locations').catch(() => null);
+        if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor });
         if (!r || !r.locations.length) return;
         const was = location.value, kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'snippet': 'snippets' };
         const groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
@@ -1688,7 +1690,9 @@ async function showViewer(config, preset) {
     // access limited to locations (a child device group may be outside the scope)
     const dgScope = el('select', {}, el('option', { value: '', text: 'only this device group' }),
         el('option', { value: 'includechilddgs', text: '+ all child device groups (includechilddgs)' }),
-        el('option', { value: 'excludemaindg', text: 'only the child device groups (excludemaindg)' }));
+        el('option', { value: 'excludemaindg', text: 'only the child device groups (excludemaindg)' }),
+        // the effective view (viewer): the location and all levels above it, the copy that wins per name marked
+        el('option', { value: 'effective', text: '+ parents (effective view)' }));
     const dgScopeField = field('Device groups', dgScope);
     dgScopeField.hidden = true;
     // the kind of a location for the choice: a device group, shared of Panorama (all device groups are below it) or an
@@ -1699,17 +1703,20 @@ async function showViewer(config, preset) {
         if (group === 'device groups') return 'dg';
         if (group === 'containers (folders)') return 'container';
         if (name === 'shared' && [...location.querySelectorAll('optgroup')].some(g => g.label === 'device groups')) return 'shared';
+        if (group === 'vsys' || group === 'shared gateways') return 'vsys';
         return null;
     }
     function drawDgScope() {
         const kind = scopeKind(location.value);
         dgScopeField.hidden = !!p.scope || kind === null;
         if (dgScopeField.hidden) { dgScope.value = ''; return; }
-        const t = { dg: ['only this device group', '+ all child device groups', 'only the child device groups'],
-            shared: ['only shared', '+ all device groups', 'only the device groups'],
-            container: ['only this container', '+ all child containers / devices', 'only the child containers / devices'] }[kind];
-        [...dgScope.options].forEach((o, i) => { o.text = t[i] + (o.value ? ' (' + o.value + ')' : ''); });
-        dgScopeField.firstChild.textContent = kind === 'container' ? 'Containers' : 'Device groups';
+        const t = { dg: ['only this device group', '+ all child device groups', 'only the child device groups', '+ parents up to shared (effective view)'],
+            shared: ['only shared', '+ all device groups', 'only the device groups', null],
+            container: ['only this container', '+ all child containers / devices', 'only the child containers / devices', '+ snippets and parents up to All (effective view)'],
+            vsys: ['only this vsys', null, null, '+ shared (effective view)'] }[kind];
+        [...dgScope.options].forEach((o, i) => { o.hidden = t[i] === null; if (t[i] !== null) o.text = t[i] + (o.value && o.value !== 'effective' ? ' (' + o.value + ')' : ''); });
+        if (dgScope.selectedOptions[0] && dgScope.selectedOptions[0].hidden) dgScope.value = '';
+        dgScopeField.firstChild.textContent = kind === 'container' ? 'Containers' : (kind === 'vsys' ? 'Scope' : 'Device groups');
     }
     location.addEventListener('change', drawDgScope);
     const filter = el('input', { placeholder: '(name contains web) and (object is.unused) - type for fields and operators', maxlength: 2000, autocomplete: 'off', spellcheck: false });
@@ -1823,7 +1830,11 @@ async function showViewer(config, preset) {
         if (!view.columns.includes(view.sort)) view.sort = null;
         loadLocations();
         info.textContent = data.total + ' objects' + (data.truncated ? ' (first ' + data.rows.length + ' shown)' : '') + (fromCache ? ' - from browser cache' : ' - ' + data.ms + ' ms')
-            + (view.template ? ' - only template ' + view.template + ' (another type shows all)' : '');
+            + (view.template ? ' - only template ' + view.template + ' (another type shows all)' : '')
+            // the effective view: which copy of a name wins (Panorama setting "ancestor objects take precedence")
+            + (dgScope.value === 'effective' && !dgScopeField.hidden ? ' - effective view: ' + (locationInfo.config === 'panorama'
+                ? (locationInfo.ancestor ? 'ancestor objects take precedence (the highest copy wins)' : 'the nearest copy wins (ancestor precedence off)')
+                : 'the nearest copy wins') : '');
         draw();
         // a link "Open ↗" of a reference: the window of that object
         const want = view.openAfterLoad;
@@ -1934,9 +1945,12 @@ async function showViewer(config, preset) {
                         title: (view.refs.has(key) ? 'hide' : 'show') + ' where this object is used (pan-os-php displayreferences)', onclick: () => run(() => toggleRefs(r, key)) });
                 // an object of a type with an object window: a click opens it (as the edit dialog of PAN-OS)
                 const win = cur.window && typeof r.name === 'string' && r.name !== '' && r.location;
-                const row = el('tr', win ? { class: 'clickable', title: 'open ' + r.name, onclick: (ev) => { if (ev.target.closest('button, a')) return; run(() => openObject(r)); } } : {}, view.columns.map(c => {
+                const row = el('tr', win ? { class: 'clickable' + (typeof r.effective === 'string' && r.effective !== 'used' ? ' overridden' : ''), title: 'open ' + r.name, onclick: (ev) => { if (ev.target.closest('button, a')) return; run(() => openObject(r)); } } : {}, view.columns.map(c => {
                     if (c === 'refcount' && refs) return el('td', { class: 'refcell' }, refButton());
-                    const t = cell(r[c]); return el('td', { text: t, title: t.length > 40 ? t : null });
+                    const t = cell(r[c]);
+                    // effective view: the copy a firewall of the location gets, or the one it is hidden by
+                    if (c === 'effective' && t) return el('td', {}, el('span', { class: 'badge ' + (t === 'used' ? 'effused' : 'effover'), text: t }));
+                    return el('td', { text: t, title: t.length > 40 ? t : null });
                 }), refs && !view.columns.includes('refcount') ? el('td', { class: 'refcell' }, refButton()) : null);
                 return view.refs.has(key) ? [row, el('tr', { class: 'refrow' }, el('td', { colspan: view.columns.length + 1 }, refsBox(view.refs.get(key))))] : [row];
             }))));
@@ -2625,7 +2639,7 @@ async function showViewer(config, preset) {
         // a link "Open ↗": the window of that object opens when the list is there
         if (preset.open) view.openAfterLoad = { name: preset.open, location: preset.at || (preset.location === 'any' ? '' : preset.location), template: preset.template || '', profile: preset.profile || '' };
         // a location with the device groups below (<DG>:includechilddgs / :excludemaindg)
-        const pl = /^(.+):(includechilddgs|excludemaindg)$/i.exec(preset.location || '');
+        const pl = /^(.+):(includechilddgs|excludemaindg|effective)$/i.exec(preset.location || '');
         if (pl) { preset.location = pl[1]; dgScope.value = pl[2].toLowerCase(); }
         if (preset.location) {
             if (![...location.options].some(o => o.value === preset.location)) location.append(el('option', { value: preset.location, text: preset.location }));

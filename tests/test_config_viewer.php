@@ -646,6 +646,10 @@ eq( array( $c['All']['children'] ?? null, $c['All']['snippets'] ?? null, $c['Pri
 $cnt = function( $loc ) use ( $alice, $SC ) { return count( $alice->call( 'GET', $SC . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() ); };
 eq( array( $cnt( 'ngfw-shared' ), $cnt( 'ngfw-shared:includechilddgs' ) > 0, $cnt( 'ngfw-shared:includechilddgs' ) === $cnt( 'ngfw-shared:excludemaindg' ) ), array( 0, TRUE, TRUE ),
     'SCM: a container with the containers / devices below it' );
+$se = $alice->call( 'GET', $SC . '/objects?type=address&location=' . urlencode( 'DE-Berlin Office:effective' ) );
+$lv = array_values( array_unique( array_map( function( $x ) { return $x['location']; }, $se[1]['rows'] ?? array() ) ) );
+eq( array( status( $se ), $lv[0] ?? null, end( $lv ) ), array( 200, 'Panorama-Shared', 'DE-Berlin Office' ),
+    'SCM effective view: from the snippets of All down to the folder' );
 // variables: the window of a firewall - the value and where it comes from; an override set from there
 $VV = $up( 'variables-panorama.xml' );
 $vo = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();
@@ -655,6 +659,21 @@ $vc = $alice->call( 'POST', $VV . '/change', array( 'type' => 'device', 'devicet
 $vo2 = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();
 eq( array( $vo['effective']['$gw']['from'] ?? null, $vl['variables'] ?? null, isset( $vl['effective'] ), status( $vc ), $vo2['effective']['$gw']['value'] ?? null, $vo2['effective']['$gw']['own'] ?? null ),
     array( 'template stack TS1', array( '$dns', '$eth1', '$gw' ), FALSE, 200, '10.55.0.254', TRUE ), 'variables: window of a firewall (value + origin), override set; the list only names them' );
+// effective view of a location (<location>:effective): the levels above it too, from the top; per name the copy that wins
+$EF = $up( 'effective-panorama.xml' );
+$eff = function( $base, $loc ) use ( $alice ) {
+    $r = $alice->call( 'GET', $base . '/objects?type=address&location=' . urlencode( $loc ) );
+    return array( status( $r ), array_map( function( $x ) { return $x['location'] . ':' . $x['name'] . ':' . $x['effective'] . ':' . $x['level']; }, $r[1]['rows'] ?? array() ) );
+};
+eq( $eff( $EF, 'DG2:effective' ), array( 200, array( 'shared:A1:used:1', 'shared:dup:overridden by DG2:1', 'DG1:A2:used:2', 'DG1:dup:overridden by DG2:2', 'DG2:A3:used:3', 'DG2:dup:used:3' ) ),
+    'effective view: shared, parent device group, the device group - the nearest copy of a name wins' );
+$axml = str_replace( '<entry name="localhost.localdomain"><log-collector>', '<entry name="localhost.localdomain"><deviceconfig><setting><management><ancestor-objects-take-precedence>yes</ancestor-objects-take-precedence></management></setting></deviceconfig><log-collector>',
+    file_get_contents( $here . '/input/effective-panorama.xml' ) );
+$r = $alice->call( 'POST', $SP . '/configs', null, array( 'anc.xml', $axml ) );
+$AN = $SP . '/configs/' . ( $r[1]['cid'] ?? '' );
+$locs = $alice->call( 'GET', $AN . '/locations' )[1] ?? array();
+eq( array( $locs['ancestor'] ?? null, $eff( $AN, 'DG2:effective' )[1][1] ?? null, $eff( $AN, 'DG2:effective' )[1][5] ?? null ),
+    array( TRUE, 'shared:dup:used:1', 'DG2:dup:overridden by shared:3' ), 'effective view: with ancestor precedence the highest copy wins' );
 // location=<DG>:includechilddgs / :excludemaindg (pan-os-php): with / only the device groups below
 $names = function( $loc ) use ( $alice, $DV ) {
     return array_map( function( $r ) { return $r['location'] . ':' . $r['name']; }, $alice->call( 'GET', $DV . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() );

@@ -3875,7 +3875,7 @@ class ViewerApp
         // limited to locations: exactly one location of the scope per request (no 'any', no list) - enforced here, not in the UI
         if( $project['scope'] !== null && !in_array( $location, $project['scope'], TRUE ) )
             throw new ViewerException( 'not allowed: your access is limited to the locations: ' . implode( ', ', $project['scope'] ), 403 );
-        if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.,:\-]{1,200}$/', $location ) )
+        if( !is_string( $location ) || !preg_match( '/^[A-Za-z0-9 _.,:\-]{1,2000}$/', $location ) )
             throw new ViewerException( 'location: letters, digits, space and . _ - , : only', 400 );
         $args[] = 'location=' . $location;
         // Panorama: the template of network / device objects (zones, interfaces, …) - the same vsys exists in several
@@ -4224,6 +4224,22 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         $c = $this->configGet( $p, $cid );
+        // "<location>:effective": the objects a firewall of this location gets - the location and every level above it
+        // (Panorama: parent device groups, shared; SCM: snippets, parent folders with their snippets); each row is
+        // marked: the copy that wins for this location, or the one it is hidden by (same name, other level)
+        $effective = null;
+        if( is_string( $in['location'] ?? null ) && preg_match( '/^(.+):effective$/', $in['location'], $m ) )
+        {
+            if( $p['scope'] !== null )
+                throw new ViewerException( 'not allowed: the effective view reads the levels above your locations', 403 );
+            $locs = $this->locations( $user, $pid, $cid );
+            foreach( $locs['locations'] as $l )
+                if( $l['name'] === $m[1] )
+                    $effective = array( 'levels' => $l['levels'], 'ancestor' => $locs['ancestor'] && $locs['config'] === 'panorama' );
+            if( $effective === null )
+                throw new ViewerException( 'location ' . $m[1] . ' not found', 400 );
+            $in['location'] = implode( ',', $effective['levels'] );
+        }
         $args = $this->queryArgs( $in, $p );
         $type = substr( array_shift( $args ), 5 );
         // the page (not REST): how many objects use each object - a 'refcount' column after 'name', for the References button
@@ -4261,6 +4277,8 @@ class ViewerApp
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
                 unset( $rows[$i]['model'] );
+        if( $effective !== null )
+            $rows = self::effectiveRows( $rows, $effective['levels'], $effective['ancestor'] );
 
         $columns = array();
         foreach( $rows as $row )
@@ -4268,6 +4286,45 @@ class ViewerApp
                 $columns[$k] = TRUE;
         return array( 'total' => count( $rows ), 'truncated' => count( $rows ) > $max, 'columns' => array_keys( $columns ),
             'rows' => array_slice( $rows, 0, $max ), 'status' => $r['status'] ?? null ) + ( $nested ? array( 'xml' => is_array( $r['xml'] ?? null ) ? $r['xml'] : array() ) : array() );
+    }
+
+    /**
+     * the effective view: rows of all levels (nearest first in $levels), sorted from the top level down; per name the
+     * copy that wins ('effective' => 'used') - the nearest, or the highest with ancestor precedence (Panorama) - and the
+     * others 'overridden by <location>' (an address and an address group share their names, so the name decides)
+     */
+    private static function effectiveRows( array $rows, array $levels, bool $ancestor ): array
+    {
+        $pos = array_flip( $levels );
+        $win = array();
+        foreach( $rows as $row )
+        {
+            $n = (string)( $row['name'] ?? '' );
+            $l = $pos[$row['location'] ?? ''] ?? PHP_INT_MAX;
+            if( !isset( $win[$n] ) || ( $ancestor ? $l > $win[$n] : $l < $win[$n] ) )
+                $win[$n] = $l;
+        }
+        $out = array();
+        foreach( $rows as $row )
+        {
+            $n = (string)( $row['name'] ?? '' );
+            $l = $pos[$row['location'] ?? ''] ?? PHP_INT_MAX;
+            $new = array();
+            foreach( $row as $k => $v )
+            {
+                $new[$k] = $v;
+                if( $k === 'location' )
+                {
+                    $new['level'] = $l === PHP_INT_MAX ? null : count( $levels ) - $l;
+                    $new['effective'] = $l === $win[$n] ? 'used' : 'overridden by ' . ( $levels[$win[$n]] ?? '?' );
+                }
+            }
+            $out[] = $new;
+        }
+        // from the top (shared / All) down to the location; within a level the order of pan-os-php
+        $order = array_keys( $out );
+        usort( $order, function( $a, $b ) use ( $out ) { return ( $out[$a]['level'] ?? 0 ) <=> ( $out[$b]['level'] ?? 0 ) ?: $a <=> $b; } );
+        return array_map( function( $i ) use ( $out ) { return $out[$i]; }, $order );
     }
 
     /**
@@ -4595,13 +4652,14 @@ class ViewerApp
         $list = array();
         foreach( is_array( $r['locations'] ?? null ) ? $r['locations'] : array() as $l )
             if( is_array( $l ) && is_string( $l['name'] ?? null ) && is_string( $l['kind'] ?? null ) )
-                $list[] = array( 'name' => $l['name'], 'kind' => $l['kind'] );
+                $list[] = array( 'name' => $l['name'], 'kind' => $l['kind'], 'levels' => is_array( $l['levels'] ?? null ) ? array_values( array_filter( $l['levels'], 'is_string' ) ) : array( $l['name'] ) );
         if( $p['scope'] !== null )
         {
             $scope = array_map( 'strtolower', $p['scope'] );
             $list = array_values( array_filter( $list, function( $l ) use ( $scope ) { return in_array( strtolower( $l['name'] ), $scope, TRUE ); } ) );
         }
-        return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list );
+        return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list,
+            'ancestor' => !empty( $r['ancestor'] ) );
     }
 
     /** state of the loaded configuration: unsaved changes, last autosave. Does not start a worker. */

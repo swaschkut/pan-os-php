@@ -108,31 +108,73 @@ function viewerLocations()
 {
     $pan = UTIL::$sharedConfig['pan'] ?? null;
     $out = array();
-    $add = function( $kind, $list ) use ( &$out ) {
+    // 'levels': the locations whose objects a firewall of this location gets, nearest first (the effective view)
+    $add = function( $kind, $list ) use ( &$out, $pan ) {
         foreach( is_array( $list ) ? $list : array() as $o )
             if( is_object( $o ) && method_exists( $o, 'name' ) && is_string( $o->name() ) && $o->name() !== '' )
-                $out[] = array( 'name' => $o->name(), 'kind' => $kind );
+                $out[] = array( 'name' => $o->name(), 'kind' => $kind, 'levels' => viewerLevels( $pan, $o ) );
     };
     if( $pan instanceof PanoramaConf )
     {
-        $out[] = array( 'name' => 'shared', 'kind' => 'shared' );
+        $out[] = array( 'name' => 'shared', 'kind' => 'shared', 'levels' => array( 'shared' ) );
         $add( 'device-group', $pan->getDeviceGroups() );
-        return array( 'config' => 'panorama', 'locations' => $out );
+        return array( 'config' => 'panorama', 'locations' => $out, 'ancestor' => $pan->ancestorObjectsTakePrecedence() );
     }
     if( $pan instanceof PANConf )
     {
-        $out[] = array( 'name' => 'shared', 'kind' => 'shared' );
+        $out[] = array( 'name' => 'shared', 'kind' => 'shared', 'levels' => array( 'shared' ) );
         $add( 'vsys', $pan->getVirtualSystems() );
         $add( 'shared-gateway', $pan->getSharedGateways() );
-        return array( 'config' => 'firewall', 'locations' => $out );
+        return array( 'config' => 'firewall', 'locations' => $out, 'ancestor' => FALSE );
     }
     if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
     {
         $add( 'container', $pan->getContainers() );
         $add( 'snippet', $pan->getSnippets() );
-        return array( 'config' => 'scm', 'locations' => $out );
+        return array( 'config' => 'scm', 'locations' => $out, 'ancestor' => FALSE );
     }
-    return array( 'config' => 'unknown', 'locations' => $out );
+    return array( 'config' => 'unknown', 'locations' => $out, 'ancestor' => FALSE );
+}
+
+/**
+ * the locations a firewall of $o gets objects from, nearest first - which copy of a name it gets:
+ *   Panorama: the device group, its parents, shared (the nearest copy wins; with "ancestor objects take precedence"
+ *             the highest one)
+ *   firewall: the vsys, shared
+ *   SCM:      the folder, its snippets (the first attached wins), the parent folder, its snippets, … up to All (and its
+ *             snippets: predefined ones too) - the nearest wins (SCM has no ancestor precedence)
+ */
+function viewerLevels( $pan, $o ): array
+{
+    if( $o instanceof DeviceGroup )
+    {
+        $list = array();
+        for( $dg = $o, $i = 0; $dg !== null && $i < 20; $dg = $dg->parentDeviceGroup, $i++ )
+            $list[] = $dg->name();
+        $list[] = 'shared';
+        return $list;
+    }
+    if( $o instanceof VirtualSystem )
+        return array( $o->name(), 'shared' );
+    if( $o instanceof Container || $o instanceof DeviceCloud || $o instanceof DeviceOnPrem )
+    {
+        $list = array();
+        for( $cur = $o, $i = 0; is_object( $cur ) && $i < 30; $i++ )
+        {
+            if( in_array( $cur->name(), $list, TRUE ) )
+                break;
+            $list[] = $cur->name();
+            foreach( $cur->attachedSnippets ?? array() as $sn )
+                if( is_object( $sn ) && !in_array( $sn->name(), $list, TRUE ) )
+                    $list[] = $sn->name();
+            $parent = $cur->parentContainer ?? null;
+            if( is_string( $parent ) && is_object( $pan ) && method_exists( $pan, 'findContainer' ) )
+                $parent = $pan->findContainer( $parent );
+            $cur = is_object( $parent ) ? $parent : null;
+        }
+        return $list;
+    }
+    return array( $o->name() );
 }
 
 /** the viewer type (and rule type / profile type) of a pan-os-php object, null for others (interface, vsys, …) */

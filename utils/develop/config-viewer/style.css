@@ -189,3 +189,9 @@ ul.objhistnotes { margin: 2px 0 4px 1.2em; padding: 0; font-size: 12px; }
 ul.objhistnotes li { overflow-wrap: anywhere; }
 ul.objhistnotes li.warn { color: var(--warn); }
 details.keygendebug pre { max-height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+
+/* effective view of a location: the copy a firewall gets, and the copies hidden by it (same name on another level) */
+.badge.effused { background: #e3f4e8; color: #1d6b35; border-color: #b7dfc3; }
+.badge.effover { background: #fdeceb; color: #9b2c22; border-color: #f2c3bf; }
+tr.overridden td { color: var(--muted); }
+tr.overridden td:not(:has(.badge)) { text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .25); }

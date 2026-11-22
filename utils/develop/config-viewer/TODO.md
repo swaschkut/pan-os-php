@@ -203,11 +203,33 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   URL HTTP header logging - the XML element names are not known yet
 * **LDAP:** the query failed at the TLS handshake with a domain controller that was not available at that time - hence
   the automatic choice of the server from DNS; to check on the real installation that another DC answers now
-* **Effective view of a location** (wish 2026-11-22): the list "as this device group / container sees it" - its own
-  objects, then the parents up to shared (Panorama) or All (SCM) with their snippets and the predefined ones; a name
-  that exists on several levels shown once, as the object that wins for this location (Panorama: the lowest level wins,
-  "ancestor precedence" turns it around for the device groups; SCM: own folder, its snippets, then the parents -
-  to check in the SCM documentation); the other copies marked as shadowed. Next to "only this / + children".
-* **Variables of firewalls** (Panorama: template / template stack, device level in template-stack/devices/entry/variable;
-  SCM: folder / snippet / device) - to show and set in the window of the firewall / on-prem device; where SCM keeps
-  them is to be checked
+* ~~Effective view of a location~~ built 2026-11-22: Location + "+ parents (effective view)" (<location>:effective) -
+  the levels from shared / All down to the location (SCM: with the snippets of each folder), column level and
+  effective (used / overridden by <location>), hidden copies struck through; Panorama: the nearest copy wins, with
+  "ancestor-objects-take-precedence" the highest; SCM: the nearest (no ancestor precedence in SCM; of two snippets
+  the first attached wins - the order of attachedSnippets is used). Open: predefined objects (Panorama services,
+  SCM predefined snippets that are not attached in the configuration) are not part of the view.
+* ~~Variables of firewalls~~ built 2026-11-22 (variable-set / variable-remove, DeviceVariables, section Variables).
+  Open: API mode (in=api:// / scm-api://: send the change), scm_pa_xml_to_change.php for changed variables, the
+  variables a template stack inherits on Panorama in a vsys of a template (only template level is read)
+* **System information of a firewall / Panorama / SCM tenant** (wish 2026-11-22) - a view "System" in the viewer
+  (read first, changes later), built on type=config-section (generic, registry utils/common/config_sections.json) so
+  that the CLI shows the same:
+  - in pan-os-php today: PanoramaConf / PANConf read only rule-require-audit-comment, ancestor-objects-take-precedence,
+    wildfire public-cloud-server (+ firewall: advance-routing, timezone); type=device actions=system-mgt-config_users
+    lists the local administrators (text only); config-section: deployment-update-schedule,
+    config-bundle-export-schedule, permitted-ip; type=master-key (master key / encrypted values); certificates
+  - missing (to add as config sections, shown in the viewer as "System"):
+    * management settings: ancestor precedence, audit comment, shared objects / commit options, idle timeout,
+      login banner, password complexity, max sessions / lockout (deviceconfig/setting/management, mgt-config/password-complexity)
+    * administrators: mgt-config/users (role, profile / access domain, authentication profile, public key - never the
+      password hash), admin roles, access domains (Panorama), authentication profiles / sequences, server profiles
+      (LDAP, RADIUS, TACACS+, SAML, Kerberos) of the device
+    * system: hostname, management IP / netmask / gateway, DNS, NTP, timezone, domain, login banner, update server,
+      Panorama servers of a firewall, HA (high-availability), log settings / syslog / SNMP / email server profiles,
+      service route, permitted IP (exists)
+    * dynamic updates schedules of a firewall (deviceconfig/system/update-schedule), content versions
+    * SCM: tenant settings of the setup API (/config/setup/v1: folders, snippets, devices, labels, variables - the
+      first ones are read), device settings (/config/device/v1 ...: to check on pan.dev which ones exist)
+  - viewer: a menu entry "System" with the sections as read-only windows; secrets (hashes, keys, PSK) never shown;
+    then changes through config-section set / add-member (reviewed per section in action-classes.json)
