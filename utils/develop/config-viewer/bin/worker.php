@@ -137,6 +137,104 @@ function viewerLocations()
 }
 
 /**
+ * system information: every config section of utils/common/config_sections.json that applies to this configuration
+ * (Panorama, firewall, a template of Panorama, an SCM folder / snippet / device) - read with the methods of
+ * type=config-section (ConfigSection), the same as the CLI shows; secrets never (ConfigSection::flatten)
+ */
+function viewerSystem( ?string $template, ?string $at ): array
+{
+    $pan = UTIL::$sharedConfig['pan'] ?? null;
+    if( !is_object( $pan ) )
+        throw new Exception( 'no configuration loaded' );
+    $isScm = $pan instanceof BuckbeakConf || $pan instanceof FawkesConf;
+    $isPanorama = $pan instanceof PanoramaConf;
+    if( $template !== null && ( !$isPanorama || $pan->findTemplate( $template ) === null ) )
+        throw new Exception( 'template ' . $template . ' not found' );
+    $scope = ConfigSection::scopeOf( $isPanorama, $template, $isScm );
+    $scmRoot = null;
+    $choices = array();
+    if( $isScm )
+    {
+        $at = $at ?? 'All';
+        $sub = null;
+        foreach( array( 'findContainer', 'findDeviceCloud', 'findDeviceOnPrem', 'findSnippet' ) as $f )
+            if( $sub === null && method_exists( $pan, $f ) )
+                $sub = $pan->$f( $at );
+        if( $sub === null )
+            throw new Exception( 'folder / snippet / device ' . $at . ' not found' );
+        $scmRoot = $sub->xmlroot;
+        foreach( array( 'getContainers', 'getDeviceClouds', 'getDeviceOnPrems', 'getSnippets' ) as $f )
+            if( method_exists( $pan, $f ) )
+                foreach( $pan->$f() as $o )
+                    $choices[] = $o->name();
+    }
+    elseif( $isPanorama )
+        foreach( $pan->getTemplates() as $t )
+            $choices[] = $t->name();
+    $names = $isPanorama && $template === null ? ConfigSection::panoramaNames( $pan->xmldoc ) : array();
+    $sections = array();
+    foreach( ConfigSection::registry() as $name => $def )
+    {
+        if( !in_array( $scope, $def['scope'], TRUE ) )
+            continue;
+        $section = ConfigSection::section( $name );
+        $container = ConfigSection::container( $pan->xmldoc, $section, $template, FALSE, $scope, $scmRoot );
+        $entries = array();
+        foreach( ConfigSection::sectionEntries( $section, $container ) as $en => $e )
+            $entries[] = array( 'name' => (string)$en, 'fields' => ConfigSection::flatten( $e ),
+                'references' => count( $names ) && !empty( $def['references'] ) ? ConfigSection::references( $e, $names ) : array() );
+        $sections[] = array( 'name' => $name, 'group' => $def['group'] ?? 'Other', 'description' => $def['description'] ?? '',
+            'kind' => $def['kind'] ?? 'entries', 'path' => $isScm ? ConfigSection::pathOf( $section, 'scm' ) : ConfigSection::xpath( $section, $template, $scope ),
+            'entries' => $entries );
+    }
+    return array( 'config' => $isScm ? 'scm' : ( $isPanorama ? 'panorama' : 'firewall' ), 'scope' => $scope, 'template' => $template,
+        'location' => $isScm ? $at : null, 'choices' => $choices,
+        'ancestor' => $isPanorama ? $pan->ancestorObjectsTakePrecedence() : null, 'sections' => $sections );
+}
+
+/**
+ * the effective view: for each object of the read, the object a firewall of $at gets for its name - with the lookup
+ * of pan-os-php itself (the store of the location, nested: an EDL before an address / group / region of the same
+ * name, then the parents, SCM snippets, predefined objects; Panorama "ancestor objects take precedence":
+ * PH::resolveNameForFirewalls). rowKey => 'used' | array( 'by' => location, 'class' => class of the winner )
+ */
+function viewerEffective( $util, string $at ): array
+{
+    $pan = UTIL::$sharedConfig['pan'] ?? null;
+    if( !is_object( $pan ) )
+        return array();
+    $loc = null;
+    if( $at === 'shared' )
+        $loc = $pan;
+    else
+        foreach( array( 'findDeviceGroup', 'findVirtualSystem', 'findContainer', 'findDeviceCloud', 'findDeviceOnPrem', 'findSnippet' ) as $f )
+            if( $loc === null && method_exists( $pan, $f ) )
+                $loc = $pan->$f( $at );
+    if( $loc === null )
+        return array();
+    $ancestor = $pan instanceof PanoramaConf && $pan->ancestorObjectsTakePrecedence();
+    $stores = array( 'Address' => 'addressStore', 'AddressGroup' => 'addressStore', 'Region' => 'addressStore', 'EDL' => 'addressStore',
+        'Service' => 'serviceStore', 'ServiceGroup' => 'serviceStore', 'Tag' => 'tagStore' );
+    $out = array();
+    foreach( is_array( $util->objectsToProcess ?? null ) ? $util->objectsToProcess : array() as $set )
+        foreach( viewerSetObjects( $set ) as $o )
+        {
+            if( !is_object( $o ) || !method_exists( $o, 'name' ) )
+                continue;
+            $prop = $stores[get_class( $o )] ?? null;
+            $win = null;
+            if( $prop !== null && isset( $loc->$prop ) && is_object( $loc->$prop ) )
+                $win = $ancestor && method_exists( 'PH', 'resolveNameForFirewalls' ) ? PH::resolveNameForFirewalls( $prop, $o->name(), $loc )
+                    : $loc->$prop->find( $o->name() );
+            if( $win === null )
+                continue;
+            $wl = PH::getLocationString( $win );
+            $out[viewerRowKey( $o )] = $win === $o ? 'used' : array( 'by' => is_string( $wl ) ? $wl : '?', 'class' => get_class( $win ) );
+        }
+    return $out;
+}
+
+/**
  * the locations a firewall of $o gets objects from, nearest first - which copy of a name it gets:
  *   Panorama: the device group, its parents, shared (the nearest copy wins; with "ancestor objects take precedence"
  *             the highest one)
@@ -572,6 +670,15 @@ function viewerRun( $type, array $args )
     // 'x-xml': the XML of every object of the read and its entry in the history ("location|template|name" => path, xml)
     $withXml = in_array( 'x-xml', $args, TRUE );
     $args = array_values( array_diff( $args, array( 'x-computed', 'x-refcount', 'x-xml' ) ) );
+    // 'x-effective=<location>': which copy of each name a firewall of this location gets (effective view)
+    $effectiveAt = null;
+    foreach( $args as $i => $a )
+        if( strpos( $a, 'x-effective=' ) === 0 )
+        {
+            $effectiveAt = substr( $a, 12 );
+            unset( $args[$i] );
+        }
+    $args = array_values( $args );
     // 'x-bp=<file>' is no pan-os-php argument either: the BP JSON of the project for this one run (checks, computed
     // verdicts, alert-only-set / best-practice-set). Only a file of the folder "files" of this project; afterwards the
     // BP JSON the configuration was loaded with is used again.
@@ -611,6 +718,8 @@ function viewerRun( $type, array $args )
                     // "location|template|name" - a DNS rule / threat rule "…|profile/name" (PH::jsonObjectKey)
                     $GLOBALS['viewerRefcounts'][viewerRowKey( $o )] = count( viewerUsers( $o ) );
     }
+    if( $effectiveAt !== null )
+        $GLOBALS['viewerEffective'] = viewerEffective( $util, $effectiveAt );
     if( $withXml )
     {
         // only the object of the window: objectsToProcess holds every object of the location (the filter is applied
@@ -682,6 +791,8 @@ function viewerChild( $conn, $type, array $args, $send )
         $r = viewerDecode( $out );
         if( isset( $GLOBALS['viewerRefcounts'] ) && $r['ok'] )
             $r['refcounts'] = $GLOBALS['viewerRefcounts'];
+        if( isset( $GLOBALS['viewerEffective'] ) && $r['ok'] )
+            $r['effective'] = $GLOBALS['viewerEffective'];
         if( isset( $GLOBALS['viewerXml'] ) && $r['ok'] )
             $r['xml'] = $GLOBALS['viewerXml'];
         if( !$done && $r['ok'] )
@@ -722,6 +833,7 @@ $repo = dirname( __FILE__ ) . '/../../../..';
 require_once $repo . '/lib/pan_php_framework.php';
 require_once $repo . '/utils/lib/UTIL.php';
 require_once dirname( __FILE__ ) . '/../lib/ViewerGit.php';
+require_once $repo . '/utils/common/ConfigSection.php';
 
 // ---- load once
 $doc = new DOMDocument();
@@ -831,6 +943,13 @@ while( TRUE )
         viewerQuiet( function() use ( $conn ) { fclose( $conn ); } );
         if( $child < 0 )
             viewerLog( 'fork failed' );
+    }
+    elseif( $cmd['cmd'] === 'system' )
+    {
+        $tpl = isset( $cmd['template'] ) && is_string( $cmd['template'] ) && $cmd['template'] !== '' ? $cmd['template'] : null;
+        $at = isset( $cmd['location'] ) && is_string( $cmd['location'] ) && $cmd['location'] !== '' ? $cmd['location'] : null;
+        try { $r = array( 'ok' => TRUE ) + viewerSystem( $tpl, $at ); } catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'system: ' . $e->getMessage() ); }
+        viewerSend( $conn, $r );
     }
     elseif( $cmd['cmd'] === 'locations' )
     {

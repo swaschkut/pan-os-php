@@ -195,3 +195,11 @@ details.keygendebug pre { max-height: 420px; overflow: auto; white-space: pre-wr
 .badge.effover { background: #fdeceb; color: #9b2c22; border-color: #f2c3bf; }
 tr.overridden td { color: var(--muted); }
 tr.overridden td:not(:has(.badge)) { text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .25); }
+
+/* System settings window */
+.objwin.syswin { width: min(1200px, 96vw); }
+.sysgroup h4 { margin: 1rem 0 .3rem; }
+.sysentry { margin: .3rem 0 .8rem; }
+.sysname { font-weight: 600; margin-bottom: .2rem; }
+.sysfact { font-weight: 600; }
+.syswin .objfields th { width: 300px; }

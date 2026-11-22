@@ -4235,7 +4235,7 @@ class ViewerApp
             $locs = $this->locations( $user, $pid, $cid );
             foreach( $locs['locations'] as $l )
                 if( $l['name'] === $m[1] )
-                    $effective = array( 'levels' => $l['levels'], 'ancestor' => $locs['ancestor'] && $locs['config'] === 'panorama' );
+                    $effective = array( 'levels' => $l['levels'], 'ancestor' => $locs['ancestor'] && $locs['config'] === 'panorama', 'at' => $m[1] );
             if( $effective === null )
                 throw new ViewerException( 'location ' . $m[1] . ' not found', 400 );
             $in['location'] = implode( ',', $effective['levels'] );
@@ -4246,7 +4246,7 @@ class ViewerApp
         $refcount = $max !== PHP_INT_MAX && !empty( $this->meta()['types'][$type]['references'] );
         $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'read', 'type' => $type,
             'args' => array_merge( $args, array( 'actions=display' ), $computed ? array( 'x-computed' ) : array(), $refcount ? array( 'x-refcount' ) : array(),
-                $nested ? array( 'x-xml' ) : array(),
+                $nested ? array( 'x-xml' ) : array(), $effective !== null ? array( 'x-effective=' . $effective['at'] ) : array(),
                 $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array(), $nested );
         // "Extra columns" of the list: additional fields of exportToExcel (e.g. NestedMembers, ResolveIP), by name
@@ -4278,7 +4278,7 @@ class ViewerApp
             foreach( $rows as $i => $row )
                 unset( $rows[$i]['model'] );
         if( $effective !== null )
-            $rows = self::effectiveRows( $rows, $effective['levels'], $effective['ancestor'] );
+            $rows = self::effectiveRows( $rows, $effective['levels'], $effective['ancestor'], is_array( $r['effective'] ?? null ) ? $r['effective'] : array() );
 
         $columns = array();
         foreach( $rows as $row )
@@ -4293,7 +4293,7 @@ class ViewerApp
      * copy that wins ('effective' => 'used') - the nearest, or the highest with ancestor precedence (Panorama) - and the
      * others 'overridden by <location>' (an address and an address group share their names, so the name decides)
      */
-    private static function effectiveRows( array $rows, array $levels, bool $ancestor ): array
+    private static function effectiveRows( array $rows, array $levels, bool $ancestor, array $marks = array() ): array
     {
         $pos = array_flip( $levels );
         $win = array();
@@ -4316,7 +4316,16 @@ class ViewerApp
                 if( $k === 'location' )
                 {
                     $new['level'] = $l === PHP_INT_MAX ? null : count( $levels ) - $l;
-                    $new['effective'] = $l === $win[$n] ? 'used' : 'overridden by ' . ( $levels[$win[$n]] ?? '?' );
+                    // the lookup of pan-os-php (worker: EDL before address / group / region, parents, snippets,
+                    // ancestor precedence) - else (types without such a lookup) the nearest level / the highest one
+                    $mark = $marks[( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . $n] ?? null;
+                    if( $mark === 'used' )
+                        $new['effective'] = 'used';
+                    elseif( is_array( $mark ) )
+                        $new['effective'] = 'overridden by ' . ( $mark['by'] ?? '?' ) . ( in_array( $mark['class'] ?? '', array( 'EDL', 'Region', 'AddressGroup', 'ServiceGroup' ), TRUE ) && $mark['class'] !== ( $row['type'] ?? '' )
+                            ? ' (' . array( 'EDL' => 'EDL', 'Region' => 'region', 'AddressGroup' => 'address group', 'ServiceGroup' => 'service group' )[$mark['class']] . ')' : '' );
+                    else
+                        $new['effective'] = $l === $win[$n] ? 'used' : 'overridden by ' . ( $levels[$win[$n]] ?? '?' );
                 }
             }
             $out[] = $new;
@@ -4660,6 +4669,32 @@ class ViewerApp
         }
         return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list,
             'ancestor' => !empty( $r['ancestor'] ) );
+    }
+
+    /**
+     * System: GET …/configs/<cid>/system?template=<template of Panorama>&location=<SCM folder / snippet / device> - the
+     * settings of the configuration (management, system, administrators, authentication, logging, updates) as
+     * type=config-section reads them; secrets never. Not for members limited to types / locations (it is the whole
+     * device).
+     */
+    public function system( array $user, $pid, $cid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        self::needUnlimited( $p, 'the system information' );
+        $cmd = array( 'cmd' => 'system' );
+        foreach( array( 'template', 'location' ) as $k )
+            if( isset( $in[$k] ) && $in[$k] !== '' )
+            {
+                if( !is_string( $in[$k] ) || !preg_match( '/^[A-Za-z0-9 _.\-]{1,200}$/', $in[$k] ) )
+                    throw new ViewerException( $k . ': letters, digits, space and . _ - only', 400 );
+                $cmd[$k] = $in[$k];
+            }
+        $r = $this->workerCall( $this->session( $p, $c, $user ), $cmd, 120 );
+        if( empty( $r['ok'] ) )
+            throw new ViewerException( (string)( $r['error'] ?? 'system information not available' ), 400 );
+        unset( $r['ok'] );
+        return $r;
     }
 
     /** state of the loaded configuration: unsaved changes, last autosave. Does not start a worker. */

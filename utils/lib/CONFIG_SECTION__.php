@@ -36,6 +36,7 @@ class CONFIG_SECTION__ extends UTIL
         $this->supportedArguments['section'] = array('niceName' => 'section', 'shortHelp' => 'config section of utils/common/config_sections.json, section=list shows them', 'argDesc' => 'deployment-update-schedule');
         $this->supportedArguments['entry'] = array('niceName' => 'entry', 'shortHelp' => 'entries of the section (default: all); set on a missing entry creates it', 'argDesc' => 'name1[,name2]');
         $this->supportedArguments['template'] = array('niceName' => 'template', 'shortHelp' => 'Panorama: section of a template instead of Panorama itself', 'argDesc' => 'template');
+        $this->supportedArguments['location'] = array('niceName' => 'location', 'shortHelp' => 'SCM: the folder / snippet / device of the section (default: All)', 'argDesc' => 'folder');
         $this->supportedArguments['actions'] = array('niceName' => 'actions', 'shortHelp' => 'display (default) | references | exportToHtml:FILE | get:xml|set|json | set:PATH,VALUE | add-member:PATH,VALUE | remove-member:PATH,VALUE | remove-field:PATH | delete - PATH: elements joined by "." (named entries as [name])', 'argDesc' => 'action[:args]');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
@@ -68,7 +69,7 @@ class CONFIG_SECTION__ extends UTIL
         $rows = array();
         foreach( ConfigSection::registry() as $n => $s )
         {
-            PH::print_stdout( " - " . str_pad($n, 32) . " " . implode(',', $s['scope']) . "  " . $s['path'] . "  - " . $s['description'] );
+            PH::print_stdout( " - " . str_pad($n, 32) . " " . implode(',', $s['scope']) . "  " . ( $s['kind'] ?? 'entries' ) . "  " . $s['path'] . "  - " . $s['description'] );
             $rows[$n] = $s;
         }
         PH::print_stdout( $rows, false, 'sections' );
@@ -101,7 +102,23 @@ class CONFIG_SECTION__ extends UTIL
         $section = ConfigSection::section( PH::$args['section'] );
         $template = isset(PH::$args['template']) && PH::$args['template'] !== 'any' ? PH::$args['template'] : null;
         $isPanorama = $this->pan->isPanorama();
-        ConfigSection::checkScope( $section, $isPanorama, $template );
+        // SCM (folders / snippets / devices): the section is below the entry of location= (default All)
+        $isScm = ( method_exists( $this->pan, 'isBuckbeak' ) && $this->pan->isBuckbeak() ) || ( method_exists( $this->pan, 'isFawkes' ) && $this->pan->isFawkes() );
+        ConfigSection::checkScope( $section, $isPanorama, $template, $isScm );
+        $scope = ConfigSection::scopeOf( $isPanorama, $template, $isScm );
+        $scmRoot = null;
+        $scmName = null;
+        if( $isScm )
+        {
+            $scmName = isset(PH::$args['location']) && PH::$args['location'] !== 'any' && PH::$args['location'] !== 'shared' ? PH::$args['location'] : 'All';
+            $sub = $this->pan->findContainer( $scmName );
+            foreach( array( 'findDeviceCloud', 'findDeviceOnPrem', 'findSnippet' ) as $f )
+                if( $sub === null && method_exists( $this->pan, $f ) )
+                    $sub = $this->pan->$f( $scmName );
+            if( $sub === null )
+                derr( "SCM: folder / snippet / device '" . $scmName . "' not found", null, FALSE );
+            $scmRoot = $sub->xmlroot;
+        }
 
         $actions = array();
         // actions separated by '/', a literal '/' (file path) is written as '//' (as for all pan-os-php actions)
@@ -111,6 +128,8 @@ class CONFIG_SECTION__ extends UTIL
                 $actions[] = self::parseAction( str_replace( "\0", '/', $a ) );
         $writes = count( array_filter( $actions, function( $a ) { return in_array($a[0], self::WRITE_ACTIONS, TRUE); } ) );
         $isAPI = $this->configInput['type'] == 'api';
+        if( $writes && $isScm && $this->configInput['type'] != 'file' )
+            derr( "SCM: changes of a config section only in an offline configuration (in=<file>.xml out=)", null, FALSE );
         // the dispatcher sets out=/dev/null when out= is not given
         if( $writes && !$isAPI && ( !isset(PH::$args['out']) || PH::$args['out'] === '/dev/null' || PH::$args['out'] === '' ) )
             derr( "changes of an offline configuration need out=", null, FALSE );
@@ -118,10 +137,15 @@ class CONFIG_SECTION__ extends UTIL
         $doc = $this->xmlDoc;
         $selected = isset(PH::$args['entry']) ? explode( ',', PH::$args['entry'] ) : null;
         $createEntries = $selected !== null && count( array_filter( $actions, function( $a ) { return in_array($a[0], array( 'set', 'add-member' ), TRUE); } ) ) > 0;
-        $container = ConfigSection::container( $doc, $section, $template, $createEntries );
+        $settings = ConfigSection::isSettings( $section );
+        $hasWrite = count( array_filter( $actions, function( $a ) { return in_array($a[0], array( 'set', 'add-member' ), TRUE); } ) ) > 0;
+        $container = ConfigSection::container( $doc, $section, $template, $createEntries || ( $settings && $hasWrite ), $scope, $scmRoot );
 
         $entries = array();
-        if( $container !== null )
+        // a settings section: one entry (the container; for display without the parts that are sections of their own)
+        if( $settings )
+            $entries = ConfigSection::sectionEntries( $section, $container, !( $hasWrite || $writes ) );
+        elseif( $container !== null )
         {
             $all = ConfigSection::entries( $container );
             if( $selected === null )
@@ -138,9 +162,9 @@ class CONFIG_SECTION__ extends UTIL
         }
 
         $names = $isPanorama && !empty($section['references']) ? ConfigSection::panoramaNames( $doc ) : array();
-        $where = $section['name'] . ( $template !== null ? ' (template ' . $template . ')' : '' );
+        $where = $section['name'] . ( $template !== null ? ' (template ' . $template . ')' : '' ) . ( $scmName !== null ? ' (' . $scmName . ')' : '' );
         PH::print_stdout( "config section " . $where . ": " . count($entries) . " entr" . ( count($entries) == 1 ? 'y' : 'ies' )
-            . ( $selected !== null ? " selected" : '' ) . " - " . ConfigSection::xpath($section, $template) );
+            . ( $selected !== null ? " selected" : '' ) . " - " . ( $isScm ? $scmName . '/' . ConfigSection::pathOf( $section, 'scm' ) : ConfigSection::xpath($section, $template, $scope) ) );
 
         $changed = array(); $deleted = array();
         foreach( $actions as $act )
@@ -201,6 +225,8 @@ class CONFIG_SECTION__ extends UTIL
                 case 'delete':
                     foreach( $entries as $n => $e )
                     {
+                        if( $e->parentNode === null )
+                            continue;
                         $e->parentNode->removeChild( $e );
                         $deleted[$n] = TRUE;
                         unset( $changed[$n] );
@@ -216,11 +242,11 @@ class CONFIG_SECTION__ extends UTIL
             if( $isAPI )
             {
                 $con = $this->pan->connector;
-                $base = ConfigSection::xpath( $section, $template );
+                $base = ConfigSection::xpath( $section, $template, $scope );
                 foreach( $changed as $n => $e )
-                    $con->sendEditRequest( $base . "/entry[@name='" . $n . "']", $e );
+                    $con->sendEditRequest( $settings ? $base : $base . "/entry[@name='" . $n . "']", $e );
                 foreach( array_keys($deleted) as $n )
-                    $con->sendDeleteRequest( $base . "/entry[@name='" . $n . "']" );
+                    $con->sendDeleteRequest( $settings ? $base : $base . "/entry[@name='" . $n . "']" );
                 PH::print_stdout( "  sent via API to the candidate configuration - commit required" );
             }
             else

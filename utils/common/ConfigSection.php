@@ -65,33 +65,98 @@ class ConfigSection
         return self::DEVICE_ENTRY . "/template/entry[@name='" . $template . "']/config/devices/entry[@name='localhost.localdomain']";
     }
 
-    /** XPath of the section container */
-    public static function xpath( array $section, $template = null )
+    /**
+     * the kind of configuration a section is read in: 'template' (Panorama, template=), 'panorama', 'firewall' or 'scm'
+     * (a folder / snippet / device of SCM - its entry is the base of the path)
+     */
+    public static function scopeOf( $isPanorama, $template = null, $isScm = FALSE )
     {
-        return self::deviceXpath( $template ) . '/' . $section['path'];
+        if( $isScm )
+            return 'scm';
+        return $template !== null ? 'template' : ( $isPanorama ? 'panorama' : 'firewall' );
+    }
+
+    /**
+     * the path of a section in a scope: 'paths' => scope => path (e.g. authentication profiles: panorama/… on Panorama,
+     * shared/… on a firewall), else 'path'
+     */
+    public static function pathOf( array $section, $scope )
+    {
+        if( isset($section['paths'][$scope]) )
+            return $section['paths'][$scope];
+        // a template holds the configuration of a firewall
+        if( $scope === 'template' && isset($section['paths']['firewall']) )
+            return $section['paths']['firewall'];
+        return $section['path'];
+    }
+
+    /**
+     * XPath of the section container. 'base' of the section: 'device' (default, below the device entry
+     * localhost.localdomain) or 'config' (below <config>: mgt-config, shared, panorama); a template: inside its
+     * <config>. SCM has no XPath (the folder / snippet / device entry is the base) - see container()
+     */
+    public static function xpath( array $section, $template = null, $scope = null )
+    {
+        if( $scope === null )
+            $scope = $template !== null ? 'template' : 'panorama';
+        $path = self::pathOf( $section, $scope );
+        if( ( $section['base'] ?? 'device' ) === 'config' )
+            return ( $template === null ? '/config' : self::DEVICE_ENTRY . "/template/entry[@name='" . $template . "']/config" ) . '/' . $path;
+        return self::deviceXpath( $template ) . '/' . $path;
+    }
+
+    /** a section is "settings": one container of fields (shown as one entry with the name of the section) */
+    public static function isSettings( array $section )
+    {
+        return ( $section['kind'] ?? 'entries' ) === 'settings';
     }
 
     /** check that the section exists for this kind of configuration */
-    public static function checkScope( array $section, $isPanorama, $template = null )
+    public static function checkScope( array $section, $isPanorama, $template = null, $isScm = FALSE )
     {
-        $scope = $template !== null ? 'template' : ( $isPanorama ? 'panorama' : 'firewall' );
+        $scope = self::scopeOf( $isPanorama, $template, $isScm );
         if( !in_array($scope, $section['scope'], TRUE) )
             derr( "config section '" . $section['name'] . "' is not available for " . $scope . " (scope: " . implode(', ', $section['scope']) . ")", null, FALSE );
     }
 
-    /** section container node, null when missing (created along the path with $create) */
-    public static function container( DOMDocument $doc, array $section, $template = null, $create = FALSE )
+    /**
+     * section container node, null when missing (created along the path with $create). $scope: as scopeOf() - for
+     * 'scm' $scmRoot is the entry of the folder / snippet / device
+     */
+    public static function container( DOMDocument $doc, array $section, $template = null, $create = FALSE, $scope = null, ?DOMElement $scmRoot = null )
     {
+        if( $scope === 'scm' )
+        {
+            if( $scmRoot === null )
+                return null;
+            $node = $scmRoot;
+            foreach( explode('/', self::pathOf( $section, 'scm' )) as $name )
+            {
+                $next = null;
+                foreach( $node->childNodes as $c )
+                    if( $c->nodeType == XML_ELEMENT_NODE && $c->nodeName == $name )
+                        $next = $c;
+                if( $next === null )
+                {
+                    if( !$create )
+                        return null;
+                    $next = self::childOrCreate( $node, $name );
+                }
+                $node = $next;
+            }
+            return $node;
+        }
         $x = new DOMXPath( $doc );
-        $n = $x->query( self::xpath($section, $template) );
+        $n = $x->query( self::xpath($section, $template, $scope) );
         if( $n->length )
             return $n->item(0);
         if( !$create )
             return null;
 
+        $config = ( $section['base'] ?? 'device' ) === 'config';
         if( $template === null )
         {
-            $base = $x->query( self::DEVICE_ENTRY );
+            $base = $x->query( $config ? '/config' : self::DEVICE_ENTRY );
             if( $base->length == 0 )
                 derr( "device entry not found in the configuration", null, FALSE );
             $node = $base->item(0);
@@ -101,11 +166,39 @@ class ConfigSection
             $t = $x->query( self::DEVICE_ENTRY . "/template/entry[@name='" . $template . "']" );
             if( $t->length == 0 )
                 derr( "template '" . $template . "' not found", null, FALSE );
-            $node = self::childOrCreate( self::childOrCreate( self::childOrCreate( $t->item(0), 'config' ), 'devices' ), 'entry', 'localhost.localdomain' );
+            $node = self::childOrCreate( $t->item(0), 'config' );
+            if( !$config )
+                $node = self::childOrCreate( self::childOrCreate( $node, 'devices' ), 'entry', 'localhost.localdomain' );
         }
-        foreach( explode('/', $section['path']) as $name )
+        foreach( explode('/', self::pathOf( $section, $scope ?? ( $template !== null ? 'template' : 'panorama' ) )) as $name )
             $node = self::childOrCreate( $node, $name );
         return $node;
+    }
+
+    /**
+     * the entries of a section to show: named entries; a "settings" section: the container itself (one entry with the
+     * name of the section) - child elements listed in 'exclude' (sections of their own) left out
+     */
+    public static function sectionEntries( array $section, $container, $forDisplay = TRUE )
+    {
+        if( !self::isSettings( $section ) )
+            return self::entries( $container );
+        if( $container === null )
+            return array();
+        if( $forDisplay && !empty($section['exclude']) )
+        {
+            $copy = $container->cloneNode( TRUE );
+            foreach( iterator_to_array( $copy->childNodes ) as $c )
+                if( $c->nodeType == XML_ELEMENT_NODE && in_array( $c->nodeName, $section['exclude'], TRUE ) )
+                    $copy->removeChild( $c );
+            // the copy is only read (display); a change works on the container itself ($forDisplay = FALSE); nothing
+            // left (only sections of their own): not set
+            foreach( $copy->childNodes as $c )
+                if( $c->nodeType == XML_ELEMENT_NODE )
+                    return array( $section['name'] => $copy );
+            return array();
+        }
+        return array( $section['name'] => $container );
     }
 
     private static function childOrCreate( DOMElement $node, $name, $entryName = null )
@@ -141,8 +234,13 @@ class ConfigSection
         return $create ? self::childOrCreate( $container, 'entry', $name ) : null;
     }
 
-    public static function isSecret( $value )
+    /** field names whose value is never shown (password hashes, keys, secrets), also when not encrypted */
+    const SECRET_FIELDS = '/(^|\.)(?!public-key$)([a-z0-9-]*-key|key|authkey|phash|password|passwd|[a-z0-9-]*-password|secret|[a-z0-9-]*-secret|psk|community|passphrase|token)$/i';
+
+    public static function isSecret( $value, $path = null )
     {
+        if( $path !== null && preg_match( self::SECRET_FIELDS, (string)$path ) )
+            return TRUE;
         return strpos( (string)$value, self::SECRET_PREFIX ) === 0;
     }
 
@@ -162,7 +260,7 @@ class ConfigSection
             if( $prefix !== '' )
             {
                 $v = trim( $node->textContent );
-                $out[$prefix] = $v === '' ? '(set)' : ( self::isSecret($v) ? '*** encrypted ***' : $v );
+                $out[$prefix] = $v === '' ? '(set)' : ( self::isSecret($v) ? '*** encrypted ***' : ( self::isSecret($v, $prefix) ? '*** hidden ***' : $v ) );
             }
             return $out;
         }

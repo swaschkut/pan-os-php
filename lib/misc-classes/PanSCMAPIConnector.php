@@ -656,6 +656,9 @@ class PanSCMAPIConnector
             #mwarning("only local offline config validation", null, FALSE);
             // variables of the folders / snippets / devices (interface variables of a firewall: on its device)
             $this->typeArray[] = "variables";
+            // NGFW device settings (/config/device/v1) - shown by type=config-section (section scm-<type>)
+            foreach( self::DEVICE_SETTINGS_TYPES as $t )
+                $this->typeArray[] = $t;
         }
         elseif( $utilType == "custom" )
         {
@@ -899,6 +902,9 @@ class PanSCMAPIConnector
         // variables of a folder / snippet / device (Configuration Setup API)
         elseif( $type === "variables" )
             $url .= "/config/setup/v1/" . $type . "?".$foldertype."=" . urlencode( $folderName );
+        // NGFW device settings
+        elseif( in_array( $type, self::DEVICE_SETTINGS_TYPES, TRUE ) )
+            $url .= "/config/device/v1/" . $type . "?".$foldertype."=" . urlencode( $folderName );
         elseif( $type !== null
             && ( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
             && $type !== "log-forwarding-profiles"
@@ -1304,6 +1310,73 @@ class PanSCMAPIConnector
      * - a variable of a device overrides the one of the same name in its folders (SCM: "overridden"); the value of
      * a folder is not copied to the folders / devices below
      */
+    /** NGFW device settings of SCM (/config/device/v1/<type>), loaded with utilType device */
+    const DEVICE_SETTINGS_TYPES = array( 'general-settings', 'management-interface-settings', 'service-settings', 'service-route-settings',
+        'authentication-settings', 'login-banner-settings', 'session-settings', 'session-timeouts-settings', 'tcp-settings',
+        'content-id-settings', 'vpn-settings', 'update-schedule-settings' );
+
+    /**
+     * an NGFW device setting of SCM into the XML of its folder / snippet / device: device-settings/<type> with the
+     * fields of the answer as elements (key_name -> key-name; a list of texts -> <member>, a list of objects with a
+     * name -> <entry name=…>; TRUE / FALSE -> yes / no) - read generically by type=config-section (section scm-<type>).
+     * Several answers for one folder are merged (a later one adds its fields).
+     */
+    function SCM_API_settings_import( $type, $object, $sub )
+    {
+        if( !isset( $sub->xmlroot ) || !$sub->xmlroot instanceof DOMElement || !is_array( $object ) )
+            return null;
+        $root = DH::findFirstElementOrCreate( 'device-settings', $sub->xmlroot );
+        $node = DH::findFirstElementOrCreate( $type, $root );
+        foreach( array( 'id', 'folder', 'snippet', 'device', 'overridden' ) as $k )
+            unset( $object[$k] );
+        self::jsonToXml( $node, $object );
+        return $node;
+    }
+
+    /** JSON (array) into the children of $node - see SCM_API_settings_import */
+    public static function jsonToXml( DOMElement $node, $value )
+    {
+        $doc = $node->ownerDocument;
+        if( !is_array( $value ) )
+        {
+            $node->appendChild( $doc->createTextNode( is_bool( $value ) ? ( $value ? 'yes' : 'no' ) : (string)$value ) );
+            return;
+        }
+        $isList = array_keys( $value ) === range( 0, count( $value ) - 1 );
+        if( $isList )
+        {
+            foreach( $value as $item )
+            {
+                if( is_array( $item ) && isset( $item['name'] ) && is_scalar( $item['name'] ) )
+                {
+                    $e = $doc->createElement( 'entry' );
+                    $e->setAttribute( 'name', (string)$item['name'] );
+                    unset( $item['name'] );
+                    $node->appendChild( $e );
+                    self::jsonToXml( $e, $item );
+                }
+                else
+                {
+                    $m = $doc->createElement( 'member' );
+                    $node->appendChild( $m );
+                    self::jsonToXml( $m, is_array( $item ) ? $item : $item );
+                }
+            }
+            return;
+        }
+        foreach( $value as $k => $v )
+        {
+            $name = str_replace( '_', '-', (string)$k );
+            if( !preg_match( '/^[A-Za-z][A-Za-z0-9.\-]*$/', $name ) )
+                $name = 'x-' . preg_replace( '/[^A-Za-z0-9.\-]/', '-', $name );
+            $existing = DH::findFirstElement( $name, $node );
+            $e = $existing !== FALSE && is_array( $v ) ? $existing : $doc->createElement( $name );
+            if( $e !== $existing )
+                $node->appendChild( $e );
+            self::jsonToXml( $e, $v );
+        }
+    }
+
     function SCM_API_variable_import( $object, $sub )
     {
         if( !isset( $object['name'] ) || !is_string( $object['name'] ) || $object['name'] === '' || !isset( $sub->xmlroot ) || !$sub->xmlroot instanceof DOMElement )
@@ -1608,6 +1681,10 @@ class PanSCMAPIConnector
             elseif( $type === "variables" )
             {
                 $this->SCM_API_variable_import( $object, $sub );
+            }
+            elseif( in_array( $type, self::DEVICE_SETTINGS_TYPES, TRUE ) )
+            {
+                $this->SCM_API_settings_import( $type, $object, $sub );
             }
             elseif( $type === "regions" )
             {

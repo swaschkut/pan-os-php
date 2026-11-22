@@ -207,11 +207,19 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   the levels from shared / All down to the location (SCM: with the snippets of each folder), column level and
   effective (used / overridden by <location>), hidden copies struck through; Panorama: the nearest copy wins, with
   "ancestor-objects-take-precedence" the highest; SCM: the nearest (no ancestor precedence in SCM; of two snippets
-  the first attached wins - the order of attachedSnippets is used). Open: predefined objects (Panorama services,
-  SCM predefined snippets that are not attached in the configuration) are not part of the view.
+  the first attached wins - the order of attachedSnippets is used). Addresses / services / tags: which copy
+  wins is the lookup of pan-os-php itself (store find of the location: an EDL before region / address group /
+  address of the same name, parents, snippets, predefined; ancestor precedence: PH::resolveNameForFirewalls); other
+  types: the nearest level.
 * ~~Variables of firewalls~~ built 2026-11-22 (variable-set / variable-remove, DeviceVariables, section Variables).
   Open: API mode (in=api:// / scm-api://: send the change), scm_pa_xml_to_change.php for changed variables, the
   variables a template stack inherits on Panorama in a vsys of a template (only template level is read)
+* **System information** - step 1 built 2026-11-22: "System settings" (read only) from the config sections
+  (management, system, HA, administrators, password complexity, access domains, admin roles, authentication profiles
+  / sequences, server profiles, log settings; SCM NGFW device settings loaded from /config/device/v1). Next: changes
+  per section (config-section set / add-member, reviewed per section), the effective SCM value (folder chain as for
+  variables), Panorama template stack: the settings of its templates combined, a firewall vsys of a template.
+  The original plan:
 * **System information of a firewall / Panorama / SCM tenant** (wish 2026-11-22) - a view "System" in the viewer
   (read first, changes later), built on type=config-section (generic, registry utils/common/config_sections.json) so
   that the CLI shows the same:

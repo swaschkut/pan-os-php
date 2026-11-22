@@ -1659,7 +1659,10 @@ async function showViewer(config, preset) {
     const ruletype = { get value() { return cur.ruletype || 'security'; } };
     const menu = el('nav', { class: 'vmenu', 'aria-label': 'object types' });
     function drawMenu() {
-        menu.replaceChildren(...VIEWER_MENU_SECTIONS.map(sec => {
+        const limitedHere = !!(p.types || p.scope);
+        menu.replaceChildren(...[limitedHere ? null : el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: 'System' }),
+            el('button', { type: 'button', class: 'ventry', text: 'System settings', title: 'management, system, administrators, authentication, logging, updates (type=config-section)',
+                onclick: () => run(showSystem) }))].filter(x => x), ...VIEWER_MENU_SECTIONS.map(sec => {
             const list = entries.filter(e => e.section === sec);
             return list.length === 0 ? null : el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: sec }),
                 list.map(e => el('button', { type: 'button', class: 'ventry' + (e.id === cur.id ? ' on' : ''), text: e.label, title: e.type + (e.ruletype ? ' / ' + e.ruletype : '') + (e.filter ? ' - ' + e.filter : ''),
@@ -2192,6 +2195,63 @@ async function showViewer(config, preset) {
         if (profile) q.set('profile', profile);
         if (cur.type === 'rule') q.set('ruletype', ruletype.value);
         return api('GET', base() + '/object?' + q.toString());
+    }
+    // System: the settings of the firewall / Panorama (or a template of it) / SCM folder, snippet or device - every
+    // config section of pan-os-php (type=config-section, utils/common/config_sections.json) that applies; read only,
+    // secrets never shown
+    async function showSystem() {
+        const box = el('div', { class: 'objwin syswin', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'system settings' });
+        const overlay = el('div', { class: 'objoverlay', onclick: (ev) => { if (ev.target === overlay) close(); } }, box);
+        const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+        function close() { document.removeEventListener('keydown', onKey); overlay.remove(); }
+        document.addEventListener('keydown', onKey);
+        document.body.append(overlay);
+        const want = { template: '', location: '' };
+        const GROUPS = ['Management', 'System', 'Administrators', 'Authentication', 'Logging', 'Updates and schedules', 'Other'];
+        async function draw() {
+            box.replaceChildren(el('p', { class: 'muted', text: 'reading the system settings ...' }));
+            const q = new URLSearchParams();
+            for (const k of ['template', 'location']) if (want[k]) q.set(k, want[k]);
+            let r;
+            try { r = await api('GET', base() + '/system?' + q.toString()); }
+            catch (e) { box.replaceChildren(el('div', { class: 'objhead' }, el('h3', { text: 'System settings' }), el('button', { type: 'button', class: 'objclose', text: '✕', onclick: close })), el('div', { class: 'error', text: e.message })); return; }
+            // which part: Panorama itself or one of its templates; SCM: a folder / snippet / device (default All)
+            let chooser = null;
+            if (r.config === 'panorama' || r.config === 'scm') {
+                const sel = el('select', { 'aria-label': r.config === 'scm' ? 'folder' : 'template' },
+                    r.config === 'panorama' ? el('option', { value: '', text: 'Panorama' }) : null,
+                    (r.choices || []).map(c => el('option', { value: c, text: (r.config === 'panorama' ? 'template ' : '') + c })));
+                sel.value = r.config === 'scm' ? (r.location || 'All') : (r.template || '');
+                sel.addEventListener('change', () => { if (r.config === 'scm') want.location = sel.value; else want.template = sel.value; draw(); });
+                chooser = field(r.config === 'scm' ? 'Folder / snippet / device' : 'Settings of', sel);
+            }
+            const title = r.config === 'scm' ? 'SCM: ' + (r.location || 'All') : (r.template ? 'template ' + r.template : (r.config === 'panorama' ? 'Panorama' : 'firewall'));
+            const facts = [];
+            if (r.config === 'panorama' && !r.template)
+                facts.push('ancestor objects take precedence: ' + (r.ancestor ? 'yes - the highest copy of a name wins' : 'no - the nearest copy of a name wins (default)'));
+            const groups = GROUPS.map(g => {
+                const secs = (r.sections || []).filter(x => (GROUPS.includes(x.group) ? x.group : 'Other') === g);
+                if (!secs.length) return null;
+                return el('div', { class: 'sysgroup' }, el('h4', { text: g }), secs.map(x => {
+                    const n = x.entries.length;
+                    const body = n === 0 ? el('p', { class: 'muted', text: 'not set' }) : el('div', {}, x.entries.map(e => el('div', { class: 'sysentry' },
+                        x.kind === 'settings' ? null : el('div', { class: 'sysname', text: e.name }),
+                        Object.keys(e.fields).length ? el('table', { class: 'objfields' }, el('tbody', {}, Object.entries(e.fields).map(([k, v]) => el('tr', {}, el('th', { text: k }), el('td', { text: v })))))
+                            : el('p', { class: 'muted', text: '(empty)' }),
+                        (e.references || []).length ? el('p', { class: 'muted', text: 'references: ' + e.references.map(rf => rf.kind + ' ' + rf.name).join(', ') }) : null)));
+                    const d = el('details', { class: 'objsection' }, el('summary', {}, x.name + (x.kind === 'settings' ? '' : ' (' + n + ')') + ' ', el('span', { class: 'muted', text: '- ' + x.description })),
+                        el('p', { class: 'muted', text: x.path }), body);
+                    d.open = n > 0 && x.kind === 'settings';
+                    return d;
+                }));
+            }).filter(x => x);
+            box.replaceChildren(
+                el('div', { class: 'objhead' }, el('h3', { text: 'System settings - ' + title }), el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+                chooser, ...facts.map(f => el('p', { class: 'sysfact', text: f })),
+                el('p', { class: 'muted', text: 'As pan-os-php type=config-section shows them (section=list); passwords, keys and secrets are never shown. Read only.' }),
+                ...groups, el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
+        }
+        await draw();
     }
     async function openObject(r) {
         // the generic window shows the list row when the object can not be read on its own (e.g. a type without a name filter)

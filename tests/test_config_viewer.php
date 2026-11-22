@@ -671,9 +671,36 @@ $axml = str_replace( '<entry name="localhost.localdomain"><log-collector>', '<en
     file_get_contents( $here . '/input/effective-panorama.xml' ) );
 $r = $alice->call( 'POST', $SP . '/configs', null, array( 'anc.xml', $axml ) );
 $AN = $SP . '/configs/' . ( $r[1]['cid'] ?? '' );
+// the lookup of pan-os-php: an EDL of the same name (here in shared) comes before the address of a device group
+$exml = str_replace( '<shared><address>', '<shared><external-list><entry name="A2"><type><ip><url>https://edl.example.com/list.txt</url><recurring><hourly/></recurring></ip></type></entry></external-list><address>',
+    file_get_contents( $here . '/input/effective-panorama.xml' ) );
+$r = $alice->call( 'POST', $SP . '/configs', null, array( 'edl.xml', $exml ) );
+$ED = $SP . '/configs/' . ( $r[1]['cid'] ?? '' );
+eq( $eff( $ED, 'DG2:effective' )[1][2] ?? null, 'DG1:A2:overridden by shared (EDL):2', 'effective view: an EDL of the same name wins over an address (lookup of pan-os-php)' );
 $locs = $alice->call( 'GET', $AN . '/locations' )[1] ?? array();
 eq( array( $locs['ancestor'] ?? null, $eff( $AN, 'DG2:effective' )[1][1] ?? null, $eff( $AN, 'DG2:effective' )[1][5] ?? null ),
     array( TRUE, 'shared:dup:used:1', 'DG2:dup:overridden by shared:3' ), 'effective view: with ancestor precedence the highest copy wins' );
+// System: the settings of Panorama / a template / SCM as type=config-section reads them; secrets never
+$SY = $up( 'system-panorama.xml' );
+$sy = $alice->call( 'GET', $SY . '/system' );
+$bySec = array();
+foreach( $sy[1]['sections'] ?? array() as $x )
+    $bySec[$x['name']] = $x;
+$syt = $alice->call( 'GET', $SY . '/system?template=T1' );
+$bySecT = array();
+foreach( $syt[1]['sections'] ?? array() as $x )
+    $bySecT[$x['name']] = $x;
+eq( array( status( $sy ), $sy[1]['ancestor'] ?? null, $sy[1]['choices'] ?? null, $bySec['management-settings']['entries'][0]['fields']['idle-timeout'] ?? null,
+    $bySec['administrators']['entries'][0]['fields']['phash'] ?? null, strpos( json_encode( $sy[1] ), 'synthetic' ) === FALSE || strpos( json_encode( $sy[1] ), '$5$' ) === FALSE,
+    status( $syt ), $bySecT['management-settings']['entries'][0]['fields']['idle-timeout'] ?? null, isset( $bySecT['access-domains'] ),
+    status( $alice->call( 'GET', $SY . '/system?template=' . urlencode( 'a/b' ) ) ) ),
+    array( 200, TRUE, array( 'T1' ), '30', '*** hidden ***', TRUE, 200, '15', FALSE, 400 ), 'System: Panorama and a template (config sections), secrets hidden' );
+$sc = $alice->call( 'GET', $SC . '/system?location=' . urlencode( 'Prisma Access' ) );
+$bySc = array();
+foreach( $sc[1]['sections'] ?? array() as $x )
+    $bySc[$x['name']] = $x;
+eq( array( status( $sc ), $sc[1]['config'] ?? null, isset( $bySc['scm-general-settings'] ), count( $bySc['log-settings']['entries'] ?? array() ), isset( $bySc['system'] ) ),
+    array( 200, 'scm', TRUE, 1, FALSE ), 'System: SCM folder (log settings, NGFW device settings sections)' );
 // location=<DG>:includechilddgs / :excludemaindg (pan-os-php): with / only the device groups below
 $names = function( $loc ) use ( $alice, $DV ) {
     return array_map( function( $r ) { return $r['location'] . ':' . $r['name']; }, $alice->call( 'GET', $DV . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() );

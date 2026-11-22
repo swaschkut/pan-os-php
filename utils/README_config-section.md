@@ -15,6 +15,28 @@ Code: `utils/lib/CONFIG_SECTION__.php` (type), `utils/common/ConfigSection.php` 
 | `config-bundle-export-schedule` | `deviceconfig/system/config-bundle-export-schedule` | Panorama | yes |
 | `permitted-ip` | `deviceconfig/system/permitted-ip` | Panorama, firewall, template | no |
 
+System settings (2026-11-22, also shown in the config viewer under **System settings**):
+
+| section | kind | scope | path |
+|---|---|---|---|
+| `management-settings` | settings | panorama, firewall, template | `deviceconfig/setting/management` (ancestor precedence, audit comment, idle timeout, …) |
+| `device-settings` | settings | panorama, firewall, template | `deviceconfig/setting` without `management` |
+| `system` | settings | panorama, firewall, template | `deviceconfig/system` (hostname, IP, DNS, NTP, Panorama servers, …) without the sections of their own |
+| `update-schedule` | settings | firewall, template | `deviceconfig/system/update-schedule` |
+| `high-availability` | settings | panorama, firewall, template | `deviceconfig/high-availability` |
+| `administrators` | entries | panorama, firewall, template | `/config/mgt-config/users` (password hash hidden) |
+| `password-complexity` | settings | panorama, firewall, template | `/config/mgt-config/password-complexity` |
+| `access-domains` | entries | panorama | `/config/mgt-config/access-domain` |
+| `admin-roles`, `authentication-profiles`, `authentication-sequences`, `server-profile-<ldap/radius/tacplus/kerberos/saml-idp/syslog/snmptrap/email>` | entries | panorama (`/config/panorama/…`), firewall / template (`shared/…`) | |
+| `log-settings` | settings | panorama, firewall, template, scm | `panorama/log-settings`, `shared/log-settings`, SCM folder `log-settings` |
+| `scm-<general / management-interface / service / service-route / authentication / login-banner / session / session-timeouts / tcp / content-id / vpn / update-schedule>-settings` | settings | scm | `device-settings/<type>` of the folder / snippet / device - loaded from `/config/device/v1/<type>` (in=scm-api:// / scm-export://, type=device) |
+
+Registry fields beside `path` / `scope` / `references`: `kind` (`entries` default, `settings` = one container of
+fields), `base` (`device` default, `config` = relative to `<config>`; a template: its `<config>`), `paths` (a path per
+scope), `exclude` (child elements left out of a settings section), `group` (heading in the viewer). SCM: `location=`
+names the folder / snippet / device (default `All`). Values of secret fields (password hash, keys, PSK, secrets,
+SNMP community) are shown as `*** hidden ***`, values encrypted with the master key as `*** encrypted ***`.
+
 `section=list` shows the registry. Registry fields: `path` (relative to `/config/devices/entry[@name='localhost.localdomain']`,
 or to the template config with `template=`), `scope` (`panorama`, `firewall`, `template`), `references` (text values
 and entry names are matched against device group / template / template stack names and managed firewall serials).
