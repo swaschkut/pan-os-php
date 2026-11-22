@@ -219,8 +219,13 @@ tr.overridden td:not(:has(.badge)) { text-decoration: line-through; text-decorat
 .diffadd { color: #1d6b35; font-family: monospace; }
 .diffdel { color: #9b2c22; font-family: monospace; }
 .diffchg { color: #7a5a00; font-family: monospace; }
-/* egress IP table: a filter field under every header, sortable headers */
-table.egresstable tr.filterrow th { padding: 2px 4px; }
-table.egresstable input.colfilter { width: 100%; min-width: 6em; box-sizing: border-box; font-weight: normal; padding: 2px 4px; }
-table.egresstable th.sortable { cursor: pointer; user-select: none; }
-table.egresstable th.sorted::after { content: ' ' attr(data-dir); }
+/* tables of the SCM tab: a filter field under every header, sortable headers; View / Compare as button tabs */
+table.coltable tr.filterrow th { padding: 2px 4px; }
+table.coltable input.colfilter { width: 100%; min-width: 6em; box-sizing: border-box; font-weight: normal; padding: 2px 4px; }
+table.coltable th.sortable { cursor: pointer; user-select: none; }
+table.coltable th.sorted::after { content: ' ' attr(data-dir); }
+.tabbar { gap: 0; margin: 12px 0 4px; }
+.tabbar .tabbtn { border-radius: 0; }
+.tabbar .tabbtn:first-child { border-radius: 6px 0 0 6px; }
+.tabbar .tabbtn:last-child { border-radius: 0 6px 6px 0; }
+.tabbar .tabbtn.on { background: var(--accent, #2563eb); color: #fff; border-color: var(--accent, #2563eb); }

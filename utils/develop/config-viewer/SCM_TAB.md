@@ -1,7 +1,7 @@
 # config viewer: SCM tab (Prisma Access, Identity, CIE, …) - concept
 
-Status: concept 2026-11-22 (agreed with Sven), first part built: egress IP (CLI `scm_egress_ip.php` + library
-`SCMEgressIP`). The rest is in `TODO.md` ("SCM tab").
+Status: concept 2026-11-22 (agreed with Sven). Built: Prisma Access > Egress IP (CLI `scm_egress_ip.php` + library
+`SCMEgressIP`) and Prisma Access > Infrastructure (see below). The rest is in `TODO.md` ("SCM tab").
 
 ## Goal
 
@@ -40,8 +40,10 @@ Folders / snippets / hierarchy are not a menu entry here: they are the SCM confi
 
 ## Data
 
-1. **Import of an export** - a `scm_pa_export.php` directory (zip) is imported into the project, versioned like
-   configurations (each import is a version; secrets of the export - PSK lists, keys - are never imported).
+1. **The SCM import of the project** (Configurations: import with the SCM key of the user, service account + TSG, as
+   the XML API import of Panorama / firewall) - it runs `scm_pa_export.php area=config,<areas of the pages>`; the
+   config area becomes the Buckbeak XML (objects / policies), the other areas a state of their Prisma Access page
+   (secrets of the export - PSK lists, keys - are never kept).
 2. **Live refresh** - a button per page: the same call as the export, with the personal key of the user (key store,
    kind SCM / egress IP; network for runs per user, as today). The result is a new version of that area.
 3. **Compare** - every page shows what changed between two versions (default: the last import against the live
@@ -90,3 +92,22 @@ Viewer (built): project tab SCM > Prisma Access > Egress IP - import (zip of an 
 read; the file; a snapshot; the answer of the API), "Read live" (run egress-ip with the egress-IP key of the user - kind
 egress IP, target TSG; network: tsg:<TSG> on the allow list, network of the project on), the states with their rows,
 compare with the state before, filter, address list / CSV download. States: projects/<pid>/scm/egress/<id>.json.
+
+## Prisma Access pages from scm_pa_export.php (built: Infrastructure)
+
+A page shows endpoints of one area of `scm_pa_export.php` (`ViewerApp::SCM_PA_PAGES`, `SCM_PA_VIEWS` of app.js):
+
+| page | area | endpoints |
+|---|---|---|
+| Infrastructure | infra | shared-infrastructure-settings, bgp-routing, internal-dns-servers, locations |
+
+- **States**: from the SCM import of the project (`scm-export area=config,infra`) and from "Read live" (run `scm-pa`:
+  `pan-os-php type=scm-export in=scm-api://<TSG> area=<area>` with the SCM key of the user - network as for an import,
+  `tsg:<TSG>` on the allow list, network of the project on). A state = the files of the endpoints of the page + a
+  manifest (`projects/<pid>/scm/pa/<page>/<id>/`), values of secret fields (api_key, secret, psk, password, token, …)
+  replaced by `***`.
+- **View**: one state - an object as setting / value, a list as a table (a filter field under every header, sort).
+- **Compare** (button tab): two states with `SCMPrismaAccessCompare` - the same as `scm_pa_compare.php` on the CLI:
+  added / removed entries (by their key field), changed fields (path: old -> new).
+- next pages the same way: Service Connection, Remote Networks, Mobile Users, Explicit Proxy, Prisma Browser (their
+  areas added to `SCM_PA_PAGES`; the SCM import then reads them as well).

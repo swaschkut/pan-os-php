@@ -1757,7 +1757,7 @@ class ViewerApp
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
     const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover',
-        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file', 'egress-ip' );
+        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file', 'egress-ip', 'scm-pa' );
     /** the mergers of the Merger tab: their arguments (checked here, the merger checks their combination again) */
     const MERGER_OBJECTTYPES = array( 'tag', 'address', 'service', 'edl', 'region', 'application-custom', 'application-filter', 'addressgroup',
         'servicegroup', 'application-group', 'custom-url-category', 'schedule', 'log-profile', 'decryption-profile', 'hip-object', 'hip-profile',
@@ -1954,7 +1954,7 @@ class ViewerApp
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
         // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
-        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip' ), TRUE );
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE );
         // the project of the installation-wide runs has only App-ID / MaxMind runs; MaxMind is installation-wide only
         if( ( $p['pid'] === self::SYSTEM_PID && !in_array( $type, array( 'appid', 'geoip' ), TRUE ) ) || ( $type === 'geoip' && $p['pid'] !== self::SYSTEM_PID ) )
             throw new ViewerException( 'not found', 404 );
@@ -2018,6 +2018,27 @@ class ViewerApp
                 throw new ViewerException( 'env: prod6 (default) or prod (older tenants)', 400 );
             $args = array( 'x-egress-key=' . $k['kid'], 'x-egress-target=egressip:' . $k['target'], 'servicetype=' . $req['serviceType'],
                 'addrtype=' . $req['addrType'], 'location=' . $req['location'], 'env=' . $env );
+        }
+        if( $type === 'scm-pa' )
+        {
+            // SCM tab, Prisma Access (Infrastructure, …) read live: scm_pa_export.php of the area of the page with the
+            // SCM key of this user (key store kind SCM, target = TSG), read only. Network as for an import of the tenant.
+            $this->projectGet( $user, $pid, 'write' );
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $page = (string)( $in['page'] ?? '' );
+            if( !isset( self::SCM_PA_PAGES[$page] ) )
+                throw new ViewerException( 'page: ' . implode( ' | ', array_keys( self::SCM_PA_PAGES ) ), 400 );
+            $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
+            if( !$k || $k['kind'] !== 'scm' )
+                throw new ViewerException( 'kid: one of your SCM keys (Account, My API keys, kind SCM)', 400 );
+            if( !$this->networkGet()['enabled'] )
+                throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
+            if( empty( $p['network'] ) )
+                throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+            if( ( $why = $this->networkRefusal( 'scm', $k['target'], $user ) ) !== null )
+                throw new ViewerException( $why, 403 );
+            $args = array( 'x-scmpa-key=' . $k['kid'], 'x-scmpa-target=scm:' . $k['target'], 'x-scmpa-page=' . $page );
         }
         if( $type === 'ldap-discover' )
         {
@@ -2907,7 +2928,7 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip' ), TRUE ) ) && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
         // App-ID database / MaxMind data of the installation or of the project: for every run (not for the runs that
@@ -2945,7 +2966,7 @@ class ViewerApp
         // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
         // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
         $steps = null;
-        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
+        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) )
         {
             try
             {
@@ -3040,7 +3061,7 @@ class ViewerApp
             return array( $step( 'maxmind-update', array( 'maxmind-zip=%JOB%/GeoLite2-Country-CSV-upload.zip' ), FALSE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
         }
         $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ), 'ldap' => array( 'ldap' ), 'ldap-users' => array( 'ldap' ),
-            'egress-ip' => array( 'egressip' ) )[$type];
+            'egress-ip' => array( 'egressip' ), 'scm-pa' => array( 'scm' ) )[$type];
         $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
         if( !$k || !in_array( $k['kind'], $kinds, TRUE ) )
             throw new ViewerException( 'the API key of the run does not exist any more' );
@@ -3087,6 +3108,17 @@ class ViewerApp
             $req = array_values( array_filter( $args, function( $a ) { return preg_match( '/^(servicetype|addrtype|location|env)=[a-z0-9_]{1,40}$/', $a ); } ) );
             return array( $step( 'scm-egress-ip', array_merge( array( 'tsg=' . $k['target'] ), $req, array( 'save=%JOB%/egress.json', 'format=list', 'out=%JOB%/egress.txt' ) ), TRUE ) );
         }
+        // SCM tab, Prisma Access read live: scm_pa_export.php (type=scm-export) of the area of the page, read only
+        if( $type === 'scm-pa' )
+        {
+            $page = '';
+            foreach( $args as $a )
+                if( preg_match( '/^x-scmpa-page=([a-z-]+)$/', $a, $m ) )
+                    $page = $m[1];
+            if( !isset( self::SCM_PA_PAGES[$page] ) )
+                throw new ViewerException( 'unknown page of the SCM tab' );
+            return array( $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=' . self::SCM_PA_PAGES[$page]['area'], 'outdir=%JOB%/scm-export' ), TRUE ) );
+        }
         if( $type === 'appid' )
             return array( $step( 'download-predefined', array( 'in=api://' . $k['target'], 'predefined-out=%JOB%/predefined.xml' ), TRUE ) );
         if( $type === 'geoip' )
@@ -3094,7 +3126,7 @@ class ViewerApp
         if( $k['kind'] === 'panos' )
             return array( $step( 'upload', array( 'in=api://' . $k['target'] . ( ( $x['source'] ?? '' ) === 'running' ? '/running-config' : '' ), 'out=%JOB%/out.xml' ), TRUE ) );
         return array(
-            $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config', 'outdir=%JOB%/scm-export', 'config-internal=no' ), TRUE ),
+            $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config,' . implode( ',', self::scmPaAreas() ), 'outdir=%JOB%/scm-export', 'config-internal=no' ), TRUE ),
             $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $k['target'], 'out=%JOB%/out.xml' ), FALSE ) );
     }
 
@@ -3335,7 +3367,7 @@ class ViewerApp
         if( $changed === 0 )
             return;
         $j = $this->q( 'SELECT j.*, p.pid FROM jobs j JOIN projects p ON p.id = j.project_id WHERE j.id = ?', array( $id ) )->fetch();
-        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover' ), TRUE ) )
+        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) )
             $this->importFinish( $j );
     }
 
@@ -3361,9 +3393,24 @@ class ViewerApp
             if( $clean !== $log )
                 file_put_contents( $dir . '/run.log', $clean );
         }
-        // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove)
-        if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover' ), TRUE ) )
+        // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove); egress IPs:
+        // taken over by the SCM tab (scmEgressList)
+        if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
             return;
+        // SCM tab, Prisma Access read live: the export of the run becomes a state of its page
+        if( $j['type'] === 'scm-pa' )
+        {
+            if( $j['state'] !== 'done' )
+                return;
+            $x = $this->jobArgsX( $j );
+            $p = $this->q( 'SELECT * FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
+            $u = $this->userById( (int)$j['user_id'] );
+            $n = $p && preg_match( '/^scm:([0-9]{1,20})$/', $x['target'] ?? '', $m ) && isset( self::SCM_PA_PAGES[$x['page'] ?? ''] )
+                ? $this->paCollect( $p, $dir, $m[1], $j['jid'], 'live', $u['name'] ?? '?', (int)( $j['finished'] ?? time() ), array( $x['page'] ) ) : 0;
+            if( $n === 0 )
+                $this->q( "UPDATE jobs SET state = 'failed', error = ?, reason = 'error' WHERE id = ?", array( 'nothing was read (see run.log)', $j['id'] ) );
+            return;
+        }
         // App-ID database / MaxMind data: in place for the installation (project of the installation) or the project
         if( $j['type'] === 'appid' || $j['type'] === 'geoip' )
         {
@@ -3414,6 +3461,19 @@ class ViewerApp
         @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
         list( $kind, $host ) = array_pad( explode( ':', $target, 2 ), 2, '' );
         $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target );
+        // the SCM import reads the Prisma Access areas as well (scm-export area=config,infra): a state of their pages
+        if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) )
+            $this->paCollect( $p, $dir, $host, $j['jid'], 'import', $u['name'] ?? '?', time(), array_keys( self::SCM_PA_PAGES ) );
+    }
+
+    /** the x-<name>-<field>= arguments of a run (key, target, source, page, …) */
+    private function jobArgsX( array $j ): array
+    {
+        $x = array();
+        foreach( (array)json_decode( $j['args'], TRUE ) as $a )
+            if( is_string( $a ) && preg_match( '/^x-[a-z]+-([a-z]+)=(.*)$/', $a, $m ) )
+                $x[$m[1]] = $m[2];
+        return $x;
     }
 
     /**
@@ -5021,6 +5081,190 @@ class ViewerApp
         // a live read stays deleted (not taken over again)
         if( preg_match( '/^[0-9a-f]{32}$/', $id ) )
             @file_put_contents( $this->jobDir( $p, $id ) . '/egress.json', '' );
+    }
+
+    // ------------------------------------------------------------------ SCM tab: Prisma Access pages
+
+    /**
+     * the pages of SCM > Prisma Access that show the endpoints of an area of scm_pa_export.php; their states come from
+     * the SCM import of the project (it reads these areas too) or from "Read live" (run scm-pa); compared with
+     * SCMPrismaAccessCompare (the same as scm_pa_compare.php on the CLI)
+     */
+    const SCM_PA_PAGES = array(
+        'infra' => array( 'area' => 'infra', 'endpoints' => array( 'shared-infrastructure-settings', 'bgp-routing', 'internal-dns-servers', 'locations' ) ),
+    );
+
+    /** the areas of scm_pa_export.php the pages need (read by the SCM import as well) */
+    private static function scmPaAreas(): array
+    {
+        return array_values( array_unique( array_column( self::SCM_PA_PAGES, 'area' ) ) );
+    }
+
+    private static function paLib(): void
+    {
+        require_once dirname( __FILE__ ) . '/../../sase/scm/lib/SCMPrismaAccessCompare.php';
+    }
+
+    private function paDir( array $p, string $page ): string
+    {
+        return $this->projectDir( $p['pid'] ) . '/scm/pa/' . $page;
+    }
+
+    /** values of fields that look like secrets: never kept (the export already redacts e.g. api_key) */
+    const PA_SECRET_FIELD = '/(secret|password|passwd|psk|pre_shared|api_key|apikey|private_key|token|passphrase)/i';
+
+    private static function paRedact( $v )
+    {
+        // objects stay objects ({} is not [], e.g. routing_preference: {"default": {}})
+        if( $v instanceof stdClass )
+        {
+            foreach( get_object_vars( $v ) as $k => $x )
+                $v->$k = preg_match( self::PA_SECRET_FIELD, (string)$k ) && $x !== null && !is_array( $x ) && !( $x instanceof stdClass ) ? '***' : self::paRedact( $x );
+            return $v;
+        }
+        if( is_array( $v ) )
+            foreach( $v as $k => $x )
+                $v[$k] = self::paRedact( $x );
+        return $v;
+    }
+
+    /**
+     * the export of a run (<jobDir>/scm-export/<TSG>/<time>/) as a state of each of $pages: its manifest (only the
+     * endpoints of the page) and their files, values of secret fields removed. A page gets a state only when at least
+     * one of its endpoints was read. Returns the number of states made.
+     */
+    private function paCollect( array $p, string $jobDir, string $tsg, string $id, string $source, string $user, int $time, array $pages ): int
+    {
+        $manifests = glob( $jobDir . '/scm-export/' . $tsg . '/*/manifest.json' ) ?: array();
+        if( count( $manifests ) === 0 )
+            return 0;
+        rsort( $manifests );
+        $src = dirname( $manifests[0] );
+        $m = json_decode( (string)file_get_contents( $manifests[0] ), TRUE );
+        if( !is_array( $m ) || !isset( $m['endpoints'] ) || !is_array( $m['endpoints'] ) )
+            return 0;
+        $made = 0;
+        foreach( $pages as $page )
+        {
+            $def = self::SCM_PA_PAGES[$page] ?? null;
+            $dir = $def !== null ? $this->paDir( $p, $page ) . '/' . $id : null;
+            if( $def === null || is_dir( $dir ) )
+                continue;
+            $eps = array();
+            $ok = 0;
+            foreach( $m['endpoints'] as $e )
+                if( is_array( $e ) && ( $e['area'] ?? '' ) === $def['area'] && in_array( $e['name'] ?? '', $def['endpoints'], TRUE )
+                    && preg_match( '#^' . preg_quote( $def['area'], '#' ) . '/[0-9a-z_.-]+\.json$#', (string)( $e['file'] ?? '' ) ) )
+                {
+                    $eps[] = $e;
+                    if( ( $e['status'] ?? '' ) === 'ok' )
+                        $ok++;
+                }
+            if( $ok === 0 )
+                continue;
+            $tmp = $this->paDir( $p, $page ) . '/.' . $id . '.' . getmypid();
+            @mkdir( $tmp . '/' . $def['area'], 0700, TRUE );
+            foreach( $eps as $e )
+            {
+                $f = $src . '/' . $e['file'];
+                if( !is_file( $f ) || is_link( $f ) )
+                    continue;
+                $c = json_decode( (string)file_get_contents( $f ) );
+                if( $c instanceof stdClass )
+                    file_put_contents( $tmp . '/' . $e['file'], json_encode( self::paRedact( $c ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+            }
+            file_put_contents( $tmp . '/manifest.json', json_encode( array( 'format_version' => $m['format_version'] ?? null, 'tool' => $m['tool'] ?? null,
+                'areas' => array( $def['area'] ), 'tsg_id' => $tsg, 'created_at' => $m['created_at'] ?? null, 'endpoints' => $eps ), JSON_UNESCAPED_SLASHES ) );
+            file_put_contents( $tmp . '/state.json', json_encode( array( 'page' => $page, 'source' => $source, 'user' => $user, 'time' => $time, 'tsg' => $tsg,
+                'fetched_at' => $m['created_at'] ?? null ), JSON_UNESCAPED_SLASHES ) );
+            rename( $tmp, $dir );
+            $made++;
+        }
+        return $made;
+    }
+
+    private function paState( array $p, $page, $id ): array
+    {
+        if( !is_string( $page ) || !isset( self::SCM_PA_PAGES[$page] ) || !is_string( $id ) || !preg_match( '/^[0-9a-z]{1,40}$/', $id )
+            || !is_file( $this->paDir( $p, $page ) . '/' . $id . '/state.json' ) )
+            throw new ViewerException( 'not found', 404 );
+        $dir = $this->paDir( $p, $page ) . '/' . $id;
+        $s = (array)json_decode( (string)file_get_contents( $dir . '/state.json' ), TRUE );
+        $m = (array)json_decode( (string)file_get_contents( $dir . '/manifest.json' ), TRUE );
+        $eps = array();
+        foreach( (array)( $m['endpoints'] ?? array() ) as $e )
+            $eps[$e['name']] = array( 'status' => $e['status'] ?? null, 'http_code' => $e['http_code'] ?? null, 'error' => $e['error'] ?? null,
+                'count' => $e['count'] ?? null, 'file' => $e['file'] ?? null );
+        return array( 'id' => $id, 'dir' => $dir, 'source' => $s['source'] ?? '', 'user' => $s['user'] ?? '', 'time' => (int)( $s['time'] ?? 0 ),
+            'tsg' => $s['tsg'] ?? null, 'fetched_at' => $s['fetched_at'] ?? null, 'endpoints' => $eps );
+    }
+
+    /** the states of a page (newest first), the SCM keys of the user for "Read live" */
+    public function scmPaList( array $user, $pid, $page ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        if( !is_string( $page ) || !isset( self::SCM_PA_PAGES[$page] ) )
+            throw new ViewerException( 'not found', 404 );
+        $states = array();
+        foreach( glob( $this->paDir( $p, $page ) . '/*/state.json' ) ?: array() as $f )
+        {
+            $s = $this->paState( $p, $page, basename( dirname( $f ) ) );
+            unset( $s['dir'] );
+            $states[] = $s;
+        }
+        usort( $states, function( $a, $b ) { return $b['time'] <=> $a['time'] ?: strcmp( $b['id'], $a['id'] ); } );
+        $keys = array();
+        if( !isset( $user['token'] ) )
+            foreach( $this->keyList( $user ) as $k )
+                if( $k['kind'] === 'scm' )
+                    $keys[] = array( 'kid' => $k['kid'], 'target' => $k['target'], 'label' => $k['label'], 'refused' => $this->networkRefusal( 'scm', $k['target'], $user ) );
+        return array( 'page' => $page, 'endpoints' => self::SCM_PA_PAGES[$page]['endpoints'], 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ) );
+    }
+
+    /** one state: the data of its endpoints (as read, secrets removed) */
+    public function scmPaGet( array $user, $pid, $page, $id ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        $s = $this->paState( $p, $page, $id );
+        foreach( $s['endpoints'] as $name => $e )
+        {
+            $c = $e['file'] !== null && is_file( $s['dir'] . '/' . $e['file'] ) ? json_decode( (string)file_get_contents( $s['dir'] . '/' . $e['file'] ) ) : null;
+            $s['endpoints'][$name]['data'] = $c instanceof stdClass ? ( $c->data ?? null ) : null;
+            unset( $s['endpoints'][$name]['file'] );
+        }
+        unset( $s['dir'] );
+        return $s;
+    }
+
+    /** two states compared (left = $old, right = $new): SCMPrismaAccessCompare, the same as scm_pa_compare.php */
+    public function scmPaCompare( array $user, $pid, $page, $old, $new ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        $l = $this->paState( $p, $page, $old );
+        $r = $this->paState( $p, $page, $new );
+        self::paLib();
+        $c = new SCMPrismaAccessCompare( $l['dir'], $r['dir'] );
+        $c->filter['areas'] = array( self::SCM_PA_PAGES[$page]['area'] );
+        $c->run();
+        $entries = array();
+        foreach( $c->entries as $e )
+            $entries[] = array( 'endpoint' => $e['endpoint'], 'singleton' => $e['singleton'], 'key_fields' => $e['key_fields'], 'counts' => $e['counts'],
+                'only_left' => array_column( $e['only_left'], 'key' ), 'only_right' => array_column( $e['only_right'], 'key' ),
+                'changed' => array_map( function( $x ) { return array( 'key' => $x['key'], 'changes' => $x['changes'] ); }, $e['changed'] ) );
+        return array( 'old' => $old, 'new' => $new, 'entries' => $entries, 'not_comparable' => $c->notComparable, 'warnings' => $c->warnings );
+    }
+
+    public function scmPaDelete( array $user, $pid, $page, $id ): void
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        $s = $this->paState( $p, $page, $id );
+        foreach( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $s['dir'], FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST ) as $f )
+            $f->isDir() ? rmdir( (string)$f ) : unlink( (string)$f );
+        rmdir( $s['dir'] );
     }
 
     /** state of the loaded configuration: unsaved changes, last autosave. Does not start a worker. */

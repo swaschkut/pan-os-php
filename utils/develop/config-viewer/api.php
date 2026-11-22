@@ -475,6 +475,23 @@ try
                 viewerOut( array( 'ok' => TRUE ) );
             }
         }
+        // SCM tab, Prisma Access pages: …/projects/<pid>/scm/pa/<page>  GET states (+ SCM keys);
+        //         …/scm/pa/<page>/<id>  GET data, DELETE;  …/scm/pa/<page>/<new>/compare/<old>  GET compare
+        //         (read live: POST …/projects/<pid>/scm-pa/runs {kid, page})
+        if( $sub === 'scm' && $n >= 5 && $route[3] === 'pa' )
+        {
+            if( $n == 5 && $method === 'GET' )
+                viewerOut( $app->scmPaList( $user, $pid, $route[4] ) );
+            if( $n == 6 && $method === 'GET' )
+                viewerOut( $app->scmPaGet( $user, $pid, $route[4], $route[5] ) );
+            if( $n == 6 && $method === 'DELETE' )
+            {
+                $app->scmPaDelete( $user, $pid, $route[4], $route[5] );
+                viewerOut( array( 'ok' => TRUE ) );
+            }
+            if( $n == 8 && $method === 'GET' && $route[6] === 'compare' )
+                viewerOut( $app->scmPaCompare( $user, $pid, $route[4], $route[7], $route[5] ) );
+        }
         // project files: …/projects/<pid>/files?kind=playbook|bp   GET list, POST upload (multipart field "file")
         //                …/projects/<pid>/files/<fid>[/download]  DELETE, GET download
         if( $sub === 'files' )

@@ -299,4 +299,6 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   states; later an as-is report. Changes only through change files + review per area + live compare right before the
   upload (conflicts, e.g. an address of the same name created meanwhile) + scm_pa_change.php - never directly.
   Built: egress IP on the CLI (scm_egress_ip.php, SCMEgressIP) and the tab SCM with Prisma Access > Egress IP (import,
-  live run egress-ip, compare). Next: the other pages from the import of a whole scm_pa_export directory.
+  live run egress-ip, compare) and Prisma Access > Infrastructure (states from the SCM import - area=config,infra - and
+  live run scm-pa, View / Compare with scm_pa_compare.php). Next: Service Connection, Remote Networks, Mobile Users,
+  Explicit Proxy, Prisma Browser the same way (SCM_PA_PAGES).

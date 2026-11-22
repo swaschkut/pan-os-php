@@ -1116,7 +1116,8 @@ async function ldapTab(base, pid, p, owner, versions) {
 // ---------------------------------------------------------------- SCM tab of a project (SCM_TAB.md)
 // a menu on the left (Prisma Access, Identity & Access, CIE, configuration, deployment, tenant, monitoring, BPA); built:
 // Prisma Access > Egress IP - states from an import (export / 92_egress-ip.json / snapshot) or read live (run egress-ip
-// with the egress-IP key of the user), shown and compared (SCMEgressIP, the same as scm_egress_ip.php on the CLI)
+// with the egress-IP key of the user), shown and compared (SCMEgressIP, the same as scm_egress_ip.php on the CLI); Prisma Access > Infrastructure - states from the SCM import of the project or read live (run scm-pa, scm_pa_export.php),
+// compared with scm_pa_compare.php (SCMPrismaAccessCompare)
 const SCM_MENU = [
     ['Prisma Access', [['egress', 'Egress IP'], ['infra', 'Infrastructure'], ['sc', 'Service Connection'], ['rn', 'Remote Networks (RN-SPN)'],
         ['mugw', 'Mobile User Gateway'], ['mugp', 'Mobile User GlobalProtect'], ['mupaa', 'Mobile User PAA'], ['muep', 'Mobile User Explicit Proxy'], ['pb', 'Prisma Browser']]],
@@ -1136,11 +1137,13 @@ async function scmTab(base, pid, canWrite) {
     function drawMenu() {
         const cur = state.scmPage[pid] || 'egress';
         menu.replaceChildren(...SCM_MENU.map(([sec, items]) => el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: sec }),
-            items.map(([id, t]) => el('button', { type: 'button', class: 'ventry' + (id === cur ? ' on' : ''), text: t + (id === 'egress' ? '' : ' ·'),
-                title: id === 'egress' ? '' : 'planned (SCM_TAB.md)', onclick: () => { state.scmPage[pid] = id; drawMenu(); run(page); } })))));
+            items.map(([id, t]) => { const built = id === 'egress' || SCM_PA_VIEWS[id];
+                return el('button', { type: 'button', class: 'ventry' + (id === cur ? ' on' : ''), text: t + (built ? '' : ' ·'),
+                    title: built ? '' : 'planned (SCM_TAB.md)', onclick: () => { state.scmPage[pid] = id; drawMenu(); run(page); } }); }))));
     }
     async function page() {
         const cur = state.scmPage[pid] || 'egress';
+        if (SCM_PA_VIEWS[cur]) { panel.replaceChildren(await scmPaPage(base, cur, canWrite, page)); return; }
         if (cur !== 'egress') {
             const t = SCM_MENU.flatMap(x => x[1]).find(x => x[0] === cur);
             panel.replaceChildren(el('h3', { text: t ? t[1] : cur }), el('p', { class: 'muted', text: 'Planned - see utils/develop/config-viewer/SCM_TAB.md: data from the imported export, a live refresh with your key, compare of two states; changes only through change files, review and a live compare right before the upload.' }));
@@ -1154,112 +1157,237 @@ async function scmTab(base, pid, canWrite) {
     return card;
 }
 
+// ---- helpers of the SCM tab pages
+
+/**
+ * a table with a filter field under every header (contains, case-insensitive; "!text" = without; the values to pick
+ * for columns with few values), sort by a click on a header (IPv4 addresses by number), a search over all columns and
+ * "Clear filters"; cols = [[key, label]], rows = objects. Returns { node, rowsOf } (rowsOf: the rows shown, in order).
+ */
+function colTable(cols, rows, extra = [], what = 'entries') {
+    const val = (x, k) => { const v = x[k]; return v === null || v === undefined ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); };
+    const q = el('input', { type: 'search', placeholder: 'search all columns …', 'aria-label': 'search all columns' });
+    const colFilter = {}, sort = { key: null, desc: false };
+    const ipKey = (v) => /^\d+\.\d+\.\d+\.\d+/.test(v) ? v.replace(/\d+/g, n => n.padStart(3, '0')) : v;
+    const heads = cols.map(([k, label]) => {
+        const values = [...new Set(rows.map(x => val(x, k)).filter(v => v !== ''))].sort();
+        const listId = 'col-' + k.replace(/[^a-z0-9]/gi, '') + '-' + Math.random().toString(36).slice(2, 8);
+        const pick = values.length > 0 && values.length <= 50 && values.length < rows.length;
+        colFilter[k] = el('input', { type: 'search', class: 'colfilter', placeholder: 'filter …', 'aria-label': 'filter ' + label, autocomplete: 'off',
+            list: pick ? listId : null, title: 'contains (case-insensitive); !text = without' });
+        colFilter[k].addEventListener('input', draw);
+        const th = el('th', { class: 'sortable', title: 'sort', text: label, onclick: () => { sort.desc = sort.key === k ? !sort.desc : false; sort.key = k; draw(); } });
+        return { k, th, fth: el('th', {}, colFilter[k], pick ? el('datalist', { id: listId }, values.map(v => el('option', { value: v }))) : null) };
+    });
+    const tbody = el('tbody', {});
+    const count = el('p', { class: 'muted' });
+    const match = (v, f) => { f = f.trim().toLowerCase(); if (!f) return true; v = v.toLowerCase(); return f[0] === '!' ? (f.length === 1 || !v.includes(f.slice(1))) : v.includes(f); };
+    const rowsOf = () => {
+        const all = q.value.trim().toLowerCase();
+        const out = rows.filter(x => cols.every(([k]) => match(val(x, k), colFilter[k].value)) && (!all || cols.map(([k]) => val(x, k)).join(' ').toLowerCase().includes(all)));
+        if (sort.key) out.sort((a, b) => ipKey(val(a, sort.key)).localeCompare(ipKey(val(b, sort.key)), undefined, { numeric: true }) * (sort.desc ? -1 : 1));
+        return out;
+    };
+    function draw() {
+        const shown = rowsOf();
+        count.textContent = shown.length + ' of ' + rows.length + ' ' + what;
+        for (const h of heads) { h.th.classList.toggle('sorted', sort.key === h.k); h.th.dataset.dir = sort.key === h.k ? (sort.desc ? '▼' : '▲') : ''; }
+        tbody.replaceChildren(...shown.map(x => el('tr', {}, cols.map(([k]) => el('td', { text: val(x, k) })))));
+    }
+    q.addEventListener('input', draw);
+    const clear = el('button', { type: 'button', text: 'Clear filters', onclick: () => { q.value = ''; for (const k in colFilter) colFilter[k].value = ''; draw(); } });
+    const node = el('div', {}, el('div', { class: 'row' }, q, clear, ...extra), count,
+        el('table', { class: 'plain coltable' }, el('thead', {}, el('tr', {}, heads.map(h => h.th)), el('tr', { class: 'filterrow' }, heads.map(h => h.fth))), tbody));
+    draw();
+    return { node, rowsOf };
+}
+
+/** "Read live" of a page: a run with one of the user's keys, polled until it ends; the error stays next to the button */
+function liveForm(r, opts) {
+    if (!r.keys.length) return el('p', { class: 'muted', text: opts.noKey });
+    const key = el('select', { 'aria-label': opts.keyLabel }, r.keys.map(k => el('option', { value: k.kid, text: 'TSG ' + k.target + (k.label && k.label !== k.target ? ' - ' + k.label : '') + (k.refused ? ' (not allowed: ' + k.refused + ')' : '') })));
+    const status = el('span', { class: 'muted' });
+    return el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+        const job = await api('POST', opts.path, Object.assign({ kid: key.value }, opts.body ? opts.body() : {}));
+        status.className = 'muted'; status.textContent = 'reading live …';
+        const t = setInterval(async () => {
+            const x = await api('GET', opts.runs + '/' + job.jid).catch(() => null);
+            if (!x || (x.state !== 'done' && x.state !== 'failed')) return;
+            clearInterval(t);
+            if (x.state === 'failed') { status.className = 'error'; status.textContent = 'live read failed: ' + (x.error || 'see Runs'); message('live read failed: ' + (x.error || 'see Runs'), 'error'); return; }
+            message(opts.done); await opts.redraw();
+        }, 1500);
+        state.timers.push(t);
+    }); } }, field('Live with your key', key), ...(opts.fields || []),
+        el('button', { class: 'primary', type: 'submit', text: 'Read live', disabled: !r.network, title: r.network ? '' : 'network is off for this project (the owner turns it on)' }), status);
+}
+
+/**
+ * the states of a page as "View" and "Compare" (button tabs): View = one state (default the newest), Compare = two
+ * states (default the one before against the newest); view(id) / compare(oldId, newId) return the content
+ */
+function viewCompare(states, label, view, compare) {
+    const out = el('div', {});
+    const opt = (s) => el('option', { value: s.id, text: fmtTime(s.time) + ' - ' + s.source + (s.user ? ', ' + s.user : '') });
+    const pick = el('select', { 'aria-label': 'state' }, states.map(opt));
+    const oldS = el('select', { 'aria-label': 'older state' }, states.map(opt)), newS = el('select', { 'aria-label': 'newer state' }, states.map(opt));
+    if (states[1]) oldS.value = states[1].id;
+    const body = el('div', {});
+    const bView = el('button', { type: 'button', class: 'tabbtn', text: 'View' }), bCmp = el('button', { type: 'button', class: 'tabbtn', text: 'Compare', disabled: states.length < 2,
+        title: states.length < 2 ? 'two states are needed' : 'what changed between two states' });
+    const bar = el('div', { class: 'row' });
+    async function show(mode) {
+        bView.classList.toggle('on', mode === 'view'); bCmp.classList.toggle('on', mode === 'compare');
+        bar.replaceChildren(...(mode === 'view' ? [field(label, pick)] : [field('older', oldS), field('newer', newS)]));
+        body.replaceChildren(el('p', { class: 'muted', text: 'loading …' }));
+        body.replaceChildren(mode === 'view' ? await view(pick.value) : (oldS.value === newS.value ? el('p', { class: 'muted', text: 'choose two different states' }) : await compare(oldS.value, newS.value)));
+    }
+    let mode = 'view';
+    bView.onclick = () => run(() => show(mode = 'view'));
+    bCmp.onclick = () => run(() => show(mode = 'compare'));
+    for (const s of [pick, oldS, newS]) s.addEventListener('change', () => run(() => show(mode)));
+    out.append(el('div', { class: 'row tabbar' }, bView, bCmp), bar, body);
+    out.showState = (id) => { pick.value = id; return show(mode = 'view'); };
+    out.ready = show('view');
+    return out;
+}
+
 async function egressPage(base, canWrite, redraw) {
     const r = await api('GET', base + '/scm/egress');
     const box = el('div', {});
-    const show = el('div', {});
     // import: 92_egress-ip.json of an export, a zip of the export, or a snapshot of scm_egress_ip.php save=
     const file = el('input', { type: 'file', accept: '.json,.zip,application/json,application/zip', required: true });
     const imp = canWrite ? el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
         const fd = new FormData(); fd.append('file', file.files[0]);
         const x = await api('POST', base + '/scm/egress', fd);
         message(x.count + ' egress IP(s) imported'); await redraw();
-    }); } }, field('Import: an export (zip), its infra/92_egress-ip.json or a snapshot (scm_egress_ip.php save=)', file), el('button', { type: 'submit', text: 'Import' })) : null;
-    // live: run egress-ip with an egress-IP key of the user (Account, My API keys, kind egress IP)
+    }); } }, field('Import: its infra/92_egress-ip.json, a snapshot (scm_egress_ip.php save=) or an export (zip)', file), el('button', { type: 'submit', text: 'Import' })) : null;
+    // live: run egress-ip with an egress-IP key of the user (Account, My API keys, kind egress IP); most tenants prod6
+    // (default), older tenants prod - a login error (HTTP 401) names the other one
     let live = null;
     if (canWrite) {
-        if (!r.keys.length) live = el('p', { class: 'muted', text: 'Live: you have no egress-IP API key yet (Account, My API keys, kind "egress IP", target = TSG id; Prisma Access > Infrastructure Settings > Egress IP API).' });
-        else {
-            const key = el('select', { 'aria-label': 'egress-IP key' }, r.keys.map(k => el('option', { value: k.kid, text: 'TSG ' + k.target + (k.label && k.label !== k.target ? ' - ' + k.label : '') + (k.refused ? ' (not allowed: ' + k.refused + ')' : '') })));
-            const sel = (name, list) => el('select', { 'aria-label': name }, list.map(v => el('option', { value: v, text: v })));
-            const st = sel('service type', r.options.servicetype), at = sel('address type', r.options.addrtype), lo = sel('location', r.options.location);
-            // most tenants prod6 (default), older tenants prod - a login error (HTTP 401) names the other one
-            const env = el('select', { 'aria-label': 'environment', title: 'most tenants prod6, older tenants prod' }, el('option', { value: 'prod6', text: 'prod6' }), el('option', { value: 'prod', text: 'prod (older tenants)' }));
-            const status = el('span', { class: 'muted' });
-            live = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
-                const job = await api('POST', base + '/egress-ip/runs', { kid: key.value, servicetype: st.value, addrtype: at.value, location: lo.value, env: env.value });
-                status.className = 'muted'; status.textContent = 'reading live …';
-                const t = setInterval(async () => {
-                    const x = await api('GET', base + '/runs/' + job.jid).catch(() => null);
-                    if (!x || (x.state !== 'done' && x.state !== 'failed')) return;
-                    clearInterval(t);
-                    // the error stays next to the button (e.g. HTTP 401 of the egress-IP API: wrong key / other environment)
-                    if (x.state === 'failed') { status.className = 'error'; status.textContent = 'live read failed: ' + (x.error || 'see Runs'); message('live read failed: ' + (x.error || 'see Runs'), 'error'); return; }
-                    message('egress IPs read live'); await redraw();
-                }, 1500);
-                state.timers.push(t);
-            }); } }, field('Live with your key', key), field('serviceType', st), field('addrType', at), field('location', lo), field('environment', env),
-                el('button', { class: 'primary', type: 'submit', text: 'Read live', disabled: !r.network, title: r.network ? '' : 'network is off for this project (the owner turns it on)' }), status);
-        }
+        const sel = (name, list) => el('select', { 'aria-label': name }, list.map(v => el('option', { value: v, text: v })));
+        const st = sel('service type', r.options.servicetype), at = sel('address type', r.options.addrtype), lo = sel('location', r.options.location);
+        const env = el('select', { 'aria-label': 'environment', title: 'most tenants prod6, older tenants prod' }, el('option', { value: 'prod6', text: 'prod6' }), el('option', { value: 'prod', text: 'prod (older tenants)' }));
+        live = liveForm(r, { keyLabel: 'egress-IP key', path: base + '/egress-ip/runs', runs: base + '/runs', redraw, done: 'egress IPs read live',
+            noKey: 'Live: you have no egress-IP API key yet (Account, My API keys, kind "egress IP", target = TSG id; Prisma Access > Infrastructure Settings > Egress IP API).',
+            body: () => ({ servicetype: st.value, addrtype: at.value, location: lo.value, env: env.value }),
+            fields: [field('serviceType', st), field('addrType', at), field('location', lo), field('environment', env)] });
     }
     const fmtReq = (q) => q ? [q.serviceType, q.addrType, q.location].filter(x => x).join(' / ') : '';
-    const list = r.states.length === 0 ? el('p', { class: 'muted', text: 'No egress IPs yet - import an export or read them live.' }) :
-        table(['When', 'Source', 'By', 'TSG', 'Request', 'Addresses', ''], r.states.map((x, i) => el('tr', {},
+    let vc = null;
+    const list = r.states.length === 0 ? el('p', { class: 'muted', text: 'No egress IPs yet - import them or read them live.' }) :
+        table(['When', 'Source', 'By', 'TSG', 'Request', 'Addresses', ''], r.states.map((x) => el('tr', {},
             el('td', { text: fmtTime(x.time) }), el('td', { text: x.source + (x.name ? ' (' + x.name + ')' : '') }), el('td', { text: x.user }), el('td', { text: x.tsg || '' }),
             el('td', { text: fmtReq(x.request) }), el('td', { text: String(x.count) }),
-            el('td', {}, el('button', { type: 'button', text: 'Show', onclick: () => run(() => showState(x.id, null)) }), ' ',
-                r.states[i + 1] ? el('button', { type: 'button', text: 'Compare with the one before', onclick: () => run(() => showState(x.id, r.states[i + 1].id)) }) : null, ' ',
+            el('td', {}, el('button', { type: 'button', text: 'Show', onclick: () => run(() => vc.showState(x.id)) }), ' ',
                 canWrite ? el('button', { type: 'button', class: 'danger', text: 'Delete', onclick: () => run(async () => {
                     if (!confirm('Delete this state of the egress IPs?')) return;
                     await api('DELETE', base + '/scm/egress/' + x.id); await redraw(); }) }) : null))));
-    async function showState(id, compare) {
-        const s = await api('GET', base + '/scm/egress/' + id + (compare ? '?compare=' + encodeURIComponent(compare) : ''));
-        const q = el('input', { type: 'search', placeholder: 'search all columns …', 'aria-label': 'search the egress IPs' });
-        // the table: a filter field under every header (contains, case-insensitive; "!text" = without; a list of the
-        // values to pick for the columns with few values), a click on a header sorts
-        const cols = [['service_type', 'Service type'], ['location', 'Location'], ['address', 'Address'], ['address_type', 'Address type'], ['allow_listed', 'Allow listed']];
-        const val = (x, k) => String(x[k] ?? '');
-        const colFilter = {}, sort = { key: null, desc: false };
-        const heads = cols.map(([k, label]) => {
-            const values = [...new Set(s.rows.map(x => val(x, k)).filter(v => v !== ''))].sort();
-            const listId = 'egress-col-' + k + '-' + Math.random().toString(36).slice(2, 8);
-            colFilter[k] = el('input', { type: 'search', class: 'colfilter', placeholder: 'filter …', 'aria-label': 'filter ' + label, autocomplete: 'off',
-                list: values.length > 0 && values.length <= 50 ? listId : null, title: 'contains (case-insensitive); !text = without' });
-            colFilter[k].addEventListener('input', draw);
-            const th = el('th', { class: 'sortable', title: 'sort', text: label, onclick: () => { sort.desc = sort.key === k ? !sort.desc : false; sort.key = k; draw(); } });
-            return { k, th, fth: el('th', {}, colFilter[k], values.length > 0 && values.length <= 50 ? el('datalist', { id: listId }, values.map(v => el('option', { value: v }))) : null) };
-        });
-        const tbody = el('tbody', {});
-        const count = el('p', { class: 'muted' });
-        const out = el('div', {}, count, el('table', { class: 'plain egresstable' }, el('thead', {}, el('tr', {}, heads.map(h => h.th)), el('tr', { class: 'filterrow' }, heads.map(h => h.fth))), tbody));
-        const match = (v, f) => { f = f.trim().toLowerCase(); if (!f) return true; v = v.toLowerCase(); return f[0] === '!' ? (f.length === 1 || !v.includes(f.slice(1))) : v.includes(f); };
-        const rowsOf = () => {
-            const all = q.value.trim().toLowerCase();
-            const rows = s.rows.filter(x => cols.every(([k]) => match(val(x, k), colFilter[k].value)) && (!all || cols.map(([k]) => val(x, k)).join(' ').toLowerCase().includes(all)));
-            if (sort.key) rows.sort((a, b) => (sort.key === 'address' ? ipKey(val(a, 'address')).localeCompare(ipKey(val(b, 'address'))) : val(a, sort.key).localeCompare(val(b, sort.key))) * (sort.desc ? -1 : 1));
-            return rows;
-        };
-        // IPv4 sorted by number (10.0.0.9 before 10.0.0.10)
-        const ipKey = (v) => /^\d+\.\d+\.\d+\.\d+/.test(v) ? v.replace(/\d+/g, n => n.padStart(3, '0')) : v;
-        const dl = (name, text, mime) => { const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: mime })), download: name }); document.body.append(a); a.click(); a.remove(); };
-        const csv = (rows) => ['service_type,location,address,address_type,allow_listed'].concat(rows.map(x => [x.service_type, x.location, x.address, x.address_type, x.allow_listed]
-            .map(v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','))).join('\n') + '\n';
-        function draw() {
-            const rows = rowsOf();
-            count.textContent = rows.length + ' of ' + s.rows.length + ' address(es)';
-            for (const h of heads) h.th.classList.toggle('sorted', sort.key === h.k), h.th.dataset.dir = sort.key === h.k ? (sort.desc ? '▼' : '▲') : '';
-            tbody.replaceChildren(...rows.map(x => el('tr', {}, cols.map(([k]) => el('td', { text: val(x, k) })))));
-        }
-        const clear = el('button', { type: 'button', text: 'Clear filters', onclick: () => { q.value = ''; for (const k in colFilter) colFilter[k].value = ''; draw(); } });
-        q.addEventListener('input', draw);
-        let cmp = null;
-        if (s.compare) {
-            const line = (sign, x) => el('div', { class: sign === '+' ? 'diffadd' : (sign === '-' ? 'diffdel' : 'diffchg'), text: sign + ' ' + x.service_type + '  ' + x.location + '  ' + x.address + (x.address_type ? '  (' + x.address_type + ')' : '') });
-            cmp = el('div', { class: 'card' }, el('h3', { text: 'Changes against the state before: ' + s.compare.added.length + ' added, ' + s.compare.removed.length + ' removed, ' + s.compare.changed.length + ' changed' }),
-                ...s.compare.added.map(x => line('+', x)), ...s.compare.removed.map(x => line('-', x)),
-                ...s.compare.changed.map(x => line('~', Object.assign({}, x.new, { address_type: x.old.address_type + ' -> ' + x.new.address_type }))),
-                !s.compare.added.length && !s.compare.removed.length && !s.compare.changed.length ? el('p', { class: 'muted', text: 'no change' }) : null);
-        }
-        show.replaceChildren(el('h3', { text: 'Egress IPs - ' + fmtTime(s.time) + ' (' + s.source + (s.tsg ? ', TSG ' + s.tsg : '') + ', ' + fmtReq(s.request) + ')' }), cmp,
-            el('div', { class: 'row' }, q, clear,
-                el('button', { type: 'button', text: 'Address list', title: 'one address per line (e.g. an external dynamic list)', onclick: () => dl('egress-ip.txt', [...new Set(rowsOf().map(x => x.address))].join('\n') + '\n', 'text/plain') }),
-                el('button', { type: 'button', text: 'CSV', onclick: () => dl('egress-ip.csv', csv(rowsOf()), 'text/csv') })), out);
-        draw();
+    const dl = (name, text, mime) => { const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: mime })), download: name }); document.body.append(a); a.click(); a.remove(); };
+    const csv = (rows) => ['service_type,location,address,address_type,allow_listed'].concat(rows.map(x => [x.service_type, x.location, x.address, x.address_type, x.allow_listed]
+        .map(v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','))).join('\n') + '\n';
+    async function view(id) {
+        const s = await api('GET', base + '/scm/egress/' + id);
+        let t = null;
+        t = colTable([['service_type', 'Service type'], ['location', 'Location'], ['address', 'Address'], ['address_type', 'Address type'], ['allow_listed', 'Allow listed']], s.rows, [
+            el('button', { type: 'button', text: 'Address list', title: 'the addresses shown, one per line (e.g. an external dynamic list)', onclick: () => dl('egress-ip.txt', [...new Set(t.rowsOf().map(x => x.address))].join('\n') + '\n', 'text/plain') }),
+            el('button', { type: 'button', text: 'CSV', title: 'the rows shown', onclick: () => dl('egress-ip.csv', csv(t.rowsOf()), 'text/csv') })], 'address(es)');
+        return el('div', {}, el('h3', { text: 'Egress IPs - ' + fmtTime(s.time) + ' (' + s.source + (s.tsg ? ', TSG ' + s.tsg : '') + ', ' + fmtReq(s.request) + ')' }), t.node);
     }
+    async function compare(oldId, newId) {
+        const s = await api('GET', base + '/scm/egress/' + newId + '?compare=' + encodeURIComponent(oldId));
+        const c = s.compare;
+        const line = (sign, x) => el('div', { class: sign === '+' ? 'diffadd' : (sign === '-' ? 'diffdel' : 'diffchg'), text: sign + ' ' + x.service_type + '  ' + x.location + '  ' + x.address + (x.address_type ? '  (' + x.address_type + ')' : '') });
+        return el('div', { class: 'card' }, el('h3', { text: c.added.length + ' added, ' + c.removed.length + ' removed, ' + c.changed.length + ' changed' }),
+            ...c.added.map(x => line('+', x)), ...c.removed.map(x => line('-', x)),
+            ...c.changed.map(x => line('~', Object.assign({}, x.new, { address_type: x.old.address_type + ' -> ' + x.new.address_type }))),
+            !c.added.length && !c.removed.length && !c.changed.length ? el('p', { class: 'muted', text: 'no change' }) : null);
+    }
+    if (r.states.length) vc = viewCompare(r.states, 'state', view, compare);
     box.append(el('h3', { text: 'Prisma Access - Egress IP' }),
-        el('p', { class: 'muted', text: 'The public addresses of Prisma Access (getPrismaAccessIP/v2): from an import or read live with your egress-IP key; compare two states. The same as php utils/develop/sase/scm/scm_egress_ip.php on the CLI. Read only.' }),
-        imp, live, list, show);
-    if (r.states.length) await showState(r.states[0].id, r.states[1] ? r.states[1].id : null);
+        el('p', { class: 'muted', text: 'The public addresses of Prisma Access (getPrismaAccessIP/v2): from an import or read live with your egress-IP key; View one state or Compare two. The same as php utils/develop/sase/scm/scm_egress_ip.php on the CLI. Read only.' }),
+        imp, live, list, vc);
+    if (vc) await vc.ready;
+    return box;
+}
+
+// Prisma Access pages that show endpoints of scm_pa_export.php (SCM_PA_PAGES of ViewerApp): title, description and how
+// each endpoint is shown - 'fields' (one object: name / value), 'table' (a list: a column per field, filters)
+const SCM_PA_VIEWS = {
+    infra: { title: 'Infrastructure', text: 'Prisma Access infrastructure settings of the tenant (Strata Cloud Manager > Prisma Access > Infrastructure Settings).',
+        endpoints: [['shared-infrastructure-settings', 'Shared infrastructure settings', 'fields'], ['bgp-routing', 'BGP routing', 'fields'],
+            ['internal-dns-servers', 'Internal DNS servers', 'table'], ['locations', 'Locations', 'table']] },
+};
+
+/** an object as name / value pairs: nested objects with dotted names, a list of plain values as "a, b" */
+function flatPairs(o, prefix = '', out = []) {
+    if (o === null || o === undefined) return out;
+    if (typeof o !== 'object') { out.push([prefix, String(o)]); return out; }
+    if (Array.isArray(o)) {
+        if (o.every(v => v === null || typeof v !== 'object')) out.push([prefix, o.join(', ')]);
+        else o.forEach((v, i) => flatPairs(v, prefix + '[' + i + ']', out));
+        return out;
+    }
+    const keys = Object.keys(o);
+    if (keys.length === 0 && prefix) out.push([prefix, '(set)']);
+    for (const k of keys) flatPairs(o[k], prefix ? prefix + '.' + k : k, out);
+    return out;
+}
+
+async function scmPaPage(base, page, canWrite, redraw) {
+    const def = SCM_PA_VIEWS[page];
+    const r = await api('GET', base + '/scm/pa/' + page);
+    const box = el('div', {});
+    const live = canWrite ? liveForm(r, { keyLabel: 'SCM key', path: base + '/scm-pa/runs', runs: base + '/runs', redraw, done: def.title + ' read live',
+        body: () => ({ page }), noKey: 'Live: you have no SCM key yet (Account, My API keys, kind "SCM": the service account - client id / secret - and the TSG id).' }) : null;
+    const epStatus = (s) => Object.entries(s.endpoints).map(([n, e]) => e.status === 'ok' ? null : n + ': ' + (e.status || '?') + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '')).filter(x => x);
+    let vc = null;
+    const list = r.states.length === 0 ? el('p', { class: 'muted', text: 'No state yet - import the SCM configuration of the tenant (Configurations: import with your SCM key - it reads these settings as well) or read them live.' }) :
+        table(['When', 'Source', 'By', 'TSG', 'Read', ''], r.states.map(x => el('tr', {},
+            el('td', { text: fmtTime(x.time) }), el('td', { text: x.source === 'import' ? 'SCM import' : x.source }), el('td', { text: x.user }), el('td', { text: x.tsg || '' }),
+            el('td', { text: epStatus(x).length ? epStatus(x).join('; ') : 'all ' + Object.keys(x.endpoints).length + ' ok' }),
+            el('td', {}, el('button', { type: 'button', text: 'Show', onclick: () => run(() => vc.showState(x.id)) }), ' ',
+                canWrite ? el('button', { type: 'button', class: 'danger', text: 'Delete', onclick: () => run(async () => {
+                    if (!confirm('Delete this state?')) return;
+                    await api('DELETE', base + '/scm/pa/' + page + '/' + x.id); await redraw(); }) }) : null))));
+    async function view(id) {
+        const s = await api('GET', base + '/scm/pa/' + page + '/' + id);
+        const parts = def.endpoints.map(([name, title, how]) => {
+            const e = s.endpoints[name];
+            const head = el('h3', { text: title });
+            if (!e) return el('div', { class: 'card' }, head, el('p', { class: 'muted', text: 'not read' }));
+            if (e.status !== 'ok') return el('div', { class: 'card' }, head, el('p', { class: 'error', text: (e.status || 'error') + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '') + (e.error ? ': ' + e.error : '') }));
+            if (how === 'fields') {
+                const one = Array.isArray(e.data) ? (e.data.length === 1 ? e.data[0] : e.data) : e.data;
+                const pairs = flatPairs(one).filter(([k]) => k !== 'id');
+                return el('div', { class: 'card' }, head, pairs.length ? table(['Setting', 'Value'], pairs.map(([k, v]) => el('tr', {}, el('td', { text: k }), el('td', { text: v })))) : el('p', { class: 'muted', text: 'empty' }));
+            }
+            const rows = (Array.isArray(e.data) ? e.data : []).map(o => Object.fromEntries(flatPairs(o)));
+            const keys = [...new Set(rows.flatMap(o => Object.keys(o)))].filter(k => k !== 'id');
+            return el('div', { class: 'card' }, head, rows.length ? colTable(keys.map(k => [k, k]), rows).node : el('p', { class: 'muted', text: 'none' }));
+        });
+        return el('div', {}, el('p', { class: 'muted', text: 'State of ' + fmtTime(s.time) + ' (' + (s.source === 'import' ? 'SCM import' : s.source) + (s.tsg ? ', TSG ' + s.tsg : '') + (s.fetched_at ? ', read ' + s.fetched_at : '') + ')' }), ...parts);
+    }
+    async function compare(oldId, newId) {
+        const c = await api('GET', base + '/scm/pa/' + page + '/' + newId + '/compare/' + oldId);
+        const fmt = (v) => v === null || v === undefined ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+        const titles = Object.fromEntries(def.endpoints.map(([n, t]) => [n, t]));
+        const cards = c.entries.map(e => {
+            const n = e.counts;
+            const lines = [...e.only_right.map(k => el('div', { class: 'diffadd', text: '+ ' + k })), ...e.only_left.map(k => el('div', { class: 'diffdel', text: '- ' + k })),
+                ...e.changed.flatMap(x => x.changes.map(ch => el('div', { class: 'diffchg', text: '~ ' + (e.singleton ? '' : x.key + ': ') + ch.path + ': '
+                    + (ch.type === 'left_only' ? fmt(ch.left) + ' -> (removed)' : ch.type === 'right_only' ? '(new) -> ' + fmt(ch.right) : fmt(ch.left) + ' -> ' + fmt(ch.right)) })))];
+            return el('div', { class: 'card' }, el('h3', { text: (titles[e.endpoint] || e.endpoint) + (e.singleton ? '' : ' - ' + n.only_right + ' added, ' + n.only_left + ' removed, ' + n.changed + ' changed, ' + n.equal + ' equal') }),
+                lines.length ? lines : el('p', { class: 'muted', text: 'no change' }));
+        });
+        const nc = c.not_comparable.map(x => el('p', { class: 'muted', text: (titles[x.endpoint] || x.endpoint) + ': not compared - ' + x.reason }));
+        return el('div', {}, el('p', { class: 'muted', text: '+ only in the newer state, - only in the older state, ~ changed (the same as scm_pa_compare.php)' }), ...cards, ...nc);
+    }
+    if (r.states.length) vc = viewCompare(r.states, 'state', view, compare);
+    box.append(el('h3', { text: 'Prisma Access - ' + def.title }), el('p', { class: 'muted', text: def.text + ' From the SCM import of the project (it reads these settings as well) or read live with your SCM key (scm_pa_export.php area=' + page + '); View one state or Compare two (scm_pa_compare.php). Read only.' }),
+        live, list, vc);
+    if (vc) await vc.ready;
     return box;
 }
 

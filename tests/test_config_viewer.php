@@ -735,6 +735,54 @@ eq( array( status( $e1 ), $e1[1]['count'] ?? null, status( $e2 ), status( $e3 ),
     in_array( 'gp_gateway', $el[1]['options']['servicetype'] ?? array(), TRUE ) ),
     array( 201, 2, 201, 400, 2, array( '198.51.100.12' ), array( '198.51.100.11' ), 400, 404, 200, 1, TRUE ),
     'SCM tab egress IP: import (JSON, zip of an export), compare of two states, delete; live only with an egress-IP key' );
+// SCM tab, Prisma Access > Infrastructure: states from the export of a run (SCM import / read live: paCollect - the
+// import reads area=config,infra), secrets removed, compare (SCMPrismaAccessCompare as scm_pa_compare.php), delete
+$paExport = function( string $jobDir, string $ts, array $shared, array $dns, array $loc ) {
+    $d = $jobDir . '/scm-export/1234567890/' . $ts;
+    @mkdir( $d . '/infra', 0700, TRUE );
+    $eps = array();
+    foreach( array( array( 'shared-infrastructure-settings', 1, $shared, FALSE ), array( 'bgp-routing', 2, array( 'backbone_routing' => 'no-asymmetric-routing' ), FALSE ),
+        array( 'internal-dns-servers', 3, $dns, TRUE ), array( 'locations', 90, $loc, TRUE ) ) as list( $n, $o, $data, $list ) )
+    {
+        $f = 'infra/' . sprintf( '%02d', $o ) . '_' . $n . '.json';
+        file_put_contents( $d . '/' . $f, json_encode( array( 'endpoint' => $n, 'area' => 'infra', 'status' => 'ok', 'data' => $data ) ) );
+        $eps[] = array( 'area' => 'infra', 'order' => $o, 'name' => $n, 'file' => $f, 'status' => 'ok', 'count' => $list ? count( $data ) : 1 );
+    }
+    $eps[] = array( 'area' => 'config', 'name' => 'addresses', 'file' => 'config/x.json', 'status' => 'ok' );
+    file_put_contents( $d . '/manifest.json', json_encode( array( 'format_version' => 6, 'areas' => array( 'config', 'infra' ), 'created_at' => '2026-11-22T20:00:00+01:00', 'endpoints' => $eps ) ) );
+};
+$loc = array( array( 'value' => 'germany-central', 'display' => 'Germany Central', 'region' => 'europe-west3' ), array( 'value' => 'france-north', 'display' => 'France North', 'region' => 'europe-west9' ) );
+$paJob1 = $data . '/pa-job1'; $paJob2 = $data . '/pa-job2';
+$paExport( $paJob1, '20261122-100000', array( 'infrastructure_subnet' => '192.0.2.0/24', 'infra_bgp_as' => '65534', 'api_key' => 'cleartext-should-go', 'loopback_ips' => array( '192.0.2.10' ) ),
+    array( array( 'name' => 'corp', 'primary' => '10.1.1.1', 'secondary' => '10.1.1.2' ) ), $loc );
+$paExport( $paJob2, '20261122-110000', array( 'infrastructure_subnet' => '192.0.2.0/24', 'infra_bgp_as' => '65535', 'loopback_ips' => array( '192.0.2.10' ) ),
+    array( array( 'name' => 'corp', 'primary' => '10.1.1.1', 'secondary' => '10.1.1.3' ), array( 'name' => 'lab', 'primary' => '10.2.2.2' ) ),
+    array( $loc[0], array( 'value' => 'netherlands-central', 'display' => 'Netherlands Central', 'region' => 'europe-west4' ) ) );
+require_once $viewer . '/lib/ViewerApp.php';
+$va = new ViewerApp( $data );
+$collect = new ReflectionMethod( 'ViewerApp', 'paCollect' );
+$collect->setAccessible( TRUE );
+$made = array( $collect->invoke( $va, array( 'pid' => $pid ), $paJob1, '1234567890', 'aaaa1111', 'import', 'alice', 1000, array( 'infra' ) ),
+    $collect->invoke( $va, array( 'pid' => $pid ), $paJob2, '1234567890', 'bbbb2222', 'live', 'alice', 2000, array( 'infra' ) ),
+    $collect->invoke( $va, array( 'pid' => $pid ), $paJob2, '1234567890', 'bbbb2222', 'live', 'alice', 2000, array( 'infra' ) ) );
+$pl = $alice->call( 'GET', $EG . '/scm/pa/infra' );
+$pg = $alice->call( 'GET', $EG . '/scm/pa/infra/aaaa1111' );
+$pc = $alice->call( 'GET', $EG . '/scm/pa/infra/bbbb2222/compare/aaaa1111' );
+$byEp = array();
+foreach( $pc[1]['entries'] ?? array() as $e )
+    $byEp[$e['endpoint']] = $e;
+$prun = $alice->call( 'POST', $EG . '/scm-pa/runs', array( 'kid' => 'nokey', 'page' => 'infra' ) );
+$pbad = $alice->call( 'GET', $EG . '/scm/pa/nopage' );
+$pdel = $alice->call( 'DELETE', $EG . '/scm/pa/infra/aaaa1111' );
+eq( array( $made, array_column( $pl[1]['states'] ?? array(), 'id' ), array_column( $pl[1]['states'] ?? array(), 'source' ),
+    $pg[1]['endpoints']['shared-infrastructure-settings']['data']['api_key'] ?? null, $pg[1]['endpoints']['shared-infrastructure-settings']['data']['infra_bgp_as'] ?? null,
+    count( $pg[1]['endpoints']['locations']['data'] ?? array() ), isset( $pg[1]['endpoints']['addresses'] ),
+    $byEp['shared-infrastructure-settings']['changed'][0]['changes'][0]['path'] ?? null, $byEp['internal-dns-servers']['only_right'] ?? null,
+    $byEp['internal-dns-servers']['changed'][0]['key'] ?? null, $byEp['locations']['only_left'] ?? null, $byEp['locations']['only_right'] ?? null,
+    $byEp['bgp-routing']['counts']['equal'] ?? null, status( $prun ), status( $pbad ), status( $pdel ), count( $alice->call( 'GET', $EG . '/scm/pa/infra' )[1]['states'] ?? array() ) ),
+    array( array( 1, 1, 0 ), array( 'bbbb2222', 'aaaa1111' ), array( 'live', 'import' ), '***', '65534', 2, FALSE,
+        'infra_bgp_as', array( 'lab' ), 'corp', array( 'france-north' ), array( 'netherlands-central' ), 1, 400, 404, 200, 1 ),
+    'SCM tab Prisma Access infrastructure: states of the export of a run (secrets removed, only the infra endpoints), compare as scm_pa_compare.php, delete; live only with an SCM key' );
 // System: the settings of Panorama / a template / SCM as type=config-section reads them; secrets never
 $SY = $up( 'system-panorama.xml' );
 $sy = $alice->call( 'GET', $SY . '/system' );
