@@ -1255,7 +1255,6 @@ trait sp_action_spyware
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $this->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
-            $action_other_then_allow_alert = false;
             foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
             {
                 if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
@@ -1270,28 +1269,17 @@ trait sp_action_spyware
                     $action_xmlNode->textContent = "alert";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
                 }
-                elseif( $action_xmlNode->textContent == "alert" )
-                {
-                }
-                elseif( !$this->cloud_inline_analysis_enabled )
-                {
-                    //explanation:
-                    //inline analysis is disabled -> but action is set to block -> not enabled, will not help
-                    $action_xmlNode->textContent = "alert";
-                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
-                }
-                else
-                {
-                    $action_other_then_allow_alert = true;
-                }
+                //explanation:
+                //same behaviour as VulnerabilityProfile::inlineML_AlertOnlySet()
+                //any other action (alert / drop / reset-*) is kept as it is
             }
 
-            if( !$action_other_then_allow_alert )
-            {
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-                $this->cloud_inline_analysis_enabled = true;
-            }
+            //explanation:
+            //same behaviour as VulnerabilityProfile::inlineML_AlertOnlySet()
+            //always enable cloud-inline-analysis, independent of the configured actions
+            $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+            $tmp_mlav_engine->textContent = "yes";
+            $this->cloud_inline_analysis_enabled = true;
         }
         else
         {
