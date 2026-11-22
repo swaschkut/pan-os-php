@@ -66,6 +66,7 @@ BUGFIX:
 * ancestor-objects-take-precedence-rule-filters
 * spyware-local-deep-learning-is-never-written
 * spyware-mica-alert-only-set
+* set-writer-member-name | bugfix to NOT remove ' member' between ""
 
 GENERAL:
 * global change from iron-skillet files to XML snippets available in specific object classes
