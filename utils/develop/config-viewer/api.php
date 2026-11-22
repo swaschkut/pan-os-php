@@ -20,7 +20,7 @@
 /**
  * config-viewer API (prototype). JSON only. Routes (api.php/<route>):
  *   POST login, POST logout, GET me, POST password, GET meta, GET playbooks, GET playbooks?all=1 + PUT playbooks (admin)
- *   GET|POST keys, PUT|DELETE keys/<kid> (own API keys), GET|POST ldap, PUT|DELETE ldap/<qid> (own LDAP queries), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
+ *   GET|POST keys, POST keys/generate (API key from user + password), PUT|DELETE keys/<kid> (own API keys), GET|POST ldap, PUT|DELETE ldap/<qid> (own LDAP queries), GET|PUT network (admin), PUT projects/<pid>/network (owner), POST projects/<pid>/import/runs
  *   GET central, POST central/appid|geoip[/runs], DELETE central/appid|geoip (admin); GET|POST|DELETE projects/<pid>/appid, POST projects/<pid>/appid/runs
  *   GET|POST users, DELETE users/<name>, POST users/<name>/password, GET audit   (admin)
  *   GET projects/<pid>/audit                                              (owner)
@@ -323,6 +323,9 @@ try
         }
         if( $method === 'POST' && count( $route ) === 1 )
             viewerOut( $app->keyAdd( $user, viewerBody() ), 201 );
+        // the API key of a firewall / Panorama from user name + password (XML API keygen; the password is not kept)
+        if( $method === 'POST' && count( $route ) === 2 && $route[1] === 'generate' )
+            viewerOut( $app->keyGenerate( $user, viewerBody() ), 201 );
         // change: the label (port), optionally a new secret
         if( $method === 'PUT' && count( $route ) === 2 )
             viewerOut( $app->keyUpdate( $user, $route[1], viewerBody() ) );

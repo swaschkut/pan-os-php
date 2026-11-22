@@ -461,6 +461,50 @@ $as( 'bob', 'bob-secret-1234' );
 $bk = call( 'POST', 'keys', array( 'kind' => 'panos', 'target' => 'fw2.example.com', 'key' => $secret ) )[1]['kid'] ?? '';
 eq( $imp( array( 'kid' => $bk ) )[0], 403, 'import: not with read permission' );
 $cookie = $aliceCookie; $csrf = $aliceCsrf;
+// the API key from the device: management address + administrator + password (XML API keygen, as key-manager add=)
+$kgDir = sys_get_temp_dir() . '/viewer-keygen-' . bin2hex( random_bytes( 4 ) );
+mkdir( $kgDir . '/api', 0700, TRUE );
+file_put_contents( $kgDir . '/api/index.php', '<?php
+// a PAN-OS XML API that knows one administrator; records what it got (method, query string, user - never the password)
+file_put_contents( dirname( __DIR__ ) . "/got.log", json_encode( array( $_SERVER["REQUEST_METHOD"], $_SERVER["QUERY_STRING"] ?? "", $_POST["type"] ?? "", $_POST["user"] ?? "" ) ) . "\n", FILE_APPEND );
+header( "Content-Type: application/xml" );
+if( ( $_POST["type"] ?? "" ) === "keygen" && ( $_POST["user"] ?? "" ) === "admin" && ( $_POST["password"] ?? "" ) === "pw:with&special%chars" )
+    echo "<response status=\"success\"><result><key>LUFRPT-from-device-geheim-9876</key></result></response>";
+else
+    echo "<response status=\"error\" code=\"403\"><result><msg>Invalid Credentials.</msg></result></response>";
+' );
+$kgPort = 18000 + random_int( 0, 999 );
+$kgSrv = proc_open( array( PHP_BINARY, '-S', '127.0.0.1:' . $kgPort, '-t', $kgDir ), array( 0 => array( 'file', '/dev/null', 'r' ), 1 => array( 'file', '/dev/null', 'w' ), 2 => array( 'file', '/dev/null', 'w' ) ), $kgPipes );
+usleep( 400000 );
+$alice = $app->userByName( 'alice' );
+$gen = function( array $in ) use ( $app, $alice ) {
+    try { return array( 201, $app->keyGenerate( $alice, $in ) ); } catch( ViewerException $e ) { return array( $e->getCode(), $e->getMessage() ); } };
+$kgIn = array( 'target' => '127.0.0.1', 'port' => $kgPort, 'username' => 'admin', 'password' => 'pw:with&special%chars', 'label' => 'lab fw' );
+putenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP=1' );
+$r = $gen( $kgIn );
+eq( array( $r[0], strpos( (string)$r[1], 'not on the allow list' ) !== FALSE ), array( 403, TRUE ), 'key from the device: only to a host the administrator allows' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8\n127.0.0.1", 'deny' => 'bad.example.com' ) );
+$r = $gen( array( 'password' => 'wrong-password' ) + $kgIn );
+eq( array( $r[0], $r[1] ), array( 400, '127.0.0.1: Invalid Credentials.' ), 'key from the device: the message of the device (wrong password)' );
+$r = $gen( $kgIn );
+$got = array_map( function( $l ) { return json_decode( $l, TRUE ); }, file( $kgDir . '/got.log', FILE_IGNORE_NEW_LINES ) ?: array() );
+eq( array( $r[0], $r[1]['kind'] ?? null, $r[1]['target'] ?? null, $r[1]['port'] ?? null, $r[1]['label'] ?? null, $r[1]['hint'] ?? null, strpos( json_encode( $r[1] ), 'geheim' ), end( $got ) ),
+    array( 201, 'panos', '127.0.0.1', $kgPort, 'lab fw', '…9876', FALSE, array( 'POST', '', 'keygen', 'admin' ) ),
+    'key from the device: keygen by POST (password not in the URL), stored as own PAN-OS key, only its end shown' );
+$sec = $db->query( "SELECT secret FROM user_keys WHERE target = '127.0.0.1'" )->fetchColumn();
+eq( array( 'n/a', strpos( (string)$sec, 'geheim' ), strpos( (string)file_get_contents( $data . '/viewer.sqlite' ), 'special%chars' ),
+    strpos( json_encode( $app->auditList( $app->userByName( 'root' ), null, array() ) ), 'special' ) ),
+    array( 'n/a', FALSE, FALSE, FALSE ), 'key from the device: the key encrypted, the password nowhere (database, audit log)' );
+putenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP' );
+eq( $gen( $kgIn )[0], 502, 'key from the device: https by default (the plain HTTP simulation answers no TLS)' );
+foreach( array( array( 'username' => '' ), array( 'password' => '' ), array( 'target' => 'a b' ), array( 'port' => '99999' ) ) as $bad )
+    eq( $gen( $bad + $kgIn )[0], 400, 'key from the device: checked (' . key( $bad ) . ')' );
+eq( call( 'POST', 'keys/generate', array( 'target' => 'fw9.other.org', 'username' => 'admin', 'password' => 'x' ) )[0], 403, 'key from the device: route POST keys/generate (host not allowed)' );
+$app->networkSet( array( 'enabled' => TRUE, 'allow' => "*.example.com\ntsg:1234567890\n10.0.0.0/8", 'deny' => 'bad.example.com' ) );
+proc_terminate( $kgSrv );
+proc_close( $kgSrv );
+exec( 'rm -rf ' . escapeshellarg( $kgDir ) );
+
 // SCM: export with network, then the conversion without
 $r = call( 'POST', 'keys', array( 'kind' => 'scm', 'target' => '1234567890', 'client_id' => 'sa-client@1234567890.iam', 'client_secret' => 'scm-geheim-4711' ) );
 $skid = $r[1]['kid'] ?? '';

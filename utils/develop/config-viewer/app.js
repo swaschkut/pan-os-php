@@ -231,6 +231,20 @@ async function showAccount() {
             fKey.firstChild.textContent = k === 'ldap' ? 'Password' : k === 'named' || k === 'other' ? 'Value (password / key)' : 'API key';
         };
         kKind.addEventListener('change', kindChanged); kindChanged();
+        // the key from the device: management address + administrator + password (XML API keygen, as key-manager add=<host>)
+        const gHost = el('input', { required: true, autocomplete: 'off', placeholder: '192.0.2.10 / fw1.example.com', size: 24 });
+        const gPort = el('input', { inputmode: 'numeric', size: 5, placeholder: '443' });
+        const gLabel = el('input', { size: 14 });
+        const gUser = el('input', { required: true, autocomplete: 'off', size: 14 });
+        const gPw = el('input', { type: 'password', required: true, autocomplete: 'new-password', size: 14 });
+        const gVerify = el('input', { type: 'checkbox' });
+        const genForm = el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
+            const body = { target: gHost.value.trim(), username: gUser.value, password: gPw.value, label: gLabel.value.trim(), verify: gVerify.checked };
+            if (gPort.value.trim()) body.port = gPort.value.trim();
+            try { const k = await api('POST', 'keys/generate', body); gPw.value = ''; await showAccount(); message('API key of ' + k.target + ' received and saved (…' + String(k.hint).replace(/^…/, '') + ')'); }
+            finally { gPw.value = ''; }
+        }); } }, field('Firewall / Panorama (management IP or name)', gHost), field('Port', gPort), field('Label', gLabel), field('Administrator', gUser), field('Password', gPw),
+            field('Check the TLS certificate', gVerify), el('button', { class: 'primary', type: 'submit', text: 'Get API key' }));
         const ksFile = el('input', { type: 'file', required: true });
         const ksResult = el('div', {});
         const kindName = { panos: 'PAN-OS', scm: 'SCM', egressip: 'egress IP', ldap: 'LDAP account', named: 'named', other: 'other' };
@@ -244,6 +258,9 @@ async function showAccount() {
                 kKey.value = kSecret.value = kId.value = '';
                 await showAccount(); message('key saved');
             }); } }, field('Kind', kKind), fTarget, fNamed, fPort, field('Label', kLabel), fKey, fId, fSecret, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
+            el('h3', { text: 'Get the API key from a firewall / Panorama' }),
+            el('p', { class: 'muted', text: 'As pan-os-php key-manager add=<host>: the viewer asks the firewall / Panorama for the API key of the administrator (XML API keygen) and saves it as your key of kind PAN-OS. The password is only sent to the device - it is not saved and not logged. The host must be allowed by the administrator (Network for runs).' + (ks.network ? '' : ' Network for runs is off at the moment - this does not work now.') }),
+            genForm,
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
                 const fd = new FormData(); fd.append('keystore', ksFile.files[0]);
                 const r = await api('POST', 'keys/import', fd);

@@ -63,6 +63,9 @@ group membership and the cleanup check (do the users still exist?); saved querie
   and `ldap-users` (a version: `type=rule actions=user-check-ldap`, `remove` → result configuration); network rules
   as for an import (LDAP host on the allow list); project tab **LDAP**
 * `PUT keys/<kid>`: label / port, optionally a new secret; **Edit** in *My API keys*
+* `POST keys/generate` (2026-11-22): the PAN-OS API key from management address + administrator + password (XML API
+  keygen by POST, as key-manager add=<host>) - only to allowed hosts, password not stored / logged / audited, TLS
+  check optional (`verify`); form *Get the API key from a firewall / Panorama* in *My API keys*
 
 ## Open
 

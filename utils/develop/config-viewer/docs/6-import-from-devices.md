@@ -16,7 +16,12 @@ nothing is written to the device. The result becomes a new version of the projec
 2. **Network for the project** - the owner turns it on in the project (tab **Configuration versions**, **Import from a
    device**). It works only while the administrator allows network.
 3. **Your own API key** - under **Account → My API keys**:
-   - PAN-OS: host name / IP address and the XML API key
+   - PAN-OS: host name / IP address and the XML API key - or **Get the API key from a firewall / Panorama**: management
+     IP / name (port), administrator and password; the viewer asks the device for the key (XML API `type=keygen` by
+     POST, as `type=key-manager add=<host>`) and saves it as your PAN-OS key. The password is only sent to the device:
+     not saved, not logged, not in the audit log. The host must be on the allow list (step 1). TLS: the certificate is
+     checked only with *Check the TLS certificate* (firewalls mostly have their own certificate; pan-os-php does not
+     check it either). A wrong password gives the message of the device (e.g. "Invalid Credentials.").
    - SCM: TSG id, client id and client secret of a service account
 
    - LDAP accounts: bind user + password (`ldap_user<bind user>`, see *LDAP*)

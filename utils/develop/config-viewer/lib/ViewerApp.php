@@ -890,6 +890,82 @@ class ViewerApp
     }
 
     /**
+     * the API key of a firewall / Panorama from its management address with user name + password (as pan-os-php
+     * type=key-manager add=<host>: the XML API type=keygen), stored as an own entry of kind panos (personal, encrypted;
+     * an entry of the same host is replaced). The password is only sent to the device (POST, never in the URL) - it is
+     * not stored, not logged and not in the audit log (fields 'username' / 'password' are not kept there). Only to hosts
+     * the administrator allows for runs (Account, Network for runs). TLS: the certificate is checked only with
+     * 'verify' (firewalls mostly have their own certificate - as pan-os-php, which does not check it).
+     * Returns the entry as keyList (never the key).
+     */
+    public function keyGenerate( array $user, array $in ): array
+    {
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not found', 404 );
+        $target = self::keyTarget( 'panos', $in['target'] ?? null );
+        $port = null;
+        if( isset( $in['port'] ) && $in['port'] !== '' && $in['port'] !== null )
+        {
+            if( !ctype_digit( (string)$in['port'] ) || (int)$in['port'] < 1 || (int)$in['port'] > 65535 )
+                throw new ViewerException( 'port: 1-65535', 400 );
+            $port = (int)$in['port'];
+        }
+        $name = $in['username'] ?? null;
+        if( !is_string( $name ) || trim( $name ) === '' || strlen( $name ) > 200 || preg_match( '/[\x00-\x1F\x7F]/', $name ) )
+            throw new ViewerException( 'username: the administrator of the firewall / Panorama', 400 );
+        $password = $in['password'] ?? null;
+        if( !is_string( $password ) || $password === '' || strlen( $password ) > 1000 )
+            throw new ViewerException( 'password: the password of the administrator', 400 );
+        $why = $this->networkRefusal( 'panos', $target );
+        if( $why !== null )
+            throw new ViewerException( 'can not reach ' . $target . ': ' . $why, 403 );
+        if( !function_exists( 'curl_init' ) )
+            throw new ViewerException( 'the PHP curl extension is missing on the server', 500 );
+
+        $host = filter_var( $target, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) !== FALSE ? '[' . $target . ']' : $target;
+        // tests only: a plain HTTP device simulation (never set in an installation - the password would go unencrypted)
+        $scheme = getenv( 'PANOSPHP_VIEWER_TEST_KEYGEN_PLAIN_HTTP' ) === '1' ? 'http' : 'https';
+        $verify = !empty( $in['verify'] ) && $in['verify'] !== 'false';
+        $ch = curl_init( $scheme . '://' . $host . ( $port !== null ? ':' . $port : '' ) . '/api/' );
+        curl_setopt_array( $ch, array(
+            CURLOPT_POST => TRUE,
+            CURLOPT_POSTFIELDS => http_build_query( array( 'type' => 'keygen', 'user' => $name, 'password' => $password ), '', '&', PHP_QUERY_RFC3986 ),
+            CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_FOLLOWLOCATION => FALSE, CURLOPT_CONNECTTIMEOUT => 7, CURLOPT_TIMEOUT => 30,
+            CURLOPT_SSL_VERIFYPEER => $verify, CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS | CURLPROTO_HTTP, CURLOPT_MAXFILESIZE => 1000000,
+        ) );
+        $raw = curl_exec( $ch );
+        $err = curl_error( $ch );
+        $code = (int)curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+        curl_close( $ch );
+        unset( $password, $in['password'] );
+        if( $raw === FALSE )
+            throw new ViewerException( 'no answer from ' . $target . ( $port !== null ? ':' . $port : '' ) . ': ' . substr( $err, 0, 200 ), 502 );
+        $doc = new DOMDocument();
+        $ok = $raw !== '' && @$doc->loadXML( (string)$raw, LIBXML_NONET );
+        $resp = $ok ? $doc->documentElement : null;
+        if( $resp === null || $resp->nodeName !== 'response' )
+            throw new ViewerException( $target . ' did not answer as a PAN-OS XML API (HTTP ' . $code . ')', 502 );
+        if( $resp->getAttribute( 'status' ) !== 'success' )
+        {
+            // the message of the device (e.g. "Invalid Credentials.") - a little pause against guessing passwords
+            usleep( 1000000 );
+            $msg = trim( preg_replace( '/\s+/', ' ', $resp->textContent ) );
+            throw new ViewerException( $target . ': ' . ( $msg !== '' ? substr( $msg, 0, 200 ) : 'key generation refused' ), 400 );
+        }
+        $key = '';
+        foreach( $doc->getElementsByTagName( 'key' ) as $k )
+            $key = trim( $k->textContent );
+        if( strlen( $key ) < 8 || preg_match( '/[\s:%]/', $key ) )
+            throw new ViewerException( $target . ' answered without a usable API key', 502 );
+        $this->keyStore( $user, 'panos', $target, $port, (string)( $in['label'] ?? '' ), $key );
+        foreach( $this->keyList( $user ) as $k )
+            if( $k['kind'] === 'panos' && $k['target'] === $target )
+                return $k;
+        throw new ViewerException( 'key not stored', 500 );
+    }
+
+    /**
      * takes the entries of an existing .panconfkeystore (the text of the file) as entries of the user: every line
      * "<name>[%<port>]:<value>" by its kind; an entry of the same kind and target is replaced. Lines that do not fit are
      * skipped - with the line number and the reason, never their content.
