@@ -1392,48 +1392,95 @@ async function scmPaPage(base, page, canWrite, redraw) {
                 canWrite ? el('button', { type: 'button', class: 'danger', text: 'Delete', onclick: () => run(async () => {
                     if (!confirm('Delete this state?')) return;
                     await api('DELETE', base + '/scm/pa/' + page + '/' + x.id); await redraw(); }) }) : null))));
+    // an endpoint = a card, closed: its data is loaded when it is opened (a page can have 75000 entries), a list page by
+    // page from the server (filters, search and sort run there)
+    const epCard = (title, summary, load) => {
+        const body = el('div', {});
+        const d = el('details', { class: 'card scmep' }, el('summary', {}, el('strong', { text: title }), summary ? el('span', { class: 'muted', text: '  ' + summary }) : null), body);
+        let loaded = false;
+        d.addEventListener('toggle', () => { if (!d.open || loaded) return; loaded = true; body.replaceChildren(el('p', { class: 'muted', text: 'loading …' }));
+            run(async () => { try { body.replaceChildren(await load()); } catch (e) { loaded = false; body.replaceChildren(el('p', { class: 'error', text: e.message })); } }); });
+        return d;
+    };
     async function view(id) {
         const s = await api('GET', base + '/scm/pa/' + page + '/' + id);
+        const kb = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
         const parts = Object.entries(s.endpoints).map(([name, e]) => {
-            const head = el('h3', { text: scmTitle(name) + (Array.isArray(e.data) ? ' (' + e.data.length + ')' : ''), title: name });
-            if (e.status !== 'ok') return el('div', { class: 'card' }, head, el('p', { class: e.status === 'unavailable' ? 'muted' : 'error',
-                text: (e.status === 'unavailable' ? 'not available (not licensed / no permission)' : (e.status || 'error')) + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '') + (e.error ? ': ' + e.error : '') }));
-            const list = Array.isArray(e.data) && (e.data.length !== 1 || e.data[0] === null || typeof e.data[0] !== 'object' || ['name', 'value', 'id'].some(k => k in e.data[0]));
-            if (!list) {
-                const one = Array.isArray(e.data) ? e.data[0] : e.data;
-                const pairs = flatPairs(one).filter(([k]) => k !== 'id');
-                // api_key of the shared infrastructure settings = the egress-IP API key: not in the export files, it went
-                // into the key store of the user who imported / read live (Account, My API keys, kind egress IP)
-                const shown = (k, v) => v === '***REDACTED***' ? (name === 'shared-infrastructure-settings' && k === 'api_key'
-                    ? 'egress-IP API key - stored as the egress-IP key of the user who imported / read it (Account, My API keys)' : 'secret (not in the export)') : v;
-                return el('div', { class: 'card' }, head, pairs.length ? table(['Setting', 'Value'], pairs.map(([k, v]) => el('tr', {}, el('td', { text: k }), el('td', { text: shown(k, v) })))) : el('p', { class: 'muted', text: 'empty' }));
-            }
-            if (e.data.length === 0) return el('div', { class: 'card' }, head, el('p', { class: 'muted', text: 'none' }));
-            const flat = e.data.map(o => o !== null && typeof o === 'object' ? Object.fromEntries(flatPairs(o)) : { value: String(o) });
-            const keys = [...new Set(flat.flatMap(o => Object.keys(o)))].filter(k => k !== 'id');
-            // wide entries (IKE gateways, tunnels, …): the fields of the first level as columns, all under "details"
-            if (keys.length <= 10) return el('div', { class: 'card' }, head, colTable(keys.map(k => [k, k]), flat).node);
-            const main = [...new Set(keys.map(k => k.split(/[.[]/)[0]))].filter(k => keys.includes(k)).slice(0, 8);
-            const rows = flat.map(o => Object.assign({}, o, { _details: Object.entries(o).filter(([k]) => k !== 'id').map(([k, v]) => k + ' = ' + v).join('\n') }));
-            return el('div', { class: 'card' }, head, colTable(main.map(k => [k, k]).concat([['_details', 'details']]), rows, [], 'entries',
-                { _details: (x) => el('details', {}, el('summary', { text: Object.keys(x).length - 1 + ' fields' }), el('pre', { class: 'scmdetails', text: x._details })) }).node);
+            if (e.status !== 'ok') return el('div', { class: 'card scmep' }, el('strong', { text: scmTitle(name) }), el('span', { class: e.status === 'unavailable' ? 'muted' : 'error',
+                text: '  ' + (e.status === 'unavailable' ? 'not available (not licensed / no permission)' : (e.status || 'error')) + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '') + (e.error ? ': ' + e.error : '') }));
+            return epCard(scmTitle(name), (e.count !== null && e.count !== undefined ? e.count + (e.count === 1 ? ' entry' : ' entries') + ', ' : '') + kb(e.bytes || 0), () => endpointData(id, name));
         });
-        return el('div', {}, el('p', { class: 'muted', text: 'State of ' + fmtTime(s.time) + ' (' + (s.source === 'import' ? 'SCM import' : s.source) + (s.tsg ? ', TSG ' + s.tsg : '') + (s.fetched_at ? ', read ' + s.fetched_at : '') + ')' }), ...parts);
+        const all = el('div', { class: 'row' }, el('button', { type: 'button', text: 'Open all', title: 'open every endpoint (loads their data)', onclick: () => box.querySelectorAll('details.scmep').forEach(d => { d.open = true; }) }),
+            el('button', { type: 'button', text: 'Close all', onclick: () => box.querySelectorAll('details.scmep').forEach(d => { d.open = false; }) }));
+        return el('div', {}, el('p', { class: 'muted', text: 'State of ' + fmtTime(s.time) + ' (' + (s.source === 'import' ? 'SCM import' : s.source) + (s.tsg ? ', TSG ' + s.tsg : '') + (s.fetched_at ? ', read ' + s.fetched_at : '') + ') - open an endpoint to load its data' }), all, ...parts);
+    }
+    // one endpoint: an object as setting / value; a list as a table that loads page by page from the server
+    async function endpointData(id, name) {
+        const url = base + '/scm/pa/' + page + '/' + id + '/data/' + encodeURIComponent(name);
+        const first = await api('GET', url + '?limit=100');
+        if (first.kind === 'object') {
+            // api_key of the shared infrastructure settings = the egress-IP API key: in the key store of the user
+            const shown = (k, v) => v === '***REDACTED***' ? (name === 'shared-infrastructure-settings' && k === 'api_key'
+                ? 'egress-IP API key - stored as the egress-IP key of the user who imported / read it (Account, My API keys)' : 'secret (not in the export)') : v;
+            return first.pairs.length ? table(['Setting', 'Value'], first.pairs.map(([k, v]) => el('tr', {}, el('td', { text: k }), el('td', { text: shown(k, v) })))) : el('p', { class: 'muted', text: 'empty' });
+        }
+        if (first.total === 0) return el('p', { class: 'muted', text: 'none' });
+        const cols = first.main ? first.main.concat(['_details']) : first.columns;
+        const st = { offset: 0, limit: 100, q: '', f: {}, sort: '', desc: false };
+        const q = el('input', { type: 'search', placeholder: 'search all fields …', 'aria-label': 'search all fields' });
+        const size = el('select', { 'aria-label': 'rows per page' }, [50, 100, 200, 500, 1000].map(n => el('option', { value: n, text: n + ' per page', selected: n === 100 })));
+        const count = el('span', { class: 'muted' }), prev = el('button', { type: 'button', text: '‹ previous' }), next = el('button', { type: 'button', text: 'next ›' });
+        const tbody = el('tbody', {});
+        let timer = null;
+        const later = () => { clearTimeout(timer); timer = setTimeout(() => { st.offset = 0; run(load); }, 300); };
+        const heads = cols.map(k => {
+            if (k === '_details') return { k, th: el('th', { text: 'details' }), fth: el('th', {}) };
+            const listId = 'pa-' + Math.random().toString(36).slice(2, 9);
+            const inp = el('input', { type: 'search', class: 'colfilter', placeholder: 'filter …', 'aria-label': 'filter ' + k, autocomplete: 'off', list: first.values[k] ? listId : null, title: 'contains (case-insensitive); !text = without' });
+            inp.addEventListener('input', () => { st.f[k] = inp.value; later(); });
+            const th = el('th', { class: 'sortable', title: 'sort', text: k, onclick: () => { st.desc = st.sort === k ? !st.desc : false; st.sort = k; st.offset = 0; run(load); } });
+            return { k, th, fth: el('th', {}, inp, first.values[k] ? el('datalist', { id: listId }, first.values[k].map(v => el('option', { value: v }))) : null) };
+        });
+        const draw = (x) => {
+            count.textContent = (x.matched ? (x.offset + 1) + '-' + Math.min(x.offset + x.rows.length, x.matched) : '0') + ' of ' + x.matched + (x.matched !== x.total ? ' (of ' + x.total + ')' : '') + ' entries';
+            prev.disabled = x.offset === 0; next.disabled = x.offset + x.rows.length >= x.matched;
+            for (const h of heads) { h.th.classList.toggle('sorted', st.sort === h.k); h.th.dataset.dir = st.sort === h.k ? (st.desc ? '▼' : '▲') : ''; }
+            tbody.replaceChildren(...x.rows.map(r => el('tr', {}, cols.map(k => k === '_details'
+                ? el('td', {}, el('details', {}, el('summary', { text: Object.keys(r).length + ' fields' }), el('pre', { class: 'scmdetails', text: Object.entries(r).map(([a, b]) => a + ' = ' + b).join('\n') })))
+                : el('td', { text: r[k] ?? '' })))));
+        };
+        async function load() {
+            const ps = new URLSearchParams({ offset: st.offset, limit: st.limit, q: st.q, f: JSON.stringify(st.f), sort: st.sort, desc: st.desc ? '1' : '' });
+            draw(await api('GET', url + '?' + ps.toString()));
+        }
+        q.addEventListener('input', () => { st.q = q.value; later(); });
+        size.addEventListener('change', () => { st.limit = +size.value; st.offset = 0; run(load); });
+        prev.onclick = () => { st.offset = Math.max(0, st.offset - st.limit); run(load); };
+        next.onclick = () => { st.offset += st.limit; run(load); };
+        const clear = el('button', { type: 'button', text: 'Clear filters', onclick: () => { q.value = ''; st.q = ''; st.f = {}; heads.forEach(h => { const i = h.fth.querySelector('input'); if (i) i.value = ''; }); st.offset = 0; run(load); } });
+        draw(first);
+        // a short list: no paging
+        if (first.total <= 100) { size.hidden = true; prev.hidden = true; next.hidden = true; }
+        return el('div', {}, el('div', { class: 'row' }, q, clear, size, prev, next, count),
+            el('div', { class: 'scmscroll' }, el('table', { class: 'plain coltable' }, el('thead', {}, el('tr', {}, heads.map(h => h.th)), el('tr', { class: 'filterrow' }, heads.map(h => h.fth))), tbody)));
     }
     async function compare(oldId, newId) {
         const c = await api('GET', base + '/scm/pa/' + page + '/' + newId + '/compare/' + oldId);
         const fmt = (v) => v === null || v === undefined ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
-        const titles = new Proxy({}, { get: (_, n) => scmTitle(String(n)) });
-        const cards = c.entries.map(e => {
+        const cards = c.endpoints.map(x => epCard(scmTitle(x.endpoint), x.old === 'ok' && x.new === 'ok' ? (x.old_count ?? '?') + ' -> ' + (x.new_count ?? '?') + ' entries'
+            : 'older: ' + (x.old || 'not read') + ', newer: ' + (x.new || 'not read'), async () => {
+            const e = await api('GET', base + '/scm/pa/' + page + '/' + newId + '/compare/' + oldId + '?ep=' + encodeURIComponent(x.endpoint));
+            if (e.not_comparable) return el('p', { class: 'muted', text: 'not compared - ' + e.not_comparable });
             const n = e.counts;
-            const lines = [...e.only_right.map(k => el('div', { class: 'diffadd', text: '+ ' + k })), ...e.only_left.map(k => el('div', { class: 'diffdel', text: '- ' + k })),
-                ...e.changed.flatMap(x => x.changes.map(ch => el('div', { class: 'diffchg', text: '~ ' + (e.singleton ? '' : x.key + ': ') + ch.path + ': '
-                    + (ch.type === 'left_only' ? fmt(ch.left) + ' -> (removed)' : ch.type === 'right_only' ? '(new) -> ' + fmt(ch.right) : fmt(ch.left) + ' -> ' + fmt(ch.right)) })))];
-            return el('div', { class: 'card' }, el('h3', { text: (titles[e.endpoint] || e.endpoint) + (e.singleton ? '' : ' - ' + n.only_right + ' added, ' + n.only_left + ' removed, ' + n.changed + ' changed, ' + n.equal + ' equal') }),
-                lines.length ? lines : el('p', { class: 'muted', text: 'no change' }));
-        });
-        const nc = c.not_comparable.map(x => el('p', { class: 'muted', text: (titles[x.endpoint] || x.endpoint) + ': not compared - ' + x.reason }));
-        return el('div', {}, el('p', { class: 'muted', text: '+ only in the newer state, - only in the older state, ~ changed (the same as scm_pa_compare.php)' }), ...cards, ...nc);
+            const more = (list, total) => total > list.length ? [el('p', { class: 'muted', text: '… ' + (total - list.length) + ' more (the first ' + e.max + ' are shown; scm_pa_compare.php on the CLI lists all)' })] : [];
+            const lines = [...e.only_right.map(k => el('div', { class: 'diffadd', text: '+ ' + k })), ...more(e.only_right, n.only_right),
+                ...e.only_left.map(k => el('div', { class: 'diffdel', text: '- ' + k })), ...more(e.only_left, n.only_left),
+                ...e.changed.flatMap(y => y.changes.map(ch => el('div', { class: 'diffchg', text: '~ ' + (e.singleton ? '' : y.key + ': ') + ch.path + ': '
+                    + (ch.type === 'left_only' ? fmt(ch.left) + ' -> (removed)' : ch.type === 'right_only' ? '(new) -> ' + fmt(ch.right) : fmt(ch.left) + ' -> ' + fmt(ch.right)) }))), ...more(e.changed, n.changed)];
+            return el('div', {}, e.singleton ? null : el('p', { class: 'muted', text: n.only_right + ' added, ' + n.only_left + ' removed, ' + n.changed + ' changed, ' + n.equal + ' equal' }),
+                lines.length ? el('div', {}, ...lines) : el('p', { class: 'muted', text: 'no change' }));
+        }));
+        return el('div', {}, el('p', { class: 'muted', text: '+ only in the newer state, - only in the older state, ~ changed (the same as scm_pa_compare.php) - open an endpoint to compare it' }), ...cards);
     }
     if (r.states.length) vc = viewCompare(r.states, 'state', view, compare);
     box.append(el('h3', { text: (def.area === 'iam' ? 'Identity & Access - ' : 'Prisma Access - ') + def.title }), el('p', { class: 'muted', text: def.text + ' As the SCM API gives them: from the SCM import of the project (it reads these areas as well) or read live with your SCM key (scm_pa_export.php area=' + def.area + '); View one state or Compare two (scm_pa_compare.php). Read only.' }),

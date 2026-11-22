@@ -138,8 +138,11 @@ A page shows endpoints of one area of `scm_pa_export.php` (`ViewerApp::SCM_PA_PA
   `tsg:<TSG>` on the allow list, network of the project on). A state = the files of the endpoints of the page + a
   manifest (`projects/<pid>/scm/pa/<page>/<id>/`), as the SCM API gave them. A live read of a page gives a state to
   every page of its area (mobile-users: Gateway, GlobalProtect, PAA).
-- **View**: one state - an object as setting / value, a list as a table (a filter field under every header, sort).
-- **Compare** (button tab): two states with `SCMPrismaAccessCompare` - the same as `scm_pa_compare.php` on the CLI:
+- **View**: one state - every endpoint a closed card (entries, size); opened: an object as setting / value, a list
+  as a table loaded page by page from the server (`…/scm/pa/<page>/<id>/data/<endpoint>?offset&limit&q&f&sort&desc`:
+  search, filter per column, sort on the server; the data flattened once into `cache/<endpoint>.json` of the state
+  when it is made). 75000 entries (Prisma Browser applications): a page in ~0.2 s.
+- **Compare** (button tab, per endpoint when its card is opened, at most 1000 keys / changes per list shown): two states with `SCMPrismaAccessCompare` - the same as `scm_pa_compare.php` on the CLI:
   added / removed entries (by their key field), changed fields (path: old -> new).
 - the internal UI API (PAA, explicit proxy, GP portal / clientless) is region specific: scm_pa_export.php
   `ui-api-host=` (default the EU host); otherwise these endpoints are "not available".

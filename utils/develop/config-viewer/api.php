@@ -479,7 +479,8 @@ try
             }
         }
         // SCM tab, Prisma Access pages: …/projects/<pid>/scm/pa/<page>  GET states (+ SCM keys);
-        //         …/scm/pa/<page>/<id>  GET data, DELETE;  …/scm/pa/<page>/<new>/compare/<old>  GET compare
+        //         …/scm/pa/<page>/<id>  GET endpoints (without data), DELETE;  …/scm/pa/<page>/<id>/data/<endpoint>  GET
+        //         one endpoint page by page;  …/scm/pa/<page>/<new>/compare/<old>[?ep=<endpoint>]  GET compare
         //         (read live: POST …/projects/<pid>/scm-pa/runs {kid, page})
         // …/projects/<pid>/scm/pa-from-runs  POST: the Prisma Access pages / egress IPs from the SCM imports of the project
         if( $sub === 'scm' && $n == 4 && $route[3] === 'pa-from-runs' && $method === 'POST' )
@@ -496,7 +497,10 @@ try
                 viewerOut( array( 'ok' => TRUE ) );
             }
             if( $n == 8 && $method === 'GET' && $route[6] === 'compare' )
-                viewerOut( $app->scmPaCompare( $user, $pid, $route[4], $route[7], $route[5] ) );
+                viewerOut( $app->scmPaCompare( $user, $pid, $route[4], $route[7], $route[5], $_GET['ep'] ?? null ) );
+            // the data of one endpoint, page by page (offset, limit, q, f = JSON of the column filters, sort, desc)
+            if( $n == 8 && $method === 'GET' && $route[6] === 'data' )
+                viewerOut( $app->scmPaData( $user, $pid, $route[4], $route[5], rawurldecode( $route[7] ), $_GET ) );
         }
         // project files: …/projects/<pid>/files?kind=playbook|bp   GET list, POST upload (multipart field "file")
         //                …/projects/<pid>/files/<fid>[/download]  DELETE, GET download

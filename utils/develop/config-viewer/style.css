@@ -230,3 +230,8 @@ table.coltable th.sorted::after { content: ' ' attr(data-dir); }
 .tabbar .tabbtn:last-child { border-radius: 0 6px 6px 0; }
 .tabbar .tabbtn.on { background: var(--accent, #2563eb); color: #fff; border-color: var(--accent, #2563eb); }
 pre.scmdetails { white-space: pre-wrap; word-break: break-all; font-size: 12px; margin: 4px 0; max-width: 60em; }
+details.scmep { padding: 10px 14px; margin: 8px 0; }
+details.scmep > summary { cursor: pointer; }
+div.card.scmep { padding: 10px 14px; margin: 8px 0; }
+.scmscroll { overflow-x: auto; max-width: 100%; }
+.scmpanel { min-width: 0; }

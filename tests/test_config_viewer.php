@@ -768,20 +768,24 @@ $made = array( $collect->invoke( $va, array( 'pid' => $pid ), $paJob1, '12345678
     $collect->invoke( $va, array( 'pid' => $pid ), $paJob2, '1234567890', 'bbbb2222', 'live', 'alice', 2000, array( 'infra' ) ) );
 $pl = $alice->call( 'GET', $EG . '/scm/pa/infra' );
 $pg = $alice->call( 'GET', $EG . '/scm/pa/infra/aaaa1111' );
+$pairs = array();
+foreach( $alice->call( 'GET', $EG . '/scm/pa/infra/aaaa1111/data/shared-infrastructure-settings' )[1]['pairs'] ?? array() as $kv )
+    $pairs[$kv[0]] = $kv[1];
+$pd = $alice->call( 'GET', $EG . '/scm/pa/infra/aaaa1111/data/locations' );
 $pc = $alice->call( 'GET', $EG . '/scm/pa/infra/bbbb2222/compare/aaaa1111' );
 $byEp = array();
-foreach( $pc[1]['entries'] ?? array() as $e )
-    $byEp[$e['endpoint']] = $e;
+foreach( array_column( $pc[1]['endpoints'] ?? array(), 'endpoint' ) as $epn )
+    $byEp[$epn] = $alice->call( 'GET', $EG . '/scm/pa/infra/bbbb2222/compare/aaaa1111?ep=' . $epn )[1];
 $prun = $alice->call( 'POST', $EG . '/scm-pa/runs', array( 'kid' => 'nokey', 'page' => 'infra' ) );
 $pbad = $alice->call( 'GET', $EG . '/scm/pa/nopage' );
 $pdel = $alice->call( 'DELETE', $EG . '/scm/pa/infra/aaaa1111' );
 eq( array( $made, array_column( $pl[1]['states'] ?? array(), 'id' ), array_column( $pl[1]['states'] ?? array(), 'source' ),
-    $pg[1]['endpoints']['shared-infrastructure-settings']['data']['api_key'] ?? null, $pg[1]['endpoints']['shared-infrastructure-settings']['data']['infra_bgp_as'] ?? null,
-    count( $pg[1]['endpoints']['locations']['data'] ?? array() ), isset( $pg[1]['endpoints']['addresses'] ),
+    $pairs['api_key'] ?? null, $pairs['infra_bgp_as'] ?? null,
+    ( $pd[1]['total'] ?? null ) . '/' . ( $pg[1]['endpoints']['locations']['count'] ?? null ), isset( $pg[1]['endpoints']['addresses'] ),
     $byEp['shared-infrastructure-settings']['changed'][0]['changes'][0]['path'] ?? null, $byEp['internal-dns-servers']['only_right'] ?? null,
     $byEp['internal-dns-servers']['changed'][0]['key'] ?? null, $byEp['locations']['only_left'] ?? null, $byEp['locations']['only_right'] ?? null,
     $byEp['bgp-routing']['counts']['equal'] ?? null, status( $prun ), status( $pbad ), status( $pdel ), count( $alice->call( 'GET', $EG . '/scm/pa/infra' )[1]['states'] ?? array() ) ),
-    array( array( 1, 1, 0 ), array( 'bbbb2222', 'aaaa1111' ), array( 'live', 'import' ), 'as-the-api-gave-it', '65534', 2, FALSE,
+    array( array( 1, 1, 0 ), array( 'bbbb2222', 'aaaa1111' ), array( 'live', 'import' ), 'as-the-api-gave-it', '65534', '2/2', FALSE,
         'infra_bgp_as', array( 'lab' ), 'corp', array( 'france-north' ), array( 'netherlands-central' ), 1, 400, 404, 200, 1 ),
     'SCM tab Prisma Access infrastructure: states of the export of a run (as the API gave them, only the infra endpoints), compare as scm_pa_compare.php, delete; live only with an SCM key' );
 // one area, several pages (mobile-users: Gateway / GlobalProtect / PAA): each page gets the endpoints it shows
@@ -801,6 +805,26 @@ eq( array( $muMade, array_keys( $alice->call( 'GET', $EG . '/scm/pa/mugw/cccc333
     array_keys( $alice->call( 'GET', $EG . '/scm/pa/mugp/cccc3333' )[1]['endpoints'] ?? array() ), status( $alice->call( 'GET', $EG . '/scm/pa/mupaa/cccc3333' ) ) ),
     array( 2, array( 'mobile-agent-locations' ), array( 'certificates' ), 404 ),
     'SCM tab mobile users: one export, a state per page with its endpoints (a page with nothing read: no state)' );
+// a large list (Prisma Browser: 75000 applications): page by page from the server - search, filter per column, sort
+$bigDir = $data . '/pa-job5/scm-export/1234567890/20261122-140000';
+@mkdir( $bigDir . '/prisma-browser', 0700, TRUE );
+$apps = array();
+for( $i = 1; $i <= 5000; $i++ )
+    $apps[] = array( 'id' => 'u' . $i, 'name' => 'app-' . $i, 'category' => $i % 3 ? 'saas' : 'web', 'domains' => array( 'a' . $i . '.example.com' ) );
+file_put_contents( $bigDir . '/prisma-browser/03_applications.json', json_encode( array( 'endpoint' => 'applications', 'status' => 'ok', 'data' => $apps ) ) );
+file_put_contents( $bigDir . '/manifest.json', json_encode( array( 'format_version' => 8, 'areas' => array( 'prisma-browser' ),
+    'endpoints' => array( array( 'area' => 'prisma-browser', 'order' => 3, 'name' => 'applications', 'file' => 'prisma-browser/03_applications.json', 'status' => 'ok', 'count' => 5000 ) ) ) ) );
+$collect->invoke( $va, array( 'pid' => $pid ), $data . '/pa-job5', '1234567890', 'gggg7777', 'live', 'alice', 4000, array( 'pb' ) );
+$PB = $EG . '/scm/pa/pb/gggg7777';
+$g1 = $alice->call( 'GET', $PB );
+$d1 = $alice->call( 'GET', $PB . '/data/applications?limit=50&offset=100' );
+$d2 = $alice->call( 'GET', $PB . '/data/applications?' . http_build_query( array( 'f' => json_encode( array( 'category' => 'web' ) ), 'sort' => 'name', 'desc' => '1', 'limit' => 3 ) ) );
+$d3 = $alice->call( 'GET', $PB . '/data/applications?' . http_build_query( array( 'q' => 'a4999.example', 'f' => json_encode( array( 'category' => '!web' ) ) ) ) );
+eq( array( isset( $g1[1]['endpoints']['applications']['data'] ), $g1[1]['endpoints']['applications']['count'] ?? null, $d1[1]['total'] ?? null, count( $d1[1]['rows'] ?? array() ),
+    $d1[1]['rows'][0]['name'] ?? null, $d2[1]['matched'] ?? null, array_column( $d2[1]['rows'] ?? array(), 'name' ), $d3[1]['matched'] ?? null, $d1[1]['values']['category'] ?? null,
+    array_key_exists( 'id', $d1[1]['rows'][0] ?? array( 'id' => 1 ) ) ),
+    array( FALSE, 5000, 5000, 50, 'app-101', 1666, array( 'app-4998', 'app-4995', 'app-4992' ), 1, array( 'saas', 'web' ), FALSE ),
+    'SCM tab large list: the state without data, one endpoint page by page (offset / limit), filter per column, natural sort, search, values of a column' );
 // the egress-IP API key the SCM API gives (shared-infrastructure-settings api_key, scm_pa_export.php egressip-key-out=)
 // goes into the key store of the user: new, the same (nothing), a new value (label stays); never shown
 $ek = new ReflectionMethod( 'ViewerApp', 'egressKeyFromScm' );

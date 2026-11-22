@@ -5344,6 +5344,11 @@ class ViewerApp
                 'fetched_at' => $m['created_at'] ?? null ), JSON_UNESCAPED_SLASHES ) );
             rename( $tmp, $dir );
             $made++;
+            // flattened once now (the first open of a large list - 75000 entries - would take seconds)
+            $st = $this->paState( $p, $page, $id );
+            foreach( $st['endpoints'] as $name => $e )
+                if( ( $e['status'] ?? '' ) === 'ok' )
+                    $this->paFlatData( $st, $name );
         }
         return $made;
     }
@@ -5428,7 +5433,10 @@ class ViewerApp
         return array( 'page' => $page, 'endpoints' => self::SCM_PA_PAGES[$page]['endpoints'], 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ) );
     }
 
-    /** one state: the data of its endpoints (as read, secrets removed) */
+    /**
+     * one state: its endpoints with status, number of entries and size - without their data (a page of Prisma Browser
+     * can have 75000 applications): the data of one endpoint with scmPaData, page by page
+     */
     public function scmPaGet( array $user, $pid, $page, $id ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
@@ -5437,32 +5445,216 @@ class ViewerApp
         $s = $this->paState( $p, $page, $id );
         foreach( $s['endpoints'] as $name => $e )
         {
-            $c = $e['file'] !== null && is_file( $s['dir'] . '/' . $e['file'] ) ? json_decode( (string)file_get_contents( $s['dir'] . '/' . $e['file'] ) ) : null;
-            $s['endpoints'][$name]['data'] = $c instanceof stdClass ? ( $c->data ?? null ) : null;
+            $f = $e['file'] !== null ? $s['dir'] . '/' . $e['file'] : null;
+            $s['endpoints'][$name]['bytes'] = $f !== null && is_file( $f ) ? filesize( $f ) : 0;
             unset( $s['endpoints'][$name]['file'] );
         }
         unset( $s['dir'] );
         return $s;
     }
 
-    /** two states compared (left = $old, right = $new): SCMPrismaAccessCompare, the same as scm_pa_compare.php */
-    public function scmPaCompare( array $user, $pid, $page, $old, $new ): array
+    /** an entry as name / value pairs (as flatPairs of app.js): dotted names, a list of plain values as "a, b" */
+    private static function paFlat( $v, string $prefix, array &$out ): void
+    {
+        if( $v === null )
+            return;
+        if( $v instanceof stdClass )
+        {
+            $vars = get_object_vars( $v );
+            if( count( $vars ) === 0 && $prefix !== '' )
+                $out[$prefix] = '(set)';
+            foreach( $vars as $k => $x )
+                self::paFlat( $x, $prefix === '' ? (string)$k : $prefix . '.' . $k, $out );
+            return;
+        }
+        if( is_array( $v ) )
+        {
+            $plain = TRUE;
+            foreach( $v as $x )
+                if( is_array( $x ) || $x instanceof stdClass )
+                    $plain = FALSE;
+            if( $plain )
+                $out[$prefix] = implode( ', ', array_map( array( 'self', 'paScalar' ), $v ) );
+            else
+                foreach( $v as $i => $x )
+                    self::paFlat( $x, $prefix . '[' . $i . ']', $out );
+            return;
+        }
+        $out[$prefix] = self::paScalar( $v );
+    }
+
+    private static function paScalar( $v ): string
+    {
+        return $v === TRUE ? 'true' : ( $v === FALSE ? 'false' : ( $v === null ? '' : (string)$v ) );
+    }
+
+    /**
+     * the data of an endpoint flattened once (cache in the folder of the state): an object as pairs, a list as rows
+     * (name / value per field) + the columns in the order they first appear
+     */
+    private function paFlatData( array $s, string $name ): array
+    {
+        $e = $s['endpoints'][$name] ?? null;
+        if( $e === null )
+            throw new ViewerException( 'not found', 404 );
+        $cache = $s['dir'] . '/cache/' . preg_replace( '/[^a-z0-9_-]/i', '_', $name ) . '.json';
+        if( is_file( $cache ) )
+        {
+            $c = json_decode( (string)file_get_contents( $cache ), TRUE );
+            if( is_array( $c ) )
+                return $c;
+        }
+        $f = $e['file'] !== null ? $s['dir'] . '/' . $e['file'] : null;
+        $j = $f !== null && is_file( $f ) ? json_decode( (string)file_get_contents( $f ) ) : null;
+        $data = $j instanceof stdClass ? ( $j->data ?? null ) : null;
+        // one object (a singleton, or a list of one entry without name / value / id): setting / value
+        $one = $data instanceof stdClass ? $data : ( is_array( $data ) && count( $data ) === 1 && $data[0] instanceof stdClass
+            && !isset( $data[0]->name ) && !isset( $data[0]->value ) && !isset( $data[0]->id ) ? $data[0] : null );
+        if( $one !== null )
+        {
+            $pairs = array();
+            self::paFlat( $one, '', $pairs );
+            unset( $pairs['id'] );
+            $out = array( 'kind' => 'object', 'pairs' => array_map( null, array_keys( $pairs ), array_values( $pairs ) ) );
+        }
+        else
+        {
+            $rows = array();
+            $cols = array();
+            foreach( is_array( $data ) ? $data : array() as $x )
+            {
+                $r = array();
+                if( $x instanceof stdClass || is_array( $x ) )
+                    self::paFlat( $x, '', $r );
+                else
+                    $r['value'] = self::paScalar( $x );
+                unset( $r['id'] );
+                foreach( $r as $k => $v )
+                    $cols[$k] = TRUE;
+                $rows[] = $r;
+            }
+            // the values a column filter offers: columns with at most 50 different values (fewer than the rows)
+            $values = array();
+            foreach( array_keys( $cols ) as $c )
+            {
+                $v = array();
+                foreach( $rows as $r )
+                    if( isset( $r[$c] ) && $r[$c] !== '' && count( $v ) <= 50 )
+                        $v[$r[$c]] = TRUE;
+                if( count( $v ) > 0 && count( $v ) <= 50 && count( $v ) < count( $rows ) )
+                {
+                    $values[$c] = array_map( 'strval', array_keys( $v ) );
+                    natcasesort( $values[$c] );
+                    $values[$c] = array_values( $values[$c] );
+                }
+            }
+            $out = array( 'kind' => 'list', 'columns' => array_keys( $cols ), 'values' => $values, 'rows' => $rows );
+        }
+        @mkdir( dirname( $cache ), 0700 );
+        @file_put_contents( $cache, json_encode( $out, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+        return $out;
+    }
+
+    /**
+     * the data of one endpoint of a state, page by page: $in offset, limit (at most 1000), q (search in every field),
+     * f (filter per column: contains, "!text" = without), sort (column), desc. A list returns the rows of the page,
+     * the number of all / of the matching rows and the columns; wide entries (more than 10 fields): main = the fields
+     * of the first level to show as columns
+     */
+    public function scmPaData( array $user, $pid, $page, $id, $name, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
+        $s = $this->paState( $p, $page, $id );
+        if( !is_string( $name ) || !isset( $s['endpoints'][$name] ) )
+            throw new ViewerException( 'not found', 404 );
+        $d = $this->paFlatData( $s, $name );
+        if( $d['kind'] === 'object' )
+            return $d;
+        $low = function( $t ) { return function_exists( 'mb_strtolower' ) ? mb_strtolower( $t ) : strtolower( $t ); };
+        $q = $low( trim( (string)( $in['q'] ?? '' ) ) );
+        $f = array();
+        foreach( (array)( is_string( $in['f'] ?? null ) ? json_decode( $in['f'], TRUE ) : ( $in['f'] ?? array() ) ) as $k => $v )
+            if( is_string( $k ) && is_scalar( $v ) && trim( (string)$v ) !== '' )
+                $f[$k] = $low( trim( (string)$v ) );
+        $rows = $d['rows'];
+        if( $q !== '' || count( $f ) > 0 )
+            $rows = array_values( array_filter( $rows, function( $r ) use ( $q, $f, $low ) {
+                foreach( $f as $k => $v )
+                {
+                    $x = $low( (string)( $r[$k] ?? '' ) );
+                    if( $v[0] === '!' ? ( strlen( $v ) > 1 && strpos( $x, substr( $v, 1 ) ) !== FALSE ) : strpos( $x, $v ) === FALSE )
+                        return FALSE;
+                }
+                return $q === '' || strpos( $low( implode( ' ', $r ) ), $q ) !== FALSE;
+            } ) );
+        $sort = is_string( $in['sort'] ?? null ) ? $in['sort'] : '';
+        if( $sort !== '' )
+        {
+            $desc = !empty( $in['desc'] ) && $in['desc'] !== 'false' && $in['desc'] !== '0';
+            usort( $rows, function( $a, $b ) use ( $sort, $desc ) {
+                $c = strnatcasecmp( (string)( $a[$sort] ?? '' ), (string)( $b[$sort] ?? '' ) );
+                return $desc ? -$c : $c;
+            } );
+        }
+        $limit = max( 1, min( 1000, (int)( $in['limit'] ?? 100 ) ) );
+        $offset = max( 0, (int)( $in['offset'] ?? 0 ) );
+        $main = null;
+        if( count( $d['columns'] ) > 10 )
+        {
+            $main = array();
+            foreach( $d['columns'] as $c )
+                if( strpbrk( $c, '.[' ) === FALSE && count( $main ) < 8 )
+                    $main[] = $c;
+        }
+        $values = array_intersect_key( $d['values'] ?? array(), array_flip( $main ?? $d['columns'] ) );
+        return array( 'kind' => 'list', 'total' => count( $d['rows'] ), 'matched' => count( $rows ), 'offset' => $offset, 'limit' => $limit,
+            'columns' => $d['columns'], 'main' => $main, 'values' => $values, 'rows' => array_slice( $rows, $offset, $limit ) );
+    }
+
+    /** at most so many keys / changes per list of a compare (the counts are always complete) */
+    const PA_COMPARE_MAX = 1000;
+
+    /**
+     * two states compared (left = $old, right = $new): SCMPrismaAccessCompare, the same as scm_pa_compare.php. Without
+     * $ep: only the endpoints of the two states (compared one by one when opened); with $ep: that endpoint
+     */
+    public function scmPaCompare( array $user, $pid, $page, $old, $new, $ep = null ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'the SCM tab' );
         self::needScmProject( $p );
         $l = $this->paState( $p, $page, $old );
         $r = $this->paState( $p, $page, $new );
+        if( $ep === null || $ep === '' )
+        {
+            $eps = array();
+            foreach( array_unique( array_merge( array_keys( $l['endpoints'] ), array_keys( $r['endpoints'] ) ) ) as $n )
+                $eps[] = array( 'endpoint' => $n, 'old' => $l['endpoints'][$n]['status'] ?? null, 'new' => $r['endpoints'][$n]['status'] ?? null,
+                    'old_count' => $l['endpoints'][$n]['count'] ?? null, 'new_count' => $r['endpoints'][$n]['count'] ?? null );
+            return array( 'old' => $old, 'new' => $new, 'endpoints' => $eps );
+        }
+        if( !is_string( $ep ) || ( !isset( $l['endpoints'][$ep] ) && !isset( $r['endpoints'][$ep] ) ) )
+            throw new ViewerException( 'not found', 404 );
+        $ls = $l['endpoints'][$ep]['status'] ?? null;
+        $rs = $r['endpoints'][$ep]['status'] ?? null;
+        if( $ls !== 'ok' || $rs !== 'ok' )
+            return array( 'endpoint' => $ep, 'not_comparable' => 'status older: ' . ( $ls ?? 'not read' ) . ', newer: ' . ( $rs ?? 'not read' ) );
         self::paLib();
+        $area = self::SCM_PA_PAGES[$page]['area'];
+        $meta = SCMPrismaAccessExport::endpointMeta( $area, $ep );
+        $load = function( $st ) use ( $ep ) {
+            $j = json_decode( (string)file_get_contents( $st['dir'] . '/' . $st['endpoints'][$ep]['file'] ), TRUE );
+            return is_array( $j ) && array_key_exists( 'data', $j ) ? $j['data'] : null;
+        };
         $c = new SCMPrismaAccessCompare( $l['dir'], $r['dir'] );
-        $c->filter['areas'] = array( self::SCM_PA_PAGES[$page]['area'] );
-        $c->run();
-        $entries = array();
-        foreach( $c->entries as $e )
-            $entries[] = array( 'endpoint' => $e['endpoint'], 'singleton' => $e['singleton'], 'key_fields' => $e['key_fields'], 'counts' => $e['counts'],
-                'only_left' => array_column( $e['only_left'], 'key' ), 'only_right' => array_column( $e['only_right'], 'key' ),
-                'changed' => array_map( function( $x ) { return array( 'key' => $x['key'], 'changes' => $x['changes'] ); }, $e['changed'] ) );
-        return array( 'old' => $old, 'new' => $new, 'entries' => $entries, 'not_comparable' => $c->notComparable, 'warnings' => $c->warnings );
+        $e = $c->compareEndpoint( array( 'area' => $area, 'container' => null, 'endpoint' => $ep, 'endpoint_key' => $meta['endpoint'] ), $meta, $load( $l ), $load( $r ) );
+        $cut = function( array $x ) { return array_slice( $x, 0, self::PA_COMPARE_MAX ); };
+        return array( 'endpoint' => $ep, 'singleton' => $e['singleton'], 'key_fields' => $e['key_fields'], 'counts' => $e['counts'],
+            'only_left' => $cut( array_column( $e['only_left'], 'key' ) ), 'only_right' => $cut( array_column( $e['only_right'], 'key' ) ),
+            'changed' => $cut( array_map( function( $x ) { return array( 'key' => $x['key'], 'changes' => $x['changes'] ); }, $e['changed'] ) ),
+            'max' => self::PA_COMPARE_MAX, 'warnings' => $c->warnings );
     }
 
     public function scmPaDelete( array $user, $pid, $page, $id ): void
