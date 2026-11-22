@@ -4125,7 +4125,9 @@ class ViewerApp
         $rows = array();
         foreach( $json as $key => $stores )
         {
-            if( !preg_match( '/Conf$/', (string)$key ) || !is_array( $stores ) )
+            // the stores, under the class of the root (PANConf, PanoramaConf, …) or of a template (Template,
+            // TemplateStack: network objects of a template - IKE, …)
+            if( !preg_match( '/Conf$|^Template$|^TemplateStack$/', (string)$key ) || !is_array( $stores ) )
                 continue;
             foreach( $stores as $store )
             {
@@ -4138,10 +4140,41 @@ class ViewerApp
                     if( !is_array( $o ) )
                         continue;
                     unset( $o['actions'] );
+                    // devices: pan-os-php names the templates of a template stack 'template' (a list), the template of
+                    // a firewall 'template' and its stack 'templatestack' (name => name + templates) - for the page
+                    // 'template' is the template an object is in: before, a template stack had the badge "template
+                    // T1,T2" and its window asked for the wrong object (no XML, no references), its members were not shown
+                    $cls = is_string( $o['type'] ?? null ) ? $o['type'] : '';
+                    if( $cls === 'TemplateStack' && isset( $o['template'] ) )
+                    {
+                        $o['templates'] = array_values( (array)$o['template'] );
+                        unset( $o['template'] );
+                    }
+                    if( $cls === 'ManagedDevice' )
+                    {
+                        if( isset( $o['template'] ) )
+                        {
+                            $o['device-template'] = $o['template'];
+                            unset( $o['template'] );
+                        }
+                        if( isset( $o['templatestack'] ) && is_array( $o['templatestack'] ) )
+                        {
+                            $ts = array_values( $o['templatestack'] )[0] ?? array();
+                            $o['templatestack'] = is_array( $ts ) && isset( $ts['name'] ) ? (string)$ts['name'] : null;
+                            $o['templates'] = is_array( $ts ) && isset( $ts['templates'] ) ? array_values( (array)$ts['templates'] ) : array();
+                        }
+                    }
                     $row = array( 'location' => $location );
                     // Panorama: the template of a network / device object (zone, interface, …)
                     if( isset( $o['model']['item']['template'] ) && is_string( $o['model']['item']['template'] ) && $o['model']['item']['template'] !== '' )
                         $row['template'] = $o['model']['item']['template'];
+                    // the template pan-os-php names (CallContext: every object of a template)
+                    elseif( isset( $o['template'] ) && is_string( $o['template'] ) && $o['template'] !== '' )
+                    {
+                        $row['template'] = $o['template'];
+                        if( $row['location'] === $o['template'] )
+                            $row['location'] = 'shared';
+                    }
                     // an object of the shared part of a template / template stack (certificates, certificate
                     // profiles, …): pan-os-php names the template as location - for pan-os-php it is template=<name>
                     // location=shared (before: location <template> - "location not found", no references)

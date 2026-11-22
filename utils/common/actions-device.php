@@ -64,11 +64,16 @@ DeviceCallContext::$supportedActions['display'] = array(
 
             foreach( $object->FirewallsSerials as $serial => $managedFirewall )
             {
+                // the firewalls of the stack (shadow-json: 'devices', with their device group in 'devicegroups')
+                PH::$JSON_TMP['sub']['object'][$object->name()]['devices'][] = (string)$serial;
                 if( $managedFirewall !== null )
                 {
                     $deviceGroups = $managedFirewall->getDeviceGroup();
                     foreach( $deviceGroups as $deviceGroup )
+                    {
                         PH::print_stdout( $context->padding." - serial: ".$serial." - DG: ".$deviceGroup);
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['devicegroups'][(string)$serial] = $deviceGroup;
+                    }
                 }
 
             }
@@ -293,6 +298,54 @@ DeviceCallContext::$supportedActions['display'] = array(
             {
                 PH::print_stdout( $padding."- serial: ".$serial );
                 PH::$JSON_TMP['sub']['object'][$object->name()]['serial'][$serial] = $serial;
+            }
+        }
+        elseif( get_class($object) == "LogCollector" )
+        {
+            /** @var LogCollector $object */
+            // where the log collector is used: the collector groups it is a member of, and the firewalls that have it
+            // in their preference list (Device Log Forwarding of a collector group)
+            $padding = "       ";
+            $hostname = $object->xmlroot instanceof DOMElement ? DH::findFirstElement( 'deviceconfig', $object->xmlroot ) : FALSE;
+            $hostname = $hostname !== FALSE ? DH::findFirstElement( 'system', $hostname ) : FALSE;
+            $hostname = $hostname !== FALSE ? DH::findFirstElement( 'hostname', $hostname ) : FALSE;
+            if( $hostname !== FALSE )
+            {
+                PH::print_stdout( $padding."hostname: ".$hostname->textContent );
+                PH::$JSON_TMP['sub']['object'][$object->name()]['hostname'] = $hostname->textContent;
+            }
+            $groups = array();
+            $firewalls = array();
+            if( method_exists( $object->owner, 'getLogCollectorGroup' ) )
+                foreach( $object->owner->getLogCollectorGroup() as $group )
+                {
+                    if( in_array( $object->name(), $group->getCollectors(), TRUE ) )
+                        $groups[] = $group->name();
+                    foreach( $group->getDevices() as $serial => $device )
+                        if( isset( $device['collectorlist'][$object->name()] ) )
+                            $firewalls[] = (string)$serial;
+                }
+            PH::print_stdout( $padding."collector groups: ".( count( $groups ) ? implode( ", ", $groups ) : "---" ) );
+            PH::print_stdout( $padding."firewalls that send logs to it: ".( count( $firewalls ) ? implode( ", ", $firewalls ) : "---" ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['collectorgroups'] = $groups;
+            PH::$JSON_TMP['sub']['object'][$object->name()]['devices'] = array_values( array_unique( $firewalls ) );
+        }
+        elseif( get_class($object) == "LogCollectorGroup" )
+        {
+            /** @var LogCollectorGroup $object */
+            // the log collectors of the group and the firewalls that send their logs to it (Device Log Forwarding),
+            // each with its preference list of collectors
+            $padding = "       ";
+            $collectors = $object->getCollectors();
+            PH::print_stdout( $padding."collectors: ".( count( $collectors ) ? implode( ", ", $collectors ) : "---" ) );
+            PH::$JSON_TMP['sub']['object'][$object->name()]['collectors'] = $collectors;
+            PH::$JSON_TMP['sub']['object'][$object->name()]['devices'] = array();
+            foreach( $object->getDevices() as $serial => $device )
+            {
+                $list = array_values( $device['collectorlist'] );
+                PH::print_stdout( $padding."- serial: ".$serial." - log collectors: ".( count( $list ) ? implode( ", ", $list ) : "---" ) );
+                PH::$JSON_TMP['sub']['object'][$object->name()]['devices'][] = (string)$serial;
+                PH::$JSON_TMP['sub']['object'][$object->name()]['logforwarding'][(string)$serial] = $list;
             }
         }
         elseif( get_class($object) == "Snippet" )

@@ -97,6 +97,11 @@ class CallContext
         $tmp_txt = "   - object '" . PH::boldText($name) . "' ".$saseID." passing through Action='{$this->actionRef['name']}'";
 
         PH::$JSON_TMP['sub']['object'][$key]['name'] = $name;
+        // an object of a Panorama template / template stack (certificates, IKE, GlobalProtect, interfaces, …): its
+        // template - the location alone (shared / vsys1) does not say which one
+        $tpl = PH::findTemplateOwner( $object );
+        if( $tpl !== null )
+            PH::$JSON_TMP['sub']['object'][$key]['template'] = $tpl->name();
         if( $key !== $name )
             PH::$JSON_TMP['sub']['object'][$key]['profile'] = $object->owner->name();
         PH::$JSON_TMP['sub']['object'][$key]['actions'][$this->actionRef['name']]['name'] = $this->actionRef['name'];

@@ -1681,7 +1681,25 @@ async function showViewer(config, preset) {
             r.locations.filter(l => l.kind === k).map(l => el('option', { value: l.name, text: l.name }))));
         location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
         if ([...location.options].some(o => o.value === was)) location.value = was;
+        drawDgScope();
     }
+    // Panorama: a device group with its child device groups (pan-os-php location=<DG>:includechilddgs) or only its
+    // child device groups (location=<DG>:excludemaindg) - offered when a device group is chosen as location; not with
+    // access limited to locations (a child device group may be outside the scope)
+    const dgScope = el('select', {}, el('option', { value: '', text: 'only this device group' }),
+        el('option', { value: 'includechilddgs', text: '+ all child device groups (includechilddgs)' }),
+        el('option', { value: 'excludemaindg', text: 'only the child device groups (excludemaindg)' }));
+    const dgScopeField = field('Device groups', dgScope);
+    dgScopeField.hidden = true;
+    function isDeviceGroup(name) {
+        const o = [...location.options].find(x => x.value === name);
+        return !!o && !!o.parentElement && o.parentElement.tagName === 'OPTGROUP' && o.parentElement.label === 'device groups';
+    }
+    function drawDgScope() {
+        dgScopeField.hidden = !!p.scope || !isDeviceGroup(location.value);
+        if (dgScopeField.hidden) dgScope.value = '';
+    }
+    location.addEventListener('change', drawDgScope);
     const filter = el('input', { placeholder: '(name contains web) and (object is.unused) - type for fields and operators', maxlength: 2000, autocomplete: 'off', spellcheck: false });
     const filterBox = suggest(filter, (text, pos) => filterSuggest(state.meta.types[type.value].filters || {}, text, pos));
     const quick = el('input', { placeholder: 'text in any column', oninput: () => { view.quick = quick.value.toLowerCase(); view.page = 1; draw(); } });
@@ -1723,6 +1741,7 @@ async function showViewer(config, preset) {
     let lastStatus = null;
 
     function typeChanged() {
+        view.template = null;
         spField.hidden = type.value !== 'securityprofile';
         devField.hidden = type.value !== 'device';
         drawExtra();
@@ -1733,10 +1752,11 @@ async function showViewer(config, preset) {
     function query() {
         // the filter of the menu entry (e.g. address groups: (object is.group)) and the one typed
         const own = filter.value.trim(), f = cur.filter && !cur.noBase ? (own ? '(' + cur.filter + ') and (' + own + ')' : cur.filter) : own;
-        const q = new URLSearchParams({ type: type.value, location: location.value || 'any', filter: f });
+        const q = new URLSearchParams({ type: type.value, location: (location.value || 'any') + (dgScope.value && !dgScopeField.hidden ? ':' + dgScope.value : ''), filter: f });
         if (type.value === 'rule') q.set('ruletype', ruletype.value);
         if (type.value === 'securityprofile') q.set('securityprofiletype', sptype.value);
         if (type.value === 'device') q.set('devicetype', devtype.value);
+        if (view.template) q.set('template', view.template);
         const extra = (state.extraCols || {})[type.value] || [];
         if (extra.length) q.set('columns', extra.join('|'));
         return q;
@@ -1790,8 +1810,18 @@ async function showViewer(config, preset) {
         view.query = key; view.type = type.value; view.refs.clear();
         if (!view.columns.includes(view.sort)) view.sort = null;
         loadLocations();
-        info.textContent = data.total + ' objects' + (data.truncated ? ' (first ' + data.rows.length + ' shown)' : '') + (fromCache ? ' - from browser cache' : ' - ' + data.ms + ' ms');
+        info.textContent = data.total + ' objects' + (data.truncated ? ' (first ' + data.rows.length + ' shown)' : '') + (fromCache ? ' - from browser cache' : ' - ' + data.ms + ' ms')
+            + (view.template ? ' - only template ' + view.template + ' (another type shows all)' : '');
         draw();
+        // a link "Open ↗" of a reference: the window of that object
+        const want = view.openAfterLoad;
+        view.openAfterLoad = null;
+        if (want) {
+            const r = view.rows.find(x => x.name === want.name && (!want.location || x.location === want.location) && (x.template || '') === want.template && (x.profile || '') === want.profile)
+                || view.rows.find(x => x.name === want.name);
+            if (r) await openObject(r);
+            else message('the object ' + want.name + ' is not in this version (any more)', 'error');
+        }
     }
     // ---- references of one object (actions=displayreferences): below its row; "Open" shows the user in a new window
     async function toggleRefs(r, key) {
@@ -1807,11 +1837,36 @@ async function showViewer(config, preset) {
         catch (e) { view.refs.set(key, { error: e.message }); }
         if (view.refs.has(key)) draw();
     }
+    // a link to an object in a new window: the list of its type with only it, and its window opened
+    // the connections of a device for its window (objLinks): [label, devicetype of the other device, names, extra links]
+    const DEVICE_LINKS = {
+        DeviceGroup: r => [['Parent device group', 'devicegroup', Array.isArray(r.hierarchy) && r.hierarchy.length > 2 ? r.hierarchy[r.hierarchy.length - 2] : null],
+            ['Child device groups', 'devicegroup', r.children], ['Firewalls', 'manageddevice', r.devices]],
+        TemplateStack: r => [['Templates (first = highest priority)', 'template', r.templates],
+            ['Firewalls', 'manageddevice', r.devices, n => r.devicegroups && r.devicegroups[n] ? [['device group', 'devicegroup', r.devicegroups[n]]] : []]],
+        ManagedDevice: r => [['Device group', 'devicegroup', r.dg], ['Template stack', 'templatestack', r.templatestack],
+            ['Templates of the stack', 'template', r.templates], ['Template', 'template', r['device-template']]],
+        LogCollectorGroup: r => [['Log collectors', 'logcollector', r.collectors],
+            ['Firewalls (Device Log Forwarding)', 'manageddevice', r.devices, n => (r.logforwarding && r.logforwarding[n] || []).map(c => ['log collector', 'logcollector', c])]],
+        LogCollector: r => [['Collector groups', 'logcollectorgroup', r.collectorgroups], ['Firewalls that send logs to it', 'manageddevice', r.devices]],
+    };
     function openLink(ref) {
-        const h = new URLSearchParams({ p: pid, c: state.config.cid, type: ref.type, location: ref.location, filter: '(name eq ' + ref.name + ')' });
-        if (ref.ruletype) h.set('ruletype', ref.ruletype);
-        if (ref.securityprofiletype) h.set('securityprofiletype', ref.securityprofiletype);
+        // an object of a template: pan-os-php finds a vsys of a template only with location=any (+ template) - the
+        // list then shows all locations of the template, "at" says which row to open
+        const h = new URLSearchParams({ p: pid, c: state.config.cid, type: ref.type, location: ref.template ? 'any' : ref.location, filter: '(name eq ' + ref.name + ')', open: ref.name });
+        if (ref.template && ref.location) h.set('at', ref.location);
+        for (const k of ['ruletype', 'securityprofiletype', 'devicetype', 'template', 'profile']) if (ref[k]) h.set(k, ref[k]);
         return window.location.pathname + '#' + h.toString();
+    }
+    // the references of one object as a box (list rows and the object window): who uses it, each with "Open ↗"
+    function refsTable(refs) {
+        return table(['Used by', 'Location', 'Name', 'Where', ''], refs.map(ref => el('tr', {},
+            el('td', { text: ref.type ? ref.type + (ref.ruletype ? ' (' + ref.ruletype + ')' : '') + (ref.securityprofiletype ? ' (' + ref.securityprofiletype + ')' : '') + (ref.devicetype ? ' (' + ref.devicetype + ')' : '') : ref.class }),
+            el('td', { text: (ref.location || '') + (ref.template ? ' (template ' + ref.template + ')' : '') }),
+            el('td', { text: ref.name + (ref.profile ? ' (profile ' + ref.profile + ')' : '') }),
+            el('td', { class: 'wrap', text: [ref.rulebase ? ref.rulebase + ' rule' : null, ...(ref.fields || [])].filter(x => x).join(', ') }),
+            el('td', {}, ref.open ? el('a', { href: openLink(ref), target: '_blank', rel: 'noopener', text: 'Open ↗', title: 'show this ' + ref.type + ' in a new window' })
+                : el('span', { class: 'muted', text: ref.type ? '' : 'no window', title: 'the viewer has no list for ' + ref.class })))));
     }
     function refsBox(d) {
         if (d === null) return el('div', { class: 'refs muted', text: 'reading the references ...' });
@@ -1820,11 +1875,7 @@ async function showViewer(config, preset) {
         return el('div', { class: 'refs' }, d.objects.map(o => el('div', {},
             el('div', { class: 'muted', text: (d.objects.length > 1 ? o.location + ': ' : '') + (o.references.length ? 'used by ' + o.references.length + ':' : 'not used (no references)')
                 + (o.hidden ? ' - ' + o.hidden + ' more outside your types / locations' : '') }),
-            o.references.length ? table(['Used by', 'Location', 'Name', 'Where', ''], o.references.map(ref => el('tr', {},
-                el('td', { text: ref.type ? ref.type + (ref.ruletype ? ' (' + ref.ruletype + ')' : '') + (ref.securityprofiletype ? ' (' + ref.securityprofiletype + ')' : '') : ref.class }),
-                el('td', { text: ref.location || '' }), el('td', { text: ref.name }),
-                el('td', { text: [ref.rulebase ? ref.rulebase + ' rule' : null, ...(ref.fields || [])].filter(x => x).join(', ') }),
-                el('td', {}, ref.open ? el('a', { href: openLink(ref), target: '_blank', rel: 'noopener', text: 'Open ↗', title: 'show this ' + ref.type + ' in a new window' }) : null)))) : null)));
+            o.references.length ? refsTable(o.references) : null)));
     }
     function cell(v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v)); }
     function draw() {
@@ -1933,6 +1984,9 @@ async function showViewer(config, preset) {
         if (kind === 'generic') {
             // every other type: all its fields, read only - the list row and what the structured model adds
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
+            // a device: its connections (device group, template stack, templates, firewalls, log collectors) are in
+            // the section "Connections" of the window, with a link each
+            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy');
             const fields = [{ key: 'name', label: 'Name', kind: 'ro', value: row.name }];
             for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? v.join(', ') : (v === null ? '' : String(v))) });
             for (const [k, v] of Object.entries(m)) if (!(k in row) && !['name', 'device_group', 'template', 'vsys', 'folder', 'snippet'].includes(k))
@@ -2183,7 +2237,8 @@ async function showViewer(config, preset) {
                         !canWrite || f.kind === 'ro' || can ? null : el('div', { class: 'muted', text: 'read only: no pan-os-php action for it here (' + (f.needs || []).filter(a => !offered[a]).join(', ') + ')' })));
                 }))),
                 el('p', { class: 'muted', text: canWrite ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
-                objHierarchy(), objXml(), objHistory(),
+                // replaceChildren() writes null as the text "null" - only the sections there are
+                ...[objHierarchy(), objLinks(), objRefs(), objXml(), objHistory()].filter(x => x),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
         }
         // the XML of the object (as it is in memory) and its history (git: every commit that changed its entry)
@@ -2191,9 +2246,49 @@ async function showViewer(config, preset) {
         function section(key, title, body) {
             const d = el('details', { class: 'objsection' }, el('summary', { text: title }), body);
             // the hierarchy of a device group is open unless closed (XML / history: closed unless opened)
-            d.open = key === 'hierarchy' ? opened[key] !== false : !!opened[key];
+            d.open = key === 'hierarchy' || key === 'refs' || key === 'links' ? opened[key] !== false : !!opened[key];
             d.addEventListener('toggle', () => { opened[key] = d.open; });
             return d;
+        }
+        // who uses the object (as the References of the list), each with "Open ↗" - read when the section is opened
+        function objRefs() {
+            if (!(state.meta.types[cur.type] && state.meta.types[cur.type].references)) return null;
+            const body = el('div', { class: 'muted', text: 'reading the references ...' });
+            const d = section('refs', 'References', body);
+            const fill = () => {
+                if (d.dataset.loaded) return;
+                d.dataset.loaded = '1';
+                const q = new URLSearchParams({ type: cur.type, location: obj.row.location, name: obj.row.name });
+                if (cur.type === 'rule') q.set('ruletype', ruletype.value);
+                if (cur.type === 'securityprofile') q.set('securityprofiletype', sptype.value);
+                if (cur.type === 'device') q.set('devicetype', devtype.value);
+                for (const k of ['template', 'profile']) if (obj.row[k]) q.set(k, obj.row[k]);
+                api('GET', base() + '/references?' + q.toString()).then(res => {
+                    const o = (res.objects || [])[0];
+                    body.className = '';
+                    body.replaceChildren(!o ? el('p', { class: 'muted', text: 'object not found' })
+                        : o.references.length ? el('div', {}, el('p', { class: 'muted', text: 'used by ' + o.references.length + (o.hidden ? ' (' + o.hidden + ' more outside your types / locations)' : '') }), refsTable(o.references))
+                        : el('p', { class: 'muted', text: 'not used (no references)' }));
+                }).catch(e => { body.className = 'error'; body.textContent = e.message; });
+            };
+            d.addEventListener('toggle', () => { if (d.open) fill(); });
+            if (d.open) fill();
+            return d;
+        }
+        // a device (device group, template stack, managed firewall, log collector / group): the devices it is
+        // connected with, each with "Open ↗" (a new window with that device)
+        function objLinks() {
+            const r = obj.row, f = cur.type === 'device' ? DEVICE_LINKS[r.type] : null;
+            if (!f) return null;
+            const list = v => (Array.isArray(v) ? v : (v === null || v === undefined || v === '' ? [] : (typeof v === 'object' ? Object.values(v) : [v]))).map(String);
+            const link = (devicetype, name) => el('a', { href: openLink({ type: 'device', devicetype, location: 'shared', name }), target: '_blank', rel: 'noopener',
+                text: 'Open ↗', title: 'show the ' + devicetype + ' ' + name + ' in a new window' });
+            const rows = f(r).map(([label, devicetype, names, extra]) => [label, devicetype, list(names), extra]).filter(x => x[2].length);
+            const body = rows.length ? el('table', { class: 'objfields' }, el('tbody', {}, rows.map(([label, devicetype, names, extra]) => el('tr', {}, el('th', { text: label }),
+                el('td', {}, names.map(n => el('div', {}, n, ' ', link(devicetype, n),
+                    ...(extra ? extra(n) : []).map(([t, dt, x]) => el('span', { class: 'muted' }, ' - ' + t + ' ' + x + ' ', link(dt, x))))))))))
+                : el('p', { class: 'muted', text: 'no connections' });
+            return section('links', 'Connections', body);
         }
         // a device group: where it is in the hierarchy (shared → parents → it → its children), as pan-os-php type=device
         // devicetype=devicegroup actions=display shows it
@@ -2394,7 +2489,7 @@ async function showViewer(config, preset) {
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
         el('div', { class: 'viewer' }, menu, el('div', { class: 'vmain' },
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-                field('Location', location), spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
+                field('Location', location), dgScopeField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
                 el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
             heading,
             el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),
@@ -2409,6 +2504,14 @@ async function showViewer(config, preset) {
             if (e) { cur = Object.assign({}, e, { noBase: !!e.filter }); typeChanged(); drawMenu(); }
         }
         if (preset.securityprofiletype) sptype.value = preset.securityprofiletype;
+        if (preset.devicetype) devtype.value = preset.devicetype;
+        // an object of a template: the list only of that template (until the filter is changed)
+        if (preset.template) view.template = preset.template;
+        // a link "Open ↗": the window of that object opens when the list is there
+        if (preset.open) view.openAfterLoad = { name: preset.open, location: preset.at || (preset.location === 'any' ? '' : preset.location), template: preset.template || '', profile: preset.profile || '' };
+        // a location with the device groups below (<DG>:includechilddgs / :excludemaindg)
+        const pl = /^(.+):(includechilddgs|excludemaindg)$/i.exec(preset.location || '');
+        if (pl) { preset.location = pl[1]; dgScope.value = pl[2].toLowerCase(); }
         if (preset.location) {
             if (![...location.options].some(o => o.value === preset.location)) location.append(el('option', { value: preset.location, text: preset.location }));
             location.value = preset.location;
@@ -2448,7 +2551,7 @@ async function openFromHash() {
     const c = (await api('GET', 'projects/' + p.pid + '/configs')).configs.find(x => x.cid === h.get('c'));
     if (!c) throw new Error('this version does not exist any more');
     state.project = p;
-    await showViewer(c, Object.fromEntries(['type', 'ruletype', 'securityprofiletype', 'location', 'filter'].map(k => [k, h.get(k)])));
+    await showViewer(c, Object.fromEntries(['type', 'ruletype', 'securityprofiletype', 'devicetype', 'location', 'filter', 'template', 'profile', 'open', 'at'].map(k => [k, h.get(k)])));
     return true;
 }
 run(async () => {

@@ -545,6 +545,64 @@ eq( array( $cr['Srv-Cert'] ?? null, $cr['FWD-Trust'] ?? null, $cr['Root-CA'] ?? 
 $CUP = $up( 'certificate-usage-panorama.xml' );
 $pp = $alice->call( 'GET', $CUP . '/objects?type=certificate-profile&location=any' )[1]['rows'][0] ?? array();
 eq( array( $pp['template'] ?? null, $pp['refcount'] ?? null ), array( 'T1', 3 ), 'certificate profile of a template: also used by a GlobalProtect gateway of a template stack' );
+// "Open ↗" of a reference to an object of a template: the reference names location + template, the list of the type
+// has the object with the same location + template (before: an IKE gateway of a template was not in the list at all)
+$refs = $alice->call( 'GET', $CUP . '/references?type=certificate-profile&location=shared&template=T1&name=CP-Users' )[1]['objects'][0]['references'] ?? array();
+$by = array();
+foreach( $refs as $x )
+    $by[$x['type'] ?? ''] = array( $x['location'] ?? null, $x['template'] ?? null, $x['open'] ?? null );
+ksort( $by );
+eq( $by, array( 'gp-gateway' => array( 'vsys1', 'TS1', TRUE ), 'gp-portal' => array( 'vsys1', 'T1', TRUE ), 'ike-gateway' => array( 'shared', 'T1', TRUE ) ),
+    'references to objects of a template: location + template, each with a window ("Open ↗")' );
+$found = array();
+foreach( array( 'ike-gateway' => 'IKE-GW', 'gp-portal' => 'GP-Portal', 'gp-gateway' => 'GP-GW' ) as $t => $n )
+{
+    $rows = $alice->call( 'GET', $CUP . '/objects?type=' . $t . '&location=any&template=' . $by[$t][1] . '&filter=' . urlencode( '(name eq ' . $n . ')' ) )[1]['rows'] ?? array();
+    $o = $alice->call( 'GET', $CUP . '/object?type=' . $t . '&location=' . $by[$t][0] . '&template=' . $by[$t][1] . '&name=' . $n );
+    $found[$t] = array( $rows[0]['location'] ?? null, $rows[0]['template'] ?? null, status( $o ), strpos( (string)( $o[1]['xml'] ?? '' ), '<entry name="' . $n . '"' ) === 0 );
+}
+eq( $found, array( 'ike-gateway' => array( 'shared', 'T1', 200, TRUE ), 'gp-portal' => array( 'vsys1', 'T1', 200, TRUE ), 'gp-gateway' => array( 'vsys1', 'TS1', 200, TRUE ) ),
+    'objects of a template: in the list (location=any + template) with location + template, the window with XML' );
+// devices: connections (template stack: templates + firewalls, firewall: device group + stack + templates, log
+// collectors), count of references and XML of device groups / template stacks
+$DV = $up( 'devices-panorama.xml' );
+$dev = function( $dt ) use ( $alice, $DV ) {
+    $r = array();
+    foreach( $alice->call( 'GET', $DV . '/objects?type=device&devicetype=' . $dt . '&location=any' )[1]['rows'] ?? array() as $x )
+        $r[$x['name']] = $x;
+    return $r;
+};
+$ts = $dev( 'templatestack' );
+$md = $dev( 'manageddevice' );
+$dg = $dev( 'devicegroup' );
+eq( array( $ts['TS1']['templates'] ?? null, $ts['TS1']['devices'] ?? null, isset( $ts['TS1']['template'] ), $ts['TS1']['refcount'] ?? null,
+    $md['001122334455']['dg'] ?? null, $md['001122334455']['templatestack'] ?? null, $md['001122334455']['templates'] ?? null, $dg['DG1']['refcount'] ?? null, $dg['DG3']['refcount'] ?? null ),
+    array( array( 'T1', 'T2' ), array( '001122334455', '001122334466' ), FALSE, 2, 'DG1', 'TS1', array( 'T1', 'T2' ), 2, 0 ),
+    'devices: templates and firewalls of a template stack, device group / stack / templates of a firewall, count of references' );
+$lc = $dev( 'logcollector' );
+$lcg = $dev( 'logcollectorgroup' );
+eq( array( $lc['009900990099']['collectorgroups'] ?? null, $lc['009900990099']['devices'] ?? null, $lcg['LCG1']['collectors'] ?? null, $lcg['LCG1']['devices'] ?? null ),
+    array( array( 'LCG1' ), array( '001122334455', '001122334466' ), array( '009900990099' ), array( '001122334455', '001122334466' ) ),
+    'log collectors: collector group and the firewalls that send their logs to it (Device Log Forwarding)' );
+$x = array();
+foreach( array( 'devicegroup' => 'DG1', 'templatestack' => 'TS1', 'manageddevice' => '001122334455' ) as $dt => $n )
+{
+    $o = $alice->call( 'GET', $DV . '/object?type=device&devicetype=' . $dt . '&location=shared&name=' . $n );
+    $x[$dt] = strpos( (string)( $o[1]['xml'] ?? '' ), '<entry name="' . $n . '"' ) === 0;
+}
+$refs = $alice->call( 'GET', $DV . '/references?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['objects'][0]['references'] ?? array();
+$open = array();
+foreach( $refs as $r )
+    $open[] = ( $r['devicetype'] ?? '' ) . ':' . $r['name'] . ':' . ( empty( $r['open'] ) ? 'no' : 'open' );
+sort( $open );
+eq( array( $x, $open ), array( array( 'devicegroup' => TRUE, 'templatestack' => TRUE, 'manageddevice' => TRUE ),
+    array( 'devicegroup:DG1:open', 'logcollectorgroup:LCG1:open', 'templatestack:TS1:open' ) ), 'devices: XML of device group / template stack, references with a window' );
+// location=<DG>:includechilddgs / :excludemaindg (pan-os-php): with / only the device groups below
+$names = function( $loc ) use ( $alice, $DV ) {
+    return array_map( function( $r ) { return $r['location'] . ':' . $r['name']; }, $alice->call( 'GET', $DV . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() );
+};
+eq( array( $names( 'DG1' ), $names( 'DG1:includechilddgs' ), $names( 'DG1:excludemaindg' ) ), array( array( 'DG1:A2' ), array( 'DG1:A2', 'DG2:A3' ), array( 'DG2:A3' ) ),
+    'location: a device group with its child device groups / only its child device groups' );
 eq( status( $alice->call( 'DELETE', $SP ) ), 200, 'security profiles: project deleted (its worker stops)' );
 // permissions: read only, limited to other locations
 $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role' => 'read' ) );
@@ -643,7 +701,7 @@ $r = $alice->call( 'GET', $RC . '/references?type=address&location=any&name=' . 
 $byLoc = array_column( $r[1]['objects'] ?? array(), null, 'location' );
 $refs = array_column( $byLoc['shared']['references'] ?? array(), null, 'name' );
 eq( array( status( $r ), array_keys( $byLoc ), count( $refs ), $refs['shared post rule 1'] ?? null ),
-    array( 200, array( 'shared', 'Datacenter-Firewalls' ), 6, array( 'type' => 'rule', 'ruletype' => 'security', 'securityprofiletype' => null, 'location' => 'shared',
+    array( 200, array( 'shared', 'Datacenter-Firewalls' ), 6, array( 'type' => 'rule', 'ruletype' => 'security', 'securityprofiletype' => null, 'devicetype' => null, 'location' => 'shared', 'template' => null, 'profile' => null,
         'name' => 'shared post rule 1', 'class' => 'SecurityRule', 'rulebase' => 'post', 'fields' => array( 'source' ), 'open' => TRUE ) ),
     'references: every object of the name, its users with type, rule type, location, pre / post, field' );
 eq( array( $refs['test']['ruletype'] ?? null, $refs['test']['location'] ?? null, $refs['test']['fields'] ?? null, $refs['group-with-duplicate-child']['type'] ?? null ),

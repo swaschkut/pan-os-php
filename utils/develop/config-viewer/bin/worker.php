@@ -148,8 +148,23 @@ function viewerTypeOf( $o )
         'DNSSecurityProfile' => 'dns-security', 'SaasSecurityProfile' => 'saas-security' );
     static $plain = array( 'Address' => 'address', 'AddressGroup' => 'address', 'Region' => 'address', 'Service' => 'service', 'ServiceGroup' => 'service',
         'Tag' => 'tag', 'Zone' => 'zone', 'Schedule' => 'schedule', 'SecurityProfileGroup' => 'securityprofilegroup', 'App' => 'application',
-        'AppGroup' => 'application', 'AppFilter' => 'application', 'AppCustom' => 'application', 'EDL' => 'edl', 'LogProfile' => 'log-profile' );
+        'AppGroup' => 'application', 'AppFilter' => 'application', 'AppCustom' => 'application', 'EDL' => 'edl', 'LogProfile' => 'log-profile',
+        // network / device objects that use other objects (certificates, profiles, interfaces, …) - so a reference names
+        // them and the page can open them
+        'Certificate' => 'certificate', 'CertificateProfile' => 'certificate-profile', 'SSL_TLSServiceProfile' => 'ssl-tls-service-profile',
+        'IKEGateway' => 'ike-gateway', 'IkeCryptoProfil' => 'ike-profile', 'IPSecCryptoProfil' => 'ipsec-profile', 'IPsecTunnel' => 'ipsec-tunnel',
+        'GreTunnel' => 'gre-tunnel', 'GPGateway' => 'gp-gateway', 'GPPortal' => 'gp-portal', 'GPGatewayTunnel' => 'gpgateway-tunnel',
+        'InterfaceManagementProfile' => 'interface-management-profile', 'ZoneProtectionProfile' => 'zone-protection-profile',
+        'EthernetInterface' => 'interface', 'AggregateEthernetInterface' => 'interface', 'LoopbackInterface' => 'interface', 'TunnelInterface' => 'interface',
+        'VlanInterface' => 'interface', 'VirtualWire' => 'virtualwire', 'VirtualRouter' => 'routing', 'LogicalRouter' => 'routing',
+        'StaticRoute' => 'static-route', 'DHCP' => 'dhcp', 'Threat' => 'threat', 'DNSPolicy' => 'dns-rule' );
+    static $devices = array( 'DeviceGroup' => 'devicegroup', 'Template' => 'template', 'TemplateStack' => 'templatestack', 'ManagedDevice' => 'manageddevice',
+        'LogCollector' => 'logcollector', 'LogCollectorGroup' => 'logcollectorgroup' );
     $c = get_class( $o );
+    if( $o instanceof ThreatPolicy )
+        return array( 'type' => 'threat-rule' );
+    if( isset( $devices[$c] ) )
+        return array( 'type' => 'device', 'devicetype' => $devices[$c] );
     if( isset( $rules[$c] ) )
         return array( 'type' => 'rule', 'ruletype' => $rules[$c] );
     if( isset( $profiles[$c] ) )
@@ -198,11 +213,17 @@ function viewerUsers( $o )
         if( !is_object( $user ) )
             continue;
         $t = viewerTypeOf( $user );
-        $loc = PH::getLocationString( $user );
+        // location and template as the rows of the page name them (viewerRowKey): the shared part of a template is
+        // location shared + template; a device is in "shared"; a DNS rule / threat rule has its security profile
+        list( $loc, $tpl ) = explode( '|', viewerRowKey( $user ), 3 );
+        if( ( $t['type'] ?? null ) === 'device' )
+            $loc = 'shared';
+        $profile = ( $user instanceof DNSPolicy || $user instanceof ThreatPolicy ) && is_object( $user->owner ?? null ) ? $user->owner->name() : null;
         $row = array( 'type' => $t['type'] ?? null, 'ruletype' => $t['ruletype'] ?? null, 'securityprofiletype' => $t['securityprofiletype'] ?? null,
-            'location' => is_string( $loc ) ? $loc : null, 'name' => method_exists( $user, 'name' ) ? (string)$user->name() : '', 'class' => get_class( $user ),
+            'devicetype' => $t['devicetype'] ?? null, 'location' => $loc !== '' ? $loc : null, 'template' => $tpl !== '' ? $tpl : null, 'profile' => $profile,
+            'name' => method_exists( $user, 'name' ) ? (string)$user->name() : '', 'class' => get_class( $user ),
             'rulebase' => method_exists( $user, 'isPostRule' ) && $t !== null && $t['type'] === 'rule' ? ( $user->isPostRule() ? 'post' : 'pre' ) : null );
-        $key = $row['class'] . '|' . $row['location'] . '|' . $row['name'];
+        $key = $row['class'] . '|' . $row['location'] . '|' . $row['template'] . '|' . $row['profile'] . '|' . $row['name'];
         if( !isset( $refs[$key] ) )
             $refs[$key] = $row + array( 'fields' => array() );
         if( $field !== null && !in_array( $field, $refs[$key]['fields'], TRUE ) )
@@ -227,6 +248,11 @@ function viewerRowKey( $o ): string
     $tpl = PH::findTemplateOwner( $o );
     $tpl = is_object( $tpl ) && method_exists( $tpl, 'name' ) ? (string)$tpl->name() : '';
     if( $tpl !== '' && $loc === $tpl )
+        $loc = 'shared';
+    // a device (device group, template, template stack, managed firewall): the page lists it in "shared" - before, a
+    // device group / template stack had its own name as location here: no count of references ("?") and no XML
+    $t = viewerTypeOf( $o );
+    if( ( $t['type'] ?? null ) === 'device' )
         $loc = 'shared';
     return $loc . '|' . $tpl . '|' . PH::jsonObjectKey( $o );
 }
