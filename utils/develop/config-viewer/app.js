@@ -1673,6 +1673,32 @@ async function showViewer(config, preset) {
     // locations: 'any' and those of the version (Panorama: shared + device groups, firewall: shared + vsys, SCM: containers +
     // snippets), known once the version is loaded; a member limited to locations gets only those
     const location = el('select', {}, (p.scope || ['any']).map(l => el('option', { value: l, text: l })));
+    // a long location list (many device groups / folders): a filter above it - the options that contain the text, an
+    // optgroup without a match is hidden; Enter takes the first match; "any" stays
+    const locFilter = el('input', { type: 'search', placeholder: 'filter locations …', autocomplete: 'off', spellcheck: false, 'aria-label': 'filter the locations', class: 'locfilter' });
+    const locCount = el('span', { class: 'muted loccount' });
+    function filterLocations() {
+        const q = locFilter.value.trim().toLowerCase();
+        let shown = 0, all = 0;
+        for (const o of location.querySelectorAll('option')) {
+            if (o.value === 'any') { o.hidden = false; continue; }
+            all++;
+            o.hidden = q !== '' && !o.text.toLowerCase().includes(q) && o.value !== location.value;
+            if (!o.hidden) shown++;
+        }
+        for (const g of location.querySelectorAll('optgroup')) g.hidden = [...g.children].every(o => o.hidden);
+        locCount.textContent = q ? shown + ' of ' + all : '';
+        locFilter.hidden = all < 8 && q === '';
+    }
+    locFilter.addEventListener('input', filterLocations);
+    locFilter.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Enter') return;
+        ev.preventDefault();
+        const q = locFilter.value.trim().toLowerCase();
+        const hit = [...location.querySelectorAll('option')].find(o => o.value !== 'any' && o.text.toLowerCase().includes(q));
+        if (hit) { location.value = hit.value; location.dispatchEvent(new Event('change')); filterLocations(); }
+    });
+    filterLocations();
     let locationsLoaded = false;
     const locationInfo = { config: null, ancestor: false };
     async function loadLocations() {
@@ -1687,6 +1713,7 @@ async function showViewer(config, preset) {
         location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
         if ([...location.options].some(o => o.value === was)) location.value = was;
         drawDgScope();
+        filterLocations();
     }
     // Panorama: a device group with its child device groups (pan-os-php location=<DG>:includechilddgs) or only its
     // child device groups (location=<DG>:excludemaindg) - offered when a device group is chosen as location; not with
@@ -2223,6 +2250,33 @@ async function showViewer(config, preset) {
         document.addEventListener('keydown', onKey);
         document.body.append(overlay);
         const want = { template: '', location: '' };
+        const sysErrors = {}, sysDone = {}, openSecs = new Set();
+        // one change: pan-os-php type=config-section on the loaded configuration (change list, history, undo)
+        async function sysChange(x, action, entry, path, value) {
+            delete sysErrors[x.name]; delete sysDone[x.name];
+            try {
+                const body = { section: x.name, action, entry, path, value };
+                if (want.template) body.template = want.template;
+                if (want.location) body.location = want.location;
+                const res = await api('POST', base() + '/system/change', body);
+                setStatus(Object.assign({ loaded: true }, res.status));
+                state.cache.clear();
+                sysDone[x.name] = action + (path ? ' ' + path : '') + (value ? ' = ' + value : '') + (entry ? ' (' + entry + ')' : '');
+            } catch (e) { sysErrors[x.name] = e.message; }
+            openSecs.add(x.name);
+            await draw();
+        }
+        function addField(x, entry) {
+            const k = el('input', { placeholder: 'field, e.g. idle-timeout or a.b.c', autocomplete: 'off', spellcheck: false, 'aria-label': 'new field of ' + x.name });
+            const v = el('input', { placeholder: 'value', autocomplete: 'off', spellcheck: false, 'aria-label': 'value of the new field of ' + x.name });
+            return el('div', { class: 'row' }, k, v, el('button', { type: 'button', class: 'small', text: 'Set', onclick: () => { if (k.value.trim() && v.value.trim()) sysChange(x, 'set', entry, k.value.trim(), v.value.trim()); } }));
+        }
+        function addEntry(x) {
+            const n = el('input', { placeholder: 'new entry name', autocomplete: 'off', spellcheck: false, 'aria-label': 'new entry of ' + x.name });
+            const k = el('input', { placeholder: 'field', autocomplete: 'off', spellcheck: false, 'aria-label': 'field of the new entry of ' + x.name });
+            const v = el('input', { placeholder: 'value', autocomplete: 'off', spellcheck: false, 'aria-label': 'value of the new entry of ' + x.name });
+            return el('div', { class: 'row' }, n, k, v, el('button', { type: 'button', class: 'small', text: 'Add entry', onclick: () => { if (n.value.trim() && k.value.trim() && v.value.trim()) sysChange(x, 'set', n.value.trim(), k.value.trim(), v.value.trim()); } }));
+        }
         const GROUPS = ['Management', 'System', 'Administrators', 'Authentication', 'Logging', 'Updates and schedules', 'Other'];
         async function draw() {
             box.replaceChildren(el('p', { class: 'muted', text: 'reading the system settings ...' }));
@@ -2250,21 +2304,52 @@ async function showViewer(config, preset) {
                 if (!secs.length) return null;
                 return el('div', { class: 'sysgroup' }, el('h4', { text: g }), secs.map(x => {
                     const n = x.entries.length;
-                    const body = n === 0 ? el('p', { class: 'muted', text: 'not set' }) : el('div', {}, x.entries.map(e => el('div', { class: 'sysentry' },
-                        x.kind === 'settings' ? null : el('div', { class: 'sysname', text: e.name }),
-                        Object.keys(e.fields).length ? el('table', { class: 'objfields' }, el('tbody', {}, Object.entries(e.fields).map(([k, v]) => el('tr', {}, el('th', { text: k }), el('td', { text: v })))))
-                            : el('p', { class: 'muted', text: '(empty)' }),
-                        (e.references || []).length ? el('p', { class: 'muted', text: 'references: ' + e.references.map(rf => rf.kind + ' ' + rf.name).join(', ') }) : null)));
+                    const ed = !!x.editable && canWrite;
+                    const entryBody = (e) => {
+                        const ent = x.kind === 'settings' ? '' : e.name;
+                        const members = e.members || [];
+                        const rows = Object.entries(e.fields).map(([k, v]) => {
+                            const secret = /^\*\*\* (hidden|encrypted) \*\*\*$/.test(v);
+                            let cell;
+                            if (!ed || secret) cell = el('td', { text: v });
+                            else if (members.includes(k)) {
+                                const add = el('input', { placeholder: 'add …', autocomplete: 'off', 'aria-label': 'add to ' + k });
+                                add.addEventListener('change', () => { if (add.value.trim()) sysChange(x, 'add-member', ent, k, add.value.trim()); });
+                                cell = el('td', {}, el('div', { class: 'chips' }, v.split(', ').filter(m => m).map(m => el('span', { class: 'chip' }, m,
+                                    el('button', { type: 'button', class: 'chipx', text: '✕', 'aria-label': 'remove ' + m, onclick: () => sysChange(x, 'remove-member', ent, k, m) }))), add));
+                            } else {
+                                const i = el('input', { value: v === '(set)' ? '' : v, placeholder: v === '(set)' ? '(set - no value)' : '', autocomplete: 'off', spellcheck: false, 'aria-label': k });
+                                i.addEventListener('change', () => { if (i.value.trim() !== '' && i.value.trim() !== v) sysChange(x, 'set', ent, k, i.value.trim()); });
+                                i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                                cell = el('td', {}, i);
+                            }
+                            return el('tr', {}, el('th', { text: k }), cell,
+                                ed && !secret ? el('td', {}, el('button', { type: 'button', class: 'small', text: '✕', title: 'remove the field ' + k, 'aria-label': 'remove field ' + k, onclick: () => sysChange(x, 'remove-field', ent, k, '') })) : null);
+                        });
+                        return el('div', { class: 'sysentry' },
+                            x.kind === 'settings' ? null : el('div', { class: 'sysname' }, e.name, ed ? el('button', { type: 'button', class: 'small danger', text: 'Delete', style: 'margin-left:.6em',
+                                onclick: () => { if (confirm('Delete ' + e.name + ' of ' + x.name + '?')) sysChange(x, 'delete', e.name, '', ''); } }) : null),
+                            rows.length ? el('table', { class: 'objfields' }, el('tbody', {}, rows)) : el('p', { class: 'muted', text: '(empty)' }),
+                            ed ? addField(x, ent) : null,
+                            (e.references || []).length ? el('p', { class: 'muted', text: 'references: ' + e.references.map(rf => rf.kind + ' ' + rf.name).join(', ') }) : null);
+                    };
+                    const body = el('div', {}, n === 0 ? el('p', { class: 'muted', text: 'not set' }) : x.entries.map(entryBody),
+                        ed && x.kind === 'settings' && n === 0 ? addField(x, '') : null,
+                        ed && x.kind !== 'settings' ? addEntry(x) : null,
+                        sysErrors[x.name] ? el('div', { class: 'error', text: sysErrors[x.name] }) : null,
+                        sysDone[x.name] ? el('div', { class: 'muted objact' }, '✓ ', el('code', { text: sysDone[x.name] })) : null);
                     const d = el('details', { class: 'objsection' }, el('summary', {}, x.name + (x.kind === 'settings' ? '' : ' (' + n + ')') + ' ', el('span', { class: 'muted', text: '- ' + x.description })),
                         el('p', { class: 'muted', text: x.path }), body);
-                    d.open = n > 0 && x.kind === 'settings';
+                    d.open = (n > 0 && x.kind === 'settings') || !!sysErrors[x.name] || !!sysDone[x.name] || openSecs.has(x.name);
+                    d.addEventListener('toggle', () => { if (d.open) openSecs.add(x.name); else openSecs.delete(x.name); });
                     return d;
                 }));
             }).filter(x => x);
             box.replaceChildren(
                 el('div', { class: 'objhead' }, el('h3', { text: 'System settings - ' + title }), el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
                 chooser, ...facts.map(f => el('p', { class: 'sysfact', text: f })),
-                el('p', { class: 'muted', text: 'As pan-os-php type=config-section shows them (section=list); passwords, keys and secrets are never shown. Read only.' }),
+                el('p', { class: 'muted', text: 'As pan-os-php type=config-section shows them (section=list); passwords, keys and secrets are never shown. '
+                    + (canWrite ? 'Sections reviewed in action-classes.json can be changed: a field is applied when you leave it (config-section set / add-member / remove-member / remove-field) - nothing is written until "Save as new version".' : 'Read only.') }),
                 ...groups, el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
         }
         await draw();
@@ -2694,7 +2779,7 @@ async function showViewer(config, preset) {
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
         el('div', { class: 'viewer' }, menu, el('div', { class: 'vmain' },
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-                field('Location', location), dgScopeField, sameNameField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
+                field('Location', el('div', { class: 'locpick' }, locFilter, location, locCount)), dgScopeField, sameNameField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
                 el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
             heading,
             el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),

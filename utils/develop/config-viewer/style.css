@@ -203,3 +203,8 @@ tr.overridden td:not(:has(.badge)) { text-decoration: line-through; text-decorat
 .sysname { font-weight: 600; margin-bottom: .2rem; }
 .sysfact { font-weight: 600; }
 .syswin .objfields th { width: 300px; }
+
+/* location choice with a filter for long lists */
+.locpick { display: flex; flex-direction: row; align-items: center; gap: 4px; }
+.locpick .locfilter { width: 9em; }
+.locpick .loccount { font-size: 11px; white-space: nowrap; }

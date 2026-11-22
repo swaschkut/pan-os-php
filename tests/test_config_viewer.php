@@ -704,6 +704,31 @@ eq( array( status( $sy ), $sy[1]['ancestor'] ?? null, $sy[1]['choices'] ?? null,
     status( $syt ), $bySecT['management-settings']['entries'][0]['fields']['idle-timeout'] ?? null, isset( $bySecT['access-domains'] ),
     status( $alice->call( 'GET', $SY . '/system?template=' . urlencode( 'a/b' ) ) ) ),
     array( 200, TRUE, array( 'T1' ), '30', '*** hidden ***', TRUE, 200, '15', FALSE, 400 ), 'System: Panorama and a template (config sections), secrets hidden' );
+// changes of the system settings (type=config-section on the loaded configuration): reviewed sections only, no secrets
+$sch = function( array $b ) use ( $alice, $SY ) { return $alice->call( 'POST', $SY . '/system/change', $b ); };
+$c1 = $sch( array( 'section' => 'management-settings', 'action' => 'set', 'path' => 'idle-timeout', 'value' => '45' ) );
+$c2 = $sch( array( 'section' => 'system', 'action' => 'set', 'path' => 'hostname', 'value' => 'pano-new', 'template' => 'T1' ) );
+$c3 = $sch( array( 'section' => 'permitted-ip', 'action' => 'set', 'entry' => '192.0.2.0/24', 'path' => 'description', 'value' => 'admin net' ) );
+$c4 = $sch( array( 'section' => 'administrators', 'action' => 'set', 'entry' => 'admin', 'path' => 'authentication-profile', 'value' => 'x' ) );
+$c5 = $sch( array( 'section' => 'system', 'action' => 'set', 'path' => 'snmp-setting.community', 'value' => 'x' ) );
+$c6 = $sch( array( 'section' => 'system', 'action' => 'set', 'path' => 'login-banner', 'value' => '*** hidden ***' ) );
+$after = array();
+foreach( $alice->call( 'GET', $SY . '/system' )[1]['sections'] ?? array() as $x )
+    $after[$x['name']] = $x;
+$afterT = array();
+foreach( $alice->call( 'GET', $SY . '/system?template=T1' )[1]['sections'] ?? array() as $x )
+    $afterT[$x['name']] = $x;
+$pip = array_column( $after['permitted-ip']['entries'] ?? array(), 'fields', 'name' );
+eq( array( status( $c1 ), status( $c2 ), status( $c3 ), status( $c4 ), status( $c5 ), status( $c6 ), $after['management-settings']['entries'][0]['fields']['idle-timeout'] ?? null,
+    $afterT['system']['entries'][0]['fields']['hostname'] ?? null, $pip['192.0.2.0/24']['description'] ?? null, $after['management-settings']['editable'] ?? null, $after['administrators']['editable'] ?? null ),
+    array( 200, 200, 200, 403, 403, 400, '45', 'pano-new', 'admin net', TRUE, FALSE ), 'System: changes of reviewed sections (also in a template, a new entry), none of others or of secrets' );
+$st = $alice->call( 'GET', $SY . '/status' )[1]['changes'] ?? array();
+$u = $alice->call( 'POST', $SY . '/undo', array( 'index' => 0 ) );
+$after = array();
+foreach( $alice->call( 'GET', $SY . '/system' )[1]['sections'] ?? array() as $x )
+    $after[$x['name']] = $x;
+eq( array( count( $st ), $st[0]['type'] ?? null, $st[0]['section'] ?? null, status( $u ), $after['management-settings']['entries'][0]['fields']['idle-timeout'] ?? null ),
+    array( 3, 'config-section', 'management-settings', 200, '30' ), 'System: changes in the change list, undo' );
 $sc = $alice->call( 'GET', $SC . '/system?location=' . urlencode( 'Prisma Access' ) );
 $bySc = array();
 foreach( $sc[1]['sections'] ?? array() as $x )

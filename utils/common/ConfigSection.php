@@ -282,6 +282,28 @@ class ConfigSection
         return $out;
     }
 
+    /** the fields of an entry (as flatten() names them) that are member lists (<member>…) - changed with add-member / remove-member */
+    public static function memberPaths( DOMElement $node, $prefix = '', &$out = array() )
+    {
+        $hasMember = FALSE;
+        foreach( $node->childNodes as $c )
+        {
+            if( $c->nodeType != XML_ELEMENT_NODE )
+                continue;
+            if( $c->nodeName == 'member' )
+            {
+                $hasMember = TRUE;
+                continue;
+            }
+            $name = $c->nodeName == 'entry' && $c->hasAttribute('name') ? '[' . $c->getAttribute('name') . ']' : $c->nodeName;
+            $p = $prefix === '' ? $name : ( $c->nodeName == 'entry' ? $prefix . $name : $prefix . '.' . $name );
+            self::memberPaths( $c, $p, $out );
+        }
+        if( $hasMember )
+            $out[] = $prefix === '' ? 'member' : $prefix;
+        return $out;
+    }
+
     /**
      * text values of an entry that are device group / template / template stack names or serials of $names
      * (kind => [name => TRUE]): list of "kind name"

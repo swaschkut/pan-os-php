@@ -128,10 +128,11 @@ class CONFIG_SECTION__ extends UTIL
                 $actions[] = self::parseAction( str_replace( "\0", '/', $a ) );
         $writes = count( array_filter( $actions, function( $a ) { return in_array($a[0], self::WRITE_ACTIONS, TRUE); } ) );
         $isAPI = $this->configInput['type'] == 'api';
-        if( $writes && $isScm && $this->configInput['type'] != 'file' )
+        if( $writes && $isScm && $this->configInput['type'] != 'file' && UTIL::$sharedConfig === null )
             derr( "SCM: changes of a config section only in an offline configuration (in=<file>.xml out=)", null, FALSE );
         // the dispatcher sets out=/dev/null when out= is not given
-        if( $writes && !$isAPI && ( !isset(PH::$args['out']) || PH::$args['out'] === '/dev/null' || PH::$args['out'] === '' ) )
+        // a configuration kept in memory (config viewer): the change stays in memory, no out= needed
+        if( $writes && !$isAPI && UTIL::$sharedConfig === null && ( !isset(PH::$args['out']) || PH::$args['out'] === '/dev/null' || PH::$args['out'] === '' ) )
             derr( "changes of an offline configuration need out=", null, FALSE );
 
         $doc = $this->xmlDoc;

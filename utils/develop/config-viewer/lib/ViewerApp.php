@@ -4661,11 +4661,17 @@ class ViewerApp
         $ch = $changes[$index] ?? null;
         if( !is_array( $ch ) || !is_string( $ch['type'] ?? null ) || $ch['type'] === 'undo' )
             throw new ViewerException( 'no change with this number that can be taken back', 404 );
-        $q = array( 'type' => $ch['type'] );
-        foreach( array( 'location', 'template', 'ruletype', 'securityprofiletype' ) as $k )
-            if( isset( $ch[$k] ) && is_string( $ch[$k] ) )
-                $q[$k] = $ch[$k];
-        $this->queryArgs( $q, $p );
+        // a change of the system settings (type=config-section): only without type / location limits
+        if( $ch['type'] === 'config-section' )
+            self::needUnlimited( $p, 'undo of a change of the system settings' );
+        else
+        {
+            $q = array( 'type' => $ch['type'] );
+            foreach( array( 'location', 'template', 'ruletype', 'securityprofiletype' ) as $k )
+                if( isset( $ch[$k] ) && is_string( $ch[$k] ) )
+                    $q[$k] = $ch[$k];
+            $this->queryArgs( $q, $p );
+        }
         $r = $this->workerCall( $files, array( 'cmd' => 'undo', 'index' => $index, 'note' => array( 'time' => time(), 'user' => (string)$user['name'] ) ) );
         return array( 'undone' => TRUE, 'unresolved' => array_values( array_filter( (array)( $r['unresolved'] ?? array() ), 'is_string' ) ),
             'warning' => is_string( $r['warning'] ?? null ) ? $r['warning'] : null, 'status' => $r['status'] ?? null );
@@ -4717,7 +4723,73 @@ class ViewerApp
         if( empty( $r['ok'] ) )
             throw new ViewerException( (string)( $r['error'] ?? 'system information not available' ), 400 );
         unset( $r['ok'] );
+        // a section can be changed here: reviewed in action-classes.json ("config-section:<section>") and write permission
+        $reviewed = $this->actionClasses()['reviewed'];
+        $write = in_array( $p['role'], array( 'write', 'owner' ), TRUE );
+        foreach( $r['sections'] as $i => $s )
+            $r['sections'][$i]['editable'] = $write && in_array( 'config-section:' . $s['name'], $reviewed, TRUE );
         return $r;
+    }
+
+    /**
+     * A change of a system setting: POST …/configs/<cid>/system/change - section, action (set / add-member /
+     * remove-member / remove-field / delete), entry (entries sections; set on a missing entry creates it), path, value,
+     * template (Panorama) / location (SCM). Runs pan-os-php type=config-section on the loaded configuration (the same
+     * as the CLI), as one change of the change list (history, undo). Only sections that are reviewed in
+     * action-classes.json ("config-section:<section>"); secret fields (password, keys, secrets) never.
+     */
+    public function systemChange( array $user, $pid, $cid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        $c = $this->configGet( $p, $cid );
+        self::needUnlimited( $p, 'a change of the system settings' );
+        require_once dirname( __FILE__ ) . '/../../../common/ConfigSection.php';
+        $name = $in['section'] ?? '';
+        $reg = ConfigSection::registry();
+        if( !is_string( $name ) || !isset( $reg[$name] ) )
+            throw new ViewerException( 'section: one of type=config-section section=list', 400 );
+        if( !in_array( 'config-section:' . $name, $this->actionClasses()['reviewed'], TRUE ) )
+            throw new ViewerException( 'section ' . $name . ' can not be changed here (not reviewed in action-classes.json)', 403 );
+        $action = $in['action'] ?? '';
+        if( !in_array( $action, array( 'set', 'add-member', 'remove-member', 'remove-field', 'delete' ), TRUE ) )
+            throw new ViewerException( 'action: set, add-member, remove-member, remove-field or delete', 400 );
+        $text = function( $k, $max, $re ) use ( $in ) {
+            $v = $in[$k] ?? '';
+            if( !is_string( $v ) || strlen( $v ) > $max || preg_match( '/[\x00-\x1F\x7F]/', $v ) || ( $v !== '' && !preg_match( $re, $v ) ) )
+                throw new ViewerException( $k . ': not valid', 400 );
+            return $v;
+        };
+        $path = $text( 'path', 300, '/^[A-Za-z0-9_.\-\[\] \/:@]+$/' );
+        $value = $text( 'value', 2000, '/^[^\x00-\x1F]*$/' );
+        $entry = $text( 'entry', 200, '/^[A-Za-z0-9 _.\-\/:@$]+$/' );
+        $template = $text( 'template', 200, '/^[A-Za-z0-9 _.\-]+$/' );
+        $location = $text( 'location', 200, '/^[A-Za-z0-9 _.\-]+$/' );
+        if( $action !== 'delete' && $path === '' )
+            throw new ViewerException( 'path: the field (elements joined by ".", named entries as [name])', 400 );
+        if( in_array( $action, array( 'set', 'add-member', 'remove-member' ), TRUE ) && $value === '' )
+            throw new ViewerException( 'value: needed for ' . $action, 400 );
+        // a secret field is never written from here (its value is not shown either) - nor a masked value
+        if( $path !== '' && ConfigSection::isSecret( '', $path ) )
+            throw new ViewerException( 'field ' . $path . ' holds a secret - not changed here', 403 );
+        if( preg_match( '/^\*\*\* (hidden|encrypted) \*\*\*$/', $value ) || ConfigSection::isSecret( $value ) )
+            throw new ViewerException( 'value: a hidden / encrypted value can not be set here', 400 );
+        if( $action === 'delete' && $entry === '' )
+            throw new ViewerException( 'entry: the entry to delete', 400 );
+        // the actions syntax of type=config-section: '/' between actions ('//' = '/')
+        $act = $action . ( $path !== '' ? ':' . str_replace( '/', '//', $path ) . ( $value !== '' ? ',' . str_replace( '/', '//', $value ) : '' ) : '' );
+        $args = array( 'section=' . $name, 'actions=' . $act );
+        if( $entry !== '' )
+            $args[] = 'entry=' . $entry;
+        if( $template !== '' )
+            $args[] = 'template=' . $template;
+        if( $location !== '' )
+            $args[] = 'location=' . $location;
+        $note = array( 'time' => time(), 'user' => (string)$user['name'], 'type' => 'config-section', 'args' => $args, 'section' => $name,
+            'actions' => $act ) + ( $entry !== '' ? array( 'filter' => $entry ) : array() ) + ( $template !== '' ? array( 'template' => $template ) : array() )
+            + ( $location !== '' ? array( 'location' => $location ) : array() );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'change', 'type' => 'config-section', 'args' => $args, 'note' => $note ) );
+        return array( 'log' => isset( $r['json']['log'] ) && is_string( $r['json']['log'] ) ? substr( $this->hidePaths( $r['json']['log'] ), 0, 200000 ) : '',
+            'status' => $r['status'] ?? null );
     }
 
     /** state of the loaded configuration: unsaved changes, last autosave. Does not start a worker. */

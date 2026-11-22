@@ -560,6 +560,8 @@ try
             // System: settings of the firewall / Panorama / SCM folder (config sections)
             if( $n == 5 && $method === 'GET' && $op === 'system' )
                 viewerOut( $app->system( $user, $pid, $cid, $_GET ) );
+            if( $n == 6 && $method === 'POST' && $op === 'system' && $route[5] === 'change' )
+                viewerOut( $app->systemChange( $user, $pid, $cid, viewerBody() ) );
             if( $n == 5 && $method === 'GET' && $op === 'status' )
                 viewerOut( $app->status( $user, $pid, $cid ) );
             if( $n == 5 && $method === 'POST' && $op === 'change' )

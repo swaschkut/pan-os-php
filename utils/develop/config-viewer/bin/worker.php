@@ -181,7 +181,7 @@ function viewerSystem( ?string $template, ?string $at ): array
         $container = ConfigSection::container( $pan->xmldoc, $section, $template, FALSE, $scope, $scmRoot );
         $entries = array();
         foreach( ConfigSection::sectionEntries( $section, $container ) as $en => $e )
-            $entries[] = array( 'name' => (string)$en, 'fields' => ConfigSection::flatten( $e ),
+            $entries[] = array( 'name' => (string)$en, 'fields' => ConfigSection::flatten( $e ), 'members' => ConfigSection::memberPaths( $e ),
                 'references' => count( $names ) && !empty( $def['references'] ) ? ConfigSection::references( $e, $names ) : array() );
         $sections[] = array( 'name' => $name, 'group' => $def['group'] ?? 'Other', 'description' => $def['description'] ?? '',
             'kind' => $def['kind'] ?? 'entries', 'path' => $isScm ? ConfigSection::pathOf( $section, 'scm' ) : ConfigSection::xpath( $section, $template, $scope ),
@@ -1054,7 +1054,7 @@ while( TRUE )
             if( is_array( $note ) )
             {
                 $clean = array();
-                foreach( array( 'time', 'user', 'type', 'location', 'template', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'field' ) as $k )
+                foreach( array( 'time', 'user', 'type', 'location', 'template', 'filter', 'actions', 'ruletype', 'securityprofiletype', 'field', 'section' ) as $k )
                     if( isset( $note[$k] ) && is_scalar( $note[$k] ) )
                         $clean[$k] = is_string( $note[$k] ) ? substr( $note[$k], 0, 2000 ) : $note[$k];
                 $clean['args'] = array_slice( array_map( function( $a ) { return substr( (string)$a, 0, 2000 ); }, array_filter( (array)( $note['args'] ?? array() ), 'is_scalar' ) ), 0, 10 );
