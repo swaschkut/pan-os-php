@@ -1164,7 +1164,7 @@ async function scmTab(base, pid, canWrite) {
  * for columns with few values), sort by a click on a header (IPv4 addresses by number), a search over all columns and
  * "Clear filters"; cols = [[key, label]], rows = objects. Returns { node, rowsOf } (rowsOf: the rows shown, in order).
  */
-function colTable(cols, rows, extra = [], what = 'entries') {
+function colTable(cols, rows, extra = [], what = 'entries', render = {}) {
     const val = (x, k) => { const v = x[k]; return v === null || v === undefined ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); };
     const q = el('input', { type: 'search', placeholder: 'search all columns …', 'aria-label': 'search all columns' });
     const colFilter = {}, sort = { key: null, desc: false };
@@ -1192,7 +1192,7 @@ function colTable(cols, rows, extra = [], what = 'entries') {
         const shown = rowsOf();
         count.textContent = shown.length + ' of ' + rows.length + ' ' + what;
         for (const h of heads) { h.th.classList.toggle('sorted', sort.key === h.k); h.th.dataset.dir = sort.key === h.k ? (sort.desc ? '▼' : '▲') : ''; }
-        tbody.replaceChildren(...shown.map(x => el('tr', {}, cols.map(([k]) => el('td', { text: val(x, k) })))));
+        tbody.replaceChildren(...shown.map(x => el('tr', {}, cols.map(([k]) => render[k] ? el('td', {}, render[k](x)) : el('td', { text: val(x, k) })))));
     }
     q.addEventListener('input', draw);
     const clear = el('button', { type: 'button', text: 'Clear filters', onclick: () => { q.value = ''; for (const k in colFilter) colFilter[k].value = ''; draw(); } });
@@ -1312,13 +1312,22 @@ async function egressPage(base, canWrite, redraw) {
     return box;
 }
 
-// Prisma Access pages that show endpoints of scm_pa_export.php (SCM_PA_PAGES of ViewerApp): title, description and how
-// each endpoint is shown - 'fields' (one object: name / value), 'table' (a list: a column per field, filters)
+// Prisma Access pages that show endpoints of scm_pa_export.php (SCM_PA_PAGES of ViewerApp: page -> area, endpoints):
+// title and text; every endpoint of a state is shown in the order of the export - one object as setting / value, a
+// list as a table (filters, sort; wide entries: the main fields as columns, all fields under "details")
 const SCM_PA_VIEWS = {
-    infra: { title: 'Infrastructure', text: 'Prisma Access infrastructure settings of the tenant (Strata Cloud Manager > Prisma Access > Infrastructure Settings).',
-        endpoints: [['shared-infrastructure-settings', 'Shared infrastructure settings', 'fields'], ['bgp-routing', 'BGP routing', 'fields'],
-            ['internal-dns-servers', 'Internal DNS servers', 'table'], ['locations', 'Locations', 'table']] },
+    infra: { title: 'Infrastructure', area: 'infra', text: 'Prisma Access infrastructure settings of the tenant (Prisma Access > Infrastructure Settings): infrastructure subnet, BGP, internal DNS servers, locations.' },
+    sc: { title: 'Service Connection', area: 'service-connections', text: 'Service connections (SC-CAN) with their IPSec tunnels, IKE gateways, crypto and QoS profiles, groups and traffic steering rules.' },
+    rn: { title: 'Remote Networks (RN-SPN)', area: 'remote-networks', text: 'Remote networks with their IPSec tunnels, IKE gateways, crypto and QoS profiles and the bandwidth allocations (SPN).' },
+    mugw: { title: 'Mobile User Gateway', area: 'mobile-users', text: 'Mobile users (GlobalProtect): infrastructure settings (portal / gateway, DNS, IP pools) and the gateway locations.' },
+    mugp: { title: 'Mobile User GlobalProtect', area: 'mobile-users', text: 'GlobalProtect of the mobile users: authentication, tunnel / agent profiles, global settings, app versions, portal, clientless VPN, trusted zones and the identity objects of the Mobile Users folder (certificates, server profiles, local users, authentication profiles / sequences).' },
+    mupaa: { title: 'Mobile User PAA', area: 'mobile-users', text: 'Prisma Access Agent: app settings, client authentication, global settings, token lifetime, staged rollout, tenant settings (internal UI API).' },
+    muep: { title: 'Mobile User Explicit Proxy', area: 'explicit-proxy', text: 'Explicit proxy of the mobile users: settings, authentication, IP access, block settings, users, proxy server profiles, upstream proxy rules and the forwarding profiles (internal UI API).' },
+    pb: { title: 'Prisma Browser', area: 'prisma-browser', text: 'Prisma Browser (Strata Enterprise Browser): user / device groups, applications, plugins, the policies (sign-in, access and data, security, customization) and pending changes.' },
+    sa: { title: 'Service accounts', area: 'iam', text: 'Identity & Access of the tenant: roles, custom roles, permission sets, service accounts, access policies, permissions.' },
 };
+const SCM_ACRONYMS = { ike: 'IKE', ipsec: 'IPSec', qos: 'QoS', bgp: 'BGP', dns: 'DNS', gp: 'GP', mfa: 'MFA', tls: 'TLS', saml: 'SAML', ldap: 'LDAP', tacacs: 'TACACS+', ep: 'EP', mu: 'MU', ip: 'IP' };
+const scmTitle = (name) => name.replace(/^mobile-agent-/, '').replace(/^pa-agent-/, '').split('-').map(w => SCM_ACRONYMS[w] || w).join(' ').replace(/^./, c => c.toUpperCase());
 
 /** an object as name / value pairs: nested objects with dotted names, a list of plain values as "a, b" */
 function flatPairs(o, prefix = '', out = []) {
@@ -1341,38 +1350,49 @@ async function scmPaPage(base, page, canWrite, redraw) {
     const box = el('div', {});
     const live = canWrite ? liveForm(r, { keyLabel: 'SCM key', path: base + '/scm-pa/runs', runs: base + '/runs', redraw, done: def.title + ' read live',
         body: () => ({ page }), noKey: 'Live: you have no SCM key yet (Account, My API keys, kind "SCM": the service account - client id / secret - and the TSG id).' }) : null;
-    const epStatus = (s) => Object.entries(s.endpoints).map(([n, e]) => e.status === 'ok' ? null : n + ': ' + (e.status || '?') + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '')).filter(x => x);
+    const epStatus = (s) => { const all = Object.values(s.endpoints), ok = all.filter(e => e.status === 'ok').length, na = all.filter(e => e.status === 'unavailable').length;
+        return ok + ' of ' + all.length + ' read' + (na ? ', ' + na + ' not available' : '') + (all.length - ok - na ? ', ' + (all.length - ok - na) + ' error' : ''); };
     let vc = null;
-    const list = r.states.length === 0 ? el('p', { class: 'muted', text: 'No state yet - import the SCM configuration of the tenant (Configurations: import with your SCM key - it reads these settings as well) or read them live.' }) :
+    const list = r.states.length === 0 ? el('p', { class: 'muted', text: 'No state yet - import the SCM configuration of the tenant (Configurations: import with your SCM key - it reads this area as well) or read it live.' }) :
         table(['When', 'Source', 'By', 'TSG', 'Read', ''], r.states.map(x => el('tr', {},
             el('td', { text: fmtTime(x.time) }), el('td', { text: x.source === 'import' ? 'SCM import' : x.source }), el('td', { text: x.user }), el('td', { text: x.tsg || '' }),
-            el('td', { text: epStatus(x).length ? epStatus(x).join('; ') : 'all ' + Object.keys(x.endpoints).length + ' ok' }),
+            el('td', { text: epStatus(x) }),
             el('td', {}, el('button', { type: 'button', text: 'Show', onclick: () => run(() => vc.showState(x.id)) }), ' ',
                 canWrite ? el('button', { type: 'button', class: 'danger', text: 'Delete', onclick: () => run(async () => {
                     if (!confirm('Delete this state?')) return;
                     await api('DELETE', base + '/scm/pa/' + page + '/' + x.id); await redraw(); }) }) : null))));
     async function view(id) {
         const s = await api('GET', base + '/scm/pa/' + page + '/' + id);
-        const parts = def.endpoints.map(([name, title, how]) => {
-            const e = s.endpoints[name];
-            const head = el('h3', { text: title });
-            if (!e) return el('div', { class: 'card' }, head, el('p', { class: 'muted', text: 'not read' }));
-            if (e.status !== 'ok') return el('div', { class: 'card' }, head, el('p', { class: 'error', text: (e.status || 'error') + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '') + (e.error ? ': ' + e.error : '') }));
-            if (how === 'fields') {
-                const one = Array.isArray(e.data) ? (e.data.length === 1 ? e.data[0] : e.data) : e.data;
+        const parts = Object.entries(s.endpoints).map(([name, e]) => {
+            const head = el('h3', { text: scmTitle(name) + (Array.isArray(e.data) ? ' (' + e.data.length + ')' : ''), title: name });
+            if (e.status !== 'ok') return el('div', { class: 'card' }, head, el('p', { class: e.status === 'unavailable' ? 'muted' : 'error',
+                text: (e.status === 'unavailable' ? 'not available (not licensed / no permission)' : (e.status || 'error')) + (e.http_code ? ' (HTTP ' + e.http_code + ')' : '') + (e.error ? ': ' + e.error : '') }));
+            const list = Array.isArray(e.data) && (e.data.length !== 1 || e.data[0] === null || typeof e.data[0] !== 'object' || ['name', 'value', 'id'].some(k => k in e.data[0]));
+            if (!list) {
+                const one = Array.isArray(e.data) ? e.data[0] : e.data;
                 const pairs = flatPairs(one).filter(([k]) => k !== 'id');
-                return el('div', { class: 'card' }, head, pairs.length ? table(['Setting', 'Value'], pairs.map(([k, v]) => el('tr', {}, el('td', { text: k }), el('td', { text: v })))) : el('p', { class: 'muted', text: 'empty' }));
+                // api_key of the shared infrastructure settings = the egress-IP API key: not in the export files, it went
+                // into the key store of the user who imported / read live (Account, My API keys, kind egress IP)
+                const shown = (k, v) => v === '***REDACTED***' ? (name === 'shared-infrastructure-settings' && k === 'api_key'
+                    ? 'egress-IP API key - stored as the egress-IP key of the user who imported / read it (Account, My API keys)' : 'secret (not in the export)') : v;
+                return el('div', { class: 'card' }, head, pairs.length ? table(['Setting', 'Value'], pairs.map(([k, v]) => el('tr', {}, el('td', { text: k }), el('td', { text: shown(k, v) })))) : el('p', { class: 'muted', text: 'empty' }));
             }
-            const rows = (Array.isArray(e.data) ? e.data : []).map(o => Object.fromEntries(flatPairs(o)));
-            const keys = [...new Set(rows.flatMap(o => Object.keys(o)))].filter(k => k !== 'id');
-            return el('div', { class: 'card' }, head, rows.length ? colTable(keys.map(k => [k, k]), rows).node : el('p', { class: 'muted', text: 'none' }));
+            if (e.data.length === 0) return el('div', { class: 'card' }, head, el('p', { class: 'muted', text: 'none' }));
+            const flat = e.data.map(o => o !== null && typeof o === 'object' ? Object.fromEntries(flatPairs(o)) : { value: String(o) });
+            const keys = [...new Set(flat.flatMap(o => Object.keys(o)))].filter(k => k !== 'id');
+            // wide entries (IKE gateways, tunnels, …): the fields of the first level as columns, all under "details"
+            if (keys.length <= 10) return el('div', { class: 'card' }, head, colTable(keys.map(k => [k, k]), flat).node);
+            const main = [...new Set(keys.map(k => k.split(/[.[]/)[0]))].filter(k => keys.includes(k)).slice(0, 8);
+            const rows = flat.map(o => Object.assign({}, o, { _details: Object.entries(o).filter(([k]) => k !== 'id').map(([k, v]) => k + ' = ' + v).join('\n') }));
+            return el('div', { class: 'card' }, head, colTable(main.map(k => [k, k]).concat([['_details', 'details']]), rows, [], 'entries',
+                { _details: (x) => el('details', {}, el('summary', { text: Object.keys(x).length - 1 + ' fields' }), el('pre', { class: 'scmdetails', text: x._details })) }).node);
         });
         return el('div', {}, el('p', { class: 'muted', text: 'State of ' + fmtTime(s.time) + ' (' + (s.source === 'import' ? 'SCM import' : s.source) + (s.tsg ? ', TSG ' + s.tsg : '') + (s.fetched_at ? ', read ' + s.fetched_at : '') + ')' }), ...parts);
     }
     async function compare(oldId, newId) {
         const c = await api('GET', base + '/scm/pa/' + page + '/' + newId + '/compare/' + oldId);
         const fmt = (v) => v === null || v === undefined ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
-        const titles = Object.fromEntries(def.endpoints.map(([n, t]) => [n, t]));
+        const titles = new Proxy({}, { get: (_, n) => scmTitle(String(n)) });
         const cards = c.entries.map(e => {
             const n = e.counts;
             const lines = [...e.only_right.map(k => el('div', { class: 'diffadd', text: '+ ' + k })), ...e.only_left.map(k => el('div', { class: 'diffdel', text: '- ' + k })),
@@ -1385,7 +1405,7 @@ async function scmPaPage(base, page, canWrite, redraw) {
         return el('div', {}, el('p', { class: 'muted', text: '+ only in the newer state, - only in the older state, ~ changed (the same as scm_pa_compare.php)' }), ...cards, ...nc);
     }
     if (r.states.length) vc = viewCompare(r.states, 'state', view, compare);
-    box.append(el('h3', { text: 'Prisma Access - ' + def.title }), el('p', { class: 'muted', text: def.text + ' From the SCM import of the project (it reads these settings as well) or read live with your SCM key (scm_pa_export.php area=' + page + '); View one state or Compare two (scm_pa_compare.php). Read only.' }),
+    box.append(el('h3', { text: (def.area === 'iam' ? 'Identity & Access - ' : 'Prisma Access - ') + def.title }), el('p', { class: 'muted', text: def.text + ' As the SCM API gives them: from the SCM import of the project (it reads these areas as well) or read live with your SCM key (scm_pa_export.php area=' + def.area + '); View one state or Compare two (scm_pa_compare.php). Read only.' }),
         live, list, vc);
     if (vc) await vc.ready;
     return box;

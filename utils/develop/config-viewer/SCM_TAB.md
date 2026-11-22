@@ -1,7 +1,7 @@
 # config viewer: SCM tab (Prisma Access, Identity, CIE, …) - concept
 
 Status: concept 2026-11-22 (agreed with Sven). Built: Prisma Access > Egress IP (CLI `scm_egress_ip.php` + library
-`SCMEgressIP`) and Prisma Access > Infrastructure (see below). The rest is in `TODO.md` ("SCM tab").
+`SCMEgressIP`), the other Prisma Access pages and Service accounts (see below). The rest is in `TODO.md` ("SCM tab").
 
 ## Goal
 
@@ -42,8 +42,10 @@ Folders / snippets / hierarchy are not a menu entry here: they are the SCM confi
 
 1. **The SCM import of the project** (Configurations: import with the SCM key of the user, service account + TSG, as
    the XML API import of Panorama / firewall) - it runs `scm_pa_export.php area=config,<areas of the pages>`; the
-   config area becomes the Buckbeak XML (objects / policies), the other areas a state of their Prisma Access page
-   (secrets of the export - PSK lists, keys - are never kept).
+   config area becomes the Buckbeak XML (objects / policies), the other areas a state of their Prisma Access page -
+   as the SCM API gives them (only what scm_pa_export.php itself redacts: api_key of shared-infrastructure-settings).
+   The egress-IP API key (that api_key) goes into the key store of the user (kind egress IP, target TSG):
+   `scm_pa_export.php egressip-key-out=<file>`.
 2. **Live refresh** - a button per page: the same call as the export, with the personal key of the user (key store,
    kind SCM / egress IP; network for runs per user, as today). The result is a new version of that area.
 3. **Compare** - every page shows what changed between two versions (default: the last import against the live
@@ -68,7 +70,8 @@ Nothing is written to SCM directly from the viewer (neither the SCM API nor the 
 
 - personal keys only (SCM: client id / secret; egress IP: header-api-key), encrypted, never back to the browser, never
   in the audit log; read only import is the default ("nur import");
-- secrets of the export (PSK, BGP secrets, API keys) are never shown or stored in the project;
+- the pages show what the SCM API gives (encrypted PSKs / secrets as the API returns them); the cleartext lists of
+  the export (psk-list) are not used; the egress-IP API key only in the key store of the user (encrypted, never shown);
 - every script works on the CLI the same way (one method for CLI and viewer).
 
 ## Egress IP (built)
@@ -100,14 +103,22 @@ A page shows endpoints of one area of `scm_pa_export.php` (`ViewerApp::SCM_PA_PA
 | page | area | endpoints |
 |---|---|---|
 | Infrastructure | infra | shared-infrastructure-settings, bgp-routing, internal-dns-servers, locations |
+| Service Connection | service-connections | all of the area (IKE / IPSec crypto, IKE gateways, IPSec tunnels, QoS, service connections, groups, traffic steering) |
+| Remote Networks (RN-SPN) | remote-networks | all of the area (crypto, IKE gateways, IPSec tunnels, QoS, bandwidth allocations, remote networks) |
+| Mobile User Gateway | mobile-users | mobile-agent infrastructure settings, locations, enable |
+| Mobile User GlobalProtect | mobile-users | authentication settings, tunnel / agent profiles, global settings, agent versions, GP portal, clientless apps / groups, trusted zones, identity objects of the folder |
+| Mobile User PAA | mobile-users | pa-agent-* (internal UI API) |
+| Mobile User Explicit Proxy | explicit-proxy | all of the area (internal UI API) |
+| Prisma Browser | prisma-browser | all of the area |
+| Service accounts (Identity & Access) | iam | all of the area |
 
 - **States**: from the SCM import of the project (`scm-export area=config,infra`) and from "Read live" (run `scm-pa`:
   `pan-os-php type=scm-export in=scm-api://<TSG> area=<area>` with the SCM key of the user - network as for an import,
   `tsg:<TSG>` on the allow list, network of the project on). A state = the files of the endpoints of the page + a
-  manifest (`projects/<pid>/scm/pa/<page>/<id>/`), values of secret fields (api_key, secret, psk, password, token, …)
-  replaced by `***`.
+  manifest (`projects/<pid>/scm/pa/<page>/<id>/`), as the SCM API gave them. A live read of a page gives a state to
+  every page of its area (mobile-users: Gateway, GlobalProtect, PAA).
 - **View**: one state - an object as setting / value, a list as a table (a filter field under every header, sort).
 - **Compare** (button tab): two states with `SCMPrismaAccessCompare` - the same as `scm_pa_compare.php` on the CLI:
   added / removed entries (by their key field), changed fields (path: old -> new).
-- next pages the same way: Service Connection, Remote Networks, Mobile Users, Explicit Proxy, Prisma Browser (their
-  areas added to `SCM_PA_PAGES`; the SCM import then reads them as well).
+- the internal UI API (PAA, explicit proxy, GP portal / clientless) is region specific: scm_pa_export.php
+  `ui-api-host=` (default the EU host); otherwise these endpoints are "not available".

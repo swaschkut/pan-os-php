@@ -736,7 +736,8 @@ eq( array( status( $e1 ), $e1[1]['count'] ?? null, status( $e2 ), status( $e3 ),
     array( 201, 2, 201, 400, 2, array( '198.51.100.12' ), array( '198.51.100.11' ), 400, 404, 200, 1, TRUE ),
     'SCM tab egress IP: import (JSON, zip of an export), compare of two states, delete; live only with an egress-IP key' );
 // SCM tab, Prisma Access > Infrastructure: states from the export of a run (SCM import / read live: paCollect - the
-// import reads area=config,infra), secrets removed, compare (SCMPrismaAccessCompare as scm_pa_compare.php), delete
+// import reads area=config + the areas of the pages), as the SCM API gave them, compare (SCMPrismaAccessCompare as
+// scm_pa_compare.php), delete
 $paExport = function( string $jobDir, string $ts, array $shared, array $dns, array $loc ) {
     $d = $jobDir . '/scm-export/1234567890/' . $ts;
     @mkdir( $d . '/infra', 0700, TRUE );
@@ -753,7 +754,7 @@ $paExport = function( string $jobDir, string $ts, array $shared, array $dns, arr
 };
 $loc = array( array( 'value' => 'germany-central', 'display' => 'Germany Central', 'region' => 'europe-west3' ), array( 'value' => 'france-north', 'display' => 'France North', 'region' => 'europe-west9' ) );
 $paJob1 = $data . '/pa-job1'; $paJob2 = $data . '/pa-job2';
-$paExport( $paJob1, '20261122-100000', array( 'infrastructure_subnet' => '192.0.2.0/24', 'infra_bgp_as' => '65534', 'api_key' => 'cleartext-should-go', 'loopback_ips' => array( '192.0.2.10' ) ),
+$paExport( $paJob1, '20261122-100000', array( 'infrastructure_subnet' => '192.0.2.0/24', 'infra_bgp_as' => '65534', 'api_key' => 'as-the-api-gave-it', 'loopback_ips' => array( '192.0.2.10' ) ),
     array( array( 'name' => 'corp', 'primary' => '10.1.1.1', 'secondary' => '10.1.1.2' ) ), $loc );
 $paExport( $paJob2, '20261122-110000', array( 'infrastructure_subnet' => '192.0.2.0/24', 'infra_bgp_as' => '65535', 'loopback_ips' => array( '192.0.2.10' ) ),
     array( array( 'name' => 'corp', 'primary' => '10.1.1.1', 'secondary' => '10.1.1.3' ), array( 'name' => 'lab', 'primary' => '10.2.2.2' ) ),
@@ -780,9 +781,37 @@ eq( array( $made, array_column( $pl[1]['states'] ?? array(), 'id' ), array_colum
     $byEp['shared-infrastructure-settings']['changed'][0]['changes'][0]['path'] ?? null, $byEp['internal-dns-servers']['only_right'] ?? null,
     $byEp['internal-dns-servers']['changed'][0]['key'] ?? null, $byEp['locations']['only_left'] ?? null, $byEp['locations']['only_right'] ?? null,
     $byEp['bgp-routing']['counts']['equal'] ?? null, status( $prun ), status( $pbad ), status( $pdel ), count( $alice->call( 'GET', $EG . '/scm/pa/infra' )[1]['states'] ?? array() ) ),
-    array( array( 1, 1, 0 ), array( 'bbbb2222', 'aaaa1111' ), array( 'live', 'import' ), '***', '65534', 2, FALSE,
+    array( array( 1, 1, 0 ), array( 'bbbb2222', 'aaaa1111' ), array( 'live', 'import' ), 'as-the-api-gave-it', '65534', 2, FALSE,
         'infra_bgp_as', array( 'lab' ), 'corp', array( 'france-north' ), array( 'netherlands-central' ), 1, 400, 404, 200, 1 ),
-    'SCM tab Prisma Access infrastructure: states of the export of a run (secrets removed, only the infra endpoints), compare as scm_pa_compare.php, delete; live only with an SCM key' );
+    'SCM tab Prisma Access infrastructure: states of the export of a run (as the API gave them, only the infra endpoints), compare as scm_pa_compare.php, delete; live only with an SCM key' );
+// one area, several pages (mobile-users: Gateway / GlobalProtect / PAA): each page gets the endpoints it shows
+$muDir = $data . '/pa-job3/scm-export/1234567890/20261122-120000';
+@mkdir( $muDir . '/mobile-users', 0700, TRUE );
+$muEps = array();
+foreach( array( array( 'mobile-agent-locations', 21, array( array( 'name' => 'europe' ) ), 'ok' ), array( 'certificates', 1, array( array( 'name' => 'gp-cert' ) ), 'ok' ),
+    array( 'pa-agent-app-settings', 40, null, 'unavailable' ) ) as list( $n, $o, $d, $st ) )
+{
+    $f = 'mobile-users/' . sprintf( '%02d', $o ) . '_' . $n . '.json';
+    file_put_contents( $muDir . '/' . $f, json_encode( array( 'endpoint' => $n, 'status' => $st, 'data' => $d ) ) );
+    $muEps[] = array( 'area' => 'mobile-users', 'order' => $o, 'name' => $n, 'file' => $f, 'status' => $st );
+}
+file_put_contents( $muDir . '/manifest.json', json_encode( array( 'format_version' => 8, 'areas' => array( 'mobile-users' ), 'endpoints' => $muEps ) ) );
+$muMade = $collect->invoke( $va, array( 'pid' => $pid ), $data . '/pa-job3', '1234567890', 'cccc3333', 'live', 'alice', 3000, array( 'mugw', 'mugp', 'mupaa' ) );
+eq( array( $muMade, array_keys( $alice->call( 'GET', $EG . '/scm/pa/mugw/cccc3333' )[1]['endpoints'] ?? array() ),
+    array_keys( $alice->call( 'GET', $EG . '/scm/pa/mugp/cccc3333' )[1]['endpoints'] ?? array() ), status( $alice->call( 'GET', $EG . '/scm/pa/mupaa/cccc3333' ) ) ),
+    array( 2, array( 'mobile-agent-locations' ), array( 'certificates' ), 404 ),
+    'SCM tab mobile users: one export, a state per page with its endpoints (a page with nothing read: no state)' );
+// the egress-IP API key the SCM API gives (shared-infrastructure-settings api_key, scm_pa_export.php egressip-key-out=)
+// goes into the key store of the user: new, the same (nothing), a new value (label stays); never shown
+$ek = new ReflectionMethod( 'ViewerApp', 'egressKeyFromScm' );
+$ek->setAccessible( TRUE );
+$au = $va->userByName( 'alice' );
+$ekr = array( $ek->invoke( $va, $au, '5550001111', 'egress-key-from-scm-1' ), $ek->invoke( $va, $au, '5550001111', 'egress-key-from-scm-1' ),
+    $ek->invoke( $va, $au, '5550001111', 'egress-key-from-scm-2' ), $ek->invoke( $va, $au, '5550001111', 'short' ) );
+$kl = array_values( array_filter( $alice->call( 'GET', 'keys' )[1]['keys'] ?? array(), function( $k ) { return $k['kind'] === 'egressip' && $k['target'] === '5550001111'; } ) );
+eq( array( $ekr, count( $kl ), $kl[0]['label'] ?? null, $kl[0]['hint'] ?? null, strpos( json_encode( $kl ), 'egress-key-from-scm' ) ),
+    array( array( 'added', 'same', 'updated', null ), 1, 'TSG 5550001111 (from SCM)', "\u{2026}cm-2", FALSE ),
+    'egress-IP API key of the SCM API into the key store of the user (added / same / updated), never shown' );
 // System: the settings of Panorama / a template / SCM as type=config-section reads them; secrets never
 $SY = $up( 'system-panorama.xml' );
 $sy = $alice->call( 'GET', $SY . '/system' );

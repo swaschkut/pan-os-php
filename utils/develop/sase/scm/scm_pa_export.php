@@ -54,6 +54,7 @@ $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-
 $supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'explicit-proxy area and config-internal: internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ', see browser developer tools: requests to /api/config/v9.2/...)', 'argDesc' => '[host]');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
 $supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod6 (api.prod6.datapath.prismaaccess.com, default, most tenants) | prod (api.prod.datapath.prismaaccess.com, older tenants)', 'argDesc' => 'prod6|prod');
+$supportedArguments['egressip-key-out'] = Array('niceName' => 'egressip-key-out', 'shortHelp' => 'write the egress-IP API key the SCM API gives in shared-infrastructure-settings (api_key; area infra) into this file (chmod 600, only the key) - e.g. for the key store of the config viewer; the export files keep it redacted', 'argDesc' => '[file]');
 $supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'write the secret lists (chmod 600) with the decrypted current value and an empty *_new column for the import: psk-list.csv + bgp-secret-list.csv (remote-networks, service-connections), secret-list.csv (mobile-users)');
 $supportedArguments['master-key'] = Array('niceName' => 'master-key', 'shortHelp' => 'master key to decrypt PSKs and BGP secrets (default: PAN-OS default master key)', 'argDesc' => '[master-key]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
@@ -139,6 +140,22 @@ PH::print_stdout();
 $export->exportEndpoints();
 if( $export->hasArea(SCMPrismaAccessExport::AREA_CONFIG) )
     $export->exportConfig();
+
+// the egress-IP API key of the tenant (api_key of shared-infrastructure-settings): only into the file asked for
+if( isset(PH::$args['egressip-key-out']) && PH::$args['egressip-key-out'] !== '' )
+{
+    $apiKey = $export->getSecret('shared-infrastructure-settings.api_key');
+    if( $apiKey !== null && $apiKey !== '' )
+    {
+        $old = umask(0077);
+        file_put_contents( PH::$args['egressip-key-out'], $apiKey );
+        umask($old);
+        @chmod( PH::$args['egressip-key-out'], 0600 );
+        PH::print_stdout( " * egress-IP API key (api_key of shared-infrastructure-settings) written to " . PH::$args['egressip-key-out'] . " - SECRET" );
+    }
+    else
+        PH::print_stdout( " * egress-IP API key: none in shared-infrastructure-settings (area infra not exported / not set)" );
+}
 
 $egressKey = null;
 if( isset(PH::$args['egressip']) )

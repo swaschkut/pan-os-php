@@ -3117,7 +3117,9 @@ class ViewerApp
                     $page = $m[1];
             if( !isset( self::SCM_PA_PAGES[$page] ) )
                 throw new ViewerException( 'unknown page of the SCM tab' );
-            return array( $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=' . self::SCM_PA_PAGES[$page]['area'], 'outdir=%JOB%/scm-export' ), TRUE ) );
+            $area = self::SCM_PA_PAGES[$page]['area'];
+            return array( $step( 'scm-export', array_merge( array( 'in=scm-api://' . $k['target'], 'area=' . $area, 'outdir=%JOB%/scm-export' ),
+                $area === 'infra' ? array( 'egressip-key-out=%JOB%/.egress-key' ) : array() ), TRUE ) );
         }
         if( $type === 'appid' )
             return array( $step( 'download-predefined', array( 'in=api://' . $k['target'], 'predefined-out=%JOB%/predefined.xml' ), TRUE ) );
@@ -3126,7 +3128,8 @@ class ViewerApp
         if( $k['kind'] === 'panos' )
             return array( $step( 'upload', array( 'in=api://' . $k['target'] . ( ( $x['source'] ?? '' ) === 'running' ? '/running-config' : '' ), 'out=%JOB%/out.xml' ), TRUE ) );
         return array(
-            $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config,' . implode( ',', self::scmPaAreas() ), 'outdir=%JOB%/scm-export', 'config-internal=no' ), TRUE ),
+            $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=config,' . implode( ',', self::scmPaAreas() ), 'outdir=%JOB%/scm-export', 'config-internal=no',
+                'egressip-key-out=%JOB%/.egress-key' ), TRUE ),
             $step( 'scm-export-xml', array( 'in=scm-export://%JOB%/scm-export/' . $k['target'], 'out=%JOB%/out.xml' ), FALSE ) );
     }
 
@@ -3393,6 +3396,17 @@ class ViewerApp
             if( $clean !== $log )
                 file_put_contents( $dir . '/run.log', $clean );
         }
+        // the egress-IP API key the SCM API gave (shared-infrastructure-settings api_key; scm_pa_export.php
+        // egressip-key-out=): into the key store of the user who ran the import / live read, the file goes at once
+        if( in_array( $j['type'], array( 'import', 'scm-pa' ), TRUE ) && is_file( $dir . '/.egress-key' ) )
+        {
+            $egressKey = trim( (string)file_get_contents( $dir . '/.egress-key' ) );
+            @unlink( $dir . '/.egress-key' );
+            $x = $this->jobArgsX( $j );
+            $u = $this->userById( (int)$j['user_id'] );
+            if( $j['state'] === 'done' && $u && preg_match( '/^scm:([0-9]{1,20})$/', $x['target'] ?? '', $m ) )
+                $this->egressKeyFromScm( $u, $m[1], $egressKey );
+        }
         // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove); egress IPs:
         // taken over by the SCM tab (scmEgressList)
         if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
@@ -3406,7 +3420,8 @@ class ViewerApp
             $p = $this->q( 'SELECT * FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
             $u = $this->userById( (int)$j['user_id'] );
             $n = $p && preg_match( '/^scm:([0-9]{1,20})$/', $x['target'] ?? '', $m ) && isset( self::SCM_PA_PAGES[$x['page'] ?? ''] )
-                ? $this->paCollect( $p, $dir, $m[1], $j['jid'], 'live', $u['name'] ?? '?', (int)( $j['finished'] ?? time() ), array( $x['page'] ) ) : 0;
+                ? $this->paCollect( $p, $dir, $m[1], $j['jid'], 'live', $u['name'] ?? '?', (int)( $j['finished'] ?? time() ),
+                    self::scmPaPagesOfArea( self::SCM_PA_PAGES[$x['page']]['area'] ) ) : 0;
             if( $n === 0 )
                 $this->q( "UPDATE jobs SET state = 'failed', error = ?, reason = 'error' WHERE id = ?", array( 'nothing was read (see run.log)', $j['id'] ) );
             return;
@@ -3466,6 +3481,26 @@ class ViewerApp
             $this->paCollect( $p, $dir, $host, $j['jid'], 'import', $u['name'] ?? '?', time(), array_keys( self::SCM_PA_PAGES ) );
     }
 
+    /**
+     * the egress-IP API key of TSG $tsg as the SCM API gave it: a new egress-IP key of the user (label "TSG … (from
+     * SCM)"), or the new value of the one the user has (its label stays); an equal value changes nothing
+     */
+    private function egressKeyFromScm( array $u, string $tsg, string $key ): ?string
+    {
+        if( strlen( $key ) < 8 || strlen( $key ) > 4000 || preg_match( '/[\s%]/', $key ) )
+            return null;
+        $old = $this->q( "SELECT * FROM user_keys WHERE user_id = ? AND kind = 'egressip' AND target = ?", array( $u['id'], $tsg ) )->fetch();
+        if( !$old )
+        {
+            $this->keyStore( $u, 'egressip', $tsg, null, 'TSG ' . $tsg . ' (from SCM)', $key );
+            return 'added';
+        }
+        if( $this->unseal( $old['secret'] ) === $key )
+            return 'same';
+        $this->q( 'UPDATE user_keys SET secret = ?, hint = ?, created = ? WHERE id = ?', array( $this->seal( $key ), substr( $key, -4 ), time(), $old['id'] ) );
+        return 'updated';
+    }
+
     /** the x-<name>-<field>= arguments of a run (key, target, source, page, …) */
     private function jobArgsX( array $j ): array
     {
@@ -3516,7 +3551,7 @@ class ViewerApp
     {
         $this->q( "UPDATE jobs SET state = 'failed', finished = ?, error = 'the job runner was stopped', reason = 'error' WHERE state = 'running'", array( time() ) );
         // key stores of imports that were running
-        foreach( glob( $this->dataDir . '/projects/*/jobs/*/.panconfkeystore' ) ?: array() as $f )
+        foreach( array_merge( glob( $this->dataDir . '/projects/*/jobs/*/.panconfkeystore' ) ?: array(), glob( $this->dataDir . '/projects/*/jobs/*/.egress-key' ) ?: array() ) as $f )
             @unlink( $f );
     }
 
@@ -5091,8 +5126,28 @@ class ViewerApp
      * SCMPrismaAccessCompare (the same as scm_pa_compare.php on the CLI)
      */
     const SCM_PA_PAGES = array(
+        // endpoints: those of the area shown on the page (null = every endpoint of the area)
         'infra' => array( 'area' => 'infra', 'endpoints' => array( 'shared-infrastructure-settings', 'bgp-routing', 'internal-dns-servers', 'locations' ) ),
+        'sc' => array( 'area' => 'service-connections', 'endpoints' => null ),
+        'rn' => array( 'area' => 'remote-networks', 'endpoints' => null ),
+        'mugw' => array( 'area' => 'mobile-users', 'endpoints' => array( 'mobile-agent-infrastructure-settings', 'mobile-agent-locations', 'mobile-agent-enable' ) ),
+        'mugp' => array( 'area' => 'mobile-users', 'endpoints' => array( 'mobile-agent-authentication-settings', 'mobile-agent-tunnel-profiles', 'mobile-agent-agent-profiles',
+            'mobile-agent-global-settings', 'mobile-agent-agent-versions', 'gp-portals', 'gp-clientless-apps', 'gp-clientless-app-groups', 'gp-trusted-zones',
+            'certificates', 'trusted-certificate-authorities', 'certificate-profiles', 'tls-service-profiles', 'saml-server-profiles', 'ldap-server-profiles',
+            'radius-server-profiles', 'tacacs-server-profiles', 'kerberos-server-profiles', 'mfa-servers', 'local-users', 'local-user-groups',
+            'authentication-profiles', 'authentication-sequences' ) ),
+        'mupaa' => array( 'area' => 'mobile-users', 'endpoints' => array( 'pa-agent-app-settings', 'pa-agent-client-auth', 'pa-agent-global-settings',
+            'pa-agent-token-lifetime', 'pa-agent-staged-rollout', 'pa-agent-tenant-settings', 'pa-agent-project-based-access' ) ),
+        'muep' => array( 'area' => 'explicit-proxy', 'endpoints' => null ),
+        'pb' => array( 'area' => 'prisma-browser', 'endpoints' => null ),
+        'sa' => array( 'area' => 'iam', 'endpoints' => null ),
     );
+
+    /** the pages that show endpoints of $area (a live read of one page gives a state to all of them) */
+    private static function scmPaPagesOfArea( string $area ): array
+    {
+        return array_keys( array_filter( self::SCM_PA_PAGES, function( $d ) use ( $area ) { return $d['area'] === $area; } ) );
+    }
 
     /** the areas of scm_pa_export.php the pages need (read by the SCM import as well) */
     private static function scmPaAreas(): array
@@ -5110,28 +5165,10 @@ class ViewerApp
         return $this->projectDir( $p['pid'] ) . '/scm/pa/' . $page;
     }
 
-    /** values of fields that look like secrets: never kept (the export already redacts e.g. api_key) */
-    const PA_SECRET_FIELD = '/(secret|password|passwd|psk|pre_shared|api_key|apikey|private_key|token|passphrase)/i';
-
-    private static function paRedact( $v )
-    {
-        // objects stay objects ({} is not [], e.g. routing_preference: {"default": {}})
-        if( $v instanceof stdClass )
-        {
-            foreach( get_object_vars( $v ) as $k => $x )
-                $v->$k = preg_match( self::PA_SECRET_FIELD, (string)$k ) && $x !== null && !is_array( $x ) && !( $x instanceof stdClass ) ? '***' : self::paRedact( $x );
-            return $v;
-        }
-        if( is_array( $v ) )
-            foreach( $v as $k => $x )
-                $v[$k] = self::paRedact( $x );
-        return $v;
-    }
-
     /**
      * the export of a run (<jobDir>/scm-export/<TSG>/<time>/) as a state of each of $pages: its manifest (only the
-     * endpoints of the page) and their files, values of secret fields removed. A page gets a state only when at least
-     * one of its endpoints was read. Returns the number of states made.
+     * endpoints of the page) and their files, as the SCM API gave them (scm_pa_export.php). A page gets a state only
+     * when at least one of its endpoints was read. Returns the number of states made.
      */
     private function paCollect( array $p, string $jobDir, string $tsg, string $id, string $source, string $user, int $time, array $pages ): int
     {
@@ -5153,7 +5190,7 @@ class ViewerApp
             $eps = array();
             $ok = 0;
             foreach( $m['endpoints'] as $e )
-                if( is_array( $e ) && ( $e['area'] ?? '' ) === $def['area'] && in_array( $e['name'] ?? '', $def['endpoints'], TRUE )
+                if( is_array( $e ) && ( $e['area'] ?? '' ) === $def['area'] && ( $def['endpoints'] === null || in_array( $e['name'] ?? '', $def['endpoints'], TRUE ) )
                     && preg_match( '#^' . preg_quote( $def['area'], '#' ) . '/[0-9a-z_.-]+\.json$#', (string)( $e['file'] ?? '' ) ) )
                 {
                     $eps[] = $e;
@@ -5169,9 +5206,8 @@ class ViewerApp
                 $f = $src . '/' . $e['file'];
                 if( !is_file( $f ) || is_link( $f ) )
                     continue;
-                $c = json_decode( (string)file_get_contents( $f ) );
-                if( $c instanceof stdClass )
-                    file_put_contents( $tmp . '/' . $e['file'], json_encode( self::paRedact( $c ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+                if( json_decode( (string)file_get_contents( $f ) ) instanceof stdClass )
+                    copy( $f, $tmp . '/' . $e['file'] );
             }
             file_put_contents( $tmp . '/manifest.json', json_encode( array( 'format_version' => $m['format_version'] ?? null, 'tool' => $m['tool'] ?? null,
                 'areas' => array( $def['area'] ), 'tsg_id' => $tsg, 'created_at' => $m['created_at'] ?? null, 'endpoints' => $eps ), JSON_UNESCAPED_SLASHES ) );

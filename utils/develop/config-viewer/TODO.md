@@ -300,5 +300,7 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   upload (conflicts, e.g. an address of the same name created meanwhile) + scm_pa_change.php - never directly.
   Built: egress IP on the CLI (scm_egress_ip.php, SCMEgressIP) and the tab SCM with Prisma Access > Egress IP (import,
   live run egress-ip, compare) and Prisma Access > Infrastructure (states from the SCM import - area=config,infra - and
-  live run scm-pa, View / Compare with scm_pa_compare.php). Next: Service Connection, Remote Networks, Mobile Users,
-  Explicit Proxy, Prisma Browser the same way (SCM_PA_PAGES).
+  live run scm-pa, View / Compare with scm_pa_compare.php), Service Connection, Remote Networks, Mobile User Gateway /
+  GlobalProtect / PAA / Explicit Proxy, Prisma Browser, Service accounts (SCM_PA_PAGES); the egress-IP API key of the
+  SCM API into the key store of the user. Open: the egress IPs with the import (egressip with that key), ui-api-host
+  per project (region of the internal UI API), CIE, config versions, deployment, tenant, monitoring, BPA.
