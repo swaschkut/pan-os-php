@@ -260,6 +260,24 @@ function connTestWindow(keys) {
     host.focus();
 }
 
+// the CSV of an SCM service account: header client_id,client_secret (also ; / quoted / BOM / CRLF) - the rows
+function parseServiceAccountCsv(text) {
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim() !== '');
+    if (!lines.length) throw new Error('the CSV is empty');
+    const sep = lines[0].includes(';') && !lines[0].includes(',') ? ';' : ',';
+    const cells = (l) => { const out = []; let cur = '', q = false;
+        for (let i = 0; i < l.length; i++) { const c = l[i];
+            if (q) { if (c === '"' && l[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+            else if (c === '"') q = true; else if (c === sep) { out.push(cur.trim()); cur = ''; } else cur += c; }
+        out.push(cur.trim()); return out; };
+    const head = cells(lines[0]).map(h => h.toLowerCase().replace(/[\s-]+/g, '_'));
+    const iId = head.indexOf('client_id'), iSec = head.indexOf('client_secret');
+    if (iId < 0 || iSec < 0) throw new Error('not the CSV of a service account: the first line must name client_id and client_secret');
+    const rows = lines.slice(1).map(cells).filter(c => c[iId] && c[iSec]).map(c => ({ client_id: c[iId], client_secret: c[iSec] }));
+    if (!rows.length) throw new Error('the CSV has no service account (client_id / client_secret empty)');
+    return rows;
+}
+
 async function showAccount() {
     const oldPw = el('input', { type: 'password', autocomplete: 'current-password', required: true });
     const newPw = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: 10 });
@@ -281,10 +299,32 @@ async function showAccount() {
         const kId = el('input', { autocomplete: 'off', spellcheck: false }), kSecret = el('input', { type: 'password', autocomplete: 'new-password' });
         const fTarget = field('Host name / IP address', kTarget), fNamed = field('Entry', kNamed), fPort = field('Port', kPort);
         const fKey = field('API key', kKey), fId = field('Client id', kId), fSecret = field('Client secret', kSecret);
+        // SCM: the CSV of a service account (download in SCM: client_id,client_secret) - read here in the browser only (the
+        // file is not uploaded): client id + secret into the form, the TSG id from the client id
+        // (name@<TSG id>.iam.panserviceaccount.com); saved with "Save key" as any key
+        const kCsv = el('input', { type: 'file', accept: '.csv,text/csv', 'aria-label': 'CSV of an SCM service account' });
+        const fCsv = field('or the CSV of the service account (client_id,client_secret)', kCsv);
+        kCsv.addEventListener('change', () => run(async () => {
+            const f = kCsv.files[0];
+            kCsv.value = '';
+            if (!f) return;
+            if (f.size > 20000) throw new Error('the CSV of a service account is a few lines - this file is too big');
+            const rows = parseServiceAccountCsv(await f.text());
+            let row = rows[0];
+            if (rows.length > 1) {
+                const pick = prompt('The file has ' + rows.length + ' service accounts:\n' + rows.map((r, i) => (i + 1) + ': ' + r.client_id).join('\n') + '\nWhich one (number)?', '1');
+                row = rows[(parseInt(pick, 10) || 0) - 1];
+                if (!row) return;
+            }
+            kId.value = row.client_id; kSecret.value = row.client_secret;
+            const tsg = /@([0-9]{1,20})\.iam\./.exec(row.client_id);
+            if (tsg) kTarget.value = tsg[1];
+            message('service account ' + row.client_id + ' taken from the CSV' + (tsg ? ' (TSG ' + tsg[1] + ')' : ' - enter the TSG id') + ' - check and "Save key"');
+        }));
         const kindChanged = () => {
             const k = kKind.value;
             fTarget.hidden = k === 'named'; fNamed.hidden = k !== 'named'; fPort.hidden = k !== 'panos';
-            fKey.hidden = k === 'scm'; fId.hidden = fSecret.hidden = k !== 'scm';
+            fKey.hidden = k === 'scm'; fId.hidden = fSecret.hidden = fCsv.hidden = k !== 'scm';
             fTarget.firstChild.textContent = { panos: 'Host name / IP address', scm: 'TSG id', egressip: 'TSG id', ldap: 'Bind user (UPN or DOMAIN\\user)', other: 'Entry name' }[k] || '';
             fKey.firstChild.textContent = k === 'ldap' ? 'Password' : k === 'named' || k === 'other' ? 'Value (password / key)' : 'API key';
         };
@@ -328,7 +368,7 @@ async function showAccount() {
                 await api('POST', 'keys', body);
                 kKey.value = kSecret.value = kId.value = '';
                 await showAccount(); message('key saved');
-            }); } }, field('Kind', kKind), fTarget, fNamed, fPort, field('Label', kLabel), fKey, fId, fSecret, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
+            }); } }, field('Kind', kKind), fTarget, fNamed, fPort, field('Label', kLabel), fKey, fId, fSecret, fCsv, el('button', { class: 'primary', type: 'submit', text: 'Save key' })),
             el('h3', { text: 'Get the API key from a firewall / Panorama' }),
             el('p', { class: 'muted', text: 'As pan-os-php key-manager add=<host>: the viewer asks the firewall / Panorama for the API key of the administrator (XML API keygen) and saves it as your key of kind PAN-OS. The password is only sent to the device - it is not saved and not logged. The host must be allowed by the administrator (Network for runs).' + (ks.network ? '' : ' Network for runs is off at the moment - this does not work now.') }),
             genForm, gDebug,
