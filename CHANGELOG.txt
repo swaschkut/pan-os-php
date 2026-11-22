@@ -5,6 +5,8 @@ UTIL:
 
 BUGFIX:
 * beta-vp-merge-artifact-fix
+* type=scm-export-xml (in=scm-export://, the SCM import of the config viewer) | nothing of the folders with a space in their name was loaded (Prisma Access, Mobile Users Container, Mobile Users, Mobile Users Explicit Proxy, Remote Networks, Service Connections): scm_pa_export.php writes their directory as slug (config/folders/Prisma_Access/), the loader looked for "Prisma Access"; the cloud folders (Mobile Users, Remote Networks, Service Connections - loaded as DeviceCloud) were looked for below devices/ - objects (e.g. FQDN addresses), profiles and rules of these folders were missing
+* SCM import (scm-api:// and scm-export://) | objects / rules of the folder "Prisma Access" whose owner the API returns with the former name "Shared" were skipped - now loaded into "Prisma Access"
 
 GENERAL:
 

@@ -1421,7 +1421,12 @@ class PanSCMAPIConnector
                     if( $object['folder'] === "predefined" )
                         continue;
 
-                    if( $object['folder'] !== $folder )
+                    // "Shared" is the former name of the folder "Prisma Access" - the API still returns it as owner
+                    // of the objects of that folder
+                    $alias = array( 'Shared' => 'Prisma Access' );
+                    $owner = isset($alias[$object['folder']]) ? $alias[$object['folder']] : $object['folder'];
+                    $loading = isset($alias[$folder]) ? $alias[$folder] : $folder;
+                    if( $owner !== $loading )
                         continue;
                 }
                 else

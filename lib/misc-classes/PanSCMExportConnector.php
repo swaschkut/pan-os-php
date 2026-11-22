@@ -197,6 +197,16 @@ class PanSCMExportConnector extends PanSCMAPIConnector
         return $r === null ? array( 'data' => array() ) : $r;
     }
 
+    /** the folder name of a container as scm_pa_export.php writes it (SCMPrismaAccessExport::slug: "Prisma Access" -> "Prisma_Access") */
+    public static function slug( $name )
+    {
+        $slug = preg_replace( '/[^A-Za-z0-9._-]+/', '_', (string)$name );
+        return trim( $slug, "_" ) === "" ? "_" : $slug;
+    }
+
+    /** legacy owner names the API returns in the objects of a folder (SCMPrismaAccessExport::OWNER_ALIASES) */
+    const OWNER_ALIASES = array( 'Shared' => 'Prisma Access' );
+
     /** objects of one type and container from the export */
     function getResource( $type = null, $foldertype = "folder", $folderName = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1 )
     {
@@ -204,16 +214,29 @@ class PanSCMExportConnector extends PanSCMAPIConnector
             return null;
         $kind = $foldertype == "snippet" ? "snippet" : ( $foldertype == "device" ? "device" : "folder" );
         $key = strpos($type, "-rules") !== FALSE ? $type . "-" . $prePost : $type;
-        if( !isset($this->files[$kind][$folderName][$key]) )
-        {
-            // rule files without pre / post split (snippet rules)
-            if( strpos($type, "-rules") !== FALSE && $prePost == "pre" && isset($this->files[$kind][$folderName][$type]) )
-                $key = $type;
-            else
-                return null;
-        }
+        // the export writes every folder (also the cloud folders Mobile Users, Remote Networks, Service Connections -
+        // loaded as DeviceCloud) below config/folders/, with the name as slug ("Prisma Access" -> "Prisma_Access")
+        $file = null;
+        foreach( array_unique( $kind == "device" ? array( "device", "folder" ) : array( $kind ) ) as $k )
+            foreach( array_unique( array( $folderName, self::slug($folderName) ) ) as $n )
+                if( $file === null && isset($this->files[$k][$n]) )
+                {
+                    if( isset($this->files[$k][$n][$key]) )
+                        $file = $this->files[$k][$n][$key];
+                    // rule files without pre / post split (snippet rules)
+                    elseif( strpos($type, "-rules") !== FALSE && $prePost == "pre" && isset($this->files[$k][$n][$type]) )
+                        $file = $this->files[$k][$n][$type];
+                }
+        if( $file === null )
+            return null;
         PH::print_stdout( "       - " . $type . ( strpos($type, "-rules") !== FALSE ? " (" . $prePost . ")" : "" ) . " - " . $foldertype . " - " . $folderName . " [export]" );
-        return $this->readFile( $this->files[$kind][$folderName][$key] );
+        $r = $this->readFile( $file );
+        // objects of the folder "Prisma Access" carry the former owner name "Shared": they belong to this folder
+        if( $r !== null )
+            foreach( $r['data'] as $i => $e )
+                if( is_array($e) && isset($e['folder']) && isset(self::OWNER_ALIASES[$e['folder']]) && self::OWNER_ALIASES[$e['folder']] === $folderName )
+                    $r['data'][$i]['folder'] = $folderName;
+        return $r;
     }
 
     function getNetworkResource( $type = "zones", $foldertype = "folder", $folderName = "Prisma Access", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1 )
