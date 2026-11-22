@@ -96,7 +96,15 @@ class ExportToHtmlHelper
         libxml_use_internal_errors( $prev );
         $columns = array();
         foreach( $doc->getElementsByTagName( 'th' ) as $th )
-            $columns[] = trim( $th->textContent );
+        {
+            // two columns with the same heading (e.g. "visibility" per profile type): the second one "… (2)" - the
+            // data is matched by column name (config viewer: extra columns), the second one was lost before
+            $c = trim( $th->textContent );
+            $base = $c;
+            for( $i = 2; in_array( $c, $columns, TRUE ); $i++ )
+                $c = $base . ' (' . $i . ')';
+            $columns[] = $c;
+        }
         $rows = array();
         foreach( $doc->getElementsByTagName( 'tbody' )->item( 0 )->childNodes ?? array() as $tr )
         {

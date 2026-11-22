@@ -477,7 +477,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             if( $bestPractice )
                 $headers .= '<th>BP AV</th>';
             if( $visibility )
-                $headers .= '<th>visibility</th>';
+                $headers .= '<th>AV visibility</th>';
             if( $adoption )
                 $headers .= '<th>AV adoption</th>';
         }
@@ -487,7 +487,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $bestPractice )
             $headers .= '<th>BP AS</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>AS visibility</th>';
         if( $adoption )
             $headers .= '<th>AS adoption</th>';
 
@@ -495,7 +495,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $bestPractice )
             $headers .= '<th>BP VP</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>VP visibility</th>';
         if( $adoption )
             $headers .= '<th>VP adoption</th>';
 
@@ -503,7 +503,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $bestPractice )
             $headers .= '<th>BP URL</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>URL visibility</th>';
         if( $adoption )
             $headers .= '<th>URL adoption</th>';
 
@@ -511,7 +511,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $bestPractice )
             $headers .= '<th>BP FB</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>FB visibility</th>';
         if( $adoption )
             $headers .= '<th>FB adoption</th>';
 
@@ -521,7 +521,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             if( $bestPractice )
                 $headers .= '<th>BP WF</th>';
             if( $visibility )
-                $headers .= '<th>visibility</th>';
+                $headers .= '<th>WF visibility</th>';
             if( $adoption )
                 $headers .= '<th>WF adoption</th>';
         }
@@ -536,7 +536,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             if( $bestPractice )
                 $headers .= '<th>BP WF/AV</th>';
             if( $visibility )
-                $headers .= '<th>visibility</th>';
+                $headers .= '<th>WF/AV visibility</th>';
             if( $adoption )
                 $headers .= '<th>WF/AV adoption</th>';
 
@@ -545,7 +545,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             if( $bestPractice )
                 $headers .= '<th>BP DNS Security</th>';
             if( $visibility )
-                $headers .= '<th>visibility</th>';
+                $headers .= '<th>DNS Security visibility</th>';
             if( $adoption )
                 $headers .= '<th>DNS Security adoption</th>';
         }

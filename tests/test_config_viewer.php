@@ -491,6 +491,12 @@ $r = $alice->call( 'POST', 'projects', array( 'name' => 'Profiles' ) );
 $SP = 'projects/' . $r[1]['pid'];
 $r = $alice->call( 'POST', $SP . '/configs', null, array( 'sp.xml', file_get_contents( $here . '/input/securityprofiles-panorama.xml' ) ) );
 $SPC = $SP . '/configs/' . $r[1]['cid'];
+// security profile groups, extra columns: visibility per profile type (before: every one "visibility" - only one shown)
+$r = $alice->call( 'GET', $SPC . '/objects?type=securityprofilegroup&location=any&columns=' . urlencode( 'BestPractice|Visibility|Adoption' ) );
+$cols = $r[1]['columns'] ?? array();
+eq( array( status( $r ), count( $cols ) === count( array_unique( $cols ) ), in_array( 'AV visibility', $cols, TRUE ), in_array( 'URL visibility', $cols, TRUE ), in_array( 'visibility', $cols, TRUE ),
+    $r[1]['rows'][0]['URL adoption'] ?? null ),
+    array( 200, TRUE, TRUE, TRUE, FALSE, 'yes' ), 'security profile groups: extra columns best practice / visibility / adoption per profile type' );
 $rows = array_column( $alice->call( 'GET', $SPC . '/objects?type=securityprofile&securityprofiletype=any&location=any&' . http_build_query( array( 'filter' => '(name regex /-shared|-dg/)' ) ) )[1]['rows'] ?? array(), null, 'name' );
 $refs = $alice->call( 'GET', $SPC . '/references?type=securityprofile&securityprofiletype=any&location=shared&name=AV-shared' );
 $av = $alice->call( 'GET', $SPC . '/object?type=securityprofile&location=shared&name=AV-shared' )[1];
