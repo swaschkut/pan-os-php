@@ -165,6 +165,7 @@ BUGFIX:
 * LDAP queries | a warning of an ldap_* function no longer ends the script (myErrorHandler)
 * alpha-mica-alert-only-keep-blocking
 * set-writer-member-name
+* beta-vp-merge-artifact-fix
 
 
 2.1.62 (20261121)
