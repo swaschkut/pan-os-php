@@ -2824,17 +2824,17 @@ class PanSCMAPIConnector
      * @param string $serviceType all|remote_network|gp_gateway|gp_portal|swg_proxy|rbi
      * @param string $addrType all|active|service_ip|auth_cache_service|network_load_balancer
      * @param string $location all|deployed
-     * @param string $environment prod6 (default, most tenants) | prod (older tenants)
+     * @param string $environment prod8 (default, most tenants) | prod (older tenants) | prod6 | prod<N>
      * @return array ['http_code' => int, 'json' => array|null, 'errors' => array|null, 'url' => string]
      */
-    public function getPrismaAccessEgressIP( $apiKey, $serviceType = "remote_network", $addrType = "all", $location = "all", $environment = "prod6" )
+    public function getPrismaAccessEgressIP( $apiKey, $serviceType = "remote_network", $addrType = "all", $location = "all", $environment = "prod8" )
     {
         if( PH::$saseQAapi )
             $url = "https://api.lab.datapath.prismaaccess.com/getPrismaAccessIP/v2";
-        elseif( $environment == "prod6" )
-            $url = "https://api.prod6.datapath.prismaaccess.com/getPrismaAccessIP/v2";
+        elseif( preg_match( '/^prod[0-9]{0,2}$/', (string)$environment ) )
+            $url = "https://api." . $environment . ".datapath.prismaaccess.com/getPrismaAccessIP/v2";
         else
-            $url = "https://api.prod.datapath.prismaaccess.com/getPrismaAccessIP/v2";
+            derr( "egress-IP API environment: prod8 | prod6 | prod | prod<N> - not '" . $environment . "'", null, FALSE );
 
         $body = json_encode( array( 'serviceType' => $serviceType, 'addrType' => $addrType, 'location' => $location ) );
         $header = array( "header-api-key: ".$apiKey, "Content-Type: application/json" );

@@ -33,9 +33,27 @@ class SCMEgressIP
     const LOCATIONS = array( 'all', 'deployed' );
     const COLUMNS = array( 'service_type', 'location', 'address', 'address_type', 'zone_subnet', 'create_time', 'allow_listed' );
 
-    /** environment of the egress-IP API: prod6 for most tenants (default), prod only for older tenants */
-    const ENVIRONMENTS = array( 'prod6', 'prod' );
+    /**
+     * environment of the egress-IP API (host api.<env>.datapath.prismaaccess.com): prod6 for most tenants (default),
+     * prod for older tenants, prod8; any other prod<N> can be given (new environments). The known ones in the order
+     * egressip-env=auto tries them.
+     */
+    const ENVIRONMENTS = array( 'prod6', 'prod', 'prod8' );
     const ENV_DEFAULT = 'prod6';
+    const ENV_PATTERN = '/^prod[0-9]{0,2}$/';
+
+    public static function validEnv( string $env ): bool
+    {
+        return preg_match( self::ENV_PATTERN, $env ) === 1;
+    }
+
+    /** the URL of the egress-IP API of an environment (prod, prod6, prod8, prod<N>) */
+    public static function url( string $env ): string
+    {
+        if( !self::validEnv( $env ) )
+            throw new Exception( "env: " . implode( ' | ', self::ENVIRONMENTS ) . " or another prod<N>" );
+        return "https://api." . $env . ".datapath.prismaaccess.com/getPrismaAccessIP/v2";
+    }
 
     /**
      * Hint for an error of the egress-IP API: HTTP 401 / 403 (login) - a wrong key, a key of another tenant or the other
@@ -45,10 +63,10 @@ class SCMEgressIP
     {
         if( preg_match( '/HTTP 40[13]\b|\b40[13]\b.*(Unauthori[sz]ed|Forbidden)|Unauthori[sz]ed|Forbidden/i', $error ) !== 1 )
             return '';
-        $other = $env === 'prod' ? 'prod6' : 'prod';
+        $other = array_values( array_diff( self::ENVIRONMENTS, array( $env ) ) );
         return ' - login failed: check the egress-IP API key' . ( $tsg !== '' ? ' of TSG ' . $tsg : '' )
             . ' (Prisma Access > Infrastructure Settings > Egress IP API) and the environment: now ' . $env
-            . ', try env=' . $other . ' (most tenants prod6, older tenants prod)';
+            . ', try env=' . implode( ' / env=', $other ) . ' (most tenants prod6, older tenants prod)';
     }
 
     /**

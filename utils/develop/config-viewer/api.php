@@ -417,6 +417,9 @@ try
             viewerOut( ViewerApp::projectPublic( $app->projectCreate( $user, viewerBody()['name'] ?? null ) ), 201 );
         if( $n == 2 && $method === 'GET' )
             viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) + array( 'network_global' => $app->networkGet()['enabled'] ) );
+        // binding of the project (PAN-OS / SCM tenant): DELETE = removed (administrator)
+        if( $n == 3 && $sub === 'binding' && $method === 'DELETE' )
+            viewerOut( $app->projectBindingReset( $user, $pid ) );
         // network for the runs of this project (owner; works only while the administrator allows network)
         if( $n == 3 && $sub === 'network' && $method === 'PUT' )
             viewerOut( $app->projectNetworkSet( $user, $pid, viewerBody()['enabled'] ?? FALSE ) );
@@ -478,6 +481,9 @@ try
         // SCM tab, Prisma Access pages: …/projects/<pid>/scm/pa/<page>  GET states (+ SCM keys);
         //         …/scm/pa/<page>/<id>  GET data, DELETE;  …/scm/pa/<page>/<new>/compare/<old>  GET compare
         //         (read live: POST …/projects/<pid>/scm-pa/runs {kid, page})
+        // …/projects/<pid>/scm/pa-from-runs  POST: the Prisma Access pages / egress IPs from the SCM imports of the project
+        if( $sub === 'scm' && $n == 4 && $route[3] === 'pa-from-runs' && $method === 'POST' )
+            viewerOut( $app->scmPaFromRuns( $user, $pid ) );
         if( $sub === 'scm' && $n >= 5 && $route[3] === 'pa' )
         {
             if( $n == 5 && $method === 'GET' )

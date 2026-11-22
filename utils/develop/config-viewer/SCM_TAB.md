@@ -47,13 +47,32 @@ Folders / snippets / hierarchy are not a menu entry here: they are the SCM confi
    The egress-IP API key (that api_key) goes into the key store of the user (kind egress IP, target TSG):
    `scm_pa_export.php egressip-key-out=<file>`.
    With that key the import reads the egress IPs as well (`egressip egressip-env=auto`: prod6, on HTTP 401 / 403
-   prod): a state of Prisma Access > Egress IP (source "SCM import", the environment that answered).
+   prod, then prod8; any other environment prod<N> can be given): a state of Prisma Access > Egress IP (source "SCM import", the environment that answered).
 2. **Live refresh** - a button per page: the same call as the export, with the personal key of the user (key store,
    kind SCM / egress IP; network for runs per user, as today). The result is a new version of that area.
 3. **Compare** - every page shows what changed between two versions (default: the last import against the live
    refresh): added / removed / changed entries. For the egress IPs: new and removed addresses per service type and
    location (`SCMEgressIP::compare`).
 4. Later: an **as-is report** of the pages (export documentation).
+
+## Binding of a project
+
+The first import / read from an API binds the project (shown next to its name):
+
+- a firewall / Panorama (XML API) -> **PAN-OS**: imports with an SCM key are refused, no SCM tab;
+- an SCM tenant -> **SCM, TSG <id>**: imports / SCM tab reads / egress IPs only for this TSG (keys of other tenants are
+  not offered, a file of egress IPs of another TSG is refused), no import from a firewall / Panorama.
+
+Projects that existed before: bound by the runs they have done when these agree (all PAN-OS or one tenant). An
+administrator can release the binding ("Release binding"; the next import binds again).
+
+## Filling the pages
+
+- **From the SCM imports** (button on top of the tab): the Prisma Access pages and Egress IP from the SCM imports /
+  reads of the project whose export is still there. Imports before 2.1.63 read only the configuration (area config) -
+  for them "Read all live".
+- **Read all live**: one run with the SCM key of the user - every area of the pages and the egress IPs (as the import,
+  without the configuration).
 
 ## Changes (setter) - only through compare and change
 
@@ -79,7 +98,7 @@ Nothing is written to SCM directly from the viewer (neither the SCM API nor the 
 ## Egress IP (built)
 
 CLI: `php utils/develop/sase/scm/scm_egress_ip.php tsg=<TSG> [servicetype=all] [addrtype=all] [location=all]
-[env=prod6|prod] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json]
+[env=prod6|prod|prod8|prod<N>] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json]
 [compare=previous.json|export-dir] [in=export-dir|92_egress-ip.json]`
 
 - `option=` reads the request body of the Palo Alto documentation ("API examples for retrieving Prisma Access IP

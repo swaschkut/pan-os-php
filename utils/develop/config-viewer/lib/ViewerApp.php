@@ -219,6 +219,14 @@ class ViewerApp
         $cols = array_column( $this->db->query( 'PRAGMA table_info(projects)' )->fetchAll(), 'name' );
         if( !in_array( 'network', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE projects ADD COLUMN network INTEGER NOT NULL DEFAULT 0' );
+        // the kind of device a project is bound to by its first import / read from an API: 'panos' (firewall /
+        // Panorama) or 'scm' (with the TSG of the tenant in bind_target); set from the runs a project already has
+        $bindNew = !in_array( 'bind_kind', $cols, TRUE );
+        if( $bindNew )
+        {
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN bind_kind TEXT' );
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN bind_target TEXT' );
+        }
         // API keys of a user (personal: only this user uses them, in any of the user's projects); the secret encrypted
         // with the key of the installation (keys.secret in the data directory), never sent back
         $this->db->exec( 'CREATE TABLE IF NOT EXISTS user_keys (id INTEGER PRIMARY KEY, kid TEXT NOT NULL UNIQUE,
@@ -244,6 +252,9 @@ class ViewerApp
         if( !in_array( 'ldaps', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE ldap_queries ADD COLUMN ldaps INTEGER NOT NULL DEFAULT 1' );
         // why a run failed: memory (killed / out of memory), timeout, error
+        if( $bindNew )
+            foreach( $this->db->query( 'SELECT id FROM projects' )->fetchAll() as $row )
+                $this->bindFromRuns( (int)$row['id'] );
         $cols = array_column( $this->db->query( 'PRAGMA table_info(jobs)' )->fetchAll(), 'name' );
         if( !in_array( 'reason', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE jobs ADD COLUMN reason TEXT' );
@@ -787,7 +798,72 @@ class ViewerApp
     public static function projectPublic( array $p ): array
     {
         return array( 'pid' => $p['pid'], 'name' => $p['name'], 'owner' => $p['owner'], 'role' => $p['role'], 'created' => (int)$p['created'],
-            'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null, 'network' => !empty( $p['network'] ) );
+            'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null, 'network' => !empty( $p['network'] ),
+            'binding' => !empty( $p['bind_kind'] ) ? array( 'kind' => $p['bind_kind'], 'target' => $p['bind_target'] ?? null ) : null );
+    }
+
+    // ------------------------------------------------------------------ binding of a project (PAN-OS / SCM tenant)
+
+    /** kind and target of a run that reads from an API: panos / scm:<TSG> (egress IPs belong to the tenant) */
+    private static function runTarget( array $j ): ?array
+    {
+        foreach( (array)json_decode( (string)$j['args'], TRUE ) as $a )
+            if( is_string( $a ) && preg_match( '/^x-(import|scmpa|egress)-target=(panos|scm|egressip):(.+)$/', $a, $m ) )
+                return $m[2] === 'panos' ? array( 'panos', null ) : array( 'scm', $m[3] );
+        return null;
+    }
+
+    /**
+     * a project without binding: bound by the runs it has done (imports, SCM tab reads) when they agree - all PAN-OS,
+     * or one SCM tenant; runs of different kinds / tenants leave it unbound (the next run binds it)
+     */
+    private function bindFromRuns( int $projectId ): void
+    {
+        $seen = array();
+        foreach( $this->q( "SELECT args FROM jobs WHERE project_id = ? AND state = 'done' AND type IN ('import', 'scm-pa', 'egress-ip')", array( $projectId ) )->fetchAll() as $j )
+            if( ( $t = self::runTarget( $j ) ) !== null )
+                $seen[$t[0] . ':' . $t[1]] = $t;
+        if( count( $seen ) === 1 )
+        {
+            $t = array_values( $seen )[0];
+            $this->q( 'UPDATE projects SET bind_kind = ?, bind_target = ? WHERE id = ? AND bind_kind IS NULL', array( $t[0], $t[1], $projectId ) );
+        }
+    }
+
+    /** a run reading from $kind ('panos' / 'scm') / TSG $target: refused when the project is bound to something else */
+    private static function bindCheck( array $p, string $kind, ?string $target ): void
+    {
+        if( empty( $p['bind_kind'] ) )
+            return;
+        if( $p['bind_kind'] !== $kind )
+            throw new ViewerException( 'this project is bound to ' . ( $p['bind_kind'] === 'scm' ? 'the SCM tenant TSG ' . $p['bind_target'] : 'PAN-OS (firewall / Panorama)' )
+                . ' - ' . ( $kind === 'scm' ? 'an SCM tenant' : 'a firewall / Panorama' ) . ' needs a project of its own', 403 );
+        if( $kind === 'scm' && (string)$p['bind_target'] !== (string)$target )
+            throw new ViewerException( 'this project is bound to the SCM tenant TSG ' . $p['bind_target'] . ' - TSG ' . $target . ' needs a project of its own', 403 );
+    }
+
+    /** the first run that read from an API binds the project */
+    private function bindSet( string $pid, string $kind, ?string $target ): void
+    {
+        $this->q( 'UPDATE projects SET bind_kind = ?, bind_target = ? WHERE pid = ? AND bind_kind IS NULL', array( $kind, $kind === 'scm' ? $target : null, $pid ) );
+    }
+
+    /** administrator: the binding of a project removed (the next import / read binds it again) */
+    public function projectBindingReset( array $user, $pid ): array
+    {
+        if( empty( $user['is_admin'] ) || isset( $user['token'] ) )
+            throw new ViewerException( 'only an administrator', 403 );
+        if( !is_string( $pid ) || !preg_match( '/^[0-9a-f]{32}$/', $pid ) || $pid === self::SYSTEM_PID
+            || $this->q( 'UPDATE projects SET bind_kind = NULL, bind_target = NULL WHERE pid = ?', array( $pid ) )->rowCount() === 0 )
+            throw new ViewerException( 'not found', 404 );
+        return array( 'ok' => TRUE );
+    }
+
+    /** the SCM tab: not for a project bound to PAN-OS */
+    private static function needScmProject( array $p ): void
+    {
+        if( ( $p['bind_kind'] ?? null ) === 'panos' )
+            throw new ViewerException( 'this project is bound to PAN-OS (firewall / Panorama) - the SCM tab is for an SCM tenant', 403 );
     }
 
     // ------------------------------------------------------------------ network for runs, API keys of a user, import
@@ -1985,6 +2061,7 @@ class ViewerApp
             if( !in_array( $source, array( 'candidate', 'running' ), TRUE ) || ( $k['kind'] === 'scm' && $source !== 'candidate' ) )
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
+            self::bindCheck( $p, $k['kind'], $k['target'] );
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
         }
         if( $type === 'egress-ip' )
@@ -1997,6 +2074,7 @@ class ViewerApp
             $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
             if( !$k || $k['kind'] !== 'egressip' )
                 throw new ViewerException( 'kid: one of your egress-IP API keys (Account, My API keys, kind egress IP)', 400 );
+            self::bindCheck( $p, 'scm', $k['target'] );
             if( !$this->networkGet()['enabled'] )
                 throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
             if( empty( $p['network'] ) )
@@ -2014,8 +2092,8 @@ class ViewerApp
                 throw new ViewerException( $e->getMessage(), 400 );
             }
             $env = (string)( $in['env'] ?? 'prod6' );
-            if( !in_array( $env, array( 'prod6', 'prod' ), TRUE ) )
-                throw new ViewerException( 'env: prod6 (default) or prod (older tenants)', 400 );
+            if( !SCMEgressIP::validEnv( $env ) )
+                throw new ViewerException( 'env: prod6 (default), prod (older tenants), prod8 or another prod<N>', 400 );
             $args = array( 'x-egress-key=' . $k['kid'], 'x-egress-target=egressip:' . $k['target'], 'servicetype=' . $req['serviceType'],
                 'addrtype=' . $req['addrType'], 'location=' . $req['location'], 'env=' . $env );
         }
@@ -2027,11 +2105,12 @@ class ViewerApp
             if( isset( $user['token'] ) )
                 throw new ViewerException( 'not allowed with an API token', 403 );
             $page = (string)( $in['page'] ?? '' );
-            if( !isset( self::SCM_PA_PAGES[$page] ) )
-                throw new ViewerException( 'page: ' . implode( ' | ', array_keys( self::SCM_PA_PAGES ) ), 400 );
+            if( $page !== 'all' && !isset( self::SCM_PA_PAGES[$page] ) )
+                throw new ViewerException( 'page: all | ' . implode( ' | ', array_keys( self::SCM_PA_PAGES ) ), 400 );
             $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
             if( !$k || $k['kind'] !== 'scm' )
                 throw new ViewerException( 'kid: one of your SCM keys (Account, My API keys, kind SCM)', 400 );
+            self::bindCheck( $p, 'scm', $k['target'] );
             if( !$this->networkGet()['enabled'] )
                 throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
             if( empty( $p['network'] ) )
@@ -3105,7 +3184,7 @@ class ViewerApp
         // the egress IPs of the tenant: scm_egress_ip.php (pan-os-php type=scm-egress-ip), the request checked at queueing
         if( $type === 'egress-ip' )
         {
-            $req = array_values( array_filter( $args, function( $a ) { return preg_match( '/^(servicetype|addrtype|location|env)=[a-z0-9_]{1,40}$/', $a ); } ) );
+            $req = array_values( array_filter( $args, function( $a ) { return preg_match( '/^(servicetype|addrtype|location)=[a-z0-9_]{1,40}$/', $a ) || preg_match( '/^env=prod[0-9]{0,2}$/', $a ); } ) );
             return array( $step( 'scm-egress-ip', array_merge( array( 'tsg=' . $k['target'] ), $req, array( 'save=%JOB%/egress.json', 'format=list', 'out=%JOB%/egress.txt' ) ), TRUE ) );
         }
         // SCM tab, Prisma Access read live: scm_pa_export.php (type=scm-export) of the area of the page, read only
@@ -3115,8 +3194,12 @@ class ViewerApp
             foreach( $args as $a )
                 if( preg_match( '/^x-scmpa-page=([a-z-]+)$/', $a, $m ) )
                     $page = $m[1];
-            if( !isset( self::SCM_PA_PAGES[$page] ) )
+            if( $page !== 'all' && !isset( self::SCM_PA_PAGES[$page] ) )
                 throw new ViewerException( 'unknown page of the SCM tab' );
+            // all: every area of the pages and the egress IPs (as the SCM import, without the configuration)
+            if( $page === 'all' )
+                return array( $step( 'scm-export', array( 'in=scm-api://' . $k['target'], 'area=' . implode( ',', self::scmPaAreas() ), 'outdir=%JOB%/scm-export',
+                    'egressip-key-out=%JOB%/.egress-key', 'egressip', 'egressip-env=auto' ), TRUE ) );
             $area = self::SCM_PA_PAGES[$page]['area'];
             return array( $step( 'scm-export', array_merge( array( 'in=scm-api://' . $k['target'], 'area=' . $area, 'outdir=%JOB%/scm-export' ),
                 $area === 'infra' ? array( 'egressip-key-out=%JOB%/.egress-key' ) : array() ), TRUE ) );
@@ -3409,6 +3492,8 @@ class ViewerApp
         }
         // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove); egress IPs:
         // taken over by the SCM tab (scmEgressList)
+        if( $j['type'] === 'egress-ip' && $j['state'] === 'done' && ( $t = self::runTarget( $j ) ) !== null )
+            $this->bindSet( $j['pid'], $t[0], $t[1] );
         if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
             return;
         // SCM tab, Prisma Access read live: the export of the run becomes a state of its page
@@ -3419,9 +3504,17 @@ class ViewerApp
             $x = $this->jobArgsX( $j );
             $p = $this->q( 'SELECT * FROM projects WHERE pid = ?', array( $j['pid'] ) )->fetch();
             $u = $this->userById( (int)$j['user_id'] );
-            $n = $p && preg_match( '/^scm:([0-9]{1,20})$/', $x['target'] ?? '', $m ) && isset( self::SCM_PA_PAGES[$x['page'] ?? ''] )
-                ? $this->paCollect( $p, $dir, $m[1], $j['jid'], 'live', $u['name'] ?? '?', (int)( $j['finished'] ?? time() ),
-                    self::scmPaPagesOfArea( self::SCM_PA_PAGES[$x['page']]['area'] ) ) : 0;
+            $page = $x['page'] ?? '';
+            $n = 0;
+            if( $p && preg_match( '/^scm:([0-9]{1,20})$/', $x['target'] ?? '', $m ) && ( $page === 'all' || isset( self::SCM_PA_PAGES[$page] ) ) )
+            {
+                $n = $this->paCollect( $p, $dir, $m[1], $j['jid'], 'live', $u['name'] ?? '?', (int)( $j['finished'] ?? time() ),
+                    $page === 'all' ? array_keys( self::SCM_PA_PAGES ) : self::scmPaPagesOfArea( self::SCM_PA_PAGES[$page]['area'] ) );
+                if( $page === 'all' && $this->egressFromExport( $p, $dir, $m[1], $j['jid'], $u['name'] ?? '?', 'live' ) )
+                    $n++;
+                if( $n > 0 )
+                    $this->bindSet( $j['pid'], 'scm', $m[1] );
+            }
             if( $n === 0 )
                 $this->q( "UPDATE jobs SET state = 'failed', error = ?, reason = 'error' WHERE id = ?", array( 'nothing was read (see run.log)', $j['id'] ) );
             return;
@@ -3476,6 +3569,8 @@ class ViewerApp
         @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
         list( $kind, $host ) = array_pad( explode( ':', $target, 2 ), 2, '' );
         $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target );
+        if( in_array( $kind, array( 'panos', 'scm' ), TRUE ) )
+            $this->bindSet( $p['pid'], $kind, $host );
         // the SCM import reads the Prisma Access areas as well (scm-export area=config,infra): a state of their pages
         if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) )
         {
@@ -3506,7 +3601,7 @@ class ViewerApp
     }
 
     /** infra/92_egress-ip.json of the export of a run (read without error) as a state of the egress IPs */
-    private function egressFromExport( array $p, string $jobDir, string $tsg, string $id, string $user ): bool
+    private function egressFromExport( array $p, string $jobDir, string $tsg, string $id, string $user, string $source = 'SCM import' ): bool
     {
         $files = glob( $jobDir . '/scm-export/' . $tsg . '/*/infra/92_egress-ip.json' ) ?: array();
         if( count( $files ) === 0 || is_file( $this->egressDir( $p ) . '/' . $id . '.json' ) )
@@ -3522,7 +3617,7 @@ class ViewerApp
             return FALSE;
         }
         $raw = (array)json_decode( (string)file_get_contents( $files[0] ), TRUE );
-        $this->egressStore( $this->egressDir( $p ), $id, array( 'source' => 'SCM import', 'user' => $user, 'time' => time(), 'tsg' => $tsg,
+        $this->egressStore( $this->egressDir( $p ), $id, array( 'source' => $source, 'user' => $user, 'time' => time(), 'tsg' => $tsg,
             'request' => $state['request'], 'fetched_at' => $state['fetched_at'], 'name' => isset( $raw['environment'] ) && is_string( $raw['environment'] ) ? $raw['environment'] : null,
             'rows' => $state['rows'] ) );
         return TRUE;
@@ -5001,6 +5096,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         $dir = $this->egressDir( $p );
         // live reads that are done: their result into the states of the project (once)
         foreach( $this->q( "SELECT j.*, u.name AS user FROM jobs j LEFT JOIN users u ON u.id = j.user_id WHERE j.project_id = ? AND j.type = 'egress-ip' AND j.state = 'done'",
@@ -5029,11 +5125,12 @@ class ViewerApp
         $keys = array();
         if( !isset( $user['token'] ) )
             foreach( $this->keyList( $user ) as $k )
-                if( $k['kind'] === 'egressip' )
+                if( $k['kind'] === 'egressip' && ( empty( $p['bind_kind'] ) || $k['target'] === (string)$p['bind_target'] ) )
                     $keys[] = array( 'kid' => $k['kid'], 'target' => $k['target'], 'label' => $k['label'], 'refused' => $this->networkRefusal( 'scm', $k['target'], $user ) );
         self::egressLib();
         return array( 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ),
-            'options' => array( 'servicetype' => SCMEgressIP::SERVICE_TYPES, 'addrtype' => SCMEgressIP::ADDR_TYPES, 'location' => SCMEgressIP::LOCATIONS ) );
+            'options' => array( 'servicetype' => SCMEgressIP::SERVICE_TYPES, 'addrtype' => SCMEgressIP::ADDR_TYPES, 'location' => SCMEgressIP::LOCATIONS,
+                'env' => SCMEgressIP::ENVIRONMENTS ) );
     }
 
     private function egressStore( string $dir, string $id, array $state ): void
@@ -5050,6 +5147,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         self::egressLib();
         $read = function( $id ) use ( $p ) {
             if( !is_string( $id ) || !preg_match( '/^[0-9a-z]{1,40}$/', $id ) || !is_file( $this->egressDir( $p ) . '/' . $id . '.json' ) )
@@ -5075,6 +5173,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'write' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         self::egressLib();
         if( !is_array( $upload ) || ( $upload['error'] ?? 1 ) !== 0 || is_array( $upload['tmp_name'] ?? null ) || !is_uploaded_file( (string)$upload['tmp_name'] ) )
             throw new ViewerException( 'file: the egress IPs (92_egress-ip.json of an export, a zip of the export, or a snapshot of scm_egress_ip.php)', 400 );
@@ -5119,6 +5218,8 @@ class ViewerApp
                 throw new ViewerException( 'file: ' . preg_replace( '#\S*' . preg_quote( $tmp, '#' ) . '\S*#', 'the file', $e->getMessage() ), 400 );
             }
             $raw = json_decode( (string)file_get_contents( $tmp . '/egress.json' ), TRUE );
+            if( ( $p['bind_kind'] ?? null ) === 'scm' && is_array( $raw ) && isset( $raw['tsg_id'] ) && is_scalar( $raw['tsg_id'] ) && (string)$raw['tsg_id'] !== (string)$p['bind_target'] )
+                throw new ViewerException( 'file: egress IPs of TSG ' . $raw['tsg_id'] . ' - this project is bound to the SCM tenant TSG ' . $p['bind_target'], 400 );
             $id = 'i' . time() . bin2hex( random_bytes( 2 ) );
             $this->egressStore( $this->egressDir( $p ), $id, array( 'source' => 'import', 'user' => (string)$user['name'], 'time' => time(),
                 'tsg' => is_array( $raw ) && isset( $raw['tsg_id'] ) && is_scalar( $raw['tsg_id'] ) ? (string)$raw['tsg_id'] : null,
@@ -5137,6 +5238,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'write' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         if( !is_string( $id ) || !preg_match( '/^[0-9a-z]{1,40}$/', $id ) || !is_file( $this->egressDir( $p ) . '/' . $id . '.json' ) )
             throw new ViewerException( 'not found', 404 );
         unlink( $this->egressDir( $p ) . '/' . $id . '.json' );
@@ -5262,11 +5364,52 @@ class ViewerApp
             'tsg' => $s['tsg'] ?? null, 'fetched_at' => $s['fetched_at'] ?? null, 'endpoints' => $eps );
     }
 
+    /**
+     * the Prisma Access pages and Egress IP from the SCM imports (and reads) the project has done: every run whose
+     * export is still there and was not taken yet. Imports before 2.1.63 read only the configuration (area config).
+     */
+    public function scmPaFromRuns( array $user, $pid ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
+        $out = array( 'runs' => 0, 'states' => 0, 'egress' => 0, 'config_only' => 0, 'gone' => 0 );
+        foreach( $this->q( "SELECT j.*, u.name AS user FROM jobs j LEFT JOIN users u ON u.id = j.user_id WHERE j.project_id = ? AND j.state = 'done' AND j.type IN ('import', 'scm-pa') ORDER BY j.created",
+            array( $p['id'] ) )->fetchAll() as $j )
+        {
+            $t = self::runTarget( $j );
+            if( $t === null || $t[0] !== 'scm' || ( !empty( $p['bind_target'] ) && $t[1] !== (string)$p['bind_target'] ) )
+                continue;
+            $out['runs']++;
+            $dir = $this->jobDir( $p, $j['jid'] );
+            $manifests = glob( $dir . '/scm-export/' . $t[1] . '/*/manifest.json' ) ?: array();
+            if( count( $manifests ) === 0 )
+            {
+                $out['gone']++;
+                continue;
+            }
+            rsort( $manifests );
+            $m = (array)json_decode( (string)file_get_contents( $manifests[0] ), TRUE );
+            if( count( array_diff( (array)( $m['areas'] ?? array() ), array( 'config' ) ) ) === 0 )
+            {
+                $out['config_only']++;
+                continue;
+            }
+            $source = $j['type'] === 'import' ? 'import' : 'live';
+            $time = (int)( $j['finished'] ?? $j['created'] );
+            $out['states'] += $this->paCollect( $p, $dir, $t[1], $j['jid'], $source, (string)$j['user'], $time, array_keys( self::SCM_PA_PAGES ) );
+            if( $this->egressFromExport( $p, $dir, $t[1], $j['jid'], (string)$j['user'], $source === 'import' ? 'SCM import' : 'live' ) )
+                $out['egress']++;
+        }
+        return $out;
+    }
+
     /** the states of a page (newest first), the SCM keys of the user for "Read live" */
     public function scmPaList( array $user, $pid, $page ): array
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         if( !is_string( $page ) || !isset( self::SCM_PA_PAGES[$page] ) )
             throw new ViewerException( 'not found', 404 );
         $states = array();
@@ -5280,7 +5423,7 @@ class ViewerApp
         $keys = array();
         if( !isset( $user['token'] ) )
             foreach( $this->keyList( $user ) as $k )
-                if( $k['kind'] === 'scm' )
+                if( $k['kind'] === 'scm' && ( empty( $p['bind_kind'] ) || $k['target'] === (string)$p['bind_target'] ) )
                     $keys[] = array( 'kid' => $k['kid'], 'target' => $k['target'], 'label' => $k['label'], 'refused' => $this->networkRefusal( 'scm', $k['target'], $user ) );
         return array( 'page' => $page, 'endpoints' => self::SCM_PA_PAGES[$page]['endpoints'], 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ) );
     }
@@ -5290,6 +5433,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         $s = $this->paState( $p, $page, $id );
         foreach( $s['endpoints'] as $name => $e )
         {
@@ -5306,6 +5450,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         $l = $this->paState( $p, $page, $old );
         $r = $this->paState( $p, $page, $new );
         self::paLib();
@@ -5324,6 +5469,7 @@ class ViewerApp
     {
         $p = $this->projectGet( $user, $pid, 'write' );
         self::needUnlimited( $p, 'the SCM tab' );
+        self::needScmProject( $p );
         $s = $this->paState( $p, $page, $id );
         foreach( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $s['dir'], FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST ) as $f )
             $f->isDir() ? rmdir( (string)$f ) : unlink( (string)$f );

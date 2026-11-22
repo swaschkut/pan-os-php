@@ -550,16 +550,15 @@ class SCMPrismaAccessExport
             mkdir($this->exportDir . "/" . self::AREA_INFRA, 0700, TRUE);
 
         PH::print_stdout( " - [infra 92] egress-ip (serviceType=all) ... " );
-        // auto: prod6 (most tenants), on a login error (HTTP 401 / 403) prod (older tenants)
-        $auto = $environment === 'auto';
-        if( $auto )
-            $environment = 'prod6';
-        $result = $this->connector->getPrismaAccessEgressIP( $apiKey, "all", "all", "all", $environment );
-        if( $auto && $result['errors'] !== null && in_array( (int)$result['http_code'], array( 401, 403 ), TRUE ) )
+        // auto: prod6 (most tenants), on a login error (HTTP 401 / 403) prod (older tenants), then prod8
+        $tries = $environment === 'auto' ? array( 'prod6', 'prod', 'prod8' ) : array( $environment );
+        foreach( $tries as $i => $environment )
         {
-            PH::print_stdout( "     prod6: HTTP " . $result['http_code'] . " - trying prod (older tenants)" );
-            $environment = 'prod';
+            if( $i > 0 )
+                PH::print_stdout( "     " . $tries[$i - 1] . ": HTTP " . $result['http_code'] . " - trying " . $environment );
             $result = $this->connector->getPrismaAccessEgressIP( $apiKey, "all", "all", "all", $environment );
+            if( $result['errors'] === null || !in_array( (int)$result['http_code'], array( 401, 403 ), TRUE ) )
+                break;
         }
         $meta['environment'] = $environment;
 
@@ -573,7 +572,7 @@ class SCMPrismaAccessExport
             // HTTP 401 / 403: wrong key or the other environment (prod6 / prod)
             if( in_array( (int)$result['http_code'], array( 401, 403 ), TRUE ) )
                 $meta['error'] .= ' - login failed: check the egress-IP API key and the environment: now ' . $environment
-                    . ', try egressip-env=' . ( $environment === 'prod' ? 'prod6' : 'prod' ) . ' (most tenants prod6, older tenants prod)';
+                    . ', try another egressip-env (prod6 / prod / prod8 / prod<N>) or auto';
             PH::print_stdout( "     x ERROR: " . $meta['error'] );
             $data = null;
         }

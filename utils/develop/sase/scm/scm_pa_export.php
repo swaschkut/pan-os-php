@@ -21,7 +21,7 @@
 // Mobile Users (GlobalProtect), Prisma Browser, IAM (documentation), config (folders / snippets, objects, security) + migration checklist
 // see utils/develop/sase/scm/README_pa_export.md
 //
-// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,explicit-proxy,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod6|prod|auto] [psk-list] [master-key=...] [debugapi]
+// php utils/develop/sase/scm/scm_pa_export.php in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,explicit-proxy,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod6|prod|prod8|prod<N>|auto] [psk-list] [master-key=...] [debugapi]
 
 require_once("lib/pan_php_framework.php");
 require_once("utils/lib/UTIL.php");
@@ -53,14 +53,14 @@ $supportedArguments['config-heavy-types'] = Array('niceName' => 'config-heavy-ty
 $supportedArguments['config-predefined-snippets'] = Array('niceName' => 'config-predefined-snippets', 'shortHelp' => 'config area: also export predefined snippets (large)');
 $supportedArguments['ui-api-host'] = Array('niceName' => 'ui-api-host', 'shortHelp' => 'explicit-proxy area and config-internal: internal UI API host of the tenant region (default ' . SCMPrismaAccessExport::UI_API_HOST_DEFAULT . ', see browser developer tools: requests to /api/config/v9.2/...)', 'argDesc' => '[host]');
 $supportedArguments['egressip'] = Array('niceName' => 'egressip', 'shortHelp' => 'also download the egress IPs via the Prisma Access egress-IP API (API key from .panconfkeystore egressip_tsg_id<TSG_ID>, else api_key of shared-infrastructure-settings, else asked for)');
-$supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host: prod6 (api.prod6.datapath.prismaaccess.com, default, most tenants) | prod (api.prod.datapath.prismaaccess.com, older tenants) | auto (prod6, on HTTP 401 / 403 prod)', 'argDesc' => 'prod6|prod|auto');
+$supportedArguments['egressip-env'] = Array('niceName' => 'egressip-env', 'shortHelp' => 'egress-IP API host api.<env>.datapath.prismaaccess.com: prod6 (default, most tenants) | prod (older tenants) | prod8 | another prod<N> | auto (prod6, on HTTP 401 / 403 prod, then prod8)', 'argDesc' => 'prod6|prod|prod8|prod<N>|auto');
 $supportedArguments['egressip-key-out'] = Array('niceName' => 'egressip-key-out', 'shortHelp' => 'write the egress-IP API key the SCM API gives in shared-infrastructure-settings (api_key; area infra) into this file (chmod 600, only the key) - e.g. for the key store of the config viewer; the export files keep it redacted', 'argDesc' => '[file]');
 $supportedArguments['psk-list'] = Array('niceName' => 'psk-list', 'shortHelp' => 'write the secret lists (chmod 600) with the decrypted current value and an empty *_new column for the import: psk-list.csv + bgp-secret-list.csv (remote-networks, service-connections), secret-list.csv (mobile-users)');
 $supportedArguments['master-key'] = Array('niceName' => 'master-key', 'shortHelp' => 'master key to decrypt PSKs and BGP secrets (default: PAN-OS default master key)', 'argDesc' => '[master-key]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 
-$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,explicit-proxy,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod6|prod|auto] [psk-list] [master-key=...]\n".
+$usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=scm-api://<TSG_ID> [area=infra,config,remote-networks,service-connections,mobile-users,explicit-proxy,prisma-browser,iam] [outdir=export] [egressip] [egressip-env=prod6|prod|prod8|prod<N>|auto] [psk-list] [master-key=...]\n".
     "php ".basename(__FILE__)." help          : more help messages\n";
 ##############
 
@@ -86,8 +86,8 @@ $areas = array_values( array_filter( array_map('trim', explode(",", $areaArg)) )
 $outdir = isset(PH::$args['outdir']) ? PH::$args['outdir'] : "export";
 $folder = isset(PH::$args['folder']) ? PH::$args['folder'] : "Remote Networks";
 $egressEnv = isset(PH::$args['egressip-env']) ? PH::$args['egressip-env'] : "prod6";
-if( $egressEnv !== "prod" && $egressEnv !== "prod6" && $egressEnv !== "auto" )
-    derr( "egressip-env must be 'prod6', 'prod' or 'auto'", null, FALSE );
+if( $egressEnv !== "auto" && !preg_match( '/^prod[0-9]{0,2}$/', $egressEnv ) )
+    derr( "egressip-env must be prod6, prod, prod8, another prod<N> or auto", null, FALSE );
 
 ########################################################################################################################
 

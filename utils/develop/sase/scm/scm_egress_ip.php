@@ -21,7 +21,7 @@
 // table, CSV, JSON or address list, compared with an earlier state.
 // https://docs.paloaltonetworks.com/prisma-access/administration/prisma-access-setup/api-examples-for-retrieving-prisma-access-ip-addresses
 //
-// php utils/develop/sase/scm/scm_egress_ip.php tsg=<TSG> [servicetype=all] [addrtype=all] [location=all] [env=prod6|prod]
+// php utils/develop/sase/scm/scm_egress_ip.php tsg=<TSG> [servicetype=all] [addrtype=all] [location=all] [env=prod6|prod|prod8|prod<N>]
 //     [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json] [compare=snapshot.json|export-dir]
 // php utils/develop/sase/scm/scm_egress_ip.php in=<export-dir|92_egress-ip.json|snapshot.json> [format=…] [compare=…]
 //
@@ -32,7 +32,7 @@ require_once dirname( __FILE__ ) . "/../../../../lib/pan_php_framework.php";
 require_once dirname( __FILE__ ) . "/lib/SCMEgressIP.php";
 
 $usage = "USAGE: php " . basename( __FILE__ ) . " tsg=<TSG> [servicetype=" . implode( '|', SCMEgressIP::SERVICE_TYPES ) . "] [addrtype=all|active|…] [location=all|deployed]\n"
-    . "         [env=prod6|prod] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json] [compare=snapshot.json|export-dir] [debugapi]\n"
+    . "         [env=prod6|prod|prod8|prod<N>] [option=option.txt] [format=table|csv|json|list] [out=file] [save=snapshot.json] [compare=snapshot.json|export-dir] [debugapi]\n"
     . "       php " . basename( __FILE__ ) . " in=<export-dir|92_egress-ip.json|snapshot.json> [format=…] [compare=…] [out=…]\n"
     . "  option=  the request body of the Palo Alto documentation ({\"serviceType\": …, \"addrType\": …, \"location\": …}); arguments override it\n"
     . "  format=list  one address per line (e.g. an external dynamic list)\n";
@@ -78,10 +78,10 @@ try
         $tsg = (string)$args['tsg'];
         if( !preg_match( '/^[0-9]{1,20}$/', $tsg ) )
             throw new Exception( "tsg: the TSG id (digits)" );
-        // most tenants are on prod6, only older tenants on prod
+        // most tenants are on prod6, older tenants on prod, others prod8 / prod<N>
         $env = isset( $args['env'] ) ? (string)$args['env'] : SCMEgressIP::ENV_DEFAULT;
-        if( !in_array( $env, SCMEgressIP::ENVIRONMENTS, TRUE ) )
-            throw new Exception( "env: prod6 (default) or prod (older tenants)" );
+        if( !SCMEgressIP::validEnv( $env ) )
+            throw new Exception( "env: prod6 (default), prod (older tenants), prod8 or another prod<N>" );
         $request = SCMEgressIP::request( isset( $args['option'] ) ? (string)$args['option'] : null, $args );
         $connector = new PanSCMAPIConnector( $tsg );
         if( isset( $args['debugapi'] ) )
@@ -93,7 +93,7 @@ try
         if( $r['errors'] !== null )
         {
             $e = json_encode( $r['errors'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-            // 401 / 403: the key is wrong, of another tenant or of the other environment (prod6 / prod)
+            // 401 / 403: the key is wrong, of another tenant or of another environment (prod6 / prod / prod8)
             throw new Exception( "egress-IP API (" . $r['url'] . "): " . $e . SCMEgressIP::loginHint( $e, $env, (string)$tsg ) );
         }
         $rows = SCMEgressIP::rows( $r['json']['result'] ?? array(), $request['serviceType'] );

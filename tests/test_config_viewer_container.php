@@ -573,6 +573,13 @@ exec( 'rm -rf ' . escapeshellarg( $kgDir ) );
 // SCM: export with network, then the conversion without
 $r = call( 'POST', 'keys', array( 'kind' => 'scm', 'target' => '1234567890', 'client_id' => 'sa-client@1234567890.iam', 'client_secret' => 'scm-geheim-4711' ) );
 $skid = $r[1]['kid'] ?? '';
+// the project is bound to PAN-OS by its imports: an SCM tenant is refused until an administrator releases the binding
+$bnd = call( 'GET', $P )[1]['binding'] ?? null;
+$r = $imp( array( 'kid' => $skid ) );
+$rel = $app->projectBindingReset( $app->userByName( 'root' ), $pid );
+$g = call( 'GET', $P )[1];
+eq( array( $bnd, $r[0], strpos( $r[1]['error'] ?? '', 'bound to PAN-OS' ) !== FALSE, $rel, array_key_exists( 'binding', $g ) ? $g['binding'] : 'x' ),
+    array( array( 'kind' => 'panos', 'target' => null ), 403, TRUE, array( 'ok' => TRUE ), null ), 'binding: PAN-OS by the imports, SCM refused, released by an administrator' );
 eq( $imp( array( 'kid' => $skid, 'source' => 'running' ) )[0], 400, 'import SCM: no running / candidate choice' );
 @unlink( $bin . '/import.log' );
 $r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $skid ) )[1]['jid'] ?? '' ) );
@@ -601,6 +608,10 @@ eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 
     count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() ) ),
     array( 'done', array( 'scm-export-xml' ), array( 'none' ), '', TRUE, TRUE, $nVers + 1 ), 'convert again: only scm-export-xml, no network, no key store, the old log as run-1.log, a new version' );
 eq( call( 'POST', $P . '/runs/' . $fjid . '/convert' )[0], 409, 'convert again: not a second time once it is done' );
+$bnd = call( 'GET', $P )[1]['binding'] ?? null;
+$r = $imp( array( 'kid' => $kid ) );
+eq( array( $bnd, $r[0] ), array( array( 'kind' => 'scm', 'target' => '1234567890' ), 403 ), 'binding: the SCM tenant by its import, a firewall refused' );
+$app->projectBindingReset( $app->userByName( 'root' ), $pid );
 // an existing .panconfkeystore of a customer: every kind of entry pan-os-php knows, and unknown names as they are
 $ksText = "fw1.example.com%443:LUFRPT1-neu-0815:zweiter\r\nfw9.example.com%8443:LUFRPT9-port-4711\ntsg_id1234567890:sa-two@x.iam%scm-zwei-4711\negressip_tsg_id1234567890:egress-key-4711\n"
     . "ldap-password:altes passwort\nbpa-apikey:bpa-key-4711\n# a comment\n\ncustom-entry_1:wert-4711\nno colon here\nfw5.example.com:a:b:c\nldap_userAlice@Example.com:mein ldap passwort\n";

@@ -639,7 +639,9 @@ async function showProject(pid) {
     let importCard = null;
     if (canWrite && !limited) {
         const my = await api('GET', 'keys').catch(() => ({ keys: [] }));
-        const usable = my.keys.filter(k => k.import && !k.refused);
+        // a project bound by its first import: only keys of the same kind (PAN-OS) / of its SCM tenant
+        const b = p.binding;
+        const usable = my.keys.filter(k => k.import && !k.refused && (!b || (b.kind === 'panos' ? k.kind === 'panos' : k.kind === 'scm' && k.target === b.target)));
         const iKey = el('select', {}, usable.map(k => el('option', { value: k.kid, text: (k.kind === 'scm' ? 'SCM TSG ' : '') + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
         const iSource = el('select', {}, el('option', { value: 'candidate', text: 'candidate configuration' }), el('option', { value: 'running', text: 'running configuration' }));
         const sourceField = field('Configuration', iSource);
@@ -650,7 +652,8 @@ async function showProject(pid) {
         }) });
         const why = !p.network_global ? 'Network for runs is off (an administrator turns it on under Account).'
             : !p.network ? 'Network is off for this project' + (owner ? ' - turn it on above.' : ' (the owner turns it on).')
-            : usable.length === 0 ? 'You have no API key that may be used now - add one under Account, My API keys (and check the allow list of the administrator).' : null;
+            : usable.length === 0 ? (b ? 'You have no API key for ' + (b.kind === 'scm' ? 'the SCM tenant TSG ' + b.target : 'a firewall / Panorama') + ' (this project is bound to it) that may be used now - add one under Account, My API keys.'
+                : 'You have no API key that may be used now - add one under Account, My API keys (and check the allow list of the administrator).') : null;
         importCard = el('div', { class: 'card' }, el('h2', { text: 'Import from a device' }),
             el('p', { class: 'muted', text: 'Downloads the configuration of a firewall / Panorama (XML API) or an SCM tenant - read only, nothing is written to the device - with your own API key. The result becomes a new version (see Runs and project files for the run).' }),
             el('div', { class: 'row' }, field('Network for this project' + (owner ? '' : ' (owner)'), netOn)),
@@ -906,11 +909,17 @@ async function showProject(pid) {
     if (canWrite && !limited) ldapCard = await ldapTab(base, pid, p, owner, configs.configs);
     // ---- Merger: object-merger / rule-merger / merger-possible-report as runs, their report as tables
     const mergerCard = !limited && configs.configs.length ? await mergerTab(base, pid, canWrite, configs.configs) : null;
-    const scmCard = !limited ? await scmTab(base, pid, canWrite) : null;
+    // the SCM tab: not for a project bound to PAN-OS
+    const scmCard = !limited && !(p.binding && p.binding.kind === 'panos') ? await scmTab(base, pid, canWrite, p) : null;
     const supportCardEl = canWrite && !limited && configs.configs.length ? await supportCard(base, configs.configs) : null;
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
+        // bound by the first import / read from an API: PAN-OS or one SCM tenant (an administrator can release it)
+        p.binding ? el('span', { class: 'badge', title: 'set by the first import from an API; imports and SCM reads of another kind / tenant are refused', text: p.binding.kind === 'scm' ? 'SCM tenant TSG ' + p.binding.target : 'PAN-OS (firewall / Panorama)' }) : null,
+        p.binding && state.admin ? el('button', { type: 'button', text: 'Release binding', title: 'administrator: the next import / read binds the project again', onclick: () => run(async () => {
+            if (!confirm('Release the binding of this project (' + (p.binding.kind === 'scm' ? 'TSG ' + p.binding.target : 'PAN-OS') + ')?')) return;
+            await api('DELETE', base + '/binding'); await showProject(pid); }) }) : null,
         owner ? el('button', { class: 'danger', type: 'button', text: 'Delete project', onclick: () => run(async () => {
             if (!confirm('Delete project "' + p.name + '" with all configurations?')) return;
             await api('DELETE', base); await showProjects();
@@ -1129,7 +1138,7 @@ const SCM_MENU = [
     ['Monitoring', [['insights', 'Insights'], ['audit', 'Audit logs']]],
     ['Best practice', [['bpa', 'BPA']]],
 ];
-async function scmTab(base, pid, canWrite) {
+async function scmTab(base, pid, canWrite, p) {
     const card = el('div', { class: 'card scmtab' });
     const panel = el('div', { class: 'scmpanel' });
     state.scmPage = state.scmPage || {};
@@ -1153,7 +1162,23 @@ async function scmTab(base, pid, canWrite) {
     }
     drawMenu();
     await page().catch(e => panel.replaceChildren(el('div', { class: 'error', text: e.message })));
-    card.append(el('h2', { text: 'SCM' }), el('div', { class: 'scmlayout' }, menu, panel));
+    // all pages at once: from the SCM imports the project has done, or read live (every area + the egress IPs)
+    let all = null;
+    if (canWrite) {
+        const r = await api('GET', base + '/scm/pa/infra').catch(() => null);
+        const fromRuns = el('button', { type: 'button', text: 'From the SCM imports', title: 'fill the Prisma Access pages and Egress IP from the SCM imports of this project (imports before 2.1.63 read only the configuration)',
+            onclick: () => run(async () => {
+                const x = await api('POST', base + '/scm/pa-from-runs');
+                message(x.runs === 0 ? 'no SCM import in this project yet' : x.states + ' page state(s), ' + x.egress + ' egress state(s) from ' + x.runs + ' SCM import(s) / read(s)'
+                    + (x.config_only ? '; ' + x.config_only + ' import(s) with the configuration only (before 2.1.63) - use "Read all live"' : '') + (x.gone ? '; ' + x.gone + ' without their export any more' : ''));
+                await page();
+            }) });
+        all = el('div', { class: 'row scmall' }, fromRuns, r ? liveForm(r, { keyLabel: 'SCM key', path: base + '/scm-pa/runs', runs: base + '/runs', redraw: page, done: 'Prisma Access read live',
+            body: () => ({ page: 'all' }), noKey: 'Read all live: you have no SCM key ' + (p && p.binding && p.binding.kind === 'scm' ? 'for TSG ' + p.binding.target : '') + ' (Account, My API keys, kind SCM).' }) : null);
+        const btn = all.querySelector('button[type=submit]');
+        if (btn) btn.textContent = 'Read all live';
+    }
+    card.append(...[el('h2', { text: 'SCM' + (p && p.binding && p.binding.kind === 'scm' ? ' - TSG ' + p.binding.target : '') }), all, el('div', { class: 'scmlayout' }, menu, panel)].filter(x => x));
     return card;
 }
 
@@ -1268,11 +1293,17 @@ async function egressPage(base, canWrite, redraw) {
     if (canWrite) {
         const sel = (name, list) => el('select', { 'aria-label': name }, list.map(v => el('option', { value: v, text: v })));
         const st = sel('service type', r.options.servicetype), at = sel('address type', r.options.addrtype), lo = sel('location', r.options.location);
-        const env = el('select', { 'aria-label': 'environment', title: 'most tenants prod6, older tenants prod' }, el('option', { value: 'prod6', text: 'prod6' }), el('option', { value: 'prod', text: 'prod (older tenants)' }));
+        // the environment: the known ones (prod6 most tenants, prod older tenants, prod8) or another prod<N>
+        const envs = (r.options.env || ['prod6', 'prod', 'prod8']);
+        const envSel = el('select', { 'aria-label': 'environment', title: 'most tenants prod6, older tenants prod' }, envs.map(v => el('option', { value: v, text: v + (v === 'prod' ? ' (older tenants)' : '') })),
+            el('option', { value: '', text: 'other …' }));
+        const envOther = el('input', { type: 'text', placeholder: 'prod<N>', pattern: 'prod[0-9]{0,2}', size: 8, 'aria-label': 'other environment', hidden: true });
+        envSel.addEventListener('change', () => { envOther.hidden = envSel.value !== ''; });
+        const env = { get value() { return envSel.value || envOther.value.trim(); } };
         live = liveForm(r, { keyLabel: 'egress-IP key', path: base + '/egress-ip/runs', runs: base + '/runs', redraw, done: 'egress IPs read live',
             noKey: 'Live: you have no egress-IP API key yet (Account, My API keys, kind "egress IP", target = TSG id; Prisma Access > Infrastructure Settings > Egress IP API).',
             body: () => ({ servicetype: st.value, addrtype: at.value, location: lo.value, env: env.value }),
-            fields: [field('serviceType', st), field('addrType', at), field('location', lo), field('environment', env)] });
+            fields: [field('serviceType', st), field('addrType', at), field('location', lo), field('environment', el('span', {}, envSel, ' ', envOther))] });
     }
     const fmtReq = (q) => q ? [q.serviceType, q.addrType, q.location].filter(x => x).join(' / ') : '';
     let vc = null;
@@ -1307,7 +1338,7 @@ async function egressPage(base, canWrite, redraw) {
     if (r.states.length) vc = viewCompare(r.states, 'state', view, compare);
     box.append(el('h3', { text: 'Prisma Access - Egress IP' }),
         el('p', { class: 'muted', text: 'The public addresses of Prisma Access (getPrismaAccessIP/v2): from an import or read live with your egress-IP key; View one state or Compare two. The same as php utils/develop/sase/scm/scm_egress_ip.php on the CLI. Read only.' }),
-        imp, live, list, vc);
+        ...[imp, live, list, vc].filter(x => x));
     if (vc) await vc.ready;
     return box;
 }
@@ -1406,7 +1437,7 @@ async function scmPaPage(base, page, canWrite, redraw) {
     }
     if (r.states.length) vc = viewCompare(r.states, 'state', view, compare);
     box.append(el('h3', { text: (def.area === 'iam' ? 'Identity & Access - ' : 'Prisma Access - ') + def.title }), el('p', { class: 'muted', text: def.text + ' As the SCM API gives them: from the SCM import of the project (it reads these areas as well) or read live with your SCM key (scm_pa_export.php area=' + def.area + '); View one state or Compare two (scm_pa_compare.php). Read only.' }),
-        live, list, vc);
+        ...[live, list, vc].filter(x => x));
     if (vc) await vc.ready;
     return box;
 }

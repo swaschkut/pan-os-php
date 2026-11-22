@@ -302,5 +302,6 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   live run egress-ip, compare) and Prisma Access > Infrastructure (states from the SCM import - area=config,infra - and
   live run scm-pa, View / Compare with scm_pa_compare.php), Service Connection, Remote Networks, Mobile User Gateway /
   GlobalProtect / PAA / Explicit Proxy, Prisma Browser, Service accounts (SCM_PA_PAGES); the egress-IP API key of the
-  SCM API into the key store of the user; the egress IPs with the import (egressip, env auto). Open: ui-api-host
+  SCM API into the key store of the user; the egress IPs with the import (egressip, env auto); binding of a project
+  (PAN-OS / one SCM TSG), "From the SCM imports", "Read all live". Open: ui-api-host
   per project (region of the internal UI API), CIE, config versions, deployment, tenant, monitoring, BPA.

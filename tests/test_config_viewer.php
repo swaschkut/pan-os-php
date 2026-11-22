@@ -824,6 +824,22 @@ $efr = array( $ef->invoke( $va, array( 'pid' => $pid ), $paJob1, '1234567890', '
 $egs = array_values( array_filter( $alice->call( 'GET', $EG . '/scm/egress' )[1]['states'] ?? array(), function( $x ) { return $x['id'] === 'eeee5555'; } ) );
 eq( array( $efr, $egs[0]['source'] ?? null, $egs[0]['name'] ?? null, $egs[0]['count'] ?? null ), array( array( TRUE, FALSE, FALSE ), 'SCM import', 'prod', 1 ),
     'SCM import with egressip: the egress IPs of the export as a state of Egress IP (once; an export without them: none)' );
+// binding: an SCM project is fixed to its TSG - no egress IPs / reads of another tenant; a PAN-OS project has no SCM tab
+$bs = new ReflectionMethod( 'ViewerApp', 'bindSet' );
+$bs->setAccessible( TRUE );
+$bs->invoke( $va, $pid, 'scm', '1234567890' );
+$ekid = $kl[0]['kid'] ?? '';
+$b1 = $alice->call( 'POST', $EG . '/egress-ip/runs', array( 'kid' => $ekid ) );
+$b2 = $alice->call( 'POST', $EG . '/scm/egress', null, array( '92_egress-ip.json', json_encode( array( 'tsg_id' => '5550001111', 'status' => 'ok', 'data' => array() ) ), 'file' ) );
+$b3 = $alice->call( 'GET', $EG . '/scm/egress' );
+$b4 = $alice->call( 'POST', $EG . '/scm/pa-from-runs' );
+$pp = $alice->call( 'POST', 'projects', array( 'name' => 'panos bound' ) )[1]['pid'] ?? '';
+$bs->invoke( $va, $pp, 'panos', null );
+$b5 = $alice->call( 'GET', 'projects/' . $pp . '/scm/pa/infra' );
+eq( array( $alice->call( 'GET', $EG )[1]['binding'] ?? null, status( $b1 ), strpos( $b1[1]['error'] ?? '', 'TSG 5550001111 needs a project of its own' ) !== FALSE, status( $b2 ),
+    in_array( '5550001111', array_column( $b3[1]['keys'] ?? array(), 'target' ), TRUE ), status( $b4 ), $b4[1]['runs'] ?? null, status( $b5 ) ),
+    array( array( 'kind' => 'scm', 'target' => '1234567890' ), 403, TRUE, 400, FALSE, 200, 0, 403 ),
+    'binding: SCM project fixed to its TSG (egress run / file of another TSG refused, only its keys), PAN-OS project without SCM tab' );
 // System: the settings of Panorama / a template / SCM as type=config-section reads them; secrets never
 $SY = $up( 'system-panorama.xml' );
 $sy = $alice->call( 'GET', $SY . '/system' );
