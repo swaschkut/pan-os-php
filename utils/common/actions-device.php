@@ -39,20 +39,8 @@
  */
 function deviceDisplayVariables( DeviceCallContext $context, $object )
 {
-    $list = array();
-    $root = isset( $object->xmlroot ) && $object->xmlroot instanceof DOMElement ? DH::findFirstElement( 'variable', $object->xmlroot ) : FALSE;
-    if( $root === FALSE )
-        return $list;
-    foreach( $root->childNodes as $entry )
-    {
-        if( !$entry instanceof DOMElement || $entry->nodeName !== 'entry' )
-            continue;
-        $type = DH::findFirstElement( 'type', $entry );
-        $value = $type !== FALSE ? DH::firstChildElement( $type ) : FALSE;
-        $desc = DH::findFirstElement( 'description', $entry );
-        $list[$entry->getAttribute( 'name' )] = array( 'type' => $value !== FALSE ? $value->nodeName : '', 'value' => $value !== FALSE ? $value->textContent : '',
-            'description' => $desc !== FALSE ? $desc->textContent : '' );
-    }
+    $holder = DeviceVariables::holder( $object );
+    $list = DeviceVariables::listOf( $holder );
     if( count( $list ) )
     {
         PH::print_stdout( $context->padding."- variables:" );
@@ -60,6 +48,35 @@ function deviceDisplayVariables( DeviceCallContext $context, $object )
             PH::print_stdout( $context->padding."  ".$name." [".$v['type']."] = ".$v['value'] );
     }
     return $list;
+}
+
+/**
+ * variables of a device for shadow-json: 'variables' (own) and 'effective' (the value of each variable for it and
+ * where it comes from - Panorama: firewall, template stack, templates; SCM: device / folder, snippets, parents)
+ */
+function deviceDisplayVariablesJson( DeviceCallContext $context, $object ): void
+{
+    $j = &PH::$JSON_TMP['sub']['object'][$object->name()];
+    $j['variables'] = deviceDisplayVariables( $context, $object );
+    $eff = DeviceVariables::effective( $object );
+    $j['effective'] = $eff;
+    if( count( $j['variables'] ) === 0 && count( $eff ) > 0 )
+        PH::print_stdout( $context->padding."- variables:" );
+    foreach( $eff as $name => $v )
+        if( !$v['own'] )
+            PH::print_stdout( $context->padding."  ".$name." [".$v['type']."] = ".$v['value']."   (from ".$v['from'].")" );
+    // a template stack: the overrides of its firewalls
+    if( $object instanceof TemplateStack )
+    {
+        $j['devicevariables'] = array();
+        foreach( array_keys( $object->FirewallsSerials ) as $serial )
+        {
+            $list = DeviceVariables::listOf( DeviceVariables::holder( $object, (string)$serial ) );
+            if( count( $list ) )
+                $j['devicevariables'][(string)$serial] = $list;
+        }
+    }
+    unset( $j );
 }
 
 function deviceActionPanorama( DeviceCallContext $context )
@@ -433,11 +450,11 @@ DeviceCallContext::$supportedActions['display'] = array(
                         PH::print_stdout( $context->padding."- ".$text.": ".implode( ", ", $j[$key] ) );
             }
             $j['snippets'] = array_values( array_map( function( $x ) { return is_object( $x ) ? $x->name() : (string)$x; }, $object->attachedSnippets ?? array() ) );
-            $j['variables'] = deviceDisplayVariables( $context, $object );
             // an on-prem device is a firewall: its name is the serial of the managed device
             if( get_class($object) === 'DeviceOnPrem' && isset( $object->owner->managedFirewallsStore ) && $object->owner->managedFirewallsStore->find( $object->name() ) !== null )
                 $j['manageddevice'] = $object->name();
             unset( $j );
+            deviceDisplayVariablesJson( $context, $object );
         }
         elseif( get_class($object) == "Snippet" )
         {
@@ -453,8 +470,12 @@ DeviceCallContext::$supportedActions['display'] = array(
                             $attached[$key][] = $sub->name();
             foreach( $attached as $key => $names )
                 PH::$JSON_TMP['sub']['object'][$object->name()][$key] = array_values( array_unique( $names ) );
-            PH::$JSON_TMP['sub']['object'][$object->name()]['variables'] = deviceDisplayVariables( $context, $object );
+            deviceDisplayVariablesJson( $context, $object );
         }
+
+        // Panorama: variables of a template, a template stack (and its firewalls), a firewall (override in its stack)
+        if( $object instanceof Template || $object instanceof TemplateStack || ( $object instanceof ManagedDevice && DeviceVariables::stackOf( $object ) !== null ) )
+            deviceDisplayVariablesJson( $context, $object );
 
         $length = &DH::dom_get_config_size($object->xmlroot);
         PH::print_stdout($context->padding."---");
@@ -2159,6 +2180,77 @@ DeviceCallContext::$supportedActions['template-add'] = array(
         'position' => array('type' => 'string', 'default' => 'bottom'),
     ),
 );
+/**
+ * a variable set / removed: on a template, a template stack, a firewall of Panorama (its override in the template stack:
+ * template-stack/devices/entry[serial]/variable) or a folder / snippet / device of SCM. On a template stack, serial=<serial>
+ * is the override of that firewall. The value: $$comma$$ $$forwardslash$$ $$colon$$ … (PH::textAliases) for , / :
+ */
+DeviceCallContext::$supportedActions['variable-set'] = array(
+    'name' => 'variable-set',
+    'MainFunction' => function (DeviceCallContext $context) {
+        if( $context->isAPI )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "not supported in API mode yet - offline configuration only" );
+            return;
+        }
+        $object = $context->object;
+        $name = $context->arguments['name'];
+        $serial = $context->arguments['serial'] === '*nodefault*' ? null : $context->arguments['serial'];
+        $holder = DeviceVariables::holder( $object, $serial, TRUE );
+        if( $holder === null )
+        {
+            $string = "no variables here (" . get_class( $object ) . ( $object instanceof ManagedDevice ? " without template stack" : "" ) . ")";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $value = PH::textAliases( (string)$context->arguments['value'] );
+        $desc = $context->arguments['description'] === '*nodefault*' ? null : PH::textAliases( (string)$context->arguments['description'] );
+        try
+        {
+            DeviceVariables::set( $holder, $name, strtolower( $context->arguments['type'] ), $value, $desc );
+        }
+        catch( Exception $e )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", $e->getMessage() );
+            return;
+        }
+        $string = "variable '" . $name . "' [" . $context->arguments['type'] . "] = " . $value . " on " . get_class( $object ) . " '" . $object->name() . "'" . ( $serial !== null ? " for firewall " . $serial : "" );
+        PH::ACTIONlog( $context, $string );
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => '*nodefault*'),
+        'type' => array('type' => 'string', 'default' => 'ip-netmask'),
+        'value' => array('type' => 'string', 'default' => '*nodefault*'),
+        'serial' => array('type' => 'string', 'default' => '*nodefault*', 'help' => 'template stack: the variable of this firewall (override)'),
+        'description' => array('type' => 'string', 'default' => '*nodefault*'),
+    ),
+);
+
+DeviceCallContext::$supportedActions['variable-remove'] = array(
+    'name' => 'variable-remove',
+    'MainFunction' => function (DeviceCallContext $context) {
+        if( $context->isAPI )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "not supported in API mode yet - offline configuration only" );
+            return;
+        }
+        $object = $context->object;
+        $name = $context->arguments['name'];
+        $serial = $context->arguments['serial'] === '*nodefault*' ? null : $context->arguments['serial'];
+        $holder = DeviceVariables::holder( $object, $serial );
+        if( $holder === null || !DeviceVariables::remove( $holder, $name ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "variable '" . $name . "' is not set here" );
+            return;
+        }
+        PH::ACTIONlog( $context, "variable '" . $name . "' removed from " . get_class( $object ) . " '" . $object->name() . "'" . ( $serial !== null ? " for firewall " . $serial : "" ) );
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => '*nodefault*'),
+        'serial' => array('type' => 'string', 'default' => '*nodefault*'),
+    ),
+);
+
 DeviceCallContext::$supportedActions['template-remove'] = array(
     'name' => 'template-remove',
     'MainFunction' => function (DeviceCallContext $context) {

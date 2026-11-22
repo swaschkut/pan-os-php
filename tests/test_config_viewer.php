@@ -614,7 +614,8 @@ $chg = function( $dt, $name, $actions ) use ( $alice, $DV ) {
 $meta = $alice->call( 'GET', 'meta' )[1]['types']['device']['actions'] ?? array();
 $offered = array_keys( $meta );
 sort( $offered );
-eq( $offered, array( 'devicegroup-addserial', 'devicegroup-removeserial', 'devicegroup-setparentdg', 'template-add', 'template-remove', 'templatestack-addserial', 'templatestack-removeserial' ),
+eq( $offered, array( 'devicegroup-addserial', 'devicegroup-removeserial', 'devicegroup-setparentdg', 'template-add', 'template-remove', 'templatestack-addserial', 'templatestack-removeserial',
+    'variable-remove', 'variable-set' ),
     'devices: only the reviewed actions (assignments) can be used in the viewer' );
 $r1 = $chg( 'devicegroup', 'DG3', 'devicegroup-addserial:DG3,001122334455' );
 $r2 = $chg( 'manageddevice', '001122334466', 'devicegroup-removeserial:DG2,001122334466/devicegroup-addserial:DG3,001122334466' );
@@ -645,6 +646,15 @@ eq( array( $c['All']['children'] ?? null, $c['All']['snippets'] ?? null, $c['Pri
 $cnt = function( $loc ) use ( $alice, $SC ) { return count( $alice->call( 'GET', $SC . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() ); };
 eq( array( $cnt( 'ngfw-shared' ), $cnt( 'ngfw-shared:includechilddgs' ) > 0, $cnt( 'ngfw-shared:includechilddgs' ) === $cnt( 'ngfw-shared:excludemaindg' ) ), array( 0, TRUE, TRUE ),
     'SCM: a container with the containers / devices below it' );
+// variables: the window of a firewall - the value and where it comes from; an override set from there
+$VV = $up( 'variables-panorama.xml' );
+$vo = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();
+$vl = $alice->call( 'GET', $VV . '/objects?type=device&devicetype=manageddevice&location=any' )[1]['rows'][0] ?? array();
+$vc = $alice->call( 'POST', $VV . '/change', array( 'type' => 'device', 'devicetype' => 'manageddevice', 'location' => 'shared', 'filter' => '(name eq 001122334455)',
+    'actions' => 'variable-set:$gw,ip-netmask,10.55.0.254' ) );
+$vo2 = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();
+eq( array( $vo['effective']['$gw']['from'] ?? null, $vl['variables'] ?? null, isset( $vl['effective'] ), status( $vc ), $vo2['effective']['$gw']['value'] ?? null, $vo2['effective']['$gw']['own'] ?? null ),
+    array( 'template stack TS1', array( '$dns', '$eth1', '$gw' ), FALSE, 200, '10.55.0.254', TRUE ), 'variables: window of a firewall (value + origin), override set; the list only names them' );
 // location=<DG>:includechilddgs / :excludemaindg (pan-os-php): with / only the device groups below
 $names = function( $loc ) use ( $alice, $DV ) {
     return array_map( function( $r ) { return $r['location'] . ':' . $r['name']; }, $alice->call( 'GET', $DV . '/objects?type=address&location=' . urlencode( $loc ) )[1]['rows'] ?? array() );

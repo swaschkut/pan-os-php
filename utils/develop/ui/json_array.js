@@ -2904,6 +2904,47 @@ var subjectObject =
                 },
                 "help": "enable function: possible values: 'yes' or 'no'"
             },
+            "variable-remove": {
+                "name": "variable-remove",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "variable-set": {
+                "name": "variable-set",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "type": {
+                        "type": "string",
+                        "default": "ip-netmask"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "template stack: the variable of this firewall (override)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "virtualsystem-delete": {
                 "name": "virtualsystem-delete",
                 "MainFunction": {}

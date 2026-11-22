@@ -15,7 +15,9 @@
         "device:templatestack-addserial",
         "device:templatestack-removeserial",
         "device:template-add",
-        "device:template-remove"
+        "device:template-remove",
+        "device:variable-set",
+        "device:variable-remove"
     ],
     "override": {},
     "types": {
@@ -414,6 +416,12 @@
             "threat-report-bp-change-plan": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "variable-remove": {
+                "class": "change"
+            },
+            "variable-set": {
+                "class": "change"
             },
             "virtualsystem-delete": {
                 "class": "change"

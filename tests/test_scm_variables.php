@@ -105,6 +105,53 @@ $x = file_get_contents( $out );
 eq( strpos( preg_replace( '/>\s+</', '><', $x ), '<variable><entry name="$ethernet1_1"><type><ip-netmask>10.1.1.1/24</ip-netmask></type></entry></variable>' ) !== FALSE, TRUE,
     'variables: XML as PAN-OS keeps variables of a template' );
 
+// the value for the firewall and where it comes from (SCM: device, its snippets, then each folder up with its snippets)
+$display = function( $file, $dt, $name ) use ( $repo ) {
+    $o = shell_exec( 'php ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=device devicetype=' . $dt . ' in=' . escapeshellarg( $file )
+        . ' actions=display ' . escapeshellarg( 'filter=(name eq ' . $name . ')' ) . ' shadow-json 2>/dev/null' );
+    $j = json_decode( substr( (string)$o, (int)strpos( (string)$o, '{' ) ), TRUE );
+    foreach( (array)$j as $stores )
+        if( is_array( $stores ) )
+            foreach( $stores as $st )
+                if( isset( $st['sub']['object'][$name] ) )
+                    return $st['sub']['object'][$name];
+    return array();
+};
+$eff = $display( $out, 'deviceonprem', '001122334455' )['effective'] ?? array();
+$short = array();
+foreach( $eff as $n => $v )
+    $short[$n] = array( $v['value'], $v['from'], $v['own'], $v['shadowed'] );
+eq( $short, array(
+    '$dns-server' => array( 'dns.example.com', 'snippet branch-snippet (of Branches)', FALSE, array() ),
+    '$egress' => array( '1000', 'folder ngfw-shared', FALSE, array() ),
+    '$ethernet1_1' => array( '10.1.1.1/24', 'this deviceonprem', TRUE, array( 'folder Branches: 10.0.0.1/24' ) ),
+), 'variables of an on-prem device: own override, then folder Branches (+ snippet), ngfw-shared - the nearest value wins' );
+// set / remove on the device (variable-set / variable-remove): an override, removing it brings the folder value back
+$out3 = $out . '.2.xml';
+shell_exec( 'php ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=device devicetype=deviceonprem in=' . escapeshellarg( $out ) . ' out=' . escapeshellarg( $out3 )
+    . ' ' . escapeshellarg( 'filter=(name eq 001122334455)' ) . ' ' . escapeshellarg( 'actions=variable-remove:$ethernet1_1/variable-set:$egress,egress-max,500' ) . ' 2>&1' );
+$eff = $display( $out3, 'deviceonprem', '001122334455' )['effective'] ?? array();
+eq( array( $eff['$ethernet1_1']['value'] ?? null, $eff['$ethernet1_1']['from'] ?? null, $eff['$egress']['value'] ?? null, $eff['$egress']['own'] ?? null ),
+    array( '10.0.0.1/24', 'folder Branches', '500', TRUE ), 'variable-remove / variable-set on an SCM device' );
+@unlink( $out3 );
+
+// Panorama: template, template stack, firewall (override in the stack: template-stack/devices/entry/variable)
+$pano = $repo . '/tests/input/variables-panorama.xml';
+$md = $display( $pano, 'manageddevice', '001122334455' )['effective'] ?? array();
+$short = array();
+foreach( $md as $n => $v )
+    $short[$n] = array( $v['value'], $v['from'], $v['own'] );
+eq( $short, array( '$dns' => array( 'dns.example.com', 'template T2 (2)', FALSE ), '$eth1' => array( '10.55.0.1/24', 'this firewall (template stack TS1)', TRUE ),
+    '$gw' => array( '10.9.9.254', 'template stack TS1', FALSE ) ),
+    'Panorama: value for a firewall - its override, the template stack, the templates in their order' );
+$out4 = $out . '.3.xml';
+shell_exec( 'php ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=device devicetype=manageddevice in=' . escapeshellarg( $pano ) . ' out=' . escapeshellarg( $out4 )
+    . ' ' . escapeshellarg( 'filter=(name eq 001122334466)' ) . ' ' . escapeshellarg( 'actions=variable-set:$eth1,ip-netmask,10.66.0.1$$forwardslash$$24' ) . ' 2>&1' );
+$ts = $display( $out4, 'templatestack', 'TS1' );
+eq( array( $ts['devicevariables']['001122334466']['$eth1']['value'] ?? null, $ts['effective']['$eth1']['value'] ?? null, $ts['effective']['$eth1']['from'] ?? null ),
+    array( '10.66.0.1/24', '10.0.0.1/24', 'template T1 (1)' ), 'Panorama: variable-set on a firewall is its override in the template stack' );
+@unlink( $out4 );
+
 // offline: in=scm-export:// - NN_variables.json of the export is read the same way
 $exp = sys_get_temp_dir() . '/scmvar-export-' . getmypid();
 @mkdir( $exp . '/config/folders/Branches', 0700, TRUE );

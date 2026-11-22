@@ -1877,6 +1877,8 @@ async function showViewer(config, preset) {
         DeviceOnPrem: r => [['Parent container', 'container', r.parent], ['Snippets', 'snippet', r.snippets], ['Managed device', 'manageddevice', r.manageddevice]],
         Snippet: r => [['Attached to containers', 'container', r.containers], ['Attached to cloud devices', 'devicecloud', r.clouds], ['Attached to on-prem devices', 'deviceonprem', r.onprem]],
     };
+    const DEVICE_KIND = { ManagedDevice: 'manageddevice', TemplateStack: 'templatestack', Template: 'template', DeviceGroup: 'devicegroup',
+        Container: 'container', DeviceCloud: 'devicecloud', DeviceOnPrem: 'deviceonprem', Snippet: 'snippet' };
     function openLink(ref) {
         // an object of a template: pan-os-php finds a vsys of a template only with location=any (+ template) - the
         // list then shows all locations of the template, "at" says which row to open
@@ -2042,7 +2044,7 @@ async function showViewer(config, preset) {
             const edit = deviceFields(row);
             // a device: its connections (device group, template stack, templates, firewalls, log collectors) are in
             // the section "Connections" of the window, with a link each
-            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy', 'templatestacks', 'stacktemplates', 'parent', 'clouds', 'onprem', 'snippets', 'containers', 'manageddevice', 'on-prem', 'vsyscontainer');
+            if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy', 'templatestacks', 'stacktemplates', 'parent', 'clouds', 'onprem', 'snippets', 'containers', 'manageddevice', 'on-prem', 'vsyscontainer', 'variables', 'effective', 'devicevariables');
             const fields = [{ key: 'name', label: 'Name', kind: 'ro', value: row.name }];
             for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? v.join(', ') : (v === null ? '' : String(v))) });
             for (const [k, v] of Object.entries(m)) if (!(k in row) && !['name', 'device_group', 'template', 'vsys', 'folder', 'snippet'].includes(k))
@@ -2294,7 +2296,7 @@ async function showViewer(config, preset) {
                 }))),
                 el('p', { class: 'muted', text: canWrite ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
                 // replaceChildren() writes null as the text "null" - only the sections there are
-                ...[objHierarchy(), objLinks(), objRefs(), objXml(), objHistory()].filter(x => x),
+                ...[objHierarchy(), objLinks(), objVariables(), objRefs(), objXml(), objHistory()].filter(x => x),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
         }
         // the XML of the object (as it is in memory) and its history (git: every commit that changed its entry)
@@ -2302,7 +2304,7 @@ async function showViewer(config, preset) {
         function section(key, title, body) {
             const d = el('details', { class: 'objsection' }, el('summary', { text: title }), body);
             // the hierarchy of a device group is open unless closed (XML / history: closed unless opened)
-            d.open = key === 'hierarchy' || key === 'refs' || key === 'links' ? opened[key] !== false : !!opened[key];
+            d.open = key === 'hierarchy' || key === 'refs' || key === 'links' || key === 'vars' ? opened[key] !== false : !!opened[key];
             d.addEventListener('toggle', () => { opened[key] = d.open; });
             return d;
         }
@@ -2345,6 +2347,63 @@ async function showViewer(config, preset) {
                     ...(extra ? extra(n) : []).map(([t, dt, x]) => el('div', { class: 'muted', style: 'padding-left:1.5em' }, '└ ' + t + ': ' + x + ' ', link(dt, x))))))))))
                 : el('p', { class: 'muted', text: 'no connections' });
             return section('links', 'Connections', body);
+        }
+        // variables (Panorama: template, template stack, firewall - its override in the stack; SCM: folder, snippet,
+        // device): the value for this object and where it comes from; set here = on this object (variable-set), an
+        // inherited one can be overridden here, an own one removed (then the inherited value applies again)
+        function objVariables() {
+            const eff = obj.row.effective;
+            if (cur.type !== 'device' || !eff || typeof eff !== 'object') return null;
+            const can = canWrite && offered['variable-set'] && offered['variable-remove'];
+            const TYPES = ['ip-netmask', 'ip-range', 'ip-wildcard', 'fqdn', 'group-id', 'device-priority', 'device-id', 'interface', 'as-number',
+                'qos-profile', 'egress-max', 'link-tag', 'zone', 'port', 'percent', 'count', 'rate', 'router-id', 'timer'];
+            const f = { key: 'variables' };
+            const set = (name, type, value) => run(() => listChange(f, 'variable-set:' + actArg(name) + ',' + actArg(type) + ',' + ruleText(value)));
+            const link = (kind, name) => kind && name && !(kind === (DEVICE_KIND[obj.row.type] || '') && name === obj.row.name) ? el('a', { href: openLink({ type: 'device', devicetype: kind, location: 'shared', name }), target: '_blank', rel: 'noopener', text: 'Open ↗' }) : null;
+            const rows = Object.entries(eff).map(([name, v]) => {
+                let valueCell;
+                if (can && v.own) {
+                    const i = el('input', { value: v.value, autocomplete: 'off', spellcheck: false, 'aria-label': 'value of ' + name });
+                    i.addEventListener('change', () => { if (i.value.trim() !== '') set(name, v.type, i.value.trim()); });
+                    i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                    valueCell = i;
+                } else valueCell = el('span', { text: v.value });
+                const over = can && !v.own ? el('button', { type: 'button', class: 'small', text: 'Override here', title: 'set ' + name + ' on this object (the inherited value stays where it is)', onclick: () => {
+                    const i = el('input', { value: v.value, autocomplete: 'off', spellcheck: false, 'aria-label': 'new value of ' + name });
+                    i.addEventListener('change', () => { if (i.value.trim() !== '') set(name, v.type, i.value.trim()); });
+                    i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                    valueCell.replaceWith(i); valueCell = i; i.focus(); } }) : null;
+                const del = can && v.own ? el('button', { type: 'button', class: 'small', text: '✕', title: 'remove ' + name + ' here' + (v.shadowed && v.shadowed.length ? ' - then: ' + v.shadowed[0] : ''), 'aria-label': 'remove ' + name,
+                    onclick: () => run(() => listChange(f, 'variable-remove:' + actArg(name))) }) : null;
+                return el('tr', {}, el('td', { text: name }), el('td', { text: v.type }), el('td', {}, valueCell),
+                    el('td', {}, v.own ? el('b', { text: 'here' }) : el('span', {}, v.from + ' ', link(v.fromkind, v.fromname)),
+                        ...(v.shadowed || []).map(x => el('div', { class: 'muted', text: 'hides ' + x }))),
+                    el('td', {}, over, del));
+            });
+            let add = null;
+            if (can) {
+                const n = el('input', { placeholder: '$name', autocomplete: 'off', spellcheck: false, 'aria-label': 'name of a new variable' });
+                const t = el('select', { 'aria-label': 'type of a new variable' }, TYPES.map(x => el('option', { value: x, text: x })));
+                const v = el('input', { placeholder: 'value', autocomplete: 'off', spellcheck: false, 'aria-label': 'value of a new variable' });
+                add = el('div', { class: 'row' }, n, t, v, el('button', { type: 'button', class: 'small', text: 'Add', onclick: () => {
+                    let name = n.value.trim(); if (name && name[0] !== '$') name = '$' + name;
+                    if (!/^\$[A-Za-z0-9_.-]{1,62}$/.test(name)) { errors.variables = 'name: $ and letters, digits, _ . -'; render(); return; }
+                    if (v.value.trim() === '') { errors.variables = 'a value is needed'; render(); return; }
+                    set(name, t.value, v.value.trim()); } }));
+            }
+            // a template stack: the overrides of its firewalls
+            const dv = obj.row.devicevariables && typeof obj.row.devicevariables === 'object' ? Object.entries(obj.row.devicevariables) : [];
+            const perDevice = dv.length ? el('div', {}, el('p', { class: 'muted', text: 'Overrides of the firewalls of this stack' }),
+                el('table', { class: 'objfields' }, el('tbody', {}, dv.map(([serial, list]) => el('tr', {}, el('th', {}, serial, ' ', link('manageddevice', serial)),
+                    el('td', {}, Object.entries(list).map(([n, x]) => el('div', { text: n + ' [' + x.type + '] = ' + x.value })))))))) : null;
+            const note = { ManagedDevice: 'kept in the template stack of the firewall (devices/entry/variable)', TemplateStack: 'the stack; a firewall can override a value (its window)',
+                Template: 'the template', DeviceOnPrem: 'the device (SCM)', DeviceCloud: 'the device (SCM)', Container: 'the folder (SCM)', Snippet: 'the snippet (SCM)' }[obj.row.type] || '';
+            const body = el('div', {},
+                rows.length ? el('table', { class: 'objfields' }, el('thead', {}, el('tr', {}, ['Name', 'Type', 'Value', 'From', ''].map(h => el('th', { text: h })))), el('tbody', {}, rows))
+                    : el('p', { class: 'muted', text: 'no variables' }),
+                errors.variables ? el('div', { class: 'error', text: errors.variables }) : null,
+                add, el('p', { class: 'muted', text: 'Set here: ' + note + '. Values with , / : are passed to pan-os-php as $$comma$$ / $$forwardslash$$ / $$colon$$.' }), perDevice);
+            return section('vars', 'Variables (' + Object.keys(eff).length + ')', body);
         }
         // a device group: where it is in the hierarchy (shared → parents → it → its children), as pan-os-php type=device
         // devicetype=devicegroup actions=display shows it

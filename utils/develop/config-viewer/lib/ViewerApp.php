@@ -4195,6 +4195,12 @@ class ViewerApp
                     }
                     if( isset( $sub['store'] ) && is_string( $sub['store'] ) )
                         $row['store'] = $sub['store'];
+                    // variables of a device: in the list only their names (the window has them with values and origin)
+                    if( !$nested && isset( $o['effective'] ) && is_array( $o['effective'] ) )
+                    {
+                        $o['variables'] = array_keys( $o['effective'] );
+                        unset( $o['effective'], $o['devicevariables'] );
+                    }
                     foreach( $o as $k => $v )
                         // the list: nested values flat (a list of texts); the object window: as they are ($nested)
                         $row[(string)$k] = ( is_array( $v ) && $k !== 'model' && !$nested ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
