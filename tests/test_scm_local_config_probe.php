@@ -51,6 +51,12 @@ $eq( array( strpos( $o1, 'gw-default: level 1, decryptable with the DEFAULT mast
 $eq( array( strpos( $o2, 'gw-own: level 1, decryptable with the given master key' ) !== FALSE, strpos( $o2, '1 default master key, 1 given master key, 0 not decryptable' ) !== FALSE ),
     array( TRUE, TRUE ), 'file= master-key=: the own master key' );
 $eq( array( strpos( $o1 . $o2, 'synthetic-psk' ), $rc1 ), array( FALSE, 1 ), 'no secret in the output; exit code 1 when a key can not be decrypted' );
+// pan-os-php type=… reaches the script (its own help, not the one of pan-os-php); no argument name that pan-os-php or
+// UTIL answer before the script (version= prints the framework version, an existing out= file is loaded as configuration)
+list( $rc3, $o3 ) = $run( array( 'help' ) );
+$eq( array( strpos( $o3, 'scm_local_config_probe.php in=scm-api://' ) !== FALSE, strpos( $o3, 'config-version=' ) !== FALSE, strpos( $o3, 'save=' ) !== FALSE,
+        strpos( $o3, 'Actions=action' ) !== FALSE, preg_match( '/^ - (version|out|changelog)=/m', $o3 ) ),
+    array( TRUE, TRUE, TRUE, FALSE, 0 ), 'pan-os-php type=scm-local-config-probe help: help of the script, config-version= and save=, no version= / out=' );
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( empty( $failed ) ? 0 : 1 );

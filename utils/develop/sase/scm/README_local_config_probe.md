@@ -8,7 +8,7 @@ customer firewalls when a tenant is moved (the PSKs of a Prisma Access tenant it
 ```bash
 pan-os-php type=scm-local-config-probe in=scm-api://<TSG>                         # the managed firewalls (serials)
 pan-os-php type=scm-local-config-probe in=scm-api://<TSG> serial=<serial>         # newest version
-    [version=<id>] [master-key=<key>] [out=<file>] [base=<url>] [debugapi]
+    [config-version=<id>] [master-key=<key>] [save=<file>] [base=<url>] [debugapi]
 pan-os-php type=scm-local-config-probe file=<config.xml> [master-key=<key>]       # offline: downloaded in SCM
 ```
 
@@ -19,7 +19,7 @@ pan-os-php type=scm-local-config-probe file=<config.xml> [master-key=<key>]     
 | per IKE gateway | `level 1, decryptable with the DEFAULT master key` / `… with the given master key` / `NOT decryptable` / `other format (prefix …)` (e.g. master key encryption level 2 - not readable by pan-os-php yet) |
 
 Never prints a secret - only names of IKE gateways, yes / no and counts. The downloaded configuration is written only
-with `out=` (chmod 600: it holds the encrypted secrets of the firewall). Exit code of `file=`: 0 when every pre-shared
+with `save=` (chmod 600: it holds the encrypted secrets of the firewall). Exit code of `file=`: 0 when every pre-shared
 key can be decrypted.
 
 To verify on a lab tenant: base URL and parameter names, the permission the service account needs, whether the file

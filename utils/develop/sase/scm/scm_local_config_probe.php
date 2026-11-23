@@ -27,12 +27,12 @@
  *   - decryptable with the default master key, or with master-key=<key> (the SHA1 in the value proves it)
  *
  * Prints never a secret: only names of IKE gateways and yes / no / counts. The downloaded configuration is written
- * only with out=<file> (chmod 600 - it holds the encrypted secrets of the firewall).
+ * only with save=<file> (chmod 600 - it holds the encrypted secrets of the firewall).
  *
  * php scm_local_config_probe.php file=<config.xml> [master-key=<key>]         offline: a configuration downloaded in SCM
  *                                                                           (Device Management > Local Config Management)
  * php scm_local_config_probe.php in=scm-api://<TSG>                            list the managed firewalls (serials)
- * php scm_local_config_probe.php in=scm-api://<TSG> serial=<serial> [version=<id>] [master-key=<key>] [out=<file>]
+ * php scm_local_config_probe.php in=scm-api://<TSG> serial=<serial> [config-version=<id>] [master-key=<key>] [save=<file>]
  *     [base=https://api.strata.paloaltonetworks.com/config/operations/v1] [debugapi]
  *
  * base: the URL of the operations API is not documented on pan.dev (only the paths) - without base= the probable
@@ -50,13 +50,13 @@ $supportedArguments = array();
 $supportedArguments['in'] = array('niceName' => 'in', 'shortHelp' => 'in=scm-api://<TSG>', 'argDesc' => 'scm-api://[TSG]');
 $supportedArguments['file'] = array('niceName' => 'file', 'shortHelp' => 'offline: a configuration file (e.g. downloaded in SCM, Local Config Management)', 'argDesc' => '[file]');
 $supportedArguments['serial'] = array('niceName' => 'serial', 'shortHelp' => 'serial number of the firewall (without: list the managed firewalls)', 'argDesc' => '[serial]');
-$supportedArguments['version'] = array('niceName' => 'version', 'shortHelp' => 'id of the version to download (default: the newest)', 'argDesc' => '[id]');
+$supportedArguments['config-version'] = array('niceName' => 'config-version', 'shortHelp' => 'id of the configuration version to download (default: the newest; not version= - pan-os-php itself answers that)', 'argDesc' => '[id]');
 $supportedArguments['master-key'] = array('niceName' => 'master-key', 'shortHelp' => 'master key of the firewall, if not the default one', 'argDesc' => '[key]');
-$supportedArguments['out'] = array('niceName' => 'out', 'shortHelp' => 'write the downloaded configuration to this file (chmod 600)', 'argDesc' => '[file]');
+$supportedArguments['save'] = array('niceName' => 'save', 'shortHelp' => 'write the downloaded configuration to this file (chmod 600; not out= - UTIL would load an existing out= file as the SCM base configuration)', 'argDesc' => '[file]');
 $supportedArguments['base'] = array('niceName' => 'base', 'shortHelp' => 'URL of the operations API (default: try the probable ones)', 'argDesc' => '[url]');
 $supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls');
 $supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
-$usage = "php " . basename(__FILE__) . " in=scm-api://<TSG> [serial=<serial> [version=<id>] [master-key=<key>] [out=<file>] [base=<url>]]";
+$usage = "php " . basename(__FILE__) . " in=scm-api://<TSG> [serial=<serial> [config-version=<id>] [master-key=<key>] [save=<file>] [base=<url>]]";
 
 // offline: a configuration file (no API)
 foreach( array_slice($argv, 1) as $a )
@@ -141,7 +141,7 @@ if( count($versions) == 0 )
 }
 
 // ---- 2) download: the given version, else the newest
-$version = isset(PH::$args['version']) && PH::$args['version'] !== true ? (string)PH::$args['version'] : null;
+$version = isset(PH::$args['config-version']) && PH::$args['config-version'] !== true ? (string)PH::$args['config-version'] : null;
 if( $version === null )
 {
     usort($versions, function( $a, $b ) { return strcmp((string)( $b['timestamp'] ?? '' ), (string)( $a['timestamp'] ?? '' )) ?: ( ( $b['id'] ?? 0 ) <=> ( $a['id'] ?? 0 ) ); });
@@ -153,11 +153,11 @@ $xml = is_string($r['response']) ? $r['response'] : '';
 PH::print_stdout(" - download version " . $version . ": HTTP " . $r['http_code'] . ", " . strlen($xml) . " bytes");
 if( $r['http_code'] != 200 || $xml === '' )
     exit(2);
-if( isset(PH::$args['out']) && PH::$args['out'] !== true )
+if( isset(PH::$args['save']) && PH::$args['save'] !== true )
 {
-    file_put_contents(PH::$args['out'], $xml);
-    chmod(PH::$args['out'], 0600);
-    PH::print_stdout("   written to " . PH::$args['out'] . " (chmod 600 - holds the encrypted secrets of the firewall)");
+    file_put_contents(PH::$args['save'], $xml);
+    chmod(PH::$args['save'], 0600);
+    PH::print_stdout("   written to " . PH::$args['save'] . " (chmod 600 - holds the encrypted secrets of the firewall)");
 }
 $doc = new DOMDocument();
 if( !@$doc->loadXML($xml, XML_PARSE_BIG_LINES) )
