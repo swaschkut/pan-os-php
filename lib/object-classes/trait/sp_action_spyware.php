@@ -68,15 +68,13 @@ trait sp_action_spyware
                 elseif( $name == "Unknown-UDP Command and Control detector" )
                     $tmp_mica_Unknown_UDP_found = TRUE;
 
+                // no inline-policy-action (PAN-OS refuses the commit; only a hand edited / uncommitted file): read as
+                // 'disable' - the XML stays at load (before: 'disable' was written into it); a set-action writes a value
                 $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
-                if( $tmp_inline_policy_action !== FALSE )
+                if( $tmp_inline_policy_action !== FALSE && $tmp_inline_policy_action->textContent !== "" )
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
                 else
-                {
-                    $tmp_inline_policy_action = DH::findFirstElementOrCreate("inline-policy-action", $tmp_entry1);
-                    $tmp_inline_policy_action->textContent = "disable";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
-                }
 
                 // local deep learning: read only, as the firewall writes it (no element: not set - PANW documents no
                 // default, the 12.1 GUI has no setting). Written only by the set-actions when the BP JSON lists it.

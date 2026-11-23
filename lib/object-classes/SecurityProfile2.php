@@ -1391,11 +1391,26 @@ class SecurityProfile2
 
             $name = DH::findAttribute( "name", $entry );
             $fieldNode = DH::findFirstElementOrCreate( $field, $entry );
+            // no / an empty action (WF rule: PAN-OS shows 'allow'; AS / VP model: PAN-OS refuses the commit): the value
+            // read at load - an element left empty would give an incomplete set command
+            $current = $fieldNode->textContent;
+            $missing = $current === "";
+            if( $missing )
+                $current = isset( $this->additional[$container][$name][$field] ) && $this->additional[$container][$name][$field] !== ""
+                    ? $this->additional[$container][$name][$field] : ( $field === 'action' ? 'allow' : 'disable' );
 
-            $target = $this->bpTargetValue( $section, $fieldNode->textContent, $validate, $fallback );
+            $target = $this->bpTargetValue( $section, $current, $validate, $fallback );
 
             if( $target === null )
+            {
+                if( $missing )
+                {
+                    $fieldNode->textContent = $current;
+                    $this->additional[$container][$name][$field] = $current;
+                    $changed = TRUE;
+                }
                 continue;
+            }
 
             $fieldNode->textContent = $target;
             $this->additional[$container][$name][$field] = $target;

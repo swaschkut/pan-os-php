@@ -4,6 +4,8 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* type=securityprofile | a vulnerability inline ML model (mica-engine-vulnerability-enabled) without inline-policy-action stopped the load of the configuration (PAN-OS refuses such a commit - a hand edited / uncommitted file): now read as disable, the XML stays
+* type=securityprofile | an anti-spyware inline ML detector (mica-engine-spyware-enabled) without inline-policy-action: 'disable' was written into the configuration while loading it - now only read as disable; the set-actions (alert-only-set / best-practice-set) write a complete inline-policy-action (no empty element, no incomplete set command)
 * type=securityprofile securityprofiletype=wildfire-analysis | a WildFire inline analysis rule (mica-engine-wildfire-rules) without action - PAN-OS commits it, the GUI shows allow: actions=display stopped (no 'action' read); now read as allow (the XML stays at load)
 * beta-vp-merge-artifact-fix
 * type=scm-export-xml (in=scm-export://, the SCM import of the config viewer) | nothing of the folders with a space in their name was loaded (Prisma Access, Mobile Users Container, Mobile Users, Mobile Users Explicit Proxy, Remote Networks, Service Connections): scm_pa_export.php writes their directory as slug (config/folders/Prisma_Access/), the loader looked for "Prisma Access"; the cloud folders (Mobile Users, Remote Networks, Service Connections - loaded as DeviceCloud) were looked for below devices/ - objects (e.g. FQDN addresses), profiles and rules of these folders were missing
