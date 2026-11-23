@@ -102,6 +102,8 @@ if( $isPlan && !$isApply )
         'areas' => $listArg( isset($args['area']) ? $args['area'] : null ),
         'containers' => $listArg( isset($args['container']) ? $args['container'] : null ),
         'types' => $listArg( isset($args['config-types']) ? $args['config-types'] : null ),
+        // this script syncs two tenants (part of the SCM migration, moves to the plug-in scm-migration)
+        'cross_tenant' => true,
     );
     if( $options['allow_delete'] && $options['mode'] != 'mirror' )
         PH::print_stdout( " ! allow-delete has only an effect with mode=mirror" );
@@ -220,6 +222,7 @@ $log = SCMPrismaAccessSync::apply( $connector, $plan, array(
     'ops' => $listArg( isset(PH::$args['ops']) ? PH::$args['ops'] : null ),
     'source_dir' => isset(PH::$args['source-dir']) ? PH::$args['source-dir'] : null,
     'skip_hash_check' => isset(PH::$args['skip-hash-check']),
+    'cross_tenant' => true,
 ) );
 
 $logFile = dirname(PH::$args['plan']) . "/apply-log-" . ( $execute ? "execute" : "dry-run" ) . "-" . date('Ymd-His') . ".json";

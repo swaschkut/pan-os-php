@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* SCM | the plan engine of scm_pa_change.php (SCMPrismaAccessSync) changes one tenant: a plan / apply between two different tenants (TSG a → TSG b) is refused - tenant migration / sync belongs to the plug-in scm-migration (scm_pa_sync.php sets it, until it moves there)
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:

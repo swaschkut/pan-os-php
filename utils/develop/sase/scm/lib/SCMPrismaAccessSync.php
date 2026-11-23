@@ -47,7 +47,7 @@ class SCMPrismaAccessSync
 
     public $diff;
     public $options = array( 'source' => 'left', 'mode' => 'additive', 'allow_delete' => false, 'allow_infra' => false, 'allow_network' => false,
-        'areas' => null, 'containers' => null, 'types' => null );
+        'areas' => null, 'containers' => null, 'types' => null, 'cross_tenant' => false );
 
     /** side data: ['dir', 'manifest', 'index' => [area|container|endpoint => meta], 'files' => cache] */
     private $src;
@@ -74,12 +74,29 @@ class SCMPrismaAccessSync
             $this->diff = json_decode( file_get_contents($diff), TRUE );
         }
         if( !is_array($this->diff) || !isset($this->diff['entries']) )
-            derr( "not a diff.json of scm_pa_compare.php: " . $diffFile, null, FALSE );
+            derr( "not a diff.json of scm_pa_compare.php: " . ( is_string($diff) ? $diff : "(array)" ), null, FALSE );
         $this->options = array_merge( $this->options, $options );
         if( !in_array($this->options['source'], array('left', 'right'), TRUE) )
             derr( "source must be left or right", null, FALSE );
         if( !in_array($this->options['mode'], array('additive', 'mirror', 'merge'), TRUE) )
             derr( "mode must be additive, mirror or merge", null, FALSE );
+        $msg = self::crossTenant( $this->diff['left']['tsg_id'] ?? null, $this->diff['right']['tsg_id'] ?? null, $this->options['cross_tenant'] );
+        if( $msg !== null )
+            derr( $msg, null, FALSE );
+    }
+
+    /**
+     * pan-os-php changes one tenant: a plan between two exports of the same TSG (scm_pa_change.php: as-is → to-be).
+     * Two different tenants (TSG a → TSG b: tenant migration / tenant sync) belong to the plug-in scm-migration, which
+     * sets 'cross_tenant'.
+     * @return string|null why it is refused, null: allowed
+     */
+    public static function crossTenant( $tsgA, $tsgB, $crossTenant )
+    {
+        if( $crossTenant || $tsgA === null || $tsgB === null || $tsgA === '' || $tsgB === '' || (string)$tsgA === (string)$tsgB )
+            return null;
+        return "the exports belong to two different tenants (TSG " . $tsgA . " / TSG " . $tsgB . "): a plan between two tenants "
+            . "(tenant migration / sync) belongs to the plug-in scm-migration - pan-os-php changes one tenant";
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1003,7 +1020,11 @@ class SCMPrismaAccessSync
 
     public static function apply( $connector, $plan, $opts )
     {
-        $opts += array( 'execute' => false, 'continue_on_error' => false, 'push' => false, 'ops' => null, 'source_dir' => null, 'skip_hash_check' => false );
+        $opts += array( 'execute' => false, 'continue_on_error' => false, 'push' => false, 'ops' => null, 'source_dir' => null, 'skip_hash_check' => false,
+            'cross_tenant' => false );
+        $msg = self::crossTenant( $plan['source']['tsg_id'] ?? null, $plan['target']['tsg_id'] ?? null, $opts['cross_tenant'] );
+        if( $msg !== null )
+            derr( $msg, null, FALSE );
         $sourceDir = $opts['source_dir'] !== null ? $opts['source_dir'] : $plan['source']['dir'];
         $sync = new SCMPrismaAccessSync( array( 'entries' => array() ) );
         $log = array( 'tool' => 'pan-os-php scm_pa_sync.php apply', 'started_at' => date('c'), 'execute' => $opts['execute'],

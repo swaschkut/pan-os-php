@@ -170,8 +170,12 @@ selected group that refers to a profile that was not selected and does not exist
 * pan-os-php utilities (merger, playbooks, actions) on an export: [README_pa_xml_to_change.md](README_pa_xml_to_change.md)
   (`in=scm-export://`, `scm_pa_xml_to_change.php` writes the change file)
 
-* bigger changes, reordering rule bases, Prisma Access areas, tenant → tenant: export / edit / `scm_pa_compare.php` /
-  `scm_pa_sync.php` ([README_pa_sync.md](README_pa_sync.md))
+* bigger changes, reordering rule bases, Prisma Access areas: export / edit / `scm_pa_compare.php` / `scm_pa_sync.php`
+  ([README_pa_sync.md](README_pa_sync.md))
+
+**One tenant.** The plan engine (`SCMPrismaAccessSync`) plans and applies between two exports of the **same** TSG
+(as-is → to-be). A plan or an apply between two different tenants (TSG a → TSG b: tenant migration / tenant sync) is
+refused - it belongs to the plug-in `scm-migration` (also Panorama / firewall → SCM and SCM → Panorama / firewall).
 * gap remediation (best practice / visibility fixes for the CDSS portal): change file `pan-os-php-scm-changes`
   ([todo/scm-gap-remediation.md](../../../../todo/scm-gap-remediation.md)) – there the requests are generated
   from findings; here the consultant writes the wanted state of a few objects by hand. Both end in the same
