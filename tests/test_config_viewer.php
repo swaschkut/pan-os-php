@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -58,6 +58,36 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
         'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/none' ),
         'args' => function( \$run ) { return array( 'vendor=' . \$run->choice( 'vendor' ), 'file=' . \$run->file( 'source', 'mig-source' ), 'out=' . \$run->out( 'out.xml' ),
             'shadow-ignoreinvalidaddressobjects', '#kinds=' . implode( '+', \$run->choices( 'kinds' ) ) ); } ) ) );" );
+
+// interface 2: a page with form blocks - defaults from the SCM tab (newest state), check of the plug-in (no overlap)
+file_put_contents( $plugins . '/pg/plugin.php', "<?php return array( 'api' => 2, 'name' => 'pg', 'title' => 'Pages',
+    'pages' => array( 'settings' => array( 'title' => 'Settings of tenant B', 'text' => 'new values',
+        'blocks' => array(
+            array( 'name' => 'infra', 'kind' => 'form', 'title' => 'Infrastructure',
+                'fields' => array(
+                    array( 'name' => 'subnet', 'type' => 'ipv4-cidr', 'label' => 'Infrastructure subnet', 'required' => TRUE ),
+                    array( 'name' => 'subnet6', 'type' => 'ipv6-cidr' ),
+                    array( 'name' => 'as', 'type' => 'asn', 'label' => 'Infra BGP AS', 'required' => TRUE ),
+                    array( 'name' => 'portal', 'type' => 'hostname' ),
+                    array( 'name' => 'pools', 'type' => 'list', 'item' => 'ipv4-cidr' ),
+                    array( 'name' => 'mode', 'type' => 'select', 'options' => array( 'same' => 'as tenant A', 'new' => 'new' ) ),
+                    array( 'name' => 'flag', 'type' => 'bool' ),
+                    array( 'name' => 'count', 'type' => 'int', 'min' => 1, 'max' => 10 ) ),
+                'defaults' => function( \$page ) {
+                    \$s = \$page->scmPa( 'infra', 'shared-infrastructure-settings' );
+                    return array( 'subnet' => array( 'value' => null, 'hint' => 'tenant A: ' . ( \$s['infrastructure_subnet'] ?? '-' ) ),
+                        'as' => array( 'value' => isset( \$s['infra_bgp_as'] ) ? (int)\$s['infra_bgp_as'] : null, 'hint' => 'tenant A: ' . ( \$s['infra_bgp_as'] ?? '-' ) ),
+                        'nosuch' => 1 );
+                },
+                'check' => function( \$v, \$page ) {
+                    foreach( \$v['pools'] ?? array() as \$pool )
+                        if( \$pool === \$v['subnet'] )
+                            return array( 'pools' => 'a pool must not be the infrastructure subnet' );
+                    return array();
+                } ),
+            array( 'name' => 'notes', 'kind' => 'form', 'fields' => array( array( 'name' => 'text', 'type' => 'text', 'max' => 20 ) ),
+                'check' => function( \$v, \$page ) { return \$page->values( 'infra' ) === array() ? array( '' => 'save Infrastructure first' ) : array(); } ) ) ) ) );" );
+file_put_contents( $plugins . '/badpage/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badpage', 'pages' => array( 'x' => array() ) );" );
 
 // an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
 require_once $here . '/../lib/misc-classes/PluginLicense.php';
@@ -819,6 +849,43 @@ eq( array( $made, array_column( $pl[1]['states'] ?? array(), 'id' ), array_colum
     array( array( 1, 1, 0 ), array( 'bbbb2222', 'aaaa1111' ), array( 'live', 'import' ), 'as-the-api-gave-it', '65534', '2/2', FALSE,
         'infra_bgp_as', array( 'lab' ), 'corp', array( 'france-north' ), array( 'netherlands-central' ), 1, 400, 404, 200, 1 ),
     'SCM tab Prisma Access infrastructure: states of the export of a run (as the API gave them, only the infra endpoints), compare as scm_pa_compare.php, delete; live only with an SCM key' );
+// pages of plug-ins (interface 2): form blocks with defaults from the newest state of the SCM tab (bbbb2222: AS 65535)
+$PGP = $EG . '/pages/pg-settings';
+$pgv = $alice->call( 'GET', $PGP );
+$pgInfra = $pgv[1]['blocks'][0] ?? array();
+$pgBad = $alice->call( 'PUT', $PGP . '/blocks/infra', array( 'values' => array( 'subnet' => '10.0.0.1/24', 'subnet6' => 'zz', 'as' => '0', 'portal' => 'a_b',
+    'pools' => array( '10.9.0.0/16', 'x' ), 'mode' => 'other', 'flag' => 'maybe', 'count' => 11, 'unknown' => 1 ) ) );
+$pgOverlap = $alice->call( 'PUT', $PGP . '/blocks/infra', array( 'values' => array( 'subnet' => '10.0.0.0/24', 'as' => 65000, 'pools' => array( '10.0.0.0/24' ) ) ) );
+$pgNotesFirst = $alice->call( 'PUT', $PGP . '/blocks/notes', array( 'values' => array( 'text' => 'x' ) ) );
+$pgOk = $alice->call( 'PUT', $PGP . '/blocks/infra', array( 'values' => array( 'subnet' => '10.0.0.0/24', 'subnet6' => '2001:DB8::/32', 'as' => '65000',
+    'portal' => 'GP.Example.com', 'pools' => array( '10.9.0.0/16', '', '10.8.0.0/16' ), 'mode' => 'new', 'flag' => TRUE, 'count' => '3' ) ) );
+$pgNotes = $alice->call( 'PUT', $PGP . '/blocks/notes', array( 'values' => array( 'text' => 'cut-over on friday' ) ) );
+$pgAfter = $alice->call( 'GET', $PGP );
+$pgAudit = $alice->call( 'GET', $EG . '/audit' );
+// another member: may read the page; saves only with write (bob's role in this project decides)
+$bobRole = $bob->call( 'GET', $EG )[1]['role'] ?? 'none';
+$bobPut = status( $bob->call( 'PUT', $PGP . '/blocks/notes', array( 'values' => array( 'text' => 'bob' ) ) ) );
+// carol as a read member: reads the page, can not save
+$alice->call( 'PUT', $EG . '/members', array( 'user' => 'carol', 'role' => 'read' ) );
+$carolRw = array( status( $carol->call( 'GET', $PGP ) ), status( $carol->call( 'PUT', $PGP . '/blocks/notes', array( 'values' => array( 'text' => 'carol' ) ) ) ) );
+$alice->call( 'DELETE', $EG . '/members/carol' );
+$pgAuditHasValue = strpos( json_encode( $pgAudit[1] ?? array() ), 'cut-over on friday' ) !== FALSE || strpos( json_encode( $pgAudit[1] ?? array() ), '10.9.0.0' ) !== FALSE;
+eq( array( status( $pgv ), $pgv[1]['title'] ?? null, array_column( $pgv[1]['blocks'] ?? array(), 'name' ), array_column( $pgInfra['fields'] ?? array(), 'type' ),
+        $pgInfra['defaults']['as']['value'] ?? null, $pgInfra['defaults']['subnet']['hint'] ?? null, isset( $pgInfra['defaults']['nosuch'] ), array_key_exists( 'saved_at', $pgInfra ) ? $pgInfra['saved_at'] : 'x',
+        isset( $pgInfra['fields'][0]['check'] ) || isset( $pgInfra['check'] ) ),
+    array( 200, 'Settings of tenant B', array( 'infra', 'notes' ), array( 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'list', 'select', 'bool', 'int' ),
+        65535, 'tenant A: 192.0.2.0/24', FALSE, null, FALSE ),
+    'plug-in page (interface 2): blocks, field types, defaults / hints of the plug-in from the newest state of the SCM tab, no callables to the browser' );
+eq( array( status( $pgBad ), array_keys( (array)( $pgBad[1]['fields'] ?? array() ) ), $pgBad[1]['fields']['subnet'] ?? null, $pgBad[1]['fields']['pools'] ?? null ),
+    array( 400, array( 'unknown', 'subnet', 'subnet6', 'as', 'portal', 'pools', 'mode', 'flag', 'count' ), 'not the network address of the subnet (10.0.0.0/24)', 'entry 2: an IPv4 network (a.b.c.d/n)' ),
+    'plug-in page: every field checked by its type, unknown fields refused, the messages per field' );
+eq( array( status( $pgOverlap ), $pgOverlap[1]['fields']['pools'] ?? null, status( $pgNotesFirst ), $pgNotesFirst[1]['fields'][''] ?? null ),
+    array( 400, 'a pool must not be the infrastructure subnet', 400, 'save Infrastructure first' ), 'plug-in page: the check of the plug-in (field / whole form, with the other blocks of the page)' );
+eq( array( status( $pgOk ), $pgOk[1]['values'] ?? null, status( $pgNotes ), $pgAfter[1]['blocks'][1]['values']['text'] ?? null, $pgAfter[1]['blocks'][0]['saved_by'] ?? null,
+        $pgAuditHasValue, $bobPut === ( $bobRole === 'none' ? 404 : ( in_array( $bobRole, array( 'owner', 'write' ), TRUE ) ? 200 : 403 ) ), $bobRole, $carolRw, status( $alice->call( 'GET', $EG . '/pages/pg-nosuch' ) ), status( $alice->call( 'PUT', $PGP . '/blocks/nosuch', array( 'values' => array() ) ) ) ),
+    array( 200, array( 'subnet' => '10.0.0.0/24', 'subnet6' => '2001:db8::/32', 'as' => 65000, 'portal' => 'gp.example.com', 'pools' => array( '10.9.0.0/16', '10.8.0.0/16' ),
+        'mode' => 'new', 'flag' => TRUE, 'count' => 3 ), 200, 'cut-over on friday', 'alice', FALSE, TRUE, 'write', array( 200, 403 ), 404, 404 ),
+    'plug-in page: saved in normalised form, with user; the audit log has no values; a read member can not save; unknown page / block' );
 // one area, several pages (mobile-users: Gateway / GlobalProtect / PAA): each page gets the endpoints it shows
 $muDir = $data . '/pa-job3/scm-export/1234567890/20261122-120000';
 @mkdir( $muDir . '/mobile-users', 0700, TRUE );
@@ -1681,7 +1748,7 @@ eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'ex
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
     array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
 eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
-eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badenv', 'badenv2', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
+eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badenv', 'badenv2', 'badpage', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
 eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
 $PL = 'projects/' . $r[1]['pid'];

@@ -241,3 +241,11 @@ label.chk { display: inline-flex; flex-direction: row; align-items: center; gap:
 .scmscope .row { align-items: center; }
 .row.wide > .groupfield { flex: 1 1 100%; }
 .row.wide .checks { max-width: none; }
+/* pages of plug-ins (interface 2) */
+.pblock { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+.pfields { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px 16px; margin: 8px 0; }
+.pfield label { display: flex; flex-direction: column; gap: 3px; }
+.pfield textarea { width: 100%; box-sizing: border-box; }
+.fielderror { color: #b3261e; font-size: 13px; }
+.fielderror:empty { display: none; }
+.pfield input[type=checkbox] { align-self: flex-start; }

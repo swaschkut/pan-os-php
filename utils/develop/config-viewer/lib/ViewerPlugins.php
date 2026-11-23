@@ -19,13 +19,16 @@
 
 
 /**
- * Plug-ins of the config viewer (interface version 1). A plug-in adds to the viewer without changing its code:
+ * Plug-ins of the config viewer (interface version 1 and 2). A plug-in adds to the viewer without changing its code:
  *   - run types   POST …/configs/<cid>/<plugin>-<run>/runs: the plug-in builds the pan-os-php arguments of the run;
  *                 with 'input' => 'none' the run needs no version (POST …/projects/<pid>/<plugin>-<run>/runs) - e.g.
  *                 a migration, whose input is a project file and whose result becomes the first version
  *   - file kinds  files of a project that its runs use (…/files?kind=<plugin>-<kind>): JSON, or 'format' => 'raw'
  *                 for any other file (a 3rd party configuration), with its own size limit
  *   - step types  pan-os-php types that a playbook may use in addition
+ *   - pages       (interface 2) a card of the project with blocks the viewer draws from their description - the
+ *                 plug-in brings no script for the page: 'form' (typed fields, values stored with the project,
+ *                 defaults / check of the plug-in)
  * A run type can set environment variables for its run ('env', %PLUGIN% = the folder of the plug-in) - so pan-os-php can
  * load files that the plug-in brings (e.g. PANOSPHP_MIGRATION_PARSERS => '%PLUGIN%/parser').
  * The browser page shows the run types with the fields the plug-in declares - a plug-in brings no script for the page.
@@ -45,7 +48,13 @@
  */
 class ViewerPlugins
 {
-    const API = 1;
+    /** the newest interface; plug-ins of interface 1 keep working */
+    const API = 2;
+    const APIS = array( 1, 2 );
+    /** types of the fields of a form block (interface 2) - ViewerPlugins::fieldValue() checks them */
+    const FIELD_TYPES = array( 'text', 'int', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'select', 'bool', 'list' );
+    /** types a list may hold */
+    const LIST_ITEMS = array( 'text', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'hostname' );
     const FIELD_KINDS = '/^(text|location|select|multi|file:[a-z][a-z0-9-]{0,40})$/';
     /** largest size limit a file kind may ask for */
     const KIND_MAX = 209715200;
@@ -139,13 +148,13 @@ class ViewerPlugins
     {
         if( !is_array( $p ) )
             throw new Exception( 'plugin.php must return an array' );
-        if( ( $p['api'] ?? null ) !== self::API )
-            throw new Exception( '"api" must be ' . self::API );
+        if( !in_array( $p['api'] ?? null, self::APIS, TRUE ) )
+            throw new Exception( '"api" must be ' . implode( ' or ', self::APIS ) );
         $name = $p['name'] ?? null;
         if( !is_string( $name ) || !preg_match( '/^[a-z][a-z0-9]{1,30}$/', $name ) || $name !== $folder )
             throw new Exception( '"name": lower case letters and digits, the same as the folder name' );
-        $out = array( 'name' => $name, 'api' => self::API, 'version' => self::text( $p['version'] ?? '0', 'version', 40 ), 'title' => self::text( $p['title'] ?? $name, 'title', 80 ),
-            'feature' => null, 'runs' => array(), 'kinds' => array(), 'playbookTypes' => array() );
+        $out = array( 'name' => $name, 'api' => $p['api'], 'version' => self::text( $p['version'] ?? '0', 'version', 40 ), 'title' => self::text( $p['title'] ?? $name, 'title', 80 ),
+            'feature' => null, 'runs' => array(), 'kinds' => array(), 'playbookTypes' => array(), 'pages' => array() );
         if( isset( $p['feature'] ) )
         {
             if( !is_string( $p['feature'] ) || !preg_match( '/^[a-z][a-z0-9-]{1,40}$/', $p['feature'] ) )
@@ -227,7 +236,197 @@ class ViewerPlugins
                 throw new Exception( '"playbookTypes": pan-os-php type names' );
             $out['playbookTypes'][] = $t;
         }
+        if( isset( $p['pages'] ) && $p['api'] < 2 )
+            throw new Exception( '"pages" need "api" 2' );
+        foreach( (array)( $p['pages'] ?? array() ) as $page => $pg )
+            $out['pages'][$name . '-' . $page] = self::checkPage( $name, $out['feature'], $page, $pg );
         return $out;
+    }
+
+    /** a page (interface 2): title, text, blocks */
+    private static function checkPage( string $plugin, ?string $feature, $page, $pg ): array
+    {
+        if( !is_string( $page ) || !preg_match( '/^[a-z][a-z0-9-]{0,30}$/', $page ) || !is_array( $pg ) )
+            throw new Exception( 'page: lower case name and a description' );
+        $blocks = array();
+        foreach( (array)( $pg['blocks'] ?? array() ) as $b )
+        {
+            if( !is_array( $b ) || !is_string( $b['name'] ?? null ) || !preg_match( '/^[a-z][a-z0-9_-]{0,30}$/', $b['name'] ) || isset( $blocks[$b['name']] ) )
+                throw new Exception( 'page ' . $page . ': a block needs a "name" (lower case, unique)' );
+            if( ( $b['kind'] ?? null ) !== 'form' )
+                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form' );
+            foreach( array( 'defaults', 'check' ) as $c )
+                if( isset( $b[$c] ) && !is_callable( $b[$c] ) )
+                    throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "' . $c . '" must be callable' );
+            $fields = array();
+            foreach( (array)( $b['fields'] ?? array() ) as $f )
+            {
+                $f = self::checkField( 'page ' . $page . ', block ' . $b['name'], $f );
+                if( isset( $fields[$f['name']] ) )
+                    throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': field ' . $f['name'] . ' twice' );
+                $fields[$f['name']] = $f;
+            }
+            if( count( $fields ) < 1 || count( $fields ) > 200 )
+                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': 1 to 200 fields' );
+            $blocks[$b['name']] = array( 'name' => $b['name'], 'kind' => 'form', 'title' => self::text( $b['title'] ?? $b['name'], 'title', 120 ),
+                'text' => self::text( $b['text'] ?? '', 'text', 1000 ), 'fields' => $fields, 'defaults' => $b['defaults'] ?? null, 'check' => $b['check'] ?? null );
+        }
+        if( count( $blocks ) < 1 || count( $blocks ) > 20 )
+            throw new Exception( 'page ' . $page . ': 1 to 20 blocks' );
+        return array( 'plugin' => $plugin, 'feature' => $feature, 'page' => $page, 'title' => self::text( $pg['title'] ?? $page, 'title', 80 ),
+            'text' => self::text( $pg['text'] ?? '', 'text', 1000 ), 'blocks' => $blocks );
+    }
+
+    /** a field of a form block: name, type, label, help, required, options (select), min / max (int), max (text), item (list) */
+    private static function checkField( string $where, $f ): array
+    {
+        if( !is_array( $f ) || !is_string( $f['name'] ?? null ) || !preg_match( '/^[a-z][a-z0-9_]{0,40}$/', $f['name'] ) )
+            throw new Exception( $where . ': a field needs a "name" (lower case letters, digits, _)' );
+        $type = $f['type'] ?? null;
+        if( !in_array( $type, self::FIELD_TYPES, TRUE ) )
+            throw new Exception( $where . ': field ' . $f['name'] . ': "type" one of ' . implode( ', ', self::FIELD_TYPES ) );
+        $out = array( 'name' => $f['name'], 'type' => $type, 'label' => self::text( $f['label'] ?? $f['name'], 'label', 80 ),
+            'help' => self::text( $f['help'] ?? '', 'help', 300 ), 'required' => !empty( $f['required'] ) );
+        if( $type === 'select' )
+        {
+            $out['options'] = array();
+            foreach( (array)( $f['options'] ?? array() ) as $value => $label )
+            {
+                if( !preg_match( '/^[a-z0-9][a-z0-9_.-]{0,40}$/', (string)$value ) )
+                    throw new Exception( $where . ': field ' . $f['name'] . ': option values with lower case letters, digits and . _ -' );
+                $out['options'][(string)$value] = self::text( $label, 'option', 80 );
+            }
+            if( count( $out['options'] ) < 1 || count( $out['options'] ) > 200 )
+                throw new Exception( $where . ': field ' . $f['name'] . ' needs "options" (value => label)' );
+        }
+        if( $type === 'int' )
+            foreach( array( 'min', 'max' ) as $k )
+                if( isset( $f[$k] ) )
+                {
+                    if( !is_int( $f[$k] ) )
+                        throw new Exception( $where . ': field ' . $f['name'] . ': "' . $k . '" must be a number' );
+                    $out[$k] = $f[$k];
+                }
+        if( $type === 'text' )
+        {
+            $max = $f['max'] ?? 200;
+            if( !is_int( $max ) || $max < 1 || $max > 2000 )
+                throw new Exception( $where . ': field ' . $f['name'] . ': "max" 1 to 2000' );
+            $out['max'] = $max;
+        }
+        if( $type === 'list' )
+        {
+            $item = $f['item'] ?? 'text';
+            if( !in_array( $item, self::LIST_ITEMS, TRUE ) )
+                throw new Exception( $where . ': field ' . $f['name'] . ': "item" one of ' . implode( ', ', self::LIST_ITEMS ) );
+            $out['item'] = $item;
+        }
+        return $out;
+    }
+
+    /**
+     * the value of a field, checked by its type: the stored form (int, bool, normalised address, list), null when
+     * empty. Throws Exception (the message names the problem, not the field).
+     */
+    public static function fieldValue( array $f, $v )
+    {
+        if( $v === null || $v === '' || $v === array() )
+        {
+            if( $f['required'] )
+                throw new Exception( 'is needed' );
+            return $f['type'] === 'bool' ? FALSE : null;
+        }
+        switch( $f['type'] )
+        {
+            case 'bool':
+                if( is_bool( $v ) )
+                    return $v;
+                if( in_array( $v, array( 'true', '1', 1 ), TRUE ) )
+                    return TRUE;
+                if( in_array( $v, array( 'false', '0', 0 ), TRUE ) )
+                    return FALSE;
+                throw new Exception( 'yes or no' );
+            case 'int':
+            case 'asn':
+                if( is_string( $v ) && preg_match( '/^-?[0-9]{1,19}$/', trim( $v ) ) )
+                    $v = (int)trim( $v );
+                if( !is_int( $v ) )
+                    throw new Exception( 'a number' );
+                $min = $f['type'] === 'asn' ? 1 : ( $f['min'] ?? null );
+                $max = $f['type'] === 'asn' ? 4294967295 : ( $f['max'] ?? null );
+                if( ( $min !== null && $v < $min ) || ( $max !== null && $v > $max ) )
+                    throw new Exception( $f['type'] === 'asn' ? 'an AS number (1 to 4294967295)' : 'a number from ' . ( $min ?? '…' ) . ' to ' . ( $max ?? '…' ) );
+                return $v;
+            case 'select':
+                if( !is_string( $v ) || !isset( $f['options'][$v] ) )
+                    throw new Exception( 'not one of the options' );
+                return $v;
+            case 'list':
+                if( !is_array( $v ) || count( $v ) > 500 )
+                    throw new Exception( 'a list (at most 500 entries)' );
+                $out = array();
+                foreach( array_values( $v ) as $i => $x )
+                {
+                    if( $x === '' || $x === null )
+                        continue;
+                    try
+                    {
+                        $out[] = self::scalarValue( $f['item'], $x, 200 );
+                    }
+                    catch( Exception $e )
+                    {
+                        throw new Exception( 'entry ' . ( $i + 1 ) . ': ' . $e->getMessage() );
+                    }
+                }
+                if( $f['required'] && count( $out ) === 0 )
+                    throw new Exception( 'is needed' );
+                return $out;
+            default:
+                return self::scalarValue( $f['type'], $v, $f['max'] ?? 200 );
+        }
+    }
+
+    /** text / ipv4 / ipv4-cidr / ipv6-cidr / hostname */
+    private static function scalarValue( string $type, $v, int $max )
+    {
+        if( !is_string( $v ) || strlen( $v ) > $max || preg_match( '/[\x00-\x1f]/', $v ) )
+            throw new Exception( 'text of at most ' . $max . ' characters' );
+        $v = $type === 'text' ? $v : trim( $v );
+        switch( $type )
+        {
+            case 'ipv4':
+                if( filter_var( $v, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) === FALSE )
+                    throw new Exception( 'an IPv4 address' );
+                return $v;
+            case 'ipv4-cidr':
+                if( !preg_match( '#^([0-9.]+)/([0-9]{1,2})$#', $v, $m ) || filter_var( $m[1], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) === FALSE || (int)$m[2] > 32 )
+                    throw new Exception( 'an IPv4 network (a.b.c.d/n)' );
+                $len = (int)$m[2];
+                $net = long2ip( ip2long( $m[1] ) & ( $len === 0 ? 0 : ( ~0 << ( 32 - $len ) ) & 0xFFFFFFFF ) );
+                if( $net !== $m[1] )
+                    throw new Exception( 'not the network address of the subnet (' . $net . '/' . $len . ')' );
+                return $net . '/' . $len;
+            case 'ipv6-cidr':
+                if( !preg_match( '#^([0-9a-fA-F:.]+)/([0-9]{1,3})$#', $v, $m ) || filter_var( $m[1], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) === FALSE || (int)$m[2] > 128 )
+                    throw new Exception( 'an IPv6 network (x::/n)' );
+                $bin = inet_pton( $m[1] );
+                $len = (int)$m[2];
+                $net = '';
+                for( $i = 0; $i < 16; $i++ )
+                {
+                    $bits = max( 0, min( 8, $len - 8 * $i ) );
+                    $net .= chr( ord( $bin[$i] ) & ( ( 0xFF << ( 8 - $bits ) ) & 0xFF ) );
+                }
+                if( $net !== $bin )
+                    throw new Exception( 'not the network address of the subnet (' . inet_ntop( $net ) . '/' . $len . ')' );
+                return inet_ntop( $bin ) . '/' . $len;
+            case 'hostname':
+                if( strlen( $v ) > 253 || !preg_match( '/^(?=.{1,253}$)([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/', $v ) )
+                    throw new Exception( 'a host name (letters, digits, -, labels separated by .)' );
+                return strtolower( $v );
+            default:
+                return $v;
+        }
     }
 
     private static function text( $v, string $what, int $max ): string
@@ -254,6 +453,16 @@ class ViewerPlugins
             if( $on === null || $on( $p ) )
                 $kinds += $p['kinds'];
         return $kinds;
+    }
+
+    /** pages (interface 2) of the plug-ins that are switched on: <plugin>-<page> => description */
+    public function pages( ?callable $on = null ): array
+    {
+        $pages = array();
+        foreach( $this->plugins as $p )
+            if( $on === null || $on( $p ) )
+                $pages += $p['pages'] ?? array();
+        return $pages;
     }
 
     public function playbookTypes( ?callable $on = null ): array
@@ -347,5 +556,37 @@ class ViewerPluginRun
         if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$/', $name ) )
             throw new ViewerException( 'plug-in: not a plain file name', 500 );
         return '%JOB%/' . $name;
+    }
+}
+
+/**
+ * what the callables of a page (defaults, check) get: the stored values of the page and read access to the data of the
+ * project the viewer has (the SCM tab) - never a path of the server, nothing to write
+ */
+class ViewerPluginPage
+{
+    /** @var array block => values (stored) */
+    private $saved;
+    private $reader;
+
+    public function __construct( array $saved, callable $reader )
+    {
+        $this->saved = $saved;
+        $this->reader = $reader;
+    }
+
+    /** the stored values of a block of this page (empty: not saved yet) */
+    public function values( string $block ): array
+    {
+        return $this->saved[$block] ?? array();
+    }
+
+    /**
+     * the data of one endpoint of the newest state of a page of the SCM tab (Prisma Access: infra, sc, rn, mugw, …),
+     * as the SCM API gave it ('data' of the export file); null: no such state / endpoint
+     */
+    public function scmPa( string $page, string $endpoint )
+    {
+        return ( $this->reader )( 'scm-pa', $page, $endpoint );
     }
 }

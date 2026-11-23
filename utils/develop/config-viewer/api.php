@@ -417,6 +417,11 @@ try
             viewerOut( ViewerApp::projectPublic( $app->projectCreate( $user, viewerBody()['name'] ?? null ) ), 201 );
         if( $n == 2 && $method === 'GET' )
             viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) + array( 'network_global' => $app->networkGet()['enabled'] ) );
+        // pages of plug-ins (interface 2): …/projects/<pid>/pages/<plugin>-<page>  GET;  …/blocks/<block>  PUT {values}
+        if( $sub === 'pages' && $n == 4 && $method === 'GET' )
+            viewerOut( $app->pluginPageGet( $user, $pid, $route[3] ) );
+        if( $sub === 'pages' && $n == 6 && $route[4] === 'blocks' && $method === 'PUT' )
+            viewerOut( $app->pluginPageSave( $user, $pid, $route[3], $route[5], viewerBody() ) );
         // scope of the SCM import of the project: PUT {kind, areas, egress, config_scope}
         if( $n == 3 && $sub === 'import-scope' && $method === 'PUT' )
             viewerOut( $app->importScopeSet( $user, $pid, viewerBody() ) );
@@ -650,7 +655,8 @@ catch( ViewerException $e )
     // a refused download is logged as well
     if( $viewerAudit['method'] === 'GET' && preg_match( '#/download$|/runs/[0-9a-f]+/files/#', $viewerAudit['route'] ) )
         $viewerAudit['download'] = TRUE;
-    viewerOut( array( 'error' => $e->getMessage() ) + ( $e instanceof ViewerDetailException ? array( 'details' => $e->details ) : array() ), $code >= 400 && $code < 600 ? $code : 400 );
+    viewerOut( array( 'error' => $e->getMessage() ) + ( $e instanceof ViewerDetailException ? array( 'details' => $e->details ) : array() )
+        + ( $e instanceof ViewerFieldException ? array( 'fields' => (object)$e->fields ) : array() ), $code >= 400 && $code < 600 ? $code : 400 );
 }
 catch( Throwable $e )
 {

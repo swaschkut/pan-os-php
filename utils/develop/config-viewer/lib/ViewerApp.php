@@ -43,6 +43,18 @@ class ViewerException extends Exception
 {
 }
 
+/** an error of a form: field => what is wrong with it ('' : the form as a whole) */
+class ViewerFieldException extends ViewerException
+{
+    public $fields;
+
+    public function __construct( string $message, array $fields )
+    {
+        parent::__construct( $message, 400 );
+        $this->fields = $fields;
+    }
+}
+
 /** an error with a debug text for the user (e.g. the key generation: the call, TLS, the answer - never a secret) */
 class ViewerDetailException extends ViewerException
 {
@@ -2094,7 +2106,7 @@ class ViewerApp
     /** for the browser page / scripts: plug-ins with their run types, fields and file kinds (admins: also the refused ones) */
     public function pluginMeta( bool $admin ): array
     {
-        $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array() );
+        $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array(), 'pages' => array() );
         foreach( $this->plugins->plugins as $p )
         {
             // a package is loaded only when it is licensed; a plug-in in a folder is the source (development / basic)
@@ -2105,6 +2117,8 @@ class ViewerApp
                 continue;
             foreach( $p['runs'] as $name => $r )
                 $out['runs'][$name] = array( 'title' => $r['title'], 'fields' => $r['fields'], 'bp' => $r['bp'], 'result' => $r['result'] !== null, 'input' => $r['input'] );
+            foreach( $p['pages'] ?? array() as $name => $pg )
+                $out['pages'][$name] = array( 'title' => $pg['title'], 'plugin' => $p['name'] );
             foreach( $p['kinds'] as $name => $k )
             {
                 $out['kinds'][$name] = $k['title'];
@@ -2118,6 +2132,164 @@ class ViewerApp
         if( $admin )
             $out['errors'] = $this->plugins->errors;
         return $out;
+    }
+
+    // ------------------------------------------------------------------ pages of plug-ins (interface 2)
+
+    /** a page of a plug-in that is switched on (an encrypted package only while licensed) */
+    private function pluginPage( $key ): array
+    {
+        $pg = is_string( $key ) ? ( $this->plugins->pages()[$key] ?? null ) : null;
+        if( $pg === null )
+            throw new ViewerException( 'not found', 404 );
+        $plugin = $this->plugins->plugins[$pg['plugin']] ?? array();
+        if( isset( $plugin['package'] ) && !$this->featureOn( $pg['feature'] ) )
+            throw new ViewerException( 'not licensed (any more): ' . $pg['feature'], 403 );
+        return $pg;
+    }
+
+    private function pluginPageDir( array $p, string $key ): string
+    {
+        return $this->projectDir( $p['pid'] ) . '/plugin-pages/' . $key;
+    }
+
+    /** stored values of every block of a page: block => ['values', 'saved_by', 'saved_at'] */
+    private function pluginPageStored( array $p, string $key, array $pg ): array
+    {
+        $out = array();
+        foreach( array_keys( $pg['blocks'] ) as $b )
+        {
+            $j = json_decode( (string)@file_get_contents( $this->pluginPageDir( $p, $key ) . '/' . $b . '.json' ), TRUE );
+            $out[$b] = is_array( $j ) ? $j : array( 'values' => array(), 'saved_by' => null, 'saved_at' => null );
+        }
+        return $out;
+    }
+
+    /** what a plug-in may read of a project: the data of one endpoint of the newest state of an SCM tab page */
+    private function pluginReader( array $p ): callable
+    {
+        return function( string $what, ...$args ) use ( $p ) {
+            if( $what !== 'scm-pa' || count( $args ) !== 2 || !isset( self::SCM_PA_PAGES[$args[0]] ) )
+                return null;
+            $newest = null;
+            foreach( glob( $this->paDir( $p, $args[0] ) . '/*/state.json' ) ?: array() as $f )
+            {
+                $s = $this->paState( $p, $args[0], basename( dirname( $f ) ) );
+                if( $newest === null || $s['time'] > $newest['time'] )
+                    $newest = $s;
+            }
+            $file = $newest['endpoints'][$args[1]]['file'] ?? null;
+            if( $file === null || !is_file( $newest['dir'] . '/' . $file ) )
+                return null;
+            $j = json_decode( (string)file_get_contents( $newest['dir'] . '/' . $file ), TRUE );
+            return is_array( $j ) ? ( $j['data'] ?? null ) : null;
+        };
+    }
+
+    /** a block for the page: description (without the callables), stored values, defaults of the plug-in */
+    private function pluginBlockPublic( array $b, array $stored, ViewerPluginPage $view ): array
+    {
+        $defaults = array();
+        $error = null;
+        if( $b['defaults'] !== null )
+        {
+            try
+            {
+                foreach( (array)( $b['defaults'] )( $view ) as $name => $d )
+                {
+                    if( !isset( $b['fields'][$name] ) )
+                        continue;
+                    $d = is_array( $d ) && ( array_key_exists( 'value', $d ) || array_key_exists( 'hint', $d ) ) ? $d : array( 'value' => $d );
+                    $value = $d['value'] ?? null;
+                    $hint = isset( $d['hint'] ) && is_scalar( $d['hint'] ) ? substr( (string)$d['hint'], 0, 300 ) : null;
+                    $defaults[$name] = array( 'value' => is_scalar( $value ) || ( is_array( $value ) && count( array_filter( $value, 'is_scalar' ) ) === count( $value ) ) ? $value : null,
+                        'hint' => $hint );
+                }
+            }
+            catch( Throwable $e )
+            {
+                $error = 'defaults of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+            }
+        }
+        $fields = array_values( $b['fields'] );
+        return array( 'name' => $b['name'], 'kind' => $b['kind'], 'title' => $b['title'], 'text' => $b['text'], 'fields' => $fields,
+            'values' => (object)$stored['values'], 'saved_by' => $stored['saved_by'], 'saved_at' => $stored['saved_at'], 'defaults' => (object)$defaults,
+            'error' => $error );
+    }
+
+    /** GET …/projects/<pid>/pages/<plugin>-<page>: the blocks with their stored values and the defaults of the plug-in */
+    public function pluginPageGet( array $user, $pid, $key ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        self::needUnlimited( $p, 'pages of plug-ins' );
+        $pg = $this->pluginPage( $key );
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        $view = new ViewerPluginPage( array_map( function( $s ) { return $s['values']; }, $stored ), $this->pluginReader( $p ) );
+        $blocks = array();
+        foreach( $pg['blocks'] as $name => $b )
+            $blocks[] = $this->pluginBlockPublic( $b, $stored[$name], $view );
+        return array( 'key' => $key, 'plugin' => $pg['plugin'], 'title' => $pg['title'], 'text' => $pg['text'], 'blocks' => $blocks,
+            'write' => in_array( $p['role'], array( 'owner', 'write' ), TRUE ) );
+    }
+
+    /**
+     * PUT …/projects/<pid>/pages/<plugin>-<page>/blocks/<block> {values}: every field checked by its type, then by the
+     * check of the plug-in; stored with the project (the audit log gets the route, not the values)
+     */
+    public function pluginPageSave( array $user, $pid, $key, $block, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'pages of plug-ins' );
+        $pg = $this->pluginPage( $key );
+        $b = is_string( $block ) ? ( $pg['blocks'][$block] ?? null ) : null;
+        if( $b === null )
+            throw new ViewerException( 'not found', 404 );
+        $raw = $in['values'] ?? null;
+        if( !is_array( $raw ) )
+            throw new ViewerException( 'values: an object field => value expected', 400 );
+        $errors = array();
+        foreach( array_keys( $raw ) as $k )
+            if( !isset( $b['fields'][$k] ) )
+                $errors[(string)$k] = 'not a field of this form';
+        $values = array();
+        foreach( $b['fields'] as $name => $f )
+            try
+            {
+                $values[$name] = ViewerPlugins::fieldValue( $f, $raw[$name] ?? null );
+            }
+            catch( Exception $e )
+            {
+                $errors[$name] = $e->getMessage();
+            }
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        if( count( $errors ) === 0 && $b['check'] !== null )
+        {
+            $saved = array_map( function( $s ) { return $s['values']; }, $stored );
+            $saved[$block] = $values;
+            try
+            {
+                foreach( (array)( $b['check'] )( $values, new ViewerPluginPage( $saved, $this->pluginReader( $p ) ) ) as $k => $msg )
+                    if( is_string( $msg ) && $msg !== '' )
+                        $errors[isset( $b['fields'][$k] ) ? $k : ''] = substr( $msg, 0, 300 );
+            }
+            catch( Throwable $e )
+            {
+                $errors[''] = 'check of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+            }
+        }
+        if( count( $errors ) > 0 )
+            throw new ViewerFieldException( 'the form has errors', $errors );
+        $dir = $this->pluginPageDir( $p, $key );
+        if( !is_dir( $dir ) )
+            mkdir( $dir, 0700, TRUE );
+        $doc = array( 'values' => $values, 'saved_by' => $user['name'], 'saved_at' => time() );
+        $tmp = $dir . '/' . $block . '.json.tmp';
+        file_put_contents( $tmp, json_encode( $doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+        @chmod( $tmp, 0600 );
+        rename( $tmp, $dir . '/' . $block . '.json' );
+        $stored[$block] = $doc;
+        $view = new ViewerPluginPage( array_map( function( $s ) { return $s['values']; }, $stored ), $this->pluginReader( $p ) );
+        return $this->pluginBlockPublic( $b, $doc, $view );
     }
 
     public function jobCreate( array $user, $pid, $cid, $type, array $in ): array

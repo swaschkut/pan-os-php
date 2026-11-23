@@ -54,6 +54,7 @@ async function api(method, path, body) {
     if (res.status === 401 && state.user) { leave(); showLogin(); throw new Error('session ended - please log in again'); }
     if (!res.ok) {
         const e = new Error(data && data.error ? data.error : 'request failed (' + res.status + ')'); if (data && data.details) e.details = data.details;
+        if (data && data.fields) e.fields = data.fields;
         browserError('api', method + ' ' + path.split('?')[0] + ' -> ' + res.status + ': ' + e.message);
         throw e;
     }
@@ -974,6 +975,9 @@ async function showProject(pid) {
     const scmCard = !limited && !(p.binding && p.binding.kind === 'panos') ? await scmTab(base, pid, canWrite, p) : null;
     const supportCardEl = canWrite && !limited && configs.configs.length ? await supportCard(base, configs.configs) : null;
 
+    // pages of plug-ins (interface 2): one card per page, drawn from the description the server gives
+    const pageCards = limited ? [] : Object.entries(plug.pages || {}).map(([k, pg]) => pluginPageCard(base, k, pg));
+
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
         // bound by the first import / read from an API: PAN-OS or one SCM tenant (an administrator can release it)
@@ -990,10 +994,75 @@ async function showProject(pid) {
             mergerCard ? ['merger', 'Config merger', [mergerCard]] : null,
             scmCard ? ['scm', 'SCM', [scmCard]] : null,
             ldapCard ? ['ldap', 'LDAP', [ldapCard]] : null,
+            pageCards.length ? ['plugin-pages', 'Plug-ins', pageCards] : null,
             supportCardEl ? ['support', 'Support file', [supportCardEl]] : null,
             ['access', 'Members, API tokens' + (owner ? ', audit log' : ''), [memberCard, tokenCard, owner ? auditCard(base + '/audit', 'Audit log of this project') : null]]]));
     // main() clears the timers of the page before - the ones of this page start now
     if (state.pendingTimers) { state.timers.push(...state.pendingTimers); state.pendingTimers = null; }
+}
+
+// ---------------------------------------------------------------- pages of plug-ins (interface 2)
+// The plug-in describes its blocks; the viewer draws them - a plug-in brings no script for the page. Form: typed fields,
+// value = stored value, else the default of the plug-in; the hint of the plug-in (e.g. "tenant A: …") below the field.
+function pluginPageCard(base, key, meta) {
+    const body = el('div', {}, el('p', { class: 'muted', text: 'loading…' }));
+    const card = el('div', { class: 'card' }, el('h2', { text: meta.title }), body);
+    const load = () => run(async () => {
+        const pg = await api('GET', base + '/pages/' + key);
+        body.replaceChildren(pg.text ? el('p', { class: 'muted', text: pg.text }) : '', ...pg.blocks.map(b => pluginFormBlock(base, key, b, pg.write, load)));
+    });
+    load();
+    return card;
+}
+
+function pluginFormBlock(base, key, b, canWrite, reload) {
+    const inputs = {}, errs = {};
+    const stored = b.saved_at !== null;
+    const rows = b.fields.map(f => {
+        const d = b.defaults[f.name] || {};
+        const v = stored ? b.values[f.name] : d.value;
+        let input;
+        if (f.type === 'select') {
+            input = el('select', {}, f.required ? null : el('option', { value: '', text: '-' }),
+                Object.entries(f.options).map(([o, label]) => { const x = el('option', { value: o, text: label }); x.selected = o === v; return x; }));
+        } else if (f.type === 'bool') {
+            input = el('input', { type: 'checkbox' }); input.checked = v === true;
+        } else if (f.type === 'list') {
+            input = el('textarea', { rows: 4, placeholder: 'one ' + (f.item === 'text' ? 'entry' : f.item) + ' per line' }); input.value = Array.isArray(v) ? v.join('\n') : '';
+        } else {
+            input = el('input', { type: f.type === 'int' || f.type === 'asn' ? 'number' : 'text', maxlength: f.max || 300,
+                placeholder: { ipv4: 'a.b.c.d', 'ipv4-cidr': 'a.b.c.d/n', 'ipv6-cidr': 'x::/n', asn: 'AS number', hostname: 'host.example.com' }[f.type] || '' });
+            input.value = v === null || v === undefined ? '' : String(v);
+        }
+        input.disabled = !canWrite;
+        inputs[f.name] = input;
+        errs[f.name] = el('div', { class: 'fielderror' });
+        return el('div', { class: 'pfield' }, el('label', {}, f.label + (f.required ? ' *' : ''), input),
+            d.hint ? el('div', { class: 'muted', text: d.hint }) : null, f.help ? el('div', { class: 'muted', text: f.help }) : null, errs[f.name]);
+    });
+    const formErr = el('div', { class: 'fielderror' });
+    const valueOf = f => {
+        const i = inputs[f.name];
+        if (f.type === 'bool') return i.checked;
+        if (f.type === 'list') return i.value.split('\n').map(x => x.trim()).filter(x => x !== '');
+        return i.value;
+    };
+    const save = () => run(async () => {
+        Object.values(errs).forEach(e => e.textContent = ''); formErr.textContent = '';
+        const values = {}; b.fields.forEach(f => { values[f.name] = valueOf(f); });
+        try {
+            await api('PUT', base + '/pages/' + key + '/blocks/' + b.name, { values });
+        } catch (e) {
+            if (e.fields) { Object.entries(e.fields).forEach(([k, m]) => { (errs[k] || formErr).textContent = m; }); throw new Error(b.title + ': ' + e.message); }
+            throw e;
+        }
+        message(b.title + ': saved'); reload();
+    });
+    return el('div', { class: 'pblock' }, el('h3', { text: b.title }), b.text ? el('p', { class: 'muted', text: b.text }) : null,
+        b.error ? el('div', { class: 'fielderror', text: b.error }) : null,
+        el('div', { class: 'pfields' }, rows), formErr,
+        el('div', { class: 'row' }, canWrite ? el('button', { class: 'primary', type: 'button', text: 'Save', onclick: save }) : null,
+            el('span', { class: 'muted', text: stored ? 'saved by ' + (b.saved_by || '?') + ', ' + fmtTime(b.saved_at) : 'not saved yet - the values shown are the defaults of the plug-in' })));
 }
 
 // ---------------------------------------------------------------- editors of pan-os-php (playbook, BP JSON)

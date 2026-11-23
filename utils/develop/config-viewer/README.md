@@ -518,7 +518,7 @@ VIEWER_PASSWORD='...' utils/develop/config-viewer/examples/viewer-playbook-run.s
 
 Without the third argument the BP JSON shipped with pan-os-php is used (CLI: no `shadow-bpjsonfile=`). The set commands file is always written (CLI: `outputformatset=`); its name is fixed. Settings: `VIEWER_URL`, `VIEWER_USER`, `VIEWER_PROJECT`, `VIEWER_OUT`. It logs in with user and password because an API token belongs to one existing project; for repeated runs in one project use a token (`Authorization: Bearer`, no CSRF header).
 
-## Plug-ins (interface version 1)
+## Plug-ins (interface version 1 and 2)
 
 A plug-in adds to the viewer without changing its code (`lib/ViewerPlugins.php`):
 
@@ -551,7 +551,39 @@ VIEWER_PLUGINS_DIR=/path/to/plugins docker compose -f docker-compose.yml up -d
 
 The compose file mounts it read-only into web, service and job runner (`/plugins`) and tells the job runner the host path (`PANOSPHP_VIEWER_CONTAINER_PLUGINS`), so that a run of the plug-in gets its folder. Without Docker: `PANOSPHP_VIEWER_PLUGINS=/path/to/plugins` for web part, service and job runner. Account → Plug-ins shows whether it was loaded.
 
-A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes and own pages, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
+### Interface 2: pages (data driven)
+
+A plug-in with `'api' => 2` can describe **pages**: a card per page in the project tab "Plug-ins". The viewer draws
+them from the description - a plug-in brings no script for the page. Plug-ins of interface 1 keep working.
+
+```php
+'pages' => array( 'settings' => array( 'title' => 'Migration settings', 'text' => '…',
+    'blocks' => array(
+        array( 'name' => 'infra', 'kind' => 'form', 'title' => 'Infrastructure of tenant B',
+            'fields' => array(
+                array( 'name' => 'subnet', 'type' => 'ipv4-cidr', 'label' => 'Infrastructure subnet', 'required' => TRUE ),
+                array( 'name' => 'pools', 'type' => 'list', 'item' => 'ipv4-cidr', 'help' => 'one per line' ) ),
+            // value and hint per field; ViewerPluginPage: values( <block> ), scmPa( <SCM tab page>, <endpoint> )
+            'defaults' => function( ViewerPluginPage $page ) { … return array( 'subnet' => array( 'value' => null, 'hint' => 'tenant A: …' ) ); },
+            // field => message ('' : the form as a whole); runs after the type checks, sees the other blocks of the page
+            'check' => function( array $values, ViewerPluginPage $page ) { return array(); } ) ) ) ),
+```
+
+| Field type | Stored as |
+|---|---|
+| `text` (`max` up to 2000), `hostname` (lower case) | string |
+| `int` (`min`, `max`), `asn` (1 - 4294967295) | number |
+| `ipv4`, `ipv4-cidr` (network address), `ipv6-cidr` (network address, short form) | string |
+| `select` (`options` value => label), `bool` | string / true, false |
+| `list` (`item`: text, ipv4, ipv4-cidr, ipv6-cidr, hostname; at most 500) | list of strings |
+
+API: `GET …/projects/<pid>/pages/<plugin>-<page>` (blocks, stored values, defaults - never the callables),
+`PUT …/projects/<pid>/pages/<plugin>-<page>/blocks/<block>` `{values}` (write; 400 with `fields` = field → message).
+Values are stored with the project (`plugin-pages/<plugin>-<page>/<block>.json`, with user and time); the audit log
+gets the route, not the values. Planned: tables, approvals (blocking `execute`), project types with roles, sensitive
+uploads.
+
+A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
 
 ## Licence and licensed plug-ins
 

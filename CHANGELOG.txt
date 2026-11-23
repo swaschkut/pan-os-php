@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* config-viewer | plug-in interface 2 (data driven): pages of a plug-in with form blocks - typed fields (text, int, asn, ipv4, ipv4-cidr, ipv6-cidr, hostname, select, bool, list), defaults / hints and a check of the plug-in, stored with the project; the viewer draws them (project tab Plug-ins), a plug-in brings no script for the page; plug-ins of interface 1 keep working
 * SCM | the SCM migration moved to the plug-in scm-migration (private): type=scm-import (SCMImporter), scm-panorama-to-change, scm-sync and their documentation; pan-os-php loads them from PANOSPHP_SCM_MIGRATION=<plug-in folder> (PH::scmMigrationFile) - without it these types name the plug-in
 * SCM | the plan engine of scm_pa_change.php (SCMPrismaAccessSync) changes one tenant: a plan / apply between two different tenants (TSG a → TSG b) is refused - tenant migration / sync belongs to the plug-in scm-migration (scm_pa_sync.php sets it, until it moves there)
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
