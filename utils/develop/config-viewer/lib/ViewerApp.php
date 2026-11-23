@@ -260,6 +260,9 @@ class ViewerApp
         // the scope of the SCM import of the project (JSON: kind, areas, egress, config scope; null = all)
         if( !in_array( 'import_scope', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE projects ADD COLUMN import_scope TEXT' );
+        // approvals of plug-in pages: 1 = an area is approved by another person than the one who made the plan
+        if( !in_array( 'approval_four_eyes', $cols, TRUE ) )
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN approval_four_eyes INTEGER NOT NULL DEFAULT 0' );
         $bindNew = !in_array( 'bind_kind', $cols, TRUE );
         if( $bindNew )
         {
@@ -839,7 +842,18 @@ class ViewerApp
         return array( 'pid' => $p['pid'], 'name' => $p['name'], 'owner' => $p['owner'], 'role' => $p['role'], 'created' => (int)$p['created'],
             'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null, 'network' => !empty( $p['network'] ),
             'binding' => !empty( $p['bind_kind'] ) ? array( 'kind' => $p['bind_kind'], 'target' => $p['bind_target'] ?? null ) : null,
-            'import_scope' => self::scopeOf( $p ), 'scm_areas' => self::scmPaAreas(), 'scm_config_groups' => self::SCM_CONFIG_GROUPS );
+            'import_scope' => self::scopeOf( $p ), 'scm_areas' => self::scmPaAreas(), 'scm_config_groups' => self::SCM_CONFIG_GROUPS,
+            'four_eyes' => !empty( $p['approval_four_eyes'] ) );
+    }
+
+    /** PUT …/projects/<pid>/approvals {four_eyes}: the owner - approvals of plug-in pages by another person than the one who made the plan */
+    public function approvalSettingSet( array $user, $pid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'owner' );
+        if( !is_bool( $in['four_eyes'] ?? null ) )
+            throw new ViewerException( 'four_eyes: true or false', 400 );
+        $this->q( 'UPDATE projects SET approval_four_eyes = ? WHERE id = ?', array( $in['four_eyes'] ? 1 : 0, $p['id'] ) );
+        return self::projectPublic( $this->projectGet( $user, $pid, 'read' ) );
     }
 
     // ------------------------------------------------------------------ scope of the SCM import
@@ -2262,9 +2276,142 @@ class ViewerApp
             'rows' => $rows, 'saved_by' => $stored['saved_by'], 'saved_at' => $stored['saved_at'], 'error' => $error );
     }
 
-    /** a block for the page: description (without the callables), stored values, defaults of the plug-in */
-    private function pluginBlockPublic( array $b, array $stored, ViewerPluginPage $view ): array
+    /**
+     * the state of an approval block: the newest plan (the result file of the newest finished run of its run type), its
+     * areas (from the plug-in), the decisions - only those for this run and this content (sha256) of the plan
+     */
+    private function approvalState( array $p, array $b, array $stored, ViewerPluginPage $view ): array
     {
+        $out = array( 'plan' => null, 'areas' => array(), 'complete' => FALSE, 'planner_id' => null, 'file' => null, 'error' => null );
+        $j = $this->q( "SELECT j.jid, j.user_id, j.finished, u.name AS by_name FROM jobs j LEFT JOIN users u ON u.id = j.user_id
+            WHERE j.project_id = ? AND j.type = ? AND j.state = 'done' ORDER BY j.finished DESC, j.id DESC LIMIT 1", array( $p['id'], $b['run'] ) )->fetch();
+        if( $j === FALSE )
+            return $out;
+        $file = $this->jobDir( $p, $j['jid'] ) . '/' . $b['file'];
+        if( !is_file( $file ) )
+        {
+            $out['error'] = 'the newest run ' . $b['run'] . ' has no ' . $b['file'];
+            return $out;
+        }
+        $content = (string)file_get_contents( $file );
+        $hash = hash( 'sha256', $content );
+        $out['plan'] = array( 'jid' => $j['jid'], 'by' => $j['by_name'], 'finished' => (int)$j['finished'], 'hash' => substr( $hash, 0, 12 ) );
+        $out['planner_id'] = $j['user_id'] !== null ? (int)$j['user_id'] : null;
+        $out['file'] = $file;
+        $out['hash'] = $hash;
+        $valid = ( $stored['values']['jid'] ?? null ) === $j['jid'] && ( $stored['values']['hash'] ?? null ) === $hash;
+        $decisions = $valid ? (array)( $stored['values']['decisions'] ?? array() ) : array();
+        try
+        {
+            $seen = array();
+            foreach( (array)( $b['areas'] )( json_decode( $content, TRUE ), $view ) as $a )
+            {
+                if( !is_array( $a ) || !is_string( $a['id'] ?? null ) || !preg_match( '/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,80}$/', $a['id'] ) || isset( $seen[$a['id']] ) )
+                    throw new ViewerException( 'every area needs a unique "id"', 500 );
+                $seen[$a['id']] = TRUE;
+                $d = $decisions[$a['id']] ?? null;
+                $out['areas'][] = array( 'id' => $a['id'], 'title' => substr( (string)( $a['title'] ?? $a['id'] ), 0, 120 ), 'summary' => substr( (string)( $a['summary'] ?? '' ), 0, 1000 ),
+                    'count' => isset( $a['count'] ) ? (int)$a['count'] : null, 'decision' => $d['decision'] ?? null, 'by' => $d['by'] ?? null, 'at' => $d['at'] ?? null, 'note' => $d['note'] ?? '' );
+                if( count( $out['areas'] ) > 500 )
+                    throw new ViewerException( 'more than 500 areas', 500 );
+            }
+        }
+        catch( Throwable $e )
+        {
+            $out['areas'] = array();
+            $out['error'] = 'areas of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+            return $out;
+        }
+        $out['complete'] = count( $out['areas'] ) > 0 && count( array_filter( $out['areas'], function( $a ) { return $a['decision'] !== 'approve'; } ) ) === 0;
+        return $out;
+    }
+
+    /** an approval block for the page */
+    private function approvalBlockPublic( array $p, array $b, array $stored, ViewerPluginPage $view ): array
+    {
+        $s = $this->approvalState( $p, $b, $stored, $view );
+        $runTitle = $this->pluginRuns()[$b['run']]['title'] ?? $b['run'];
+        return array( 'name' => $b['name'], 'kind' => 'approval', 'title' => $b['title'], 'text' => $b['text'], 'run' => $b['run'], 'run_title' => $runTitle,
+            'plan' => $s['plan'], 'areas' => $s['areas'], 'complete' => $s['complete'], 'four_eyes' => !empty( $p['approval_four_eyes'] ),
+            'saved_by' => $stored['saved_by'], 'saved_at' => $stored['saved_at'], 'error' => $s['error'] );
+    }
+
+    /**
+     * PUT an approval block {decisions: {<area>: {decision: approve|reject|clear, note}}} - write; with four eyes the
+     * person who made the plan can not approve. Bound to the plan (run and content): a new plan starts without decisions.
+     */
+    private function approvalSave( array $user, array $p, string $key, array $pg, array $b, array $in ): array
+    {
+        $raw = $in['decisions'] ?? null;
+        if( !is_array( $raw ) )
+            throw new ViewerException( 'decisions: an object area => {decision, note} expected', 400 );
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        $saved = array_map( function( $s ) { return $s['values']; }, $stored );
+        $s = $this->approvalState( $p, $b, $stored[$b['name']], new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) );
+        if( $s['plan'] === null || $s['error'] !== null )
+            throw new ViewerException( $s['error'] ?? 'there is no plan yet (run ' . $b['run'] . ')', 409 );
+        $valid = ( $stored[$b['name']]['values']['jid'] ?? null ) === $s['plan']['jid'] && ( $stored[$b['name']]['values']['hash'] ?? null ) === $s['hash'];
+        $decisions = $valid ? (array)( $stored[$b['name']]['values']['decisions'] ?? array() ) : array();
+        $ids = array_column( $s['areas'], 'id' );
+        $errors = array();
+        foreach( $raw as $id => $d )
+        {
+            $id = (string)$id;
+            $decision = is_array( $d ) ? ( $d['decision'] ?? null ) : null;
+            $note = is_array( $d ) ? ( $d['note'] ?? '' ) : '';
+            if( !in_array( $id, $ids, TRUE ) )
+                $errors[$id] = 'not an area of this plan';
+            elseif( !in_array( $decision, array( 'approve', 'reject', 'clear' ), TRUE ) )
+                $errors[$id] = 'decision: approve, reject or clear';
+            elseif( !is_string( $note ) || strlen( $note ) > 300 || preg_match( '/[\x00-\x1f]/', $note ) )
+                $errors[$id] = 'note: text of at most 300 characters';
+            elseif( $decision === 'approve' && !empty( $p['approval_four_eyes'] ) && $s['planner_id'] === (int)$user['id'] )
+                $errors[$id] = 'four eyes: approved by another person than the one who made the plan';
+            elseif( $decision === 'clear' )
+                unset( $decisions[$id] );
+            else
+                $decisions[$id] = array( 'decision' => $decision, 'by' => $user['name'], 'at' => time(), 'note' => $note );
+        }
+        if( count( $errors ) > 0 )
+            throw new ViewerFieldException( 'the decisions have errors', $errors );
+        $this->pluginBlockStore( $user, $p, $key, $pg, $b, $stored, array( 'jid' => $s['plan']['jid'], 'hash' => $s['hash'], 'decisions' => $decisions ) );
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        $saved = array_map( function( $x ) { return $x['values']; }, $stored );
+        return $this->approvalBlockPublic( $p, $b, $stored[$b['name']], new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) );
+    }
+
+    /**
+     * a run type with 'approval': refused unless every area of the newest plan is approved; then a copy of exactly that
+     * plan (plugin-pages/<page>/approved/<sha256>.json) for the run - %PROJECT%/… of ViewerPluginRun::approved()
+     */
+    private function approvalGate( array $p, array $plugin ): string
+    {
+        $key = $plugin['approval']['page'];
+        $pg = $this->pluginPage( $key );
+        $b = $pg['blocks'][$plugin['approval']['block']];
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        $saved = array_map( function( $x ) { return $x['values']; }, $stored );
+        $s = $this->approvalState( $p, $b, $stored[$b['name']], new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) );
+        if( !$s['complete'] )
+            throw new ViewerException( 'not approved: every area of the newest plan (' . $b['title'] . ') must be approved first', 409 );
+        $dir = $this->pluginPageDir( $p, $key ) . '/approved';
+        if( !is_dir( $dir ) )
+            mkdir( $dir, 0700, TRUE );
+        $name = substr( $s['hash'], 0, 32 ) . '.json';
+        if( !is_file( $dir . '/' . $name ) )
+        {
+            copy( $s['file'], $dir . '/' . $name . '.tmp' );
+            @chmod( $dir . '/' . $name . '.tmp', 0600 );
+            rename( $dir . '/' . $name . '.tmp', $dir . '/' . $name );
+        }
+        return '%PROJECT%/plugin-pages/' . $key . '/approved/' . $name;
+    }
+
+    /** a block for the page: description (without the callables), stored values, defaults of the plug-in */
+    private function pluginBlockPublic( array $b, array $stored, ViewerPluginPage $view, ?array $p = null ): array
+    {
+        if( $b['kind'] === 'approval' )
+            return $this->approvalBlockPublic( $p, $b, $stored, $view );
         if( $b['kind'] === 'table' )
             return $this->tableBlockPublic( $b, $stored, $view );
         $defaults = array();
@@ -2306,7 +2453,7 @@ class ViewerApp
         $view = new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) );
         $blocks = array();
         foreach( $pg['blocks'] as $name => $b )
-            $blocks[] = $this->pluginBlockPublic( $b, $stored[$name], $view );
+            $blocks[] = $this->pluginBlockPublic( $b, $stored[$name], $view, $p );
         return array( 'key' => $key, 'plugin' => $pg['plugin'], 'title' => $pg['title'], 'text' => $pg['text'], 'blocks' => $blocks,
             'write' => in_array( $p['role'], array( 'owner', 'write' ), TRUE ) );
     }
@@ -2325,6 +2472,8 @@ class ViewerApp
             throw new ViewerException( 'not found', 404 );
         if( $b['kind'] === 'table' )
             return $this->tableSave( $user, $p, $key, $pg, $b, $in );
+        if( $b['kind'] === 'approval' )
+            return $this->approvalSave( $user, $p, $key, $pg, $b, $in );
         $raw = $in['values'] ?? null;
         if( !is_array( $raw ) )
             throw new ViewerException( 'values: an object field => value expected', 400 );
@@ -2376,7 +2525,7 @@ class ViewerApp
         rename( $tmp, $dir . '/' . $b['name'] . '.json' );
         $stored[$b['name']] = $doc;
         $saved = array_map( function( $s ) { return $s['values']; }, $stored );
-        return $this->pluginBlockPublic( $b, $doc, new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) );
+        return $this->pluginBlockPublic( $b, $doc, new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ), $p );
     }
 
     /**
@@ -2770,7 +2919,9 @@ class ViewerApp
             foreach( $plugin['fields'] as $f )
                 if( $f['required'] && ( !isset( $in[$f['name']] ) || $in[$f['name']] === '' || $in[$f['name']] === array() ) )
                     throw new ViewerException( $f['name'] . ' is needed', 400 );
-            $run = new ViewerPluginRun( $in, function( $fid, $kind ) use ( $p ) { return $this->fileGet( $p, $fid, $kind ); }, $plugin['fields'] );
+            // a run that needs an approval: only with every area of the newest plan approved - it gets a copy of that plan
+            $approved = ( $plugin['approval'] ?? null ) !== null ? $this->approvalGate( $p, $plugin ) : null;
+            $run = new ViewerPluginRun( $in, function( $fid, $kind ) use ( $p ) { return $this->fileGet( $p, $fid, $kind ); }, $plugin['fields'], $approved );
             $args = ( $plugin['args'] )( $run );
             if( !is_array( $args ) )
                 throw new ViewerException( 'plug-in: no arguments', 500 );
@@ -3516,8 +3667,10 @@ class ViewerApp
                 $this->runnerFinish( (int)$j['id'], 'failed', 'a file of the run (playbook / BP JSON) does not exist any more' );
                 return $this->runnerTake();
             }
-            // %PROJECT%: a version of this project (type=diff) - only <32 hex>.xml, and it must still exist
-            if( strpos( $a, '%PROJECT%' ) !== FALSE && ( !preg_match( '#^[a-z0-9-]+=%PROJECT%/([0-9a-f]{32}\.xml)$#', $a, $m ) || !is_file( $dir . '/' . $m[1] ) ) )
+            // %PROJECT%: a version of this project (type=diff) - only <32 hex>.xml, and it must still exist; the approved plan
+            // of a plug-in run (plugin-pages/<page>/approved/<32 hex>.json)
+            if( strpos( $a, '%PROJECT%' ) !== FALSE && ( !preg_match( '#^[a-z0-9-]+=%PROJECT%/((?:plugin-pages/[a-z][a-z0-9-]{0,62}/approved/)?[0-9a-f]{32}\.(?:xml|json))$#', $a, $m )
+                || ( substr( $m[1], -5 ) === '.json' && strpos( $m[1], 'plugin-pages/' ) !== 0 ) || !is_file( $dir . '/' . $m[1] ) ) )
             {
                 $this->runnerFinish( (int)$j['id'], 'failed', 'a version of the run does not exist any more' );
                 return $this->runnerTake();

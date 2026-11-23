@@ -252,3 +252,6 @@ label.chk { display: inline-flex; flex-direction: row; align-items: center; gap:
 .ptable td { vertical-align: top; }
 .ptable td input[type=text], .ptable td input[type=number], .ptable td select { min-width: 120px; }
 td.pchanged { background: color-mix(in srgb, #f5c400 18%, transparent); }
+.badge.ok { background: #e3f4e8; color: #1d6b35; border-color: #b7dfc3; }
+.badge.warn { background: #fdeceb; color: #9b2c22; border-color: #f2c3bf; }
+p.notice { background: #e8f4ec; border: 1px solid #b9dcc5; padding: 6px 10px; border-radius: 6px; }

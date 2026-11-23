@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* config-viewer | plug-in interface 2: approval blocks - the areas of a plan (result of a run of the plug-in) approved / rejected one by one, bound to that run and its content; a run type with 'approval' starts only when every area is approved and gets a copy of exactly that plan; four eyes per project (owner)
 * config-viewer | plug-in interface 2: table blocks - rows of the plug-in, editable columns (stored are the changes per row, the value of the plug-in stays visible), check of the plug-in per cell, filter; ViewerPluginPage::rows() for other blocks
 * config-viewer | plug-in interface 2 (data driven): pages of a plug-in with form blocks - typed fields (text, int, asn, ipv4, ipv4-cidr, ipv6-cidr, hostname, select, bool, list), defaults / hints and a check of the plug-in, stored with the project; the viewer draws them (project tab Plug-ins), a plug-in brings no script for the page; plug-ins of interface 1 keep working
 * SCM | the SCM migration moved to the plug-in scm-migration (private): type=scm-import (SCMImporter), scm-panorama-to-change, scm-sync and their documentation; pan-os-php loads them from PANOSPHP_SCM_MIGRATION=<plug-in folder> (PH::scmMigrationFile) - without it these types name the plug-in

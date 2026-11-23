@@ -977,6 +977,12 @@ async function showProject(pid) {
 
     // pages of plug-ins (interface 2): one card per page, drawn from the description the server gives
     const pageCards = limited ? [] : Object.entries(plug.pages || {}).map(([k, pg]) => pluginPageCard(base, k, pg));
+    // approvals of plug-in pages: the owner decides whether the person who made a plan may approve it (four eyes)
+    if (pageCards.length && owner) {
+        const fe = el('input', { type: 'checkbox' }); fe.checked = !!p.four_eyes;
+        fe.addEventListener('change', () => run(async () => { await api('PUT', base + '/approvals', { four_eyes: fe.checked }); await showProject(pid); }));
+        pageCards.unshift(el('div', { class: 'card' }, el('label', { class: 'chk' }, fe, ' Approvals: four eyes - an area of a plan is approved by another person than the one who made the plan')));
+    }
 
     main(el('div', { class: 'row' }, el('h2', { text: 'Project: ' + p.name }), el('span', { class: 'badge', text: 'your permission: ' + p.role }),
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
@@ -1010,7 +1016,8 @@ function pluginPageCard(base, key, meta) {
     const load = () => run(async () => {
         const pg = await api('GET', base + '/pages/' + key);
         body.replaceChildren(pg.text ? el('p', { class: 'muted', text: pg.text }) : '',
-            ...pg.blocks.map(b => b.kind === 'table' ? pluginTableBlock(base, key, b, pg.write, load) : pluginFormBlock(base, key, b, pg.write, load)));
+            ...pg.blocks.map(b => b.kind === 'table' ? pluginTableBlock(base, key, b, pg.write, load)
+                : b.kind === 'approval' ? pluginApprovalBlock(base, key, b, pg.write, load) : pluginFormBlock(base, key, b, pg.write, load)));
     });
     load();
     return card;
@@ -1069,6 +1076,44 @@ function pluginInput(f, v, inTable) {
     return input;
 }
 const pluginShow = v => v === null || v === undefined ? '' : Array.isArray(v) ? v.join(', ') : v === true ? 'yes' : v === false ? 'no' : String(v);
+
+// approval of a plan of a plug-in: the areas of the newest plan (the result of a run), approved / rejected one by one;
+// bound to that plan - a new plan starts without decisions. The run that needs it starts only when all are approved.
+function pluginApprovalBlock(base, key, b, canWrite, reload) {
+    const errs = {}, notes = {};
+    const decide = (id, decision) => run(async () => {
+        Object.values(errs).forEach(e => e.textContent = '');
+        try {
+            await api('PUT', base + '/pages/' + key + '/blocks/' + b.name, { decisions: { [id]: { decision, note: notes[id] ? notes[id].value : '' } } });
+        } catch (e) {
+            if (e.fields) { Object.entries(e.fields).forEach(([k, m]) => { if (errs[k]) errs[k].textContent = m; }); throw new Error(b.title + ': ' + e.message); }
+            throw e;
+        }
+        reload();
+    });
+    const badge = a => a.decision === 'approve' ? el('span', { class: 'badge ok', text: 'approved' }) : a.decision === 'reject' ? el('span', { class: 'badge warn', text: 'rejected' })
+        : el('span', { class: 'badge', text: 'open' });
+    const rows = b.areas.map(a => {
+        errs[a.id] = el('div', { class: 'fielderror' });
+        notes[a.id] = el('input', { maxlength: 300, placeholder: 'note', value: a.note || '' }); notes[a.id].disabled = !canWrite;
+        return el('tr', {}, el('td', {}, el('strong', { text: a.title }), a.summary ? el('div', { class: 'muted', text: a.summary }) : null),
+            el('td', { text: a.count === null ? '' : String(a.count) }),
+            el('td', {}, badge(a), a.by ? el('div', { class: 'muted', text: a.by + ', ' + fmtTime(a.at) }) : null),
+            el('td', {}, notes[a.id], errs[a.id]),
+            el('td', {}, canWrite ? [el('button', { type: 'button', text: 'Approve', onclick: () => decide(a.id, 'approve') }), ' ',
+                el('button', { type: 'button', class: 'danger', text: 'Reject', onclick: () => decide(a.id, 'reject') }), ' ',
+                a.decision ? el('button', { type: 'button', text: 'Clear', onclick: () => decide(a.id, 'clear') }) : null] : null));
+    });
+    const done = b.areas.filter(a => a.decision === 'approve').length;
+    return el('div', { class: 'pblock' }, el('h3', { text: b.title }), b.text ? el('p', { class: 'muted', text: b.text }) : null,
+        b.error ? el('div', { class: 'fielderror', text: b.error }) : null,
+        b.plan === null ? el('p', { class: 'muted', text: 'No plan yet - start the run "' + b.run_title + '" (Runs).' })
+            : el('p', { class: 'muted', text: 'Plan: run ' + b.plan.jid.slice(0, 8) + ' by ' + (b.plan.by || '?') + ', ' + fmtTime(b.plan.finished) + ' (content ' + b.plan.hash + ')'
+                + (b.four_eyes ? ' - four eyes: approved by another person than ' + (b.plan.by || '?') : '') }),
+        b.areas.length ? el('div', { class: 'scmscroll' }, table(['Area', 'Entries', 'Decision', 'Note', ''], rows)) : null,
+        b.plan !== null ? el('p', { class: b.complete ? 'notice' : 'muted', text: b.complete ? 'All ' + b.areas.length + ' areas approved - the run that needs this approval can start.'
+            : done + ' of ' + b.areas.length + ' areas approved - the run that needs this approval starts only when all are.' }) : null);
+}
 
 // a table of a plug-in: its rows, editable columns; stored are the changes per row - the value of the plug-in below a
 // changed cell; a filter for long tables (every MU IP pool, every tunnel)

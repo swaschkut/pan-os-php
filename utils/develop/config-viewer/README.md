@@ -597,7 +597,30 @@ API: `GET …/projects/<pid>/pages/<plugin>-<page>` (blocks, stored values, defa
 for a table (only rows sent change; the value of the plug-in again removes the change) - write; 400 with `fields` =
 field (form) / `<key>/<column>` (table) → message. Values are stored with the project
 (`plugin-pages/<plugin>-<page>/<block>.json`, with user and time); the audit log gets the route, not the values.
-Planned: approvals (blocking `execute`), project types with roles, sensitive uploads.
+
+**Approval blocks** - the areas of a plan (the result file of a run type of the plug-in) approved or rejected one by
+one; a run type with `'approval' => '<page>/<block>'` starts only when every area of the newest plan is approved:
+
+```php
+'runs' => array(
+    'plan'  => array( 'tool' => '…', 'args' => function( $run ) { return array( …, 'out=' . $run->out( 'plan.json' ) ); } ),
+    'apply' => array( 'tool' => '…', 'approval' => 'review/plan',
+        'args' => function( $run ) { return array( 'plan=' . $run->approved(), … ); } ) ),     // a copy of the approved plan
+'pages' => array( 'review' => array( 'blocks' => array(
+    array( 'name' => 'plan', 'kind' => 'approval', 'run' => 'plan', 'file' => 'plan.json',
+        // the areas of the plan: id, title, summary, count
+        'areas' => function( $plan, ViewerPluginPage $page ) { return array( array( 'id' => 'infra', 'title' => 'Infrastructure', 'count' => 2 ) ); } ) ) ) ),
+```
+
+* The plan is the result file of the newest finished run of `run`; decisions are bound to that run **and** its content
+  (sha256) - a new plan starts without decisions.
+* `PUT …/blocks/<block>` `{decisions: {<area>: {decision: approve|reject|clear, note}}}` (write members).
+* **Four eyes** per project (owner: `PUT …/projects/<pid>/approvals {four_eyes}`, in the page: tab Plug-ins): the person
+  who started the plan run can reject, not approve.
+* The run that needs the approval gets a copy of exactly the approved plan (`ViewerPluginRun::approved()`,
+  `plugin-pages/<page>/approved/<sha256>.json`); without all areas approved: 409.
+
+Planned: project types with roles, sensitive uploads.
 
 A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
 

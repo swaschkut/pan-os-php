@@ -29,7 +29,8 @@
  *   - pages       (interface 2) a card of the project with blocks the viewer draws from their description - the
  *                 plug-in brings no script for the page: 'form' (typed fields, values stored with the project,
  *                 defaults / check of the plug-in), 'table' (rows of the plug-in, editable columns - stored are the
- *                 changes per row)
+ *                 changes per row), 'approval' (the areas of the result of a run - a plan - approved / rejected one by
+ *                 one; a run type with 'approval' => '<page>/<block>' starts only when all are approved)
  * A run type can set environment variables for its run ('env', %PLUGIN% = the folder of the plug-in) - so pan-os-php can
  * load files that the plug-in brings (e.g. PANOSPHP_MIGRATION_PARSERS => '%PLUGIN%/parser').
  * The browser page shows the run types with the fields the plug-in declares - a plug-in brings no script for the page.
@@ -228,8 +229,11 @@ class ViewerPlugins
                 throw new Exception( 'run ' . $run . ': "input" is version or none' );
             if( $input === 'none' && $result === null )
                 throw new Exception( 'run ' . $run . ': a run without a version needs "result"' );
+            $approval = $r['approval'] ?? null;
+            if( $approval !== null && ( !is_string( $approval ) || !preg_match( '#^[a-z][a-z0-9-]{0,30}/[a-z][a-z0-9_-]{0,30}$#', $approval ) ) )
+                throw new Exception( 'run ' . $run . ': "approval" must be <page>/<block>' );
             $out['runs'][$name . '-' . $run] = array( 'plugin' => $name, 'feature' => $out['feature'], 'input' => $input, 'tool' => $r['tool'], 'title' => self::text( $r['title'] ?? $run, 'title', 80 ), 'fields' => $fields,
-                'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'], 'env' => $env );
+                'bp' => !empty( $r['bp'] ), 'result' => $result, 'args' => $r['args'], 'env' => $env, 'approval' => $approval );
         }
         foreach( (array)( $p['playbookTypes'] ?? array() ) as $t )
         {
@@ -240,12 +244,23 @@ class ViewerPlugins
         if( isset( $p['pages'] ) && $p['api'] < 2 )
             throw new Exception( '"pages" need "api" 2' );
         foreach( (array)( $p['pages'] ?? array() ) as $page => $pg )
-            $out['pages'][$name . '-' . $page] = self::checkPage( $name, $out['feature'], $page, $pg );
+            $out['pages'][$name . '-' . $page] = self::checkPage( $name, $out['feature'], $page, $pg, $out['runs'] );
+        // a run that needs an approval: the approval block of a page of this plug-in
+        foreach( $out['runs'] as $k => $r )
+            if( $r['approval'] !== null )
+            {
+                list( $page, $block ) = explode( '/', $r['approval'] );
+                if( ( $out['pages'][$name . '-' . $page]['blocks'][$block]['kind'] ?? null ) !== 'approval' )
+                    throw new Exception( 'run ' . $k . ': "approval" ' . $r['approval'] . ' is not an approval block of this plug-in' );
+                if( $out['pages'][$name . '-' . $page]['blocks'][$block]['run'] === $k )
+                    throw new Exception( 'run ' . $k . ': can not need the approval of its own result' );
+                $out['runs'][$k]['approval'] = array( 'page' => $name . '-' . $page, 'block' => $block );
+            }
         return $out;
     }
 
     /** a page (interface 2): title, text, blocks */
-    private static function checkPage( string $plugin, ?string $feature, $page, $pg ): array
+    private static function checkPage( string $plugin, ?string $feature, $page, $pg, array $runs = array() ): array
     {
         if( !is_string( $page ) || !preg_match( '/^[a-z][a-z0-9-]{0,30}$/', $page ) || !is_array( $pg ) )
             throw new Exception( 'page: lower case name and a description' );
@@ -255,14 +270,29 @@ class ViewerPlugins
             if( !is_array( $b ) || !is_string( $b['name'] ?? null ) || !preg_match( '/^[a-z][a-z0-9_-]{0,30}$/', $b['name'] ) || isset( $blocks[$b['name']] ) )
                 throw new Exception( 'page ' . $page . ': a block needs a "name" (lower case, unique)' );
             $kind = $b['kind'] ?? null;
-            if( !in_array( $kind, array( 'form', 'table' ), TRUE ) )
-                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form or table' );
-            foreach( array( 'defaults', 'check', 'rows' ) as $c )
+            if( !in_array( $kind, array( 'form', 'table', 'approval' ), TRUE ) )
+                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form, table or approval' );
+            foreach( array( 'defaults', 'check', 'rows', 'areas' ) as $c )
                 if( isset( $b[$c] ) && !is_callable( $b[$c] ) )
                     throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "' . $c . '" must be callable' );
             if( $kind === 'table' )
             {
                 $blocks[$b['name']] = self::checkTable( 'page ' . $page . ', block ' . $b['name'], $b );
+                continue;
+            }
+            if( $kind === 'approval' )
+            {
+                $where = 'page ' . $page . ', block ' . $b['name'];
+                $run = $b['run'] ?? null;
+                if( !is_string( $run ) || !isset( $runs[$plugin . '-' . $run] ) )
+                    throw new Exception( $where . ': "run" must name a run type of this plug-in (its result is the plan)' );
+                if( !is_string( $b['file'] ?? null ) || !preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}\.json$/', $b['file'] ) )
+                    throw new Exception( $where . ': "file" must be a plain .json file name (the plan the run writes)' );
+                if( !isset( $b['areas'] ) )
+                    throw new Exception( $where . ': "areas" (callable: the areas of the plan) is needed' );
+                $blocks[$b['name']] = array( 'name' => $b['name'], 'kind' => 'approval', 'title' => self::text( $b['title'] ?? $b['name'], 'title', 120 ),
+                    'text' => self::text( $b['text'] ?? '', 'text', 1000 ), 'fields' => array(), 'run' => $plugin . '-' . $run, 'file' => $b['file'],
+                    'areas' => $b['areas'], 'defaults' => null, 'check' => null );
                 continue;
             }
             $fields = array();
@@ -518,10 +548,14 @@ class ViewerPluginRun
     private $file;
     private $fields = array();
 
-    public function __construct( array $in, callable $file, array $fields = array() )
+    /** the approved plan of a run type with 'approval' (a copy, as it was approved) */
+    private $approved;
+
+    public function __construct( array $in, callable $file, array $fields = array(), ?string $approved = null )
     {
         $this->in = $in;
         $this->file = $file;
+        $this->approved = $approved;
         foreach( $fields as $f )
             $this->fields[$f['name']] = $f;
     }
@@ -575,6 +609,14 @@ class ViewerPluginRun
         if( !isset( $this->in[$field] ) || $this->in[$field] === '' )
             return null;
         return '%FILES%/' . ( $this->file )( $this->in[$field], $kind )['file'];
+    }
+
+    /** a run type with 'approval': the plan as it was approved (a copy - a newer plan does not change it) */
+    public function approved(): string
+    {
+        if( $this->approved === null )
+            throw new ViewerException( 'plug-in: approved() only for a run type with "approval"', 500 );
+        return $this->approved;
     }
 
     /** the decoded content of a project file (JSON) of the given kind; null when the field is not given */

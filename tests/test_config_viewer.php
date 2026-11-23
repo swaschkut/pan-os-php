@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -114,6 +114,24 @@ file_put_contents( $plugins . '/pg/plugin.php', "<?php return array( 'api' => 2,
 file_put_contents( $plugins . '/badtable/plugin.php', "<?php return array( 'api' => 2, 'name' => 'badtable', 'pages' => array( 'x' => array( 'blocks' => array(
     array( 'name' => 't', 'kind' => 'table', 'key' => 'a', 'rows' => function( \$p ) { return array(); }, 'columns' => array( array( 'name' => 'a', 'type' => 'text', 'edit' => TRUE ) ) ) ) ) ) );" );
 file_put_contents( $plugins . '/badpage/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badpage', 'pages' => array( 'x' => array() ) );" );
+
+// approval: the areas of the plan of the run "plan" (plan.json); the run "apply" needs every area approved
+file_put_contents( $plugins . '/ap/plugin.php', "<?php return array( 'api' => 2, 'name' => 'ap', 'title' => 'Approvals',
+    'runs' => array(
+        'plan' => array( 'title' => 'Make the plan', 'tool' => 'address', 'args' => function( \$run ) { return array( 'actions=display' ); } ),
+        'apply' => array( 'title' => 'Apply the plan', 'tool' => 'address', 'approval' => 'review/plan',
+            'args' => function( \$run ) { return array( 'actions=display', 'shadow-bpjsonfile=' . \$run->approved() ); } ) ),
+    'pages' => array( 'review' => array( 'title' => 'Review', 'blocks' => array(
+        array( 'name' => 'plan', 'kind' => 'approval', 'title' => 'Plan', 'run' => 'plan', 'file' => 'plan.json',
+            'areas' => function( \$plan, \$page ) {
+                \$out = array();
+                foreach( (array)( \$plan['areas'] ?? array() ) as \$a )
+                    \$out[] = array( 'id' => \$a['id'], 'title' => \$a['title'], 'summary' => 'create ' . \$a['n'], 'count' => \$a['n'] );
+                return \$out;
+            } ) ) ) ) );" );
+file_put_contents( $plugins . '/badappr/plugin.php', "<?php return array( 'api' => 2, 'name' => 'badappr',
+    'runs' => array( 'r' => array( 'tool' => 'address', 'approval' => 'p/f', 'args' => function( \$run ) { return array(); } ) ),
+    'pages' => array( 'p' => array( 'blocks' => array( array( 'name' => 'f', 'kind' => 'form', 'fields' => array( array( 'name' => 'x', 'type' => 'text' ) ) ) ) ) ) );" );
 
 // an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
 require_once $here . '/../lib/misc-classes/PluginLicense.php';
@@ -1797,11 +1815,11 @@ eq( status( $alice->call( 'DELETE', $G ) ), 200, 'grants project deleted' );
 
 // ---- 12p. plug-ins: run types, file kinds
 $m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
-eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'mig-import' ), 'plug-ins: run types in meta' );
+eq( array_keys( $m['runs'] ?? array() ), array( 'ap-plan', 'ap-apply', 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'mig-import' ), 'plug-ins: run types in meta' );
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
     array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
 eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
-eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badenv', 'badenv2', 'badpage', 'badtable', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
+eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badappr', 'badenv', 'badenv2', 'badpage', 'badtable', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
 eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
 $PL = 'projects/' . $r[1]['pid'];
@@ -1836,6 +1854,66 @@ eq( status( $alice->call( 'POST', $PLC . '/badargs-out/runs', array() ) ), 500, 
 eq( status( $alice->call( 'POST', $PLC . '/wrongapi-x/runs', array() ) ), 404, 'plug-ins: no run type of a refused plug-in' );
 eq( status( $alice->call( 'PUT', $PL . '/members', array( 'user' => 'bob', 'role' => 'write', 'scope' => array( 'shared' ) ) ) ), 200, 'plug-ins: bob limited' );
 eq( status( $bob->call( 'POST', $PLC . '/example-export/runs', array() ) ), 403, 'plug-ins: no run for a limited member' );
+// approvals (interface 2): the areas of the newest plan (result of the run ap-plan), bound to that run and its content;
+// ap-apply only with every area approved, it gets a copy of exactly that plan; four eyes (owner): not by the planner
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Approvals' ) );
+$AP = 'projects/' . $r[1]['pid'];
+$apPid = $r[1]['pid'];
+$r = $alice->call( 'POST', $AP . '/configs', null, array( 'p.xml', $xml ) );
+$APC = $AP . '/configs/' . $r[1]['cid'];
+$alice->call( 'PUT', $AP . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
+$alice->call( 'PUT', $AP . '/members', array( 'user' => 'carol', 'role' => 'read' ) );
+$APG = $AP . '/pages/ap-review';
+$apBlock = function( $c ) use ( $APG ) { return $c->call( 'GET', $APG )[1]['blocks'][0] ?? array(); };
+$a0 = $apBlock( $alice );
+$apNoPlan = status( $alice->call( 'POST', $APC . '/ap-apply/runs', array() ) );
+// the plan run (done, by alice) with its plan.json - as the job runner leaves it
+$db = new PDO( 'sqlite:' . $data . '/viewer.sqlite' );
+$apProjectId = (int)$db->query( "SELECT id FROM projects WHERE pid = '" . $apPid . "'" )->fetchColumn();
+$aliceId = (int)$db->query( "SELECT id FROM users WHERE name = 'alice'" )->fetchColumn();
+$planJid = bin2hex( random_bytes( 16 ) );
+$db->prepare( "INSERT INTO jobs (jid, project_id, config_id, user_id, type, args, state, created, started, finished) VALUES (?,?,?,?,?,?,?,?,?,?)" )
+    ->execute( array( $planJid, $apProjectId, 0, $aliceId, 'ap-plan', '[]', 'done', time(), time(), time() ) );
+$planDir = $data . '/projects/' . $apPid . '/jobs/' . $planJid;
+mkdir( $planDir, 0700, TRUE );
+$plan1 = json_encode( array( 'areas' => array( array( 'id' => 'infra', 'title' => 'Infrastructure', 'n' => 2 ), array( 'id' => 'rn', 'title' => 'Remote networks', 'n' => 5 ) ) ) );
+file_put_contents( $planDir . '/plan.json', $plan1 );
+$a1 = $apBlock( $alice );
+$apHalf = $alice->call( 'PUT', $APG . '/blocks/plan', array( 'decisions' => array( 'infra' => array( 'decision' => 'approve', 'note' => 'ok' ) ) ) );
+$apHalfRun = status( $alice->call( 'POST', $APC . '/ap-apply/runs', array() ) );
+$apBad = $alice->call( 'PUT', $APG . '/blocks/plan', array( 'decisions' => array( 'mars' => array( 'decision' => 'approve' ), 'rn' => array( 'decision' => 'maybe' ) ) ) );
+$apCarol = status( $carol->call( 'PUT', $APG . '/blocks/plan', array( 'decisions' => array( 'rn' => array( 'decision' => 'approve' ) ) ) ) );
+$apFeBob = status( $bob->call( 'PUT', $AP . '/approvals', array( 'four_eyes' => TRUE ) ) );
+$apFe = $alice->call( 'PUT', $AP . '/approvals', array( 'four_eyes' => TRUE ) );
+$apSelf = $alice->call( 'PUT', $APG . '/blocks/plan', array( 'decisions' => array( 'rn' => array( 'decision' => 'approve' ) ) ) );
+$apReject = $alice->call( 'PUT', $APG . '/blocks/plan', array( 'decisions' => array( 'rn' => array( 'decision' => 'reject', 'note' => 'check the tunnels' ) ) ) );
+$apBob = $bob->call( 'PUT', $APG . '/blocks/plan', array( 'decisions' => array( 'rn' => array( 'decision' => 'approve' ) ) ) );
+$a2 = $apBlock( $alice );
+$apRun = $alice->call( 'POST', $APC . '/ap-apply/runs', array() );
+$apArg = $apRun[1]['args'][1] ?? '';
+$apCopy = preg_match( '#^shadow-bpjsonfile=%PROJECT%/(plugin-pages/ap-review/approved/[0-9a-f]{32}\.json)$#', $apArg, $mm ) ? (string)@file_get_contents( $data . '/projects/' . $apPid . '/' . $mm[1] ) : null;
+$apDone = waitRun( $alice, $AP . '/runs/' . ( $apRun[1]['jid'] ?? 'x' ) );
+// a new plan (other content): the decisions were for the old one
+file_put_contents( $planDir . '/plan.json', json_encode( array( 'areas' => array( array( 'id' => 'infra', 'title' => 'Infrastructure', 'n' => 3 ) ) ) ) );
+$a3 = $apBlock( $alice );
+$apNewRun = status( $alice->call( 'POST', $APC . '/ap-apply/runs', array() ) );
+$alice->call( 'DELETE', $AP . '/members/carol' );
+eq( array( array_key_exists( 'plan', $a0 ) ? $a0['plan'] : 'x', $a0['complete'] ?? null, $a0['run_title'] ?? null, $apNoPlan,
+        $a1['plan']['jid'] ?? null, $a1['plan']['by'] ?? null, array_column( $a1['areas'] ?? array(), 'id' ), array_column( $a1['areas'] ?? array(), 'decision' ), $a1['areas'][1]['count'] ?? null ),
+    array( null, FALSE, 'Make the plan', 409, $planJid, 'alice', array( 'infra', 'rn' ), array( null, null ), 5 ),
+    'plug-in approval: no plan - the run that needs it is refused; the areas of the newest plan (from the plug-in), open' );
+eq( array( status( $apHalf ), $apHalf[1]['areas'][0]['decision'] ?? null, $apHalf[1]['areas'][0]['by'] ?? null, $apHalf[1]['complete'] ?? null, $apHalfRun,
+        status( $apBad ), array_keys( (array)( $apBad[1]['fields'] ?? array() ) ), $apCarol, $apFeBob, $apFe[1]['four_eyes'] ?? null ),
+    array( 200, 'approve', 'alice', FALSE, 409, 400, array( 'mars', 'rn' ), 403, 403, TRUE ),
+    'plug-in approval: one area approved - still refused; unknown area / decision; read member; four eyes only by the owner' );
+eq( array( status( $apSelf ), $apSelf[1]['fields']['rn'] ?? null, status( $apReject ), status( $apBob ), $a2['complete'] ?? null,
+        array_column( $a2['areas'] ?? array(), 'by' ), $a2['areas'][1]['note'] ?? null ),
+    array( 400, 'four eyes: approved by another person than the one who made the plan', 200, 200, TRUE, array( 'alice', 'bob' ), '' ),
+    'plug-in approval: four eyes - the planner can reject, not approve; another member approves' );
+eq( array( status( $apRun ), $apCopy === $plan1, strpos( (string)( $apDone[1]['error'] ?? '' ), 'does not exist any more' ) === FALSE,
+        array_column( $a3['areas'] ?? array(), 'decision' ), $a3['complete'] ?? null, $apNewRun ),
+    array( 202, TRUE, TRUE, array( null ), FALSE, 409 ),
+    'plug-in approval: the run gets a copy of exactly the approved plan; a new plan starts without decisions and the run is refused again' );
 // a raw file kind, a run without a version, the result into this and into another project
 $sw = "hostname SW1\nip access-list extended ACL-IN\n permit tcp any host 10.1.1.10 eq 443\n deny ip any any\n";
 eq( status( $up( $alice, $PL, 'mig-source', "hostname only\n" ) ), 400, 'plug-ins: raw file - the check of the plug-in refuses it' );

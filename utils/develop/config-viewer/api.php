@@ -417,6 +417,9 @@ try
             viewerOut( ViewerApp::projectPublic( $app->projectCreate( $user, viewerBody()['name'] ?? null ) ), 201 );
         if( $n == 2 && $method === 'GET' )
             viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) + array( 'network_global' => $app->networkGet()['enabled'] ) );
+        // approvals of plug-in pages: PUT {four_eyes} (owner)
+        if( $n == 3 && $sub === 'approvals' && $method === 'PUT' )
+            viewerOut( $app->approvalSettingSet( $user, $pid, viewerBody() ) );
         // pages of plug-ins (interface 2): …/projects/<pid>/pages/<plugin>-<page>  GET;  …/blocks/<block>  PUT {values}
         if( $sub === 'pages' && $n == 4 && $method === 'GET' )
             viewerOut( $app->pluginPageGet( $user, $pid, $route[3] ) );
