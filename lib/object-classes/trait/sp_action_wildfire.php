@@ -78,9 +78,12 @@ trait sp_action_wildfire
 
                 $name = DH::findAttribute("name", $tmp_entry1);
 
+                // no action (PAN-OS commits it): the rule allows, as the GUI shows it - read as 'allow', the XML stays
                 $tmp_action = DH::findFirstElement("action", $tmp_entry1);
-                if( $tmp_action !== FALSE )
+                if( $tmp_action !== FALSE && $tmp_action->textContent !== "" )
                     $this->additional['mica-engine-wildfire-rules'][$name]['action'] = $tmp_action->textContent;
+                else
+                    $this->additional['mica-engine-wildfire-rules'][$name]['action'] = "allow";
 
                 $tmp_direction = DH::findFirstElement("direction", $tmp_entry1);
                 if( $tmp_direction !== FALSE )
@@ -351,18 +354,22 @@ trait sp_action_wildfire
 
                 $name = DH::findAttribute("name", $mlav_engine_entry);
 
-                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
-                if ($action_xmlNode->textContent == "allow")
+                // no action / an empty one: the rule allows (PAN-OS GUI: Action allow) - set to alert like allow; the
+                // action element is created only when it is set (an empty one would give an incomplete set command)
+                $action_xmlNode = DH::findFirstElement("action", $mlav_engine_entry);
+                $action = $action_xmlNode !== FALSE ? $action_xmlNode->textContent : "";
+                if ($action == "allow" || $action == "")
                 {
                     if ($this->owner->owner->version >= 112)
                     {
+                        $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
                         $action_xmlNode->textContent = "alert";
                         $this->additional['mica-engine-wildfire-rules'][$name]['action'] = "alert";
 
                         $sendAPI = true;
                     }
                 }
-                elseif ($action_xmlNode->textContent == "alert")
+                elseif ($action == "alert")
                 {
 
                 }

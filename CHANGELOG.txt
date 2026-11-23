@@ -39,6 +39,7 @@ UTIL:
 * SP classes - change to single place for versioning
 
 BUGFIX:
+* type=securityprofile actions=wildfire.alert-only-set | a WildFire inline analysis rule (mica-engine-wildfire-rules) without action - PAN-OS commits it, the GUI shows allow - got an empty action element and the incomplete set command '... "rule1" action': now read as allow and set to alert; display / checks read it as allow (the XML stays at load)
 * type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
 * bugfix for filter missing GPGatewayTunnel / profile
 * type=profile | general bugfix to support profiletype argument | cleanup
