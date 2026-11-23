@@ -221,9 +221,12 @@ require_once $basedir . '/misc-classes/PluginPackage.php';
 // encrypted plug-in packages of a run (PANOSPHP_PLUGIN_PACKAGES + PANOSPHP_LICENSE): mounted as ppp://<name>/…
 PluginPackage::bootFromEnv();
 require_once $basedir . '/misc-classes/SCMCommon.php';
-// Panorama / firewall -> SCM import: part of the SCM migration (moves to the plug-in scm-migration) - only if present
-if( is_file( $basedir . '/misc-classes/SCMImporter.php' ) )
-    require_once $basedir . '/misc-classes/SCMImporter.php';
+// Panorama / firewall -> SCM import: part of the SCM migration - from the plug-in scm-migration (PANOSPHP_SCM_MIGRATION),
+// else from here as long as it is part of this installation
+$scmImporterFile = PH::scmMigrationFile( 'lib/SCMImporter.php' ) ?? ( is_file( $basedir . '/misc-classes/SCMImporter.php' ) ? $basedir . '/misc-classes/SCMImporter.php' : null );
+if( $scmImporterFile !== null )
+    require_once $scmImporterFile;
+unset( $scmImporterFile );
 require_once $basedir . '/misc-classes/trait/StatCollectorTrait.php';
 
 

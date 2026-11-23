@@ -2642,14 +2642,38 @@ class PH
 
     /** types of the SCM migration (plug-in scm-migration): not in every installation */
     const SCM_MIGRATION_TYPES = array( 'scm-import', 'scm-panorama-to-change', 'scm-sync' );
+    const SCM_MIGRATION_HINT = " - it belongs to the plug-in scm-migration (PANOSPHP_SCM_MIGRATION=<folder of the plug-in>)";
+
+    /**
+     * a file of the plug-in scm-migration: PANOSPHP_SCM_MIGRATION=<folder of the plug-in> (a folder, or ppp://scmmigration
+     * of the encrypted package) - set by the config viewer for its runs, or by hand on the command line
+     * @return string|null the path, null: not there
+     */
+    /** the root folder of pan-os-php (lib/, utils/, …) - for plug-ins that use its files */
+    public static function rootDir(): string
+    {
+        return realpath( dirname(__FILE__) . "/../.." );
+    }
+
+    public static function scmMigrationFile( string $relative ): ?string
+    {
+        $dir = getenv( 'PANOSPHP_SCM_MIGRATION' );
+        if( !is_string( $dir ) || $dir === '' )
+            return null;
+        $file = rtrim( $dir, '/' ) . '/' . $relative;
+        return is_file( $file ) ? $file : null;
+    }
 
     public static function runSCMScript( $type, $argv )
     {
-        $root = realpath( dirname(__FILE__) . "/../.." );
+        $root = self::rootDir();
         $file = self::SCM_SCRIPT_TYPES[$type];
         $script = $root . ( strpos($file, '/') !== FALSE ? "/utils/develop/" : "/utils/develop/sase/scm/" ) . $file;
+        // the scripts of the SCM migration: from the plug-in (folder scm/), if it is there
+        if( in_array($type, self::SCM_MIGRATION_TYPES, TRUE) && ($pluginScript = self::scmMigrationFile( 'scm/' . $file )) !== null )
+            $script = $pluginScript;
         if( !is_file($script) )
-            derr( "type=" . $type . " is not part of this installation" . ( in_array($type, self::SCM_MIGRATION_TYPES, TRUE) ? " - it belongs to the plug-in scm-migration" : "" ), null, FALSE );
+            derr( "type=" . $type . " is not part of this installation" . ( in_array($type, self::SCM_MIGRATION_TYPES, TRUE) ? self::SCM_MIGRATION_HINT : "" ), null, FALSE );
         // the repository root on the include path: some scripts require "lib/pan_php_framework.php" relative to it
         $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " " . escapeshellarg($script);
         foreach( array_slice($argv, 1) as $a )
@@ -2735,7 +2759,7 @@ class PH
         elseif( $type == "scm-apply" )
             $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "scm-import" && !class_exists('SCMIMPORT', FALSE) )
-            derr( "type=scm-import is not part of this installation - it belongs to the plug-in scm-migration", null, FALSE );
+            derr( "type=scm-import is not part of this installation" . self::SCM_MIGRATION_HINT, null, FALSE );
         elseif( $type == "scm-import" )
             $util = new SCMIMPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "upload" )
