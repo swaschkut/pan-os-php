@@ -39,6 +39,8 @@ UTIL:
 * SP classes - change to single place for versioning
 
 BUGFIX:
+* type=securityprofile | a vulnerability inline ML model (mica-engine-vulnerability-enabled) without inline-policy-action stopped the load of the configuration (PAN-OS refuses such a commit - a hand edited / uncommitted file): now read as disable, the XML stays
+* type=securityprofile | an anti-spyware inline ML detector (mica-engine-spyware-enabled) without inline-policy-action: 'disable' was written into the configuration while loading it - now only read as disable; the set-actions (alert-only-set / best-practice-set) write a complete inline-policy-action (no empty element, no incomplete set command)
 * type=securityprofile actions=wildfire.alert-only-set | a WildFire inline analysis rule (mica-engine-wildfire-rules) without action - PAN-OS commits it, the GUI shows allow - got an empty action element and the incomplete set command '... "rule1" action': now read as allow and set to alert; display / checks read it as allow (the XML stays at load)
 * type=device devicetype=manageddevice actions=display | templates of the template-stack were not printed
 * bugfix for filter missing GPGatewayTunnel / profile

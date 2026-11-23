@@ -68,15 +68,13 @@ trait sp_action_spyware
                 elseif( $name == "Unknown-UDP Command and Control detector" )
                     $tmp_mica_Unknown_UDP_found = TRUE;
 
+                // no inline-policy-action (PAN-OS refuses the commit; only a hand edited / uncommitted file): read as
+                // 'disable' - the XML stays at load (before: 'disable' was written into it); a set-action writes a value
                 $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
-                if( $tmp_inline_policy_action !== FALSE )
+                if( $tmp_inline_policy_action !== FALSE && $tmp_inline_policy_action->textContent !== "" )
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
                 else
-                {
-                    $tmp_inline_policy_action = DH::findFirstElementOrCreate("inline-policy-action", $tmp_entry1);
-                    $tmp_inline_policy_action->textContent = "disable";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
-                }
 
                 // local deep learning: read only - this release never writes it (not added, not enabled)
                 $tmp_local_deep_learning = DH::findFirstElement("local-deep-learning", $tmp_entry1);
@@ -1030,7 +1028,7 @@ trait sp_action_spyware
 
                 $name = DH::findAttribute( "name", $mlav_engine_entry);
 
-                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+                $action_xmlNode = DH::findFirstElementOrCreate("inline-policy-action", $mlav_engine_entry);
                 $action_xmlNode->textContent = "reset-both";
 
                 $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
@@ -1262,7 +1260,13 @@ trait sp_action_spyware
 
                 $name = DH::findAttribute( "name", $mlav_engine_entry);
 
-                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+                // no inline-policy-action: the value read at load ('disable') - written, so the set commands are complete
+                $action_xmlNode = DH::findFirstElementOrCreate("inline-policy-action", $mlav_engine_entry);
+                if( $action_xmlNode->textContent === "" )
+                {
+                    $action_xmlNode->textContent = "disable";
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
+                }
 
                 if( $action_xmlNode->textContent == "allow" )
                 {
