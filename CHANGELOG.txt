@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* SCM | type=scm-ngfw-psk-list (scm_ngfw_psk_list.php): read only - every firewall managed by the SCM tenant (or serial=), the newest version of its configuration (NGFW operations API local-config) and its IKE gateways (peer, local address, IKE version, whether the pre-shared key can be decrypted: default master key, then master-key=); psk-list=<file> writes the PSK list with the clear text (CSV, chmod 600) - the output never shows a secret; save-dir= keeps the configurations; new class SCMLocalConfig, also used by type=scm-local-config-probe
 * config-viewer | plug-in interface 2: sensitive files - a run field 'secret' (a file uploaded only for this run: never a project / result file, removed when the run ends) and sensitive results of a run (.sensitive/: downloadable once by write members, then removed; removed after PANOSPHP_VIEWER_SENSITIVE_DAYS, default 7)
 * SCM | type=scm-local-config-probe (scm_local_config_probe.php): read only - the configuration of a firewall managed by SCM (NGFW operations API local-config, or a downloaded file) and whether the pre-shared keys of its IKE gateways can be decrypted (default / given master key, level 1); never prints a secret
 * config-viewer | plug-in interface 2: project types - a project with roles (e.g. source / target SCM tenant), each bound by its first import / SCM read / egress run, one tenant per role; writing only into roles with write; pages of a project type only in such a project; the plug-in reads the roles and the SCM tab states per role

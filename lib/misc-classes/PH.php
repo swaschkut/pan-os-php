@@ -2530,7 +2530,7 @@ class PH
         "scm-changes",
         "scm-apply",
         "scm-export-xml",
-        "scm-export", "scm-egress-ip", "scm-local-config-probe", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync", "scm-report", "panorama-move",
+        "scm-export", "scm-egress-ip", "scm-local-config-probe", "scm-ngfw-psk-list", "scm-xml-to-change", "scm-change", "scm-panorama-to-change", "scm-compare", "scm-sync", "scm-report", "panorama-move",
         "scm-import",
         "upload",
         "xml-issue",
@@ -2637,6 +2637,7 @@ class PH
         'scm-report' => 'scm_pa_report.php',
         'scm-egress-ip' => 'scm_egress_ip.php',
         'scm-local-config-probe' => 'scm_local_config_probe.php',
+        'scm-ngfw-psk-list' => 'scm_ngfw_psk_list.php',
         // path relative to utils/develop/ when it contains a '/'
         'panorama-move' => 'panorama_move/panorama_to_panorama_move.php',
     );

@@ -10181,6 +10181,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "scm-ngfw-psk-list": {
+        "name": "scm-ngfw-psk-list",
+        "action": [],
+        "filter": []
+    },
     "scm-panorama-to-change": {
         "name": "scm-panorama-to-change",
         "action": [],
