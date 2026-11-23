@@ -263,6 +263,13 @@ class ViewerApp
         // approvals of plug-in pages: 1 = an area is approved by another person than the one who made the plan
         if( !in_array( 'approval_four_eyes', $cols, TRUE ) )
             $this->db->exec( 'ALTER TABLE projects ADD COLUMN approval_four_eyes INTEGER NOT NULL DEFAULT 0' );
+        // project type of a plug-in (<plugin>-<type>) and its roles, each with its own binding (JSON role => title, kind,
+        // write, target) - a project without a type has the one binding of bind_kind / bind_target
+        if( !in_array( 'ptype', $cols, TRUE ) )
+        {
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN ptype TEXT' );
+            $this->db->exec( 'ALTER TABLE projects ADD COLUMN roles TEXT' );
+        }
         $bindNew = !in_array( 'bind_kind', $cols, TRUE );
         if( $bindNew )
         {
@@ -843,7 +850,117 @@ class ViewerApp
             'types' => $p['types'] ?? null, 'scope' => $p['scope'] ?? null, 'network' => !empty( $p['network'] ),
             'binding' => !empty( $p['bind_kind'] ) ? array( 'kind' => $p['bind_kind'], 'target' => $p['bind_target'] ?? null ) : null,
             'import_scope' => self::scopeOf( $p ), 'scm_areas' => self::scmPaAreas(), 'scm_config_groups' => self::SCM_CONFIG_GROUPS,
-            'four_eyes' => !empty( $p['approval_four_eyes'] ) );
+            'four_eyes' => !empty( $p['approval_four_eyes'] ),
+            'type' => !empty( $p['ptype'] ) ? array( 'key' => $p['ptype'], 'roles' => array_values( self::rolesOf( $p ) ) ) : null );
+    }
+
+    // ------------------------------------------------------------------ project types of plug-ins: roles, each bound
+
+    /** the roles of a project with a project type: name => [name, title, kind, write, target] (empty: no type) */
+    private static function rolesOf( array $p ): array
+    {
+        $r = !empty( $p['ptype'] ) && is_string( $p['roles'] ?? null ) ? json_decode( $p['roles'], TRUE ) : null;
+        return is_array( $r ) ? $r : array();
+    }
+
+    /**
+     * PUT …/projects/<pid>/type {type: <plugin>-<type> | null} - the owner, while the project has read nothing from an
+     * API yet (no binding, no import / SCM read / egress run): its roles come from the plug-in, each bound later by its
+     * first import / read
+     */
+    public function projectTypeSet( array $user, $pid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'owner' );
+        $type = $in['type'] ?? null;
+        foreach( self::rolesOf( $p ) as $r )
+            if( $r['target'] !== null )
+                throw new ViewerException( 'the role ' . $r['name'] . ' is bound already - the project type stays (a new project for another one)', 409 );
+        if( !empty( $p['bind_kind'] ) || $this->q( "SELECT 1 FROM jobs WHERE project_id = ? AND type IN ('import', 'scm-pa', 'egress-ip') AND state = 'done' LIMIT 1", array( $p['id'] ) )->fetch() )
+            throw new ViewerException( 'this project has read from a device / tenant already - a project type is set for a new project', 409 );
+        if( $type === null )
+        {
+            $this->q( 'UPDATE projects SET ptype = NULL, roles = NULL WHERE id = ?', array( $p['id'] ) );
+            return self::projectPublic( $this->projectGet( $user, $pid, 'read' ) );
+        }
+        $t = is_string( $type ) ? ( $this->plugins->projectTypes()[$type] ?? null ) : null;
+        if( $t === null )
+            throw new ViewerException( 'type: a project type of a plug-in (meta: plugins.projectTypes)', 400 );
+        $plugin = $this->plugins->plugins[$t['plugin']] ?? array();
+        if( isset( $plugin['package'] ) && !$this->featureOn( $t['feature'] ) )
+            throw new ViewerException( 'not licensed (any more): ' . $t['feature'], 403 );
+        $roles = array();
+        foreach( $t['roles'] as $name => $r )
+            $roles[$name] = $r + array( 'target' => null );
+        $this->q( 'UPDATE projects SET ptype = ?, roles = ? WHERE id = ?', array( $type, json_encode( $roles ), $p['id'] ) );
+        return self::projectPublic( $this->projectGet( $user, $pid, 'read' ) );
+    }
+
+    /** the role of a run (x-role=<role> in its arguments) */
+    private static function runRole( array $j ): ?string
+    {
+        foreach( (array)json_decode( (string)$j['args'], TRUE ) as $a )
+            if( is_string( $a ) && preg_match( '/^x-role=([a-z][a-z0-9-]{0,20})$/', $a, $m ) )
+                return $m[1];
+        return null;
+    }
+
+    /**
+     * a run that reads from $kind / $target: a project without a type - its one binding (bindCheck); with a type - the
+     * role bound to this target, or the free role $role of this kind (bound when the run is done). Returns the role.
+     */
+    private static function bindRole( array $p, string $kind, ?string $target, $role ): ?string
+    {
+        $roles = self::rolesOf( $p );
+        if( count( $roles ) === 0 )
+        {
+            self::bindCheck( $p, $kind, $target );
+            return null;
+        }
+        foreach( $roles as $r )
+            if( $r['kind'] === $kind && $r['target'] !== null && (string)$r['target'] === (string)$target )
+            {
+                if( $role !== null && $role !== '' && $role !== $r['name'] )
+                    throw new ViewerException( 'this ' . ( $kind === 'scm' ? 'tenant TSG ' : 'device ' ) . $target . ' is bound to the role ' . $r['name'] . ' of this project', 403 );
+                return $r['name'];
+            }
+        $free = array_keys( array_filter( $roles, function( $r ) use ( $kind ) { return $r['kind'] === $kind && $r['target'] === null; } ) );
+        if( $role === null || $role === '' )
+            throw new ViewerException( count( $free ) > 0 ? 'role: this project has the roles ' . implode( ', ', array_keys( $roles ) ) . ' - choose the role of ' . $target . ' (free: ' . implode( ', ', $free ) . ')'
+                : 'this project has no free role for ' . ( $kind === 'scm' ? 'an SCM tenant' : 'a firewall / Panorama' ) . ' - ' . $target . ' needs a project of its own', 403 );
+        if( !is_string( $role ) || !isset( $roles[$role] ) )
+            throw new ViewerException( 'role: one of ' . implode( ', ', array_keys( $roles ) ), 400 );
+        if( $roles[$role]['kind'] !== $kind )
+            throw new ViewerException( 'the role ' . $role . ' is for ' . ( $roles[$role]['kind'] === 'scm' ? 'an SCM tenant' : 'a firewall / Panorama' ), 403 );
+        if( $roles[$role]['target'] !== null )
+            throw new ViewerException( 'the role ' . $role . ' is bound to ' . $roles[$role]['target'] . ' - ' . $target . ' needs another role / project', 403 );
+        return $role;
+    }
+
+    /** a key / a file of $kind / $target fits the project: its binding (no type), a role bound to it or a free role of that kind */
+    private static function bindFits( array $p, string $kind, ?string $target ): bool
+    {
+        $roles = self::rolesOf( $p );
+        if( count( $roles ) === 0 )
+            return empty( $p['bind_kind'] ) || ( $p['bind_kind'] === $kind && ( $kind !== 'scm' || (string)$target === (string)$p['bind_target'] ) );
+        foreach( $roles as $r )
+            if( $r['kind'] === $kind && ( $r['target'] === null || (string)$r['target'] === (string)$target ) )
+                return TRUE;
+        return FALSE;
+    }
+
+    /**
+     * writing into $kind / $target (e.g. an upload into an SCM tenant): a project without a type - its binding; with a
+     * type - only into a role marked 'write' that is bound to this target
+     */
+    public static function writeAllowed( array $p, string $kind, ?string $target ): bool
+    {
+        $roles = self::rolesOf( $p );
+        if( count( $roles ) === 0 )
+            return self::bindFits( $p, $kind, $target );
+        foreach( $roles as $r )
+            if( $r['kind'] === $kind && $r['target'] !== null && (string)$r['target'] === (string)$target )
+                return $r['write'];
+        return FALSE;
     }
 
     /** PUT …/projects/<pid>/approvals {four_eyes}: the owner - approvals of plug-in pages by another person than the one who made the plan */
@@ -967,9 +1084,22 @@ class ViewerApp
             throw new ViewerException( 'this project is bound to the SCM tenant TSG ' . $p['bind_target'] . ' - TSG ' . $target . ' needs a project of its own', 403 );
     }
 
-    /** the first run that read from an API binds the project */
-    private function bindSet( string $pid, string $kind, ?string $target ): void
+    /** the first run that read from an API binds the project - with a project type: the role of the run */
+    private function bindSet( string $pid, string $kind, ?string $target, ?string $role = null ): void
     {
+        $p = $this->q( 'SELECT id, ptype, roles FROM projects WHERE pid = ?', array( $pid ) )->fetch();
+        if( $p && !empty( $p['ptype'] ) )
+        {
+            $roles = self::rolesOf( $p );
+            if( $role === null || !isset( $roles[$role] ) || $roles[$role]['kind'] !== $kind || $roles[$role]['target'] !== null || $target === null )
+                return;
+            foreach( $roles as $r )
+                if( $r['target'] !== null && (string)$r['target'] === (string)$target )
+                    return;
+            $roles[$role]['target'] = (string)$target;
+            $this->q( 'UPDATE projects SET roles = ? WHERE id = ? AND roles = ?', array( json_encode( $roles ), $p['id'], $p['roles'] ) );
+            return;
+        }
         $this->q( 'UPDATE projects SET bind_kind = ?, bind_target = ? WHERE pid = ? AND bind_kind IS NULL', array( $kind, $kind === 'scm' ? $target : null, $pid ) );
     }
 
@@ -981,6 +1111,15 @@ class ViewerApp
         if( !is_string( $pid ) || !preg_match( '/^[0-9a-f]{32}$/', $pid ) || $pid === self::SYSTEM_PID
             || $this->q( 'UPDATE projects SET bind_kind = NULL, bind_target = NULL WHERE pid = ?', array( $pid ) )->rowCount() === 0 )
             throw new ViewerException( 'not found', 404 );
+        // a project with a project type: the bindings of its roles as well
+        $p = $this->q( 'SELECT id, ptype, roles FROM projects WHERE pid = ?', array( $pid ) )->fetch();
+        if( $p && !empty( $p['ptype'] ) )
+        {
+            $roles = self::rolesOf( $p );
+            foreach( $roles as $k => $r )
+                $roles[$k]['target'] = null;
+            $this->q( 'UPDATE projects SET roles = ? WHERE id = ?', array( json_encode( $roles ), $p['id'] ) );
+        }
         return array( 'ok' => TRUE );
     }
 
@@ -2120,7 +2259,7 @@ class ViewerApp
     /** for the browser page / scripts: plug-ins with their run types, fields and file kinds (admins: also the refused ones) */
     public function pluginMeta( bool $admin ): array
     {
-        $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array(), 'pages' => array() );
+        $out = array( 'runs' => array(), 'kinds' => array(), 'rawKinds' => array(), 'plugins' => array(), 'pages' => array(), 'projectTypes' => array() );
         foreach( $this->plugins->plugins as $p )
         {
             // a package is loaded only when it is licensed; a plug-in in a folder is the source (development / basic)
@@ -2132,7 +2271,9 @@ class ViewerApp
             foreach( $p['runs'] as $name => $r )
                 $out['runs'][$name] = array( 'title' => $r['title'], 'fields' => $r['fields'], 'bp' => $r['bp'], 'result' => $r['result'] !== null, 'input' => $r['input'] );
             foreach( $p['pages'] ?? array() as $name => $pg )
-                $out['pages'][$name] = array( 'title' => $pg['title'], 'plugin' => $p['name'] );
+                $out['pages'][$name] = array( 'title' => $pg['title'], 'plugin' => $p['name'], 'types' => $pg['types'] );
+            foreach( $p['projectTypes'] ?? array() as $name => $t )
+                $out['projectTypes'][$name] = array( 'title' => $t['title'], 'text' => $t['text'], 'plugin' => $p['name'], 'roles' => array_values( $t['roles'] ) );
             foreach( $p['kinds'] as $name => $k )
             {
                 $out['kinds'][$name] = $k['title'];
@@ -2160,6 +2301,13 @@ class ViewerApp
         if( isset( $plugin['package'] ) && !$this->featureOn( $pg['feature'] ) )
             throw new ViewerException( 'not licensed (any more): ' . $pg['feature'], 403 );
         return $pg;
+    }
+
+    /** a page of project types: only in a project of one of them */
+    private static function pageForProject( array $p, array $pg ): void
+    {
+        if( count( $pg['types'] ?? array() ) > 0 && !in_array( $p['ptype'] ?? null, $pg['types'], TRUE ) )
+            throw new ViewerException( 'not found', 404 );
     }
 
     private function pluginPageDir( array $p, string $key ): string
@@ -2205,15 +2353,30 @@ class ViewerApp
                     $this->pluginRowsDepth--;
                 }
             }
-            if( $what !== 'scm-pa' || count( $args ) !== 2 || !isset( self::SCM_PA_PAGES[$args[0]] ) )
+            $roles = self::rolesOf( $p );
+            if( $what === 'role' && count( $args ) === 1 )
+                return $roles[$args[0]] ?? null;
+            if( $what !== 'scm-pa' || count( $args ) < 2 || !isset( self::SCM_PA_PAGES[$args[0]] ) )
                 return null;
+            // a role: only the states of its tenant (not bound yet: none)
+            $tsg = null;
+            if( ( $args[2] ?? null ) !== null )
+            {
+                $tsg = $roles[$args[2]]['target'] ?? null;
+                if( $tsg === null )
+                    return null;
+            }
             $newest = null;
             foreach( glob( $this->paDir( $p, $args[0] ) . '/*/state.json' ) ?: array() as $f )
             {
                 $s = $this->paState( $p, $args[0], basename( dirname( $f ) ) );
+                if( $tsg !== null && (string)$s['tsg'] !== (string)$tsg )
+                    continue;
                 if( $newest === null || $s['time'] > $newest['time'] )
                     $newest = $s;
             }
+            if( $newest === null )
+                return null;
             $file = $newest['endpoints'][$args[1]]['file'] ?? null;
             if( $file === null || !is_file( $newest['dir'] . '/' . $file ) )
                 return null;
@@ -2448,6 +2611,7 @@ class ViewerApp
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'pages of plug-ins' );
         $pg = $this->pluginPage( $key );
+        self::pageForProject( $p, $pg );
         $stored = $this->pluginPageStored( $p, $key, $pg );
         $saved = array_map( function( $s ) { return $s['values']; }, $stored );
         $view = new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) );
@@ -2467,6 +2631,7 @@ class ViewerApp
         $p = $this->projectGet( $user, $pid, 'write' );
         self::needUnlimited( $p, 'pages of plug-ins' );
         $pg = $this->pluginPage( $key );
+        self::pageForProject( $p, $pg );
         $b = is_string( $block ) ? ( $pg['blocks'][$block] ?? null ) : null;
         if( $b === null )
             throw new ViewerException( 'not found', 404 );
@@ -2666,12 +2831,14 @@ class ViewerApp
             if( !in_array( $source, array( 'candidate', 'running' ), TRUE ) || ( $k['kind'] === 'scm' && $source !== 'candidate' ) )
                 throw new ViewerException( 'source: candidate or running (PAN-OS)', 400 );
             // only references here - the runner builds the steps and the key store of the run when it starts
-            self::bindCheck( $p, $k['kind'], $k['target'] );
+            $role = self::bindRole( $p, $k['kind'], $k['target'], $in['role'] ?? null );
             // one import of a project at a time (a second click while the first is queued / running)
             $busy = $this->q( "SELECT jid FROM jobs WHERE project_id = ? AND type = 'import' AND state IN ('queued', 'running') ORDER BY id LIMIT 1", array( $p['id'] ) )->fetch();
             if( $busy )
                 throw new ViewerException( 'an import of this project is already queued / running (run ' . substr( $busy['jid'], 0, 8 ) . ') - see Runs and project files', 409 );
             $args = array( 'x-import-key=' . $k['kid'], 'x-import-target=' . $k['kind'] . ':' . $k['target'], 'x-import-source=' . $source );
+            if( $role !== null )
+                $args[] = 'x-role=' . $role;
             // SCM: the scope of the import - given with the import (chosen the first time / changed by the owner) or the
             // one of the project; fixed in the arguments of the run
             if( $k['kind'] === 'scm' )
@@ -2705,7 +2872,7 @@ class ViewerApp
             $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
             if( !$k || $k['kind'] !== 'egressip' )
                 throw new ViewerException( 'kid: one of your egress-IP API keys (Account, My API keys, kind egress IP)', 400 );
-            self::bindCheck( $p, 'scm', $k['target'] );
+            $role = self::bindRole( $p, 'scm', $k['target'], $in['role'] ?? null );
             if( !$this->networkGet()['enabled'] )
                 throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
             if( empty( $p['network'] ) )
@@ -2727,6 +2894,8 @@ class ViewerApp
                 throw new ViewerException( 'env: prod8 (default), prod6, prod (older tenants) or another prod<N>', 400 );
             $args = array( 'x-egress-key=' . $k['kid'], 'x-egress-target=egressip:' . $k['target'], 'servicetype=' . $req['serviceType'],
                 'addrtype=' . $req['addrType'], 'location=' . $req['location'], 'env=' . $env );
+            if( $role !== null )
+                $args[] = 'x-role=' . $role;
         }
         if( $type === 'scm-pa' )
         {
@@ -2741,7 +2910,7 @@ class ViewerApp
             $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $in['kid'] ?? '' ), $user['id'] ) )->fetch();
             if( !$k || $k['kind'] !== 'scm' )
                 throw new ViewerException( 'kid: one of your SCM keys (Account, My API keys, kind SCM)', 400 );
-            self::bindCheck( $p, 'scm', $k['target'] );
+            $role = self::bindRole( $p, 'scm', $k['target'], $in['role'] ?? null );
             if( !$this->networkGet()['enabled'] )
                 throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
             if( empty( $p['network'] ) )
@@ -2749,6 +2918,8 @@ class ViewerApp
             if( ( $why = $this->networkRefusal( 'scm', $k['target'], $user ) ) !== null )
                 throw new ViewerException( $why, 403 );
             $args = array( 'x-scmpa-key=' . $k['kid'], 'x-scmpa-target=scm:' . $k['target'], 'x-scmpa-page=' . $page );
+            if( $role !== null )
+                $args[] = 'x-role=' . $role;
         }
         if( $type === 'ldap-discover' )
         {
@@ -4137,7 +4308,7 @@ class ViewerApp
         // LDAP runs: their results stay in the folder of the run (ldap.json / ldap.csv, out.xml of a remove); egress IPs:
         // taken over by the SCM tab (scmEgressList)
         if( $j['type'] === 'egress-ip' && $j['state'] === 'done' && ( $t = self::runTarget( $j ) ) !== null )
-            $this->bindSet( $j['pid'], $t[0], $t[1] );
+            $this->bindSet( $j['pid'], $t[0], $t[1], self::runRole( $j ) );
         if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
             return;
         // SCM tab, Prisma Access read live: the export of the run becomes a state of its page
@@ -4157,7 +4328,7 @@ class ViewerApp
                 if( $page === 'all' && $this->egressFromExport( $p, $dir, $m[1], $j['jid'], $u['name'] ?? '?', 'live' ) )
                     $n++;
                 if( $n > 0 )
-                    $this->bindSet( $j['pid'], 'scm', $m[1] );
+                    $this->bindSet( $j['pid'], 'scm', $m[1], self::runRole( $j ) );
             }
             if( $n === 0 )
                 $this->q( "UPDATE jobs SET state = 'failed', error = ?, reason = 'error' WHERE id = ?", array( 'nothing was read (see run.log)', $j['id'] ) );
@@ -4212,9 +4383,11 @@ class ViewerApp
             return;
         @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
         list( $kind, $host ) = array_pad( explode( ':', $target, 2 ), 2, '' );
-        $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target );
+        $role = self::runRole( $j );
+        $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target
+            . ( $role !== null ? ' (role ' . $role . ')' : '' ) );
         if( in_array( $kind, array( 'panos', 'scm' ), TRUE ) )
-            $this->bindSet( $p['pid'], $kind, $host );
+            $this->bindSet( $p['pid'], $kind, $host, $role );
         // the SCM import reads the Prisma Access areas as well (scm-export area=config,infra): a state of their pages
         if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) )
         {
@@ -5772,7 +5945,7 @@ class ViewerApp
         $keys = array();
         if( !isset( $user['token'] ) )
             foreach( $this->keyList( $user ) as $k )
-                if( $k['kind'] === 'egressip' && ( empty( $p['bind_kind'] ) || $k['target'] === (string)$p['bind_target'] ) )
+                if( $k['kind'] === 'egressip' && self::bindFits( $p, 'scm', $k['target'] ) )
                     $keys[] = array( 'kid' => $k['kid'], 'target' => $k['target'], 'label' => $k['label'], 'refused' => $this->networkRefusal( 'scm', $k['target'], $user ) );
         self::egressLib();
         return array( 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ),
@@ -5865,8 +6038,8 @@ class ViewerApp
                 throw new ViewerException( 'file: ' . preg_replace( '#\S*' . preg_quote( $tmp, '#' ) . '\S*#', 'the file', $e->getMessage() ), 400 );
             }
             $raw = json_decode( (string)file_get_contents( $tmp . '/egress.json' ), TRUE );
-            if( ( $p['bind_kind'] ?? null ) === 'scm' && is_array( $raw ) && isset( $raw['tsg_id'] ) && is_scalar( $raw['tsg_id'] ) && (string)$raw['tsg_id'] !== (string)$p['bind_target'] )
-                throw new ViewerException( 'file: egress IPs of TSG ' . $raw['tsg_id'] . ' - this project is bound to the SCM tenant TSG ' . $p['bind_target'], 400 );
+            if( is_array( $raw ) && isset( $raw['tsg_id'] ) && is_scalar( $raw['tsg_id'] ) && !self::bindFits( $p, 'scm', (string)$raw['tsg_id'] ) )
+                throw new ViewerException( 'file: egress IPs of TSG ' . $raw['tsg_id'] . ' - not the SCM tenant of this project', 400 );
             $id = 'i' . time() . bin2hex( random_bytes( 2 ) );
             $this->egressStore( $this->egressDir( $p ), $id, array( 'source' => 'import', 'user' => (string)$user['name'], 'time' => time(),
                 'tsg' => is_array( $raw ) && isset( $raw['tsg_id'] ) && is_scalar( $raw['tsg_id'] ) ? (string)$raw['tsg_id'] : null,
@@ -6030,7 +6203,7 @@ class ViewerApp
             array( $p['id'] ) )->fetchAll() as $j )
         {
             $t = self::runTarget( $j );
-            if( $t === null || $t[0] !== 'scm' || ( !empty( $p['bind_target'] ) && $t[1] !== (string)$p['bind_target'] ) )
+            if( $t === null || $t[0] !== 'scm' || !self::bindFits( $p, 'scm', $t[1] ) )
                 continue;
             $out['runs']++;
             $dir = $this->jobDir( $p, $j['jid'] );
@@ -6075,7 +6248,7 @@ class ViewerApp
         $keys = array();
         if( !isset( $user['token'] ) )
             foreach( $this->keyList( $user ) as $k )
-                if( $k['kind'] === 'scm' && ( empty( $p['bind_kind'] ) || $k['target'] === (string)$p['bind_target'] ) )
+                if( $k['kind'] === 'scm' && self::bindFits( $p, 'scm', $k['target'] ) )
                     $keys[] = array( 'kid' => $k['kid'], 'target' => $k['target'], 'label' => $k['label'], 'refused' => $this->networkRefusal( 'scm', $k['target'], $user ) );
         return array( 'page' => $page, 'endpoints' => self::SCM_PA_PAGES[$page]['endpoints'], 'states' => $states, 'keys' => $keys, 'network' => !empty( $p['network'] ) );
     }

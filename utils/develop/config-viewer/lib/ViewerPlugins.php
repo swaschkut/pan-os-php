@@ -31,6 +31,8 @@
  *                 defaults / check of the plug-in), 'table' (rows of the plug-in, editable columns - stored are the
  *                 changes per row), 'approval' (the areas of the result of a run - a plan - approved / rejected one by
  *                 one; a run type with 'approval' => '<page>/<block>' starts only when all are approved)
+ *   - project types (interface 2) roles of a project, each bound to its own system (e.g. tenant migration: source
+ *                 and target SCM tenant), writing only into the roles marked 'write'; pages can belong to project types
  * A run type can set environment variables for its run ('env', %PLUGIN% = the folder of the plug-in) - so pan-os-php can
  * load files that the plug-in brings (e.g. PANOSPHP_MIGRATION_PARSERS => '%PLUGIN%/parser').
  * The browser page shows the run types with the fields the plug-in declares - a plug-in brings no script for the page.
@@ -156,7 +158,7 @@ class ViewerPlugins
         if( !is_string( $name ) || !preg_match( '/^[a-z][a-z0-9]{1,30}$/', $name ) || $name !== $folder )
             throw new Exception( '"name": lower case letters and digits, the same as the folder name' );
         $out = array( 'name' => $name, 'api' => $p['api'], 'version' => self::text( $p['version'] ?? '0', 'version', 40 ), 'title' => self::text( $p['title'] ?? $name, 'title', 80 ),
-            'feature' => null, 'runs' => array(), 'kinds' => array(), 'playbookTypes' => array(), 'pages' => array() );
+            'feature' => null, 'runs' => array(), 'kinds' => array(), 'playbookTypes' => array(), 'pages' => array(), 'projectTypes' => array() );
         if( isset( $p['feature'] ) )
         {
             if( !is_string( $p['feature'] ) || !preg_match( '/^[a-z][a-z0-9-]{1,40}$/', $p['feature'] ) )
@@ -241,10 +243,17 @@ class ViewerPlugins
                 throw new Exception( '"playbookTypes": pan-os-php type names' );
             $out['playbookTypes'][] = $t;
         }
-        if( isset( $p['pages'] ) && $p['api'] < 2 )
-            throw new Exception( '"pages" need "api" 2' );
+        if( ( isset( $p['pages'] ) || isset( $p['projectTypes'] ) ) && $p['api'] < 2 )
+            throw new Exception( '"pages" / "projectTypes" need "api" 2' );
+        foreach( (array)( $p['projectTypes'] ?? array() ) as $type => $t )
+            $out['projectTypes'][$name . '-' . $type] = self::checkProjectType( $name, $out['feature'], $type, $t );
         foreach( (array)( $p['pages'] ?? array() ) as $page => $pg )
+        {
             $out['pages'][$name . '-' . $page] = self::checkPage( $name, $out['feature'], $page, $pg, $out['runs'] );
+            foreach( $out['pages'][$name . '-' . $page]['types'] as $t )
+                if( !isset( $out['projectTypes'][$t] ) )
+                    throw new Exception( 'page ' . $page . ': project type ' . $t . ' is not one of this plug-in' );
+        }
         // a run that needs an approval: the approval block of a page of this plug-in
         foreach( $out['runs'] as $k => $r )
             if( $r['approval'] !== null )
@@ -257,6 +266,26 @@ class ViewerPlugins
                 $out['runs'][$k]['approval'] = array( 'page' => $name . '-' . $page, 'block' => $block );
             }
         return $out;
+    }
+
+    /** a project type (interface 2): title, roles (name => title, kind panos | scm, write) */
+    private static function checkProjectType( string $plugin, ?string $feature, $type, $t ): array
+    {
+        if( !is_string( $type ) || !preg_match( '/^[a-z][a-z0-9-]{0,30}$/', $type ) || !is_array( $t ) )
+            throw new Exception( 'project type: lower case name and a description' );
+        $roles = array();
+        foreach( (array)( $t['roles'] ?? array() ) as $role => $r )
+        {
+            if( !is_string( $role ) || !preg_match( '/^[a-z][a-z0-9-]{0,20}$/', $role ) || !is_array( $r ) )
+                throw new Exception( 'project type ' . $type . ': role: lower case name and a description' );
+            if( !in_array( $r['kind'] ?? null, array( 'panos', 'scm' ), TRUE ) )
+                throw new Exception( 'project type ' . $type . ', role ' . $role . ': "kind" panos or scm' );
+            $roles[$role] = array( 'name' => $role, 'title' => self::text( $r['title'] ?? $role, 'title', 80 ), 'kind' => $r['kind'], 'write' => !empty( $r['write'] ) );
+        }
+        if( count( $roles ) < 1 || count( $roles ) > 8 )
+            throw new Exception( 'project type ' . $type . ': 1 to 8 roles' );
+        return array( 'plugin' => $plugin, 'feature' => $feature, 'type' => $type, 'title' => self::text( $t['title'] ?? $type, 'title', 80 ),
+            'text' => self::text( $t['text'] ?? '', 'text', 1000 ), 'roles' => $roles );
     }
 
     /** a page (interface 2): title, text, blocks */
@@ -310,8 +339,16 @@ class ViewerPlugins
         }
         if( count( $blocks ) < 1 || count( $blocks ) > 20 )
             throw new Exception( 'page ' . $page . ': 1 to 20 blocks' );
+        // the project types the page belongs to (of this plug-in; none: every project)
+        $types = array();
+        foreach( (array)( $pg['projectTypes'] ?? array() ) as $t )
+        {
+            if( !is_string( $t ) || !preg_match( '/^[a-z][a-z0-9-]{0,30}$/', $t ) )
+                throw new Exception( 'page ' . $page . ': "projectTypes": names of project types of this plug-in' );
+            $types[] = $plugin . '-' . $t;
+        }
         return array( 'plugin' => $plugin, 'feature' => $feature, 'page' => $page, 'title' => self::text( $pg['title'] ?? $page, 'title', 80 ),
-            'text' => self::text( $pg['text'] ?? '', 'text', 1000 ), 'blocks' => $blocks );
+            'text' => self::text( $pg['text'] ?? '', 'text', 1000 ), 'blocks' => $blocks, 'types' => $types );
     }
 
     /**
@@ -530,6 +567,16 @@ class ViewerPlugins
         return $pages;
     }
 
+    /** project types (interface 2) of the plug-ins that are switched on: <plugin>-<type> => description */
+    public function projectTypes( ?callable $on = null ): array
+    {
+        $types = array();
+        foreach( $this->plugins as $p )
+            if( $on === null || $on( $p ) )
+                $types += $p['projectTypes'] ?? array();
+        return $types;
+    }
+
     public function playbookTypes( ?callable $on = null ): array
     {
         $types = array();
@@ -669,10 +716,17 @@ class ViewerPluginPage
 
     /**
      * the data of one endpoint of the newest state of a page of the SCM tab (Prisma Access: infra, sc, rn, mugw, …),
-     * as the SCM API gave it ('data' of the export file); null: no such state / endpoint
+     * as the SCM API gave it ('data' of the export file); null: no such state / endpoint. $role (a project with a
+     * project type): only states of the tenant of that role
      */
-    public function scmPa( string $page, string $endpoint )
+    public function scmPa( string $page, string $endpoint, ?string $role = null )
     {
-        return ( $this->reader )( 'scm-pa', $page, $endpoint );
+        return ( $this->reader )( 'scm-pa', $page, $endpoint, $role );
+    }
+
+    /** a project with a project type: a role and its binding - name, title, kind, write, target (null: not bound yet) */
+    public function role( string $role ): ?array
+    {
+        return ( $this->reader )( 'role', $role );
     }
 }

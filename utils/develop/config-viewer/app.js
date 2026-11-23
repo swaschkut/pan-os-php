@@ -610,6 +610,8 @@ async function showProject(pid) {
     const p = await api('GET', 'projects/' + pid);
     state.project = p; state.config = null; state.cache.clear();
     const canWrite = p.role !== 'read', owner = p.role === 'owner';
+    // project type of a plug-in: its roles (each bound to a device / tenant) for the forms of runs that read from one
+    state.projectRoles = p.type ? p.type.roles : null;
     // access limited to some types / locations: no whole-configuration operations (download, upload, runs)
     const limited = !!(p.types || p.scope);
     const base = 'projects/' + pid;
@@ -643,6 +645,7 @@ async function showProject(pid) {
         // a project bound by its first import: only keys of the same kind (PAN-OS) / of its SCM tenant
         const b = p.binding;
         const usable = my.keys.filter(k => k.import && !k.refused && (!b || (b.kind === 'panos' ? k.kind === 'panos' : k.kind === 'scm' && k.target === b.target)));
+        const iRole = roleSelect(null);
         const iKey = el('select', {}, usable.map(k => el('option', { value: k.kid, text: (k.kind === 'scm' ? 'SCM TSG ' : '') + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
         const iSource = el('select', {}, el('option', { value: 'candidate', text: 'candidate configuration' }), el('option', { value: 'running', text: 'running configuration' }));
         const sourceField = field('Configuration', iSource);
@@ -711,13 +714,14 @@ async function showProject(pid) {
                 importStatus.className = 'muted'; importStatus.textContent = 'starting …';
                 let job;
                 try {
-                    job = await api('POST', base + '/import/runs', k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : Object.assign({ kid: iKey.value }, scopeLocked ? {} : { scope: scopeOf() }));
+                    job = await api('POST', base + '/import/runs', Object.assign(k && k.kind === 'panos' ? { kid: iKey.value, source: iSource.value } : Object.assign({ kid: iKey.value }, scopeLocked ? {} : { scope: scopeOf() }),
+                        iRole && iRole.value ? { role: iRole.value } : {}));
                 } catch (e) { importStatus.className = 'error'; importStatus.textContent = e.message; throw e; }
                 if (k && k.kind === 'scm' && !scopeLocked) { p.import_scope = scopeOf(); scopeHint.textContent = ''; }
                 importStatus.className = 'ok'; importStatus.textContent = 'import queued - it becomes a new version when it is done (Runs and project files)';
                 message('import queued - it becomes a new version when it is done (Runs and project files)');
                 watchImport(job);
-            }); } }, field('From (my API key)', iKey), sourceField, importBtn, importStatus),
+            }); } }, field('From (my API key)', iKey), iRole ? field('Role', iRole) : null, sourceField, importBtn, importStatus),
             // the scope also without an import now (network off, no key yet): shown, saved by its own button
             !(p.binding && p.binding.kind === 'panos') ? scopeField : null);
         // an import of this project still queued / running (another page, another member): the button stays off
@@ -976,7 +980,9 @@ async function showProject(pid) {
     const supportCardEl = canWrite && !limited && configs.configs.length ? await supportCard(base, configs.configs) : null;
 
     // pages of plug-ins (interface 2): one card per page, drawn from the description the server gives
-    const pageCards = limited ? [] : Object.entries(plug.pages || {}).map(([k, pg]) => pluginPageCard(base, k, pg));
+    const pageCards = limited ? [] : Object.entries(plug.pages || {})
+        .filter(([k, pg]) => !pg.types || pg.types.length === 0 || (p.type && pg.types.includes(p.type.key)))
+        .map(([k, pg]) => pluginPageCard(base, k, pg));
     // approvals of plug-in pages: the owner decides whether the person who made a plan may approve it (four eyes)
     if (pageCards.length && owner) {
         const fe = el('input', { type: 'checkbox' }); fe.checked = !!p.four_eyes;
@@ -988,8 +994,18 @@ async function showProject(pid) {
         limited ? el('span', { class: 'badge', text: 'limited to ' + [p.types ? 'types ' + p.types.join(', ') : null, p.scope ? 'locations ' + p.scope.join(', ') : null].filter(x => x).join('; ') }) : null,
         // bound by the first import / read from an API: PAN-OS or one SCM tenant (an administrator can release it)
         p.binding ? el('span', { class: 'badge', title: 'set by the first import from an API; imports and SCM reads of another kind / tenant are refused', text: p.binding.kind === 'scm' ? 'SCM tenant TSG ' + p.binding.target : 'PAN-OS (firewall / Panorama)' }) : null,
-        p.binding && state.admin ? el('button', { type: 'button', text: 'Release binding', title: 'administrator: the next import / read binds the project again', onclick: () => run(async () => {
-            if (!confirm('Release the binding of this project (' + (p.binding.kind === 'scm' ? 'TSG ' + p.binding.target : 'PAN-OS') + ')?')) return;
+        // project type of a plug-in: its roles, each bound by its first import / read; the owner sets the type before that
+        p.type ? el('span', { class: 'badge', title: 'project type of a plug-in', text: ((plug.projectTypes || {})[p.type.key] || {}).title || p.type.key }) : null,
+        ...(p.type ? p.type.roles.map(r => el('span', { class: 'badge' + (r.write ? ' ok' : ''), title: r.write ? 'written to by the runs of the plug-in' : 'read only',
+            text: r.title + ': ' + (r.target ? (r.kind === 'scm' ? 'TSG ' : '') + r.target : 'not bound yet') + (r.write ? ' (write)' : '') })) : []),
+        owner && !p.binding && Object.keys(plug.projectTypes || {}).length && !(p.type && p.type.roles.some(r => r.target)) ? (() => {
+            const sel = el('select', { 'aria-label': 'project type' }, el('option', { value: '', text: 'standard project' }),
+                Object.entries(plug.projectTypes).map(([k, t]) => { const o = el('option', { value: k, text: t.title }); o.selected = p.type && p.type.key === k; return o; }));
+            return el('span', { class: 'row' }, field('Project type', sel), el('button', { type: 'button', text: 'Set', onclick: () => run(async () => {
+                await api('PUT', base + '/type', { type: sel.value || null }); await showProject(pid); }) }));
+        })() : null,
+        (p.binding || (p.type && p.type.roles.some(r => r.target))) && state.admin ? el('button', { type: 'button', text: 'Release binding', title: 'administrator: the next import / read binds the project again', onclick: () => run(async () => {
+            if (!confirm('Release the binding of this project (' + (p.binding ? (p.binding.kind === 'scm' ? 'TSG ' + p.binding.target : 'PAN-OS') : 'all roles') + ')?')) return;
             await api('DELETE', base + '/binding'); await showProject(pid); }) }) : null,
         owner ? el('button', { class: 'danger', type: 'button', text: 'Delete project', onclick: () => run(async () => {
             if (!confirm('Delete project "' + p.name + '" with all configurations?')) return;
@@ -1458,12 +1474,22 @@ function colTable(cols, rows, extra = [], what = 'entries', render = {}) {
 }
 
 /** "Read live" of a page: a run with one of the user's keys, polled until it ends; the error stays next to the button */
+// a project with a project type (plug-in): the role of a run that reads from a device / tenant - "auto" takes the
+// role bound to the tenant of the key, a free role binds it (the server checks it)
+function roleSelect(kind) {
+    const roles = (state.projectRoles || []).filter(r => !kind || r.kind === kind);
+    if (!roles.length) return null;
+    return el('select', { 'aria-label': 'role' }, el('option', { value: '', text: 'auto (the role of this tenant / device)' }),
+        roles.map(r => el('option', { value: r.name, text: r.title + ' (' + r.name + ': ' + (r.target ? (r.kind === 'scm' ? 'TSG ' : '') + r.target : 'free') + ')' })));
+}
+
 function liveForm(r, opts) {
     if (!r.keys.length) return el('p', { class: 'muted', text: opts.noKey });
+    const roleSel = roleSelect('scm');
     const key = el('select', { 'aria-label': opts.keyLabel }, r.keys.map(k => el('option', { value: k.kid, text: 'TSG ' + k.target + (k.label && k.label !== k.target ? ' - ' + k.label : '') + (k.refused ? ' (not allowed: ' + k.refused + ')' : '') })));
     const status = el('span', { class: 'muted' });
     return el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(async () => {
-        const job = await api('POST', opts.path, Object.assign({ kid: key.value }, opts.body ? opts.body() : {}));
+        const job = await api('POST', opts.path, Object.assign({ kid: key.value }, opts.body ? opts.body() : {}, roleSel && roleSel.value ? { role: roleSel.value } : {}));
         status.className = 'muted'; status.textContent = 'reading live …';
         const t = setInterval(async () => {
             const x = await api('GET', opts.runs + '/' + job.jid).catch(() => null);
@@ -1473,7 +1499,7 @@ function liveForm(r, opts) {
             message(opts.done); await opts.redraw();
         }, 1500);
         state.timers.push(t);
-    }); } }, field('Live with your key', key), ...(opts.fields || []),
+    }); } }, field('Live with your key', key), roleSel ? field('Role', roleSel) : null, ...(opts.fields || []),
         el('button', { class: 'primary', type: 'submit', text: 'Read live', disabled: !r.network, title: r.network ? '' : 'network is off for this project (the owner turns it on)' }), status);
 }
 

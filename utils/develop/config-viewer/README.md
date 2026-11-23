@@ -620,7 +620,28 @@ one; a run type with `'approval' => '<page>/<block>'` starts only when every are
 * The run that needs the approval gets a copy of exactly the approved plan (`ViewerPluginRun::approved()`,
   `plugin-pages/<page>/approved/<sha256>.json`); without all areas approved: 409.
 
-Planned: project types with roles, sensitive uploads.
+
+**Project types** - a project with roles, each bound to its own device / tenant (e.g. a tenant migration: source and
+target SCM tenant in one project); pages can belong to project types:
+
+```php
+'projectTypes' => array( 'tenant-migration' => array( 'title' => 'SCM tenant migration', 'roles' => array(
+    'source' => array( 'title' => 'Tenant A (source)', 'kind' => 'scm' ),
+    'target' => array( 'title' => 'Tenant B (target)', 'kind' => 'scm', 'write' => TRUE ) ) ) ),
+'pages' => array( 'settings' => array( 'projectTypes' => array( 'tenant-migration' ), 'blocks' => … ) ),
+```
+
+* The owner sets the type (`PUT …/projects/<pid>/type {type: <plugin>-<type> | null}`, in the page: project header)
+  while the project has read nothing from a device / tenant yet; it stays once a role is bound.
+* Import, SCM tab read live and egress IPs take the role bound to the tenant / device of the key; a free role is
+  chosen for a new one (`role` in the request, "Role" in the page) and bound when the run is done. One tenant for one
+  role only. Keys and egress files are offered / taken only for the tenants of the roles (or a free role).
+* Writing (e.g. an upload into an SCM tenant): only into a role with `'write' => TRUE` (`ViewerApp::writeAllowed()`).
+* The plug-in reads the roles: `ViewerPluginPage::role( <role> )` (name, title, kind, write, target),
+  `scmPa( <page>, <endpoint>, <role> )` (the newest state of the tenant of that role).
+* The administrator releases the binding of all roles (Release binding), as for a project without a type.
+
+Planned: sensitive uploads.
 
 A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
 

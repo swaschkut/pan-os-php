@@ -61,7 +61,16 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
 
 // interface 2: a page with form blocks - defaults from the SCM tab (newest state), check of the plug-in (no overlap)
 file_put_contents( $plugins . '/pg/plugin.php', "<?php return array( 'api' => 2, 'name' => 'pg', 'title' => 'Pages',
-    'pages' => array( 'settings' => array( 'title' => 'Settings of tenant B', 'text' => 'new values',
+    'projectTypes' => array( 'tmig' => array( 'title' => 'Tenant migration', 'roles' => array(
+        'source' => array( 'title' => 'Tenant A', 'kind' => 'scm' ), 'target' => array( 'title' => 'Tenant B', 'kind' => 'scm', 'write' => TRUE ) ) ) ),
+    'pages' => array( 'mig' => array( 'title' => 'Migration', 'projectTypes' => array( 'tmig' ), 'blocks' => array(
+            array( 'name' => 'tenants', 'kind' => 'form', 'fields' => array( array( 'name' => 'note', 'type' => 'text' ) ),
+                'defaults' => function( \$page ) {
+                    \$a = \$page->role( 'source' ); \$b = \$page->role( 'target' );
+                    return array( 'note' => array( 'value' => '', 'hint' => 'A: ' . ( \$a['target'] ?? '-' ) . ', B: ' . ( \$b['target'] ?? '-' ) . ', write B: ' . ( !empty( \$b['write'] ) ? 'yes' : 'no' )
+                        . ', infra of A: ' . json_encode( \$page->scmPa( 'infra', 'shared-infrastructure-settings', 'source' ) ) ) );
+                } ) ) ),
+        'settings' => array( 'title' => 'Settings of tenant B', 'text' => 'new values',
         'blocks' => array(
             array( 'name' => 'infra', 'kind' => 'form', 'title' => 'Infrastructure',
                 'fields' => array(
@@ -957,6 +966,62 @@ eq( array( $tDup[1]['fields']['netherlands-central/pool'] ?? null, $tInfra[1]['f
     'plug-in page, table: check of the plug-in per cell (with another block), stored are the changes only, value of the plug-in kept, rows() for other blocks' );
 eq( array( status( $tBack ), $t2['rows'][0]['changed'] ?? null, array_key_exists( 'pool', $t2['rows'][0]['value'] ?? array() ) ? $t2['rows'][0]['value']['pool'] : 'x', $t2['rows'][1]['value']['pool'] ?? null ),
     array( 200, array( 'dns' ), null, '10.21.0.0/16' ), 'plug-in page, table: the value of the plug-in again removes the change; rows not sent keep theirs' );
+// project type of a plug-in (interface 2): roles, each bound by its first import / read; writing only into a role
+// with "write"; pages of a project type only in such a project
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Tenant migration' ) );
+$TM = 'projects/' . $r[1]['pid'];
+$tmPid = $r[1]['pid'];
+$alice->call( 'PUT', $TM . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
+$tmMeta = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
+$tmNoType = status( $alice->call( 'GET', $TM . '/pages/pg-mig' ) );
+$tmBob = status( $bob->call( 'PUT', $TM . '/type', array( 'type' => 'pg-tmig' ) ) );
+$tmBad = status( $alice->call( 'PUT', $TM . '/type', array( 'type' => 'pg-nosuch' ) ) );
+$tmSet = $alice->call( 'PUT', $TM . '/type', array( 'type' => 'pg-tmig' ) );
+$tmPage = $alice->call( 'GET', $TM . '/pages/pg-mig' );
+$tmOther = status( $alice->call( 'GET', $EG . '/pages/pg-mig' ) );
+// the binding of the roles (as the runs of the import / SCM tab / egress use it)
+$vaR = new ViewerApp( $data );
+$m = array();
+foreach( array( 'bindRole', 'bindSet', 'writeAllowed', 'bindFits' ) as $fn )
+{
+    $m[$fn] = new ReflectionMethod( 'ViewerApp', $fn );
+    $m[$fn]->setAccessible( TRUE );
+}
+$tmRow = function() use ( $data, $tmPid ) { $db = new PDO( 'sqlite:' . $data . '/viewer.sqlite' ); $st = $db->prepare( 'SELECT * FROM projects WHERE pid = ?' ); $st->execute( array( $tmPid ) ); return $st->fetch( PDO::FETCH_ASSOC ); };
+$role = function( $kind, $target, $role ) use ( $m, $tmRow ) {
+    try { return $m['bindRole']->invoke( null, $tmRow(), $kind, $target, $role ); }
+    catch( ViewerException $e ) { return 'refused: ' . substr( $e->getMessage(), 0, 30 ); }
+};
+$b1 = array( $role( 'scm', '111', null ), $role( 'scm', '111', 'source' ), $role( 'panos', 'fw1', 'source' ), $role( 'scm', '111', 'nosuch' ) );
+$m['bindSet']->invoke( $vaR, $tmPid, 'scm', '111', 'source' );
+$b2 = array( $role( 'scm', '111', null ), $role( 'scm', '111', 'target' ), $role( 'scm', '222', null ), $role( 'scm', '222', 'source' ), $role( 'scm', '222', 'target' ) );
+$m['bindSet']->invoke( $vaR, $tmPid, 'scm', '111', 'target' );          // the tenant of another role: not bound twice
+$m['bindSet']->invoke( $vaR, $tmPid, 'scm', '222', null );              // no role: nothing
+$b3r = json_decode( $tmRow()['roles'], TRUE )['target'] ?? array();
+$b3 = array_key_exists( 'target', $b3r ) ? $b3r['target'] : 'x';
+$m['bindSet']->invoke( $vaR, $tmPid, 'scm', '222', 'target' );
+$p3 = $tmRow();
+$b4 = array( $role( 'scm', '222', null ), $role( 'scm', '333', 'source' ), $role( 'scm', '333', null ),
+    $m['writeAllowed']->invoke( null, $p3, 'scm', '222' ), $m['writeAllowed']->invoke( null, $p3, 'scm', '111' ), $m['writeAllowed']->invoke( null, $p3, 'scm', '333' ),
+    $m['bindFits']->invoke( null, $p3, 'scm', '111' ), $m['bindFits']->invoke( null, $p3, 'scm', '333' ) );
+$tmProj = $alice->call( 'GET', $TM );
+$tmHint = $alice->call( 'GET', $TM . '/pages/pg-mig' )[1]['blocks'][0]['defaults']['note']['hint'] ?? null;
+$tmAgain = status( $alice->call( 'PUT', $TM . '/type', array( 'type' => null ) ) );
+$tmReset = status( $alice->call( 'DELETE', $TM . '/binding' ) );
+$tmAfter = array_column( $alice->call( 'GET', $TM )[1]['type']['roles'] ?? array(), 'target' );
+$alice->call( 'DELETE', $TM . '/members/bob' );
+eq( array( array_keys( $tmMeta['projectTypes'] ?? array() ), array_column( $tmMeta['projectTypes']['pg-tmig']['roles'] ?? array(), 'name' ), $tmMeta['pages']['pg-mig']['types'] ?? null,
+        $tmNoType, $tmBob, $tmBad, status( $tmSet ), $tmSet[1]['type']['key'] ?? null, array_column( $tmSet[1]['type']['roles'] ?? array(), 'target' ), status( $tmPage ), $tmOther ),
+    array( array( 'pg-tmig' ), array( 'source', 'target' ), array( 'pg-tmig' ), 404, 403, 400, 200, 'pg-tmig', array( null, null ), 200, 404 ),
+    'project type: in meta; set by the owner (not by a write member, only a known type); its page only in such a project' );
+eq( array( $b1, $b2, $b3 ),
+    array( array( 'refused: role: this project has the rol', 'source', 'refused: the role source is for an SCM ', 'refused: role: one of source, target' ),
+        array( 'source', 'refused: this tenant TSG 111 is bound t', 'refused: role: this project has the rol', 'refused: the role source is bound to 11', 'target' ), null ),
+    'project type: a run takes the role bound to its tenant, or a free role chosen for it; one tenant for one role only' );
+eq( array( $b4, array_column( $tmProj[1]['type']['roles'] ?? array(), 'target' ), array_column( $tmProj[1]['type']['roles'] ?? array(), 'write' ), $tmHint, $tmAgain, $tmReset, $tmAfter ),
+    array( array( 'target', 'refused: the role source is bound to 11', 'refused: this project has no free role ', TRUE, FALSE, FALSE, TRUE, FALSE ),
+        array( '111', '222' ), array( FALSE, TRUE ), 'A: 111, B: 222, write B: yes, infra of A: null', 409, 200, array( null, null ) ),
+    'project type: writing only into the role with write; keys / files only of the tenants of the roles; the plug-in reads the roles; the type stays once bound; the administrator releases the roles' );
 // one area, several pages (mobile-users: Gateway / GlobalProtect / PAA): each page gets the endpoints it shows
 $muDir = $data . '/pa-job3/scm-export/1234567890/20261122-120000';
 @mkdir( $muDir . '/mobile-users', 0700, TRUE );
