@@ -65,7 +65,31 @@ class ViewerApp
     const DEVICETYPES = array( 'any', 'devicegroup', 'template', 'templatestack', 'manageddevice', 'logcollector', 'logcollectorgroup', 'vsys',
         'container', 'devicecloud', 'deviceonprem', 'snippet' );
     const SPTYPES = array( 'any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'data-filtering', 'wildfire-analysis',
+        'custom-url-category', 'dns-security', 'saas-security', 'virus-and-wildfire-analysis' );
+    /** the profile types of the list (Profile type): Panorama / firewall keep antivirus and WildFire analysis apart, SCM has
+     * one virus-and-wildfire-analysis profile instead (SecurityProfileStore::$secprof_fawkes_array) */
+    const SPTYPES_PANOS = array( 'any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'data-filtering', 'wildfire-analysis',
         'custom-url-category', 'dns-security', 'saas-security' );
+    const SPTYPES_SCM = array( 'any', 'url-filtering', 'virus-and-wildfire-analysis', 'vulnerability', 'spyware', 'file-blocking', 'dns-security',
+        'custom-url-category', 'saas-security' );
+    /** the securityprofiletype of a profile by its class (the 'type' of a row): the window and the references of a row
+     * read exactly this profile - not the first profile of the same name of another type (an URL profile, …) */
+    const SPCLASSES = array( 'URLProfile' => 'url-filtering', 'AntiVirusProfile' => 'virus', 'VirusAndWildfireProfile' => 'virus-and-wildfire-analysis',
+        'VulnerabilityProfile' => 'vulnerability', 'AntiSpywareProfile' => 'spyware', 'FileBlockingProfile' => 'file-blocking',
+        'DataFilteringProfile' => 'data-filtering', 'WildfireProfile' => 'wildfire-analysis', 'customURLProfile' => 'custom-url-category',
+        'DNSSecurityProfile' => 'dns-security', 'SaasSecurityProfile' => 'saas-security' );
+
+    /** does a row (its class) belong to the profile type asked for - SCM: virus / wildfire-analysis select the
+     * virus-and-wildfire-analysis profiles (as SECURITYPROFILEUTIL) */
+    public static function spTypeMatches( $class, $st ): bool
+    {
+        if( !is_string( $st ) || $st === '' || $st === 'any' )
+            return TRUE;
+        $own = is_string( $class ) ? ( self::SPCLASSES[$class] ?? null ) : null;
+        if( $own === null )
+            return TRUE;
+        return $own === $st || ( $own === 'virus-and-wildfire-analysis' && in_array( $st, array( 'virus', 'wildfire-analysis' ), TRUE ) );
+    }
 
     /** types a grant limited to locations (scope) can use: their objects live in a location (device group, vsys, shared, SCM folder) */
     const SCOPE_TYPES = array( 'address', 'service', 'tag', 'rule', 'schedule', 'securityprofile', 'securityprofilegroup', 'edl', 'log-profile' );
@@ -4164,7 +4188,7 @@ class ViewerApp
             $meta[$type] = array( 'actions' => $actions, 'filters' => $filters, 'readonly' => count( $actions ) == 0, 'resource' => self::resourceName( $type ),
                 'references' => isset( $def['action']['displayreferences'] ), 'columns' => self::exportColumns( $def ) );
         }
-        $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES, 'devicetypes' => self::DEVICETYPES,
+        $this->meta = array( 'types' => $meta, 'ruletypes' => self::RULETYPES, 'securityprofiletypes' => self::SPTYPES_PANOS, 'securityprofiletypes_scm' => self::SPTYPES_SCM, 'securityprofileclasses' => self::SPCLASSES, 'devicetypes' => self::DEVICETYPES,
             'resources' => array_map( function( $t ) { return array( 'type' => $t, 'model' => 'scm-v1' ); }, self::SCM_RESOURCES ) );
         return $this->meta;
     }
@@ -4869,9 +4893,12 @@ class ViewerApp
         $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + ( $template !== '' ? array( 'location' => 'any' ) : array() ) + $in, PHP_INT_MAX, FALSE, TRUE );
         // a DNS rule / threat rule: the one of this security profile
         $profile = is_string( $in['profile'] ?? null ) ? $in['profile'] : '';
+        // a security profile: only one of the profile type asked for (an URL profile can have the name of a
+        // virus-and-wildfire-analysis profile in the same folder)
+        $st = ( $in['type'] ?? null ) === 'securityprofile' ? ( $in['securityprofiletype'] ?? 'any' ) : 'any';
         foreach( $r['rows'] as $row )
             if( ( $row['name'] ?? null ) === $name && ( $location === 'any' || ( $row['location'] ?? null ) === $location ) && ( $template === '' || ( $row['template'] ?? '' ) === $template )
-                && ( $profile === '' || ( $row['profile'] ?? '' ) === $profile ) )
+                && ( $profile === '' || ( $row['profile'] ?? '' ) === $profile ) && self::spTypeMatches( $row['type'] ?? null, $st ) )
             {
                 $model = is_array( $row['model']['item'] ?? null ) ? $row['model']['item'] : null;
                 unset( $row['model'] );

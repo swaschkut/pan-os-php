@@ -2152,6 +2152,19 @@ async function showViewer(config, preset) {
         }).filter(x => x));
     }
     const sptype = el('select', {}, state.meta.securityprofiletypes.map(t => el('option', { value: t, text: t })));
+    // the profile type of one profile (its class, the 'type' of its row): its window and references read exactly this
+    // profile - with "any" (or SCM: virus) not the first profile of the same name (an URL profile, …)
+    const spTypeOf = r => (r && (state.meta.securityprofileclasses || {})[r.type]) || sptype.value;
+    // the profile types of the configuration: Panorama / firewall antivirus and WildFire analysis, SCM one
+    // virus-and-wildfire-analysis profile (virus / wildfire-analysis of an older link: that one)
+    function drawSpTypes(config) {
+        const list = config === 'scm' && state.meta.securityprofiletypes_scm ? state.meta.securityprofiletypes_scm : state.meta.securityprofiletypes;
+        let was = sptype.value;
+        if (config === 'scm' && (was === 'virus' || was === 'wildfire-analysis')) was = 'virus-and-wildfire-analysis';
+        sptype.replaceChildren(...list.map(t => el('option', { value: t, text: t })));
+        if (!list.includes(was)) sptype.append(el('option', { value: was, text: was }));
+        sptype.value = was;
+    }
     // locations: 'any' and those of the version (Panorama: shared + device groups, firewall: shared + vsys, SCM: containers +
     // snippets), known once the version is loaded; a member limited to locations gets only those
     const location = el('select', {}, (p.scope || ['any']).map(l => el('option', { value: l, text: l })));
@@ -2188,6 +2201,7 @@ async function showViewer(config, preset) {
         locationsLoaded = true;
         const r = await api('GET', base() + '/locations').catch(() => null);
         if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor });
+        if (r) drawSpTypes(r.config);
         if (!r || !r.locations.length) return;
         const was = location.value, kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'snippet': 'snippets' };
         const groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
@@ -2387,6 +2401,7 @@ async function showViewer(config, preset) {
         view.refs.set(key, null); draw();
         const q = new URLSearchParams(view.query);
         q.set('name', r.name);
+        if (q.get('type') === 'securityprofile') q.set('securityprofiletype', spTypeOf(r));
         if (r.location) q.set('location', r.location);
         if (r.profile) q.set('profile', r.profile);
         if (r.template) q.set('template', r.template);
@@ -2721,11 +2736,12 @@ async function showViewer(config, preset) {
             m.uuid ? { key: 'uuid', label: 'UUID', kind: 'ro', value: m.uuid } : null,
             loc].filter(f => f);
     }
-    async function fetchObject(name, loc, template, profile) {
+    async function fetchObject(name, loc, template, profile, cls) {
         const q = new URLSearchParams({ type: cur.type, location: loc, name });
         if (template) q.set('template', template);
         if (profile) q.set('profile', profile);
         if (cur.type === 'rule') q.set('ruletype', ruletype.value);
+        if (cur.type === 'securityprofile') q.set('securityprofiletype', spTypeOf({ type: cls }));
         return api('GET', base() + '/object?' + q.toString());
     }
     // System: the settings of the firewall / Panorama (or a template of it) / SCM folder, snippet or device - every
@@ -2845,8 +2861,8 @@ async function showViewer(config, preset) {
     }
     async function openObject(r) {
         // the generic window shows the list row when the object can not be read on its own (e.g. a type without a name filter)
-        let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template, r.profile).catch(() => ({ row: r, model: null }))
-            : await fetchObject(r.name, r.location, r.template, r.profile);
+        let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template, r.profile, r.type).catch(() => ({ row: r, model: null }))
+            : await fetchObject(r.name, r.location, r.template, r.profile, r.type);
         const offered = state.meta.types[cur.type].actions || {};
         const done = {}, errors = {}, pending = {}, hints = {};
         const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': cur.label + ' ' + r.name });
@@ -2863,6 +2879,8 @@ async function showViewer(config, preset) {
                 if (n.total !== 1) throw new Error('"' + obj.row.name + '" is ' + n.total + ' times in template ' + obj.row.template + ' (several vsys) - change it with a filter instead');
             }
             if (cur.type === 'rule') body.ruletype = ruletype.value;
+            // a security profile: only this one (else "any": every profile of this name in the location - an URL profile too)
+            if (cur.type === 'securityprofile') body.securityprofiletype = spTypeOf(obj.row);
             const res = await api('POST', base() + '/change', body);
             setStatus(Object.assign({ loaded: true }, res.status));
             state.cache.clear(); changed = true;
@@ -2876,13 +2894,13 @@ async function showViewer(config, preset) {
                 const actions = f.act(String(f.value), newValue);
                 if (!actions) return;
                 await apply(f, actions);
-                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location, obj.row.template, obj.row.profile);
+                obj = await fetchObject(f.rename ? newValue : obj.row.name, obj.row.location, obj.row.template, obj.row.profile, obj.row.type);
             } catch (e) { errors[f.key] = e.message; }
             render();
         }
         async function listChange(f, actions) {
             delete errors[f.key];
-            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location, obj.row.template, obj.row.profile); } catch (e) { errors[f.key] = e.message; }
+            try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location, obj.row.template, obj.row.profile, obj.row.type); } catch (e) { errors[f.key] = e.message; }
             render();
         }
         function control(f) {
@@ -2982,7 +3000,7 @@ async function showViewer(config, preset) {
                 d.dataset.loaded = '1';
                 const q = new URLSearchParams({ type: cur.type, location: obj.row.location, name: obj.row.name });
                 if (cur.type === 'rule') q.set('ruletype', ruletype.value);
-                if (cur.type === 'securityprofile') q.set('securityprofiletype', sptype.value);
+                if (cur.type === 'securityprofile') q.set('securityprofiletype', spTypeOf(obj.row));
                 if (cur.type === 'device') q.set('devicetype', devtype.value);
                 for (const k of ['template', 'profile']) if (obj.row[k]) q.set(k, obj.row[k]);
                 api('GET', base() + '/references?' + q.toString()).then(res => {

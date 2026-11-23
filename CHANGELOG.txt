@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* config-viewer | Security profiles: the window of a profile showed another profile of the same name (SCM: an URL profile instead of the virus-and-wildfire-analysis profile) - window, references and changes now use the type of the profile itself; a change from the window changed every profile of that name in the location; SCM lists virus-and-wildfire-analysis as profile type (instead of virus / wildfire-analysis); references link a virus-and-wildfire-analysis profile with its own type (before: virus)
 * type=securityprofile | a vulnerability inline ML model (mica-engine-vulnerability-enabled) without inline-policy-action stopped the load of the configuration (PAN-OS refuses such a commit - a hand edited / uncommitted file): now read as disable, the XML stays
 * type=securityprofile | an anti-spyware inline ML detector (mica-engine-spyware-enabled) without inline-policy-action: 'disable' was written into the configuration while loading it - now only read as disable; the set-actions (alert-only-set / best-practice-set) write a complete inline-policy-action (no empty element, no incomplete set command)
 * type=securityprofile securityprofiletype=wildfire-analysis | a WildFire inline analysis rule (mica-engine-wildfire-rules) without action - PAN-OS commits it, the GUI shows allow: actions=display stopped (no 'action' read); now read as allow (the XML stays at load)

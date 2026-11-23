@@ -290,10 +290,8 @@ function viewerTypeOf( $o )
         'CaptivePortalRule' => 'captiveportal', 'AuthenticationRule' => 'authentication', 'PbfRule' => 'pbf', 'QoSRule' => 'qos', 'DoSRule' => 'dos',
         'TunnelInspectionRule' => 'tunnelinspection', 'DefaultSecurityRule' => 'defaultsecurity', 'NetworkPacketBrokerRule' => 'networkpacketbroker',
         'SDWanRule' => 'sdwan' );
-    static $profiles = array( 'URLProfile' => 'url-filtering', 'AntiVirusProfile' => 'virus', 'VirusAndWildfireProfile' => 'virus',
-        'VulnerabilityProfile' => 'vulnerability', 'AntiSpywareProfile' => 'spyware', 'FileBlockingProfile' => 'file-blocking',
-        'DataFilteringProfile' => 'data-filtering', 'WildfireProfile' => 'wildfire-analysis', 'customURLProfile' => 'custom-url-category',
-        'DNSSecurityProfile' => 'dns-security', 'SaasSecurityProfile' => 'saas-security' );
+    // profiles: the types of the page (ViewerApp::SPCLASSES - SCM: virus-and-wildfire-analysis, before 'virus')
+    $profiles = ViewerApp::SPCLASSES;
     static $plain = array( 'Address' => 'address', 'AddressGroup' => 'address', 'Region' => 'address', 'Service' => 'service', 'ServiceGroup' => 'service',
         'Tag' => 'tag', 'Zone' => 'zone', 'Schedule' => 'schedule', 'SecurityProfileGroup' => 'securityprofilegroup', 'App' => 'application',
         'AppGroup' => 'application', 'AppFilter' => 'application', 'AppCustom' => 'application', 'EDL' => 'edl', 'LogProfile' => 'log-profile',

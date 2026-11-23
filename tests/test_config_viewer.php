@@ -659,6 +659,37 @@ $se = $alice->call( 'GET', $SC . '/objects?type=address&location=' . urlencode( 
 $lv = array_values( array_unique( array_map( function( $x ) { return $x['location']; }, $se[1]['rows'] ?? array() ) ) );
 eq( array( status( $se ), $lv[0] ?? null, end( $lv ) ), array( 200, 'Panorama-Shared', 'DE-Berlin Office' ),
     'SCM effective view: from the snippets of All down to the folder' );
+// SCM: a virus-and-wildfire-analysis profile and an URL profile of the same name in one folder (synthetic) - the list
+// offers virus-and-wildfire-analysis (not virus / wildfire-analysis), the window, the references and a change of a row
+// read / change exactly that profile (before: securityprofiletype "any" - the URL profile of the same name)
+$sx = str_replace( "        <entry name=\"Mobile Users Container\">\n          <parent>Prisma Access</parent>\n",
+    "        <entry name=\"Mobile Users Container\">\n          <parent>Prisma Access</parent>\n          <profiles>\n"
+    . "            <virus-and-wildfire-analysis><entry name=\"Same-Name\"/></virus-and-wildfire-analysis>\n"
+    . "            <url-filtering><entry name=\"Same-Name\"/></url-filtering>\n          </profiles>\n",
+    file_get_contents( $here . '/input/SCM-import.xml' ) );
+$SN = $SP . '/configs/' . ( $alice->call( 'POST', $SP . '/configs', null, array( 'SCM-same-name.xml', $sx ) )[1]['cid'] ?? '' );
+$mu = urlencode( 'Mobile Users Container' );
+$snObj = function( $st ) use ( $alice, $SN, $mu ) {
+    $r = $alice->call( 'GET', $SN . '/object?type=securityprofile&securityprofiletype=' . $st . '&location=' . $mu . '&name=Same-Name' );
+    return status( $r ) . ' ' . ( $r[1]['row']['type'] ?? '-' );
+};
+$snRef = $alice->call( 'GET', $SN . '/references?type=securityprofile&securityprofiletype=virus-and-wildfire-analysis&location=' . $mu . '&name=Same-Name' )[1]['objects'] ?? array();
+$meta = $alice->call( 'GET', 'meta' )[1] ?? array();
+eq( array( count( $alice->call( 'GET', $SN . '/objects?type=securityprofile&securityprofiletype=any&location=' . $mu . '&filter=' . urlencode( '(name eq Same-Name)' ) )[1]['rows'] ?? array() ),
+        $snObj( 'virus-and-wildfire-analysis' ), $snObj( 'url-filtering' ), $snObj( 'virus' ), $snObj( 'wildfire-analysis' ),
+        array_map( function( $o ) { return $o['class'] ?? null; }, $snRef ),
+        in_array( 'virus-and-wildfire-analysis', $meta['securityprofiletypes_scm'] ?? array(), TRUE ), in_array( 'virus', $meta['securityprofiletypes_scm'] ?? array(), TRUE ),
+        in_array( 'virus-and-wildfire-analysis', $meta['securityprofiletypes'] ?? array(), TRUE ), $meta['securityprofileclasses']['VirusAndWildfireProfile'] ?? null ),
+    array( 2, '200 VirusAndWildfireProfile', '200 URLProfile', '200 VirusAndWildfireProfile', '200 VirusAndWildfireProfile', array( 'VirusAndWildfireProfile' ),
+        TRUE, FALSE, FALSE, 'virus-and-wildfire-analysis' ),
+    'SCM: virus-and-wildfire-analysis and URL profile of the same name - window and references of exactly the profile type' );
+$snc = $alice->call( 'POST', $SN . '/change', array( 'type' => 'securityprofile', 'securityprofiletype' => 'virus-and-wildfire-analysis', 'location' => 'Mobile Users Container',
+    'filter' => '(name eq Same-Name)', 'actions' => 'name-addprefix:x-' ) );
+$snNames = array_map( function( $x ) { return $x['type'] . ':' . $x['name']; }, $alice->call( 'GET', $SN . '/objects?type=securityprofile&securityprofiletype=any&location=' . $mu
+    . '&filter=' . urlencode( '(name contains Same-Name)' ) )[1]['rows'] ?? array() );
+sort( $snNames );
+eq( array( status( $snc ), $snNames ), array( 200, array( 'URLProfile:Same-Name', 'VirusAndWildfireProfile:x-Same-Name' ) ),
+    'SCM: a change of the virus-and-wildfire-analysis profile leaves the URL profile of the same name' );
 // variables: the window of a firewall - the value and where it comes from; an override set from there
 $VV = $up( 'variables-panorama.xml' );
 $vo = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();
