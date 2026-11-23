@@ -21,7 +21,7 @@ The export is the input for the later steps:
 Every export also writes `MIGRATION_CHECKLIST.md` (see below).
 
 Next steps and the verification list for the first live run: [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md).
-Comparing two exports: [README_pa_compare.md](README_pa_compare.md); syncing differences: [README_pa_sync.md](README_pa_sync.md).
+Comparing two exports: [README_pa_compare.md](README_pa_compare.md); changing one tenant: [README_pa_change.md](README_pa_change.md).
 Step-by-step guide for consultants:
 [CONSULTANT_GUIDE_pa_export_compare.md](CONSULTANT_GUIDE_pa_export_compare.md).
 

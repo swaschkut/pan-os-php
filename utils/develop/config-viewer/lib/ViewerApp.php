@@ -830,7 +830,7 @@ class ViewerApp
             'import_scope' => self::scopeOf( $p ), 'scm_areas' => self::scmPaAreas(), 'scm_config_groups' => self::SCM_CONFIG_GROUPS );
     }
 
-    // ------------------------------------------------------------------ scope of the SCM import (PROJECT_TYPES.md 1)
+    // ------------------------------------------------------------------ scope of the SCM import
 
     /** groups of the config area (scm_pa_export.php config-scope=, SCMPrismaAccessExport::CONFIG_GROUPS) */
     const SCM_CONFIG_GROUPS = array( 'objects', 'policies', 'network', 'identity', 'device' );

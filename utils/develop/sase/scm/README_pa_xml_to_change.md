@@ -33,8 +33,8 @@ All steps with `pan-os-php type=…` (the SCM scripts are registered as types; a
 | `scm-export-xml` | the export as one XML (UTIL type) |
 | `scm-xml-to-change` | scm_pa_xml_to_change.php |
 | `scm-change` | scm_pa_change.php (`diff=`, `select=`, `execute`) |
-| `scm-panorama-to-change` | scm_pa_panorama_to_change.php |
-| `scm-compare` / `scm-sync` | scm_pa_compare.php / scm_pa_sync.php |
+| `scm-panorama-to-change` | scm_pa_panorama_to_change.php (plug-in scm-migration) |
+| `scm-compare` / `scm-sync` | scm_pa_compare.php / scm_pa_sync.php (plug-in scm-migration) |
 
 ```
 pan-os-php type=scm-export in=scm-api://1234 area=config outdir=export ui-api-host=<region host>

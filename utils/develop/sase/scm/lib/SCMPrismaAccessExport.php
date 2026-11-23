@@ -3190,7 +3190,7 @@ class SCMPrismaAccessExport
         if( $this->hasArea(self::AREA_CONFIG) && $this->configHierarchy !== null )
         {
             $add( 'objects_policies', 'check', self::AREA_CONFIG, 'Folders, snippets, objects and security policy',
-                'exported in config/ (owned objects per container, hierarchy.json with snippet order); compare with scm_pa_compare.php, transfer with scm_pa_sync.php' );
+                'exported in config/ (owned objects per container, hierarchy.json with snippet order); compare with scm_pa_compare.php, change with scm_pa_change.php' );
             if( !empty($manifest['config']['owner_aliases']) )
             {
                 $o = array();

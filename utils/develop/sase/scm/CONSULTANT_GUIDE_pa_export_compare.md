@@ -1,4 +1,4 @@
-# Consultant guide – Prisma Access export, compare and sync with pan-os-php
+# Consultant guide – Prisma Access export and compare with pan-os-php
 
 This guide explains how to take a complete snapshot of a Prisma Access tenant (Strata Cloud Manager), how to
 compare two snapshots – for a tenant migration, a lab / production drift check, or a before / after check of a change –
@@ -8,15 +8,14 @@ and how to write the differences into a tenant.
 |---|---|---|
 | `scm_pa_export.php` | downloads the tenant configuration into a local directory | yes (read only) |
 | `scm_pa_compare.php` | compares two export directories and writes a report | no |
-| `scm_pa_sync.php plan` | turns the differences into a reviewable list of operations | no |
-| `scm_pa_sync.php apply` | sends the operations to the target tenant (dry-run unless `execute`) | yes (**write**) |
+| `scm_pa_change.php` | writes a change request into **one** tenant (plan, dry-run unless `execute`) | yes (**write**) |
 
 Reference documentation: [README_pa_export.md](README_pa_export.md) (export), [README_pa_compare.md](README_pa_compare.md)
-(compare), [README_pa_sync.md](README_pa_sync.md) (sync), [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md)
+(compare), [README_pa_change.md](README_pa_change.md) (change one tenant), [todo/scm-pa-export-next-steps.md](../../../../todo/scm-pa-export-next-steps.md)
 (verification list, roadmap).
 
-> **Status:** in development (`beta_scm-extension`). Export and compare only **read**. `scm_pa_sync.php apply execute`
-> **changes** the target tenant – it has been tested against a simulated tenant only: use it on lab tenants until
+> **Status:** in development (`beta_scm-extension`). Export and compare only **read**. `scm_pa_change.php … execute`
+> **changes** the tenant – it has been tested against a simulated tenant only: use it on lab tenants until
 > the live verification ([NEXT_STEPS](../../../../todo/scm-pa-export-next-steps.md) §4.10) is done.
 
 ---
@@ -210,80 +209,12 @@ network, `backup_SC`, group members). `config,container,…` renames folders / s
 
 ---
 
-## 4. Sync the differences into a tenant
+## 4. Write changes
 
-> Writes to a tenant. Lab tenants first. Always: plan → read the plan → dry-run → execute → push → compare again.
-
-### 4.1 Decide direction and mode
-
-- **source** = the export whose content should win (`left` or `right` of the compare); the other is the target.
-- **NGFW network / device settings** (interfaces, routing, zones, VPN, device setup) are only written with
-  `allow-network`; devices themselves (serials, folder assignment) are never written – onboard / move them in SCM.
-- **mode**
-  - `additive` – create what is missing in the target, update what differs; nothing is deleted. Safe default.
-  - `mirror` + `allow-delete` – the target becomes a copy of the source (within the compared areas / filters);
-    entries that exist only in the target are deleted.
-  - `merge` – both tenants get what they are missing (two plans); entries that differ are listed as conflicts and
-    not touched – decide them manually.
-- Infrastructure settings (infrastructure subnet, AS, BGP routing) are only changed with `allow-infra` – this can
-  interrupt traffic.
-
-### 4.2 Prepare the source export
-
-For gateways / connections with PSK or BGP secret and for MU server profiles / local users the cleartext is taken
-from the source export's secret lists. Export the source with `psk-list`. To set **new** keys on the target, fill
-`psk_new` / `secret_new` in those CSV files. Local user passwords (`HASHED`) always need `secret_new`.
-
-**Strata Cloud Manager tenants use their own master key**, so `psk_current` is usually `DECRYPT_FAILED`. Then:
-
-1. fill `psk_new` with the existing PSKs – the peer firewalls (branch / data center) have them; for PAN-OS peers
-   pan-os-php can read them from their configuration
-2. check the list – no secret is printed:
-   ```bash
-   php utils/develop/sase/scm/scm_pa_secret_check.php dir=<source export dir>
-   ```
-   `OK new = secret of the source tenant` → correct; `NEW` → this is a different PSK than in the source tenant
-   (typo, or an intended new key – then the peer needs it too); `MISSING` → no value yet
-3. plan again – the plan shows per secret "verified" or "new secret"
-
-### 4.3 Create and read the plan
-
-```bash
-php utils/develop/sase/scm/scm_pa_sync.php plan diff=<compare dir>/diff.json source=left mode=additive
-```
-
-Open `PLAN_REPORT.md` next to `diff.json`:
-
-- **Blocked operations** – never executed, with the reason (delete not allowed, still referenced, secret missing,
-  read-only area, Prisma Browser, infrastructure without `allow-infra`). Fix the cause and plan again.
-- **Operations in execution order** – create / update / move / delete, the reason (e.g. `changed: protocol.bgp.peer_as`),
-  dependencies (`depends on`) and notes (e.g. "reference … not found – predefined or inherited?").
-- **Conflicts** (merge) – handle manually.
-
-To leave out single operations set `"enabled": false` in `plan.json` (operations depending on them are skipped too).
-
-### 4.4 Dry-run, execute, push
-
-```bash
-# dry-run – reads the target, sends nothing, shows every request
-php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=<compare dir>/plan.json
-
-# execute – you are asked to type the target TSG
-php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=<compare dir>/plan.json execute
-
-# execute and push the changed folders
-php utils/develop/sase/scm/scm_pa_sync.php apply in=scm-api://<target TSG> plan=<compare dir>/plan.json execute push
-```
-
-- `conflict` = the target object was changed after its export → export the target again, compare, plan again.
-- `failed` = the API refused a request (HTTP code and message in the console / `apply-log-*.json`); apply stops
-  unless `continue-on-error`.
-- Without `push` the touched folders are listed – push them in Strata Cloud Manager.
-
-### 4.5 Check the result
-
-Export the target again and compare it with the **same** source export. Only blocked / excluded differences may
-remain. Then work through `MIGRATION_CHECKLIST.md` (certificates, IPs on branch / DC firewalls, …).
+* **one tenant** (change objects / rules / settings of the tenant you exported): `scm_pa_change.php` - change request
+  file, plan, dry-run, execute, verify ([README_pa_change.md](README_pa_change.md)).
+* **two tenants** (sync tenant A → tenant B, tenant migration, Panorama → SCM): plug-in `scm-migration` (licensed) -
+  `pan-os-php type=scm-sync …` with the plug-in. pan-os-php alone refuses a plan between two tenants.
 
 ## 5. Troubleshooting
 

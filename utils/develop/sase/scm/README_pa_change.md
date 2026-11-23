@@ -1,8 +1,8 @@
 # scm_pa_change.php – change an SCM tenant from a small change request file
 
 One command instead of the manual chain export → copy → edit JSON → compare → plan → dry-run → execute → re-export →
-compare. The script only chains the existing building blocks (`scm_pa_export.php`, `scm_pa_compare.php`,
-`scm_pa_sync.php`); all safety steps stay:
+compare. The script only chains the existing building blocks (`scm_pa_export.php`, `scm_pa_compare.php`, the plan
+engine `SCMPrismaAccessSync`); all safety steps stay:
 
 * without `execute` nothing is sent (dry-run, including the hash check of the target objects)
 * `execute` asks for the TSG id (unless `yes`)
@@ -165,13 +165,12 @@ selected group that refers to a profile that was not selected and does not exist
 
 ## Relation to the other tools
 
-* Panorama device-groups → SCM: [README_pa_panorama_import.md](README_pa_panorama_import.md)
-  (`scm_pa_panorama_to_change.php` writes the change file)
+* Panorama device-groups → SCM: plug-in `scm-migration` (`type=scm-panorama-to-change` writes the change file)
 * pan-os-php utilities (merger, playbooks, actions) on an export: [README_pa_xml_to_change.md](README_pa_xml_to_change.md)
   (`in=scm-export://`, `scm_pa_xml_to_change.php` writes the change file)
 
-* bigger changes, reordering rule bases, Prisma Access areas: export / edit / `scm_pa_compare.php` / `scm_pa_sync.php`
-  ([README_pa_sync.md](README_pa_sync.md))
+* bigger changes, reordering rule bases, Prisma Access areas of one tenant: export / edit / `scm_pa_compare.php` / plan
+  with `SCMPrismaAccessSync` (as this script does)
 
 **One tenant.** The plan engine (`SCMPrismaAccessSync`) plans and applies between two exports of the **same** TSG
 (as-is → to-be). A plan or an apply between two different tenants (TSG a → TSG b: tenant migration / tenant sync) is

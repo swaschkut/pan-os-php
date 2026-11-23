@@ -23,7 +23,7 @@ require_once(dirname(__FILE__) . "/SCMPrismaAccessExport.php");
  * Offline compare of two scm_pa_export.php export directories ("left" and "right").
  *
  * The result is symmetric (no direction): per area / container / endpoint the entries only in left, only in right
- * and changed (field level). It is the input for the sync plan (scm_pa_sync.php, step 3).
+ * and changed (field level). It is the input for the plan (SCMPrismaAccessSync).
  *
  * Identity of an entry = endpoint metadata key (default "name") inside the owning container - never the tenant
  * specific id. Before comparing, every entry is normalised: ids / owner fields / derived fields are removed, keys are

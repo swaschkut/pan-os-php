@@ -5,7 +5,7 @@ Status: the export covers all planned areas (`infra`, `config`, `remote-networks
 answers. Before compare / import are built on top of it, the export format has to be verified against a live tenant.
 
 Details of the export itself: [README_pa_export.md](../utils/develop/sase/scm/README_pa_export.md). Compare: [README_pa_compare.md](../utils/develop/sase/scm/README_pa_compare.md).
-Sync: [README_pa_sync.md](../utils/develop/sase/scm/README_pa_sync.md).
+Sync of two tenants: plug-in scm-migration; one tenant: [README_pa_change.md](../utils/develop/sase/scm/README_pa_change.md).
 Step-by-step guide for consultants: [CONSULTANT_GUIDE_pa_export_compare.md](../utils/develop/sase/scm/CONSULTANT_GUIDE_pa_export_compare.md).
 
 ---
@@ -406,7 +406,7 @@ tokens never in shared files (HAR: "Export HAR (sanitized)", no `debugapi` logs,
 | step | what |
 |---|---|
 | ✅ | endpoint metadata (`ENDPOINT_META`) + `scm_pa_compare.php` ([README_pa_compare.md](../utils/develop/sase/scm/README_pa_compare.md)) |
-| ✅ | `scm_pa_sync.php plan` / `apply` ([README_pa_sync.md](../utils/develop/sase/scm/README_pa_sync.md)) – offline / mock only |
+| ✅ | `scm_pa_sync.php plan` / `apply` (now plug-in scm-migration) – offline / mock only |
 | ✅ | config export: leaf mode, parallel queries, chunks, heavy types, owner aliases, snippet rule bases, PA deployment folders |
 | ✅ | area `explicit-proxy`, GlobalProtect portal / Clientless VPN / trusted zones, Prisma Access Agent (internal UI API) |
 | ✅ | pan-os-php loader: vulnerability / WildFire-AV profiles from the internal API ([SECURITY_PROFILES_public_vs_internal_api.md](../utils/develop/sase/scm/SECURITY_PROFILES_public_vs_internal_api.md)) |

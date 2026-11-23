@@ -6,7 +6,7 @@ Technical reference. For a step-by-step guide see
 
 `scm_pa_compare.php` compares two export directories written by `scm_pa_export.php` – **offline**, no API access,
 no credentials. The result is symmetric ("left" / "right", no direction) and is the input for the planned sync
-(`scm_pa_sync.php`: plan → apply, see [README_pa_sync.md](README_pa_sync.md)).
+(one tenant: `scm_pa_change.php`, see [README_pa_change.md](README_pa_change.md); two tenants: plug-in `scm-migration`).
 
 ## Usage
 
@@ -123,7 +123,7 @@ config,container,Mobile Users,MU
 ```
 <out>/
     DIFF_REPORT.md      human readable report
-    diff.json           complete machine readable result (input for scm_pa_sync.php)
+    diff.json           complete machine readable result (input for the plan engine SCMPrismaAccessSync)
     diff-summary.csv    one row per compared endpoint: area, container, endpoint, left, right, equal,
                         only_left, only_right, changed, order_changed
 ```

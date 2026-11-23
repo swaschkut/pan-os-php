@@ -645,7 +645,7 @@ async function showProject(pid) {
         const iKey = el('select', {}, usable.map(k => el('option', { value: k.kid, text: (k.kind === 'scm' ? 'SCM TSG ' : '') + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
         const iSource = el('select', {}, el('option', { value: 'candidate', text: 'candidate configuration' }), el('option', { value: 'running', text: 'running configuration' }));
         const sourceField = field('Configuration', iSource);
-        // SCM: the scope of the import (PROJECT_TYPES.md 1) - chosen at the first import, changed later by the owner
+        // SCM: the scope of the import - chosen at the first import, changed later by the owner
         const sc = p.import_scope || { kind: 'all', areas: p.scm_areas, egress: true, config_scope: [] };
         const scopeLocked = !!p.import_scope && !owner;
         const AREA_LABEL = { infra: 'Infrastructure', 'service-connections': 'Service connections', 'remote-networks': 'Remote networks', 'mobile-users': 'Mobile users',

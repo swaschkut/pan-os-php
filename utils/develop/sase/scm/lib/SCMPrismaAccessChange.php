@@ -205,7 +205,7 @@ class SCMPrismaAccessChange
             }
             $t = $this->types[$e['_type']];
             if( !in_array($t['group'], self::SUPPORTED_GROUPS, TRUE) && !in_array($t['name'], self::SUPPORTED_TYPES, TRUE) )
-                $this->errors[] = $where . ": type " . $e['_type'] . " (" . $t['group'] . ") is not supported by scm_pa_change.php - use the sync workflow (export, edit, compare, scm_pa_sync.php)";
+                $this->errors[] = $where . ": type " . $e['_type'] . " (" . $t['group'] . ") is not supported by scm_pa_change.php - export, edit, compare and plan / apply with SCMPrismaAccessSync";
             if( !empty($t['position']) )
             {
                 if( isset($e['snippet']) && isset($e['position']) )

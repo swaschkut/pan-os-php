@@ -39,7 +39,7 @@ Panorama without firewalls: `scope=device-groups` (shared + device-groups) or `s
 template-stacks as snippets, attached to the device-group folders: stack, then its templates – from the firewalls of
 the device-group); `dg-parent=<folder below ngfw-shared>` (default ngfw-shared, max. 4 folder levels below it),
 `device-group=DG1,DG2`, `shared=global|folder|skip`. The same import as change request for
-`scm_pa_change.php`: `utils/develop/sase/scm/scm_pa_panorama_to_change.php` (README_pa_panorama_import.md there).
+`scm_pa_change.php`: `type=scm-panorama-to-change` (plug-in scm-migration).
 
 `scm=` is the download of the target tenant (without it an empty SCM configuration is used); `out=` is that
 configuration with the import, the base for the next changes (playbook on `scm-import.xml`).

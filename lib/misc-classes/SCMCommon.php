@@ -20,7 +20,7 @@
 /**
  * SCM knowledge that does not belong to one tool: used by the import of a Panorama / firewall configuration, by
  * scm_pa_xml_to_change.php (pan-os-php on an SCM export of one tenant) and by the SCM best-practice actions.
- * (Moved here from SCMImporter, so the core of pan-os-php does not depend on the migration code.)
+ * (The Panorama / firewall import itself belongs to the plug-in scm-migration.)
  */
 class SCMCommon
 {

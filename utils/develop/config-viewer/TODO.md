@@ -305,8 +305,6 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   SCM API into the key store of the user; the egress IPs with the import (egressip, env auto); binding of a project
   (PAN-OS / one SCM TSG), "From the SCM imports", "Read all live". Open: ui-api-host
   per project (region of the internal UI API), CIE, config versions, deployment, tenant, monitoring, BPA.
-* **project types** (concept 2026-11-22: PROJECT_TYPES.md) - ~~scope of the SCM import~~ built 2026-11-22; project types with roles of the binding: tenant migration (A → B:
-  migration settings - new subnet / AS / portal host name -, transform, SC / RN / MU / proxy new with the old tunnel
-  names, tunnel check old ↔ new egress IPs by name, PSK handling - new PSKs, per tunnel by script -, migration report),
-  tenant sync (A ↔ B objects / policies + further areas), Panorama → SCM (device-group / template-stack / template →
-  folder / snippet mapping, views, import / sync / onboarding runs).
+* ~~scope of the SCM import~~ built 2026-11-22. Project types between two systems (tenant migration, tenant sync,
+  Panorama → SCM): plug-in scm-migration (private) - here only the plug-in interface v2 (data driven forms / tables /
+  approval steps) they need.

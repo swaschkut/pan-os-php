@@ -3,7 +3,7 @@
 **Status:** concept / inventory (2026-11-17)
 **Code reference:** `alpha` `b109255`
 **Related:** [scm-prisma-access-lifecycle.md](scm-prisma-access-lifecycle.md),
-[scm-pa-export-next-steps.md](scm-pa-export-next-steps.md), [scm-panorama-migration.md](scm-panorama-migration.md),
+[scm-pa-export-next-steps.md](scm-pa-export-next-steps.md), Panorama → SCM: plug-in scm-migration,
 [scm-api-coverage.md](scm-api-coverage.md)
 
 Prisma Access is configured in two places:
