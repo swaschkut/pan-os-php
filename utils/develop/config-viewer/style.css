@@ -255,3 +255,4 @@ td.pchanged { background: color-mix(in srgb, #f5c400 18%, transparent); }
 .badge.ok { background: #e3f4e8; color: #1d6b35; border-color: #b7dfc3; }
 .badge.warn { background: #fdeceb; color: #9b2c22; border-color: #f2c3bf; }
 p.notice { background: #e8f4ec; border: 1px solid #b9dcc5; padding: 6px 10px; border-radius: 6px; }
+.sensitive { background: #fff4ce; border: 1px solid #e0b400; border-radius: 6px; padding: 4px 8px; margin-bottom: 6px; }

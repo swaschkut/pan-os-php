@@ -31,6 +31,9 @@
  *                 defaults / check of the plug-in), 'table' (rows of the plug-in, editable columns - stored are the
  *                 changes per row), 'approval' (the areas of the result of a run - a plan - approved / rejected one by
  *                 one; a run type with 'approval' => '<page>/<block>' starts only when all are approved)
+ *   - sensitive   (interface 2) a run field 'secret': a file (e.g. a PSK list of the customer) uploaded only for this
+ *                 run - never a project file, never downloadable, removed when the run ends; results the run writes
+ *                 into %JOB%/.sensitive/ are downloadable once (then removed), by write members
  *   - project types (interface 2) roles of a project, each bound to its own system (e.g. tenant migration: source
  *                 and target SCM tenant), writing only into the roles marked 'write'; pages can belong to project types
  * A run type can set environment variables for its run ('env', %PLUGIN% = the folder of the plug-in) - so pan-os-php can
@@ -59,7 +62,7 @@ class ViewerPlugins
     const FIELD_TYPES = array( 'text', 'int', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'select', 'bool', 'list' );
     /** types a list may hold */
     const LIST_ITEMS = array( 'text', 'ipv4', 'ipv4-cidr', 'ipv6-cidr', 'hostname' );
-    const FIELD_KINDS = '/^(text|location|select|multi|file:[a-z][a-z0-9-]{0,40})$/';
+    const FIELD_KINDS = '/^(text|location|select|multi|secret|file:[a-z][a-z0-9-]{0,40})$/';
     /** largest size limit a file kind may ask for */
     const KIND_MAX = 209715200;
 
@@ -656,6 +659,22 @@ class ViewerPluginRun
         if( !isset( $this->in[$field] ) || $this->in[$field] === '' )
             return null;
         return '%FILES%/' . ( $this->file )( $this->in[$field], $kind )['file'];
+    }
+
+    /**
+     * a field 'secret': the file uploaded for this run only (POST …/secret-uploads, the token as value) - in the hidden
+     * folder of the run, removed when the run ends; null when the field is not given
+     */
+    public function secret( string $field ): ?string
+    {
+        if( ( $this->fields[$field]['kind'] ?? null ) !== 'secret' )
+            throw new ViewerException( 'plug-in: ' . $field . ' is not a field "secret"', 500 );
+        $v = $this->in[$field] ?? '';
+        if( $v === '' )
+            return null;
+        if( !is_string( $v ) || !preg_match( '/^[0-9a-f]{32}$/', $v ) )
+            throw new ViewerException( $field . ': the token of an upload (POST …/secret-uploads)', 400 );
+        return '%JOB%/.secret/' . $field;
     }
 
     /** a run type with 'approval': the plan as it was approved (a copy - a newer plan does not change it) */

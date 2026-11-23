@@ -3111,6 +3111,10 @@ class ViewerApp
         if( $open >= self::JOB_QUEUE_MAX )
             throw new ViewerException( 'too many open runs in this project - wait for them or cancel one', 429 );
         $jid = self::randomId();
+        // sensitive files of the run (fields 'secret' of a plug-in): moved from the upload into the hidden folder of the
+        // run before it can start; removed when the run ends (runnerFinish)
+        if( $plugin !== null )
+            $this->secretMove( $user, $p, $plugin, $in, $jid );
         // a support file: what goes in is put next to the run now (hidden folder .support of the run)
         if( $type === 'support-file' )
             $args = $this->supportStage( $user, $p, $c, $jid, $in );
@@ -3394,7 +3398,10 @@ class ViewerApp
         $p = $this->projectGet( $user, $pid, 'read' );
         self::needUnlimited( $p, 'a run' );
         $j = $this->jobRow( $p, $jid );
-        return self::jobPublic( $j ) + array( 'files' => in_array( $j['state'], array( 'done', 'failed' ), TRUE ) ? $this->jobFiles( $p, $j['jid'] ) : array() );
+        $done = in_array( $j['state'], array( 'done', 'failed' ), TRUE );
+        return self::jobPublic( $j ) + array( 'files' => $done ? $this->jobFiles( $p, $j['jid'] ) : array(),
+            // sensitive results: downloadable once by write members (not with a token)
+            'sensitive' => $done && $p['role'] !== 'read' && !isset( $user['token'] ) ? $this->sensitiveFiles( $p, $j ) : array() );
     }
 
     /** @return array 'name', 'content' of one result file; server paths are replaced in the content */
@@ -3416,6 +3423,132 @@ class ViewerApp
         throw new ViewerException( 'not found', 404 );
     }
 
+    // ------------------------------------------------------------------ sensitive files of runs (plug-in interface 2)
+
+    /** an upload for a field 'secret' stays at most this long before a run takes it */
+    const SECRET_UPLOAD_TTL = 3600;
+    const SECRET_UPLOAD_MAX = 20971520;
+
+    private function secretUploadDir( array $p ): string
+    {
+        return $this->projectDir( $p['pid'] ) . '/.secret-uploads';
+    }
+
+    /** uploads no run took in time are removed */
+    private function secretUploadsClean( array $p ): void
+    {
+        foreach( glob( $this->secretUploadDir( $p ) . '/*.json' ) ?: array() as $f )
+        {
+            $m = json_decode( (string)@file_get_contents( $f ), TRUE );
+            if( !is_array( $m ) || (int)( $m['created'] ?? 0 ) < time() - self::SECRET_UPLOAD_TTL )
+            {
+                @unlink( substr( $f, 0, -5 ) . '.dat' );
+                @unlink( $f );
+            }
+        }
+    }
+
+    /**
+     * POST …/projects/<pid>/secret-uploads (file): a file for a field 'secret' of a plug-in run - kept hidden, for this
+     * user, at most an hour; the token is the value of the field. Never a project file, never downloadable.
+     */
+    public function secretUpload( array $user, $pid, ?array $upload ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'a sensitive upload' );
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
+        if( $upload === null || ( $upload['error'] ?? 1 ) !== UPLOAD_ERR_OK || !is_uploaded_file( $upload['tmp_name'] ) )
+            throw new ViewerException( 'file: the file for the run', 400 );
+        if( (int)$upload['size'] < 1 || (int)$upload['size'] > self::SECRET_UPLOAD_MAX )
+            throw new ViewerException( 'file: 1 byte to ' . ( self::SECRET_UPLOAD_MAX / 1048576 ) . ' MB', 400 );
+        $this->secretUploadsClean( $p );
+        $dir = $this->secretUploadDir( $p );
+        if( !is_dir( $dir ) )
+            mkdir( $dir, 0700, TRUE );
+        $token = self::randomId();
+        move_uploaded_file( $upload['tmp_name'], $dir . '/' . $token . '.dat' );
+        @chmod( $dir . '/' . $token . '.dat', 0600 );
+        file_put_contents( $dir . '/' . $token . '.json', json_encode( array( 'user' => (int)$user['id'], 'created' => time() ) ) );
+        return array( 'token' => $token, 'size' => (int)$upload['size'], 'expires' => time() + self::SECRET_UPLOAD_TTL );
+    }
+
+    /** the fields 'secret' of a plug-in run: their uploads (of this user, not expired) into <run>/.secret/<field> */
+    private function secretMove( array $user, array $p, array $plugin, array $in, string $jid ): void
+    {
+        $moves = array();
+        foreach( $plugin['fields'] as $f )
+        {
+            if( $f['kind'] !== 'secret' || ( $in[$f['name']] ?? '' ) === '' )
+                continue;
+            $token = $in[$f['name']];
+            $base = is_string( $token ) && preg_match( '/^[0-9a-f]{32}$/', $token ) ? $this->secretUploadDir( $p ) . '/' . $token : null;
+            $m = $base !== null ? json_decode( (string)@file_get_contents( $base . '.json' ), TRUE ) : null;
+            if( !is_array( $m ) || !is_file( $base . '.dat' ) || (int)( $m['user'] ?? 0 ) !== (int)$user['id'] || (int)( $m['created'] ?? 0 ) < time() - self::SECRET_UPLOAD_TTL )
+                throw new ViewerException( $f['name'] . ': no upload of yours with this token (an upload is kept for an hour) - upload the file again', 400 );
+            $moves[$f['name']] = $base;
+        }
+        if( count( $moves ) === 0 )
+            return;
+        $dir = $this->jobDir( $p, $jid ) . '/.secret';
+        mkdir( $dir, 0700, TRUE );
+        foreach( $moves as $field => $base )
+        {
+            rename( $base . '.dat', $dir . '/' . $field );
+            @chmod( $dir . '/' . $field, 0600 );
+            @unlink( $base . '.json' );
+        }
+    }
+
+    /** results of a run a write member may download once: <run>/.sensitive/* - removed after the download or after these days */
+    private static function sensitiveDays(): int
+    {
+        return max( 1, (int)( getenv( 'PANOSPHP_VIEWER_SENSITIVE_DAYS' ) ?: 7 ) );
+    }
+
+    private function sensitiveFiles( array $p, array $j ): array
+    {
+        $dir = $this->jobDir( $p, $j['jid'] ) . '/.sensitive';
+        $out = array();
+        foreach( glob( $dir . '/*' ) ?: array() as $f )
+        {
+            if( !is_file( $f ) || is_link( $f ) )
+                continue;
+            $expires = filemtime( $f ) + self::sensitiveDays() * 86400;
+            if( $expires < time() )
+            {
+                @unlink( $f );
+                continue;
+            }
+            $out[] = array( 'name' => basename( $f ), 'size' => filesize( $f ), 'expires' => $expires );
+        }
+        return $out;
+    }
+
+    /**
+     * GET …/runs/<jid>/sensitive/<name>: a sensitive result (e.g. the PSK list for the customer) - once: it is removed
+     * when it was read. Write members, not with an API token; the audit log gets who and when.
+     */
+    public function sensitiveTake( array $user, $pid, $jid, string $name ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'write' );
+        self::needUnlimited( $p, 'a run' );
+        if( isset( $user['token'] ) )
+            throw new ViewerException( 'not allowed with an API token', 403 );
+        $j = $this->jobRow( $p, $jid );
+        if( !in_array( $j['state'], array( 'done', 'failed' ), TRUE ) )
+            throw new ViewerException( 'the run is not finished', 409 );
+        foreach( $this->sensitiveFiles( $p, $j ) as $f )
+            if( $f['name'] === $name )
+            {
+                $path = $this->jobDir( $p, $j['jid'] ) . '/.sensitive/' . $f['name'];
+                $content = (string)file_get_contents( $path );
+                @unlink( $path );
+                return array( 'name' => $f['name'], 'content' => $content );
+            }
+        throw new ViewerException( 'not found (a sensitive file is downloaded once, or it expired)', 404 );
+    }
+
     /** cancel an open run (the runner stops it) or delete a finished one with its files; who started it, or write */
     public function jobDelete( array $user, $pid, $jid ): void
     {
@@ -3427,8 +3560,9 @@ class ViewerApp
         if( in_array( $j['state'], array( 'queued', 'running' ), TRUE ) )
         {
             $this->q( "UPDATE jobs SET state = 'cancelled', finished = ? WHERE id = ? AND state IN ('queued','running')", array( time(), $j['id'] ) );
-            // an import: its key store goes at once (the job runner stops the run)
+            // an import: its key store goes at once (the job runner stops the run); sensitive inputs as well
             @unlink( $this->jobDir( $p, $j['jid'] ) . '/.panconfkeystore' );
+            self::rmTree( $this->jobDir( $p, $j['jid'] ) . '/.secret' );
             return;
         }
         $this->q( 'DELETE FROM jobs WHERE id = ?', array( $j['id'] ) );
@@ -4268,6 +4402,9 @@ class ViewerApp
         if( $changed === 0 )
             return;
         $j = $this->q( 'SELECT j.*, p.pid FROM jobs j JOIN projects p ON p.id = j.project_id WHERE j.id = ?', array( $id ) )->fetch();
+        // sensitive inputs of the run (fields 'secret' of a plug-in): gone when the run ends
+        if( $j )
+            self::rmTree( $this->dataDir . '/projects/' . $j['pid'] . '/jobs/' . $j['jid'] . '/.secret' );
         if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) )
             $this->importFinish( $j );
     }

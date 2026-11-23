@@ -641,7 +641,17 @@ target SCM tenant in one project); pages can belong to project types:
   `scmPa( <page>, <endpoint>, <role> )` (the newest state of the tenant of that role).
 * The administrator releases the binding of all roles (Release binding), as for a project without a type.
 
-Planned: sensitive uploads.
+**Sensitive files** (e.g. the PSK list of a customer):
+
+* A run field `'kind' => 'secret'`: the file is uploaded for this run only - `POST …/projects/<pid>/secret-uploads`
+  (multipart `file`, write members, not with an API token) gives a token (kept for the user who uploaded it, one hour),
+  the token is the value of the field. When the run is queued the file moves into the hidden folder of the run
+  (`%JOB%/.secret/<field>`, `ViewerPluginRun::secret( <field> )`); it is removed when the run ends. Never a project
+  file, never in the result files / support file, never in the audit log.
+* Sensitive results: a run writes them into `%JOB%/.sensitive/`. `GET …/runs/<jid>` lists them under `sensitive`
+  (write members, not with a token); `GET …/runs/<jid>/sensitive/<name>` downloads one **once** - it is removed then
+  (the download is in the audit log). Not downloaded: removed after `PANOSPHP_VIEWER_SENSITIVE_DAYS` (default 7).
+* The plug-in writes no secret into run.log or a normal result file.
 
 A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
 

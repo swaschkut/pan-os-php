@@ -872,7 +872,9 @@ async function showProject(pid) {
             plugInputs = (pr ? pr.fields : []).map(f => {
                 const kind = f.kind.startsWith('file:') ? f.kind.slice(5) : null;
                 const opts = Object.entries(f.options || {});
-                const input = kind ? el('select', {}, el('option', { value: '', text: '- choose a file -' }), files.files.filter(x => x.kind === kind).map(x => el('option', { value: x.fid, text: x.name })))
+                // a field 'secret': a file uploaded only for this run (never a project file) - sent when the run starts
+                const input = f.kind === 'secret' ? Object.assign(el('input', { type: 'file', title: 'sensitive: only for this run - never a project file, removed when the run ends' }), { isSecret: true })
+                    : kind ? el('select', {}, el('option', { value: '', text: '- choose a file -' }), files.files.filter(x => x.kind === kind).map(x => el('option', { value: x.fid, text: x.name })))
                     : f.kind === 'select' ? el('select', {}, el('option', { value: '', text: '- choose -' }), opts.map(([v, label]) => { const o = el('option', { value: v, text: label }); o.selected = v === f.default; return o; }))
                     : f.kind === 'multi' ? Object.assign(el('select', { multiple: true, size: Math.min(6, opts.length) }, opts.map(([v, label]) => el('option', { value: v, text: label }))), { isMulti: true })
                     : el('input', { value: f.default || '', maxlength: 200 });
@@ -889,7 +891,8 @@ async function showProject(pid) {
         async function drawRuns() {
             const runs = (await api('GET', base + '/runs')).runs;
             const details = new Map();
-            for (const r of runs) if (openFiles.has(r.jid)) details.set(r.jid, (await api('GET', base + '/runs/' + r.jid)).files);
+            const sensitive = new Map();
+            for (const r of runs) if (openFiles.has(r.jid)) { const x = await api('GET', base + '/runs/' + r.jid); details.set(r.jid, x.files); sensitive.set(r.jid, x.sensitive || []); }
             runsBody.replaceChildren(runs.length === 0 ? el('p', { class: 'muted', text: 'No runs yet.' }) :
                 table(['Run', 'Version', 'State', 'By', 'Started', 'Finished', ''], runs.flatMap(r => {
                     const open = r.state === 'queued' || r.state === 'running';
@@ -921,7 +924,13 @@ async function showProject(pid) {
                             }) })));
                     if (!details.has(r.jid)) return [row];
                     const fl = details.get(r.jid);
-                    return [row, el('tr', {}, el('td', { colspan: 7, class: 'wrap' }, fl.length === 0 ? el('span', { class: 'muted', text: 'no files' }) :
+                    // sensitive results (e.g. the PSK list for the customer): downloadable once, then removed
+                    const sl = sensitive.get(r.jid) || [];
+                    const sens = sl.length ? el('div', { class: 'sensitive' }, el('strong', { text: 'Sensitive - download once: ' }),
+                        sl.map(f => el('span', { class: 'filelink' }, el('a', { href: API + '/' + base + '/runs/' + r.jid + '/sensitive/' + encodeURIComponent(f.name), text: f.name,
+                            onclick: (ev) => { if (!confirm(f.name + ' can be downloaded ONCE - it is removed afterwards. Keep it safe. Download now?')) { ev.preventDefault(); return; } setTimeout(() => refreshRuns(), 1500); } }),
+                            el('span', { class: 'muted', text: ' ' + fmtSize(f.size) + ', until ' + fmtTime(f.expires) })))) : null;
+                    return [row, el('tr', {}, el('td', { colspan: 7, class: 'wrap' }, sens, fl.length === 0 ? el('span', { class: 'muted', text: 'no files' }) :
                         fl.map(f => el('span', { class: 'filelink' }, el('a', { href: API + '/' + base + '/runs/' + r.jid + '/files/' + f.name.split('/').map(encodeURIComponent).join('/'), text: f.name }),
                             el('span', { class: 'muted', text: ' ' + fmtSize(f.size) }))))) ];
                 })));
@@ -951,6 +960,12 @@ async function showProject(pid) {
                 else if (plug.runs[rType.value]) {
                     if (!plug.runs[rType.value].bp) delete body.bp;
                     for (const x of plugInputs) {
+                        if (x.input.isSecret) {
+                            if (!x.input.files.length) { if (x.f.required) throw new Error(x.f.label + ' is needed'); continue; }
+                            const fd = new FormData(); fd.append('file', x.input.files[0]);
+                            body[x.f.name] = (await api('POST', base + '/secret-uploads', fd)).token;
+                            continue;
+                        }
                         const v = x.input.isMulti ? Array.from(x.input.selectedOptions).map(o => o.value) : x.input.value.trim();
                         if (v.length === 0 && x.f.required) throw new Error(x.f.label + ' is needed');
                         if (v.length !== 0) body[x.f.name] = v;

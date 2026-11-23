@@ -417,6 +417,9 @@ try
             viewerOut( ViewerApp::projectPublic( $app->projectCreate( $user, viewerBody()['name'] ?? null ) ), 201 );
         if( $n == 2 && $method === 'GET' )
             viewerOut( ViewerApp::projectPublic( $app->projectGet( $user, $pid ) ) + array( 'network_global' => $app->networkGet()['enabled'] ) );
+        // a file for a field 'secret' of a plug-in run (multipart, file): token, kept hidden for an hour
+        if( $n == 3 && $sub === 'secret-uploads' && $method === 'POST' )
+            viewerOut( $app->secretUpload( $user, $pid, $_FILES['file'] ?? null ), 201 );
         // project type of a plug-in (roles, each bound): PUT {type} (owner, before the first import / read)
         if( $n == 3 && $sub === 'type' && $method === 'PUT' )
             viewerOut( $app->projectTypeSet( $user, $pid, viewerBody() ) );
@@ -567,6 +570,18 @@ try
             // a failed SCM import: only the conversion again, from the export the run has downloaded
             if( $n == 5 && $method === 'POST' && $route[4] === 'convert' )
                 viewerOut( $app->jobConvert( $user, $pid, $route[3] ), 202 );
+            // a sensitive result of a run (…/runs/<jid>/sensitive/<name>): once, then it is removed
+            if( $n == 6 && $method === 'GET' && $route[4] === 'sensitive' )
+            {
+                $f = $app->sensitiveTake( $user, $pid, $route[3], rawurldecode( $route[5] ) );
+                $viewerAudit['download'] = TRUE;
+                viewerAudit( 200 );
+                header( 'Content-Type: application/octet-stream' );
+                header( 'Content-Disposition: attachment; filename="' . preg_replace( '/[^A-Za-z0-9._-]/', '_', $f['name'] ) . '"' );
+                header( 'Cache-Control: no-store' );
+                echo $f['content'];
+                exit;
+            }
             if( $n >= 6 && $method === 'GET' && $route[4] === 'files' )
             {
                 $f = $app->jobFile( $user, $pid, $route[3], implode( '/', array_map( 'rawurldecode', array_slice( $route, 5 ) ) ) );
@@ -659,7 +674,7 @@ catch( ViewerException $e )
 {
     $code = $e->getCode();
     // a refused download is logged as well
-    if( $viewerAudit['method'] === 'GET' && preg_match( '#/download$|/runs/[0-9a-f]+/files/#', $viewerAudit['route'] ) )
+    if( $viewerAudit['method'] === 'GET' && preg_match( '#/download$|/runs/[0-9a-f]+/(files|sensitive)/#', $viewerAudit['route'] ) )
         $viewerAudit['download'] = TRUE;
     viewerOut( array( 'error' => $e->getMessage() ) + ( $e instanceof ViewerDetailException ? array( 'details' => $e->details ) : array() )
         + ( $e instanceof ViewerFieldException ? array( 'fields' => (object)$e->fields ) : array() ), $code >= 400 && $code < 600 ? $code : 400 );

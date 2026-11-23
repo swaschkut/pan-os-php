@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable', 'ap', 'badappr', 'sec' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -141,6 +141,12 @@ file_put_contents( $plugins . '/ap/plugin.php', "<?php return array( 'api' => 2,
 file_put_contents( $plugins . '/badappr/plugin.php', "<?php return array( 'api' => 2, 'name' => 'badappr',
     'runs' => array( 'r' => array( 'tool' => 'address', 'approval' => 'p/f', 'args' => function( \$run ) { return array(); } ) ),
     'pages' => array( 'p' => array( 'blocks' => array( array( 'name' => 'f', 'kind' => 'form', 'fields' => array( array( 'name' => 'x', 'type' => 'text' ) ) ) ) ) ) );" );
+
+// sensitive: a field 'secret' (file only for this run, removed when it ends)
+file_put_contents( $plugins . '/sec/plugin.php', "<?php return array( 'api' => 2, 'name' => 'sec', 'title' => 'Sensitive',
+    'runs' => array( 'use' => array( 'title' => 'Use the PSK list', 'tool' => 'address',
+        'fields' => array( array( 'name' => 'psk', 'kind' => 'secret', 'label' => 'PSK list', 'required' => TRUE ) ),
+        'args' => function( \$run ) { return array( 'actions=display', 'x-psk=' . \$run->secret( 'psk' ) ); } ) ) );" );
 
 // an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
 require_once $here . '/../lib/misc-classes/PluginLicense.php';
@@ -1880,7 +1886,7 @@ eq( status( $alice->call( 'DELETE', $G ) ), 200, 'grants project deleted' );
 
 // ---- 12p. plug-ins: run types, file kinds
 $m = $alice->call( 'GET', 'meta' )[1]['plugins'] ?? array();
-eq( array_keys( $m['runs'] ?? array() ), array( 'ap-plan', 'ap-apply', 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'mig-import' ), 'plug-ins: run types in meta' );
+eq( array_keys( $m['runs'] ?? array() ), array( 'ap-plan', 'ap-apply', 'badargs-in', 'badargs-out', 'example-export', 'example-tag-rules', 'mig-import', 'sec-use' ), 'plug-ins: run types in meta' );
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
     array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
 eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
@@ -1919,6 +1925,60 @@ eq( status( $alice->call( 'POST', $PLC . '/badargs-out/runs', array() ) ), 500, 
 eq( status( $alice->call( 'POST', $PLC . '/wrongapi-x/runs', array() ) ), 404, 'plug-ins: no run type of a refused plug-in' );
 eq( status( $alice->call( 'PUT', $PL . '/members', array( 'user' => 'bob', 'role' => 'write', 'scope' => array( 'shared' ) ) ) ), 200, 'plug-ins: bob limited' );
 eq( status( $bob->call( 'POST', $PLC . '/example-export/runs', array() ) ), 403, 'plug-ins: no run for a limited member' );
+// sensitive (interface 2): a file for a field 'secret' only for its run - never a project file, never downloadable,
+// removed when the run ends; sensitive results (.sensitive/ of the run): downloadable once by write members
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'Sensitive' ) );
+$SE = 'projects/' . $r[1]['pid'];
+$sePid = $r[1]['pid'];
+$r = $alice->call( 'POST', $SE . '/configs', null, array( 'p.xml', $xml ) );
+$SEC = $SE . '/configs/' . $r[1]['cid'];
+$alice->call( 'PUT', $SE . '/members', array( 'user' => 'bob', 'role' => 'write' ) );
+$alice->call( 'PUT', $SE . '/members', array( 'user' => 'carol', 'role' => 'read' ) );
+$pskCsv = "tunnel,psk\nrn-1,synthetic-secret-psk\n";
+$seNoFile = status( $alice->call( 'POST', $SE . '/secret-uploads', array() ) );
+$seCarol = status( $carol->call( 'POST', $SE . '/secret-uploads', null, array( 'psk.csv', $pskCsv, 'file' ) ) );
+$up1 = $alice->call( 'POST', $SE . '/secret-uploads', null, array( 'psk.csv', $pskCsv, 'file' ) );
+$tok = $up1[1]['token'] ?? '';
+$seBob = status( $bob->call( 'POST', $SEC . '/sec-use/runs', array( 'psk' => $tok ) ) );
+$seBad = status( $alice->call( 'POST', $SEC . '/sec-use/runs', array( 'psk' => str_repeat( 'a', 32 ) ) ) );
+$seMissing = status( $alice->call( 'POST', $SEC . '/sec-use/runs', array() ) );
+$seRun = $alice->call( 'POST', $SEC . '/sec-use/runs', array( 'psk' => $tok ) );
+$seAgain = status( $alice->call( 'POST', $SEC . '/sec-use/runs', array( 'psk' => $tok ) ) );
+$seDone = waitRun( $alice, $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) );
+$seJobDir = $data . '/projects/' . $sePid . '/jobs/' . ( $seRun[1]['jid'] ?? 'x' );
+$seFileGet = status( $alice->call( 'GET', $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) . '/files/.secret/psk' ) );
+$seProjectFiles = count( $alice->call( 'GET', $SE . '/files' )[1]['files'] ?? array( 1 ) );
+// an upload no run takes in time
+$up2 = $alice->call( 'POST', $SE . '/secret-uploads', null, array( 'psk.csv', $pskCsv, 'file' ) );
+$metaF = $data . '/projects/' . $sePid . '/.secret-uploads/' . ( $up2[1]['token'] ?? 'x' ) . '.json';
+file_put_contents( $metaF, json_encode( array( 'user' => json_decode( (string)file_get_contents( $metaF ), TRUE )['user'] ?? 0, 'created' => time() - 7200 ) ) );
+$seExpired = status( $alice->call( 'POST', $SEC . '/sec-use/runs', array( 'psk' => $up2[1]['token'] ?? '' ) ) );
+// a sensitive result, as a plug-in run writes it
+@mkdir( $seJobDir . '/.sensitive', 0700, TRUE );
+file_put_contents( $seJobDir . '/.sensitive/psk-for-customer.csv', $pskCsv );
+file_put_contents( $seJobDir . '/.sensitive/old.csv', 'x' );
+touch( $seJobDir . '/.sensitive/old.csv', time() - 8 * 86400 );
+$seRunView = $alice->call( 'GET', $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) );
+$seCarolView = $carol->call( 'GET', $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) );
+$seCarolTake = status( $carol->call( 'GET', $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-for-customer.csv' ) );
+$seTake = $alice->call( 'GET', $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-for-customer.csv' );
+$seTake2 = status( $alice->call( 'GET', $SE . '/runs/' . ( $seRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-for-customer.csv' ) );
+$seAudit = json_encode( $alice->call( 'GET', $SE . '/audit' )[1] ?? array() );
+$alice->call( 'DELETE', $SE . '/members/bob' );
+$alice->call( 'DELETE', $SE . '/members/carol' );
+eq( array( $seNoFile, $seCarol, status( $up1 ), strlen( $tok ), $seBob, $seBad, $seMissing, status( $seRun ), $seRun[1]['args'][1] ?? null, $seAgain ),
+    array( 400, 403, 201, 32, 400, 400, 400, 202, 'x-psk=%JOB%/.secret/psk', 400 ),
+    'sensitive upload: write members only, a token for one run of the same user; the run gets the file in its hidden folder' );
+eq( array( in_array( $seDone[1]['state'] ?? '', array( 'done', 'failed' ), TRUE ), is_dir( $seJobDir . '/.secret' ), in_array( '.secret/psk', array_column( $seDone[1]['files'] ?? array(), 'name' ), TRUE ),
+        $seFileGet, $seProjectFiles, $seExpired, strpos( $seAudit, 'synthetic-secret-psk' ) ),
+    array( TRUE, FALSE, FALSE, 404, 0, 400, FALSE ),
+    'sensitive upload: removed when the run ends, never a result / project file; an upload expires after an hour; not in the audit log' );
+eq( array( array_column( $seRunView[1]['sensitive'] ?? array(), 'name' ), is_file( $seJobDir . '/.sensitive/old.csv' ), $seCarolView[1]['sensitive'] ?? null, $seCarolTake,
+        status( $seTake ), ( $seTake[1] ?? null ) === $pskCsv || ( $seTake[2] ?? null ) === $pskCsv || strpos( json_encode( $seTake ), 'synthetic-secret-psk' ) !== FALSE,
+        $seTake2, is_file( $seJobDir . '/.sensitive/psk-for-customer.csv' ), strpos( $seAudit, 'sensitive\\/psk-for-customer.csv' ) !== FALSE,
+        in_array( 'psk-for-customer.csv', array_column( $seRunView[1]['files'] ?? array(), 'name' ), TRUE ) ),
+    array( array( 'psk-for-customer.csv' ), FALSE, array(), 403, 200, TRUE, 404, FALSE, TRUE, FALSE ),
+    'sensitive result: listed for write members only, expired ones removed, downloaded once (then gone), the download in the audit log' );
 // approvals (interface 2): the areas of the newest plan (result of the run ap-plan), bound to that run and its content;
 // ap-apply only with every area approved, it gets a copy of exactly that plan; four eyes (owner): not by the planner
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Approvals' ) );
