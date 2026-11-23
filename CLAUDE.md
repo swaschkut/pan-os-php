@@ -2,6 +2,63 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working rules (all pan-os-php repositories)
+
+These rules apply to every repository of this project: `pan-os-php` (public), `pan-os-php_scm-migration`,
+`pan-os-php_migration`, `pan-os-php_license` (private).
+
+### Delivery: patch files only
+
+- Claude **never commits and never pushes** - not to any branch, not to any of these repositories. The maintainer
+  applies the patch with `git apply` and commits / pushes himself.
+- Every change is delivered as a patch file (`git diff` against the current remote head of the branch), checked with
+  `git apply --check` against that head before it is handed over.
+- Before building a patch: fetch the latest remote state. The maintainer often edits files directly on GitHub; a
+  patch against an old head does not apply. If a patch has to sit on top of other, not yet pushed patches, say so and
+  apply those first.
+- Branches: `pan-os-php` → **alpha** (fetch dev and beta as well; fixes for dev / beta only when asked).
+  `pan-os-php_scm-migration`, `pan-os-php_migration`, `pan-os-php_license` → **main**.
+- "nur beantworten" / "nicht arbeiten" / "erst darüber reden": answer only, no code, no patch.
+
+### Language
+
+- Answers to the maintainer in German. Code, comments, CHANGELOG, README and documentation in English.
+
+### Data that never goes into a repository
+
+- **No customer configurations** and no data derived from them (configs, exports, logs, run.log, checklists of a
+  customer tenant). Tests use synthetic data only. Customer files are used for diagnosis only, and nothing of them is
+  quoted in code, tests, commit texts or documentation.
+- The anonymiser mapping file is sensitive and is never shared with the output.
+- Playbooks / best-practice JSON of customers or partners do not go into a repository or test.
+- **Licence key material, in no repository at all** (not even a private one): signing keys, release keys,
+  `packages.json`, `register.json`, `licences/`, `support-<kid>.key`, built packages (`*.ppp`), licences.
+- PSK lists, secret lists, egress-IP API keys, `.panconfkeystore`: never in a repository.
+
+### Secrets in the code
+
+- API keys and secrets are never returned to the browser, never written to an audit log, stored encrypted, and are
+  personal (no key shared by all users). Keys are not deleted automatically after use.
+- Import from devices is read-only.
+
+### Code
+
+- One implementation per feature: config viewer and CLI use the same pan-os-php filters / methods - nothing is
+  maintained twice.
+- Public / private boundary: `pan-os-php` holds what works on **one** system (export / read, upload of a finished
+  change set into one SCM tenant with its safety checks: live compare, dry-run, approval). Everything of an actual
+  **migration between two systems** (project types, migration plan, transformation, PSK workflow, migration report)
+  lives in the private plug-in repositories - nothing of it goes into the public repository.
+- Plug-ins describe forms / tables / approval steps as data (viewer plug-in interface v2); a plug-in brings no
+  JavaScript for the page.
+
+### pan-os-php specific
+
+- Every change gets a CHANGELOG.txt entry in the top version section of the branch (bug fixes under its first
+  `BUGFIX:` line).
+- Run the tests of the touched area before handing over a patch (e.g. `tests/test_config_viewer.php`,
+  `tests/test_config_viewer_container.php` for the config viewer).
+
 ## What This Project Is
 
 PAN-OS-PHP is a PHP library for managing Palo Alto Networks PAN-OS firewall and Panorama configurations — both offline XML files and live devices via the PAN-OS XML API. It also ships a large set of ready-to-run CLI utilities (`utils/`) built on top of the library.
