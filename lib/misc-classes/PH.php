@@ -2660,6 +2660,9 @@ class PH
         $dir = getenv( 'PANOSPHP_SCM_MIGRATION' );
         if( !is_string( $dir ) || $dir === '' )
             return null;
+        // ppp://<name> without a mounted package (no licence / PANOSPHP_PLUGIN_PACKAGES): not there
+        if( preg_match( '#^([A-Za-z][A-Za-z0-9+.-]*)://#', $dir, $m ) && !in_array( $m[1], stream_get_wrappers(), TRUE ) )
+            return null;
         $file = rtrim( $dir, '/' ) . '/' . $relative;
         return is_file( $file ) ? $file : null;
     }
@@ -2675,7 +2678,11 @@ class PH
         if( !is_file($script) )
             derr( "type=" . $type . " is not part of this installation" . ( in_array($type, self::SCM_MIGRATION_TYPES, TRUE) ? self::SCM_MIGRATION_HINT : "" ), null, FALSE );
         // the repository root on the include path: some scripts require "lib/pan_php_framework.php" relative to it
-        $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " " . escapeshellarg($script);
+        $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " ";
+        // a script of an encrypted plug-in package (ppp://…): the new process mounts the package first
+        if( strpos($script, 'ppp://') === 0 )
+            $cmd .= escapeshellarg($root . "/utils/lib/plugin_script.php") . " ";
+        $cmd .= escapeshellarg($script);
         foreach( array_slice($argv, 1) as $a )
             $cmd .= " " . escapeshellarg($a);
         passthru( $cmd, $rc );
