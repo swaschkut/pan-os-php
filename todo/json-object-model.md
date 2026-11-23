@@ -2,8 +2,7 @@
 
 **Status:** decided 2026-11-20 – the model is the Strata Cloud Manager (SCM) API schema; first five resources implemented
 **Code reference:** `alpha` – `lib/resources/scm/scm-ngfw-config-schema.json` (49 resources, request schema per
-resource, generated from the official SCM API description), `lib/misc-classes/SCMImporter.php` (Panorama / firewall
-XML → SCM configuration), `SCMChangeGenerator`; REST resources of the config-viewer (`ViewerApp::resourceList()`,
+resource, generated from the official SCM API description), `SCMChangeGenerator`; REST resources of the config-viewer (`ViewerApp::resourceList()`,
 today `model: display-v0`)
 **Related:** [config-viewer-api.md](config-viewer-api.md) (decision 4), [ui-config-in-browser.md](ui-config-in-browser.md)
 (open decision 3), [api-rest.md](api-rest.md)
@@ -37,8 +36,9 @@ Example (address, PAN-OS input):
   "device_group": "shared" }
 ```
 
-Building blocks that exist: `SCMImporter` already translates Panorama / firewall XML into the SCM configuration, and
-the schema file names the fields per resource. The API model is that translation per object, not a new mapper.
+Building blocks that exist: `SCMChangeGenerator` writes SCM API requests from an SCM configuration, and the schema file
+names the fields per resource. (The translation of a whole Panorama / firewall configuration into SCM is part of the
+plug-in scm-migration.)
 
 ## Own definitions (where the SCM API has nothing)
 

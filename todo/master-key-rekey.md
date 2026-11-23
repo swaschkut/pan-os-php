@@ -6,8 +6,7 @@
 `tests/test_master_key.php`. Open: lab verification and follow-ups, see "Open items" below
 **Code reference:** `alpha` `aea719d`
 **Related:** `lib/helper-classes/PanosCrypto.php`, [panorama-move-concept.md](panorama-move-concept.md) section 7a
-(`master-key=same|different`), SCM importers (`lib/misc-classes/SCMImporter.php`,
-`utils/develop/sase/scm/lib/SCMPrismaAccessExport.php`), action `display-psk` style use in
+(`master-key=same|different`), SCM export (`utils/develop/sase/scm/lib/SCMPrismaAccessExport.php`), action `display-psk` style use in
 `utils/common/actions-ikegateway.php` (argument `master-key`)
 
 ## Goal
@@ -22,7 +21,7 @@ same way).
 
 ## Building blocks already in alpha
 
-`PanosCrypto` (used by `SCMImporter`, `SCMPrismaAccessExport`, `actions-ikegateway.php`):
+`PanosCrypto` (used by `SCMPrismaAccessExport`, `actions-ikegateway.php`, the plug-in scm-migration):
 
 * format `-` + base64(version `0x01`) + base64(SHA-1 of the clear text, 28 chars) + base64(ciphertext),
   e.g. `-AQ==…=…==`

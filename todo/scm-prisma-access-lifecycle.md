@@ -24,7 +24,8 @@ The same report (document, tables, network plans) is produced
 * from the **export** of the tenant (after deployment / later) → as-built documentation and maturity report
 
 Because design and export use the same format, `scm_pa_compare.php` ✅ shows what was changed compared to the agreed
-design, and `scm_pa_sync.php` ✅ can apply the design to a tenant.
+design, and the plan engine `SCMPrismaAccessSync` ✅ can apply the design to **one** tenant (open: a command for it -
+`scm_pa_sync.php` moved to the plug-in scm-migration, which is for two tenants).
 
 ## 2. Phases and intermediate results
 
@@ -33,7 +34,7 @@ design, and `scm_pa_sync.php` ✅ can apply the design to a tenant.
 | 0 | **Technical Requirements (TRD)** – first customer meeting | TRD template (today: document, not automated) | TRD as structured data (`trd.json`) + TRD document | questionnaire (new) |
 | 1 | **Guided design (HLD)** – the consultant is guided through the decisions per component, with options, defaults, validation | `trd.json` | design decisions + `design/` (design JSON in export format) | design wizard (new) |
 | 2 | **Design review** with the customer | design JSON | HLD document, network plans, checklist of manual items, open points | report + diagram generator (new) |
-| 3 | **Apply** the design to the tenant | design JSON, secret lists | configured tenant (candidate → push) | `scm_pa_sync.php` ✅ (write path still to be tested on a live tenant) |
+| 3 | **Apply** the design to the tenant | design JSON, secret lists | configured tenant (candidate → push) | `SCMPrismaAccessSync` ✅ (write path still to be tested on a live tenant; command: open) |
 | 4 | **Operation / adapt** – the configuration is changed or extended, manually (SCM UI) or by script | configured tenant, change requests | changed tenant (candidate → push) | manually: SCM UI; by script: change file → `scm-change` ✅, actions of the planned Prisma Access type (building blocks 3 + 4 in [prisma-access-config.md](prisma-access-config.md), new) |
 | 5 | **Maturity report** – regularly or on request | export of the tenant | as-built report (same as phase 2) + diff design ↔ as-built + best practice / visibility results | `scm_pa_export.php` ✅, `scm_pa_compare.php` ✅, pan-os-php BP checks ✅, report generator (new) |
 
@@ -46,7 +47,7 @@ The design is stored **in the same directory / file format as the export** (`man
 
 * the report generator needs only one input format
 * `scm_pa_compare.php` compares design ↔ export without conversion
-* `scm_pa_sync.php` applies the design (plan `additive` against the empty / existing tenant)
+* `SCMPrismaAccessSync` applies the design (plan `additive` against the empty / existing tenant)
 
 Additionally a **design layer** for information that is not part of the SCM configuration:
 
@@ -199,7 +200,7 @@ Next steps for the builder:
 |---|---|---|
 | export | `scm_pa_export.php` – all areas incl. internal UI API | ✅ verified |
 | compare | `scm_pa_compare.php` | ✅ |
-| apply | `scm_pa_sync.php` plan / apply | ✅ offline – write path to be tested (NEXT_STEPS 7.1 steps 1–3) |
+| apply | `SCMPrismaAccessSync` plan / apply (one tenant; command: open) | ✅ offline – write path to be tested (NEXT_STEPS 7.1 steps 1–3) |
 | best practice | pan-os-php BP / visibility checks, SCM loader with complete profiles | ✅ |
 | **report generator** | export / design → HLD / as-built document with tables and network plans | as-built from export ✅ first version (`scm-report`: Markdown, HTML, findings); from design new |
 | **diagram generator** | network plans from the same data | draw.io from export ✅ first version (Lucidchart import) |
