@@ -84,7 +84,7 @@ $pan->save_to_file($origFile, FALSE);
 PH::print_stdout( "   " . count($loaded) . " container(s) loaded" . ( isset($args['original']) ? ", written to " . $origFile : "" ) );
 
 PH::print_stdout( PH::boldText(" * [2/3] difference original <-> " . $args['file2']) );
-// security profile sections only the internal UI API has (SCMImporter::INTERNAL_GAPS): removed from both sides
+// security profile sections only the internal UI API has (SCMCommon::INTERNAL_GAPS): removed from both sides
 // before the public difference; a difference in them -> _internal (complete entry, written by scm_pa_change.php
 // through the internal UI API after the public request)
 $internalSide = function( $file, $outFile ){
@@ -92,21 +92,21 @@ $internalSide = function( $file, $outFile ){
     $doc->load($file, XML_PARSE_BIG_LINES);
     $xp = new DOMXPath($doc);
     $profiles = array();
-    foreach( SCMImporter::INTERNAL_GAPS as $xmlType => $paths )
+    foreach( SCMCommon::INTERNAL_GAPS as $xmlType => $paths )
         foreach( $xp->query("/config/devices/entry/*/entry/profiles/" . $xmlType . "/entry") as $prof )
         {
             $owner = $prof->parentNode->parentNode->parentNode;
             $kind = $owner->parentNode->nodeName;
             $scopeType = ( $kind == 'container' || $kind == 'cloud' ) ? 'folder' : ( $kind == 'snippet' ? 'snippet' : 'device' );
-            $full = SCMImporter::domToInternal( $prof->cloneNode(TRUE) );
-            $removed = SCMImporter::stripInternalGaps( $xp, $prof, $xmlType );
-            $stripped = SCMImporter::domToInternal( $prof->cloneNode(TRUE) );
+            $full = SCMCommon::domToInternal( $prof->cloneNode(TRUE) );
+            $removed = SCMCommon::stripInternalGaps( $xp, $prof, $xmlType );
+            $stripped = SCMCommon::domToInternal( $prof->cloneNode(TRUE) );
             // the internal-only part: top-level sections that differ between complete and stripped entry
             $gaps = array();
             foreach( (array)$full as $k => $v )
                 if( $k !== '@name' && ( !is_array($stripped) || !array_key_exists($k, $stripped) || $stripped[$k] != $v ) )
                     $gaps[$k] = $v;
-            $profiles[SCMImporter::INTERNAL_GAP_RESOURCES[$xmlType] . "|" . $scopeType . "|" . $owner->getAttribute('name') . "|" . $prof->getAttribute('name')] = array(
+            $profiles[SCMCommon::INTERNAL_GAP_RESOURCES[$xmlType] . "|" . $scopeType . "|" . $owner->getAttribute('name') . "|" . $prof->getAttribute('name')] = array(
                 'type' => $xmlType, 'uuid' => $prof->getAttribute('uuid'), 'entry' => $full, 'gaps' => $gaps, 'removed' => $removed );
         }
     $doc->save($outFile);
@@ -303,7 +303,7 @@ foreach( $gen['requests'] as $r )
         if( $skip )
             continue;
         // custom URL category without entries: SCM refuses an empty list ("list is invalid") - placeholder entry
-        // empty.empty, as the Panorama import (SCMImporter) and the SCM UI do
+        // empty.empty, as the SCM UI does
         if( $resource == 'url-categories' && isset($item['list']) && $item['list'] === array() )
         {
             $item['list'] = array( 'empty.empty' );

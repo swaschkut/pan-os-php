@@ -2640,11 +2640,16 @@ class PH
         'panorama-move' => 'panorama_move/panorama_to_panorama_move.php',
     );
 
+    /** types of the SCM migration (plug-in scm-migration): not in every installation */
+    const SCM_MIGRATION_TYPES = array( 'scm-import', 'scm-panorama-to-change', 'scm-sync' );
+
     public static function runSCMScript( $type, $argv )
     {
         $root = realpath( dirname(__FILE__) . "/../.." );
         $file = self::SCM_SCRIPT_TYPES[$type];
         $script = $root . ( strpos($file, '/') !== FALSE ? "/utils/develop/" : "/utils/develop/sase/scm/" ) . $file;
+        if( !is_file($script) )
+            derr( "type=" . $type . " is not part of this installation" . ( in_array($type, self::SCM_MIGRATION_TYPES, TRUE) ? " - it belongs to the plug-in scm-migration" : "" ), null, FALSE );
         // the repository root on the include path: some scripts require "lib/pan_php_framework.php" relative to it
         $cmd = escapeshellarg(PHP_BINARY) . " -d " . escapeshellarg("include_path=" . $root . PATH_SEPARATOR . get_include_path()) . " " . escapeshellarg($script);
         foreach( array_slice($argv, 1) as $a )
@@ -2729,6 +2734,8 @@ class PH
             $util = new SCMEXPORTXML($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "scm-apply" )
             $util = new SCMAPPLY($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        elseif( $type == "scm-import" && !class_exists('SCMIMPORT', FALSE) )
+            derr( "type=scm-import is not part of this installation - it belongs to the plug-in scm-migration", null, FALSE );
         elseif( $type == "scm-import" )
             $util = new SCMIMPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
         elseif( $type == "upload" )

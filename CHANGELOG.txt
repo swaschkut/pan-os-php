@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
 * config-viewer | Security profiles: the window of a profile showed another profile of the same name (SCM: an URL profile instead of the virus-and-wildfire-analysis profile) - window, references and changes now use the type of the profile itself; a change from the window changed every profile of that name in the location; SCM lists virus-and-wildfire-analysis as profile type (instead of virus / wildfire-analysis); references link a virus-and-wildfire-analysis profile with its own type (before: virus)

@@ -46,7 +46,9 @@ require_once(dirname(__FILE__)."/DIFF.php");
 require_once(dirname(__FILE__)."/SCMCHANGES.php");
 require_once(dirname(__FILE__)."/SCMAPPLY.php");
 require_once(dirname(__FILE__)."/SCMEXPORTXML.php");
-require_once(dirname(__FILE__)."/SCMIMPORT.php");
+// type=scm-import: part of the SCM migration (moves to the plug-in scm-migration) - only if present
+if( is_file(dirname(__FILE__)."/SCMIMPORT.php") && class_exists('SCMImporter', FALSE) )
+    require_once(dirname(__FILE__)."/SCMIMPORT.php");
 require_once(dirname(__FILE__)."/OVERRIDEFINDER.php");
 require_once(dirname(__FILE__)."/APPIDENABLER.php");
 require_once(dirname(__FILE__)."/CONFIGSIZE.php");

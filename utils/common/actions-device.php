@@ -3683,12 +3683,12 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
                 $matchList = DH::findFirstElement( 'match-list', $lfp->xmlroot );
                 if( $matchList !== FALSE )
                     DH::clearDomNodeChilds( $matchList );
-                foreach( SCMImporter::SLS_LOG_TYPES as $logType )
+                foreach( SCMCommon::SLS_LOG_TYPES as $logType )
                     $lfp->add_log_filter( $logType, $logType . "-sls", "All Logs", TRUE );
                 // no SCM field (SCM sends every match list to Strata Logging Service)
                 foreach( iterator_to_array( $lfp->xmlroot->getElementsByTagName('send-to-panorama') ) as $node )
                     $node->parentNode->removeChild( $node );
-                PH::print_stdout( " * LogForwardingProfile create: 'default' (folder All, Strata Logging Service: " . implode(", ", SCMImporter::SLS_LOG_TYPES) . ")" );
+                PH::print_stdout( " * LogForwardingProfile create: 'default' (folder All, Strata Logging Service: " . implode(", ", SCMCommon::SLS_LOG_TYPES) . ")" );
                 if( $context->isAPI )
                     derr( "LogForwardingProfile create via API not supported for SCM - use the offline XML and scm_pa_xml_to_change.php", null, false );
             }
