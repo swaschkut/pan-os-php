@@ -121,6 +121,7 @@ UTIL:
 * location=shared:includechilddgs / shared:excludemaindg | Panorama: shared + all device groups / all device groups; SCM: location=<container>:includechilddgs / :excludemaindg - the container and the containers / devices below it
 
 BUGFIX:
+* type=securityprofile securityprofiletype=wildfire-analysis | a WildFire inline analysis rule (mica-engine-wildfire-rules) without action - PAN-OS commits it, the GUI shows allow: actions=display stopped (no 'action' read); now read as allow (the XML stays at load)
 * config-viewer | scope of the SCM import: "Save scope" drew the project again - the key chosen for the import went back to the first one; the answer of "Import" (queued / error) only in the message on top of the page (out of sight, an import was started many times) - now next to the button, which stays off while the import is queued / running (its state, done / error, shown there); a second import of a project while one is queued / running is refused (409)
 * config-viewer | SCM tab: "null" shown under a page without states
 * config-viewer | a live read of the egress IPs (run egress-ip) left the key store of the run (.panconfkeystore) in its folder until the runner restarted - now removed when the run ends, as for an import
