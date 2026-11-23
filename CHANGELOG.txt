@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* SCM | type=scm-local-config-probe (scm_local_config_probe.php): read only - the configuration of a firewall managed by SCM (NGFW operations API local-config, or a downloaded file) and whether the pre-shared keys of its IKE gateways can be decrypted (default / given master key, level 1); never prints a secret
 * config-viewer | plug-in interface 2: project types - a project with roles (e.g. source / target SCM tenant), each bound by its first import / SCM read / egress run, one tenant per role; writing only into roles with write; pages of a project type only in such a project; the plug-in reads the roles and the SCM tab states per role
 * config-viewer | plug-in interface 2: approval blocks - the areas of a plan (result of a run of the plug-in) approved / rejected one by one, bound to that run and its content; a run type with 'approval' starts only when every area is approved and gets a copy of exactly that plan; four eyes per project (owner)
 * config-viewer | plug-in interface 2: table blocks - rows of the plug-in, editable columns (stored are the changes per row, the value of the plug-in stays visible), check of the plug-in per cell, filter; ViewerPluginPage::rows() for other blocks
