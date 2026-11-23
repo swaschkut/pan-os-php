@@ -10156,6 +10156,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "scm-egress-ip": {
+        "name": "scm-egress-ip",
+        "action": [],
+        "filter": []
+    },
     "scm-export": {
         "name": "scm-export",
         "action": [],
@@ -10168,6 +10173,11 @@ var subjectObject =
     },
     "scm-import": {
         "name": "scm-import",
+        "action": [],
+        "filter": []
+    },
+    "scm-local-config-probe": {
+        "name": "scm-local-config-probe",
         "action": [],
         "filter": []
     },
