@@ -2165,10 +2165,32 @@ class ViewerApp
         return $out;
     }
 
-    /** what a plug-in may read of a project: the data of one endpoint of the newest state of an SCM tab page */
-    private function pluginReader( array $p ): callable
+    /** depth of rows() of the plug-in calling rows() of a table (a table can build on another one, not on itself) */
+    private $pluginRowsDepth = 0;
+
+    /**
+     * what a plug-in may read of a project: the data of one endpoint of the newest state of an SCM tab page; the rows of
+     * a table block of the page (with the stored changes)
+     */
+    private function pluginReader( array $p, ?array $pg = null, array $saved = array() ): callable
     {
-        return function( string $what, ...$args ) use ( $p ) {
+        $reader = null;
+        $reader = function( string $what, ...$args ) use ( $p, $pg, $saved, &$reader ) {
+            if( $what === 'rows' && $pg !== null && count( $args ) === 1 && ( $pg['blocks'][$args[0]]['kind'] ?? null ) === 'table' )
+            {
+                if( $this->pluginRowsDepth > 3 )
+                    throw new ViewerException( 'plug-in: tables build on each other too deep', 500 );
+                $this->pluginRowsDepth++;
+                try
+                {
+                    $b = $pg['blocks'][$args[0]];
+                    return self::tableMerge( $b, $this->tableSource( $b, new ViewerPluginPage( $saved, $reader ) ), $saved[$args[0]] ?? array() );
+                }
+                finally
+                {
+                    $this->pluginRowsDepth--;
+                }
+            }
             if( $what !== 'scm-pa' || count( $args ) !== 2 || !isset( self::SCM_PA_PAGES[$args[0]] ) )
                 return null;
             $newest = null;
@@ -2184,11 +2206,67 @@ class ViewerApp
             $j = json_decode( (string)file_get_contents( $newest['dir'] . '/' . $file ), TRUE );
             return is_array( $j ) ? ( $j['data'] ?? null ) : null;
         };
+        return $reader;
+    }
+
+    /** the rows of a table block from the plug-in: key => row (known columns, scalar values / lists of them) */
+    private function tableSource( array $b, ViewerPluginPage $view ): array
+    {
+        $out = array();
+        foreach( (array)( $b['rows'] )( $view ) as $r )
+        {
+            if( !is_array( $r ) || !isset( $r[$b['key']] ) || !is_scalar( $r[$b['key']] ) || (string)$r[$b['key']] === '' )
+                throw new ViewerException( 'plug-in: table ' . $b['name'] . ': every row needs a value in ' . $b['key'], 500 );
+            $k = (string)$r[$b['key']];
+            if( isset( $out[$k] ) )
+                throw new ViewerException( 'plug-in: table ' . $b['name'] . ': ' . $b['key'] . ' ' . $k . ' twice', 500 );
+            $row = array();
+            foreach( $b['fields'] as $name => $f )
+            {
+                $v = $r[$name] ?? null;
+                $row[$name] = is_scalar( $v ) || $v === null || ( is_array( $v ) && count( array_filter( $v, 'is_scalar' ) ) === count( $v ) ) ? $v : null;
+            }
+            $out[$k] = $row;
+            if( count( $out ) > 5000 )
+                throw new ViewerException( 'plug-in: table ' . $b['name'] . ': more than 5000 rows', 500 );
+        }
+        return $out;
+    }
+
+    /** the rows with the stored changes (key => column => value) */
+    private static function tableMerge( array $b, array $source, array $changes ): array
+    {
+        foreach( $source as $k => $row )
+            foreach( (array)( $changes[$k] ?? array() ) as $col => $v )
+                if( isset( $b['fields'][$col] ) && $b['fields'][$col]['edit'] )
+                    $source[$k][$col] = $v;
+        return $source;
+    }
+
+    /** a table block for the page: columns, rows (key, value as it is now, source of the plug-in), stored changes */
+    private function tableBlockPublic( array $b, array $stored, ViewerPluginPage $view ): array
+    {
+        $rows = array();
+        $error = null;
+        try
+        {
+            $source = $this->tableSource( $b, $view );
+            foreach( self::tableMerge( $b, $source, $stored['values'] ) as $k => $row )
+                $rows[] = array( 'key' => (string)$k, 'value' => $row, 'source' => $source[$k], 'changed' => array_keys( (array)( $stored['values'][$k] ?? array() ) ) );
+        }
+        catch( Throwable $e )
+        {
+            $error = 'rows of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+        }
+        return array( 'name' => $b['name'], 'kind' => 'table', 'title' => $b['title'], 'text' => $b['text'], 'fields' => array_values( $b['fields'] ), 'key' => $b['key'],
+            'rows' => $rows, 'saved_by' => $stored['saved_by'], 'saved_at' => $stored['saved_at'], 'error' => $error );
     }
 
     /** a block for the page: description (without the callables), stored values, defaults of the plug-in */
     private function pluginBlockPublic( array $b, array $stored, ViewerPluginPage $view ): array
     {
+        if( $b['kind'] === 'table' )
+            return $this->tableBlockPublic( $b, $stored, $view );
         $defaults = array();
         $error = null;
         if( $b['defaults'] !== null )
@@ -2224,7 +2302,8 @@ class ViewerApp
         self::needUnlimited( $p, 'pages of plug-ins' );
         $pg = $this->pluginPage( $key );
         $stored = $this->pluginPageStored( $p, $key, $pg );
-        $view = new ViewerPluginPage( array_map( function( $s ) { return $s['values']; }, $stored ), $this->pluginReader( $p ) );
+        $saved = array_map( function( $s ) { return $s['values']; }, $stored );
+        $view = new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) );
         $blocks = array();
         foreach( $pg['blocks'] as $name => $b )
             $blocks[] = $this->pluginBlockPublic( $b, $stored[$name], $view );
@@ -2244,6 +2323,8 @@ class ViewerApp
         $b = is_string( $block ) ? ( $pg['blocks'][$block] ?? null ) : null;
         if( $b === null )
             throw new ViewerException( 'not found', 404 );
+        if( $b['kind'] === 'table' )
+            return $this->tableSave( $user, $p, $key, $pg, $b, $in );
         $raw = $in['values'] ?? null;
         if( !is_array( $raw ) )
             throw new ViewerException( 'values: an object field => value expected', 400 );
@@ -2268,7 +2349,7 @@ class ViewerApp
             $saved[$block] = $values;
             try
             {
-                foreach( (array)( $b['check'] )( $values, new ViewerPluginPage( $saved, $this->pluginReader( $p ) ) ) as $k => $msg )
+                foreach( (array)( $b['check'] )( $values, new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) ) as $k => $msg )
                     if( is_string( $msg ) && $msg !== '' )
                         $errors[isset( $b['fields'][$k] ) ? $k : ''] = substr( $msg, 0, 300 );
             }
@@ -2279,17 +2360,121 @@ class ViewerApp
         }
         if( count( $errors ) > 0 )
             throw new ViewerFieldException( 'the form has errors', $errors );
+        return $this->pluginBlockStore( $user, $p, $key, $pg, $b, $stored, $values );
+    }
+
+    /** writes the values of a block and returns it as the page shows it */
+    private function pluginBlockStore( array $user, array $p, string $key, array $pg, array $b, array $stored, array $values ): array
+    {
         $dir = $this->pluginPageDir( $p, $key );
         if( !is_dir( $dir ) )
             mkdir( $dir, 0700, TRUE );
         $doc = array( 'values' => $values, 'saved_by' => $user['name'], 'saved_at' => time() );
-        $tmp = $dir . '/' . $block . '.json.tmp';
+        $tmp = $dir . '/' . $b['name'] . '.json.tmp';
         file_put_contents( $tmp, json_encode( $doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
         @chmod( $tmp, 0600 );
-        rename( $tmp, $dir . '/' . $block . '.json' );
-        $stored[$block] = $doc;
-        $view = new ViewerPluginPage( array_map( function( $s ) { return $s['values']; }, $stored ), $this->pluginReader( $p ) );
-        return $this->pluginBlockPublic( $b, $doc, $view );
+        rename( $tmp, $dir . '/' . $b['name'] . '.json' );
+        $stored[$b['name']] = $doc;
+        $saved = array_map( function( $s ) { return $s['values']; }, $stored );
+        return $this->pluginBlockPublic( $b, $doc, new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) );
+    }
+
+    /**
+     * a table: {rows: {<key>: {<column>: value}}} - only editable columns of rows the plug-in gives; a value equal to
+     * the one of the plug-in removes the change; rows not sent keep their changes. Errors: '<key>/<column>' => message.
+     */
+    private function tableSave( array $user, array $p, string $key, array $pg, array $b, array $in ): array
+    {
+        $raw = $in['rows'] ?? null;
+        if( !is_array( $raw ) )
+            throw new ViewerException( 'rows: an object key => {column: value} expected', 400 );
+        $stored = $this->pluginPageStored( $p, $key, $pg );
+        $saved = array_map( function( $s ) { return $s['values']; }, $stored );
+        $view = new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) );
+        try
+        {
+            $source = $this->tableSource( $b, $view );
+        }
+        catch( Throwable $e )
+        {
+            throw new ViewerException( 'rows of the plug-in: ' . $e->getMessage(), 500 );
+        }
+        $changes = (array)$stored[$b['name']]['values'];
+        foreach( array_keys( $changes ) as $k )
+            if( !isset( $source[(string)$k] ) )
+                unset( $changes[$k] );      // a row the plug-in does not give any more
+        $errors = array();
+        foreach( $raw as $k => $cols )
+        {
+            $k = (string)$k;
+            if( !isset( $source[$k] ) )
+            {
+                $errors[$k] = 'not a row of this table';
+                continue;
+            }
+            if( !is_array( $cols ) )
+            {
+                $errors[$k] = 'an object column => value expected';
+                continue;
+            }
+            foreach( $cols as $col => $v )
+            {
+                $f = $b['fields'][$col] ?? null;
+                if( $f === null || !$f['edit'] )
+                {
+                    $errors[$k . '/' . $col] = 'not an editable column';
+                    continue;
+                }
+                try
+                {
+                    $v = ViewerPlugins::fieldValue( $f, $v );
+                }
+                catch( Exception $e )
+                {
+                    $errors[$k . '/' . $col] = $e->getMessage();
+                    continue;
+                }
+                try
+                {
+                    $orig = ViewerPlugins::fieldValue( array( 'required' => FALSE ) + $f, $source[$k][$col] );
+                }
+                catch( Exception $e )
+                {
+                    $orig = $source[$k][$col];
+                }
+                if( $v === $orig )
+                    unset( $changes[$k][$col] );
+                else
+                    $changes[$k][$col] = $v;
+                if( isset( $changes[$k] ) && $changes[$k] === array() )
+                    unset( $changes[$k] );
+            }
+        }
+        if( count( $errors ) === 0 && $b['check'] !== null )
+        {
+            $saved[$b['name']] = $changes;
+            try
+            {
+                foreach( (array)( $b['check'] )( self::tableMerge( $b, $source, $changes ), new ViewerPluginPage( $saved, $this->pluginReader( $p, $pg, $saved ) ) ) as $k => $msg )
+                {
+                    if( is_array( $msg ) )
+                    {
+                        foreach( $msg as $col => $m )
+                            if( is_string( $m ) && $m !== '' )
+                                $errors[$k . ( isset( $b['fields'][$col] ) ? '/' . $col : '' )] = substr( $m, 0, 300 );
+                    }
+                    elseif( is_string( $msg ) && $msg !== '' )
+                        $errors[isset( $source[(string)$k] ) ? (string)$k : ''] = substr( $msg, 0, 300 );
+                }
+            }
+            catch( Throwable $e )
+            {
+                $errors[''] = 'check of the plug-in: ' . substr( $e->getMessage(), 0, 300 );
+            }
+        }
+        if( count( $errors ) > 0 )
+            throw new ViewerFieldException( 'the table has errors', $errors );
+        return $this->pluginBlockStore( $user, $p, $key, $pg, $b, $stored, $changes );
     }
 
     public function jobCreate( array $user, $pid, $cid, $type, array $in ): array

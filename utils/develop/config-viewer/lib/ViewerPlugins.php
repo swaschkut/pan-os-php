@@ -28,7 +28,8 @@
  *   - step types  pan-os-php types that a playbook may use in addition
  *   - pages       (interface 2) a card of the project with blocks the viewer draws from their description - the
  *                 plug-in brings no script for the page: 'form' (typed fields, values stored with the project,
- *                 defaults / check of the plug-in)
+ *                 defaults / check of the plug-in), 'table' (rows of the plug-in, editable columns - stored are the
+ *                 changes per row)
  * A run type can set environment variables for its run ('env', %PLUGIN% = the folder of the plug-in) - so pan-os-php can
  * load files that the plug-in brings (e.g. PANOSPHP_MIGRATION_PARSERS => '%PLUGIN%/parser').
  * The browser page shows the run types with the fields the plug-in declares - a plug-in brings no script for the page.
@@ -253,11 +254,17 @@ class ViewerPlugins
         {
             if( !is_array( $b ) || !is_string( $b['name'] ?? null ) || !preg_match( '/^[a-z][a-z0-9_-]{0,30}$/', $b['name'] ) || isset( $blocks[$b['name']] ) )
                 throw new Exception( 'page ' . $page . ': a block needs a "name" (lower case, unique)' );
-            if( ( $b['kind'] ?? null ) !== 'form' )
-                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form' );
-            foreach( array( 'defaults', 'check' ) as $c )
+            $kind = $b['kind'] ?? null;
+            if( !in_array( $kind, array( 'form', 'table' ), TRUE ) )
+                throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "kind" must be form or table' );
+            foreach( array( 'defaults', 'check', 'rows' ) as $c )
                 if( isset( $b[$c] ) && !is_callable( $b[$c] ) )
                     throw new Exception( 'page ' . $page . ', block ' . $b['name'] . ': "' . $c . '" must be callable' );
+            if( $kind === 'table' )
+            {
+                $blocks[$b['name']] = self::checkTable( 'page ' . $page . ', block ' . $b['name'], $b );
+                continue;
+            }
             $fields = array();
             foreach( (array)( $b['fields'] ?? array() ) as $f )
             {
@@ -275,6 +282,34 @@ class ViewerPlugins
             throw new Exception( 'page ' . $page . ': 1 to 20 blocks' );
         return array( 'plugin' => $plugin, 'feature' => $feature, 'page' => $page, 'title' => self::text( $pg['title'] ?? $page, 'title', 80 ),
             'text' => self::text( $pg['text'] ?? '', 'text', 1000 ), 'blocks' => $blocks );
+    }
+
+    /**
+     * a table block: 'columns' (fields; 'edit' => TRUE: editable), 'key' (the column that names a row, not editable),
+     * 'rows' (callable: the rows of the plug-in, column => value), 'check' (callable: the rows with the changes)
+     */
+    private static function checkTable( string $where, array $b ): array
+    {
+        if( !isset( $b['rows'] ) )
+            throw new Exception( $where . ': a table needs "rows" (callable)' );
+        $cols = array();
+        foreach( (array)( $b['columns'] ?? array() ) as $c )
+        {
+            $f = self::checkField( $where, $c );
+            if( isset( $cols[$f['name']] ) )
+                throw new Exception( $where . ': column ' . $f['name'] . ' twice' );
+            $f['edit'] = !empty( $c['edit'] );
+            $cols[$f['name']] = $f;
+        }
+        if( count( $cols ) < 1 || count( $cols ) > 50 )
+            throw new Exception( $where . ': 1 to 50 columns' );
+        $key = $b['key'] ?? null;
+        if( !is_string( $key ) || !isset( $cols[$key] ) || $cols[$key]['edit'] )
+            throw new Exception( $where . ': "key" must name a column that is not editable' );
+        if( count( array_filter( $cols, function( $c ) { return $c['edit']; } ) ) === 0 )
+            throw new Exception( $where . ': at least one column with "edit" => TRUE' );
+        return array( 'name' => $b['name'], 'kind' => 'table', 'title' => self::text( $b['title'] ?? $b['name'], 'title', 120 ),
+            'text' => self::text( $b['text'] ?? '', 'text', 1000 ), 'fields' => $cols, 'key' => $key, 'rows' => $b['rows'], 'defaults' => null, 'check' => $b['check'] ?? null );
     }
 
     /** a field of a form block: name, type, label, help, required, options (select), min / max (int), max (text), item (list) */
@@ -575,10 +610,19 @@ class ViewerPluginPage
         $this->reader = $reader;
     }
 
-    /** the stored values of a block of this page (empty: not saved yet) */
+    /** the stored values of a block of this page (empty: not saved yet); a table: the changes, key => column => value */
     public function values( string $block ): array
     {
         return $this->saved[$block] ?? array();
+    }
+
+    /**
+     * a table block of this page as it is now: its rows with the stored changes, key => column => value (null:
+     * not a table of this page)
+     */
+    public function rows( string $block ): ?array
+    {
+        return ( $this->reader )( 'rows', $block );
     }
 
     /**

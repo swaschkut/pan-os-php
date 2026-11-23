@@ -249,3 +249,6 @@ label.chk { display: inline-flex; flex-direction: row; align-items: center; gap:
 .fielderror { color: #b3261e; font-size: 13px; }
 .fielderror:empty { display: none; }
 .pfield input[type=checkbox] { align-self: flex-start; }
+.ptable td { vertical-align: top; }
+.ptable td input[type=text], .ptable td input[type=number], .ptable td select { min-width: 120px; }
+td.pchanged { background: color-mix(in srgb, #f5c400 18%, transparent); }

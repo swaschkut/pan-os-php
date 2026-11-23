@@ -33,7 +33,7 @@ function eq( $actual, $expected, $msg )
 
 // ---- plug-ins: the example plug-in and three that must be refused
 $plugins = $data . '-plugins';
-foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage' ) as $d )
+foreach( array( 'example', 'wrongapi', 'othername', 'badargs', 'mig', 'pg', 'badpage', 'badtable' ) as $d )
     mkdir( $plugins . '/' . $d, 0700, TRUE );
 copy( $viewer . '/examples/plugins/example/plugin.php', $plugins . '/example/plugin.php' );
 file_put_contents( $plugins . '/wrongapi/plugin.php', "<?php return array( 'api' => 99, 'name' => 'wrongapi' );" );
@@ -86,7 +86,33 @@ file_put_contents( $plugins . '/pg/plugin.php', "<?php return array( 'api' => 2,
                     return array();
                 } ),
             array( 'name' => 'notes', 'kind' => 'form', 'fields' => array( array( 'name' => 'text', 'type' => 'text', 'max' => 20 ) ),
-                'check' => function( \$v, \$page ) { return \$page->values( 'infra' ) === array() ? array( '' => 'save Infrastructure first' ) : array(); } ) ) ) ) );" );
+                'check' => function( \$v, \$page ) { return \$page->values( 'infra' ) === array() ? array( '' => 'save Infrastructure first' ) : array(); } ),
+            array( 'name' => 'pools', 'kind' => 'table', 'title' => 'MU IP pools', 'key' => 'value',
+                'columns' => array( array( 'name' => 'value', 'type' => 'text', 'label' => 'Location' ), array( 'name' => 'region', 'type' => 'text' ),
+                    array( 'name' => 'pool', 'type' => 'ipv4-cidr', 'edit' => TRUE ), array( 'name' => 'dns', 'type' => 'list', 'item' => 'ipv4', 'edit' => TRUE ),
+                    array( 'name' => 'enabled', 'type' => 'bool', 'edit' => TRUE ) ),
+                'rows' => function( \$page ) {
+                    \$out = array();
+                    foreach( (array)\$page->scmPa( 'infra', 'locations' ) as \$l )
+                        \$out[] = array( 'value' => \$l['value'], 'region' => \$l['region'], 'pool' => null, 'dns' => array(), 'enabled' => TRUE );
+                    return \$out;
+                },
+                'check' => function( \$rows, \$page ) {
+                    \$seen = array(); \$err = array();
+                    foreach( \$rows as \$k => \$r )
+                    {
+                        if( \$r['pool'] !== null && \$r['pool'] === ( \$page->values( 'infra' )['subnet'] ?? null ) )
+                            \$err[\$k] = array( 'pool' => 'the infrastructure subnet' );
+                        elseif( \$r['pool'] !== null && isset( \$seen[\$r['pool']] ) )
+                            \$err[\$k] = array( 'pool' => 'used by ' . \$seen[\$r['pool']] );
+                        \$seen[\$r['pool']] = \$k;
+                    }
+                    return \$err;
+                } ),
+            array( 'name' => 'sum', 'kind' => 'form', 'fields' => array( array( 'name' => 'ok', 'type' => 'bool' ) ),
+                'defaults' => function( \$page ) { return array( 'ok' => array( 'value' => FALSE, 'hint' => count( array_filter( (array)\$page->rows( 'pools' ), function( \$r ) { return \$r['pool'] !== null; } ) ) . ' pools set' ) ); } ) ) ) ) );" );
+file_put_contents( $plugins . '/badtable/plugin.php', "<?php return array( 'api' => 2, 'name' => 'badtable', 'pages' => array( 'x' => array( 'blocks' => array(
+    array( 'name' => 't', 'kind' => 'table', 'key' => 'a', 'rows' => function( \$p ) { return array(); }, 'columns' => array( array( 'name' => 'a', 'type' => 'text', 'edit' => TRUE ) ) ) ) ) ) );" );
 file_put_contents( $plugins . '/badpage/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badpage', 'pages' => array( 'x' => array() ) );" );
 
 // an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
@@ -870,7 +896,7 @@ $alice->call( 'PUT', $EG . '/members', array( 'user' => 'carol', 'role' => 'read
 $carolRw = array( status( $carol->call( 'GET', $PGP ) ), status( $carol->call( 'PUT', $PGP . '/blocks/notes', array( 'values' => array( 'text' => 'carol' ) ) ) ) );
 $alice->call( 'DELETE', $EG . '/members/carol' );
 $pgAuditHasValue = strpos( json_encode( $pgAudit[1] ?? array() ), 'cut-over on friday' ) !== FALSE || strpos( json_encode( $pgAudit[1] ?? array() ), '10.9.0.0' ) !== FALSE;
-eq( array( status( $pgv ), $pgv[1]['title'] ?? null, array_column( $pgv[1]['blocks'] ?? array(), 'name' ), array_column( $pgInfra['fields'] ?? array(), 'type' ),
+eq( array( status( $pgv ), $pgv[1]['title'] ?? null, array_slice( array_column( $pgv[1]['blocks'] ?? array(), 'name' ), 0, 2 ), array_column( $pgInfra['fields'] ?? array(), 'type' ),
         $pgInfra['defaults']['as']['value'] ?? null, $pgInfra['defaults']['subnet']['hint'] ?? null, isset( $pgInfra['defaults']['nosuch'] ), array_key_exists( 'saved_at', $pgInfra ) ? $pgInfra['saved_at'] : 'x',
         isset( $pgInfra['fields'][0]['check'] ) || isset( $pgInfra['check'] ) ),
     array( 200, 'Settings of tenant B', array( 'infra', 'notes' ), array( 'ipv4-cidr', 'ipv6-cidr', 'asn', 'hostname', 'list', 'select', 'bool', 'int' ),
@@ -886,6 +912,33 @@ eq( array( status( $pgOk ), $pgOk[1]['values'] ?? null, status( $pgNotes ), $pgA
     array( 200, array( 'subnet' => '10.0.0.0/24', 'subnet6' => '2001:db8::/32', 'as' => 65000, 'portal' => 'gp.example.com', 'pools' => array( '10.9.0.0/16', '10.8.0.0/16' ),
         'mode' => 'new', 'flag' => TRUE, 'count' => 3 ), 200, 'cut-over on friday', 'alice', FALSE, TRUE, 'write', array( 200, 403 ), 404, 404 ),
     'plug-in page: saved in normalised form, with user; the audit log has no values; a read member can not save; unknown page / block' );
+// table block: rows of the plug-in (locations of the newest SCM tab state), editable columns, stored = the changes per row
+$tbl = function() use ( $alice, $PGP ) { foreach( $alice->call( 'GET', $PGP )[1]['blocks'] ?? array() as $b ) if( $b['name'] === 'pools' ) return $b; return array(); };
+$t0 = $tbl();
+$tBad = $alice->call( 'PUT', $PGP . '/blocks/pools', array( 'rows' => array( 'mars' => array( 'pool' => '10.1.0.0/16' ),
+    'germany-central' => array( 'region' => 'x', 'pool' => '10.1.0.1/16' ), 'netherlands-central' => array( 'dns' => array( '10.1.1.1', 'nope' ) ) ) ) );
+$tDup = $alice->call( 'PUT', $PGP . '/blocks/pools', array( 'rows' => array( 'germany-central' => array( 'pool' => '10.20.0.0/16' ), 'netherlands-central' => array( 'pool' => '10.20.0.0/16' ) ) ) );
+$tInfra = $alice->call( 'PUT', $PGP . '/blocks/pools', array( 'rows' => array( 'germany-central' => array( 'pool' => '10.0.0.0/24' ) ) ) );
+$tOk = $alice->call( 'PUT', $PGP . '/blocks/pools', array( 'rows' => array( 'germany-central' => array( 'pool' => '10.20.0.0/16', 'dns' => array( '10.1.1.1', '10.1.1.2' ), 'enabled' => FALSE ),
+    'netherlands-central' => array( 'pool' => '10.21.0.0/16', 'dns' => array(), 'enabled' => TRUE ) ) ) );
+$t1 = $tbl();
+$sumHint = null;
+foreach( $alice->call( 'GET', $PGP )[1]['blocks'] ?? array() as $b ) if( $b['name'] === 'sum' ) $sumHint = $b['defaults']['ok']['hint'] ?? null;
+$tBack = $alice->call( 'PUT', $PGP . '/blocks/pools', array( 'rows' => array( 'germany-central' => array( 'pool' => '', 'enabled' => TRUE ) ) ) );
+$t2 = $tbl();
+eq( array( $t0['key'] ?? null, array_column( $t0['rows'] ?? array(), 'key' ), $t0['rows'][1]['value']['region'] ?? null, array_column( array_filter( $t0['fields'] ?? array(), function( $f ) { return $f['edit']; } ), 'name' ),
+        status( $tBad ), array_keys( (array)( $tBad[1]['fields'] ?? array() ) ) ),
+    array( 'value', array( 'germany-central', 'netherlands-central' ), 'europe-west4', array( 'pool', 'dns', 'enabled' ),
+        400, array( 'mars', 'germany-central/region', 'germany-central/pool', 'netherlands-central/dns' ) ),
+    'plug-in page, table: rows of the plug-in (SCM tab), editable columns; unknown row / not editable column / type errors per cell' );
+eq( array( $tDup[1]['fields']['netherlands-central/pool'] ?? null, $tInfra[1]['fields']['germany-central/pool'] ?? null, status( $tOk ),
+        $t1['rows'][0]['value'] ?? null, $t1['rows'][0]['changed'] ?? null, array_key_exists( 'pool', $t1['rows'][0]['source'] ?? array() ) ? $t1['rows'][0]['source']['pool'] : 'x', $t1['rows'][1]['changed'] ?? null, $sumHint ),
+    array( 'used by germany-central', 'the infrastructure subnet', 200,
+        array( 'value' => 'germany-central', 'region' => 'europe-west3', 'pool' => '10.20.0.0/16', 'dns' => array( '10.1.1.1', '10.1.1.2' ), 'enabled' => FALSE ),
+        array( 'pool', 'dns', 'enabled' ), null, array( 'pool' ), '2 pools set' ),
+    'plug-in page, table: check of the plug-in per cell (with another block), stored are the changes only, value of the plug-in kept, rows() for other blocks' );
+eq( array( status( $tBack ), $t2['rows'][0]['changed'] ?? null, array_key_exists( 'pool', $t2['rows'][0]['value'] ?? array() ) ? $t2['rows'][0]['value']['pool'] : 'x', $t2['rows'][1]['value']['pool'] ?? null ),
+    array( 200, array( 'dns' ), null, '10.21.0.0/16' ), 'plug-in page, table: the value of the plug-in again removes the change; rows not sent keep theirs' );
 // one area, several pages (mobile-users: Gateway / GlobalProtect / PAA): each page gets the endpoints it shows
 $muDir = $data . '/pa-job3/scm-export/1234567890/20261122-120000';
 @mkdir( $muDir . '/mobile-users', 0700, TRUE );
@@ -1748,7 +1801,7 @@ eq( array_keys( $m['runs'] ?? array() ), array( 'badargs-in', 'badargs-out', 'ex
 eq( array( $m['kinds'] ?? null, $m['runs']['example-tag-rules']['fields'][0]['kind'] ?? null, $m['runs']['example-tag-rules']['result'] ?? null ),
     array( array( 'example-taglist' => 'tag list (JSON)', 'mig-source' => 'source' ), 'file:example-taglist', TRUE ), 'plug-ins: file kind and fields in meta' );
 eq( array( $m['rawKinds'] ?? null, $m['runs']['mig-import']['input'] ?? null, $m['runs']['mig-import']['fields'][0]['options'] ?? null ), array( array( 'mig-source' ), 'none', array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ), 'plug-ins: raw kind, run without a version, options in meta' );
-eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badenv', 'badenv2', 'badpage', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
+eq( array( array_keys( $m['errors'] ?? array() ), strpos( $m['errors']['wrongapi'] ?? '', '"api"' ) !== FALSE ), array( array( 'badenv', 'badenv2', 'badpage', 'badtable', 'othername', 'wrongapi' ), TRUE ), 'plug-ins: refused ones are named to the admin with the reason (also: env of the viewer, path with ..)' );
 eq( array_key_exists( 'errors', $bob->call( 'GET', 'meta' )[1]['plugins'] ?? array( 'errors' => 1 ) ), FALSE, 'plug-ins: no reasons for other users' );
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Plug-ins' ) );
 $PL = 'projects/' . $r[1]['pid'];

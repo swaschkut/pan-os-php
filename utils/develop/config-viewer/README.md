@@ -577,11 +577,27 @@ them from the description - a plug-in brings no script for the page. Plug-ins of
 | `select` (`options` value => label), `bool` | string / true, false |
 | `list` (`item`: text, ipv4, ipv4-cidr, ipv6-cidr, hostname; at most 500) | list of strings |
 
-API: `GET …/projects/<pid>/pages/<plugin>-<page>` (blocks, stored values, defaults - never the callables),
-`PUT …/projects/<pid>/pages/<plugin>-<page>/blocks/<block>` `{values}` (write; 400 with `fields` = field → message).
-Values are stored with the project (`plugin-pages/<plugin>-<page>/<block>.json`, with user and time); the audit log
-gets the route, not the values. Planned: tables, approvals (blocking `execute`), project types with roles, sensitive
-uploads.
+**Table blocks** - rows of the plug-in (e.g. every MU IP pool, every tunnel), some columns editable; stored are the
+changes per row, the value of the plug-in stays visible below a changed cell:
+
+```php
+array( 'name' => 'pools', 'kind' => 'table', 'title' => 'MU IP pools', 'key' => 'location',
+    'columns' => array( array( 'name' => 'location', 'type' => 'text' ),
+        array( 'name' => 'pool', 'type' => 'ipv4-cidr', 'edit' => TRUE ), array( 'name' => 'dns', 'type' => 'list', 'item' => 'ipv4', 'edit' => TRUE ) ),
+    'rows' => function( ViewerPluginPage $page ) { return array( array( 'location' => 'germany-central', 'pool' => '10.20.0.0/16', 'dns' => array() ) ); },
+    // the rows with the changes: key => column => message (or key => message, '' => message)
+    'check' => function( array $rows, ViewerPluginPage $page ) { return array(); } ),
+```
+
+`key` names the column that identifies a row (not editable); at most 5000 rows, 50 columns. `ViewerPluginPage::rows(
+<block> )` gives another block the table with its changes.
+
+API: `GET …/projects/<pid>/pages/<plugin>-<page>` (blocks, stored values, defaults, table rows - never the callables),
+`PUT …/projects/<pid>/pages/<plugin>-<page>/blocks/<block>` `{values}` for a form, `{rows: {<key>: {<column>: value}}}`
+for a table (only rows sent change; the value of the plug-in again removes the change) - write; 400 with `fields` =
+field (form) / `<key>/<column>` (table) → message. Values are stored with the project
+(`plugin-pages/<plugin>-<page>/<block>.json`, with user and time); the audit log gets the route, not the values.
+Planned: approvals (blocking `execute`), project types with roles, sensitive uploads.
 
 A raw file is not given to members limited to types / locations. **Not yet:** own PHP code of a plug-in inside the run (today a run is one pan-os-php call), own API routes, a result page from a JSON of the run (estimate of a migration), a link between projects that offers a newer import, encrypted plug-ins. In Docker a plug-in folder must be mounted into `web`, `service` and `jobs` (not in the compose file yet).
 
