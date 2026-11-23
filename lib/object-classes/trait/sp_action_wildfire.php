@@ -78,9 +78,12 @@ trait sp_action_wildfire
 
                 $name = DH::findAttribute("name", $tmp_entry1);
 
+                // no action (PAN-OS commits it): the rule allows, as the GUI shows it - read as 'allow', the XML stays
                 $tmp_action = DH::findFirstElement("action", $tmp_entry1);
-                if( $tmp_action !== FALSE )
+                if( $tmp_action !== FALSE && $tmp_action->textContent !== "" )
                     $this->additional['mica-engine-wildfire-rules'][$name]['action'] = $tmp_action->textContent;
+                else
+                    $this->additional['mica-engine-wildfire-rules'][$name]['action'] = "allow";
 
                 $tmp_direction = DH::findFirstElement("direction", $tmp_entry1);
                 if( $tmp_direction !== FALSE )
