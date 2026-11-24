@@ -1836,9 +1836,9 @@ class UTIL
             {
                 $this->sub = $this->pan;
             }
-            elseif( $this->location == 'any' )
+            elseif( $this->location == 'any' || ( $this->location == 'predefined' && $this->predefinedObjectSets() !== array() ) )
             {
-                #
+                # predefined: the predefined objects of the type (location_filter_object)
             }
             else
             {
@@ -2021,6 +2021,47 @@ class UTIL
         PH::print_stdout();
     }
 
+    /**
+     * the predefined objects of the type (they belong to shared, listed before it; read only - CallContext::readOnlyReason):
+     * services (service-http, service-https), applications, log forwarding profiles, threats, security profiles / URL
+     * categories (securityprofiletype). Also location=predefined.
+     * SCM: its predefined objects are in the predefined snippet (a location of its own) - none here.
+     */
+    public function predefinedObjectSets(): array
+    {
+        if( !is_object( $this->pan ) || $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf )
+            return array();
+        if( $this->utilType == 'service' )
+        {
+            $pre = ServiceStore::getPredefinedStore( $this->pan );
+            return array( array( 'store' => $pre, 'objects' => $pre->all( null, TRUE ) ) );
+        }
+        if( $this->utilType == 'application' && isset( $this->pan->predefinedappStore ) )
+            return array( array( 'store' => $this->pan->predefinedappStore, 'objects' => $this->pan->predefinedappStore->apps() ) );
+        if( $this->utilType == 'log-profile' && isset( $this->pan->LogProfilePredefinedStore ) )
+            return array( array( 'store' => $this->pan->LogProfilePredefinedStore, 'objects' => $this->pan->LogProfilePredefinedStore->getAll() ) );
+        if( $this->utilType == 'threat' && isset( $this->pan->threatStore ) )
+            return array( array( 'store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll() ) );
+        if( $this->utilType == 'securityprofile' )
+        {
+            // securityprofiletype=<type> (the old predefined-<type> are the same) - custom-url-category / predefined-url:
+            // the predefined URL categories
+            $map = array( 'url-filtering' => 'UrlFilteringPredefinedStore', 'virus' => 'AntiVirusPredefinedStore', 'vulnerability' => 'VulnerabilityPredefinedStore',
+                'spyware' => 'AntiSpywarePredefinedStore', 'file-blocking' => 'FileBlockingPredefinedStore', 'wildfire-analysis' => 'WildfirePredefinedStore',
+                'data-filtering' => 'DataFilteringPredefinedStore', 'custom-url-category' => 'urlStore' );
+            $types = isset( $this->securityProfileTypes ) && is_array( $this->securityProfileTypes ) ? $this->securityProfileTypes : array( 'any' );
+            $out = array();
+            foreach( $map as $t => $prop )
+            {
+                $alias = $t === 'custom-url-category' ? 'predefined-url' : 'predefined-' . $t;
+                if( ( in_array( 'any', $types, TRUE ) || in_array( $t, $types, TRUE ) || in_array( $alias, $types, TRUE ) ) && isset( $this->pan->$prop ) && is_object( $this->pan->$prop ) )
+                    $out[] = array( 'store' => $this->pan->$prop, 'objects' => $this->pan->$prop->securityProfiles() );
+            }
+            return $out;
+        }
+        return array();
+    }
+
     public function location_filter_object()
     {
         $sub = null;
@@ -2029,6 +2070,16 @@ class UTIL
         foreach( $this->objectsLocation as $location )
         {
             $locationFound = FALSE;
+
+            // location=predefined: only the predefined objects of the type (never a target - CallContext)
+            if( $location == 'predefined' )
+            {
+                foreach( $this->predefinedObjectSets() as $set )
+                    $this->objectsToProcess[] = $set;
+                if( $this->predefinedObjectSets() === array() )
+                    $this->locationNotFound( $location );
+                continue;
+            }
 
             if( $this->configType == 'panos' )
             {
@@ -2041,13 +2092,8 @@ class UTIL
                     elseif( $this->utilType == 'service' )
                     {
                         // the predefined services (service-http, service-https) belong to shared - before it, read only
-                        // (CallContext::readOnlyReason)
-                        // (SCM: its predefined objects come with the predefined-snippet)
-                        if( !( $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf ) )
-                        {
-                            $pre = ServiceStore::getPredefinedStore( $this->pan );
-                            $this->objectsToProcess[] = array('store' => $pre, 'objects' => $pre->all(null, TRUE));
-                        }
+                        foreach( $this->predefinedObjectSets() as $set )
+                            $this->objectsToProcess[] = $set;
                         $this->objectsToProcess[] = array('store' => $this->pan->serviceStore, 'objects' => $this->pan->serviceStore->all(null, TRUE));
                     }
                     elseif( $this->utilType == 'tag' )
@@ -2178,13 +2224,8 @@ class UTIL
                     elseif( $this->utilType == 'service' )
                     {
                         // the predefined services (service-http, service-https) belong to shared - before it, read only
-                        // (CallContext::readOnlyReason)
-                        // (SCM: its predefined objects come with the predefined-snippet)
-                        if( !( $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf ) )
-                        {
-                            $pre = ServiceStore::getPredefinedStore( $this->pan );
-                            $this->objectsToProcess[] = array('store' => $pre, 'objects' => $pre->all(null, TRUE));
-                        }
+                        foreach( $this->predefinedObjectSets() as $set )
+                            $this->objectsToProcess[] = $set;
                         $this->objectsToProcess[] = array('store' => $this->pan->serviceStore, 'objects' => $this->pan->serviceStore->all(null, TRUE));
                     }
 

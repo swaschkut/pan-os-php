@@ -386,6 +386,18 @@ eq( array( status( $r ), strpos( (string)( $r[1]['row']['readonly'] ?? '' ), 'te
     'read only: the row of a value used directly in a rule says why, an object has no mark' );
 $r = $alice->call( 'POST', $RO . '/change', array( 'type' => 'address', 'location' => 'vsys1', 'filter' => '(name eq 10.9.9.9)', 'actions' => 'description-set:x' ) );
 eq( array( status( $r ), strpos( json_encode( $r[1] ), 'read-only object' ) !== FALSE ), array( 400, TRUE ), 'read only: a change of the object itself is refused with the reason' );
+// an interface: listed in the vsys it is imported into, its XML belongs to the firewall - the window has it
+$r = $alice->call( 'POST', $roP . '/configs', null, array( 'network.xml', file_get_contents( $here . '/input/network-edit.xml' ) ) );
+$NW = $roP . '/configs/' . ( $r[1]['cid'] ?? '' );
+$r = $alice->call( 'GET', $NW . '/object?type=interface&location=vsys1&name=' . rawurlencode( 'ethernet1/1' ) );
+eq( array( status( $r ), strpos( (string)( $r[1]['xml'] ?? '' ), '<entry name="ethernet1/1">' ) === 0 ), array( 200, TRUE ), 'interface window: the XML of the interface (listed in vsys1)' );
+// a predefined object: listed with location "predefined", its window read only with the XML of predefined.xml
+$r = $alice->call( 'GET', $RO . '/objects?type=service&location=shared' );
+$locs = array(); foreach( $r[1]['rows'] ?? array() as $x ) $locs[$x['name']] = $x['location'] ?? null;
+eq( array( $locs['service-http'] ?? null, $locs['tcp-shared'] ?? null ), array( 'predefined', 'shared' ), 'predefined: service-http listed with location predefined (at shared)' );
+$r = $alice->call( 'GET', $RO . '/object?type=securityprofile&securityprofiletype=virus&location=predefined&name=default' );
+eq( array( status( $r ), $r[1]['row']['readonly'] ?? null, strpos( (string)( $r[1]['xml'] ?? '' ), '<entry name="default"' ) === 0, array_key_exists( 'history', $r[1] ?? array() ) ? $r[1]['history'] : 'x' ),
+    array( 200, 'predefined', TRUE, null ), 'predefined: the window of a predefined virus profile - read only, XML of predefined.xml, no history' );
 eq( status( $alice->call( 'DELETE', $roP ) ), 200, 'read only: the test project removed (its worker stops)' );
 for( $i = 0; $i < 50 && count( glob( $data . '/projects/*/work/*.pid' ) ) > 1; $i++ )
     usleep( 100000 );

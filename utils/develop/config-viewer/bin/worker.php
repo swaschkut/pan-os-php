@@ -769,7 +769,7 @@ function viewerRun( $type, array $args )
                 if( is_object( $o ) && isset( $o->xmlroot ) && $o->xmlroot instanceof DOMElement && method_exists( $o, 'name' )
                     && ( $xmlName === null ? count( $GLOBALS['viewerXml'] ) < 20 : $o->name() === $xmlName ) && count( $GLOBALS['viewerXml'] ) < 50 )
                 {
-                    $GLOBALS['viewerXml'][viewerRowKey( $o )] = array( 'path' => viewerHistoryPath( $o ),
+                    $GLOBALS['viewerXml'][viewerRowKey( $o )] = array( 'path' => ( class_exists( 'CallContext' ) && CallContext::readOnlyReason( $o ) === 'predefined' ) ? null : viewerHistoryPath( $o ),
                         'xml' => substr( ConfigObjectSplit::canonical( $o->xmlroot ), 0, 200000 ) );
                 }
     }

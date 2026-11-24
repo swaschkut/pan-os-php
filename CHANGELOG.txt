@@ -2,6 +2,9 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* location=predefined | the predefined objects of a type, read only, never a target (an argument "…location…" = predefined: SKIPPED): service (service-http, service-https), application, log-profile, threat, securityprofile (securityprofiletype=<type>; the old securityprofiletype=predefined-<type> stays as before and is an alias here) - UTIL::predefinedObjectSets; they stay listed at shared / any as before
+* actions | read only also: a threat, a threat rule / DNS rule of a security profile, a predefined security profile / URL category (predefined.xml)
+* config-viewer | location "predefined" for the types with predefined objects (not SCM: its predefined snippet); a predefined object is listed with location "predefined", its window read only with the XML of predefined.xml (no history)
 * actions | read-only objects (CallContext::readOnlyReason): a temporary object (a value used directly in a rule / a name that is no object of the configuration), a predefined object, a GlobalProtect gateway tunnel - an action that changes the object itself (CallContext::changesObject: name-, description-, tag-, value-, members, delete, move, …-set / -add / -remove) is SKIPPED ("read-only object: …"); actions for its users (removewhereused, replacewithobject, replace-IP-by-MT-like-Object, …) still run
 * type=gpgateway-tunnel | read only: a GlobalProtect gateway tunnel is a helper object of the GlobalProtect gateway - no change actions (the ones of 2.1.64 alpha removed, also name-rename)
 * type=service | location=shared / any: also the predefined services (service-http, service-https) - before the shared ones, read only; ObjectCandidates: selectable for groups and rules
@@ -60,6 +63,8 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* config-viewer | the window of an interface had no XML (listed in the vsys it is imported into, its XML belongs to the firewall / template)
+* type=address display | a region wrote each network as a key of the object - in a list (config viewer) every network became an empty column; now under 'members'
 * config-viewer | lists and nested values were shown as "[object Object]" (e.g. the details of an application): now as text; the window of an application shows its details (category, technology, risk, ports, …) as fields
 * type=rule | securityProfile-Profile-Set data-filtering looked in the store of the data objects (DataObjectsProfileStore) - the profile was never found nor referenced; now DataFilteringProfileStore
 * type=rule | qosMarking-Set: follow-c2s-flow could not be set (a value was required, then refused); a new marking type kept the one before (two markings under <marking>)

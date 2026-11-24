@@ -5472,7 +5472,8 @@ class ViewerApp
                             $o['templates'] = is_array( $ts ) && isset( $ts['templates'] ) ? array_values( (array)$ts['templates'] ) : array();
                         }
                     }
-                    $row = array( 'location' => $location );
+                    // a predefined object (CallContext::readOnlyReason): location "predefined" - its window reads it there
+                    $row = array( 'location' => ( $o['readonly'] ?? null ) === 'predefined' ? 'predefined' : $location );
                     // Panorama: the template of a network / device object (zone, interface, …)
                     if( isset( $o['model']['item']['template'] ) && is_string( $o['model']['item']['template'] ) && $o['model']['item']['template'] !== '' )
                         $row['template'] = $o['model']['item']['template'];
@@ -5823,6 +5824,15 @@ class ViewerApp
                 unset( $row['model'] );
                 // its XML and its history (git, the commits that changed its entry - the unsaved ones first)
                 $x = $r['xml'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . $name] ?? null;
+                // an object listed in another location than its owner (an interface: in the vsys it is imported into,
+                // its XML belongs to the firewall / template) - the one XML of this template and name
+                if( $x === null && is_array( $r['xml'] ?? null ) )
+                {
+                    $tail = '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . $name;
+                    $same = array_values( array_filter( array_keys( $r['xml'] ), function( $k ) use ( $tail ) { return substr( $k, -strlen( $tail ) ) === $tail; } ) );
+                    if( count( $same ) === 1 )
+                        $x = $r['xml'][$same[0]];
+                }
                 $path = is_array( $x ) && is_string( $x['path'] ?? null ) ? $x['path'] : null;
                 return array( 'row' => $row, 'model' => $model, 'xml' => is_array( $x ) && is_string( $x['xml'] ?? null ) ? $x['xml'] : null,
                     'history' => $path !== null ? $this->objectHistory( $user, $pid, $cid, $path, ( $row['location'] ?? '' ) . ':' . $name ) : null, 'status' => $r['status'] );

@@ -90,6 +90,14 @@ class SecurityProfileStore extends ObjStore
         return $this->name;
     }
 
+    /** the stores of the predefined security profiles / URL categories (predefined.xml) - read only */
+    public static function predefinedStores(): array
+    {
+        return array_values( array_filter( array( self::$predefinedURLStore, self::$predefinedVirusStore, self::$predefinedSpywareStore,
+            self::$predefinedVulnerabilityStore, self::$predefinedFileblockingStore, self::$predefinedWildfireStore, self::$predefinedUrlFitleringStore,
+            self::$predefinedDataFilteringStore, self::$predefinedVirusAndWildfireStore ), 'is_object' ) );
+    }
+
     public function __construct($owner, $profileType)
     {
         $this->bp_json_file = dirname(__FILE__)."/../../utils/api/v1/bp/scm_bp_sp_panw.json";

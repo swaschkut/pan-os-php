@@ -1801,7 +1801,9 @@ AddressCallContext::$supportedActions[] = array(
             PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
             foreach( $object->members() as $member )
             {
-                PH::$JSON_TMP['sub']['object'][$object->name()][$member]['value'] = $member;
+                // under 'members' (as an address group) - before, every member was a key of the object: in a list each
+                // network became a column of its own (config viewer: empty columns "192.168.10.0/24", …)
+                PH::$JSON_TMP['sub']['object'][$object->name()]['members'][$member]['value'] = $member;
                 PH::print_stdout( "          - '{$member}'" );
             }
 

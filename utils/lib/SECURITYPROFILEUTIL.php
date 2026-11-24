@@ -80,6 +80,17 @@ class SECURITYPROFILEUTIL extends UTIL
 
         foreach( $this->objectsLocation as $location )
         {
+            // location=predefined: the predefined profiles of the asked types (UTIL::predefinedObjectSets) - read only,
+            // never a target
+            if( $location == 'predefined' )
+            {
+                foreach( $this->predefinedObjectSets() as $set )
+                    $this->objectsToProcess[] = array( 'store' => $set['store'], 'rules' => $set['objects'] );
+                if( $this->predefinedObjectSets() === array() )
+                    $this->locationNotFound( $location );
+                continue;
+            }
+
             $locationFound = FALSE;
 
             if( $this->configType == 'panos' )

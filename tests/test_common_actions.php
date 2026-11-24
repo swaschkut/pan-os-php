@@ -325,6 +325,45 @@ $eq( array( $rc, strpos( $o, 'read-only' ), $x( $dir . '/t2.xml', "//entry[@name
 list( $rc, $o ) = $tcli( 'service', '(name eq service-http)', 'description-set:x', null );
 $eq( strpos( $o, 'description set' ), FALSE, 'predefined service: not changed (not selected by a filter; read only - see readOnlyReason)' );
 
+// location=predefined (UTIL::predefinedObjectSets): only the predefined objects - never a target
+list( $rc, $o ) = $tcli( 'service', '(name regex /./)', 'display', null );
+exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=service ' . escapeshellarg( 'in=' . $dir . '/tmp.xml' ) . ' location=predefined actions=display 2>&1', $po, $prc );
+$po = implode( "\n", $po );
+$eq( array( $prc, preg_match_all( "/- object '([^']+)'/", $po, $mm ) ? $mm[1] : array() ), array( 0, array( 'service-http', 'service-https' ) ),
+    'location=predefined: the predefined services only' );
+list( $rc, $o ) = $tcli( 'address', '(name eq h-1)', 'move:predefined', $dir . '/b.xml' );
+$eq( array( strpos( $o, "'predefined' is no target location" ) !== FALSE, $x( $dir . '/b.xml', "//vsys/entry/address/entry[@name='h-1']/ip-netmask" ) ), array( TRUE, array( '192.0.2.1/32' ) ),
+    'location=predefined: never a target (move:predefined SKIPPED)' );
+// security profiles: location=predefined with the normal type; the old securityprofiletype=predefined-<type> (shared) as before
+$sp = function( string $loc, string $t, string $actions ) use ( $repo, $dir ) {
+    exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=securityprofile ' . escapeshellarg( 'in=' . $dir . '/tmp.xml' )
+        . ' location=' . $loc . ' securityprofiletype=' . $t . ' ' . escapeshellarg( 'actions=' . $actions ) . ' 2>&1', $o, $rc );
+    return array( $rc, implode( "\n", $o ) );
+};
+$names = function( string $o ) { return preg_match_all( "/^\s+\* (\S+)/m", $o, $m ) ? array_values( array_unique( $m[1] ) ) : array(); };
+list( $rc1, $o1 ) = $sp( 'predefined', 'virus', 'display' );
+list( $rc2, $o2 ) = $sp( 'shared', 'predefined-virus', 'display' );
+list( $rc3, $o3 ) = $sp( 'predefined', 'predefined-virus', 'display' );
+$eq( array( $rc1, $rc2, $rc3, count( $names( $o1 ) ) > 0, $names( $o1 ) === $names( $o2 ), $names( $o1 ) === $names( $o3 ) ), array( 0, 0, 0, TRUE, TRUE, TRUE ),
+    'security profiles: location=predefined securityprofiletype=virus = the old securityprofiletype=predefined-virus (also as alias)' );
+list( $rc, $o ) = $sp( 'predefined', 'virus', 'description-set:x' );
+$eq( strpos( $o, 'SKIPPED : read-only object: predefined' ) !== FALSE, TRUE, 'security profiles: a predefined profile is read only' );
+// a region: display (shadow-json) - its networks under 'members', not as keys of the object (list columns)
+file_put_contents( $dir . '/region.xml', str_replace( '<address-group>', '<region><entry name="reg-1"><address><member>192.168.10.0/24</member><member>192.168.178.0/24</member></address></entry></region><address-group>',
+    file_get_contents( __DIR__ . '/input/group-members.xml' ) ) );
+exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=address ' . escapeshellarg( 'in=' . $dir . '/region.xml' )
+    . ' location=vsys1 shadow-json ' . escapeshellarg( 'filter=(name eq reg-1)' ) . ' actions=display 2>/dev/null', $ro );
+$ro = implode( "\n", $ro );
+$rj = json_decode( substr( $ro, strpos( $ro, '{' ) ), TRUE );
+$found = null;
+array_walk_recursive( $rj, function() {} );
+$walk = function( $a ) use ( &$walk, &$found ) { if( !is_array( $a ) ) return; if( isset( $a['reg-1'] ) && is_array( $a['reg-1'] ) ) { $found = $a['reg-1']; return; } foreach( $a as $v ) $walk( $v ); };
+$walk( $rj );
+$eq( array( is_array( $found ), array_keys( $found['members'] ?? array() ), isset( $found['192.168.10.0/24'] ) ), array( TRUE, array( '192.168.10.0/24', '192.168.178.0/24' ), FALSE ),
+    'region display: the networks under members (no key per network)' );
+$tdb = $tc->threatStore->getAll();
+$eq( array( CallContext::readOnlyReason( reset( $tdb ) ) ), array( 'a threat of the threat database' ), 'readOnlyReason: a threat' );
+
 // ---- ObjectCandidates: the names a field can take - own location and above (firewall, Panorama, SCM)
 $loadConf = function( string $class, string $file ) {
     $c = new $class();

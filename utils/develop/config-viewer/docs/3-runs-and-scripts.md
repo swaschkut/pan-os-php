@@ -27,7 +27,9 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   `color-set:…`, its comments → `comments-delete/comments-add:…`. Under the field the action is shown (✓). A field
   without a pan-os-php action for it is read only (and says why). A **read-only object** - a value used directly in a rule
   (temporary), a predefined object (e.g. service-http / service-https, listed at *shared*), a GlobalProtect gateway
-  tunnel - is shown read only with the reason; pan-os-php does not change it (an action for its users, e.g.
+  tunnel, a threat, a threat rule / DNS rule - is shown read only with the reason. The location **predefined** lists the
+  predefined objects (services, applications, log forwarding profiles, threats, security profiles); a predefined object
+  is listed with this location, its XML comes from predefined.xml; *predefined* is never a target; pan-os-php does not change it (an action for its users, e.g.
   `replacewithobject`, still works). A field that names other objects (members, tags,
   zones, addresses, services, applications, URL categories, interfaces, profiles, …) offers them as a drop down: the
   objects of its own location and of the locations above it (vsys → shared; device group → parent device groups →

@@ -2463,6 +2463,7 @@ async function showViewer(config, preset) {
         const groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
             r.locations.filter(l => l.kind === k).map(l => el('option', { value: l.name, text: l.name }))));
         location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
+        drawPredefined();
         if ([...location.options].some(o => o.value === was)) location.value = was;
         drawDgScope();
         filterLocations();
@@ -2553,8 +2554,21 @@ async function showViewer(config, preset) {
     const log = el('pre', { class: 'log', hidden: true });
     let lastStatus = null;
 
+    // the types with predefined objects (pan-os-php UTIL::predefinedObjectSets): location "predefined" - only to read
+    // them (they are also listed at shared); never a target. SCM: the predefined snippet is a location of its own
+    const PREDEFINED_TYPES = ['service', 'application', 'log-profile', 'threat', 'securityprofile'];
+    function drawPredefined() {
+        const pre = location.querySelector('option[value="predefined"]');
+        if (PREDEFINED_TYPES.includes(type.value) && !p.scope && !(locationInfo && locationInfo.config === 'scm')) {
+            if (!pre) location.append(el('option', { value: 'predefined', text: 'predefined (read only)' }));
+        } else if (pre) {
+            if (location.value === 'predefined') location.value = location.options[0].value;
+            pre.remove();
+        }
+    }
     function typeChanged() {
         view.template = null;
+        drawPredefined();
         spField.hidden = type.value !== 'securityprofile';
         devField.hidden = type.value !== 'device';
         drawSameName();

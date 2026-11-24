@@ -136,6 +136,14 @@ class CallContext
 
         PH::print_stdout( $tmp_txt );
 
+        // "predefined" is a location to read the predefined objects - never a target (move, clone, create, …)
+        foreach( $this->arguments as $argName => $argValue )
+            if( is_string( $argValue ) && stripos( (string)$argName, 'location' ) !== FALSE && strtolower( trim( $argValue ) ) === 'predefined' )
+            {
+                PH::ACTIONstatus( $this, "SKIPPED", "'predefined' is no target location - predefined objects come with PAN-OS" );
+                return;
+            }
+
         // an action that changes the object itself is not done on a read-only object (an action for its users - e.g.
         // removewhereused, replacewithobject of a value used directly in a rule - is)
         if( $readOnly !== null && empty( $this->actionRef['readonlyObjects'] ) && self::changesObject( $this->actionRef['name'] ) )
@@ -149,7 +157,7 @@ class CallContext
 
     /**
      * why an object can not be changed - null: it can. A GlobalProtect gateway tunnel (helper object of a GlobalProtect
-     * gateway), a predefined object, a temporary object (a value used directly in a rule / a name pan-os-php did not
+     * gateway), a threat, a threat rule / DNS rule of a security profile, a predefined object, a temporary object (a value used directly in a rule / a name pan-os-php did not
      * find in the configuration).
      */
     static public function readOnlyReason( $object ): ?string
@@ -158,7 +166,15 @@ class CallContext
             return null;
         if( $object instanceof GPGatewayTunnel )
             return "a GlobalProtect gateway tunnel is a helper object of the GlobalProtect gateway";
+        // threats (App-ID / threat database), the threat rules and DNS rules of a security profile: shown, not changed
+        if( $object instanceof Threat )
+            return "a threat of the threat database";
+        if( $object instanceof ThreatPolicy || $object instanceof DNSPolicy )
+            return "a rule of a security profile (threat rule / DNS rule) - change the security profile";
         if( method_exists( $object, 'isPredefined' ) && $object->isPredefined() )
+            return "predefined";
+        // a predefined security profile / URL category (predefined.xml)
+        if( isset( $object->owner ) && $object->owner instanceof SecurityProfileStore && in_array( $object->owner, SecurityProfileStore::predefinedStores(), TRUE ) )
             return "predefined";
         foreach( array( 'isTmpAddr', 'isTmpSrv', 'isTmp' ) as $m )
             if( method_exists( $object, $m ) && $object->$m() )
