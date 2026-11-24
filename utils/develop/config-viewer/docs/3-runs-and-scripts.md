@@ -105,7 +105,21 @@ A run works on a copy of one version in its own folder and container (no network
 | stats | best practice figures of the configuration |
 | playbook | the steps of a playbook - exports, set commands, changed configuration |
 | diff | compares two versions (file1 = the original, file2 = the newer one): differences in `run.log`, set commands file1 → file2 in `set-commands.txt`; optional only a part (XPath) |
+| IKE gateways / PSK list | the IKE gateways of the version and their pre-shared keys; optional with one of your SCM keys also the firewalls managed by that SCM tenant (newest configuration SCM keeps of each firewall, read only, network) - then both compared |
 | migration (licence) | a configuration of another vendor (project file) to PAN-OS |
+
+**IKE gateways / PSK list** (`type=scm-ngfw-psk-list`, write permission): a version, an SCM key, or both.
+
+- `run.log`: per gateway its place, peer and whether the pre-shared key can be decrypted (PAN-OS default master
+  key) - never a secret.
+- **Sensitive - download once**: `psk-list-version.csv` / `psk-list-firewalls.csv` - one row per gateway with the clear
+  text of the keys that could be decrypted. Only members with write permission see them; the download removes the file
+  on the server (a second download is not possible - start the run again); not downloaded: removed after 7 days
+  (`PANOSPHP_VIEWER_SENSITIVE_DAYS`). The download is in the audit log, its content never.
+- Result files without clear text: `psk-sha1-version.csv` / `psk-sha1-firewalls.csv` (the SHA-1 of each key, as PAN-OS
+  keeps it in the encrypted value) and, with both, `psk-compare.csv` - per gateway name: `same`, `different`,
+  `only-a` (only in the version), `only-b` (only on the firewalls), `unknown` (no pre-shared key / other format).
+  The comparison works without decrypting: also for keys of another master key.
 
 **Playbooks** come from two places, like the BP JSON:
 

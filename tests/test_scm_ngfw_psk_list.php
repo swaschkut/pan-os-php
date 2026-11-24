@@ -97,28 +97,62 @@ $xml = $lc->download( '007900000000001', '3' );
 $eq( array( $xml === $fwXml, $lc->download( '007900000000001', '9' ) ), array( TRUE, null ), 'download(): the XML of the version; null on HTTP 404' );
 
 $doc = new DOMDocument(); $doc->loadXML( $xml );
-$gws = SCMLocalConfig::gateways( new DOMXPath( $doc ) );
+$gws = IKEPSKList::gateways( new DOMXPath( $doc ) );
 $by = array_column( $gws, null, 'ike_gateway' );
 $eq( array( count( $gws ), $by['gw-a']['psk_status'], $by['gw-a']['psk_current'], $by['gw-a']['peer_address'], $by['gw-a']['local_address'], $by['gw-a']['ike_version'],
-        $by['gw-a']['psk_sha1'] === SCMPrismaAccessExport::cleartextSha1( 'synthetic-psk-a' ) ),
+        $by['gw-a']['psk_sha1'] === IKEPSKList::cleartextSha1( 'synthetic-psk-a' ) ),
     array( 4, 'default-master-key', 'synthetic-psk-a', '203.0.113.10', 'ethernet1/1 | 198.51.100.1/24', 'ikev2', TRUE ), 'gateways(): default master key - clear text, peer, local address, IKE version, SHA-1' );
-$eq( array( $by['gw-b']['psk_status'], $by['gw-b']['psk_current'], $by['gw-b']['peer_address'], $by['gw-b']['psk_sha1'] === SCMPrismaAccessExport::cleartextSha1( 'synthetic-psk-b' ),
+$eq( array( $by['gw-b']['psk_status'], $by['gw-b']['psk_current'], $by['gw-b']['peer_address'], $by['gw-b']['psk_sha1'] === IKEPSKList::cleartextSha1( 'synthetic-psk-b' ),
         $by['gw-c']['psk_status'], $by['gw-c']['psk_prefix'], $by['gw-c']['peer_address'], $by['gw-d']['psk_status'] ),
     array( 'not-decryptable', '', 'dynamic', TRUE, 'other-format', '-AA==', 'peer.example.net', 'no-psk' ), 'gateways(): other master key (SHA-1 still known), other format, certificate' );
-$by2 = array_column( SCMLocalConfig::gateways( new DOMXPath( $doc ), 'abcdefghijklmnop' ), null, 'ike_gateway' );
+$by2 = array_column( IKEPSKList::gateways( new DOMXPath( $doc ), 'abcdefghijklmnop' ), null, 'ike_gateway' );
 $eq( array( $by2['gw-a']['psk_status'], $by2['gw-b']['psk_status'], $by2['gw-b']['psk_current'] ), array( 'default-master-key', 'given-master-key', 'synthetic-psk-b' ),
     'gateways() master key: the default one first, then the given one' );
-$lines = implode( "\n", array_map( array( 'SCMLocalConfig', 'gatewayLine' ), $gws ) ) . implode( "\n", $log );
+$lines = implode( "\n", array_map( array( 'IKEPSKList', 'gatewayLine' ), $gws ) ) . implode( "\n", $log );
 $eq( strpos( $lines, 'synthetic-psk' ), FALSE, 'gatewayLine() / progress lines: no secret' );
 
 $dir = sys_get_temp_dir() . '/ngfwpsk-' . getmypid();
 @mkdir( $dir, 0700, TRUE );
 $file = $dir . '/psk-list.csv';
-$rows = SCMLocalConfig::writePSKList( $file, array( array( 'serial' => '007900000000001', 'firewall' => 'fw-1', 'config_version' => '3', 'config_timestamp' => '2026-11-20T10:00:00Z', 'gateways' => $gws ) ) );
+$rows = IKEPSKList::writePSKList( $file, array( array( 'serial' => '007900000000001', 'firewall' => 'fw-1', 'config_version' => '3', 'config_timestamp' => '2026-11-20T10:00:00Z', 'gateways' => $gws ) ) );
 $csv = array_map( function( $l ) { return str_getcsv( $l, ',', '"', '' ); }, file( $file, FILE_IGNORE_NEW_LINES ) );
 $eq( array( $rows, decoct( fileperms( $file ) & 0777 ), $csv[0], array_slice( $csv[1], 0, 10 ), $csv[1][10] ),
-    array( 4, '600', SCMLocalConfig::PSK_LIST_COLUMNS, array( '007900000000001', 'fw-1', '3', '2026-11-20T10:00:00Z', '', 'gw-a', '203.0.113.10', 'ethernet1/1 | 198.51.100.1/24', 'ikev2', 'default-master-key' ), 'synthetic-psk-a' ),
+    array( 4, '600', IKEPSKList::PSK_LIST_COLUMNS, array( '007900000000001', 'fw-1', '3', '2026-11-20T10:00:00Z', '', 'gw-a', '203.0.113.10', 'ethernet1/1 | 198.51.100.1/24', 'ikev2', 'default-master-key' ), 'synthetic-psk-a' ),
     'writePSKList(): one row per gateway, chmod 600, clear text only in this file' );
+
+// in=<file.xml>: a configuration offline (here an SCM folder: the gateway below devices/entry/network of the folder),
+// SHA-1 list without clear text, comparison with another list by gateway name and SHA-1
+$scmXml = function( $gwB, $pskB ) use ( $c ) {
+    return '<config><devices><entry name="localhost.localdomain"><container><entry name="Branches"><devices><entry name="localhost.localdomain"><network><ike><gateway>'
+        . '<entry name="gw-a"><peer-address><ip>203.0.113.10</ip></peer-address><authentication><pre-shared-key><key>' . $c->encrypt( 'synthetic-psk-a' ) . '</key></pre-shared-key></authentication></entry>'
+        . '<entry name="' . $gwB . '"><peer-address><ip>203.0.113.11</ip></peer-address><authentication><pre-shared-key><key>' . $c->encrypt( $pskB ) . '</key></pre-shared-key></authentication></entry>'
+        . '<entry name="gw-cert"><authentication><certificate/></authentication></entry>'
+        . '</gateway></ike></network></entry></devices></entry></container></entry></devices></config>';
+};
+file_put_contents( $dir . '/a.xml', $scmXml( 'gw-b', 'synthetic-psk-b' ) );
+file_put_contents( $dir . '/b.xml', $scmXml( 'gw-c', 'synthetic-psk-b' ) );
+file_put_contents( $dir . '/b2.xml', $scmXml( 'gw-b', 'synthetic-psk-b-new' ) );
+$cli = function( array $args ) use ( $repo ) {
+    exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=scm-ngfw-psk-list ' . implode( ' ', array_map( 'escapeshellarg', $args ) ) . ' 2>&1', $o, $rc );
+    return array( $rc, implode( "\n", $o ) );
+};
+list( $rcA, $oA ) = $cli( array( 'in=' . $dir . '/a.xml', 'psk-list=' . $dir . '/.sensitive/a.csv', 'sha1-list=' . $dir . '/a-sha1.csv' ) );
+$sha1 = (string)@file_get_contents( $dir . '/a-sha1.csv' );
+$eq( array( $rcA, strpos( $oA, 'gw-a (container Branches)' ) !== FALSE, strpos( $oA, 'synthetic' ), decoct( fileperms( $dir . '/.sensitive/a.csv' ) & 0777 ),
+        strpos( (string)file_get_contents( $dir . '/.sensitive/a.csv' ), 'synthetic-psk-a' ) !== FALSE, strpos( $sha1, 'synthetic' ), strpos( $sha1, IKEPSKList::cleartextSha1( 'synthetic-psk-a' ) ) !== FALSE,
+        strpos( $sha1, 'psk_current' ) ),
+    array( 0, TRUE, FALSE, '600', TRUE, FALSE, TRUE, FALSE ),
+    'in=<file.xml>: gateways of an SCM folder (location), PSK list chmod 600 with clear text, SHA-1 list without, output without secret' );
+list( $rcB, $oB ) = $cli( array( 'in=' . $dir . '/b.xml', 'compare=' . $dir . '/a-sha1.csv', 'compare-out=' . $dir . '/cmp.csv' ) );
+list( $rcB2, $oB2 ) = $cli( array( 'in=' . $dir . '/b2.xml', 'compare=' . $dir . '/.sensitive/a.csv' ) );
+$cmp = array_column( array_map( function( $l ) { return str_getcsv( $l, ',', '"', '' ); }, array_slice( file( $dir . '/cmp.csv', FILE_IGNORE_NEW_LINES ), 1 ) ), 1, 0 );
+$eq( array( $rcB, $cmp, strpos( (string)file_get_contents( $dir . '/cmp.csv' ), 'synthetic' ), strpos( $oB, '1 same, 0 different, 1 only in a, 1 only in b, 1 unknown' ) !== FALSE,
+        $rcB2, strpos( $oB2, '1 same, 1 different, 0 only in a, 0 only in b, 1 unknown' ) !== FALSE, strpos( $oB2, 'synthetic' ) ),
+    array( 0, array( 'gw-a' => 'same', 'gw-b' => 'only-a', 'gw-c' => 'only-b', 'gw-cert' => 'unknown' ), FALSE, TRUE, 0, TRUE, FALSE ),
+    'compare=: by gateway name and SHA-1 (same / different / only in a / only in b / unknown); a PSK list as input is read without its clear text' );
+$eq( array( IKEPSKList::compare( array( array( 'ike_gateway' => 'x', 'psk_sha1' => 'S1' ), array( 'ike_gateway' => 'x', 'psk_sha1' => 'S2' ) ), array( array( 'ike_gateway' => 'x', 'psk_sha1' => 'S1' ) ) )[0]['result'],
+        IKEPSKList::compare( array( array( 'ike_gateway' => 'x', 'psk_sha1' => 'S1', 'firewall' => 'fw-1', 'serial' => '0079', 'location' => 'vsys vsys1' ) ), array( array( 'ike_gateway' => 'x', 'psk_sha1' => 'S1' ) ) )[0]['a_where'] ),
+    array( 'different', 'fw-1 (0079) / vsys vsys1' ), 'compare(): a name with two different keys on one side is different; where = firewall (serial) / location' );
 
 // pan-os-php type=scm-ngfw-psk-list reaches the script
 exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=scm-ngfw-psk-list help 2>&1', $out, $rc );

@@ -1979,6 +1979,45 @@ eq( array( array_column( $seRunView[1]['sensitive'] ?? array(), 'name' ), is_fil
         in_array( 'psk-for-customer.csv', array_column( $seRunView[1]['files'] ?? array(), 'name' ), TRUE ) ),
     array( array( 'psk-for-customer.csv' ), FALSE, array(), 403, 200, TRUE, 404, FALSE, TRUE, FALSE ),
     'sensitive result: listed for write members only, expired ones removed, downloaded once (then gone), the download in the audit log' );
+// PSK list (run psk-list, type=scm-ngfw-psk-list): the IKE gateways of a version - the PSK list with the clear text
+// is a sensitive result (download once), the SHA-1 list a result file; never a secret in run.log; with an SCM key the
+// firewalls managed by SCM as well (network - not in this test); neither version nor key: refused
+require_once $here . '/../lib/helper-classes/PanosCrypto.php';
+$pskCrypto = new PanosCrypto();
+$pskXml = '<config version="11.1.0" urldb="paloaltonetworks"><devices><entry name="localhost.localdomain"><network><ike><gateway>'
+    . '<entry name="gw-branch"><peer-address><ip>203.0.113.10</ip></peer-address><local-address><interface>ethernet1/1</interface></local-address>'
+    . '<authentication><pre-shared-key><key>' . $pskCrypto->encrypt( 'synthetic-viewer-psk' ) . '</key></pre-shared-key></authentication></entry>'
+    . '<entry name="gw-other"><peer-address><dynamic/></peer-address><authentication><pre-shared-key><key>' . $pskCrypto->encrypt( 'synthetic-other-psk', 'abcdefghijklmnop' ) . '</key></pre-shared-key></authentication></entry>'
+    . '</gateway></ike></network><vsys><entry name="vsys1"/></vsys></entry></devices></config>';
+$r = $alice->call( 'POST', 'projects', array( 'name' => 'PSK list' ) );
+$PK = 'projects/' . $r[1]['pid'];
+$pkPid = $r[1]['pid'];
+$r = $alice->call( 'POST', $PK . '/configs', null, array( 'fw.xml', $pskXml ) );
+$PKC = $PK . '/configs/' . ( $r[1]['cid'] ?? 'x' );
+$alice->call( 'PUT', $PK . '/members', array( 'user' => 'carol', 'role' => 'read' ) );
+$pkNothing = status( $alice->call( 'POST', $PK . '/psk-list/runs', array() ) );
+$pkCarol = status( $carol->call( 'POST', $PKC . '/psk-list/runs', array() ) );
+$pkBadKey = status( $alice->call( 'POST', $PKC . '/psk-list/runs', array( 'kid' => str_repeat( 'a', 32 ) ) ) );
+$pkRun = $alice->call( 'POST', $PKC . '/psk-list/runs', array() );
+$pkDone = waitRun( $alice, $PK . '/runs/' . ( $pkRun[1]['jid'] ?? 'x' ) );
+$pkJobDir = $data . '/projects/' . $pkPid . '/jobs/' . ( $pkRun[1]['jid'] ?? 'x' );
+$pkLog = is_file( $pkJobDir . '/run.log' ) ? (string)file_get_contents( $pkJobDir . '/run.log' ) : '';
+$pkSha1 = is_file( $pkJobDir . '/psk-sha1-version.csv' ) ? (string)file_get_contents( $pkJobDir . '/psk-sha1-version.csv' ) : '';
+$pkCarolView = $carol->call( 'GET', $PK . '/runs/' . ( $pkRun[1]['jid'] ?? 'x' ) );
+$pkPerm = decoct( @fileperms( $pkJobDir . '/.sensitive/psk-list-version.csv' ) & 0777 );
+$pkTake = $alice->call( 'GET', $PK . '/runs/' . ( $pkRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-list-version.csv' );
+$pkTake2 = status( $alice->call( 'GET', $PK . '/runs/' . ( $pkRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-list-version.csv' ) );
+$alice->call( 'DELETE', $PK . '/members/carol' );
+eq( array( $pkNothing, $pkCarol, $pkBadKey, status( $pkRun ), $pkDone[1]['state'] ?? null ),
+    array( 400, 403, 400, 202, 'done' ), 'PSK list: a version and / or an SCM key of the user; write members only; the run of a version is done' );
+eq( array( array_column( $pkDone[1]['sensitive'] ?? array(), 'name' ), in_array( 'psk-sha1-version.csv', array_column( $pkDone[1]['files'] ?? array(), 'name' ), TRUE ),
+        in_array( '.sensitive/psk-list-version.csv', array_column( $pkDone[1]['files'] ?? array(), 'name' ), TRUE ), $pkCarolView[1]['sensitive'] ?? null,
+        $pkPerm ),
+    array( array( 'psk-list-version.csv' ), TRUE, FALSE, array(), '600' ), 'PSK list: the clear text list a sensitive result (chmod 600, not a result file, not for read members), the SHA-1 list a result file' );
+eq( array( strpos( $pkLog, 'synthetic-' ), strpos( $pkSha1, 'synthetic-' ), strpos( $pkLog, 'gw-branch' ) !== FALSE, strpos( $pkLog, 'NOT decryptable' ) !== FALSE,
+        status( $pkTake ), strpos( json_encode( $pkTake ), 'synthetic-viewer-psk' ) !== FALSE, strpos( json_encode( $pkTake ), 'synthetic-other-psk' ), $pkTake2 ),
+    array( FALSE, FALSE, TRUE, TRUE, 200, TRUE, FALSE, 404 ),
+    'PSK list: run.log / SHA-1 list without a secret; the download holds the clear text that could be decrypted, once' );
 // approvals (interface 2): the areas of the newest plan (result of the run ap-plan), bound to that run and its content;
 // ap-apply only with every area approved, it gets a copy of exactly that plan; four eyes (owner): not by the planner
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Approvals' ) );

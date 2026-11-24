@@ -17,6 +17,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+// the SHA-1 of an encrypted value (IKEPSKList): also when this file is loaded without the pan-os-php framework (config viewer)
+if( !class_exists( 'IKEPSKList', FALSE ) )
+    require_once dirname( __FILE__ ) . '/../../../../../lib/misc-classes/IKEPSKList.php';
+
 /**
  * Export of Prisma Access configuration of one tenant (TSG) into a local directory, per area:
  *
@@ -1045,16 +1049,14 @@ class SCMPrismaAccessExport
      * The SHA1 part identifies the cleartext independent of the master key: two tenants with different master keys
      * produce different values for the same secret, but the same SHA1.
      */
-    const ENCRYPTED_V1_PATTERN = '#^-AQ==([A-Za-z0-9+/]{27}=)[A-Za-z0-9+/]+={0,2}$#';
+    const ENCRYPTED_V1_PATTERN = IKEPSKList::ENCRYPTED_V1_PATTERN;
 
     /**
      * base64 SHA1 of the cleartext of a PAN-OS encrypted value, or null
      */
     public static function encryptedSha1( $value )
     {
-        if( !is_string($value) || !preg_match(self::ENCRYPTED_V1_PATTERN, $value, $m) )
-            return null;
-        return $m[1];
+        return IKEPSKList::encryptedSha1( $value );
     }
 
     /**
@@ -1062,7 +1064,7 @@ class SCMPrismaAccessExport
      */
     public static function cleartextSha1( $cleartext )
     {
-        return base64_encode( sha1( (string)$cleartext, true ) );
+        return IKEPSKList::cleartextSha1( $cleartext );
     }
 
     /**

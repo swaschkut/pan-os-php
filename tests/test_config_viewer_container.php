@@ -611,8 +611,8 @@ $r = waitRun( $P . '/runs/' . ( $imp( array( 'kid' => $skid ) )[1]['jid'] ?? '' 
 $fjid = $r[1]['jid'] ?? '';
 $nVers = count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() );
 eq( array( $r[1]['state'] ?? null, is_dir( $data . '/projects/' . $pid . '/jobs/' . $fjid . '/scm-export/1234567890' ) ), array( 'failed', TRUE ), 'import SCM: conversion failed, the export stays with the run' );
-eq( array( call( 'POST', $P . '/runs/' . $doneJid . '/convert' )[0], call( 'POST', $P . '/runs/' . $ijid . '/convert' )[0], call( 'POST', $P . '/runs/' . str_repeat( '0', 32 ) . '/convert' )[0] ),
-    array( 409, 400, 404 ), 'convert again: only a failed SCM import' );
+eq( array( call( 'POST', $P . '/runs/' . $ijid . '/convert' )[0], call( 'POST', $P . '/runs/' . str_repeat( '0', 32 ) . '/convert' )[0] ),
+    array( 400, 404 ), 'convert again: only an SCM import' );
 unlink( $bin . '/fail-scm-xml' );
 @unlink( $bin . '/import.log' );
 $r = call( 'POST', $P . '/runs/' . $fjid . '/convert' );
@@ -623,7 +623,12 @@ $names = array_column( $r[1]['files'] ?? array(), 'name' );
 eq( array( $r[1]['state'] ?? null, array_column( $il, 0 ), array_column( $il, 1 ), $il[0][2] ?? null, in_array( 'run-1.log', $names, TRUE ), in_array( 'run.log', $names, TRUE ),
     count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() ) ),
     array( 'done', array( 'scm-export-xml' ), array( 'none' ), '', TRUE, TRUE, $nVers + 1 ), 'convert again: only scm-export-xml, no network, no key store, the old log as run-1.log, a new version' );
-eq( call( 'POST', $P . '/runs/' . $fjid . '/convert' )[0], 409, 'convert again: not a second time once it is done' );
+// a done SCM import again (a newer pan-os-php converts more, e.g. the IKE / IPsec objects): a new version; one import at a time
+$again = call( 'POST', $P . '/runs/' . $fjid . '/convert' );
+$busy = call( 'POST', $P . '/runs/' . $doneJid . '/convert' )[0];
+$r = waitRun( $P . '/runs/' . $fjid );
+eq( array( $again[0], $busy, $r[1]['state'] ?? null, count( call( 'GET', $P . '/configs' )[1]['configs'] ?? array() ), in_array( 'x-import-again=yes', $r[1]['args'] ?? array(), TRUE ) ),
+    array( 202, 409, 'done', $nVers + 2, TRUE ), 'convert again: also a done SCM import - a new version; not while another import is queued' );
 $bnd = call( 'GET', $P )[1]['binding'] ?? null;
 $r = $imp( array( 'kid' => $kid ) );
 eq( array( $bnd, $r[0] ), array( array( 'kind' => 'scm', 'target' => '1234567890' ), 403 ), 'binding: the SCM tenant by its import, a firewall refused' );

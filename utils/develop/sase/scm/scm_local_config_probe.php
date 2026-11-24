@@ -140,7 +140,7 @@ if( $xml === null )
     exit(2);
 if( isset(PH::$args['save']) && PH::$args['save'] !== true )
 {
-    $fh = SCMLocalConfig::openSecretFile( (string)PH::$args['save'] );
+    $fh = IKEPSKList::openSecretFile( (string)PH::$args['save'] );
     fwrite( $fh, $xml );
     fclose( $fh );
     PH::print_stdout("   written to " . PH::$args['save'] . " (chmod 600 - holds the encrypted secrets of the firewall)");
@@ -165,17 +165,17 @@ PH::print_stdout();
 function probeAnalyse( DOMXPath $xp, ?string $masterKey ): array
 {
     $stats = array( 'gateways' => 0, 'psk' => 0, 'level1' => 0, 'other' => 0, 'default' => 0, 'given' => 0, 'no' => 0 );
-    $map = array( SCMLocalConfig::PSK_DEFAULT => 'default', SCMLocalConfig::PSK_GIVEN => 'given', SCMLocalConfig::PSK_NOT_DECRYPTABLE => 'no' );
+    $map = array( IKEPSKList::PSK_DEFAULT => 'default', IKEPSKList::PSK_GIVEN => 'given', IKEPSKList::PSK_NOT_DECRYPTABLE => 'no' );
     PH::print_stdout();
     PH::print_stdout(" - IKE gateways with pre-shared key:");
-    foreach( SCMLocalConfig::gateways( $xp, $masterKey ) as $g )
+    foreach( IKEPSKList::gateways( $xp, $masterKey ) as $g )
     {
         $stats['gateways']++;
-        if( $g['psk_status'] === SCMLocalConfig::PSK_NONE )
+        if( $g['psk_status'] === IKEPSKList::PSK_NONE )
             continue;
         $stats['psk']++;
         $label = $g['ike_gateway'] . ( $g['location'] !== '' ? " (" . $g['location'] . ")" : "" );
-        if( $g['psk_status'] === SCMLocalConfig::PSK_OTHER_FORMAT )
+        if( $g['psk_status'] === IKEPSKList::PSK_OTHER_FORMAT )
         {
             $stats['other']++;
             PH::print_stdout("   * " . $label . ": other format (" . ( $g['psk_prefix'] === '' ? 'empty' : 'prefix ' . $g['psk_prefix'] ) . ") - not readable by pan-os-php");

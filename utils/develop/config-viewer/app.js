@@ -832,6 +832,7 @@ async function showProject(pid) {
         const rVersion = el('select', { required: true }, configs.configs.map(c => el('option', { value: c.cid, text: c.name + ' - ' + fmtTime(c.created) })));
         const rType = el('select', {}, el('option', { value: 'stats', text: 'stats (BPA figures)' }), el('option', { value: 'playbook', text: 'playbook' }),
             el('option', { value: 'diff', text: 'diff (compare two versions)' }),
+            canWrite ? el('option', { value: 'psk-list', text: 'IKE gateways / PSK list' }) : null,
             Object.entries(plug.runs).map(([k, r]) => el('option', { value: k, text: r.title })));
         // predefined playbooks (shipped with pan-os-php, turned on by an administrator) and the playbook files of the project
         const ownPb = files.files.filter(f => f.kind === 'playbook');
@@ -857,6 +858,15 @@ async function showProject(pid) {
         const diffFields = el('span', { class: 'row' }, field('Compare with (file2, the newer one)', dOther), field('Set commands file1 → file2', dSet),
             field('No rule order check', dOrder), el('label', { class: 'grow' }, 'Only this part (XPath)', dXpath));
         const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp), versionField = field('Version', rVersion);
+        // PSK list: this version and / or - with an SCM key of mine - the firewalls managed by SCM (newest local
+        // configuration), both compared by the SHA-1 of the pre-shared key; the PSK lists are sensitive (download once)
+        const pskKeys = canWrite ? (await api('GET', 'keys').catch(() => ({ keys: [] }))).keys.filter(k => k.kind === 'scm' && !k.refused) : [];
+        const pskNoVersion = el('option', { value: '', text: '- no version (only the firewalls of SCM) -' });
+        const pskKey = el('select', {}, el('option', { value: '', text: '- none (only the version) -' }),
+            pskKeys.map(k => el('option', { value: k.kid, text: 'SCM TSG ' + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
+        const pskRole = roleSelect('scm');
+        const pskFields = el('span', { class: 'row' }, field('Firewalls managed by SCM (my SCM key)', pskKey), pskRole ? field('Role', pskRole) : null,
+            el('span', { class: 'muted', text: 'PSK lists (clear text): sensitive, download once. Comparison and SHA-1 lists: result files.' }));
         // run types of plug-ins: the fields the plug-in declares (text, location, a project file of a kind)
         const plugFields = el('span', { class: 'row' });
         let plugInputs = [];
@@ -864,11 +874,14 @@ async function showProject(pid) {
             const pr = plug.runs[rType.value];
             pbField.hidden = pbOpts.hidden = rType.value !== 'playbook'; locField.hidden = rType.value !== 'stats';
             diffFields.hidden = rType.value !== 'diff';
+            pskFields.hidden = rType.value !== 'psk-list';
+            if (rType.value === 'psk-list') { if (!pskNoVersion.parentNode) rVersion.prepend(pskNoVersion); }
+            else if (pskNoVersion.parentNode) { if (rVersion.value === '') rVersion.selectedIndex = 1; pskNoVersion.remove(); }
             versionField.firstChild.textContent = rType.value === 'diff' ? 'Version (file1, the original)' : 'Version';
-            bpField.hidden = (!!pr && !pr.bp) || rType.value === 'diff';
+            bpField.hidden = (!!pr && !pr.bp) || rType.value === 'diff' || rType.value === 'psk-list';
             // a run type without a version (its input is a project file)
             versionField.hidden = !!pr && pr.input === 'none';
-            rVersion.required = !versionField.hidden;
+            rVersion.required = !versionField.hidden && rType.value !== 'psk-list';
             plugInputs = (pr ? pr.fields : []).map(f => {
                 const kind = f.kind.startsWith('file:') ? f.kind.slice(5) : null;
                 const opts = Object.entries(f.options || {});
@@ -900,6 +913,8 @@ async function showProject(pid) {
                             : r.type === 'ldap-discover' ? 'LDAP servers of ' + ((r.args || []).find(a => a.startsWith('x-ldap-discover-target=')) || '').slice(23)
                             : r.type === 'ldap' ? 'LDAP ' + ((r.args || []).find(a => a.startsWith('x-ldap-target=')) || '').slice(14).replace(/^auto:/, 'automatic: ')
                             : r.type === 'import' ? 'from ' + ((r.args || []).find(a => a.startsWith('x-import-target=')) || '').slice(16).replace(/^panos:/, '').replace(/^scm:/, 'SCM TSG ')
+                            : r.type === 'psk-list' ? [r.cid ? (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name : null,
+                                (r.args || []).some(a => a.startsWith('x-psk-target=')) ? 'firewalls of SCM TSG ' + ((r.args || []).find(a => a.startsWith('x-psk-target=')) || '').slice(17) : null].filter(Boolean).join(' + ')
                             : !r.cid ? '-' : (configs.configs.find(c => c.cid === r.cid) || { name: '(deleted version)' }).name }),
                         el('td', { class: 'wrap' }, el('span', { class: 'badge' + (open ? ' dirty' : '') + (r.reason === 'memory' ? ' oom' : ''), text: r.reason === 'memory' ? 'out of memory' : r.state }),
                             r.error ? el('span', { class: r.reason === 'memory' ? 'error' : 'muted', text: ' ' + (r.reason === 'memory' ? r.error.replace(/^out of memory: /, '') : r.error) }) : null),
@@ -914,7 +929,8 @@ async function showProject(pid) {
                                 await api('POST', base + '/runs/' + r.jid + '/save', to === pid ? {} : { project: to });
                                 await showProject(pid); message(to === pid ? 'the result configuration of the run is a new version' : 'the result configuration of the run is a new version of the other project');
                             }) }), ' in ', el('select', { 'aria-label': 'project for the result' }, writable.map(x => { const o = el('option', { value: x.pid, text: x.pid === pid ? 'this project' : x.name }); o.selected = x.pid === pid; return o; }))) : null, ' ',
-                            canWrite && r.type === 'import' && r.state === 'failed' && (r.args || []).some(a => a.startsWith('x-import-target=scm:')) ? el('button', { type: 'button', text: 'Convert again', title: 'only the conversion to XML (scm-export-xml) on the export this run has already downloaded - no download, no network', onclick: () => run(async () => {
+                            canWrite && r.type === 'import' && (r.state === 'failed' || r.state === 'done') && (r.args || []).some(a => a.startsWith('x-import-target=scm:')) ? el('button', { type: 'button', text: 'Convert again', title: 'only the conversion to XML (scm-export-xml) on the export this run has already downloaded - no download, no network; a new version (e.g. after an update of pan-os-php that converts more)', onclick: () => run(async () => {
+                                if (r.state === 'done' && !confirm('Convert the export of this import again? The result becomes a new version (no download, no network).')) return;
                                 await api('POST', base + '/runs/' + r.jid + '/convert');
                                 message('conversion queued - the configuration becomes a new version when it is done'); await refreshRuns();
                             }) }) : null, ' ',
@@ -957,6 +973,12 @@ async function showProject(pid) {
                     if (dOrder.checked) body.noruleordercheck = true;
                     if (dXpath.value.trim()) body.xpath = dXpath.value.trim();
                 }
+                else if (rType.value === 'psk-list') {
+                    delete body.bp;
+                    if (!rVersion.value && !pskKey.value) throw new Error('choose a version and / or an SCM key');
+                    if (pskKey.value) body.kid = pskKey.value;
+                    if (pskKey.value && pskRole && pskRole.value) body.role = pskRole.value;
+                }
                 else if (plug.runs[rType.value]) {
                     if (!plug.runs[rType.value].bp) delete body.bp;
                     for (const x of plugInputs) {
@@ -972,11 +994,11 @@ async function showProject(pid) {
                     }
                 }
                 else body.location = rLocation.value.trim() || 'any';
-                const noVersion = plug.runs[rType.value] && plug.runs[rType.value].input === 'none';
+                const noVersion = (plug.runs[rType.value] && plug.runs[rType.value].input === 'none') || (rType.value === 'psk-list' && !rVersion.value);
                 await api('POST', base + (noVersion ? '' : '/configs/' + rVersion.value) + '/' + rType.value + '/runs', body);
                 message('run queued');
                 await refreshRuns();
-            }); } }, field('Run', rType), versionField, diffFields, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
+            }); } }, field('Run', rType), versionField, diffFields, pskFields, pbField, locField, plugFields, bpField, el('button', { class: 'primary', type: 'submit', text: 'Start run' }), pbOpts),
             runsBody);
         // while a run is open: refresh the list
         let openRuns = await drawRuns();

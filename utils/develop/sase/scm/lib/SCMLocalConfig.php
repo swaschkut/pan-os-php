@@ -19,29 +19,16 @@
 
 /**
  * Read only: the configuration of the firewalls managed by Strata Cloud Manager (SCM NGFW operations API
- * GET /local-config/versions, GET /local-config/download) and the pre-shared keys of their IKE gateways.
+ * GET /local-config/versions, GET /local-config/download).
  *
- * One implementation for scm_local_config_probe.php, scm_ngfw_psk_list.php (and the config viewer, which runs them).
- * Nothing here prints or logs a secret: the clear text of a pre-shared key is only returned (gateways()) and written by
- * writePSKList() into a file with chmod 600.
+ * One implementation for scm_local_config_probe.php, scm_ngfw_psk_list.php (and the config viewer, which runs them);
+ * the IKE gateways / pre-shared keys of a configuration: IKEPSKList. Nothing here prints or logs a secret.
  */
-require_once(dirname(__FILE__) . "/SCMPrismaAccessExport.php");
-
 class SCMLocalConfig
 {
     /** the base URL of the operations API is not documented (only the paths): the probable ones, in this order */
     const BASE_PATHS = array( '/config/ngfw-operations/v1', '/config/operations/v1', '/operations/v1', '/config/device-operations/v1' );
     const SERIAL_PARAMS = array( 'device', 'serial' );
-
-    const PSK_LIST_COLUMNS = array( 'serial', 'firewall', 'config_version', 'config_timestamp', 'location', 'ike_gateway',
-        'peer_address', 'local_address', 'ike_version', 'psk_status', 'psk_current', 'psk_sha1' );
-
-    /** psk_status of a gateway */
-    const PSK_DEFAULT = 'default-master-key';
-    const PSK_GIVEN = 'given-master-key';
-    const PSK_NOT_DECRYPTABLE = 'not-decryptable';
-    const PSK_OTHER_FORMAT = 'other-format';
-    const PSK_NONE = 'no-psk';
 
     /** @var object PanSCMAPIConnector (or an object with sendSCMAPIRequest() and $url_api) */
     private $connector;
@@ -167,107 +154,5 @@ class SCMLocalConfig
         if( $r['http_code'] != 200 || !is_string($r['response']) || $r['response'] === '' )
             return null;
         return $r['response'];
-    }
-
-    /**
-     * the IKE gateways of a configuration
-     * @return array of ['location', 'ike_gateway', 'peer_address', 'local_address', 'ike_version', 'psk_status',
-     *               'psk_current' (clear text, only when decrypted), 'psk_sha1' (base64 SHA-1 of the clear text, from the
-     *               encrypted value - also when it can not be decrypted), 'psk_prefix' (first 5 characters of the encrypted
- *               value: its format)]
-     */
-    public static function gateways( DOMXPath $xp, ?string $masterKey = null ): array
-    {
-        $crypto = new PanosCrypto();
-        $out = array();
-        foreach( $xp->query("//network/ike/gateway/entry") as $gw )
-        {
-            $where = $xp->query("ancestor::entry[parent::vsys or parent::template or parent::device-group]", $gw)->item(0);
-            $peer = array();
-            foreach( $xp->query("peer-address/ip|peer-address/fqdn", $gw) as $n )
-                $peer[] = trim($n->textContent);
-            if( empty($peer) && $xp->query("peer-address/dynamic", $gw)->length > 0 )
-                $peer[] = 'dynamic';
-            $local = array();
-            foreach( $xp->query("local-address/interface|local-address/ip", $gw) as $n )
-                $local[] = trim($n->textContent);
-            $ver = $xp->query("protocol/version", $gw)->item(0);
-
-            $row = array( 'location' => $where !== null ? $where->parentNode->nodeName . " " . $where->getAttribute('name') : '',
-                'ike_gateway' => $gw->getAttribute('name'), 'peer_address' => implode(" | ", $peer), 'local_address' => implode(" | ", $local),
-                'ike_version' => $ver !== null ? trim($ver->textContent) : '', 'psk_status' => self::PSK_NONE, 'psk_current' => '', 'psk_sha1' => '', 'psk_prefix' => '' );
-
-            $key = $xp->query("authentication/pre-shared-key/key", $gw)->item(0);
-            if( $key !== null )
-            {
-                $value = trim($key->textContent);
-                $row['psk_prefix'] = substr($value, 0, 5);
-                if( strpos($value, "-AQ==") !== 0 )
-                    $row['psk_status'] = self::PSK_OTHER_FORMAT;
-                else
-                {
-                    $sha1 = SCMPrismaAccessExport::encryptedSha1( $value );
-                    $row['psk_sha1'] = $sha1 !== null ? $sha1 : '';
-                    // PanosCrypto::decrypt(): '' when the key does not fit (the SHA-1 in the value is checked)
-                    $clear = $crypto->decrypt( $value, null );
-                    $status = self::PSK_DEFAULT;
-                    if( $clear === '' && $masterKey !== null )
-                    {
-                        $clear = $crypto->decrypt( $value, $masterKey );
-                        $status = self::PSK_GIVEN;
-                    }
-                    if( $clear === '' )
-                        $status = self::PSK_NOT_DECRYPTABLE;
-                    $row['psk_status'] = $status;
-                    $row['psk_current'] = $clear;
-                }
-            }
-            $out[] = $row;
-        }
-        return $out;
-    }
-
-    /** a gateway for an output line: never the clear text */
-    public static function gatewayLine( array $g ): string
-    {
-        $text = array( self::PSK_DEFAULT => 'decryptable with the DEFAULT master key', self::PSK_GIVEN => 'decryptable with the given master key',
-            self::PSK_NOT_DECRYPTABLE => 'NOT decryptable', self::PSK_OTHER_FORMAT => 'other format - not readable by pan-os-php',
-            self::PSK_NONE => 'no pre-shared key' );
-        return $g['ike_gateway'] . ( $g['location'] !== '' ? " (" . $g['location'] . ")" : "" )
-            . ( $g['peer_address'] !== '' ? "  peer " . $g['peer_address'] : "" ) . ": " . $text[$g['psk_status']];
-    }
-
-    /** opens a file for secrets: created with chmod 600 */
-    public static function openSecretFile( string $file )
-    {
-        $old = umask(0077);
-        $fh = @fopen( $file, "w" );
-        umask($old);
-        if( $fh === false )
-            throw new Exception( "not possible to write " . $file );
-        chmod( $file, 0600 );
-        return $fh;
-    }
-
-    /**
-     * the PSK list: one row per IKE gateway of every firewall, the clear text when decrypted (chmod 600)
-     * @param array $firewalls of ['serial', 'firewall', 'config_version', 'config_timestamp', 'gateways' => gateways()]
-     */
-    public static function writePSKList( string $file, array $firewalls ): int
-    {
-        $fh = self::openSecretFile( $file );
-        fputcsv( $fh, self::PSK_LIST_COLUMNS, ',', '"', '' );
-        $n = 0;
-        foreach( $firewalls as $fw )
-            foreach( $fw['gateways'] as $g )
-            {
-                $line = array();
-                foreach( self::PSK_LIST_COLUMNS as $col )
-                    $line[] = (string)( array_key_exists($col, $g) ? $g[$col] : ( $fw[$col] ?? '' ) );
-                fputcsv( $fh, $line, ',', '"', '' );
-                $n++;
-            }
-        fclose( $fh );
-        return $n;
     }
 }

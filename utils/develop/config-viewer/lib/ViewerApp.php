@@ -2097,7 +2097,7 @@ class ViewerApp
      * path of the request. 'in=' is the version file, the working directory is the folder of the job.
      */
     const JOB_TYPES = array( 'stats', 'playbook', 'diff', 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover',
-        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file', 'egress-ip', 'scm-pa' );
+        'object-merger', 'rule-merger', 'merger-possible-report', 'support-file', 'egress-ip', 'scm-pa', 'psk-list' );
     /** the mergers of the Merger tab: their arguments (checked here, the merger checks their combination again) */
     const MERGER_OBJECTTYPES = array( 'tag', 'address', 'service', 'edl', 'region', 'application-custom', 'application-filter', 'addressgroup',
         'servicegroup', 'application-group', 'custom-url-category', 'schedule', 'log-profile', 'decryption-profile', 'hip-object', 'hip-profile',
@@ -2800,7 +2800,9 @@ class ViewerApp
         // a run works on the whole configuration
         self::needUnlimited( $p, 'a ' . $type . ' run' );
         // a run type of a plug-in with 'input' => 'none' has no version (its input is a project file); an import neither
-        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE );
+        $noVersion = ( $plugin !== null && $plugin['input'] === 'none' ) || in_array( $type, array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE )
+            // the PSK list: of a version and / or (with an SCM key) of the firewalls managed by SCM
+            || ( $type === 'psk-list' && $cid === null );
         // the project of the installation-wide runs has only App-ID / MaxMind runs; MaxMind is installation-wide only
         if( ( $p['pid'] === self::SYSTEM_PID && !in_array( $type, array( 'appid', 'geoip' ), TRUE ) ) || ( $type === 'geoip' && $p['pid'] !== self::SYSTEM_PID ) )
             throw new ViewerException( 'not found', 404 );
@@ -2920,6 +2922,35 @@ class ViewerApp
             $args = array( 'x-scmpa-key=' . $k['kid'], 'x-scmpa-target=scm:' . $k['target'], 'x-scmpa-page=' . $page );
             if( $role !== null )
                 $args[] = 'x-role=' . $role;
+        }
+        if( $type === 'psk-list' )
+        {
+            // the IKE gateways and pre-shared keys (type=scm-ngfw-psk-list): of this version (offline) and / or, with an SCM
+            // key of this user, of the firewalls managed by the SCM tenant (newest local configuration, read only) - then
+            // both compared by the SHA-1 of the pre-shared key. The PSK lists (clear text) are sensitive results:
+            // downloadable once. Write permission, not with an API token.
+            $this->projectGet( $user, $pid, 'write' );
+            if( isset( $user['token'] ) )
+                throw new ViewerException( 'not allowed with an API token', 403 );
+            $kid = (string)( $in['kid'] ?? '' );
+            if( $kid === '' && $cid === null )
+                throw new ViewerException( 'a version and / or kid (one of your SCM keys) is needed', 400 );
+            if( $kid !== '' )
+            {
+                $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( $kid, $user['id'] ) )->fetch();
+                if( !$k || $k['kind'] !== 'scm' )
+                    throw new ViewerException( 'kid: one of your SCM keys (Account, My API keys, kind SCM)', 400 );
+                $role = self::bindRole( $p, 'scm', $k['target'], $in['role'] ?? null );
+                if( !$this->networkGet()['enabled'] )
+                    throw new ViewerException( (string)$this->networkRefusal( 'scm', $k['target'], $user ), 403 );
+                if( empty( $p['network'] ) )
+                    throw new ViewerException( 'network is off for this project (the owner turns it on)', 403 );
+                if( ( $why = $this->networkRefusal( 'scm', $k['target'], $user ) ) !== null )
+                    throw new ViewerException( $why, 403 );
+                $args = array( 'x-psk-key=' . $k['kid'], 'x-psk-target=scm:' . $k['target'] );
+                if( $role !== null )
+                    $args[] = 'x-role=' . $role;
+            }
         }
         if( $type === 'ldap-discover' )
         {
@@ -3314,9 +3345,11 @@ class ViewerApp
     }
 
     /**
-     * a failed SCM import again from its export: only the conversion (type=scm-export-xml) on the JSON the run has
-     * already downloaded - no network, no key. The run is queued again (its run.log stays as run-<n>.log); when it
-     * is done the configuration becomes a new version, as after an import.
+     * an SCM import again from its export: only the conversion (type=scm-export-xml) on the JSON the run has already
+     * downloaded - no network, no key. A failed import (the conversion failed), or a done one (a newer pan-os-php
+     * converts more, e.g. the IKE / IPsec objects). The run is queued again (its run.log stays as run-<n>.log); when it
+     * is done the configuration becomes a new version, as after an import (a done one: the Prisma Access states and
+     * egress IPs of the run are not taken over a second time).
      */
     public function jobConvert( array $user, $pid, $jid ): array
     {
@@ -3331,8 +3364,11 @@ class ViewerApp
                 $tsg = $m[1];
         if( $j['type'] !== 'import' || $tsg === null )
             throw new ViewerException( 'only an SCM import can be converted again', 400 );
-        if( $j['state'] !== 'failed' )
-            throw new ViewerException( 'only a failed import can be converted again (state: ' . $j['state'] . ')', 409 );
+        if( !in_array( $j['state'], array( 'failed', 'done' ), TRUE ) )
+            throw new ViewerException( 'only a finished import can be converted again (state: ' . $j['state'] . ')', 409 );
+        $busy = $this->q( "SELECT jid FROM jobs WHERE project_id = ? AND type = 'import' AND state IN ('queued', 'running') ORDER BY id LIMIT 1", array( $p['id'] ) )->fetch();
+        if( $busy )
+            throw new ViewerException( 'an import of this project is already queued / running (run ' . substr( $busy['jid'], 0, 8 ) . ')', 409 );
         $dir = $this->jobDir( $p, $j['jid'] );
         $export = $dir . '/scm-export/' . $tsg;
         if( !is_dir( $export ) || is_link( $export ) || count( glob( $export . '/*/manifest.json' ) ?: array() ) === 0 )
@@ -3342,10 +3378,14 @@ class ViewerApp
         if( is_file( $dir . '/run.log' ) )
             @rename( $dir . '/run.log', $dir . '/run-' . $n . '.log' );
         @unlink( $dir . '/out.xml' );
-        $args = array_values( array_filter( $args, function( $a ) { return $a !== 'x-import-resume=convert'; } ) );
+        $again = $j['state'] === 'done' || in_array( 'x-import-again=yes', $args, TRUE );
+        $args = array_values( array_filter( $args, function( $a ) { return $a !== 'x-import-resume=convert' && $a !== 'x-import-again=yes'; } ) );
         $args[] = 'x-import-resume=convert';
-        if( $this->q( "UPDATE jobs SET state = 'queued', args = ?, error = NULL, reason = NULL, started = NULL, finished = NULL WHERE id = ? AND state = 'failed'",
-            array( json_encode( $args ), $j['id'] ) )->rowCount() === 0 )
+        // a done import converted again: its version, Prisma Access states and egress IPs exist already
+        if( $again )
+            $args[] = 'x-import-again=yes';
+        if( $this->q( "UPDATE jobs SET state = 'queued', args = ?, error = NULL, reason = NULL, started = NULL, finished = NULL WHERE id = ? AND state = ?",
+            array( json_encode( $args ), $j['id'], $j['state'] ) )->rowCount() === 0 )
             throw new ViewerException( 'the run changed - try again', 409 );
         return $this->jobGet( $user, $pid, $j['jid'] );
     }
@@ -3560,9 +3600,11 @@ class ViewerApp
         if( in_array( $j['state'], array( 'queued', 'running' ), TRUE ) )
         {
             $this->q( "UPDATE jobs SET state = 'cancelled', finished = ? WHERE id = ? AND state IN ('queued','running')", array( time(), $j['id'] ) );
-            // an import: its key store goes at once (the job runner stops the run); sensitive inputs as well
+            // an import: its key store goes at once (the job runner stops the run); sensitive inputs and what the run has
+            // written of its sensitive results as well (a cancelled run never offers them)
             @unlink( $this->jobDir( $p, $j['jid'] ) . '/.panconfkeystore' );
             self::rmTree( $this->jobDir( $p, $j['jid'] ) . '/.secret' );
+            self::rmTree( $this->jobDir( $p, $j['jid'] ) . '/.sensitive' );
             return;
         }
         $this->q( 'DELETE FROM jobs WHERE id = ?', array( $j['id'] ) );
@@ -3945,7 +3987,7 @@ class ViewerApp
         $config = $j['file'] !== null && preg_match( '/^[0-9a-f]{32}\.xml$/', $j['file'] ) ? $dir . '/' . $j['file'] : null;
         $args = json_decode( $j['args'], TRUE );
         // a run type of a plug-in without a version: no in=
-        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) ) && (int)$j['config_id'] === 0;
+        $noVersion = ( ( $this->pluginRuns()[$j['type']]['input'] ?? 'version' ) === 'none' || in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-discover', 'egress-ip', 'scm-pa', 'psk-list' ), TRUE ) ) && (int)$j['config_id'] === 0;
         // type=diff: its versions are file1= / file2= (%PROJECT%), never in=
         $noIn = $noVersion || $j['type'] === 'diff';
         // App-ID database / MaxMind data of the installation or of the project: for every run (not for the runs that
@@ -3985,7 +4027,7 @@ class ViewerApp
         // an import: checked again now (the administrator / owner may have turned network off, the lists may have changed),
         // the key store of the run (only this one entry; removed when the run ends: runnerFinish), and its steps
         $steps = null;
-        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) )
+        if( in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa', 'psk-list' ), TRUE ) )
         {
             try
             {
@@ -4053,6 +4095,17 @@ class ViewerApp
             return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
                 'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
         };
+        // the PSK list: first the version (offline - the first step gets in=), then with a key the firewalls managed by SCM
+        // (network), compared with the version
+        $pskSteps = array();
+        if( $type === 'psk-list' && (int)$j['config_id'] !== 0 )
+            $pskSteps[] = $step( 'scm-ngfw-psk-list', array( 'psk-list=%JOB%/.sensitive/psk-list-version.csv', 'sha1-list=%JOB%/psk-sha1-version.csv' ), FALSE );
+        if( $type === 'psk-list' && !isset( $x['key'] ) )
+        {
+            if( count( $pskSteps ) === 0 )
+                throw new ViewerException( 'the run has neither a version nor a key' );
+            return $pskSteps;
+        }
         // help for the first LDAP query (no key): the network rules again, then type=ldap-query mode=discover
         if( $type === 'ldap-discover' )
         {
@@ -4080,7 +4133,7 @@ class ViewerApp
             return array( $step( 'maxmind-update', array( 'maxmind-zip=%JOB%/GeoLite2-Country-CSV-upload.zip' ), FALSE, array( 'PANOSPHP_GEOIP_DIR' => '%JOB%/geoip' ) ) );
         }
         $kinds = array( 'import' => array( 'panos', 'scm' ), 'appid' => array( 'panos' ), 'geoip' => array( 'named' ), 'ldap' => array( 'ldap' ), 'ldap-users' => array( 'ldap' ),
-            'egress-ip' => array( 'egressip' ), 'scm-pa' => array( 'scm' ) )[$type];
+            'egress-ip' => array( 'egressip' ), 'scm-pa' => array( 'scm' ), 'psk-list' => array( 'scm' ) )[$type];
         $k = $this->q( 'SELECT * FROM user_keys WHERE kid = ? AND user_id = ?', array( (string)( $x['key'] ?? '' ), (int)$j['user_id'] ) )->fetch();
         if( !$k || !in_array( $k['kind'], $kinds, TRUE ) )
             throw new ViewerException( 'the API key of the run does not exist any more' );
@@ -4121,6 +4174,11 @@ class ViewerApp
             $raw = array_values( array_filter( $args, function( $a ) { return strpos( $a, 'x-' ) !== 0; } ) );
             return array( $step( $type === 'ldap' ? 'ldap-query' : 'rule', $raw, TRUE, $type === 'ldap-users' ? $this->dataEnv( $j['pid'] ) : array() ) );
         }
+        // the PSK list of the firewalls managed by SCM (read only), compared with the one of the version
+        if( $type === 'psk-list' )
+            return array_merge( $pskSteps, array( $step( 'scm-ngfw-psk-list', array_merge( array( 'in=scm-api://' . $k['target'],
+                'psk-list=%JOB%/.sensitive/psk-list-firewalls.csv', 'sha1-list=%JOB%/psk-sha1-firewalls.csv' ),
+                count( $pskSteps ) > 0 ? array( 'compare=%JOB%/psk-sha1-version.csv', 'compare-out=%JOB%/psk-compare.csv' ) : array() ), TRUE ) ) );
         // the egress IPs of the tenant: scm_egress_ip.php (pan-os-php type=scm-egress-ip), the request checked at queueing
         if( $type === 'egress-ip' )
         {
@@ -4405,7 +4463,7 @@ class ViewerApp
         // sensitive inputs of the run (fields 'secret' of a plug-in): gone when the run ends
         if( $j )
             self::rmTree( $this->dataDir . '/projects/' . $j['pid'] . '/jobs/' . $j['jid'] . '/.secret' );
-        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa' ), TRUE ) )
+        if( $j && in_array( $j['type'], array( 'import', 'appid', 'geoip', 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'scm-pa', 'psk-list' ), TRUE ) )
             $this->importFinish( $j );
     }
 
@@ -4446,7 +4504,8 @@ class ViewerApp
         // taken over by the SCM tab (scmEgressList)
         if( $j['type'] === 'egress-ip' && $j['state'] === 'done' && ( $t = self::runTarget( $j ) ) !== null )
             $this->bindSet( $j['pid'], $t[0], $t[1], self::runRole( $j ) );
-        if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip' ), TRUE ) )
+        // the PSK list: its results stay in the folder of the run (the PSK lists in .sensitive/, downloadable once)
+        if( in_array( $j['type'], array( 'ldap', 'ldap-users', 'ldap-discover', 'egress-ip', 'psk-list' ), TRUE ) )
             return;
         // SCM tab, Prisma Access read live: the export of the run becomes a state of its page
         if( $j['type'] === 'scm-pa' )
@@ -4521,12 +4580,13 @@ class ViewerApp
         @chmod( $this->projectDir( $p['pid'] ) . '/' . $file, 0600 );
         list( $kind, $host ) = array_pad( explode( ':', $target, 2 ), 2, '' );
         $role = self::runRole( $j );
+        $again = in_array( 'x-import-again=yes', (array)json_decode( $j['args'], TRUE ), TRUE );
         $this->configInsert( $p, $u, ( $kind === 'scm' ? 'scm-' . $host : $host ) . '.xml', $file, null, 'import run ' . substr( $j['jid'], 0, 8 ) . ' from ' . $target
-            . ( $role !== null ? ' (role ' . $role . ')' : '' ) );
+            . ( $role !== null ? ' (role ' . $role . ')' : '' ) . ( $again ? ' - converted again' : '' ) );
         if( in_array( $kind, array( 'panos', 'scm' ), TRUE ) )
             $this->bindSet( $p['pid'], $kind, $host, $role );
         // the SCM import reads the Prisma Access areas as well (scm-export area=config,infra): a state of their pages
-        if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) )
+        if( $kind === 'scm' && preg_match( '/^[0-9]{1,20}$/', $host ) && !$again )
         {
             $this->paCollect( $p, $dir, $host, $j['jid'], 'import', $u['name'] ?? '?', time(), array_keys( self::SCM_PA_PAGES ) );
             // the egress IPs (scm-export egressip with the api_key of the tenant, prod8 / prod6 / prod): a state of Egress IP
