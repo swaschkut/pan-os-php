@@ -68,15 +68,13 @@ trait sp_action_spyware
                 elseif( $name == "Unknown-UDP Command and Control detector" )
                     $tmp_mica_Unknown_UDP_found = TRUE;
 
+                // no inline-policy-action (PAN-OS refuses the commit; only a hand edited / uncommitted file): read as
+                // 'disable' - the XML stays at load (before: 'disable' was written into it); a set-action writes a value
                 $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
-                if( $tmp_inline_policy_action !== FALSE )
+                if( $tmp_inline_policy_action !== FALSE && $tmp_inline_policy_action->textContent !== "" )
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
                 else
-                {
-                    $tmp_inline_policy_action = DH::findFirstElementOrCreate("inline-policy-action", $tmp_entry1);
-                    $tmp_inline_policy_action->textContent = "disable";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
-                }
 
                 // local deep learning: read only - this release never writes it (not added, not enabled)
                 $tmp_local_deep_learning = DH::findFirstElement("local-deep-learning", $tmp_entry1);
@@ -1030,7 +1028,7 @@ trait sp_action_spyware
 
                 $name = DH::findAttribute( "name", $mlav_engine_entry);
 
-                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+                $action_xmlNode = DH::findFirstElementOrCreate("inline-policy-action", $mlav_engine_entry);
                 $action_xmlNode->textContent = "reset-both";
 
                 $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
@@ -1255,7 +1253,6 @@ trait sp_action_spyware
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $this->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
-            $action_other_then_allow_alert = false;
             foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
             {
                 if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
@@ -1263,35 +1260,30 @@ trait sp_action_spyware
 
                 $name = DH::findAttribute( "name", $mlav_engine_entry);
 
-                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+                // no inline-policy-action: the value read at load ('disable') - written, so the set commands are complete
+                $action_xmlNode = DH::findFirstElementOrCreate("inline-policy-action", $mlav_engine_entry);
+                if( $action_xmlNode->textContent === "" )
+                {
+                    $action_xmlNode->textContent = "disable";
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
+                }
 
                 if( $action_xmlNode->textContent == "allow" )
                 {
                     $action_xmlNode->textContent = "alert";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
                 }
-                elseif( $action_xmlNode->textContent == "alert" )
-                {
-                }
-                elseif( !$this->cloud_inline_analysis_enabled )
-                {
-                    //explanation:
-                    //inline analysis is disabled -> but action is set to block -> not enabled, will not help
-                    $action_xmlNode->textContent = "alert";
-                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
-                }
-                else
-                {
-                    $action_other_then_allow_alert = true;
-                }
+                //explanation:
+                //same behaviour as VulnerabilityProfile::inlineML_AlertOnlySet()
+                //any other action (alert / drop / reset-*) is kept as it is
             }
 
-            if( !$action_other_then_allow_alert )
-            {
-                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
-                $tmp_mlav_engine->textContent = "yes";
-                $this->cloud_inline_analysis_enabled = true;
-            }
+            //explanation:
+            //same behaviour as VulnerabilityProfile::inlineML_AlertOnlySet()
+            //always enable cloud-inline-analysis, independent of the configured actions
+            $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $this->xmlroot);
+            $tmp_mlav_engine->textContent = "yes";
+            $this->cloud_inline_analysis_enabled = true;
         }
         else
         {
