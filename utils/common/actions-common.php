@@ -217,7 +217,7 @@ CallContext::registerAction( array( 'RoutingCallContext', 'ZoneCallContext' ), a
 
 CallContext::registerAction( array( 'IKEgatewayCallContext', 'IKEprofileCallContext', 'IPsecprofileCallContext', 'IPsectunnelCallContext',
     'RoutingCallContext', 'StaticRouteCallContext', 'GREtunnelCallContext', 'InterfaceManagementProfileCallContext', 'ZoneProtectionProfileCallContext',
-    'VirtualWireCallContext', 'GPPortalCallContext', 'GPGatewayCallContext', 'GPGatewaytunnelCallContext' ), array(
+    'VirtualWireCallContext', 'GPPortalCallContext', 'GPGatewayCallContext' ), array(
     'name' => 'name-rename',
     'MainFunction' => function (CallContext $context) {
         $context->runEdit( function( $o, $a ) {

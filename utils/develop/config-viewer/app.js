@@ -2341,7 +2341,7 @@ const VIEWER_MENU = [
     ['Network', 'dhcp', 'DHCP', 'dhcp', { window: 'dhcp', one: 'DHCP' }],
     ['Network', 'gp-portals', 'GlobalProtect Portals', 'gp-portal', { window: 'gpportal', one: 'GlobalProtect portal' }],
     ['Network', 'gp-gateways', 'GlobalProtect Gateways', 'gp-gateway', { window: 'gpgateway', one: 'GlobalProtect gateway' }],
-    ['Network', 'gp-gateway-tunnels', 'GlobalProtect Gateway Tunnels', 'gpgateway-tunnel', { window: 'gptunnel', one: 'GlobalProtect gateway tunnel' }],
+    ['Network', 'gp-gateway-tunnels', 'GlobalProtect Gateway Tunnels', 'gpgateway-tunnel'],
     ['Network', 'ike-profiles', 'IKE Crypto Profiles', 'ike-profile', { window: 'ikeprofile', one: 'IKE crypto profile' }],
     ['Network', 'ipsec-profiles', 'IPSec Crypto Profiles', 'ipsec-profile', { window: 'ipsecprofile', one: 'IPsec crypto profile' }],
     ['Network', 'interface-mgmt-profiles', 'Interface Management Profiles', 'interface-management-profile', { window: 'imp', one: 'Interface management profile' }],
@@ -2366,7 +2366,7 @@ const FIELD_PICKS = {
     ipsectunnel: { gw: 'ike-gateway', prof: 'ipsec-crypto-profile', tif: 'tunnel-interface' },
     interface: { imp: 'interface-management-profile' }, routing: { if: 'interface' }, sroute: { if: 'interface' },
     gre: { lif: 'interface', tif: 'tunnel-interface' }, vwire: { if1: 'interface', if2: 'interface' },
-    gpportal: { lif: 'interface' }, gpgateway: { lif: 'interface', tif: 'tunnel-interface' }, gptunnel: { lif: 'interface', tif: 'tunnel-interface' },
+    gpportal: { lif: 'interface' }, gpgateway: { lif: 'interface', tif: 'tunnel-interface' },
 };
 // several entries of one pan-os-php type (addresses / address groups, services / service groups): "classes" names the
 // PHP classes of an entry; an object of another class goes to the entry of the type without "classes"
@@ -2727,7 +2727,8 @@ async function showViewer(config, preset) {
                 + (o.hidden ? ' - ' + o.hidden + ' more outside your types / locations' : '') }),
             o.references.length ? refsTable(o.references) : null)));
     }
-    function cell(v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v)); }
+    // a value of a list cell: lists and nested values (e.g. the details of an application) as text - never "[object Object]"
+    function cell(v) { return v !== null && typeof v === 'object' ? fmtTree(v) : (v === null || v === undefined ? '' : String(v)); }
     function draw() {
         let rows = view.rows;
         if (view.quick) rows = rows.filter(r => view.columns.some(c => cell(r[c]).toLowerCase().includes(view.quick)));
@@ -2882,7 +2883,7 @@ async function showViewer(config, preset) {
                 bool('userid', 'User identification', 'userid-enable'), bool('pbp', 'Packet buffer protection', 'packetbufferprotection-set'),
                 row.template ? { key: 'template', label: 'Template', kind: 'ro', value: row.template } : null, loc].filter(f => f);
         }
-        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel', 'interface', 'imp', 'zpp', 'routing', 'sroute', 'gre', 'dhcp', 'vwire', 'gpportal', 'gpgateway', 'gptunnel'].includes(kind)) return networkFields(kind, row, m, loc);
+        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel', 'interface', 'imp', 'zpp', 'routing', 'sroute', 'gre', 'dhcp', 'vwire', 'gpportal', 'gpgateway'].includes(kind)) return networkFields(kind, row, m, loc);
         if (kind === 'generic') {
             // every other type: all its fields, read only - the list row and what the structured model adds
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
@@ -2891,7 +2892,15 @@ async function showViewer(config, preset) {
             // the section "Connections" of the window, with a link each
             if (DEVICE_LINKS[row.type]) skip.push('templates', 'devices', 'dg', 'templatestack', 'device-template', 'collectors', 'collectorgroups', 'devicegroups', 'logforwarding', 'children', 'hierarchy', 'templatestacks', 'stacktemplates', 'parent', 'clouds', 'onprem', 'snippets', 'containers', 'manageddevice', 'on-prem', 'vsyscontainer', 'variables', 'effective', 'devicevariables');
             const fields = [{ key: 'name', label: 'Name', kind: 'ro', value: row.name }];
-            for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? v.join(', ') : (v === null ? '' : String(v))) });
+            // an application: its details (category, technology, risk, ports, …) as fields of their own
+            if (Array.isArray(row.app) && row.app.length === 1 && row.app[0] && typeof row.app[0] === 'object') {
+                const d = Object.values(row.app[0])[0];
+                if (d && typeof d === 'object') {
+                    for (const [k, v] of Object.entries(d)) if (k !== 'name' && v !== '' && v !== null) fields.push({ key: 'app-' + k, label: k, kind: 'ro', value: typeof v === 'object' ? fmtTree(v) : String(v) });
+                    skip.push('app');
+                }
+            }
+            for (const [k, v] of Object.entries(row)) if (!skip.includes(k)) fields.push({ key: k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null && !Array.isArray(v) ? fmtTree(v) : (Array.isArray(v) ? fmtTree(v) : (v === null ? '' : String(v))) });
             for (const [k, v] of Object.entries(m)) if (!(k in row) && !['name', 'device_group', 'template', 'vsys', 'folder', 'snippet'].includes(k))
                 fields.push({ key: 'm-' + k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null ? fmtTree(v) : String(v) });
             if (row.template) fields.push({ key: 'template', label: 'Template', kind: 'ro', value: row.template });
@@ -3231,14 +3240,6 @@ async function showViewer(config, preset) {
             }
             return [...f, ...rest(['local_address', 'ssl_tls_service_profile', 'remote_user_tunnel', 'remote_user_tunnel_configs']), loc];
         }
-        if (kind === 'gptunnel') {
-            return [nameRo,
-                req('lif', 'Local interface', get(m, 'local_address', 'interface'), 'local-interface-set', 'must exist'),
-                opt('lip', 'Local IPv4 address', get(m, 'local_address', 'ip', 'ipv4'), 'local-ip-set', 'address with mask, or an address object'),
-                req('tif', 'Tunnel interface', m.tunnel_interface, 'tunnel-interface-set', 'must exist'),
-                flag('dis', 'Disabled', m.disabled, 'disabled-set'),
-                ...rest(['local_address', 'tunnel_interface', 'disabled']), loc];
-        }
         // IPsec tunnel
         const ak = m.auto_key || {};
         const proxies = Array.isArray(ak.proxy_id) ? ak.proxy_id : [];
@@ -3275,6 +3276,29 @@ async function showViewer(config, preset) {
         return String(v).split(',').map(x => x.trim()).filter(x => x);
     }
     // a nested value of the model as one readable line: "static_ip: translated_address new test 2"
+    // the XML of an object: up to 20 lines as text; longer - the elements of the first and second level can be folded
+    // (open at first; a click on the start tag folds / unfolds), below that as text
+    function xmlView(text) {
+        if (text.split('\n').length <= 20) return el('pre', { class: 'objxml', text });
+        const doc = new DOMParser().parseFromString(text, 'application/xml');
+        if (doc.getElementsByTagName('parsererror').length) return el('pre', { class: 'objxml', text });
+        const ser = new XMLSerializer();
+        const indent = d => '  '.repeat(d);
+        const startTag = n => '<' + n.nodeName + [...n.attributes].map(a => ' ' + a.name + '="' + a.value + '"').join('') + '>';
+        const node = (n, d) => {
+            const kids = [...n.childNodes].filter(c => c.nodeType === 1);
+            if (d > 2 || kids.length === 0) {
+                const t = ser.serializeToString(n).replace(/ xmlns="[^"]*"/, '');
+                return el('pre', { class: 'objxml xmlleaf', text: t.split('\n').map(l => indent(d) + l.replace(/^\s+/, '')).join('\n') });
+            }
+            const det = el('details', { class: 'xmlnode', open: true },
+                el('summary', { class: 'objxml', text: indent(d) + startTag(n) + '  (' + kids.length + ')' }),
+                kids.map(c => node(c, d + 1)),
+                el('pre', { class: 'objxml xmlleaf', text: indent(d) + '</' + n.nodeName + '>' }));
+            return det;
+        };
+        return el('div', { class: 'xmltree' }, node(doc.documentElement, 0));
+    }
     function fmtTree(v) {
         if (v === null || v === undefined || v === '') return '';
         if (Array.isArray(v)) return v.map(fmtTree).filter(x => x).join(', ');
@@ -3329,6 +3353,7 @@ async function showViewer(config, preset) {
             } };
     }
     function ruleFields(row, m, name, loc) {
+        const get = (o, ...path) => path.reduce((x, k) => (x && typeof x === 'object' ? x[k] : undefined), o);
         const yesno = (v) => String(v) === 'true' || String(v) === 'yes' ? 'yes' : 'no';
         const list = (key, label, value, a) => Array.isArray(value) ? { key, label, kind: 'list', value: value.filter(x => x !== 'any'), any: value.includes('any') || value.length === 0,
             needs: [a + '-add'], needsRemove: [a + '-remove'], add: x => a + '-add:' + actArg(x), remove: x => a + '-remove:' + actArg(x),
@@ -3368,11 +3393,59 @@ async function showViewer(config, preset) {
                 : ( m.action !== undefined ? { key: 'action', label: 'Action', kind: 'ro', value: m.action } : null),
             sec ? { key: 'profilegroup', label: 'Profile group', kind: 'text', value: row.securityprofilegroup && row.securityprofilegroup !== 'null' ? row.securityprofilegroup : '', needs: ['securityprofile-group-set', 'securityprofile-remove'],
                 act: (o, n) => n === '' ? 'securityprofile-remove:any' : 'securityprofile-group-set:' + actArg(n) } : null,
-            sec && row.securityprofile && row.securityprofile !== 'null' ? { key: 'profiles', label: 'Profiles', kind: 'ro', value: typeof row.securityprofile === 'string' ? row.securityprofile : fmtTree(row.securityprofile) } : null,
+            // the profiles one by one (SecurityRule::SECPROF_TYPES); setting one replaces a profile group, a group replaces them
+            ...(sec || fixed ? (() => {
+                const ps = get(m, 'profile_setting', 'profiles') || {};
+                const types = ['virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking', 'wildfire', 'data-filtering'];
+                for (const t of ['virus-and-wildfire', 'dns-security']) if (ps[t.replace(/-/g, '_')] !== undefined || (locationInfo && locationInfo.config === 'scm')) types.push(t);
+                return types.map(t => ({ key: 'sp-' + t, label: 'Profile: ' + t, kind: 'text', value: listOf(ps[t.replace(/-/g, '_')]).join(''), pick: 'profile-' + t,
+                    needs: ['securityprofile-profile-set', 'securityprofile-remove'], placeholder: 'empty = none',
+                    act: (o, n) => n === '' ? 'securityprofile-remove:' + t : 'securityprofile-profile-set:' + t + ',' + actArg(n) }));
+            })() : []),
             sec ? { key: 'logsetting', label: 'Log forwarding', kind: 'text', value: m.log_setting || '', needs: ['logsetting-set', 'logsetting-disable'], placeholder: 'empty = none', act: (o, n) => n === '' ? 'logsetting-disable' : 'logsetting-set:' + actArg(n) } : null,
             sec ? { key: 'logstart', label: 'Log at session start', kind: 'select', value: yesno(log.start), choices: ['no', 'yes'], needs: ['logstart-enable', 'logstart-disable'], act: (o, n) => n === 'yes' ? 'logstart-enable' : 'logstart-disable' } : null,
             sec ? { key: 'logend', label: 'Log at session end', kind: 'select', value: yesno(log.end), choices: ['no', 'yes'], needs: ['logend-enable', 'logend-disable'], act: (o, n) => n === 'yes' ? 'logend-enable' : 'logend-disable' } : null,
             sec ? { key: 'schedule', label: 'Schedule', kind: 'text', value: m.schedule || '', needs: ['schedule-set', 'schedule-remove'], act: (o, n) => n === '' ? 'schedule-remove' : 'schedule-set:' + actArg(n) } : null,
+            sec && !fixed ? { key: 'ruletype', label: 'Rule type', kind: 'select', value: m.rule_type || 'universal', choices: ['universal', 'intrazone', 'interzone'], needs: ['ruletype-change'],
+                act: (o, n) => 'ruletype-change:' + n } : null,
+            sec && !fixed ? { key: 'hip', label: 'Source HIP profile', kind: 'text', value: listOf(m.source_hip !== undefined ? m.source_hip : m.hip_profiles).join(', '), pick: 'hip-profile',
+                needs: ['hip-set'], placeholder: 'any', note: 'one profile (any, no-hip or a HIP profile)', act: (o, n) => 'hip-set:' + actArg(n === '' ? 'any' : n) } : null,
+            sec && !fixed ? (() => {
+                const mk = get(m, 'qos', 'marking') || {};
+                const t = Object.keys(mk)[0] || '';
+                const DSCP = ['af11', 'af12', 'af13', 'af21', 'af22', 'af23', 'af31', 'af32', 'af33', 'af41', 'af42', 'af43', 'cs0', 'cs1', 'cs2', 'cs3', 'cs4', 'cs5', 'cs6', 'cs7', 'ef'];
+                const CS = ['cs0', 'cs1', 'cs2', 'cs3', 'cs4', 'cs5', 'cs6', 'cs7'];
+                return { key: 'qos', label: 'QoS marking', kind: 'parts', value: { type: t.replace(/_/g, '-'), value: t && typeof mk[t] !== 'object' ? String(mk[t]) : '' },
+                    needs: ['qosmarking-set', 'qosmarking-remove'],
+                    parts: [{ key: 'type', kind: 'select', label: 'marking', choices: [['', 'none'], ['ip-dscp', 'IP DSCP'], ['ip-precedence', 'IP precedence'], ['follow-c2s-flow', 'follow client-to-server flow']] },
+                        { key: 'value', kind: 'select', label: 'value', choices: DSCP.map(x => [x, x]), show: v => v.type === 'ip-dscp' },
+                        { key: 'value', kind: 'select', label: 'value', choices: CS.map(x => [x, x]), show: v => v.type === 'ip-precedence' }],
+                    act: (o, v) => {
+                        if (v.type === '') return o.type === '' ? '' : 'qosmarking-remove';
+                        if (v.type === 'follow-c2s-flow') return 'qosmarking-set:follow-c2s-flow,';
+                        const allowed = v.type === 'ip-dscp' ? DSCP : CS;
+                        const val = allowed.includes(v.value) ? v.value : allowed[0];
+                        return 'qosmarking-set:' + v.type + ',' + val;
+                    } };
+            })() : null,
+            sec && !fixed ? { key: 'dsri', label: 'Disable server response inspection', kind: 'select', value: ['yes', 'true', true].includes(get(m, 'option', 'disable_server_response_inspection')) ? 'yes' : 'no',
+                choices: ['no', 'yes'], needs: ['dsri-set'], act: (o, n) => 'dsri-set:' + n } : null,
+            // Panorama: the firewalls the rule is pushed to (target) - "serial" or "serial vsys"
+            m.target !== undefined || (locationInfo && locationInfo.config === 'panorama') ? (() => {
+                const tg = m.target || {};
+                const devs = [];
+                for (const d of Array.isArray(tg.devices) ? tg.devices : (tg.devices && typeof tg.devices === 'object' ? [tg.devices] : [])) {
+                    const serial = typeof d === 'object' ? String(d.name || '') : String(d);
+                    const vs = typeof d === 'object' && d.vsys ? (Array.isArray(d.vsys) ? d.vsys : [d.vsys]).map(x => typeof x === 'object' ? x.name : x) : [];
+                    if (vs.length) for (const v of vs) devs.push(serial + ' ' + v); else devs.push(serial);
+                }
+                const dev = x => { const p = x.trim().split(/\s+/); if (!/^[0-9A-Za-z-]+$/.test(p[0])) throw new Error('serial [vsys]'); return actArg(p[0]) + (p[1] ? ',' + actArg(p[1]) : ''); };
+                return { key: 'target', label: 'Target firewalls', kind: 'list', value: devs, any: devs.length === 0, pick: 'firewall',
+                    needs: ['target-add-device'], needsRemove: ['target-remove-device'], add: x => 'target-add-device:' + dev(x), remove: x => 'target-remove-device:' + dev(x),
+                    buttons: [['target-set-any', 'all firewalls']], note: 'serial, or serial and vsys; empty = all firewalls of the device group' };
+            })() : null,
+            m.target !== undefined || (locationInfo && locationInfo.config === 'panorama') ? { key: 'tnegate', label: 'Target negate', kind: 'select',
+                value: ['yes', 'true', true].includes(get(m, 'target', 'negate')) ? 'yes' : 'no', choices: ['no', 'yes'], needs: ['target-negate-set'], act: (o, n) => 'target-negate-set:' + n } : null,
             ruletype.value === 'nat' ? natSource(row, m) : null,
             ruletype.value === 'nat' ? natDestination(row, m) : null,
             m.uuid ? { key: 'uuid', label: 'UUID', kind: 'ro', value: m.uuid } : null,
@@ -3505,6 +3578,9 @@ async function showViewer(config, preset) {
         // the generic window shows the list row when the object can not be read on its own (e.g. a type without a name filter)
         let obj = cur.window === 'generic' ? await fetchObject(r.name, r.location, r.template, r.profile, r.type).catch(() => ({ row: r, model: null }))
             : await fetchObject(r.name, r.location, r.template, r.profile, r.type);
+        // a read-only object (temporary, predefined, GlobalProtect gateway tunnel - pan-os-php CallContext::readOnlyReason):
+        // every field read only, also for a member with write
+        const writable = canWrite && !obj.row.readonly;
         const offered = state.meta.types[cur.type].actions || {};
         const done = {}, errors = {}, pending = {}, hints = {};
         const box = el('div', { class: 'objwin', role: 'dialog', 'aria-modal': 'true', 'aria-label': cur.label + ' ' + r.name });
@@ -3566,11 +3642,11 @@ async function showViewer(config, preset) {
         }
         function control(f) {
             if (f.kind === 'buttons') {
-                const bs = f.buttons.filter(b => canWrite && offered[b[0]]);
+                const bs = f.buttons.filter(b => writable && offered[b[0]]);
                 return bs.length ? el('div', { class: 'row' }, bs.map(b => el('button', { type: 'button', text: b[1], onclick: () => run(() => listChange(f, b[0])) })))
                     : el('span', { class: 'muted', text: 'read only' });
             }
-            const can = canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]);
+            const can = writable && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]);
             if (f.kind === 'ro' || !can)
                 return el('span', { class: 'objro', text: Array.isArray(f.value) ? f.value.join(', ') : String(f.value === undefined ? '' : f.value) });
             if (f.kind === 'text') {
@@ -3642,15 +3718,16 @@ async function showViewer(config, preset) {
             box.replaceChildren(
                 el('div', { class: 'objhead' }, el('h3', { text: (cur.one || cur.label) + ': ' + obj.row.name }), obj.row.template ? el('span', { class: 'badge', text: 'template ' + obj.row.template }) : null, el('span', { class: 'badge', text: obj.row.location }),
                     el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),
+                obj.row.readonly ? el('p', { class: 'badge', text: 'read only: ' + obj.row.readonly }) : null,
                 el('table', { class: 'objfields' }, el('tbody', {}, fields.map(f => {
-                    const can = f.kind === 'buttons' || (canWrite && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]));
+                    const can = f.kind === 'buttons' || (writable && f.kind !== 'ro' && (f.needs || []).every(a => offered[a]));
                     return el('tr', {}, el('th', { text: f.label }), el('td', {}, control(f),
                         errors[f.key] ? el('div', { class: 'error', text: errors[f.key] }) : null,
                         done[f.key] ? el('div', { class: 'muted objact' }, '✓ ', el('code', { text: done[f.key] })) : null,
                         f.note && (f.kind === 'ro' || f.kind === 'list' || !can) ? el('div', { class: 'muted', text: f.note }) : null,
-                        !canWrite || f.kind === 'ro' || can ? null : el('div', { class: 'muted', text: 'read only: no pan-os-php action for it here (' + (f.needs || []).filter(a => !offered[a]).join(', ') + ')' })));
+                        !writable || f.kind === 'ro' || can ? null : el('div', { class: 'muted', text: 'read only: no pan-os-php action for it here (' + (f.needs || []).filter(a => !offered[a]).join(', ') + ')' })));
                 }))),
-                el('p', { class: 'muted', text: canWrite ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
+                el('p', { class: 'muted', text: writable ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
                 // replaceChildren() writes null as the text "null" - only the sections there are
                 ...[objHierarchy(), objLinks(), objVariables(), objRefs(), objXml(), objHistory()].filter(x => x),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
@@ -3776,7 +3853,7 @@ async function showViewer(config, preset) {
             // database, not from the configuration) or an object the read did not give (then: a bug - please report)
             // a device (device group, template, …): its XML would be its whole part of the configuration - not shown
             if (cur.type === 'device' && !obj.xml) return null;
-            return obj.xml ? section('xml', 'XML', el('pre', { class: 'objxml', text: obj.xml }))
+            return obj.xml ? section('xml', 'XML', xmlView(obj.xml))
                 : el('p', { class: 'muted', text: 'XML: not available. Predefined objects of PAN-OS (applications, URL categories, predefined profiles) are not part of the configuration; for any other object please report it.' });
         }
         function objHistory() {
@@ -3965,6 +4042,8 @@ async function showViewer(config, preset) {
             heading,
             el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),
             tableWrap, pager, changesCard, changeBox)));
+    // a new location / device group scope / same-name choice / profile or device type: the list at once (no "Show")
+    for (const sel of [location, dgScope, sameName, sptype, devtype]) if (sel) sel.addEventListener('change', () => { view.page = 1; run(() => load(false)); });
     drawMenu();
     typeChanged();
     if (preset) {

@@ -259,3 +259,12 @@ td.pchanged { background: color-mix(in srgb, #f5c400 18%, transparent); }
 .badge.warn { background: #fdeceb; color: #9b2c22; border-color: #f2c3bf; }
 p.notice { background: #e8f4ec; border: 1px solid #b9dcc5; padding: 6px 10px; border-radius: 6px; }
 .sensitive { background: #fff4ce; border: 1px solid #e0b400; border-radius: 6px; padding: 4px 8px; margin-bottom: 6px; }
+
+/* the XML of an object with more than 20 lines: the first and second level can be folded */
+.xmltree .objxml { margin: 0; }
+.xmltree details.xmlnode > summary { cursor: pointer; list-style: none; white-space: pre; font-family: monospace; }
+.xmltree details.xmlnode > summary::-webkit-details-marker { display: none; }
+.xmltree details.xmlnode:not([open]) > summary::after { content: ' …'; color: var(--muted); }
+.xmltree pre.xmlleaf { white-space: pre; }
+.xmltree { max-height: 480px; overflow: auto; font-size: 12px; background: var(--code-bg, #f5f5f5); padding: .5em; }
+.xmltree pre.objxml, .xmltree summary.objxml { max-height: none; overflow: visible; background: none; padding: 0; font-size: 12px; }

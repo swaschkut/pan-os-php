@@ -4707,64 +4707,9 @@ var subjectObject =
     "gpgateway-tunnel": {
         "name": "gpgateway-tunnel",
         "action": {
-            "disabled-set": {
-                "name": "disabled-Set",
-                "MainFunction": {},
-                "args": {
-                    "disabled": {
-                        "type": "bool",
-                        "default": "*nodefault*"
-                    }
-                },
-                "help": "disable the tunnel"
-            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
-            },
-            "local-interface-set": {
-                "name": "local-interface-Set",
-                "MainFunction": {},
-                "args": {
-                    "interface": {
-                        "type": "string",
-                        "default": "*nodefault*"
-                    }
-                },
-                "help": "local interface (it must exist)"
-            },
-            "local-ip-set": {
-                "name": "local-ip-Set",
-                "MainFunction": {},
-                "args": {
-                    "ip": {
-                        "type": "string",
-                        "default": ""
-                    }
-                },
-                "help": "local IPv4 address; empty: removed"
-            },
-            "name-rename": {
-                "name": "name-rename",
-                "MainFunction": {},
-                "args": {
-                    "newname": {
-                        "type": "string",
-                        "default": "*nodefault*"
-                    }
-                },
-                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
-            },
-            "tunnel-interface-set": {
-                "name": "tunnel-interface-Set",
-                "MainFunction": {},
-                "args": {
-                    "interface": {
-                        "type": "string",
-                        "default": "*nodefault*"
-                    }
-                },
-                "help": "tunnel interface (it must exist)"
             }
         },
         "filter": {
@@ -8509,11 +8454,13 @@ var subjectObject =
                 "args": {
                     "arg1": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "ip-dscp, ip-precedence or follow-c2s-flow"
                     },
                     "arg2": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "",
+                        "help": "ip-dscp: af11 \u2026 ef, cs0 \u2026 cs7; ip-precedence: cs0 \u2026 cs7; follow-c2s-flow: none"
                     }
                 }
             },

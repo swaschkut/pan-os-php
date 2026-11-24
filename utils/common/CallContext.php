@@ -129,9 +129,50 @@ class CallContext
             }
         }
 
+        // read-only objects (temporary, predefined, GlobalProtect gateway tunnel): the config viewer shows them read only
+        $readOnly = self::readOnlyReason( $object );
+        if( $readOnly !== null && PH::$shadow_json && $this->actionRef['name'] === 'display' )
+            PH::$JSON_TMP['sub']['object'][$key]['readonly'] = $readOnly;
+
         PH::print_stdout( $tmp_txt );
 
+        // an action that changes the object itself is not done on a read-only object (an action for its users - e.g.
+        // removewhereused, replacewithobject of a value used directly in a rule - is)
+        if( $readOnly !== null && empty( $this->actionRef['readonlyObjects'] ) && self::changesObject( $this->actionRef['name'] ) )
+        {
+            PH::ACTIONstatus( $this, "SKIPPED", "read-only object: " . $readOnly );
+            return;
+        }
+
         $this->actionRef['MainFunction']($this);
+    }
+
+    /**
+     * why an object can not be changed - null: it can. A GlobalProtect gateway tunnel (helper object of a GlobalProtect
+     * gateway), a predefined object, a temporary object (a value used directly in a rule / a name pan-os-php did not
+     * find in the configuration).
+     */
+    static public function readOnlyReason( $object ): ?string
+    {
+        if( !is_object( $object ) )
+            return null;
+        if( $object instanceof GPGatewayTunnel )
+            return "a GlobalProtect gateway tunnel is a helper object of the GlobalProtect gateway";
+        if( method_exists( $object, 'isPredefined' ) && $object->isPredefined() )
+            return "predefined";
+        foreach( array( 'isTmpAddr', 'isTmpSrv', 'isTmp' ) as $m )
+            if( method_exists( $object, $m ) && $object->$m() )
+                return "temporary - a value used directly (e.g. in a rule) or a name that is not an object of the configuration";
+        return null;
+    }
+
+    /** an action that changes the object itself (by its name) - not one that only reads or changes the users of the object */
+    static public function changesObject( string $action ): bool
+    {
+        $a = strtolower( $action );
+        return (bool)preg_match( '/^(name-|description-|tag-|value-|color-|comments-|sourceport-|timeout-|protocol-set|dstport-set|add-member|remove-member|'
+            . 'delete|decommission|move|interface-|ip-|mtu-|link-state|zpp-|logsetting-|packetbufferprotection|userid-|local-|peer-|tunnel-|disabled-|upload-|url\.)/', $a )
+            || (bool)preg_match( '/-(set|add|remove|rename|append|prepend|delete|replace)$/', $a );
     }
 
     public function hasGlobalInitAction()

@@ -30,7 +30,6 @@ class GPGatewayTunnel
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
-    use TunnelObjectEdit;
 
     public $owner;
 
@@ -288,30 +287,6 @@ class GPGatewayTunnel
         return $this->interface;
     }
 
-
-    // ---- changes of the actions (gpgateway-tunnel …-set): XML, object and references together (see TunnelObjectEdit)
-
-    /** the local IPv4 address (address with mask or an address object); '' removes it */
-    public function editLocalIp( string $ip ): void
-    {
-        $ip = trim( $ip );
-        if( $ip === '' )
-        {
-            $this->editRemove( array( 'local-address', 'ip', 'ipv4' ) );
-            $this->localIPv4 = null;
-            return;
-        }
-        if( strlen( $ip ) > 63 || preg_match( '/[\s<>:]/', $ip ) )
-            throw new Exception( "local IP: an IPv4 address with mask, or an address object" );
-        $this->editText( array( 'local-address', 'ip', 'ipv4' ), $ip );
-        $this->localIPv4 = $ip;
-    }
-
-    public function editDisabled( bool $disabled ): void
-    {
-        $this->editText( array( 'disabled' ), self::editYesNo( $disabled ) );
-        $this->disabled = self::editYesNo( $disabled );
-    }
 
     public function isGPGatewayTunnelType()
     {

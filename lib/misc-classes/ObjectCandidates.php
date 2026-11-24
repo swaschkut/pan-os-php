@@ -39,7 +39,11 @@ class ObjectCandidates
         'log-profile' => array( 'LogProfileStore' ),
         'application' => array( 'appStore' ),
         'url-category' => array( 'customURLProfileStore', 'EDLStore' ),
+        'hip-profile' => array( 'HipProfilesProfileStore' ),
     );
+
+    /** predefined names of a kind (not in a store) */
+    const PREDEFINED = array( 'hip-profile' => array( 'any', 'no-hip' ) );
 
     /** kind => store of a network configuration (NetworkPropertiesContainer) */
     const NETWORK_KINDS = array(
@@ -55,7 +59,8 @@ class ObjectCandidates
 
     static public function kinds(): array
     {
-        return array_merge( array_keys( self::OBJECT_KINDS ), array_keys( self::NETWORK_KINDS ), array( 'zone', 'interface', 'tunnel-interface' ) );
+        return array_merge( array_keys( self::OBJECT_KINDS ), array_keys( self::NETWORK_KINDS ), array( 'zone', 'interface', 'tunnel-interface', 'firewall' ),
+            array_map( function( $t ) { return 'profile-' . $t; }, array_keys( SecurityRule::SECPROF_TYPES ) ) );
     }
 
     /**
@@ -69,6 +74,15 @@ class ObjectCandidates
             return array();
         if( isset( self::OBJECT_KINDS[$kind] ) )
             $groups = self::objectKind( $loc, $kind );
+        elseif( strpos( $kind, 'profile-' ) === 0 && isset( SecurityRule::SECPROF_TYPES[substr( $kind, 8 )] ) )
+        {
+            // a security profile of a type (SecurityRule::SECPROF_TYPES: its store), then the predefined ones
+            $def = SecurityRule::SECPROF_TYPES[substr( $kind, 8 )];
+            $groups = self::levelStores( $loc, array( $def['store'] ) );
+            $groups[] = array( 'location' => 'predefined', 'names' => $def['predefined'] );
+        }
+        elseif( $kind === 'firewall' )
+            $groups = self::firewalls( $loc );
         elseif( isset( self::NETWORK_KINDS[$kind] ) )
             $groups = self::networkStores( $loc, self::NETWORK_KINDS[$kind] );
         elseif( $kind === 'zone' )
@@ -201,6 +215,44 @@ class ObjectCandidates
         return $out;
     }
 
+    /** the names of these stores in the location and the locations above it */
+    static private function levelStores( $loc, array $stores ): array
+    {
+        $groups = array();
+        foreach( PH::firewallResolutionLevels( $loc ) as $level )
+        {
+            $names = array();
+            foreach( $stores as $prop )
+                if( isset( $level->$prop ) )
+                    $names = array_merge( $names, self::names( $level->$prop ) );
+            $groups[] = array( 'location' => self::label( $level ), 'names' => $names );
+        }
+        return $groups;
+    }
+
+    /**
+     * the firewalls a rule of a Panorama location can target: of the device group and the ones below it (shared: of
+     * every device group) - "serial", or "serial vsys" for each vsys but vsys1
+     */
+    static private function firewalls( $loc ): array
+    {
+        $dgs = $loc instanceof DeviceGroup ? array( $loc ) : ( $loc instanceof PanoramaConf ? $loc->getDeviceGroups() : array() );
+        $groups = array();
+        foreach( $dgs as $dg )
+        {
+            $names = array();
+            foreach( $dg->getDevicesInGroup( TRUE ) as $serial => $d )
+            {
+                $names[] = (string)$serial;
+                foreach( $d['vsyslist'] ?? array() as $vsys )
+                    if( $vsys !== 'vsys1' )
+                        $names[] = $serial . ' ' . $vsys;
+            }
+            $groups[] = array( 'location' => $dg->name(), 'names' => $names );
+        }
+        return $groups;
+    }
+
     static private function objectKind( $loc, string $kind ): array
     {
         $groups = array();
@@ -223,6 +275,11 @@ class ObjectCandidates
                 }
             $groups[] = array( 'location' => self::label( $level ), 'names' => $names );
         }
+        if( isset( self::PREDEFINED[$kind] ) )
+            $groups[] = array( 'location' => 'predefined', 'names' => self::PREDEFINED[$kind] );
+        // predefined services (service-http, service-https)
+        if( $kind === 'service' && !( PH::findRootObjectOrDie( $loc ) instanceof BuckbeakConf || PH::findRootObjectOrDie( $loc ) instanceof FawkesConf ) )
+            $groups[] = array( 'location' => 'predefined', 'names' => self::names( ServiceStore::getPredefinedStore( PH::findRootObjectOrDie( $loc ) ), FALSE ) );
         // predefined: applications, URL categories
         if( $kind === 'application' && isset( $loc->appStore ) )
         {

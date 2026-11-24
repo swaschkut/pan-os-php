@@ -26,6 +26,7 @@
  */
 $repo = dirname( __DIR__ );
 require_once $repo . '/lib/pan_php_framework.php';
+require_once $repo . '/utils/common/actions.php';
 
 $checks = 0; $failed = array();
 $eq = function( $got, $want, $msg ) use ( &$checks, &$failed ) {
@@ -291,10 +292,14 @@ $eq( array( $rc, $x( $w, $W . "/local-address/interface|" . $W . "/local-address
 $pan = $load( $w );
 $v1 = $pan->findVirtualSystem( 'vsys1' );
 $eq( in_array( 'gw-1', $refs( $v1->addressStore->find( 'gp-pool' ) ), TRUE ), TRUE, 'gp-gateway: reference of the address object (local IP / IP pool)' );
-list( $rc, $o ) = $cli( 'gpgateway-tunnel', $in2, $dir . '/t.xml', 'gw-N', 'local-interface-set:ethernet1//2/local-ip-set:192.0.2.1//24/tunnel-interface-set:tunnel.2/disabled-set:yes' );
-$N = "//tunnel/global-protect-gateway/entry[@name='gw-N']";
-$eq( array( $rc, $x( $dir . '/t.xml', $N . "/local-address/interface|" . $N . "/local-address/ip/ipv4|" . $N . "/tunnel-interface|" . $N . "/disabled" ) ),
-    array( 0, array( 'ethernet1/2', '192.0.2.1/24', 'tunnel.2', 'yes' ) ), 'gpgateway-tunnel: local interface / IP, tunnel interface, disabled' );
+// a GlobalProtect gateway tunnel is a helper object of the GlobalProtect gateway: read only - no change action, an
+// action of another type (interface …-set) SKIPPED
+list( $rc, $o ) = $cli( 'gpgateway-tunnel', $in2, $dir . '/t.xml', 'gw-N', 'local-ip-set:192.0.2.1//24' );
+$eq( array( strpos( $o, "unsupported action" ) !== FALSE || strpos( $o, "not a valid action" ) !== FALSE || strpos( $o, "ERROR" ) !== FALSE,
+        array_values( array_diff( array_keys( GPGatewaytunnelCallContext::$supportedActions ), array( 'display', 'exporttoexcel', 'exporttohtml' ) ) ) ),
+    array( TRUE, array() ), 'gpgateway-tunnel: read only - no change action' );
+$eq( CallContext::readOnlyReason( ( function( $f ) { $c = new PANConf(); ob_start(); $c->load_from_file( $f ); ob_end_clean(); return $c; } )( $in2 )->network->gpGatewayTunnelStore->getAll()[0] ) !== null,
+    TRUE, 'gpgateway-tunnel: CallContext::readOnlyReason' );
 foreach( array( array( 'gp-portal', 'portal-1', 'ssl-tls-profile-set:nope', "'nope' not found" ), array( 'gp-gateway', 'gw-1', 'tunnel-interface-set:ethernet1//1', 'not a tunnel interface' ),
         array( 'gp-gateway', 'gw-1', 'client-ip-pool-add:cfg-x,10.1.0.0//24', "'cfg-x' not found" ), array( 'gp-portal', 'portal-1', 'local-interface-set:ethernet9//9', 'not an interface of vsys1' ) ) as $t )
 {

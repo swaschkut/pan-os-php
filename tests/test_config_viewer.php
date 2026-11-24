@@ -372,6 +372,23 @@ eq( array( status( $bob->call( 'GET', $C . '/candidates?type=address&location=te
         status( $bob->call( 'GET', $C . '/candidates?type=address&location=testDG&kind=address' ) ),
         status( $bob->call( 'GET', $C . '/candidates?type=address&location=testDG&name=no-such-object&kind=address' ) ) ),
     array( 400, 400, 400 ), 'candidates: unknown kind, no name, unknown object - 400' );
+// read-only objects (pan-os-php CallContext::readOnlyReason): a value used directly in a rule - the row says so, a change
+// of the object itself is refused with the reason
+$roXml = str_replace( '</service-group>', '</service-group><rulebase><security><rules><entry name="r-ip"><from><member>any</member></from><to><member>any</member></to>'
+    . '<source><member>10.9.9.9</member></source><destination><member>any</member></destination><application><member>any</member></application>'
+    . '<service><member>any</member></service><action>allow</action></entry></rules></security></rulebase>', file_get_contents( $here . '/input/group-members.xml' ) );
+$roP = 'projects/' . ( $alice->call( 'POST', 'projects', array( 'name' => 'read only test' ) )[1]['pid'] ?? '' );
+$r = $alice->call( 'POST', $roP . '/configs', null, array( 'readonly.xml', $roXml ) );
+$RO = $roP . '/configs/' . ( $r[1]['cid'] ?? '' );
+$r = $alice->call( 'GET', $RO . '/object?type=address&location=vsys1&name=10.9.9.9' );
+$r2 = $alice->call( 'GET', $RO . '/object?type=address&location=vsys1&name=h-1' );
+eq( array( status( $r ), strpos( (string)( $r[1]['row']['readonly'] ?? '' ), 'temporary' ) === 0, array_key_exists( 'readonly', $r2[1]['row'] ?? array() ) ), array( 200, TRUE, FALSE ),
+    'read only: the row of a value used directly in a rule says why, an object has no mark' );
+$r = $alice->call( 'POST', $RO . '/change', array( 'type' => 'address', 'location' => 'vsys1', 'filter' => '(name eq 10.9.9.9)', 'actions' => 'description-set:x' ) );
+eq( array( status( $r ), strpos( json_encode( $r[1] ), 'read-only object' ) !== FALSE ), array( 400, TRUE ), 'read only: a change of the object itself is refused with the reason' );
+eq( status( $alice->call( 'DELETE', $roP ) ), 200, 'read only: the test project removed (its worker stops)' );
+for( $i = 0; $i < 50 && count( glob( $data . '/projects/*/work/*.pid' ) ) > 1; $i++ )
+    usleep( 100000 );
 $r = $bob->call( 'POST', $C . '/change', $change );
 eq( status( $r ), 200, 'bob (write) changes an object' );
 eq( $r[1]['status']['dirty'] ?? null, TRUE, 'unsaved change is reported' );
@@ -1309,7 +1326,8 @@ foreach( $g[1]['items'] ?? array() as $x ) if( isset( $x['dynamic'] ) ) { $dyn =
 eq( isset( $dyn['dynamic']['filter'] ), TRUE, 'scm-v1: dynamic address group with filter' );
 $sv = $alice->call( 'GET', $RC . '/services' );
 $sg = $alice->call( 'GET', $RC . '/service-groups' );
-eq( ( $sv[1]['total'] ?? 0 ) + ( $sg[1]['total'] ?? 0 ), 17, 'scm-v1: services + service-groups = the 17 objects of type service' );
+// 17 of the configuration + the predefined service-http / service-https (they belong to shared, read only)
+eq( ( $sv[1]['total'] ?? 0 ) + ( $sg[1]['total'] ?? 0 ), 19, 'scm-v1: services + service-groups = the 19 objects of type service (17 + 2 predefined)' );
 eq( isset( $sv[1]['items'][0]['protocol'] ), TRUE, 'scm-v1: service with protocol' );
 eq( is_array( $sg[1]['items'][0]['members'] ?? null ), TRUE, 'scm-v1: service group with members' );
 $tg = $alice->call( 'GET', $RC . '/tags' );

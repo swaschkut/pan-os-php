@@ -132,10 +132,6 @@
         "gp-gateway:client-access-route-remove",
         "gp-gateway:client-exclude-access-route-add",
         "gp-gateway:client-exclude-access-route-remove",
-        "gpgateway-tunnel:local-interface-set",
-        "gpgateway-tunnel:local-ip-set",
-        "gpgateway-tunnel:tunnel-interface-set",
-        "gpgateway-tunnel:disabled-set",
         "ike-gateway:name-rename",
         "ike-profile:name-rename",
         "ipsec-profile:name-rename",
@@ -147,8 +143,7 @@
         "zone-protection-profile:name-rename",
         "virtualwire:name-rename",
         "gp-portal:name-rename",
-        "gp-gateway:name-rename",
-        "gpgateway-tunnel:name-rename"
+        "gp-gateway:name-rename"
     ],
     "override": {},
     "types": {
@@ -755,23 +750,8 @@
             }
         },
         "gpgateway-tunnel": {
-            "disabled-set": {
-                "class": "change"
-            },
             "display": {
                 "class": "read"
-            },
-            "local-interface-set": {
-                "class": "change"
-            },
-            "local-ip-set": {
-                "class": "change"
-            },
-            "name-rename": {
-                "class": "change"
-            },
-            "tunnel-interface-set": {
-                "class": "change"
             }
         },
         "gre-tunnel": {

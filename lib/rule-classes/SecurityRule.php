@@ -771,6 +771,22 @@ class SecurityRule extends RuleWithUserID
         return TRUE;
     }
 
+    /**
+     * the security profile types of a rule (profile-setting/profiles/<type>): the store of a location that holds the
+     * profiles of the type, the setter of the rule; the names PAN-OS / SCM predefine for the type
+     */
+    const SECPROF_TYPES = array(
+        'virus' => array( 'store' => 'AntiVirusProfileStore', 'set' => 'setSecProf_AV', 'predefined' => array( 'default' ) ),
+        'spyware' => array( 'store' => 'AntiSpywareProfileStore', 'set' => 'setSecProf_Spyware', 'predefined' => array( 'default', 'strict' ) ),
+        'vulnerability' => array( 'store' => 'VulnerabilityProfileStore', 'set' => 'setSecProf_Vuln', 'predefined' => array( 'default', 'strict' ) ),
+        'url-filtering' => array( 'store' => 'URLProfileStore', 'set' => 'setSecProf_URL', 'predefined' => array( 'default' ) ),
+        'file-blocking' => array( 'store' => 'FileBlockingProfileStore', 'set' => 'setSecProf_FileBlock', 'predefined' => array( 'basic file blocking', 'strict file blocking' ) ),
+        'wildfire' => array( 'store' => 'WildfireProfileStore', 'set' => 'setSecProf_Wildfire', 'predefined' => array( 'default' ) ),
+        'data-filtering' => array( 'store' => 'DataFilteringProfileStore', 'set' => 'setSecProf_DataFilt', 'predefined' => array() ),
+        'virus-and-wildfire' => array( 'store' => 'VirusAndWildfireProfileStore', 'set' => 'setSecProf_AVWF', 'predefined' => array( 'best-practice' ) ),
+        'dns-security' => array( 'store' => 'DNSSecurityProfileStore', 'set' => 'setSecProf_DNSSEC', 'predefined' => array( 'best-practice' ) ),
+    );
+
     public function setSecProf_DataFilt($newAVprof)
     {
         $this->secproftype = 'profile';
@@ -894,7 +910,9 @@ class SecurityRule extends RuleWithUserID
                 }
                 else
                 {
-                    mwarning("SecurityRule SecurityProfileGroup contains a string in a variable which should be an object");
+                    // a predefined profile (default, strict, ...) is a name - no object in a store
+                    if( !in_array( $value, self::SECPROF_TYPES[$index]['predefined'] ?? array(), TRUE ) )
+                        mwarning("SecurityRule '" . $this->name() . "': security profile '" . $value . "' (" . $index . ") is not known to pan-os-php - written as name", null, FALSE);
                     $ntmp->appendChild($this->secprofroot->ownerDocument->createTextNode($value));
                 }
             }
@@ -2166,65 +2184,50 @@ class SecurityRule extends RuleWithUserID
      * @param null|string $newSchedule empty or null description will erase existing one
      * @return bool false if no update was made to description (already had same value)
      */
+    /** QoS marking of a security rule: type => allowed values ('follow-c2s-flow': no value) */
+    const QOS_MARKING = array(
+        'ip-dscp' => array( 'af11', 'af12', 'af13', 'af21', 'af22', 'af23', 'af31', 'af32', 'af33', 'af41', 'af42', 'af43',
+            'cs0', 'cs1', 'cs2', 'cs3', 'cs4', 'cs5', 'cs6', 'cs7', 'ef' ),
+        'ip-precedence' => array( 'cs0', 'cs1', 'cs2', 'cs3', 'cs4', 'cs5', 'cs6', 'cs7' ),
+        'follow-c2s-flow' => array( '' ),
+    );
+
+    /**
+     * @param null|string $arg1 ip-dscp, ip-precedence, follow-c2s-flow; null / '': no QoS marking
+     * @param null|string $arg2 the value (none for follow-c2s-flow)
+     * @return bool false if nothing changed
+     */
     function setQoSMarking($arg1 = null, $arg2 = null)
     {
-        //ip-dscp;ip-precedence;follow-c2s-flow
-        //1- af11,af12,af13,af21,af22,af23,af31,af32,af33,af41,af42,af43,cs0-cs7,ef
-        //2- cs0 - cs7
-        //3 - ""
+        $arg1 = $arg1 === null ? '' : (string)$arg1;
+        $arg2 = $arg2 === null ? '' : (string)$arg2;
 
-        //validation:
-        $tmp_qos_marking = array();
-        $tmp_qos_marking['ip-dscp'] = array('af11' => 'af11', 'af12' => 'af12', 'af13' => 'af13', 'af21' => 'af21', 'af22' => 'af22', 'af23' => 'af23',
-            'af31' => 'af31', 'af32' => 'af32', 'af33' => 'af33', 'af41' => 'af41', 'af42' => 'af42', 'af43' => 'af43',
-            'cs0' => 'cs0', 'cs1' => 'cs1', 'cs2' => 'cs2', 'cs3' => 'cs3', 'cs4' => 'cs4', 'cs5' => 'cs5', 'cs6' => 'cs6', 'cs7' => 'cs7', 'ef' => 'ef');
-        $tmp_qos_marking['ip-precedence'] = array('cs0' => 'cs0', 'cs1' => 'cs1', 'cs2' => 'cs2', 'cs3' => 'cs3', 'cs4' => 'cs4', 'cs5' => 'cs5', 'cs6' => 'cs6', 'cs7' => 'cs7');
-        $tmp_qos_marking['follow-c2s-flow'] = array();
-
-        if( !isset($tmp_qos_marking[$arg1]) )
-            derr("qosmarking: " . $arg1 . " not allowed in PAN-OS. possible values for arg1: 'ip-dscp', 'ip-precedence', 'follow-c2s-flow'");
-        else
-        {
-            if( $arg1 == "follow-c2s-flow" )
-            {
-                if( $arg2 != "" )
-                    derr("qosmarking: " . $arg1 . " with " . $arg2 . " not allowed in PAN-OS; 'arg2' must be not set!");
-            }
-
-            if( !isset($tmp_qos_marking[$arg1][$arg2]) )
-            {
-                print_r($tmp_qos_marking[$arg1]);
-                derr("qosmarking: " . $arg1 . " with " . $arg2 . " not allowed in PAN-OS");
-            }
-
-        }
-
-
-        if( $arg1 === null || $arg2 === null || strlen($arg1) < 1 || strlen($arg2) < 1 )
+        if( $arg1 === '' )
         {
             if( empty($this->qosMarking) )
                 return FALSE;
-
             $this->qosMarking = array();
             $tmpRoot = DH::findFirstElement('qos', $this->xmlroot);
-
-            if( $tmpRoot === FALSE )
-                return TRUE;
-
-            $this->xmlroot->removeChild($tmpRoot);
+            if( $tmpRoot !== FALSE )
+                $this->xmlroot->removeChild($tmpRoot);
+            return TRUE;
         }
-        else
-        {
 
-            if( $this->qosMarking == array($arg1 => $arg2) )
-                return FALSE;
-            $this->qosMarking = array($arg1 => $arg2);
+        if( !isset(self::QOS_MARKING[$arg1]) )
+            derr("qosmarking: '" . $arg1 . "' not allowed in PAN-OS - " . implode(', ', array_keys(self::QOS_MARKING)), null, FALSE);
+        if( !in_array($arg2, self::QOS_MARKING[$arg1], TRUE) )
+            derr("qosmarking: " . $arg1 . " with '" . $arg2 . "' not allowed in PAN-OS" . ( $arg1 === 'follow-c2s-flow' ? " (no value)" : " - " . implode(', ', self::QOS_MARKING[$arg1]) ), null, FALSE);
 
-            $tmpRoot = DH::findFirstElementOrCreate('qos', $this->xmlroot);
-            $tmpRoot = DH::findFirstElementOrCreate('marking', $tmpRoot);
-            $tmpRoot = DH::findFirstElementOrCreate($arg1, $tmpRoot);
-            DH::setDomNodeText($tmpRoot, $arg2);
-        }
+        if( $this->qosMarking == array($arg1 => $arg2) )
+            return FALSE;
+        $this->qosMarking = array($arg1 => $arg2);
+
+        // one marking: the one before goes (ip-dscp -> ip-precedence)
+        $marking = DH::findFirstElementOrCreate('marking', DH::findFirstElementOrCreate('qos', $this->xmlroot));
+        DH::clearDomNodeChilds($marking);
+        $node = DH::createElement($marking, $arg1);
+        if( $arg2 !== '' )
+            DH::setDomNodeText($node, $arg2);
 
         return TRUE;
     }

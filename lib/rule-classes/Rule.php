@@ -500,7 +500,8 @@ class Rule
         $this->_targetIsNegated = $TRUEorFALSE;
 
         $node = DH::findFirstElementOrCreate('target', $this->xmlroot);
-        DH::findFirstElementOrCreate('negate', $node, boolYesNo($TRUEorFALSE));
+        // also an existing <negate> (findFirstElementOrCreate sets the text only of a new one)
+        DH::setDomNodeText(DH::findFirstElementOrCreate('negate', $node), boolYesNo($TRUEorFALSE));
 
         return TRUE;
     }

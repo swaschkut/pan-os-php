@@ -2,6 +2,15 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* actions | read-only objects (CallContext::readOnlyReason): a temporary object (a value used directly in a rule / a name that is no object of the configuration), a predefined object, a GlobalProtect gateway tunnel - an action that changes the object itself (CallContext::changesObject: name-, description-, tag-, value-, members, delete, move, …-set / -add / -remove) is SKIPPED ("read-only object: …"); actions for its users (removewhereused, replacewithobject, replace-IP-by-MT-like-Object, …) still run
+* type=gpgateway-tunnel | read only: a GlobalProtect gateway tunnel is a helper object of the GlobalProtect gateway - no change actions (the ones of 2.1.64 alpha removed, also name-rename)
+* type=service | location=shared / any: also the predefined services (service-http, service-https) - before the shared ones, read only; ObjectCandidates: selectable for groups and rules
+* config-viewer | object window of a read-only object (temporary, predefined, GlobalProtect gateway tunnel): every field read only, the reason shown; GlobalProtect gateway tunnels: the generic window (read only)
+* config-viewer | a new location / device group scope / same-name choice / security profile type / device type loads the list at once (no "Show")
+* config-viewer | object window: XML of more than 20 lines - the elements of the first and second level can be folded
+* type=rule | securityProfile-Profile-Set / securityProfile-Remove: the profile types as data (SecurityRule::SECPROF_TYPES: store, setter, predefined names) instead of one branch per type; a profile not found is logged ("written as name"); qosMarking-Set: arg2 optional (follow-c2s-flow has no value)
+* ObjectCandidates | new kinds profile-<type> (security profiles of a type + predefined), hip-profile, firewall (target of a Panorama rule: the firewalls of the device group and below, "serial" / "serial vsys")
+* config-viewer | rule window: the security profiles one by one (drop down of the type), rule type, source HIP profile, QoS marking, disable server response inspection, target firewalls (drop down) / negate / all firewalls
 * type=ike-gateway / ike-profile / ipsec-profile / ipsec-tunnel / routing / static-route / gre-tunnel / interface-management-profile / zone-protection-profile / virtualwire / gp-portal / gp-gateway / gpgateway-tunnel | new common action name-rename (NetworkObjectEdit::editRename): the object, the index of its store and every user that names it - IKE gateway (IKE crypto profile v1 / v2), IPsec tunnel (IKE gateway, IPsec crypto profile), interface and sub-interface (interface management profile), zone (zone protection profile), static route (next virtual router); name checked (characters, length 31 / 63, unique in the store)
 * config-viewer | network windows: the name can be changed (name-rename) - not of an interface / DHCP
 * type=zone / routing | interface-add / interface-remove: one common action (actions-common.php) for zones (new: Zone::editInterfaceAdd / editInterfaceRemove - layer3 / layer2 / virtual-wire / tap; an interface of the zone type, imported into the vsys, in no other zone) and virtual / logical routers (now also: in no other router)
@@ -32,8 +41,7 @@ UTIL:
 * type=dhcp | new actions: server - mode-set, ip-pool-add / -remove, gateway-set, subnet-mask-set, dns-set, lease-set, reservation-add / -remove; relay - relay-set, relay-server-add / -remove
 * type=virtualwire | new actions: interface-set, tag-allowed-set, multicast-firewalling-set, link-state-pass-through-set
 * type=gp-portal / gp-gateway | new actions: local-interface-set, local-ip-set, ssl-tls-profile-set; gp-gateway also tunnel-interface-set, client-ip-pool-add / -remove, client-access-route-add / -remove, client-exclude-access-route-add / -remove
-* type=gpgateway-tunnel | new actions: local-interface-set, local-ip-set, tunnel-interface-set, disabled-set
-* config-viewer | the windows of interfaces, interface management profiles, zone protection profiles, virtual / logical routers, static routes, GRE tunnels, DHCP, virtual wires and GlobalProtect portals / gateways / gateway tunnels can change these values (the new actions, reviewed in action-classes.json); every other value read only
+* config-viewer | the windows of interfaces, interface management profiles, zone protection profiles, virtual / logical routers, static routes, GRE tunnels, DHCP, virtual wires and GlobalProtect portals / gateways can change these values (the new actions, reviewed in action-classes.json); every other value read only
 * config-viewer | the window of a network object (IKE gateway, IKE / IPsec crypto profile, IPsec tunnel, interfaces, virtual / logical router, static route, GRE tunnel, GlobalProtect, interface management profile, virtual wire, DHCP) shows all its values: ApiObjectModel knows these classes (SCM schema: ike-gateways, ike-crypto-profiles, ipsec-crypto-profiles, ipsec-tunnels, virtual-routers, logical-routers; the others as their XML) - before only name and location
 * config-viewer | PSK list: only the SCM keys the project may use (bound to a tenant: that one; bound to a firewall / Panorama: none; roles: the tenants of the SCM roles)
 * config-viewer | run "IKE gateways / PSK list" (psk-list): the IKE gateways of a version and / or - with an SCM key of the user - of the firewalls managed by the SCM tenant, compared by the SHA-1 of the pre-shared key (same / different / only in one / unknown); the PSK lists with clear text are sensitive results (download once), SHA-1 lists and comparison are result files; write members, not with an API token
@@ -52,6 +60,11 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* config-viewer | lists and nested values were shown as "[object Object]" (e.g. the details of an application): now as text; the window of an application shows its details (category, technology, risk, ports, …) as fields
+* type=rule | securityProfile-Profile-Set data-filtering looked in the store of the data objects (DataObjectsProfileStore) - the profile was never found nor referenced; now DataFilteringProfileStore
+* type=rule | qosMarking-Set: follow-c2s-flow could not be set (a value was required, then refused); a new marking type kept the one before (two markings under <marking>)
+* type=rule | target-Negate-Set: an existing <negate> was not changed
+* rule | a predefined security profile (default, strict, ...) warned "contains a string in a variable which should be an object"; now only a profile pan-os-php does not know, with rule, type and name
 * network objects | a renamed IKE / IPsec crypto profile, IKE gateway, interface management / zone protection profile or virtual router kept its old name in the objects that use it (referencedObjectRenamed handled only addresses)
 * rule | the URL categories kept by the rule (urlCategories(), display) were not updated after a change of the category container
 * description | setDescription converted every text from ISO-8859-1 to UTF-8: a description with umlauts written by an action or the config viewer became "PrÃ¼fung"; now only a text that is no UTF-8

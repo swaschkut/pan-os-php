@@ -2039,7 +2039,17 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->all(null, TRUE));
                     }
                     elseif( $this->utilType == 'service' )
+                    {
+                        // the predefined services (service-http, service-https) belong to shared - before it, read only
+                        // (CallContext::readOnlyReason)
+                        // (SCM: its predefined objects come with the predefined-snippet)
+                        if( !( $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf ) )
+                        {
+                            $pre = ServiceStore::getPredefinedStore( $this->pan );
+                            $this->objectsToProcess[] = array('store' => $pre, 'objects' => $pre->all(null, TRUE));
+                        }
                         $this->objectsToProcess[] = array('store' => $this->pan->serviceStore, 'objects' => $this->pan->serviceStore->all(null, TRUE));
+                    }
                     elseif( $this->utilType == 'tag' )
                         $this->objectsToProcess[] = array('store' => $this->pan->tagStore, 'objects' => $this->pan->tagStore->getall());
                     elseif( $this->utilType == 'vsys' )
@@ -2166,7 +2176,17 @@ class UTIL
                     if( $this->utilType == 'address' )
                         $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->all(null, TRUE));
                     elseif( $this->utilType == 'service' )
+                    {
+                        // the predefined services (service-http, service-https) belong to shared - before it, read only
+                        // (CallContext::readOnlyReason)
+                        // (SCM: its predefined objects come with the predefined-snippet)
+                        if( !( $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf ) )
+                        {
+                            $pre = ServiceStore::getPredefinedStore( $this->pan );
+                            $this->objectsToProcess[] = array('store' => $pre, 'objects' => $pre->all(null, TRUE));
+                        }
                         $this->objectsToProcess[] = array('store' => $this->pan->serviceStore, 'objects' => $this->pan->serviceStore->all(null, TRUE));
+                    }
 
                     elseif( $this->utilType == 'tag' )
                         $this->objectsToProcess[] = array('store' => $this->pan->tagStore, 'objects' => $this->pan->tagStore->getall());

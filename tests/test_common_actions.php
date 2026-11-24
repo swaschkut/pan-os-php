@@ -21,7 +21,8 @@
  * Common actions (utils/common/actions-common.php, CallContext::registerAction): one definition for several types -
  * add-member / remove-member (address / service groups), description-set (address, service, rule, security profile) -
  * interface-add / interface-remove (router, zone), name-rename of the network objects (users updated), the value actions of address / service (value-set, protocol-set,
- * dstport-set), URL categories of rules and ObjectCandidates (what a field can take). Synthetic inputs
+ * dstport-set), URL categories of rules, the rule settings of the object window (security profiles, QoS marking,
+ * HIP, DSRI, rule type, target) and ObjectCandidates (what a field can take). Synthetic inputs
  * tests/input/group-members.xml, zones-interfaces.xml, network-rename.xml; panorama-10.0-merger.xml, SCM-import.xml.
  * php tests/test_common_actions.php
  */
@@ -253,6 +254,77 @@ foreach( array( array( 'ike-profile', 'ike-b', 'name-rename:ike-aes128', 'the na
     $eq( array( $rc2, strpos( $o, 'SKIPPED' ) !== FALSE && strpos( $o, $t[3] ) !== FALSE ), array( 0, TRUE ), 'name-rename ' . $t[0] . ' ' . $t[2] . ': SKIPPED (' . $t[3] . ')' );
 }
 
+// ---- rule settings of the object window: security profiles (SecurityRule::SECPROF_TYPES), QoS marking, HIP, DSRI,
+// rule type, target
+$rcli = function( string $file, ?string $out, string $location, string $rule, string $actions ) use ( $repo ) {
+    $args = array( 'type=rule', 'in=' . $file, 'location=' . $location, 'filter=(name eq ' . $rule . ')', 'actions=' . $actions );
+    if( $out !== null )
+        $args[] = 'out=' . $out;
+    exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' ' . implode( ' ', array_map( 'escapeshellarg', $args ) ) . ' 2>&1', $o, $rc );
+    return array( $rc, implode( "\n", $o ) );
+};
+file_put_contents( $dir . '/sp.xml', str_replace( '<url-filtering><entry name="URL-shared">',
+    '<data-filtering><entry name="DF-shared"><description>synthetic</description></entry></data-filtering><url-filtering><entry name="URL-shared">',
+    file_get_contents( __DIR__ . '/input/securityprofiles-panorama.xml' ) ) );
+$P = "//entry[@name='r1']/profile-setting/profiles";
+list( $rc, $o ) = $rcli( $dir . '/sp.xml', $dir . '/sp1.xml', 'any', 'r1', 'securityprofile-profile-set:data-filtering,DF-shared/securityprofile-profile-set:vulnerability,strict/securityprofile-remove:spyware' );
+$sp = ( function( $f ) { $c = new PanoramaConf(); ob_start(); $c->load_from_file( $f ); ob_end_clean(); return $c; } )( $dir . '/sp1.xml' );
+$eq( array( $rc, $x( $dir . '/sp1.xml', $P . "/data-filtering/member|" . $P . "/vulnerability/member" ), count( $x( $dir . '/sp1.xml', $P . "/spyware" ) ),
+        count( $sp->DataFilteringProfileStore->find( 'DF-shared' )->getReferences() ), strpos( $o, 'WARNING' ) ),
+    array( 0, array( 'DF-shared', 'strict' ), 0, 1, FALSE ),
+    'rule profiles: data-filtering found in its store (referenced), predefined vulnerability "strict" without warning, spyware removed' );
+list( $rc, $o ) = $rcli( $dir . '/sp.xml', $dir . '/b.xml', 'any', 'r1', 'securityprofile-profile-set:virus,nope' );
+$eq( strpos( $o, "profile 'nope' (virus) not found" ) !== FALSE, TRUE, 'rule profiles: an unknown profile is logged (written as name, as before)' );
+
+$pin = __DIR__ . '/input/panorama-10.0-manageddevice-nodg.xml';
+$R = "//entry[@name='local dg']";
+list( $rc, $o ) = $rcli( $pin, $dir . '/q1.xml', 'testDG', 'local dg', 'qosmarking-set:ip-dscp,af11/qosmarking-set:ip-precedence,cs3' );
+$eq( array( $rc, $x( $dir . '/q1.xml', $R . "/qos/marking/*" ), $x( $dir . '/q1.xml', $R . "/qos/marking/ip-precedence" ) ), array( 0, array( 'cs3' ), array( 'cs3' ) ),
+    'QoS marking: ip-dscp, then ip-precedence - one marking' );
+list( $rc, $o ) = $rcli( $dir . '/q1.xml', $dir . '/q2.xml', 'testDG', 'local dg', 'qosmarking-set:follow-c2s-flow/dsri-set:yes/hip-set:no-hip/ruletype-change:interzone/target-add-device:007100000290/target-negate-set:yes' );
+$eq( array( $rc, count( $x( $dir . '/q2.xml', $R . "/qos/marking/follow-c2s-flow" ) ), count( $x( $dir . '/q2.xml', $R . "/qos/marking/*" ) ),
+        $x( $dir . '/q2.xml', $R . "/option/disable-server-response-inspection|" . $R . "/source-hip/member|" . $R . "/rule-type|" . $R . "/target/negate|" . $R . "/target/devices/entry/@name" ) ),
+    array( 0, 1, 1, array( 'yes', '007100000290', 'yes', 'no-hip', 'interzone' ) ),
+    'rule: QoS follow-c2s-flow (no value), DSRI, HIP, rule type, target device, target negate (an existing <negate> changed)' );
+list( $rc, $o ) = $rcli( $dir . '/q2.xml', $dir . '/q3.xml', 'testDG', 'local dg', 'qosmarking-remove' );
+$eq( count( $x( $dir . '/q3.xml', $R . "/qos" ) ), 0, 'QoS marking removed' );
+list( $rc, $o ) = $rcli( $pin, $dir . '/b.xml', 'testDG', 'local dg', 'qosmarking-set:ip-precedence,af11' );
+$eq( strpos( $o, "ip-precedence with 'af11' not allowed" ) !== FALSE, TRUE, 'QoS marking: a value of the other type is refused' );
+
+// ---- read-only objects (CallContext::readOnlyReason): temporary (a value used directly in a rule), predefined,
+// GlobalProtect gateway tunnel - an action that changes the object itself is SKIPPED, one for its users is done
+file_put_contents( $dir . '/tmp.xml', str_replace( '</service-group>',
+    '</service-group><rulebase><security><rules><entry name="r-ip"><from><member>any</member></from><to><member>any</member></to>'
+    . '<source><member>10.9.9.9</member></source><destination><member>any</member></destination><application><member>any</member></application>'
+    . '<service><member>service-http</member></service><action>allow</action></entry></rules></security></rulebase>', file_get_contents( __DIR__ . '/input/group-members.xml' ) ) );
+$tc = ( function( $f ) { $c = new PANConf(); ob_start(); $c->load_from_file( $f ); ob_end_clean(); return $c; } )( $dir . '/tmp.xml' );
+$tv = $tc->findVirtualSystem( 'vsys1' );
+$eq( array( CallContext::readOnlyReason( $tv->addressStore->find( '10.9.9.9' ) ) !== null, CallContext::readOnlyReason( $tv->addressStore->find( 'h-1' ) ),
+        CallContext::readOnlyReason( $tv->serviceStore->find( 'service-http' ) ) ),
+    array( TRUE, null, 'predefined' ), 'readOnlyReason: a value used directly in a rule (temporary), an object (none), a predefined service' );
+$eq( array( CallContext::changesObject( 'description-set' ), CallContext::changesObject( 'tag-Add' ), CallContext::changesObject( 'name-rename' ), CallContext::changesObject( 'delete' ),
+        CallContext::changesObject( 'removewhereused' ), CallContext::changesObject( 'replaceWithObject' ), CallContext::changesObject( 'replace-IP-by-MT-like-Object' ),
+        CallContext::changesObject( 'display' ), CallContext::changesObject( 'exportToExcel' ) ),
+    array( TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ), 'changesObject: the actions that change the object itself' );
+$tcli = function( string $type, string $filter, string $actions, ?string $out ) use ( $repo, $dir ) {
+    $args = array( 'type=' . $type, 'in=' . $dir . '/tmp.xml', 'location=vsys1', 'filter=' . $filter, 'actions=' . $actions );
+    if( $out !== null )
+        $args[] = 'out=' . $out;
+    exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' ' . implode( ' ', array_map( 'escapeshellarg', $args ) ) . ' 2>&1', $o, $rc );
+    return array( $rc, implode( "\n", $o ) );
+};
+foreach( array( 'description-set:x', 'tag-add:t1', 'value-set:10.9.9.10', 'name-rename:x1', 'delete' ) as $a )
+{
+    list( $rc, $o ) = $tcli( 'address', '(name eq 10.9.9.9)', $a, $dir . '/b.xml' );
+    $eq( array( $rc, strpos( $o, 'SKIPPED : read-only object: temporary' ) !== FALSE, $x( $dir . '/b.xml', "//entry[@name='r-ip']/source/member" ) ),
+        array( 0, TRUE, array( '10.9.9.9' ) ), 'temporary address ' . $a . ': SKIPPED (read only), the rule unchanged' );
+}
+list( $rc, $o ) = $tcli( 'address', '(name eq 10.9.9.9)', 'replaceWithObject:h-1', $dir . '/t2.xml' );
+$eq( array( $rc, strpos( $o, 'read-only' ), $x( $dir . '/t2.xml', "//entry[@name='r-ip']/source/member" ) ), array( 0, FALSE, array( 'h-1' ) ),
+    'temporary address replaceWithObject: done - it changes the users (the rule), not the object' );
+list( $rc, $o ) = $tcli( 'service', '(name eq service-http)', 'description-set:x', null );
+$eq( strpos( $o, 'description set' ), FALSE, 'predefined service: not changed (not selected by a filter; read only - see readOnlyReason)' );
+
 // ---- ObjectCandidates: the names a field can take - own location and above (firewall, Panorama, SCM)
 $loadConf = function( string $class, string $file ) {
     $c = new $class();
@@ -266,8 +338,8 @@ $fw = $loadConf( 'PANConf', __DIR__ . '/input/group-members.xml' );
 $g1 = $fw->findVirtualSystem( 'vsys1' )->addressStore->find( 'g-1' );
 $eq( $flat( ObjectCandidates::forObject( $g1, 'address' ) ), array( 'vsys1' => array( 'g-dyn', 'h-1', 'h-2', 'h-3' ), 'shared' => array( 'h-shared' ) ),
     'candidates firewall: address of a vsys group - vsys1, then shared; not the group itself, not g-2 (holds it: loop), not the wildcard w-1' );
-$eq( $flat( ObjectCandidates::forObject( $fw->findVirtualSystem( 'vsys1' )->serviceStore->find( 'sg-1' ), 'service' ) ), array( 'vsys1' => array( 'tcp-1', 'tcp-2' ), 'shared' => array( 'tcp-shared' ) ),
-    'candidates firewall: service of a service group - not itself, not sg-2 (holds it)' );
+$eq( $flat( ObjectCandidates::forObject( $fw->findVirtualSystem( 'vsys1' )->serviceStore->find( 'sg-1' ), 'service' ) ), array( 'vsys1' => array( 'tcp-1', 'tcp-2' ), 'shared' => array( 'tcp-shared' ), 'predefined' => array( 'service-http', 'service-https' ) ),
+    'candidates firewall: service of a service group - not itself, not sg-2 (holds it); the predefined services' );
 $zfw = $loadConf( 'PANConf', $zin );
 $eq( array( $flat( ObjectCandidates::forObject( $zfw->findVirtualSystem( 'vsys1' )->zoneStore->find( 'untrust' ), 'interface' ) ),
         $flat( ObjectCandidates::forObject( $zfw->findVirtualSystem( 'vsys1' )->zoneStore->find( 'l2' ), 'interface' ) ) ),
@@ -294,6 +366,18 @@ $eq( array_keys( $flat( ObjectCandidates::forObject( $a, 'address' ) ) ), array(
     'candidates SCM: address of a folder - the folder, then the levels above with objects (scmResolutionLevels)' );
 $eq( array_keys( $flat( ObjectCandidates::forObject( $scm->findContainer( 'Perimeter-FWs' ), 'ike-crypto-profile' ) ) ), array( 'All' ),
     'candidates SCM: network profiles of the parent folders' );
+$spc = ( function( $f ) { $c = new PanoramaConf(); ob_start(); $c->load_from_file( $f ); ob_end_clean(); return $c; } )( __DIR__ . '/input/securityprofiles-panorama.xml' );
+$r1 = null;
+foreach( $spc->findDeviceGroup( 'DG1' )->securityRules->rules() as $r )
+    if( $r->name() === 'r1' )
+        $r1 = $r;
+$eq( array( $flat( ObjectCandidates::forObject( $r1, 'profile-virus' ) ), $flat( ObjectCandidates::forObject( $r1, 'profile-spyware' ) ), $flat( ObjectCandidates::forObject( $r1, 'hip-profile' ) ) ),
+    array( array( 'shared' => array( 'AV-shared' ), 'predefined' => array( 'default' ) ), array( 'DG1' => array( 'AS-dg' ), 'predefined' => array( 'default', 'strict' ) ),
+        array( 'predefined' => array( 'any', 'no-hip' ) ) ),
+    'candidates: security profiles of a type (the device group, shared, predefined), HIP profiles' );
+$nd = ( function( $f ) { $c = new PanoramaConf(); ob_start(); $c->load_from_file( $f ); ob_end_clean(); return $c; } )( $pin );
+$eq( $flat( ObjectCandidates::forObject( $nd->findDeviceGroup( 'testDG' )->securityRules->rules()[0], 'firewall' ) ), array( 'testDG' => array( '007100000290' ) ),
+    'candidates: target firewalls of a device group rule' );
 try { ObjectCandidates::forObject( $g1, 'nope' ); $eq( 'no exception', 'exception', 'candidates: unknown kind' ); }
 catch( Exception $e ) { $eq( strpos( $e->getMessage(), "unknown kind 'nope'" ) !== FALSE, TRUE, 'candidates: an unknown kind is an error' ); }
 

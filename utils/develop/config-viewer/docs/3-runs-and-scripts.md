@@ -25,12 +25,18 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   `description-set:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, type and value of an address →
   `value-set:…` (also IPv6), protocol / destination port of a service → `protocol-set:…` / `dstport-set:…`, the name → `name-rename:…` (tags too), a member of an address / service group → `add-member:…` / ✕ `remove-member:…`, the color of a tag →
   `color-set:…`, its comments → `comments-delete/comments-add:…`. Under the field the action is shown (✓). A field
-  without a pan-os-php action for it is read only (and says why). A field that names other objects (members, tags,
+  without a pan-os-php action for it is read only (and says why). A **read-only object** - a value used directly in a rule
+  (temporary), a predefined object (e.g. service-http / service-https, listed at *shared*), a GlobalProtect gateway
+  tunnel - is shown read only with the reason; pan-os-php does not change it (an action for its users, e.g.
+  `replacewithobject`, still works). A field that names other objects (members, tags,
   zones, addresses, services, applications, URL categories, interfaces, profiles, …) offers them as a drop down: the
   objects of its own location and of the locations above it (vsys → shared; device group → parent device groups →
   shared; SCM folder → its snippets → parent folders → All; template), grouped by location, without the ones it has
   already and without the ones the action would refuse (the group itself, an interface of another zone, …); a rule of
-  a Panorama device group gets the zones of the templates. A name can still be typed. An action that refuses the change (pan-os-php
+  a Panorama device group gets the zones of the templates. A name can still be typed.
+- **Rule window** (security rules): the security profiles one by one (each with the profiles of its type; a profile
+  replaces a profile group and the other way round), rule type, source HIP profile, QoS marking, disable server response
+  inspection; Panorama: target firewalls (serial or serial and vsys), target negate, all firewalls. An action that refuses the change (pan-os-php
   SKIPPED, e.g. the last member of a group) leaves the version as it was and shows its reason at the field. Descriptions, tag comments and address values may contain `,` `:`
   `/` `|` (written as the pan-os-php aliases `$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`); in every other
   value `,` and `:` can not be used (they separate the arguments of an action).
@@ -63,8 +69,8 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   keep alive, disabled. **DHCP**: server (mode, IP pools, gateway, subnet mask, DNS, lease, reserved addresses) or
   relay (on / off, servers). **Virtual wires**: interfaces, allowed tags, multicast firewalling, link state pass
   through. **GlobalProtect portals / gateways**: local interface / IPv4, SSL/TLS service profile; gateway also tunnel
-  interface and the IP pool / access route lists of each client setting. **GlobalProtect gateway tunnels**: local
-  interface / IP, tunnel interface, disabled. The **name** of these network objects (not of an interface / DHCP) can be
+  interface and the IP pool / access route lists of each client setting. **GlobalProtect gateway tunnels**: read only
+  (a helper object of the GlobalProtect gateway). The **name** of these network objects (not of an interface / DHCP) can be
   changed: `name-rename` changes it also in every object that uses it. IPv6 values can not be entered (":" separates the arguments of an
   action); a change works on the version (offline), not through an API connection. Every other value of these
   objects - and every other network / device type - is shown read only (all values of the object). Panorama: zones, interfaces, … of a template

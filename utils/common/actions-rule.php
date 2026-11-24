@@ -3027,83 +3027,16 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
 
-        $ret = TRUE;
-
-        if( $type == 'virus' )
-        {
-            $profName_obj = $rule->owner->owner->AntiVirusProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_AV($profName_obj);
-            else
-                $ret = $rule->setSecProf_AV($profName);
-        }
-        elseif( $type == 'vulnerability' )
-        {
-            $profName_obj = $rule->owner->owner->VulnerabilityProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_Vuln($profName_obj);
-            else
-                $ret = $rule->setSecProf_Vuln($profName);
-        }
-        elseif( $type == 'url-filtering' )
-        {
-            $profName_obj = $rule->owner->owner->URLProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_URL($profName_obj);
-            else
-                $ret = $rule->setSecProf_URL($profName);
-        }
-        elseif( $type == 'data-filtering' )
-        {
-            $profName_obj = $rule->owner->owner->DataObjectsProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_DataFilt($profName_obj);
-            else
-                $ret = $rule->setSecProf_DataFilt($profName);
-        }
-        elseif( $type == 'file-blocking' )
-        {
-            $profName_obj = $rule->owner->owner->FileBlockingProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_FileBlock($profName_obj);
-            else
-                $ret = $rule->setSecProf_FileBlock($profName);
-        }
-        elseif( $type == 'spyware' )
-        {
-            $profName_obj = $rule->owner->owner->AntiSpywareProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_Spyware($profName_obj);
-            else
-                $ret = $rule->setSecProf_Spyware($profName);
-        }
-        elseif( $type == 'wildfire' )
-        {
-            $profName_obj = $rule->owner->owner->WildfireProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_Wildfire($profName_obj);
-            else
-                $ret = $rule->setSecProf_Wildfire($profName);
-        }
-        elseif( $type == 'virus-and-wildfire' )
-        {
-            $profName_obj = $rule->owner->owner->VirusAndWildfireProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_AVWF($profName_obj);
-            else
-                $ret = $rule->setSecProf_AVWF($profName);
-        }
-        elseif( $type == 'dns-security' )
-        {
-            $profName_obj = $rule->owner->owner->DNSSecurityProfileStore->find($profName);
-            if( $profName_obj !== null )
-                $ret = $rule->setSecProf_DNSSEC($profName_obj);
-            else
-                $ret = $rule->setSecProf_DNSSEC($profName);
-        }
-        else
-            derr("unsupported profile type '{$type}'");
-
+        // SecurityRule::SECPROF_TYPES: the store of the type (this location or above) and the setter of the rule
+        if( !isset( SecurityRule::SECPROF_TYPES[$type] ) )
+            derr( "unsupported profile type '{$type}'" );
+        $def = SecurityRule::SECPROF_TYPES[$type];
+        $store = $def['store'];
+        $profName_obj = isset( $rule->owner->owner->$store ) ? $rule->owner->owner->$store->find( $profName ) : null;
+        if( $profName_obj === null && !in_array( $profName, $def['predefined'], TRUE ) )
+            PH::ACTIONlog( $context, "profile '" . $profName . "' (" . $type . ") not found in the location or above - written as name" );
+        $setter = $def['set'];
+        $ret = $rule->$setter( $profName_obj !== null ? $profName_obj : $profName );
         if( !$ret )
         {
             $string = "no change detected" ;
@@ -3149,24 +3082,12 @@ RuleCallContext::$supportedActions[] = array(
             else
                 $rule->removeSecurityProfile();
         }
-        elseif( $type == 'virus' )
-            $ret = $rule->setSecProf_AV($profName);
-        elseif( $type == 'vulnerability' )
-            $ret = $rule->setSecProf_Vuln($profName);
-        elseif( $type == 'url-filtering' )
-            $ret = $rule->setSecProf_URL($profName);
-        elseif( $type == 'data-filtering' )
-            $ret = $rule->setSecProf_DataFilt($profName);
-        elseif( $type == 'file-blocking' )
-            $ret = $rule->setSecProf_FileBlock($profName);
-        elseif( $type == 'spyware' )
-            $ret = $rule->setSecProf_Spyware($profName);
-        elseif( $type == 'wildfire' )
-            $ret = $rule->setSecProf_Wildfire($profName);
-        elseif( $type == 'virus-and-wildfire' )
-            $ret = $rule->setSecProf_AVWF($profName);
-        elseif( $type == 'dns-security' )
-            $ret = $rule->setSecProf_DNSSEC($profName);
+        // SecurityRule::SECPROF_TYPES: the setter of the type (null: none of this type)
+        elseif( isset( SecurityRule::SECPROF_TYPES[$type] ) )
+        {
+            $setter = SecurityRule::SECPROF_TYPES[$type]['set'];
+            $ret = $rule->$setter( $profName );
+        }
         else
             derr("unsupported profile type '{$type}'");
 
@@ -7177,8 +7098,8 @@ RuleCallContext::$supportedActions[] = array(
             $rule->setQoSMarking($context->arguments['arg1'], $context->arguments['arg2']);
     },
     'args' => array(
-        'arg1' => array('type' => 'string', 'default' => '*nodefault*'),
-        'arg2' => array('type' => 'string', 'default' => '*nodefault*')
+        'arg1' => array('type' => 'string', 'default' => '*nodefault*', 'help' => 'ip-dscp, ip-precedence or follow-c2s-flow'),
+        'arg2' => array('type' => 'string', 'default' => '', 'help' => 'ip-dscp: af11 … ef, cs0 … cs7; ip-precedence: cs0 … cs7; follow-c2s-flow: none')
     )
 );
 
