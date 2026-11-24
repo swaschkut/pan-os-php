@@ -660,6 +660,13 @@ class PanSCMAPIConnector
             foreach( self::DEVICE_SETTINGS_TYPES as $t )
                 $this->typeArray[] = $t;
         }
+        elseif( in_array( $utilType, array( "network", "ike-gateway", "ike-profile", "ipsec-profile", "ipsec-tunnel" ), TRUE ) )
+        {
+            // IKE / IPsec of the NGFW folders, snippets and devices (/config/network/v1) - into <network> of the XML,
+            // read by the loader as on a firewall (scm-export-xml: "network"; the UTIL types need the referenced ones too)
+            foreach( array_keys( self::NETWORK_XML_TYPES ) as $t )
+                $this->typeArray[] = $t;
+        }
         elseif( $utilType == "custom" )
         {
         }
@@ -1178,7 +1185,7 @@ class PanSCMAPIConnector
 
     function loadResources( $folder, $sub, $utilType, $type, $foldertype)
     {
-        if( $type == "zones" || $type == "zone-protection-profiles" )
+        if( $type == "zones" || $type == "zone-protection-profiles" || isset( self::NETWORK_XML_TYPES[$type] ) )
             $resource = $this->getNetworkResource( $type, $foldertype, $folder, $this->global_limit);
         else
             $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit);
@@ -1310,6 +1317,55 @@ class PanSCMAPIConnector
      * - a variable of a device overrides the one of the same name in its folders (SCM: "overridden"); the value of
      * a folder is not copied to the folders / devices below
      */
+    /**
+     * network objects of SCM (/config/network/v1/<type>) => their place below <network> of a folder / snippet / device,
+     * as on a firewall; in this order (an entry refers to the ones before it: gateway -> IKE crypto profile, tunnel
+     * interface; tunnel -> gateway, IPsec crypto profile, tunnel interface)
+     */
+    const NETWORK_XML_TYPES = array(
+        'ike-crypto-profiles' => array( 'ike', 'crypto-profiles', 'ike-crypto-profiles' ),
+        'ipsec-crypto-profiles' => array( 'ike', 'crypto-profiles', 'ipsec-crypto-profiles' ),
+        'tunnel-interfaces' => array( 'interface', 'tunnel', 'units' ),
+        'ike-gateways' => array( 'ike', 'gateway' ),
+        'ipsec-tunnels' => array( 'tunnel', 'ipsec' ) );
+
+    /** fields of an SCM answer that are not part of the PAN-OS entry */
+    const NETWORK_XML_SKIP = array( 'id', 'name', 'folder', 'snippet', 'device', 'overridden' );
+
+    /**
+     * a network object of SCM into the XML of its folder / snippet / device: devices/entry[@name='localhost.localdomain']/
+     * network/<path>/<entry name=…> (where SCM keeps it, SCMCommon::networkNode) with the
+     * fields of the answer (key_name -> key-name, a list of texts -> <member>, a list of objects with a name ->
+     * <entry name=…>, TRUE / FALSE -> yes / no - the SCM fields follow the PAN-OS XML). The loader reads it as on a
+     * firewall (NetworkPropertiesContainer). An entry of the same name in the same place is kept (the first one).
+     * The pre-shared key of an IKE gateway stays as SCM gives it (encrypted).
+     */
+    function SCM_API_network_import( $type, $object, $sub )
+    {
+        if( !isset( $sub->xmlroot ) || !$sub->xmlroot instanceof DOMElement || !is_array( $object ) || !isset( $object['name'] ) || !is_scalar( $object['name'] ) )
+            return null;
+        $node = SCMCommon::networkNodeOrCreate( $sub->xmlroot );
+        foreach( self::NETWORK_XML_TYPES[$type] as $tag )
+            $node = DH::findFirstElementOrCreate( $tag, $node );
+        $name = (string)$object['name'];
+        foreach( $node->childNodes as $c )
+            if( $c instanceof DOMElement && $c->nodeName === 'entry' && $c->getAttribute( 'name' ) === $name )
+                return null;
+
+        $fields = array_diff_key( $object, array_flip( self::NETWORK_XML_SKIP ) );
+        // interfaces: the IPs as <ip><entry name="…"/></ip> - SCM answers a list of texts or of objects with a name
+        if( $type === 'tunnel-interfaces' && isset( $fields['ip'] ) && is_array( $fields['ip'] ) )
+            foreach( $fields['ip'] as $i => $ip )
+                if( is_scalar( $ip ) )
+                    $fields['ip'][$i] = array( 'name' => (string)$ip );
+
+        $entry = $node->ownerDocument->createElement( 'entry' );
+        $entry->setAttribute( 'name', $name );
+        $node->appendChild( $entry );
+        self::jsonToXml( $entry, $fields );
+        return $entry;
+    }
+
     /** NGFW device settings of SCM (/config/device/v1/<type>), loaded with utilType device */
     const DEVICE_SETTINGS_TYPES = array( 'general-settings', 'management-interface-settings', 'service-settings', 'service-route-settings',
         'authentication-settings', 'login-banner-settings', 'session-settings', 'session-timeouts-settings', 'tcp-settings',
@@ -1686,6 +1742,10 @@ class PanSCMAPIConnector
             elseif( $type === "variables" )
             {
                 $this->SCM_API_variable_import( $object, $sub );
+            }
+            elseif( isset( self::NETWORK_XML_TYPES[$type] ) )
+            {
+                $this->SCM_API_network_import( $type, $object, $sub );
             }
             elseif( in_array( $type, self::DEVICE_SETTINGS_TYPES, TRUE ) )
             {

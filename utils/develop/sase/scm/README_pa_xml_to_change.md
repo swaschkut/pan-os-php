@@ -59,7 +59,13 @@ with a config area is used (the tools print which one).
 * loaded types: tags, addresses, address groups, external dynamic lists, regions, services, service groups,
   schedules, application groups / filters / custom applications, log forwarding / zone protection / security profiles,
   profile groups, zones, security and NAT rules (the address / service types and the mergers load NAT rules too, so
-  their references are replaced)
+  their references are replaced), IKE / IPsec crypto profiles, tunnel interfaces, IKE gateways, IPsec tunnels (below
+  `devices/entry[@name='localhost.localdomain']/network` of the folder / snippet / device, where SCM keeps them;
+  `type=ike-gateway`, `ipsec-tunnel`, `ike-profile`, `ipsec-profile`; the pre-shared key stays encrypted as SCM gives it)
+* not yet in the XML (in the export as JSON only): the other network types (interfaces other than tunnel, routers,
+  routing profiles, QoS, SD-WAN, DNS proxy, LLDP), identity (certificates, server / authentication profiles, local
+  users), dynamic user groups, URL categories, HIP objects / profiles, HTTP / syslog server profiles, auto-tag actions,
+  decryption / AI security profiles, the rules other than security / NAT, the log match lists
 * security profiles (vulnerability, virus-and-wildfire, anti-spyware, DNS security) are loaded complete – decoder
   actions, inline ML, inline cloud analysis, rule action `default`, advanced DNS – when the export has their internal
   UI API answers (`config/internal/<type>.json`, scm_pa_export.php default, `ui-api-host=` for the tenant region);

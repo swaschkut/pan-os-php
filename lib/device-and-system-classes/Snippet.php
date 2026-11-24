@@ -1287,7 +1287,7 @@ class Snippet
         // Extract network related configs
         //
         //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
-        $tmp = DH::findFirstElement('network', $xml);
+        $tmp = SCMCommon::networkNode($xml); // SCM: devices/entry[@name='localhost.localdomain']/network
         if( $tmp !== FALSE )
         {
             if( $debugLoadTime )

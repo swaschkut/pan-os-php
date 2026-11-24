@@ -105,5 +105,38 @@ class SCMCommon
         return $out;
     }
     /** log types of the match lists added to log forwarding profiles without match list (Strata Logging Service) */
+    /** the device entry below a folder / snippet / device that holds its network part (as SCM writes its XML) */
+    const NETWORK_DEVICE = 'localhost.localdomain';
+
+    /**
+     * the <network> of a folder / snippet / device of an SCM configuration: SCM keeps it below
+     * devices/entry[@name='localhost.localdomain']/network (as a template does); a <network> directly below the entry
+     * is read as well. FALSE: none.
+     */
+    public static function networkNode( DOMElement $xml )
+    {
+        $direct = DH::findFirstElement( 'network', $xml );
+        if( $direct !== FALSE )
+            return $direct;
+        $devices = DH::findFirstElement( 'devices', $xml );
+        if( $devices === FALSE )
+            return FALSE;
+        foreach( $devices->childNodes as $e )
+            if( $e instanceof DOMElement && $e->nodeName === 'entry' && $e->getAttribute( 'name' ) === self::NETWORK_DEVICE )
+                return DH::findFirstElement( 'network', $e );
+        return FALSE;
+    }
+
+    /** the <network> of a folder / snippet / device to write into (SCM place), created if missing */
+    public static function networkNodeOrCreate( DOMElement $xml ): DOMElement
+    {
+        $n = self::networkNode( $xml );
+        if( $n !== FALSE )
+            return $n;
+        $devices = DH::findFirstElementOrCreate( 'devices', $xml );
+        $entry = DH::findFirstElementByNameAttrOrCreate( 'entry', self::NETWORK_DEVICE, $devices, $xml->ownerDocument );
+        return DH::findFirstElementOrCreate( 'network', $entry );
+    }
+
     const SLS_LOG_TYPES = array('traffic', 'threat', 'wildfire', 'url', 'data', 'tunnel', 'auth', 'decryption');
 }
