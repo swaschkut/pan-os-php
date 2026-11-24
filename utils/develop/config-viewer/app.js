@@ -2335,15 +2335,15 @@ const VIEWER_MENU = [
     ['Network', 'virtual-wires', 'Virtual Wires', 'virtualwire'],
     ['Network', 'routing', 'Virtual Routers / Routing', 'routing'],
     ['Network', 'static-routes', 'Static Routes', 'static-route'],
-    ['Network', 'ike-gateways', 'IKE Gateways', 'ike-gateway'],
-    ['Network', 'ipsec-tunnels', 'IPSec Tunnels', 'ipsec-tunnel'],
+    ['Network', 'ike-gateways', 'IKE Gateways', 'ike-gateway', { window: 'ikegateway', one: 'IKE gateway' }],
+    ['Network', 'ipsec-tunnels', 'IPSec Tunnels', 'ipsec-tunnel', { window: 'ipsectunnel', one: 'IPsec tunnel' }],
     ['Network', 'gre-tunnels', 'GRE Tunnels', 'gre-tunnel'],
     ['Network', 'dhcp', 'DHCP', 'dhcp'],
     ['Network', 'gp-portals', 'GlobalProtect Portals', 'gp-portal'],
     ['Network', 'gp-gateways', 'GlobalProtect Gateways', 'gp-gateway'],
     ['Network', 'gp-gateway-tunnels', 'GlobalProtect Gateway Tunnels', 'gpgateway-tunnel'],
-    ['Network', 'ike-profiles', 'IKE Crypto Profiles', 'ike-profile'],
-    ['Network', 'ipsec-profiles', 'IPSec Crypto Profiles', 'ipsec-profile'],
+    ['Network', 'ike-profiles', 'IKE Crypto Profiles', 'ike-profile', { window: 'ikeprofile', one: 'IKE crypto profile' }],
+    ['Network', 'ipsec-profiles', 'IPSec Crypto Profiles', 'ipsec-profile', { window: 'ipsecprofile', one: 'IPsec crypto profile' }],
     ['Network', 'interface-mgmt-profiles', 'Interface Management Profiles', 'interface-management-profile'],
     ['Network', 'zone-protection-profiles', 'Zone Protection Profiles', 'zone-protection-profile'],
     ['Device', 'devices', 'Devices', 'device'],
@@ -2839,6 +2839,7 @@ async function showViewer(config, preset) {
                 bool('userid', 'User identification', 'userid-enable'), bool('pbp', 'Packet buffer protection', 'packetbufferprotection-set'),
                 row.template ? { key: 'template', label: 'Template', kind: 'ro', value: row.template } : null, loc].filter(f => f);
         }
+        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel'].includes(kind)) return networkFields(kind, row, m, loc);
         if (kind === 'generic') {
             // every other type: all its fields, read only - the list row and what the structured model adds
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
@@ -2862,6 +2863,121 @@ async function showViewer(config, preset) {
                     act: (o, n) => n === '' ? 'comments-delete' : (o === '' ? '' : 'comments-delete/') + 'comments-add:' + ruleText(n) }, loc];
         }
         return [name, loc];
+    }
+    // IKE gateway, IKE / IPsec crypto profile, IPsec tunnel: the values of the model, each changed by its pan-os-php
+    // action (type=ike-gateway / ike-profile / ipsec-profile / ipsec-tunnel …-set); what has no action stays read only
+    function networkFields(kind, row, m, loc) {
+        const yn = v => v === true || v === 'yes' ? 'yes' : (v === false || v === 'no' ? 'no' : '');
+        const get = (o, ...path) => path.reduce((x, k) => (x && typeof x === 'object' ? x[k] : undefined), o);
+        const words = v => Array.isArray(v) ? v.map(String) : (v === undefined || v === null || v === '' ? [] : [String(v)]);
+        const keywords = (n, what) => { const l = n.split(/[\s,|]+/).map(x => x.trim()).filter(x => x); if (!l.length) throw new Error(what + ': at least one'); return l.map(actArg).join('|'); };
+        const sel = (key, label, value, choices, action, note) => ({ key, label, kind: 'select', value, choices, needs: [action], note,
+            act: (o, n) => n === '' ? '' : action + ':' + n });
+        const flag = (key, label, value, action, argPrefix) => ({ key, label, kind: 'select', value: yn(value), choices: ['yes', 'no'], needs: [action],
+            act: (o, n) => n === '' ? '' : action + ':' + (argPrefix || '') + n });
+        const name = (key, label, value, action, suffix, note) => ({ key, label, kind: 'text', value: value || '', needs: [action], note,
+            act: (o, n) => { if (n === '') throw new Error(label + ': a name is needed'); return action + ':' + actArg(n) + (suffix || ''); } });
+        const amount = (key, label, value, action, units, optional) => {
+            const unit = value && typeof value === 'object' ? Object.keys(value)[0] || '' : '';
+            return { key, label, kind: 'parts', value: { unit, value: unit ? String(value[unit]) : '' }, needs: [action],
+                parts: [{ key: 'unit', kind: 'select', label: 'unit', choices: (optional ? [['', 'none']] : []).concat(units.map(u => [u, u])) },
+                    { key: 'value', kind: 'text', label: 'value', show: v => v.unit !== '' }],
+                act: (o, v) => {
+                    if (v.unit === '') return o.unit === '' ? '' : action;
+                    if (!/^[0-9]+$/.test(v.value.trim())) return { hint: 'a number' };
+                    return action + ':' + v.unit + ',' + v.value.trim();
+                } };
+        };
+        const ident = (which) => {
+            const id = m[which + '_id'] || {};
+            return { key: which + '-id', label: which === 'local' ? 'Local identification' : 'Peer identification', kind: 'parts', value: { type: id.type || '', id: id.id || '' },
+                needs: [which + '-id-set'],
+                parts: [{ key: 'type', kind: 'select', label: 'type', choices: [['', 'none'], ['ipaddr', 'IP address'], ['fqdn', 'FQDN'], ['ufqdn', 'user FQDN'], ['keyid', 'key ID'], ['dn', 'distinguished name']] },
+                    { key: 'id', kind: 'text', label: 'id', show: v => v.type !== '' }],
+                act: (o, v) => {
+                    if (v.type === '') return o.type === '' ? '' : which + '-id-set';
+                    if (!v.id.trim()) return { hint: 'enter the id' };
+                    return which + '-id-set:' + v.type + ',' + actArg(v.id.trim());
+                } };
+        };
+        // the other values of the model, read only (nothing is left out)
+        const rest = (used) => Object.entries(m).filter(([k]) => !used.includes(k) && !['name', 'device_group', 'template', 'template_stack', 'vsys', 'folder', 'snippet', 'device', '_panosphp'].includes(k))
+            .map(([k, v]) => ({ key: 'm-' + k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null ? fmtTree(v) : String(v) }));
+        const ro = (key, label, value, note) => ({ key, label, kind: 'ro', value: value === undefined || value === null ? '' : value, note });
+        const nameRo = ro('name', 'Name', row.name);
+        if (kind === 'ikegateway') {
+            const pa = m.peer_address || {};
+            const paType = pa.ip !== undefined ? 'ip' : pa.fqdn !== undefined ? 'fqdn' : pa.dynamic !== undefined ? 'dynamic' : '';
+            const psk = get(m, 'authentication', 'pre_shared_key', 'key');
+            return [nameRo,
+                sel('version', 'IKE version', get(m, 'protocol', 'version') || '', ['ikev1', 'ikev2', 'ikev2-preferred'], 'version-set'),
+                name('ike2', 'IKE crypto profile (IKEv2)', get(m, 'protocol', 'ikev2', 'ike_crypto_profile'), 'ike-crypto-profile-set', ',ikev2', 'must exist here or above (parent folder / snippet / template)'),
+                name('ike1', 'IKE crypto profile (IKEv1)', get(m, 'protocol', 'ikev1', 'ike_crypto_profile'), 'ike-crypto-profile-set', ',ikev1'),
+                { key: 'peer', label: 'Peer address', kind: 'parts', value: { type: paType, value: pa.ip || pa.fqdn || '' }, needs: ['peer-address-set'],
+                    parts: [{ key: 'type', kind: 'select', label: 'type', choices: [['ip', 'IP'], ['fqdn', 'FQDN'], ['dynamic', 'dynamic']] },
+                        { key: 'value', kind: 'text', label: 'value', show: v => v.type !== 'dynamic' }],
+                    act: (o, v) => {
+                        if (v.type === 'dynamic') return o.type === 'dynamic' ? '' : 'peer-address-set:dynamic';
+                        if (!v.value.trim()) return { hint: 'enter the ' + (v.type === 'ip' ? 'IP address' : 'FQDN') };
+                        return 'peer-address-set:' + v.type + ',' + actArg(v.value.trim());
+                    } },
+                name('lif', 'Local interface', get(m, 'local_address', 'interface'), 'local-interface-set'),
+                { key: 'lip', label: 'Local IP', kind: 'text', value: get(m, 'local_address', 'ip') || '', placeholder: 'empty = none', needs: ['local-ip-set'],
+                    act: (o, n) => n === '' ? 'local-ip-set' : 'local-ip-set:' + actArg(n) },
+                ident('local'), ident('peer'),
+                flag('natt', 'NAT traversal', get(m, 'protocol_common', 'nat_traversal', 'enable'), 'nat-traversal-set'),
+                flag('frag', 'Fragmentation', get(m, 'protocol_common', 'fragmentation', 'enable'), 'fragmentation-set'),
+                flag('passive', 'Passive mode', get(m, 'protocol_common', 'passive_mode'), 'passive-mode-set'),
+                flag('dpd2', 'Dead peer detection (IKEv2)', get(m, 'protocol', 'ikev2', 'dpd', 'enable'), 'dpd-set', 'ikev2,'),
+                flag('dpd1', 'Dead peer detection (IKEv1)', get(m, 'protocol', 'ikev1', 'dpd', 'enable'), 'dpd-set', 'ikev1,'),
+                sel('xmode', 'Exchange mode (IKEv1)', get(m, 'protocol', 'ikev1', 'exchange_mode') || '', ['auto', 'main', 'aggressive'], 'exchange-mode-set'),
+                flag('disabled', 'Disabled', m.disabled, 'disabled-set'),
+                ro('psk', 'Pre-shared key', psk !== undefined ? psk : (m.authentication ? fmtTree(m.authentication) : ''), 'encrypted, as the configuration has it - not changed here; the clear text: run "IKE gateways / PSK list"'),
+                ...rest(['authentication', 'peer_address', 'local_address', 'local_id', 'peer_id', 'protocol', 'protocol_common', 'disabled']), loc];
+        }
+        if (kind === 'ikeprofile')
+            return [nameRo,
+                { key: 'enc', label: 'Encryption', kind: 'text', value: words(m.encryption).join(', '), needs: ['encryption-set'], note: 'one or more, e.g. aes-256-cbc, aes-128-cbc', act: (o, n) => 'encryption-set:' + keywords(n, 'encryption') },
+                { key: 'hash', label: 'Authentication (hash)', kind: 'text', value: words(m.hash).join(', '), needs: ['hash-set'], note: 'one or more, e.g. sha256, sha384', act: (o, n) => 'hash-set:' + keywords(n, 'hash') },
+                { key: 'dh', label: 'DH group', kind: 'text', value: words(m.dh_group).join(', '), needs: ['dh-group-set'], note: 'one or more, e.g. group14, group19', act: (o, n) => 'dh-group-set:' + keywords(n, 'DH group') },
+                amount('life', 'Key lifetime', m.lifetime, 'lifetime-set', ['seconds', 'minutes', 'hours', 'days']),
+                { key: 'amult', label: 'IKEv2 authentication multiple', kind: 'text', value: m.authentication_multiple !== undefined ? String(m.authentication_multiple) : '', needs: ['authentication-multiple-set'],
+                    placeholder: '0-50', act: (o, n) => { if (!/^[0-9]+$/.test(n)) throw new Error('0-50'); return 'authentication-multiple-set:' + n; } },
+                ...rest(['encryption', 'hash', 'dh_group', 'lifetime', 'authentication_multiple']), loc];
+        if (kind === 'ipsecprofile')
+            return [nameRo,
+                { key: 'enc', label: 'ESP encryption', kind: 'text', value: words(get(m, 'esp', 'encryption')).join(', '), needs: ['esp-encryption-set'], note: 'one or more, e.g. aes-256-gcm, aes-128-gcm (an AH profile becomes ESP)',
+                    act: (o, n) => 'esp-encryption-set:' + keywords(n, 'encryption') },
+                { key: 'auth', label: 'ESP authentication', kind: 'text', value: words(get(m, 'esp', 'authentication')).join(', '), needs: ['esp-authentication-set'], note: 'one or more, e.g. sha256 - or none',
+                    act: (o, n) => 'esp-authentication-set:' + keywords(n, 'authentication') },
+                { key: 'dh', label: 'DH group', kind: 'text', value: m.dh_group !== undefined ? String(m.dh_group) : '', needs: ['dh-group-set'], note: 'no-pfs or a group, e.g. group14',
+                    act: (o, n) => { if (!/^[a-z0-9-]+$/.test(n)) throw new Error('no-pfs or a group'); return 'dh-group-set:' + n; } },
+                amount('life', 'Lifetime', m.lifetime, 'lifetime-set', ['seconds', 'minutes', 'hours', 'days']),
+                amount('size', 'Lifesize', m.lifesize, 'lifesize-set', ['kb', 'mb', 'gb', 'tb'], true),
+                ...rest(['esp', 'dh_group', 'lifetime', 'lifesize']), loc];
+        // IPsec tunnel
+        const ak = m.auto_key || {};
+        const proxies = Array.isArray(ak.proxy_id) ? ak.proxy_id : [];
+        const tm = m.tunnel_monitor || {};
+        return [nameRo,
+            name('gw', 'IKE gateway', Array.isArray(ak.ike_gateway) && ak.ike_gateway[0] ? ak.ike_gateway[0].name : '', 'ike-gateway-set', '', 'must exist here or above (parent folder / snippet / template)'),
+            name('prof', 'IPsec crypto profile', ak.ipsec_crypto_profile, 'ipsec-crypto-profile-set'),
+            name('tif', 'Tunnel interface', m.tunnel_interface, 'tunnel-interface-set'),
+            { key: 'proxy', label: 'Proxy IDs', kind: 'list', value: proxies.map(p => p.name + ': ' + (p.local || '') + ' → ' + (p.remote || '')), needs: ['proxy-id-add'], needsRemove: ['proxy-id-remove'],
+                note: 'add: name local remote (e.g. p2 10.2.0.0/24 10.3.0.0/24 - protocol any)',
+                add: x => { const p = x.split(/\s+/); if (p.length !== 3) throw new Error('name local remote'); return 'proxy-id-add:' + p.map(actArg).join(','); },
+                remove: x => 'proxy-id-remove:' + actArg(x.split(': ')[0]) },
+            flag('ar', 'Anti replay', m.anti_replay, 'anti-replay-set'),
+            flag('tos', 'Copy TOS header', m.copy_tos, 'copy-tos-set'),
+            { key: 'tmon', label: 'Tunnel monitor', kind: 'parts', value: { enable: yn(tm.enable) || 'no', dest: tm.destination_ip || '' }, needs: ['tunnel-monitor-set'],
+                parts: [{ key: 'enable', kind: 'select', label: 'enabled', choices: [['no', 'no'], ['yes', 'yes']] }, { key: 'dest', kind: 'text', label: 'destination IP', show: v => v.enable === 'yes' }],
+                act: (o, v) => {
+                    if (v.enable === 'no') return o.enable === 'no' ? '' : 'tunnel-monitor-set:no';
+                    if (!v.dest.trim()) return { hint: 'enter the destination IP' };
+                    return 'tunnel-monitor-set:yes,' + actArg(v.dest.trim());
+                } },
+            flag('disabled', 'Disabled', m.disabled, 'disabled-set'),
+            ...rest(['auto_key', 'tunnel_interface', 'anti_replay', 'copy_tos', 'tunnel_monitor', 'disabled']), loc];
     }
     // a rule (every rule type): the fields its model has; list fields as add / remove (+ "any"), single values as -set
     function ruleText(v) {

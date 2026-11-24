@@ -158,6 +158,7 @@ require_once $basedir . '/misc-classes/trait/ReferenceableObject.php';
 require_once $basedir . '/misc-classes/trait/XmlConvertible.php';
 require_once $basedir . '/misc-classes/trait/ObjectWithDescription.php';
 require_once $basedir . '/misc-classes/trait/PathableName.php';
+require_once $basedir . '/misc-classes/trait/NetworkObjectEdit.php';
 require_once $basedir . '/misc-classes/DH.php';
 require_once $basedir . '/misc-classes/PH.php';
 require_once $basedir . '/misc-classes/ConfigObjectSplit.php';

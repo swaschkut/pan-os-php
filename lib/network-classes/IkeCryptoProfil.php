@@ -30,6 +30,7 @@ class IkeCryptoProfil
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     public $owner;
 
@@ -338,6 +339,42 @@ class IkeCryptoProfil
         DH::setDomNodeText($tmp_gateway, $time);
 
         return TRUE;
+    }
+
+    // ---- changes of the actions (ike-profile …-set): XML and object together; an invalid value: Exception
+
+    public function editEncryption( $values ): void
+    {
+        $this->encryption = self::editKeywords( $values, 'encryption' );
+        $this->editMembers( array( 'encryption' ), $this->encryption );
+    }
+
+    public function editHash( $values ): void
+    {
+        $this->hash = self::editKeywords( $values, 'hash' );
+        $this->editMembers( array( 'hash' ), $this->hash );
+    }
+
+    public function editDhGroup( $values ): void
+    {
+        $this->dhgroup = self::editKeywords( $values, 'dh-group' );
+        $this->editMembers( array( 'dh-group' ), $this->dhgroup );
+    }
+
+    /** key lifetime: seconds 180-65535, minutes 3-65535, hours 1-65535, days 1-365 */
+    public function editLifetime( string $unit, string $value ): void
+    {
+        $this->editAmount( array( 'lifetime' ), $unit, $value, array( 'seconds' => array( 180, 65535 ), 'minutes' => array( 3, 65535 ), 'hours' => array( 1, 65535 ), 'days' => array( 1, 365 ) ), 'lifetime' );
+        foreach( array( 'seconds', 'minutes', 'hours', 'days' ) as $u )
+            $this->{'lifetime_' . $u} = $u === strtolower( trim( $unit ) ) ? (string)(int)$value : '';
+    }
+
+    /** IKEv2 authentication multiple 0-50 (0: off) */
+    public function editAuthenticationMultiple( string $value ): void
+    {
+        if( !preg_match( '/^[0-9]{1,2}$/', trim( $value ) ) || (int)$value > 50 )
+            throw new Exception( "authentication-multiple: 0-50" );
+        $this->editText( array( 'authentication-multiple' ), (string)(int)$value );
     }
 
     public function isIkeCryptoProfilType()

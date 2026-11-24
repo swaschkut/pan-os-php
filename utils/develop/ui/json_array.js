@@ -4365,6 +4365,17 @@ var subjectObject =
     "ike-gateway": {
         "name": "ike-gateway",
         "action": {
+            "disabled-set": {
+                "name": "disabled-Set",
+                "MainFunction": {},
+                "args": {
+                    "disabled": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "disable the gateway"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {},
@@ -4382,6 +4393,41 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "dpd-set": {
+                "name": "dpd-Set",
+                "MainFunction": {},
+                "args": {
+                    "ike-version": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ikev1",
+                            "ikev2"
+                        ]
+                    },
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "dead peer detection of IKEv1 \/ IKEv2"
+            },
+            "exchange-mode-set": {
+                "name": "exchange-mode-Set",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "auto",
+                            "main",
+                            "aggressive"
+                        ]
+                    }
+                },
+                "help": "IKEv1 exchange mode"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -4428,6 +4474,162 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - PSKcleartext : show IKE gateway PSK in cleartext\n"
                     }
                 }
+            },
+            "fragmentation-set": {
+                "name": "fragmentation-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "IKEv2 fragmentation"
+            },
+            "ike-crypto-profile-set": {
+                "name": "ike-crypto-profile-Set",
+                "MainFunction": {},
+                "args": {
+                    "profile": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "ike-version": {
+                        "type": "string",
+                        "default": "ikev2",
+                        "choices": [
+                            "ikev1",
+                            "ikev2"
+                        ]
+                    }
+                },
+                "help": "IKE crypto profile of IKEv1 or IKEv2 - must exist in the location of the gateway or above it"
+            },
+            "local-id-set": {
+                "name": "local-id-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "",
+                        "choices": [
+                            "",
+                            "ipaddr",
+                            "fqdn",
+                            "ufqdn",
+                            "keyid",
+                            "dn"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "local identification; type empty: removed"
+            },
+            "local-interface-set": {
+                "name": "local-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "local interface of the gateway"
+            },
+            "local-ip-set": {
+                "name": "local-ip-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "local IP address (with mask, or address object); empty: removed"
+            },
+            "nat-traversal-set": {
+                "name": "nat-traversal-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "NAT traversal"
+            },
+            "passive-mode-set": {
+                "name": "passive-mode-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "passive mode"
+            },
+            "peer-address-set": {
+                "name": "peer-address-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ip",
+                            "fqdn",
+                            "dynamic"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "peer address: ip (address or address object), fqdn, or dynamic"
+            },
+            "peer-id-set": {
+                "name": "peer-id-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "",
+                        "choices": [
+                            "",
+                            "ipaddr",
+                            "fqdn",
+                            "ufqdn",
+                            "keyid",
+                            "dn"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "peer identification; type empty: removed"
+            },
+            "version-set": {
+                "name": "version-Set",
+                "MainFunction": {},
+                "args": {
+                    "version": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ikev1",
+                            "ikev2",
+                            "ikev2-preferred"
+                        ]
+                    }
+                },
+                "help": "IKE version"
             }
         },
         "filter": {
@@ -4473,6 +4675,18 @@ var subjectObject =
     "ike-profile": {
         "name": "ike-profile",
         "action": {
+            "authentication-multiple-set": {
+                "name": "authentication-multiple-Set",
+                "MainFunction": {},
+                "args": {
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "0-50 (0: off)"
+                    }
+                },
+                "help": "IKEv2 authentication multiple"
+            },
             "delete": {
                 "name": "delete",
                 "MainFunction": {}
@@ -4487,6 +4701,18 @@ var subjectObject =
                 "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
                 "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
+            "dh-group-set": {
+                "name": "dh-group-Set",
+                "MainFunction": {},
+                "args": {
+                    "groups": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "one or more, separated by | (e.g. group14|group19)"
+                    }
+                },
+                "help": "DH groups"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -4494,6 +4720,18 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "encryption-set": {
+                "name": "encryption-Set",
+                "MainFunction": {},
+                "args": {
+                    "algorithms": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "one or more, separated by | (e.g. aes-256-cbc|aes-128-cbc)"
+                    }
+                },
+                "help": "encryption algorithms"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -4538,6 +4776,39 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
                     }
                 }
+            },
+            "hash-set": {
+                "name": "hash-Set",
+                "MainFunction": {},
+                "args": {
+                    "algorithms": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "one or more, separated by | (e.g. sha256|sha384)"
+                    }
+                },
+                "help": "authentication (hash) algorithms"
+            },
+            "lifetime-set": {
+                "name": "lifetime-Set",
+                "MainFunction": {},
+                "args": {
+                    "unit": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "seconds",
+                            "minutes",
+                            "hours",
+                            "days"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "key lifetime"
             }
         },
         "filter": {
@@ -5158,6 +5429,18 @@ var subjectObject =
                 "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
                 "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
+            "dh-group-set": {
+                "name": "dh-group-Set",
+                "MainFunction": {},
+                "args": {
+                    "group": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "no-pfs or a group (e.g. group14)"
+                    }
+                },
+                "help": "DH group (PFS)"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -5165,6 +5448,30 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "esp-authentication-set": {
+                "name": "esp-authentication-Set",
+                "MainFunction": {},
+                "args": {
+                    "algorithms": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "one or more, separated by | (e.g. sha256 or none)"
+                    }
+                },
+                "help": "ESP authentication algorithms"
+            },
+            "esp-encryption-set": {
+                "name": "esp-encryption-Set",
+                "MainFunction": {},
+                "args": {
+                    "algorithms": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "one or more, separated by | (e.g. aes-256-gcm|aes-128-gcm)"
+                    }
+                },
+                "help": "ESP encryption algorithms (an AH profile becomes ESP)"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -5209,6 +5516,49 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
                     }
                 }
+            },
+            "lifesize-set": {
+                "name": "lifesize-Set",
+                "MainFunction": {},
+                "args": {
+                    "unit": {
+                        "type": "string",
+                        "default": "",
+                        "choices": [
+                            "",
+                            "kb",
+                            "mb",
+                            "gb",
+                            "tb"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "lifesize; unit empty: removed"
+            },
+            "lifetime-set": {
+                "name": "lifetime-Set",
+                "MainFunction": {},
+                "args": {
+                    "unit": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "seconds",
+                            "minutes",
+                            "hours",
+                            "days"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "lifetime"
             }
         },
         "filter": {
@@ -5290,6 +5640,39 @@ var subjectObject =
     "ipsec-tunnel": {
         "name": "ipsec-tunnel",
         "action": {
+            "anti-replay-set": {
+                "name": "anti-replay-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "anti replay"
+            },
+            "copy-tos-set": {
+                "name": "copy-tos-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "copy TOS header"
+            },
+            "disabled-set": {
+                "name": "disabled-Set",
+                "MainFunction": {},
+                "args": {
+                    "disabled": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "disable the tunnel"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -5337,6 +5720,84 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
                     }
                 }
+            },
+            "ike-gateway-set": {
+                "name": "ike-gateway-Set",
+                "MainFunction": {},
+                "args": {
+                    "gateway": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "IKE gateway - must exist in the location of the tunnel or above it"
+            },
+            "ipsec-crypto-profile-set": {
+                "name": "ipsec-crypto-profile-Set",
+                "MainFunction": {},
+                "args": {
+                    "profile": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "IPsec crypto profile - must exist in the location of the tunnel or above it"
+            },
+            "proxy-id-add": {
+                "name": "proxy-id-Add",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "local": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "remote": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "add a proxy ID (protocol any)"
+            },
+            "proxy-id-remove": {
+                "name": "proxy-id-Remove",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove a proxy ID"
+            },
+            "tunnel-interface-set": {
+                "name": "tunnel-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "tunnel interface"
+            },
+            "tunnel-monitor-set": {
+                "name": "tunnel-monitor-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    },
+                    "destination-ip": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "tunnel monitor (with a destination IP)"
             }
         },
         "filter": {

@@ -276,3 +276,65 @@ IPsecprofileCallContext::$supportedActions['deleteforce'] = array_merge(IPsecpro
         'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
     )
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+IPsecprofileCallContext::$supportedActions['esp-encryption-set'] = array(
+    'name' => 'esp-encryption-Set',
+    'MainFunction' => function ( IPsecprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editEsp( 'encryption', $a['algorithms'] );
+            return "ESP encryption " . implode( ', ', $o->encryption );
+        } );
+    },
+    'args' => array( 'algorithms' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'one or more, separated by | (e.g. aes-256-gcm|aes-128-gcm)' ) ),
+    'help' => 'ESP encryption algorithms (an AH profile becomes ESP)',
+);
+
+IPsecprofileCallContext::$supportedActions['esp-authentication-set'] = array(
+    'name' => 'esp-authentication-Set',
+    'MainFunction' => function ( IPsecprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editEsp( 'authentication', $a['algorithms'] );
+            return "ESP authentication " . implode( ', ', $o->authentication );
+        } );
+    },
+    'args' => array( 'algorithms' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'one or more, separated by | (e.g. sha256 or none)' ) ),
+    'help' => 'ESP authentication algorithms',
+);
+
+IPsecprofileCallContext::$supportedActions['dh-group-set'] = array(
+    'name' => 'dh-group-Set',
+    'MainFunction' => function ( IPsecprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDhGroup( $a['group'] );
+            return "DH group " . $o->dhgroup;
+        } );
+    },
+    'args' => array( 'group' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'no-pfs or a group (e.g. group14)' ) ),
+    'help' => 'DH group (PFS)',
+);
+
+IPsecprofileCallContext::$supportedActions['lifetime-set'] = array(
+    'name' => 'lifetime-Set',
+    'MainFunction' => function ( IPsecprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLifetime( $a['unit'], $a['value'] );
+            return "lifetime " . $a['value'] . " " . $a['unit'];
+        } );
+    },
+    'args' => array( 'unit' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'seconds', 'minutes', 'hours', 'days' ) ), 'value' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'lifetime',
+);
+
+IPsecprofileCallContext::$supportedActions['lifesize-set'] = array(
+    'name' => 'lifesize-Set',
+    'MainFunction' => function ( IPsecprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLifesize( $a['unit'], $a['value'] );
+            return $a['unit'] === '' ? "lifesize removed" : "lifesize " . $a['value'] . " " . $a['unit'];
+        } );
+    },
+    'args' => array( 'unit' => array( 'type' => 'string', 'default' => '', 'choices' => array( '', 'kb', 'mb', 'gb', 'tb' ) ), 'value' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'lifesize; unit empty: removed',
+);

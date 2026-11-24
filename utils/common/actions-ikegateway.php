@@ -290,3 +290,161 @@ IKEgatewayCallContext::$supportedActions[] = array(
     )
 );
 IKEgatewayCallContext::$supportedActions[] = array_merge(IKEgatewayCallContext::$supportedActions[array_key_last(IKEgatewayCallContext::$supportedActions)], array('name' => 'exportToHtml'));
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+IKEgatewayCallContext::$supportedActions['version-set'] = array(
+    'name' => 'version-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editVersion( $a['version'] );
+            return "version '" . $o->version . "'";
+        } );
+    },
+    'args' => array( 'version' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'ikev1', 'ikev2', 'ikev2-preferred' ) ) ),
+    'help' => 'IKE version',
+);
+
+IKEgatewayCallContext::$supportedActions['ike-crypto-profile-set'] = array(
+    'name' => 'ike-crypto-profile-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIkeCryptoProfile( $a['profile'], $a['ike-version'] );
+            return $a['ike-version'] . " IKE crypto profile '" . $a['profile'] . "'";
+        } );
+    },
+    'args' => array( 'profile' => array( 'type' => 'string', 'default' => '*nodefault*' ), 'ike-version' => array( 'type' => 'string', 'default' => 'ikev2', 'choices' => array( 'ikev1', 'ikev2' ) ) ),
+    'help' => 'IKE crypto profile of IKEv1 or IKEv2 - must exist in the location of the gateway or above it',
+);
+
+IKEgatewayCallContext::$supportedActions['peer-address-set'] = array(
+    'name' => 'peer-address-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editPeerAddress( $a['type'], $a['value'] );
+            return "peer address " . $a['type'] . ( $a['type'] !== 'dynamic' ? " '" . $a['value'] . "'" : "" );
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'ip', 'fqdn', 'dynamic' ) ), 'value' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'peer address: ip (address or address object), fqdn, or dynamic',
+);
+
+IKEgatewayCallContext::$supportedActions['local-interface-set'] = array(
+    'name' => 'local-interface-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $found = $o->editLocalInterface( $a['interface'] );
+            return "local interface '" . $a['interface'] . "'" . ( $found ? "" : " (no interface of this name in the location or above it)" );
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'local interface of the gateway',
+);
+
+IKEgatewayCallContext::$supportedActions['local-ip-set'] = array(
+    'name' => 'local-ip-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLocalIp( $a['ip'] );
+            return $a['ip'] === '' ? "local IP removed" : "local IP '" . $a['ip'] . "'";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'local IP address (with mask, or address object); empty: removed',
+);
+
+IKEgatewayCallContext::$supportedActions['local-id-set'] = array(
+    'name' => 'local-id-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIdentification( 'local', $a['type'], $a['id'] );
+            return $a['type'] === '' ? "local identification removed" : "local identification " . $a['type'] . " '" . $a['id'] . "'";
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '', 'choices' => array( '', 'ipaddr', 'fqdn', 'ufqdn', 'keyid', 'dn' ) ), 'id' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'local identification; type empty: removed',
+);
+
+IKEgatewayCallContext::$supportedActions['peer-id-set'] = array(
+    'name' => 'peer-id-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIdentification( 'peer', $a['type'], $a['id'] );
+            return $a['type'] === '' ? "peer identification removed" : "peer identification " . $a['type'] . " '" . $a['id'] . "'";
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '', 'choices' => array( '', 'ipaddr', 'fqdn', 'ufqdn', 'keyid', 'dn' ) ), 'id' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'peer identification; type empty: removed',
+);
+
+IKEgatewayCallContext::$supportedActions['nat-traversal-set'] = array(
+    'name' => 'nat-traversal-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editProtocolCommon( 'nat-traversal', $a['enable'] );
+            return "NAT traversal " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'NAT traversal',
+);
+
+IKEgatewayCallContext::$supportedActions['fragmentation-set'] = array(
+    'name' => 'fragmentation-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editProtocolCommon( 'fragmentation', $a['enable'] );
+            return "fragmentation " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'IKEv2 fragmentation',
+);
+
+IKEgatewayCallContext::$supportedActions['passive-mode-set'] = array(
+    'name' => 'passive-mode-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editProtocolCommon( 'passive-mode', $a['enable'] );
+            return "passive mode " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'passive mode',
+);
+
+IKEgatewayCallContext::$supportedActions['dpd-set'] = array(
+    'name' => 'dpd-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDpd( $a['ike-version'], $a['enable'] );
+            return $a['ike-version'] . " dead peer detection " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'ike-version' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'ikev1', 'ikev2' ) ), 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'dead peer detection of IKEv1 / IKEv2',
+);
+
+IKEgatewayCallContext::$supportedActions['exchange-mode-set'] = array(
+    'name' => 'exchange-mode-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editExchangeMode( $a['mode'] );
+            return "IKEv1 exchange mode '" . $a['mode'] . "'";
+        } );
+    },
+    'args' => array( 'mode' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'auto', 'main', 'aggressive' ) ) ),
+    'help' => 'IKEv1 exchange mode',
+);
+
+IKEgatewayCallContext::$supportedActions['disabled-set'] = array(
+    'name' => 'disabled-Set',
+    'MainFunction' => function ( IKEgatewayCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDisabled( $a['disabled'] );
+            return "disabled " . ( $a['disabled'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'disabled' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'disable the gateway',
+);

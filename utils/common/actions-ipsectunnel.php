@@ -210,3 +210,113 @@ IPsectunnelCallContext::$supportedActions[] = array(
     )
 );
 IPsectunnelCallContext::$supportedActions[] = array_merge(IPsectunnelCallContext::$supportedActions[array_key_last(IPsectunnelCallContext::$supportedActions)], array('name' => 'exportToHtml'));
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+IPsectunnelCallContext::$supportedActions['ike-gateway-set'] = array(
+    'name' => 'ike-gateway-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIkeGateway( $a['gateway'] );
+            return "IKE gateway '" . $a['gateway'] . "'";
+        } );
+    },
+    'args' => array( 'gateway' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'IKE gateway - must exist in the location of the tunnel or above it',
+);
+
+IPsectunnelCallContext::$supportedActions['ipsec-crypto-profile-set'] = array(
+    'name' => 'ipsec-crypto-profile-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIpsecCryptoProfile( $a['profile'] );
+            return "IPsec crypto profile '" . $a['profile'] . "'";
+        } );
+    },
+    'args' => array( 'profile' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'IPsec crypto profile - must exist in the location of the tunnel or above it',
+);
+
+IPsectunnelCallContext::$supportedActions['tunnel-interface-set'] = array(
+    'name' => 'tunnel-interface-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $found = $o->editTunnelInterface( $a['interface'] );
+            return "tunnel interface '" . $a['interface'] . "'" . ( $found ? "" : " (no interface of this name in the location or above it)" );
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'tunnel interface',
+);
+
+IPsectunnelCallContext::$supportedActions['anti-replay-set'] = array(
+    'name' => 'anti-replay-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editFlag( 'anti-replay', $a['enable'] );
+            return "anti replay " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'anti replay',
+);
+
+IPsectunnelCallContext::$supportedActions['copy-tos-set'] = array(
+    'name' => 'copy-tos-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editFlag( 'copy-tos', $a['enable'] );
+            return "copy TOS header " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'copy TOS header',
+);
+
+IPsectunnelCallContext::$supportedActions['disabled-set'] = array(
+    'name' => 'disabled-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editFlag( 'disabled', $a['disabled'] );
+            return "disabled " . ( $a['disabled'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'disabled' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'disable the tunnel',
+);
+
+IPsectunnelCallContext::$supportedActions['tunnel-monitor-set'] = array(
+    'name' => 'tunnel-monitor-Set',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editTunnelMonitor( $a['enable'], $a['destination-ip'] );
+            return "tunnel monitor " . ( $a['enable'] ? "yes, destination " . $a['destination-ip'] : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ), 'destination-ip' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'tunnel monitor (with a destination IP)',
+);
+
+IPsectunnelCallContext::$supportedActions['proxy-id-add'] = array(
+    'name' => 'proxy-id-Add',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editProxyIdAdd( $a['name'], $a['local'], $a['remote'] );
+            return "proxy ID '" . $a['name'] . "' " . $a['local'] . " -> " . $a['remote'];
+        } );
+    },
+    'args' => array( 'name' => array( 'type' => 'string', 'default' => '*nodefault*' ), 'local' => array( 'type' => 'string', 'default' => '*nodefault*' ), 'remote' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'add a proxy ID (protocol any)',
+);
+
+IPsectunnelCallContext::$supportedActions['proxy-id-remove'] = array(
+    'name' => 'proxy-id-Remove',
+    'MainFunction' => function ( IPsectunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editProxyIdRemove( $a['name'] );
+            return "proxy ID '" . $a['name'] . "' removed";
+        } );
+    },
+    'args' => array( 'name' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove a proxy ID',
+);

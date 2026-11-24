@@ -30,6 +30,7 @@ class IPsecTunnel
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     public $owner;
 
@@ -654,6 +655,101 @@ class IPsecTunnel
     public function getDisabled()
     {
         return $this->disabled;
+    }
+
+    // ---- changes of the actions (ipsec-tunnel …-set): XML, object and references together; an invalid value: Exception
+
+    /** the IKE gateway (auto key) - it must exist in the location / its scope */
+    public function editIkeGateway( string $gateway ): void
+    {
+        $gateway = self::editName( $gateway, 'IKE gateway' );
+        $new = $this->editLookup( 'ikeGatewayStore', $gateway, 'findIKEGateway' );
+        if( $new === null )
+            throw new Exception( "IKE gateway '" . $gateway . "' not found in the location of the tunnel or above it" );
+        $old = is_string( $this->gateway ) && $this->gateway !== 'notfound' && $this->gateway !== '' ? $this->editLookup( 'ikeGatewayStore', $this->gateway, 'findIKEGateway' ) : null;
+        $node = $this->editNode( array( 'auto-key', 'ike-gateway' ) );
+        foreach( iterator_to_array( $node->childNodes ) as $c )
+            $node->removeChild( $c );
+        $e = $node->ownerDocument->createElement( 'entry' );
+        $e->setAttribute( 'name', $gateway );
+        $node->appendChild( $e );
+        $this->gateway = $gateway;
+        $this->editSwapReference( $old, $new );
+    }
+
+    /** the IPsec crypto profile (auto key) - it must exist in the location / its scope (or be the predefined "default") */
+    public function editIpsecCryptoProfile( string $profile ): void
+    {
+        $profile = self::editName( $profile, 'IPsec crypto profile' );
+        $new = $this->editLookup( 'ipsecCryptoProfileStore', $profile, 'findIpsecCryptoProfil' );
+        if( $new === null && $profile !== 'default' )
+            throw new Exception( "IPsec crypto profile '" . $profile . "' not found in the location of the tunnel or above it" );
+        $old = is_string( $this->proposal ) && $this->proposal !== '' ? $this->editLookup( 'ipsecCryptoProfileStore', $this->proposal, 'findIpsecCryptoProfil' ) : null;
+        $this->editText( array( 'auto-key', 'ipsec-crypto-profile' ), $profile );
+        $this->proposal = $profile;
+        $this->editSwapReference( $old, $new );
+    }
+
+    /** the tunnel interface; FALSE: no interface of this name in the location / its scope (set all the same - e.g. an SCM variable) */
+    public function editTunnelInterface( string $interface ): bool
+    {
+        $interface = self::editName( $interface, 'tunnel interface' );
+        $old = is_string( $this->interface ) && $this->interface !== '' ? $this->editLookup( null, $this->interface, 'findInterface' ) : null;
+        $new = $this->editLookup( null, $interface, 'findInterface' );
+        $this->editText( array( 'tunnel-interface' ), $interface );
+        $this->interface = $interface;
+        $this->editSwapReference( $old, $new );
+        return $new !== null;
+    }
+
+    /** anti-replay, copy-tos, disabled */
+    public function editFlag( string $flag, bool $value ): void
+    {
+        if( !in_array( $flag, array( 'anti-replay', 'copy-tos', 'disabled' ), TRUE ) )
+            throw new Exception( "anti-replay, copy-tos or disabled" );
+        $this->editText( array( $flag ), self::editYesNo( $value ) );
+        if( $flag === 'disabled' )
+            $this->disabled = self::editYesNo( $value );
+    }
+
+    /** tunnel monitor: on with a destination IP, or off */
+    public function editTunnelMonitor( bool $enable, string $destination = '' ): void
+    {
+        $destination = trim( $destination );
+        if( $enable && ( $destination === '' || preg_match( '/[\s<>]/', $destination ) ) )
+            throw new Exception( "tunnel monitor: a destination IP" );
+        $this->editText( array( 'tunnel-monitor', 'enable' ), self::editYesNo( $enable ) );
+        if( $enable )
+            $this->editText( array( 'tunnel-monitor', 'destination-ip' ), $destination );
+    }
+
+    /** a proxy ID (auto key): name, local, remote (protocol any) */
+    public function editProxyIdAdd( string $name, string $local, string $remote ): void
+    {
+        $name = self::editName( $name, 'proxy ID' );
+        foreach( array( 'local' => $local, 'remote' => $remote ) as $k => $v )
+            if( trim( $v ) === '' || preg_match( '/[\s<>]/', trim( $v ) ) )
+                throw new Exception( "proxy ID " . $k . ": an IP / network" );
+        foreach( $this->proxys as $p )
+            if( $p['name'] === $name )
+                throw new Exception( "proxy ID '" . $name . "' exists" );
+        if( $this->proxyIdRoot === null || $this->proxyIdRoot === FALSE )
+            $this->proxyIdRoot = $this->editNode( array( 'auto-key', 'proxy-id' ) );
+        if( !$this->addProxyId( trim( $local ), trim( $remote ), $name ) )
+            throw new Exception( "a proxy ID with local " . $local . " / remote " . $remote . " exists" );
+    }
+
+    public function editProxyIdRemove( string $name ): void
+    {
+        foreach( $this->proxys as $index => $p )
+            if( $p['name'] === $name )
+            {
+                $p['xmlroot']->parentNode->removeChild( $p['xmlroot'] );
+                unset( $this->proxys[$index] );
+                $this->proxys = array_values( $this->proxys );
+                return;
+            }
+        throw new Exception( "proxy ID '" . $name . "' not found" );
     }
 
     public function isIPsecTunnelType()

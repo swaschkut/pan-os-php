@@ -40,8 +40,16 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   can not be renamed or moved.
 - *Other*: Threat Rules and DNS Rules (comparable, no policies), and every type without an own entry.
 - **Network / Device and every other entry**: a click opens the object too. Zones can be changed (name, zone
-  protection profile, log setting, user identification, packet buffer protection); every other type shows all its
-  fields, read only (its actions are not reviewed for the viewer yet). Panorama: zones, interfaces, … of a template
+  protection profile, log setting, user identification, packet buffer protection). **IKE gateways**: IKE version,
+  IKE crypto profile of IKEv2 / IKEv1, peer address (IP, FQDN, dynamic), local interface / IP, local / peer
+  identification, NAT traversal, fragmentation, passive mode, dead peer detection, exchange mode, disabled - the
+  pre-shared key is shown (encrypted, as the configuration has it), not changed. **IKE crypto profiles**: encryption,
+  hash, DH groups, key lifetime, authentication multiple. **IPsec crypto profiles**: ESP encryption / authentication,
+  DH group, lifetime, lifesize. **IPsec tunnels**: IKE gateway, IPsec crypto profile, tunnel interface, proxy IDs (add:
+  `name local remote`, ✕ remove), anti replay, copy TOS, tunnel monitor, disabled. A profile / gateway must exist in
+  the location or above it (template stack, SCM parent folder / snippet / All), else the change is refused. Every
+  other value of these objects - and every other network / device type - is shown read only (all values of the
+  object). Panorama: zones, interfaces, … of a template
   show the template (column and window); a change names it.
 - **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
   window). Nothing is written until **Save as new version**; **Discard changes** drops them all.

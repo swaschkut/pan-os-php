@@ -303,6 +303,30 @@ class CallContext
     }
 
     /**
+     * an action that changes a network object with one of its edit… methods (NetworkObjectEdit): offline only (an XML
+     * file, the config viewer); an invalid value stops with its reason. $fn( $object, $arguments ) returns the log line.
+     */
+    public function runEdit( callable $fn ): void
+    {
+        if( $this->isAPI )
+        {
+            PH::ACTIONstatus( $this, "SKIPPED", "offline only (an XML file / the config viewer) - not with an API connection" );
+            return;
+        }
+        try
+        {
+            $msg = $fn( $this->object, $this->arguments );
+        }
+        catch( Exception $e )
+        {
+            derr( $this->object->name() . ": " . $e->getMessage(), null, FALSE );
+            return;
+        }
+        if( is_string( $msg ) && $msg !== '' )
+            PH::ACTIONlog( $this, $msg );
+    }
+
+    /**
      * exportToExcel / exportToHtml: the cells "template" and "location" of a network / device object that is not in a
      * firewall or template configuration (PANConf) - SCM (folder, snippet, device): "---" and its name; Panorama: "---"
      * and "shared". Always both cells, so the columns of the row stay in place.

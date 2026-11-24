@@ -251,3 +251,65 @@ IKEprofileCallContext::$supportedActions['deleteforce'] = array_merge(IKEprofile
         'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
     )
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+IKEprofileCallContext::$supportedActions['encryption-set'] = array(
+    'name' => 'encryption-Set',
+    'MainFunction' => function ( IKEprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editEncryption( $a['algorithms'] );
+            return "encryption " . implode( ', ', $o->encryption );
+        } );
+    },
+    'args' => array( 'algorithms' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'one or more, separated by | (e.g. aes-256-cbc|aes-128-cbc)' ) ),
+    'help' => 'encryption algorithms',
+);
+
+IKEprofileCallContext::$supportedActions['hash-set'] = array(
+    'name' => 'hash-Set',
+    'MainFunction' => function ( IKEprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editHash( $a['algorithms'] );
+            return "hash " . implode( ', ', $o->hash );
+        } );
+    },
+    'args' => array( 'algorithms' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'one or more, separated by | (e.g. sha256|sha384)' ) ),
+    'help' => 'authentication (hash) algorithms',
+);
+
+IKEprofileCallContext::$supportedActions['dh-group-set'] = array(
+    'name' => 'dh-group-Set',
+    'MainFunction' => function ( IKEprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDhGroup( $a['groups'] );
+            return "DH group " . implode( ', ', $o->dhgroup );
+        } );
+    },
+    'args' => array( 'groups' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'one or more, separated by | (e.g. group14|group19)' ) ),
+    'help' => 'DH groups',
+);
+
+IKEprofileCallContext::$supportedActions['lifetime-set'] = array(
+    'name' => 'lifetime-Set',
+    'MainFunction' => function ( IKEprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLifetime( $a['unit'], $a['value'] );
+            return "key lifetime " . $a['value'] . " " . $a['unit'];
+        } );
+    },
+    'args' => array( 'unit' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'seconds', 'minutes', 'hours', 'days' ) ), 'value' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'key lifetime',
+);
+
+IKEprofileCallContext::$supportedActions['authentication-multiple-set'] = array(
+    'name' => 'authentication-multiple-Set',
+    'MainFunction' => function ( IKEprofileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editAuthenticationMultiple( $a['value'] );
+            return "IKEv2 authentication multiple " . $a['value'];
+        } );
+    },
+    'args' => array( 'value' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => '0-50 (0: off)' ) ),
+    'help' => 'IKEv2 authentication multiple',
+);

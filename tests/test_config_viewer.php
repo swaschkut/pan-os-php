@@ -1984,7 +1984,7 @@ eq( array( array_column( $seRunView[1]['sensitive'] ?? array(), 'name' ), is_fil
 // firewalls managed by SCM as well (network - not in this test); neither version nor key: refused
 require_once $here . '/../lib/helper-classes/PanosCrypto.php';
 $pskCrypto = new PanosCrypto();
-$pskXml = '<config version="11.1.0" urldb="paloaltonetworks"><devices><entry name="localhost.localdomain"><network><ike><gateway>'
+$pskXml = '<config version="11.1.0" urldb="paloaltonetworks"><mgt-config><users/></mgt-config><shared/><devices><entry name="localhost.localdomain"><network><ike><gateway>'
     . '<entry name="gw-branch"><peer-address><ip>203.0.113.10</ip></peer-address><local-address><interface>ethernet1/1</interface></local-address>'
     . '<authentication><pre-shared-key><key>' . $pskCrypto->encrypt( 'synthetic-viewer-psk' ) . '</key></pre-shared-key></authentication></entry>'
     . '<entry name="gw-other"><peer-address><dynamic/></peer-address><authentication><pre-shared-key><key>' . $pskCrypto->encrypt( 'synthetic-other-psk', 'abcdefghijklmnop' ) . '</key></pre-shared-key></authentication></entry>'
@@ -2008,6 +2008,20 @@ $pkPerm = decoct( @fileperms( $pkJobDir . '/.sensitive/psk-list-version.csv' ) &
 $pkTake = $alice->call( 'GET', $PK . '/runs/' . ( $pkRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-list-version.csv' );
 $pkTake2 = status( $alice->call( 'GET', $PK . '/runs/' . ( $pkRun[1]['jid'] ?? 'x' ) . '/sensitive/psk-list-version.csv' ) );
 $alice->call( 'DELETE', $PK . '/members/carol' );
+// network objects in the object window: all values (model) and their change actions (IKE gateway); a value the
+// action refuses comes back as an error; the delete of a crypto profile is not offered
+$nm = $alice->call( 'GET', 'meta' )[1]['types'] ?? array();
+$nwBefore = $alice->call( 'GET', $PKC . '/object?' . http_build_query( array( 'type' => 'ike-gateway', 'location' => 'shared', 'name' => 'gw-branch' ) ) );
+$nwChange = $alice->call( 'POST', $PKC . '/change', array( 'type' => 'ike-gateway', 'location' => 'shared', 'filter' => '(name eq gw-branch)', 'actions' => 'peer-address-set:fqdn,vpn.example.net/version-set:ikev2-preferred' ) );
+$nwAfter = $alice->call( 'GET', $PKC . '/object?' . http_build_query( array( 'type' => 'ike-gateway', 'location' => 'shared', 'name' => 'gw-branch' ) ) );
+$nwBad = $alice->call( 'POST', $PKC . '/change', array( 'type' => 'ike-gateway', 'location' => 'shared', 'filter' => '(name eq gw-branch)', 'actions' => 'ike-crypto-profile-set:nope,ikev2' ) );
+$alice->call( 'POST', $PKC . '/discard', array() );
+eq( array( isset( $nm['ike-gateway']['actions']['peer-address-set'], $nm['ike-gateway']['actions']['version-set'], $nm['ipsec-tunnel']['actions']['proxy-id-add'], $nm['ike-profile']['actions']['lifetime-set'] ),
+        isset( $nm['ike-profile']['actions']['delete'] ), $nwBefore[1]['model']['peer_address']['ip'] ?? null, $nwBefore[1]['model']['local_address']['interface'] ?? null,
+        status( $nwChange ), $nwAfter[1]['model']['peer_address'] ?? null, $nwAfter[1]['model']['protocol']['version'] ?? null,
+        status( $nwBad ) >= 400, strpos( json_encode( $nwBad[1] ?? '' ), 'not found' ) !== FALSE ),
+    array( TRUE, FALSE, '203.0.113.10', 'ethernet1/1', 200, array( 'fqdn' => 'vpn.example.net' ), 'ikev2-preferred', TRUE, TRUE ),
+    'network objects: the window gets every value (model), the change actions are offered and applied, a refused value comes back as error' );
 eq( array( $pkNothing, $pkCarol, $pkBadKey, status( $pkRun ), $pkDone[1]['state'] ?? null ),
     array( 400, 403, 400, 202, 'done' ), 'PSK list: a version and / or an SCM key of the user; write members only; the run of a version is done' );
 eq( array( array_column( $pkDone[1]['sensitive'] ?? array(), 'name' ), in_array( 'psk-sha1-version.csv', array_column( $pkDone[1]['files'] ?? array(), 'name' ), TRUE ),

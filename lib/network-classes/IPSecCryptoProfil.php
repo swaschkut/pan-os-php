@@ -30,6 +30,7 @@ class IPSecCryptoProfil
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     public $owner;
 
@@ -411,6 +412,52 @@ class IPSecCryptoProfil
         DH::setDomNodeText($tmp_gateway, $size);
 
         return TRUE;
+    }
+
+    // ---- changes of the actions (ipsec-profile …-set): XML and object together; an invalid value: Exception
+
+    /** ESP encryption / authentication (an AH profile becomes ESP) */
+    public function editEsp( string $what, $values ): void
+    {
+        if( !in_array( $what, array( 'encryption', 'authentication' ), TRUE ) )
+            throw new Exception( "encryption or authentication" );
+        $list = self::editKeywords( $values, 'esp ' . $what );
+        $ah = $this->editFind( array( 'ah' ) );
+        if( $ah !== FALSE )
+            $ah->parentNode->removeChild( $ah );
+        $this->editMembers( array( 'esp', $what ), $list );
+        $this->ipsecProtocol = 'esp';
+        if( $what === 'encryption' )
+            $this->encryption = $list;
+        else
+            $this->authentication = $list;
+    }
+
+    /** DH group (perfect forward secrecy): no-pfs or a group */
+    public function editDhGroup( string $value ): void
+    {
+        $value = self::editKeyword( $value, 'dh-group' );
+        $this->editText( array( 'dh-group' ), $value );
+        $this->dhgroup = $value;
+    }
+
+    /** lifetime: seconds 180-65535, minutes 3-65535, hours 1-65535, days 1-365 */
+    public function editLifetime( string $unit, string $value ): void
+    {
+        $this->editAmount( array( 'lifetime' ), $unit, $value, array( 'seconds' => array( 180, 65535 ), 'minutes' => array( 3, 65535 ), 'hours' => array( 1, 65535 ), 'days' => array( 1, 365 ) ), 'lifetime' );
+        foreach( array( 'seconds', 'minutes', 'hours', 'days' ) as $u )
+            $this->{'lifetime_' . $u} = $u === strtolower( trim( $unit ) ) ? (string)(int)$value : '';
+    }
+
+    /** lifesize: kb / mb / gb / tb 1-65535; unit '' removes it */
+    public function editLifesize( string $unit, string $value = '' ): void
+    {
+        if( trim( $unit ) === '' )
+            $this->editRemove( array( 'lifesize' ) );
+        else
+            $this->editAmount( array( 'lifesize' ), $unit, $value, array( 'kb' => array( 1, 65535 ), 'mb' => array( 1, 65535 ), 'gb' => array( 1, 65535 ), 'tb' => array( 1, 65535 ) ), 'lifesize' );
+        foreach( array( 'kb', 'mb', 'gb', 'tb' ) as $u )
+            $this->{'lifesize_' . $u} = $u === strtolower( trim( $unit ) ) ? (string)(int)$value : '';
     }
 
     public function isIPsecCryptoProfilType()

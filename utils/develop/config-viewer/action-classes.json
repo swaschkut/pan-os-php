@@ -36,7 +36,39 @@
         "config-section:scm-session-timeouts-settings",
         "config-section:scm-tcp-settings",
         "config-section:scm-content-id-settings",
-        "config-section:scm-update-schedule-settings"
+        "config-section:scm-update-schedule-settings",
+        "ike-gateway:disabled-set",
+        "ike-gateway:dpd-set",
+        "ike-gateway:exchange-mode-set",
+        "ike-gateway:fragmentation-set",
+        "ike-gateway:ike-crypto-profile-set",
+        "ike-gateway:local-id-set",
+        "ike-gateway:local-interface-set",
+        "ike-gateway:local-ip-set",
+        "ike-gateway:nat-traversal-set",
+        "ike-gateway:passive-mode-set",
+        "ike-gateway:peer-address-set",
+        "ike-gateway:peer-id-set",
+        "ike-gateway:version-set",
+        "ike-profile:authentication-multiple-set",
+        "ike-profile:dh-group-set",
+        "ike-profile:encryption-set",
+        "ike-profile:hash-set",
+        "ike-profile:lifetime-set",
+        "ipsec-profile:dh-group-set",
+        "ipsec-profile:esp-authentication-set",
+        "ipsec-profile:esp-encryption-set",
+        "ipsec-profile:lifesize-set",
+        "ipsec-profile:lifetime-set",
+        "ipsec-tunnel:anti-replay-set",
+        "ipsec-tunnel:copy-tos-set",
+        "ipsec-tunnel:disabled-set",
+        "ipsec-tunnel:ike-gateway-set",
+        "ipsec-tunnel:ipsec-crypto-profile-set",
+        "ipsec-tunnel:proxy-id-add",
+        "ipsec-tunnel:proxy-id-remove",
+        "ipsec-tunnel:tunnel-interface-set",
+        "ipsec-tunnel:tunnel-monitor-set"
     ],
     "override": {},
     "types": {
@@ -563,11 +595,20 @@
             }
         },
         "ike-gateway": {
+            "disabled-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "network"
             },
             "displayreferences": {
                 "class": "read"
+            },
+            "dpd-set": {
+                "class": "change"
+            },
+            "exchange-mode-set": {
+                "class": "change"
             },
             "exporttoexcel": {
                 "class": "writes-file",
@@ -576,9 +617,42 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "fragmentation-set": {
+                "class": "change"
+            },
+            "ike-crypto-profile-set": {
+                "class": "change"
+            },
+            "local-id-set": {
+                "class": "change"
+            },
+            "local-interface-set": {
+                "class": "change"
+            },
+            "local-ip-set": {
+                "class": "change"
+            },
+            "nat-traversal-set": {
+                "class": "change"
+            },
+            "passive-mode-set": {
+                "class": "change"
+            },
+            "peer-address-set": {
+                "class": "change"
+            },
+            "peer-id-set": {
+                "class": "change"
+            },
+            "version-set": {
+                "class": "change"
             }
         },
         "ike-profile": {
+            "authentication-multiple-set": {
+                "class": "change"
+            },
             "delete": {
                 "class": "change"
             },
@@ -588,11 +662,17 @@
             "deleteforce": {
                 "class": "change"
             },
+            "dh-group-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
             "displayreferences": {
                 "class": "read"
+            },
+            "encryption-set": {
+                "class": "change"
             },
             "exporttoexcel": {
                 "class": "writes-file",
@@ -601,6 +681,12 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "hash-set": {
+                "class": "change"
+            },
+            "lifetime-set": {
+                "class": "change"
             }
         },
         "interface": {
@@ -666,12 +752,21 @@
             "deleteforce": {
                 "class": "change"
             },
+            "dh-group-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
             "displayreferences": {
                 "class": "read"
             },
+            "esp-authentication-set": {
+                "class": "change"
+            },
+            "esp-encryption-set": {
+                "class": "change"
+            },
             "exporttoexcel": {
                 "class": "writes-file",
                 "file_arg": 0
@@ -679,9 +774,24 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "lifesize-set": {
+                "class": "change"
+            },
+            "lifetime-set": {
+                "class": "change"
             }
         },
         "ipsec-tunnel": {
+            "anti-replay-set": {
+                "class": "change"
+            },
+            "copy-tos-set": {
+                "class": "change"
+            },
+            "disabled-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
@@ -692,6 +802,24 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "ike-gateway-set": {
+                "class": "change"
+            },
+            "ipsec-crypto-profile-set": {
+                "class": "change"
+            },
+            "proxy-id-add": {
+                "class": "change"
+            },
+            "proxy-id-remove": {
+                "class": "change"
+            },
+            "tunnel-interface-set": {
+                "class": "change"
+            },
+            "tunnel-monitor-set": {
+                "class": "change"
             }
         },
         "log-profile": {

@@ -2,6 +2,11 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* type=ike-gateway | new actions (offline: XML file / config viewer): version-set, ike-crypto-profile-set (IKEv1 / IKEv2), peer-address-set (ip / fqdn / dynamic), local-interface-set, local-ip-set, local-id-set, peer-id-set, nat-traversal-set, fragmentation-set, passive-mode-set, dpd-set, exchange-mode-set, disabled-set - references updated; a profile that does not exist in the location or above it is refused
+* type=ike-profile | new actions: encryption-set, hash-set, dh-group-set, lifetime-set, authentication-multiple-set
+* type=ipsec-profile | new actions: esp-encryption-set, esp-authentication-set, dh-group-set, lifetime-set, lifesize-set
+* type=ipsec-tunnel | new actions: ike-gateway-set, ipsec-crypto-profile-set, tunnel-interface-set, anti-replay-set, copy-tos-set, disabled-set, tunnel-monitor-set, proxy-id-add, proxy-id-remove - references updated
+* config-viewer | the windows of IKE gateways, IKE / IPsec crypto profiles and IPsec tunnels can change these values (the new actions, reviewed one by one in action-classes.json); every other value read only
 * config-viewer | the window of a network object (IKE gateway, IKE / IPsec crypto profile, IPsec tunnel, interfaces, virtual / logical router, static route, GRE tunnel, GlobalProtect, interface management profile, virtual wire, DHCP) shows all its values: ApiObjectModel knows these classes (SCM schema: ike-gateways, ike-crypto-profiles, ipsec-crypto-profiles, ipsec-tunnels, virtual-routers, logical-routers; the others as their XML) - before only name and location
 * config-viewer | PSK list: only the SCM keys the project may use (bound to a tenant: that one; bound to a firewall / Panorama: none; roles: the tenants of the SCM roles)
 * config-viewer | run "IKE gateways / PSK list" (psk-list): the IKE gateways of a version and / or - with an SCM key of the user - of the firewalls managed by the SCM tenant, compared by the SHA-1 of the pre-shared key (same / different / only in one / unknown); the PSK lists with clear text are sensitive results (download once), SHA-1 lists and comparison are result files; write members, not with an API token

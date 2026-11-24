@@ -30,6 +30,7 @@ class IKEGateway
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     public $owner;
 
@@ -511,6 +512,159 @@ class IKEGateway
     //set nat-traversal
     //set dpd
 
+
+    // ---- changes of the actions (ike-gateway …-set): XML, object and references together; an invalid value: Exception
+
+    const IKE_VERSIONS = array( 'ikev1', 'ikev2', 'ikev2-preferred' );
+    const ID_TYPES = array( 'ipaddr', 'fqdn', 'ufqdn', 'keyid', 'dn' );
+    /** IKE crypto profiles PAN-OS has without configuration */
+    const PREDEFINED_IKE_CRYPTO_PROFILES = array( 'default', 'Suite-B-GCM-128', 'Suite-B-GCM-256' );
+
+    /** the profile of the version used: ikev1 - the IKEv1 one, else the IKEv2 one (then the other one) */
+    private function editProposal(): void
+    {
+        $v1 = $this->editTextOf( array( 'protocol', 'ikev1', 'ike-crypto-profile' ) );
+        $v2 = $this->editTextOf( array( 'protocol', 'ikev2', 'ike-crypto-profile' ) );
+        $p = $this->version === 'ikev1' ? ( $v1 !== '' ? $v1 : $v2 ) : ( $v2 !== '' ? $v2 : $v1 );
+        $this->proposal = $p !== '' ? $p : 'default';
+    }
+
+    public function editVersion( string $version ): void
+    {
+        $version = strtolower( trim( $version ) );
+        if( !in_array( $version, self::IKE_VERSIONS, TRUE ) )
+            throw new Exception( "version: one of " . implode( ', ', self::IKE_VERSIONS ) );
+        $this->editText( array( 'protocol', 'version' ), $version );
+        $this->version = $version;
+        $this->editProposal();
+    }
+
+    /** the IKE crypto profile for IKEv1 or IKEv2 - it must exist in the location / its scope (or be predefined) */
+    public function editIkeCryptoProfile( string $profile, string $ikeVersion ): void
+    {
+        $ikeVersion = strtolower( trim( $ikeVersion ) );
+        if( !in_array( $ikeVersion, array( 'ikev1', 'ikev2' ), TRUE ) )
+            throw new Exception( "ike-version: ikev1 or ikev2" );
+        $profile = self::editName( $profile, 'IKE crypto profile' );
+        $new = $this->editLookup( 'ikeCryptoProfileStore', $profile, 'findIKECryptoProfil' );
+        if( $new === null && !in_array( $profile, self::PREDEFINED_IKE_CRYPTO_PROFILES, TRUE ) )
+            throw new Exception( "IKE crypto profile '" . $profile . "' not found in the location of the gateway or above it" );
+        $other = $ikeVersion === 'ikev1' ? 'ikev2' : 'ikev1';
+        $oldName = $this->editTextOf( array( 'protocol', $ikeVersion, 'ike-crypto-profile' ) );
+        $old = $oldName !== '' && $oldName !== $this->editTextOf( array( 'protocol', $other, 'ike-crypto-profile' ) )
+            ? $this->editLookup( 'ikeCryptoProfileStore', $oldName, 'findIKECryptoProfil' ) : null;
+        $this->editText( array( 'protocol', $ikeVersion, 'ike-crypto-profile' ), $profile );
+        $this->editSwapReference( $old, $new );
+        $this->editProposal();
+    }
+
+    /** ip (an address or address object), fqdn, or dynamic (no value) */
+    public function editPeerAddress( string $type, string $value = '' ): void
+    {
+        $type = strtolower( trim( $type ) );
+        $value = trim( $value );
+        if( !in_array( $type, array( 'ip', 'fqdn', 'dynamic' ), TRUE ) )
+            throw new Exception( "peer address type: ip, fqdn or dynamic" );
+        if( $type !== 'dynamic' && ( $value === '' || strlen( $value ) > 255 || preg_match( '/[\s<>]/', $value ) ) )
+            throw new Exception( "peer address: a value for " . $type );
+        $this->editChoice( array( 'peer-address' ), $type, $type === 'dynamic' ? null : $value );
+        $this->peerAddress = $type === 'dynamic' ? 'dynamic' : $value;
+    }
+
+    /** the local interface; FALSE: no interface of this name in the location / its scope (set all the same - e.g. an SCM variable) */
+    public function editLocalInterface( string $interface ): bool
+    {
+        $interface = self::editName( $interface, 'interface' );
+        $old = is_string( $this->localInterface ) && $this->localInterface !== '' ? $this->editLookup( null, $this->localInterface, 'findInterface' ) : null;
+        $new = $this->editLookup( null, $interface, 'findInterface' );
+        $this->editText( array( 'local-address', 'interface' ), $interface );
+        $this->localInterface = $interface;
+        $this->editSwapReference( $old, $new );
+        return $new !== null;
+    }
+
+    /** the local IP (an address of the interface or an address object); '' removes it */
+    public function editLocalIp( string $ip ): void
+    {
+        $ip = trim( $ip );
+        if( $ip === '' )
+        {
+            $this->editRemove( array( 'local-address', 'ip' ) );
+            $this->localAddress = FALSE;
+            return;
+        }
+        if( strlen( $ip ) > 255 || preg_match( '/[\s<>]/', $ip ) )
+            throw new Exception( "local IP: an IP address (with mask) or an address object" );
+        $this->editText( array( 'local-address', 'ip' ), $ip );
+        $this->localAddress = $ip;
+    }
+
+    /** local / peer identification: type and id; type '' removes it */
+    public function editIdentification( string $which, string $type, string $id = '' ): void
+    {
+        if( !in_array( $which, array( 'local', 'peer' ), TRUE ) )
+            throw new Exception( "local or peer" );
+        $type = strtolower( trim( $type ) );
+        $id = trim( $id );
+        if( $type === '' )
+        {
+            $this->editRemove( array( $which . '-id' ) );
+            $this->{$which . 'ID'} = FALSE;
+            $this->{$which . 'IDtype'} = FALSE;
+            return;
+        }
+        if( !in_array( $type, self::ID_TYPES, TRUE ) )
+            throw new Exception( $which . " id type: one of " . implode( ', ', self::ID_TYPES ) );
+        if( $id === '' || strlen( $id ) > 1024 || preg_match( '/[\x00-\x1F<>]/', $id ) )
+            throw new Exception( $which . " id: a value" );
+        $this->editText( array( $which . '-id', 'type' ), $type );
+        $this->editText( array( $which . '-id', 'id' ), $id );
+        $this->{$which . 'ID'} = $id;
+        $this->{$which . 'IDtype'} = $type;
+    }
+
+    /** protocol-common: nat-traversal, fragmentation (…/enable) or passive-mode */
+    public function editProtocolCommon( string $setting, bool $enable ): void
+    {
+        $yn = self::editYesNo( $enable );
+        if( $setting === 'passive-mode' )
+            $this->editText( array( 'protocol-common', 'passive-mode' ), $yn );
+        elseif( $setting === 'nat-traversal' || $setting === 'fragmentation' )
+        {
+            $this->editText( array( 'protocol-common', $setting, 'enable' ), $yn );
+            if( $setting === 'nat-traversal' )
+                $this->natTraversal = $yn;
+            else
+                $this->fragmentation = $yn;
+        }
+        else
+            throw new Exception( "nat-traversal, fragmentation or passive-mode" );
+    }
+
+    /** dead peer detection of IKEv1 / IKEv2 */
+    public function editDpd( string $ikeVersion, bool $enable ): void
+    {
+        $ikeVersion = strtolower( trim( $ikeVersion ) );
+        if( !in_array( $ikeVersion, array( 'ikev1', 'ikev2' ), TRUE ) )
+            throw new Exception( "ike-version: ikev1 or ikev2" );
+        $this->editText( array( 'protocol', $ikeVersion, 'dpd', 'enable' ), self::editYesNo( $enable ) );
+    }
+
+    /** IKEv1 exchange mode */
+    public function editExchangeMode( string $mode ): void
+    {
+        $mode = strtolower( trim( $mode ) );
+        if( !in_array( $mode, array( 'auto', 'main', 'aggressive' ), TRUE ) )
+            throw new Exception( "exchange mode: auto, main or aggressive" );
+        $this->editText( array( 'protocol', 'ikev1', 'exchange-mode' ), $mode );
+        $this->exchangemode = $mode;
+    }
+
+    public function editDisabled( bool $disabled ): void
+    {
+        $this->editText( array( 'disabled' ), self::editYesNo( $disabled ) );
+        $this->disabled = self::editYesNo( $disabled );
+    }
 
     public function isIKEGatewayType()
     {
