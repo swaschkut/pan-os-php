@@ -2947,7 +2947,10 @@ async function showViewer(config, preset) {
         const rest = (used) => Object.entries(m).filter(([k]) => !used.includes(k) && !['name', 'device_group', 'template', 'template_stack', 'vsys', 'folder', 'snippet', 'device', '_panosphp'].includes(k))
             .map(([k, v]) => ({ key: 'm-' + k, label: k, kind: 'ro', value: typeof v === 'object' && v !== null ? fmtTree(v) : String(v) }));
         const ro = (key, label, value, note) => ({ key, label, kind: 'ro', value: value === undefined || value === null ? '' : value, note });
-        const nameRo = ro('name', 'Name', row.name);
+        // the name: name-rename (the users that name the object are changed too); an interface / DHCP: its interface, read only
+        const nameRo = ['interface', 'dhcp'].includes(kind) ? ro('name', 'Name', row.name)
+            : { key: 'name', label: 'Name', kind: 'text', value: row.name, needs: ['name-rename'], rename: true, note: 'renamed everywhere it is used',
+                act: (o, n) => { if (n === '') throw new Error('a name is needed'); return 'name-rename:' + actArg(n); } };
         if (kind === 'ikegateway') {
             const pa = m.peer_address || {};
             const paType = pa.ip !== undefined ? 'ip' : pa.fqdn !== undefined ? 'fqdn' : pa.dynamic !== undefined ? 'dynamic' : '';

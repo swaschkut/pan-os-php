@@ -64,7 +64,8 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   relay (on / off, servers). **Virtual wires**: interfaces, allowed tags, multicast firewalling, link state pass
   through. **GlobalProtect portals / gateways**: local interface / IPv4, SSL/TLS service profile; gateway also tunnel
   interface and the IP pool / access route lists of each client setting. **GlobalProtect gateway tunnels**: local
-  interface / IP, tunnel interface, disabled. IPv6 values can not be entered (":" separates the arguments of an
+  interface / IP, tunnel interface, disabled. The **name** of these network objects (not of an interface / DHCP) can be
+  changed: `name-rename` changes it also in every object that uses it. IPv6 values can not be entered (":" separates the arguments of an
   action); a change works on the version (offline), not through an API connection. Every other value of these
   objects - and every other network / device type - is shown read only (all values of the object). Panorama: zones, interfaces, … of a template
   show the template (column and window); a change names it.

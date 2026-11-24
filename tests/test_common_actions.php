@@ -20,9 +20,9 @@
 /**
  * Common actions (utils/common/actions-common.php, CallContext::registerAction): one definition for several types -
  * add-member / remove-member (address / service groups), description-set (address, service, rule, security profile) -
- * interface-add / interface-remove (router, zone), the value actions of address / service (value-set, protocol-set,
+ * interface-add / interface-remove (router, zone), name-rename of the network objects (users updated), the value actions of address / service (value-set, protocol-set,
  * dstport-set), URL categories of rules and ObjectCandidates (what a field can take). Synthetic inputs
- * tests/input/group-members.xml, zones-interfaces.xml; panorama-10.0-merger.xml, SCM-import.xml.
+ * tests/input/group-members.xml, zones-interfaces.xml, network-rename.xml; panorama-10.0-merger.xml, SCM-import.xml.
  * php tests/test_common_actions.php
  */
 
@@ -219,6 +219,39 @@ file_put_contents( $dir . '/unk.xml', str_replace( '<member>gambling</member>', 
 list( $rc, $o ) = $zcli( 'rule', $dir . '/unk.xml', $dir . '/u3.xml', '(name eq shared pre decrypt 1)', 'category-add:adult' );
 $eq( array( strpos( $o, 'does not know (not-known-cat)' ) !== FALSE, $x( $dir . '/u3.xml', $U ) ), array( TRUE, array( 'gambling', 'not-known-cat' ) ),
     'rule: a category pan-os-php does not know - SKIPPED, nothing dropped' );
+
+// ---- name-rename of the network objects (common): the object and every user that names it
+$eq( IKEprofileCallContext::$supportedActions['name-rename']['MainFunction'] === RoutingCallContext::$supportedActions['name-rename']['MainFunction'], TRUE,
+    'name-rename: one definition for the network types' );
+$rin = __DIR__ . '/input/network-rename.xml';
+$steps = array( array( 'ike-profile', 'ike-a', 'ike-aes128' ), array( 'ipsec-profile', 'ipsec-a', 'ipsec-aes128' ), array( 'ike-gateway', 'gw-1', 'gw-berlin' ),
+    array( 'interface-management-profile', 'mgmt-a', 'mgmt ping' ), array( 'zone-protection-profile', 'zpp-1', 'zpp-strict' ), array( 'routing', 'vr-b', 'vr-vpn' ),
+    array( 'static-route', 'r-2', 'r-dc' ), array( 'ipsec-tunnel', 'tun-1', 'tun-berlin' ) );
+$cur = $rin;
+foreach( $steps as $i => $t )
+{
+    list( $rc, $o ) = $zcli( $t[0], $cur, $dir . '/rn' . $i . '.xml', '(name eq ' . $t[1] . ')', 'name-rename:' . $t[2] );
+    $eq( array( $rc, strpos( $o, "renamed '" . $t[1] . "' -> '" . $t[2] . "'" ) !== FALSE ), array( 0, TRUE ), 'name-rename ' . $t[0] . ' ' . $t[1] . ' -> ' . $t[2] );
+    $cur = $dir . '/rn' . $i . '.xml';
+}
+$N = "//devices/entry/network";
+$eq( array( $x( $cur, $N . "/ike/gateway/entry/protocol/*/ike-crypto-profile" ), $x( $cur, $N . "/tunnel/ipsec/entry/auto-key/ipsec-crypto-profile" ),
+        $x( $cur, $N . "/tunnel/ipsec/entry/auto-key/ike-gateway/entry/@name" ), $x( $cur, $N . "/interface//interface-management-profile" ),
+        $x( $cur, "//zone/entry/network/zone-protection-profile" ), $x( $cur, $N . "/virtual-router//next-vr" ), $x( $cur, $N . "/tunnel/ipsec/entry/@name" ) ),
+    array( array( 'ike-aes128', 'ike-aes128' ), array( 'ipsec-aes128' ), array( 'gw-berlin' ), array( 'mgmt ping', 'mgmt ping', 'mgmt-b' ), array( 'zpp-strict' ), array( 'vr-vpn' ), array( 'tun-berlin' ) ),
+    'name-rename: every user names the new name (IKE gateway v1 / v2, IPsec tunnel, interface and sub-interface, zone, static route next-vr)' );
+$rc = ( function( $f ) { $c = new PANConf(); ob_start(); $c->load_from_file( $f ); ob_end_clean(); return $c; } )( $cur );
+$cnt = function( $o ) { return is_object( $o ) ? count( $o->getReferences() ) : -1; };
+$eq( array( $cnt( $rc->network->ikeCryptoProfileStore->findIKECryptoProfil( 'ike-aes128' ) ), $cnt( $rc->network->interfaceManagementProfileStore->find( 'mgmt ping' ) ),
+        $cnt( $rc->network->ikeGatewayStore->findIKEGateway( 'gw-berlin' ) ), $cnt( $rc->network->zoneProtectionProfileStore->find( 'zpp-strict' ) ) ),
+    array( 1, 2, 1, 1 ), 'name-rename: loaded again, the renamed objects have their users (references)' );
+foreach( array( array( 'ike-profile', 'ike-b', 'name-rename:ike-aes128', 'the name of another' ), array( 'ike-gateway', 'gw-berlin', 'name-rename:gw berlin', 'up to 63 characters' ),
+        array( 'ike-profile', 'ike-b', 'name-rename:-x', 'starting with a letter' ), array( 'ike-profile', 'ike-b', 'name-rename:' . str_repeat( 'a', 32 ), 'up to 31 characters' ),
+        array( 'static-route', 'to-b', 'name-rename:r-dc', 'the name of another' ), array( 'ike-profile', 'ike-b', 'name-rename:ike-b', 'already' ) ) as $t )
+{
+    list( $rc2, $o ) = $zcli( $t[0], $cur, $dir . '/b.xml', '(name eq ' . $t[1] . ')', $t[2] );
+    $eq( array( $rc2, strpos( $o, 'SKIPPED' ) !== FALSE && strpos( $o, $t[3] ) !== FALSE ), array( 0, TRUE ), 'name-rename ' . $t[0] . ' ' . $t[2] . ': SKIPPED (' . $t[3] . ')' );
+}
 
 // ---- ObjectCandidates: the names a field can take - own location and above (firewall, Panorama, SCM)
 $loadConf = function( string $class, string $file ) {

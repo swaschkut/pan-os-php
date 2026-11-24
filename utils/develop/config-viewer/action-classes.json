@@ -135,7 +135,20 @@
         "gpgateway-tunnel:local-interface-set",
         "gpgateway-tunnel:local-ip-set",
         "gpgateway-tunnel:tunnel-interface-set",
-        "gpgateway-tunnel:disabled-set"
+        "gpgateway-tunnel:disabled-set",
+        "ike-gateway:name-rename",
+        "ike-profile:name-rename",
+        "ipsec-profile:name-rename",
+        "ipsec-tunnel:name-rename",
+        "routing:name-rename",
+        "static-route:name-rename",
+        "gre-tunnel:name-rename",
+        "interface-management-profile:name-rename",
+        "zone-protection-profile:name-rename",
+        "virtualwire:name-rename",
+        "gp-portal:name-rename",
+        "gp-gateway:name-rename",
+        "gpgateway-tunnel:name-rename"
     ],
     "override": {},
     "types": {
@@ -714,6 +727,9 @@
             "local-ip-set": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "ssl-tls-profile-set": {
                 "class": "change"
             },
@@ -731,6 +747,9 @@
             "local-ip-set": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "ssl-tls-profile-set": {
                 "class": "change"
             }
@@ -746,6 +765,9 @@
                 "class": "change"
             },
             "local-ip-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             },
             "tunnel-interface-set": {
@@ -769,6 +791,9 @@
                 "class": "change"
             },
             "local-ip-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             },
             "peer-address-set": {
@@ -818,6 +843,9 @@
                 "class": "change"
             },
             "local-ip-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             },
             "nat-traversal-set": {
@@ -873,6 +901,9 @@
                 "class": "change"
             },
             "lifetime-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             }
         },
@@ -952,6 +983,9 @@
                 "class": "writes-file",
                 "file_arg": 0
             },
+            "name-rename": {
+                "class": "change"
+            },
             "permitted-ip-add": {
                 "class": "change"
             },
@@ -1000,6 +1034,9 @@
             },
             "lifetime-set": {
                 "class": "change"
+            },
+            "name-rename": {
+                "class": "change"
             }
         },
         "ipsec-tunnel": {
@@ -1027,6 +1064,9 @@
                 "class": "change"
             },
             "ipsec-crypto-profile-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             },
             "proxy-id-add": {
@@ -1138,6 +1178,9 @@
                 "class": "change"
             },
             "interface-remove": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             },
             "static-route-add": {
@@ -2076,6 +2119,9 @@
             "metric-set": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "nexthop-set": {
                 "class": "change"
             },
@@ -2201,6 +2247,9 @@
             "multicast-firewalling-set": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "tag-allowed-set": {
                 "class": "change"
             }
@@ -2300,6 +2349,9 @@
                 "file_arg": 0
             },
             "flood-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             },
             "packet-set": {

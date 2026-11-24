@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared/>
+  <devices>
+    <entry name="localhost.localdomain">
+      <network>
+        <interface>
+          <ethernet>
+            <entry name="ethernet1/1">
+              <layer3>
+                <ip><entry name="198.51.100.1/24"/></ip>
+                <interface-management-profile>mgmt-a</interface-management-profile>
+                <units>
+                  <entry name="ethernet1/1.10"><tag>10</tag><ip><entry name="192.0.2.1/24"/></ip><interface-management-profile>mgmt-a</interface-management-profile></entry>
+                </units>
+              </layer3>
+            </entry>
+            <entry name="ethernet1/2"><layer3><ip><entry name="203.0.113.1/24"/></ip><interface-management-profile>mgmt-b</interface-management-profile></layer3></entry>
+          </ethernet>
+          <tunnel><units><entry name="tunnel.1"/></units></tunnel>
+        </interface>
+        <profiles>
+          <interface-management-profile>
+            <entry name="mgmt-a"><ping>yes</ping></entry>
+            <entry name="mgmt-b"><https>yes</https></entry>
+          </interface-management-profile>
+          <zone-protection-profile>
+            <entry name="zpp-1"><description>synthetic</description></entry>
+          </zone-protection-profile>
+        </profiles>
+        <ike>
+          <crypto-profiles>
+            <ike-crypto-profiles>
+              <entry name="ike-a"><encryption><member>aes-128-cbc</member></encryption><hash><member>sha256</member></hash><dh-group><member>group14</member></dh-group><lifetime><hours>8</hours></lifetime></entry>
+              <entry name="ike-b"><encryption><member>aes-256-cbc</member></encryption><hash><member>sha256</member></hash><dh-group><member>group14</member></dh-group><lifetime><hours>8</hours></lifetime></entry>
+            </ike-crypto-profiles>
+            <ipsec-crypto-profiles>
+              <entry name="ipsec-a"><esp><encryption><member>aes-128-cbc</member></encryption><authentication><member>sha256</member></authentication></esp><dh-group>group14</dh-group><lifetime><hours>1</hours></lifetime></entry>
+            </ipsec-crypto-profiles>
+          </crypto-profiles>
+          <gateway>
+            <entry name="gw-1"><peer-address><ip>203.0.113.10</ip></peer-address><local-address><interface>ethernet1/2</interface></local-address><protocol><version>ikev2</version><ikev2><ike-crypto-profile>ike-a</ike-crypto-profile></ikev2><ikev1><ike-crypto-profile>ike-a</ike-crypto-profile></ikev1></protocol></entry>
+          </gateway>
+        </ike>
+        <tunnel>
+          <ipsec>
+            <entry name="tun-1"><tunnel-interface>tunnel.1</tunnel-interface><auto-key><ike-gateway><entry name="gw-1"/></ike-gateway><ipsec-crypto-profile>ipsec-a</ipsec-crypto-profile></auto-key></entry>
+          </ipsec>
+        </tunnel>
+        <virtual-router>
+          <entry name="default">
+            <interface><member>ethernet1/1</member><member>ethernet1/2</member></interface>
+            <routing-table><ip><static-route>
+              <entry name="to-b"><destination>10.50.0.0/16</destination><nexthop><next-vr>vr-b</next-vr></nexthop><metric>10</metric></entry>
+              <entry name="r-2"><destination>10.60.0.0/16</destination><nexthop><ip-address>198.51.100.254</ip-address></nexthop><metric>10</metric></entry>
+            </static-route></ip></routing-table>
+          </entry>
+          <entry name="vr-b"><interface><member>tunnel.1</member></interface></entry>
+        </virtual-router>
+      </network>
+      <vsys>
+        <entry name="vsys1">
+          <import><network><interface><member>ethernet1/1</member><member>ethernet1/1.10</member><member>ethernet1/2</member><member>tunnel.1</member></interface></network></import>
+          <zone>
+            <entry name="trust"><network><layer3><member>ethernet1/1</member></layer3><zone-protection-profile>zpp-1</zone-protection-profile></network></entry>
+          </zone>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

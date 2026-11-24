@@ -206,6 +206,9 @@ class VlanInterface
 
     public function referencedObjectRenamed($h, $old, $replaceType = 'name')
     {
+        // a renamed network object this one names (profile, IKE gateway, virtual router): NetworkObjectEdit
+        if( is_object( $h ) && $replaceType == 'name' && method_exists( $this, 'editReferenceRenamed' ) )
+            $this->editReferenceRenamed( $h, $old );
         if( is_object($h) )
         {
             if( get_class( $h ) == "Address" )

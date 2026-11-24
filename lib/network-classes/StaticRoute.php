@@ -435,6 +435,9 @@ class StaticRoute
 
     public function referencedObjectRenamed($h, $old)
     {
+        // a renamed virtual router (next hop next-vr): NetworkObjectEdit
+        if( is_object( $h ) && method_exists( $this, 'editReferenceRenamed' ) )
+            $this->editReferenceRenamed( $h, $old );
         if( get_class($h) == "EthernetInterface" || get_class($h) == "AggregateEthernetInterface" )
         {
             if( $this->_interface !== $h )

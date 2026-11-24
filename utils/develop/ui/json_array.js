@@ -4287,6 +4287,17 @@ var subjectObject =
                 },
                 "help": "local IPv4 address"
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+            },
             "ssl-tls-profile-set": {
                 "name": "ssl-tls-profile-Set",
                 "MainFunction": {},
@@ -4505,6 +4516,17 @@ var subjectObject =
                 },
                 "help": "local IPv4 address"
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+            },
             "ssl-tls-profile-set": {
                 "name": "ssl-tls-profile-Set",
                 "MainFunction": {},
@@ -4722,6 +4744,17 @@ var subjectObject =
                 },
                 "help": "local IPv4 address; empty: removed"
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+            },
             "tunnel-interface-set": {
                 "name": "tunnel-interface-Set",
                 "MainFunction": {},
@@ -4831,6 +4864,17 @@ var subjectObject =
                     }
                 },
                 "help": "local IP"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             },
             "peer-address-set": {
                 "name": "peer-address-Set",
@@ -5075,6 +5119,17 @@ var subjectObject =
                     }
                 },
                 "help": "local IP address (with mask, or address object); empty: removed"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             },
             "nat-traversal-set": {
                 "name": "nat-traversal-Set",
@@ -5335,6 +5390,17 @@ var subjectObject =
                     }
                 },
                 "help": "key lifetime"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             }
         },
         "filter": {
@@ -5813,6 +5879,17 @@ var subjectObject =
                     }
                 }
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+            },
             "permitted-ip-add": {
                 "name": "permitted-ip-Add",
                 "MainFunction": {},
@@ -6232,6 +6309,17 @@ var subjectObject =
                     }
                 },
                 "help": "lifetime"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             }
         },
         "filter": {
@@ -6415,6 +6503,17 @@ var subjectObject =
                     }
                 },
                 "help": "IPsec crypto profile - must exist in the location of the tunnel or above it"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             },
             "proxy-id-add": {
                 "name": "proxy-id-Add",
@@ -7352,6 +7451,17 @@ var subjectObject =
                     }
                 },
                 "help": "removes an interface from a virtual \/ logical router or a zone. Example: 'actions=interface-remove:ethernet1\/\/2'"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             },
             "static-route-add": {
                 "name": "static-route-Add",
@@ -15072,6 +15182,17 @@ var subjectObject =
                 },
                 "help": "metric"
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+            },
             "nexthop-set": {
                 "name": "nexthop-Set",
                 "MainFunction": {},
@@ -16470,6 +16591,17 @@ var subjectObject =
                 },
                 "help": "multicast firewalling"
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+            },
             "tag-allowed-set": {
                 "name": "tag-allowed-Set",
                 "MainFunction": {},
@@ -17158,6 +17290,17 @@ var subjectObject =
                     }
                 },
                 "help": "flood protection of a type"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
             },
             "packet-set": {
                 "name": "packet-Set",

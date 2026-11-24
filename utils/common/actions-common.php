@@ -210,4 +210,26 @@ CallContext::registerAction( array( 'RoutingCallContext', 'ZoneCallContext' ), a
     'help' => "removes an interface from a virtual / logical router or a zone. Example: 'actions=interface-remove:ethernet1//2'"
 ) );
 
+// ---- name-rename of the network objects: NetworkObjectEdit::editRename - the object, the index of its store and
+// every user that names it (IKE gateway -> IKE crypto profile, IPsec tunnel -> IKE gateway / IPsec crypto profile,
+// interface -> interface management profile, zone -> zone protection profile, static route -> next virtual router).
+// A type with its own name-rename (zone, interface, address, ...) keeps it.
+
+CallContext::registerAction( array( 'IKEgatewayCallContext', 'IKEprofileCallContext', 'IPsecprofileCallContext', 'IPsectunnelCallContext',
+    'RoutingCallContext', 'StaticRouteCallContext', 'GREtunnelCallContext', 'InterfaceManagementProfileCallContext', 'ZoneProtectionProfileCallContext',
+    'VirtualWireCallContext', 'GPPortalCallContext', 'GPGatewayCallContext', 'GPGatewaytunnelCallContext' ), array(
+    'name' => 'name-rename',
+    'MainFunction' => function (CallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            if( !method_exists( $o, 'editRename' ) )
+                throw new Exception( "this object can not be renamed here" );
+            $old = $o->name();
+            $o->editRename( $a['newname'] );
+            return "renamed '" . $old . "' -> '" . $o->name() . "' (users updated: " . count( $o->getReferences() ) . ")";
+        } );
+    },
+    'args' => array( 'newname' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "renames a network object and updates every object that names it. Example: 'actions=name-rename:ike-aes256'"
+) );
+
 // </editor-fold>

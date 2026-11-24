@@ -172,4 +172,106 @@ trait NetworkObjectEdit
             throw new Exception( $what . ": " . $unit . " " . $units[$unit][0] . "-" . $units[$unit][1] );
         $this->editChoice( $path, $unit, (string)(int)$value );
     }
+
+    // ---- name-rename (common action): the object, its store and every user (referencedObjectRenamed)
+
+    /**
+     * which users name an object of a class: class => array( XML tags below the user that hold the name, properties
+     * of the user that keep it in memory )
+     */
+    static public function editRenameMap(): array
+    {
+        return array(
+            'IkeCryptoProfil' => array( array( 'ike-crypto-profile' ), array( 'proposal' ) ),
+            'IPSecCryptoProfil' => array( array( 'ipsec-crypto-profile' ), array( 'proposal' ) ),
+            'IKEGateway' => array( array( 'ike-gateway' ), array( 'gateway' ) ),
+            'InterfaceManagementProfile' => array( array( 'interface-management-profile' ), array( 'intMgmtProfile' ) ),
+            'ZoneProtectionProfile' => array( array( 'zone-protection-profile' ), array( 'zoneProtectionProfile' ) ),
+            'VirtualRouter' => array( array( 'next-vr' ), array( '_nexthopVR' ) ),
+        );
+    }
+
+    /** the longest name PAN-OS takes for the object */
+    protected function editNameMax(): int
+    {
+        foreach( array( 'IkeCryptoProfil', 'IPSecCryptoProfil', 'InterfaceManagementProfile', 'ZoneProtectionProfile', 'VirtualRouter', 'LogicalRouter',
+                     'VirtualWire', 'GPPortal', 'GPGateway' ) as $c )
+            if( $this instanceof $c )
+                return 31;
+        return 63;
+    }
+
+    /**
+     * renames the object: its XML, the index of its store and every user that names it (XML and memory). Refused:
+     * an invalid name, a name of another object of the same store.
+     */
+    public function editRename( string $new ): void
+    {
+        $new = trim( $new );
+        $max = $this->editNameMax();
+        // IKE gateway / IPsec tunnel: no space (PAN-OS)
+        $space = ( $this instanceof IKEGateway || $this instanceof IPsecTunnel ) ? '' : ' ';
+        if( !preg_match( '/^[0-9a-zA-Z][0-9a-zA-Z_.' . $space . '-]{0,' . ( $max - 1 ) . '}$/', $new ) )
+            throw new Exception( "name '" . $new . "': up to " . $max . " characters - letters, digits, _ - ." . ( $space ? " and space" : "" ) . ", starting with a letter or digit" );
+        if( $new === $this->name() )
+            throw new Exception( "the name is " . $new . " already" );
+        $siblings = array();
+        if( isset( $this->owner ) && is_object( $this->owner ) )
+        {
+            if( method_exists( $this->owner, 'getAll' ) )
+                $siblings = $this->owner->getAll();
+            elseif( method_exists( $this->owner, 'staticRoutes' ) )
+                $siblings = $this->owner->staticRoutes();
+        }
+        foreach( $siblings as $o )
+            if( $o !== $this && is_object( $o ) && method_exists( $o, 'name' ) && $o->name() === $new )
+                throw new Exception( "'" . $new . "' is the name of another " . get_class( $o ) . " here" );
+
+        $old = $this->name();
+        // pan-os-php: the store (index) and every referencing object are told (broadcastMyNameChange)
+        $this->setRefName( $new );
+        if( $this->xmlroot !== null )
+            $this->xmlroot->setAttribute( 'name', $new );
+        // a virtual router as next hop: also in the static routes of the other routers (not every one is a reference)
+        if( $this instanceof VirtualRouter && $siblings !== array() )
+            foreach( $siblings as $vr )
+                if( method_exists( $vr, 'staticRoutes' ) )
+                    foreach( $vr->staticRoutes() as $route )
+                        if( method_exists( $route, 'editReferenceRenamed' ) )
+                            $route->editReferenceRenamed( $this, $old );
+    }
+
+    /**
+     * a referenced object of another class was renamed ($h, old name $old): the name in this object's XML (the tags
+     * of editRenameMap: text, <member>, <entry name="">) and in its properties
+     */
+    public function editReferenceRenamed( $h, $old ): void
+    {
+        $map = null;
+        foreach( self::editRenameMap() as $class => $m )
+            if( $h instanceof $class )
+                $map = $m;
+        if( $map === null || !is_string( $old ) || $old === '' || $this->xmlroot === null )
+            return;
+        $new = $h->name();
+        foreach( $map[0] as $tag )
+            foreach( iterator_to_array( $this->xmlroot->getElementsByTagName( $tag ) ) as $node )
+            {
+                $children = 0;
+                foreach( $node->childNodes as $c )
+                    if( $c instanceof DOMElement )
+                    {
+                        $children++;
+                        if( $c->nodeName === 'entry' && $c->getAttribute( 'name' ) === $old )
+                            $c->setAttribute( 'name', $new );
+                        elseif( $c->nodeName === 'member' && trim( $c->textContent ) === $old )
+                            $c->textContent = $new;
+                    }
+                if( $children === 0 && trim( $node->textContent ) === $old )
+                    $node->textContent = $new;
+            }
+        foreach( $map[1] as $prop )
+            if( property_exists( $this, $prop ) && $this->$prop === $old )
+                $this->$prop = $new;
+    }
 }

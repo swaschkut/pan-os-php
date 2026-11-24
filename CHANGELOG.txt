@@ -2,6 +2,8 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* type=ike-gateway / ike-profile / ipsec-profile / ipsec-tunnel / routing / static-route / gre-tunnel / interface-management-profile / zone-protection-profile / virtualwire / gp-portal / gp-gateway / gpgateway-tunnel | new common action name-rename (NetworkObjectEdit::editRename): the object, the index of its store and every user that names it - IKE gateway (IKE crypto profile v1 / v2), IPsec tunnel (IKE gateway, IPsec crypto profile), interface and sub-interface (interface management profile), zone (zone protection profile), static route (next virtual router); name checked (characters, length 31 / 63, unique in the store)
+* config-viewer | network windows: the name can be changed (name-rename) - not of an interface / DHCP
 * type=zone / routing | interface-add / interface-remove: one common action (actions-common.php) for zones (new: Zone::editInterfaceAdd / editInterfaceRemove - layer3 / layer2 / virtual-wire / tap; an interface of the zone type, imported into the vsys, in no other zone) and virtual / logical routers (now also: in no other router)
 * type=rule | new actions category-add / category-remove / category-set-any (URL category of security / decryption rules: custom URL category, EDL, predefined); refused when the rule has categories pan-os-php does not know (a change would drop them) or for the last one (use category-set-any)
 * actions | a change of the network edit actions (CallContext::runEdit) that is refused is SKIPPED with the reason (before: an error that stopped the run) - a run over many objects goes on
@@ -50,6 +52,7 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* network objects | a renamed IKE / IPsec crypto profile, IKE gateway, interface management / zone protection profile or virtual router kept its old name in the objects that use it (referencedObjectRenamed handled only addresses)
 * rule | the URL categories kept by the rule (urlCategories(), display) were not updated after a change of the category container
 * description | setDescription converted every text from ISO-8859-1 to UTF-8: a description with umlauts written by an action or the config viewer became "PrÃ¼fung"; now only a text that is no UTF-8
 * Address::setType | the same type was never recognised (string compared with the type constant)
