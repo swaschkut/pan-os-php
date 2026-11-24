@@ -27,8 +27,10 @@ StaticRouteCallContext::$supportedActions['display'] = Array(
     {
         $staticRoute = $context->object;
         PH::print_stdout("     * ".get_class($staticRoute)." '{$staticRoute->name()}'" );
-        PH::$JSON_TMP['sub']['object'][$staticRoute->owner->name()]['name'] = $staticRoute->name();
-        PH::$JSON_TMP['sub']['object'][$staticRoute->owner->name()]['type'] = get_class($staticRoute);
+        $key = PH::jsonObjectKey( $staticRoute );
+        PH::$JSON_TMP['sub']['object'][$key]['name'] = $staticRoute->name();
+        PH::$JSON_TMP['sub']['object'][$key]['type'] = get_class($staticRoute);
+        PH::$JSON_TMP['sub']['object'][$key]['router'] = $staticRoute->owner->name();
 
         $text = $staticRoute->display( $staticRoute->owner );
         PH::print_stdout( $text );

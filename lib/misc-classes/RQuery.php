@@ -122,6 +122,8 @@ class RQuery
             $this->contextObject = new RoutingRQueryContext($this);
         elseif( $this->objectType == 'dhcp' )
             $this->contextObject = new DHCPRQueryContext($this);
+        elseif( $this->objectType == 'virtualwire' )
+            $this->contextObject = new VirtualWireRQueryContext($this);
         elseif( $this->objectType == 'certificate' )
             $this->contextObject = new CertificateRQueryContext($this);
         elseif( $this->objectType == 'certificate-profile' )

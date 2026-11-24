@@ -5566,9 +5566,27 @@ class ViewerApp
                 $rows = $this->exportExtraColumns( $this->session( $p, $c, $user ), $type, array_merge( $args, $this->bpArg( $p, $in ) ), array_values( array_unique( $want ) ), $rows )['rows'];
         }
         if( $refcount && is_array( $r['refcounts'] ?? null ) )
+        {
+            // an object listed in another location than its owner (an interface in the vsys it is imported into: counted
+            // at the firewall / template) - the one count of this template and name
+            $byTail = null;
             foreach( $rows as $i => $row )
             {
-                $n = $r['refcounts'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . ( $row['name'] ?? '' )] ?? null;
+                $tail = '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . ( $row['name'] ?? '' );
+                $n = $r['refcounts'][( $row['location'] ?? '' ) . $tail] ?? null;
+                if( $n === null )
+                {
+                    if( $byTail === null )
+                    {
+                        $byTail = array();
+                        foreach( $r['refcounts'] as $k => $v )
+                        {
+                            $t = substr( (string)$k, (int)strpos( (string)$k, '|' ) );
+                            $byTail[$t] = isset( $byTail[$t] ) ? FALSE : $v;
+                        }
+                    }
+                    $n = isset( $byTail[$tail] ) && $byTail[$tail] !== FALSE ? $byTail[$tail] : null;
+                }
                 $new = array();
                 foreach( $row as $k => $v )
                 {
@@ -5578,6 +5596,7 @@ class ViewerApp
                 }
                 $rows[$i] = $new;
             }
+        }
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
                 unset( $rows[$i]['model'] );
@@ -5808,9 +5827,10 @@ class ViewerApp
         if( !is_string( $location ) || $location === '' || ( $location === 'any' && !$tpl ) )
             throw new ViewerException( 'location: the location of the object', 400 );
         $template = is_string( $in['template'] ?? null ) ? $in['template'] : '';
-        // an object of a template (Panorama): pan-os-php takes location=any with template= (the vsys of the template is
-        // no location of the configuration) - the row is matched by its vsys and template
-        $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + ( $template !== '' ? array( 'location' => 'any' ) : array() ) + $in, PHP_INT_MAX, FALSE, TRUE );
+        // an object of a template (Panorama): pan-os-php reads it with template= and its location (shared or a vsys of the
+        // template: UTIL::templateVirtualSystem); location=any lists an interface / router imported into a vsys only at
+        // the template itself - the row is matched by its location and template
+        $r = $this->objects( $user, $pid, $cid, array( 'filter' => '(name eq ' . $name . ')' ) + $in, PHP_INT_MAX, FALSE, TRUE );
         // a DNS rule / threat rule: the one of this security profile
         $profile = is_string( $in['profile'] ?? null ) ? $in['profile'] : '';
         // a security profile: only one of the profile type asked for (an URL profile can have the name of a
@@ -6030,7 +6050,8 @@ class ViewerApp
     /**
      * The locations of a version, for the location choice: Panorama - shared + device groups, firewall - shared + vsys,
      * SCM - containers + snippets (loads the version like a read). A member limited to locations gets only those, and
-     * no 'any'. Panorama also: the templates / template stacks with their vsys (network types, template=).
+     * no 'any'. Panorama also: the templates / template stacks with their vsys (network types, template=). Panorama /
+     * firewall: 'version' (PAN-OS, e.g. 101 = 10.1).
      */
     public function locations( array $user, $pid, $cid ): array
     {
@@ -6054,7 +6075,7 @@ class ViewerApp
                     $templates[] = array( 'name' => $t['name'], 'kind' => $t['kind'],
                         'vsys' => is_array( $t['vsys'] ?? null ) ? array_values( array_filter( $t['vsys'], 'is_string' ) ) : array() );
         return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list,
-            'templates' => $templates, 'ancestor' => !empty( $r['ancestor'] ) );
+            'templates' => $templates, 'version' => is_int( $r['version'] ?? null ) ? $r['version'] : null, 'ancestor' => !empty( $r['ancestor'] ) );
     }
 
     /**

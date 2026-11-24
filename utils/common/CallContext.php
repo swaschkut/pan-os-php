@@ -104,6 +104,11 @@ class CallContext
             PH::$JSON_TMP['sub']['object'][$key]['template'] = $tpl->name();
         if( $key !== $name )
             PH::$JSON_TMP['sub']['object'][$key]['profile'] = $object->owner->name();
+        // a network object of the firewall / template (interface, router, static route, virtual wire, DHCP): it stays
+        // at the PANConf (location shared) - the vsys that import it are named
+        $importingVsys = $this->actionRef['name'] === 'display' ? PH::importingVsys( $object ) : array();
+        if( $importingVsys !== array() )
+            PH::$JSON_TMP['sub']['object'][$key]['vsys'] = implode( ',', $importingVsys );
         PH::$JSON_TMP['sub']['object'][$key]['actions'][$this->actionRef['name']]['name'] = $this->actionRef['name'];
 
         // API object model (SCM shape, todo/json-object-model.md): with shadow-json, 'display' adds it for every
@@ -153,6 +158,9 @@ class CallContext
         }
 
         $this->actionRef['MainFunction']($this);
+
+        if( $importingVsys !== array() )
+            PH::print_stdout( "        vsys: " . implode( ', ', $importingVsys ) );
     }
 
     /**

@@ -2396,12 +2396,21 @@ async function showViewer(config, preset) {
     const type = { get value() { return cur.type; } };
     const ruletype = { get value() { return cur.ruletype || 'security'; } };
     const menu = el('nav', { class: 'vmenu', 'aria-label': 'object types' });
+    // PAN-OS before 8.0: captive portal rules; from 8.0 on (and SCM): authentication rules - captive portal only for a
+    // Panorama / firewall configuration older than 8.0 (until the version is known: authentication)
+    function entryOffered(e) {
+        const v = locationInfo.version;
+        const old = (locationInfo.config === 'panorama' || locationInfo.config === 'firewall') && Number.isInteger(v) && v < 80;
+        if (e.ruletype === 'captiveportal') return old;
+        if (e.ruletype === 'authentication') return !old;
+        return true;
+    }
     function drawMenu() {
         const limitedHere = !!(p.types || p.scope);
         menu.replaceChildren(...[limitedHere ? null : el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: 'System' }),
             el('button', { type: 'button', class: 'ventry', text: 'System settings', title: 'management, system, administrators, authentication, logging, updates (type=config-section)',
                 onclick: () => run(showSystem) }))].filter(x => x), ...VIEWER_MENU_SECTIONS.map(sec => {
-            const list = entries.filter(e => e.section === sec);
+            const list = entries.filter(e => e.section === sec && (entryOffered(e) || e.id === cur.id));
             return list.length === 0 ? null : el('div', { class: 'vsec' }, el('div', { class: 'vsechead', text: sec }),
                 list.map(e => el('button', { type: 'button', class: 'ventry' + (e.id === cur.id ? ' on' : ''), text: e.label, title: e.type + (e.ruletype ? ' / ' + e.ruletype : '') + (e.filter ? ' - ' + e.filter : ''),
                     onclick: () => run(async () => { if (e.id === cur.id && !cur.noBase) return; cur = e; state.viewerEntry[pid] = e.id; filter.value = ''; typeChanged(); drawMenu(); await load(false); }) })));
@@ -2452,7 +2461,7 @@ async function showViewer(config, preset) {
     filterLocations();
     let locationsLoaded = false;
     let locData = null;
-    const locationInfo = { config: null, ancestor: false };
+    const locationInfo = { config: null, ancestor: false, version: null };
     // Panorama, network types (zones, interfaces, routers, …): no device groups - template= picks the template /
     // template stack; location: shared (= the PANConf of the template, where the objects live) or one of its vsys
     // (what the vsys imports)
@@ -2497,7 +2506,15 @@ async function showViewer(config, preset) {
         if (locationsLoaded) return;
         locationsLoaded = true;
         const r = await api('GET', base() + '/locations').catch(() => null);
-        if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor });
+        if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor, version: Number.isInteger(r.version) ? r.version : null });
+        if (r) {
+            // the rule base of this PAN-OS version: authentication (8.0 and later) / captive portal (before)
+            if (!entryOffered(cur) && cur.ruletype) {
+                const other = entries.find(e => e.type === 'rule' && e.ruletype === (cur.ruletype === 'captiveportal' ? 'authentication' : 'captiveportal'));
+                if (other) { cur = other; state.viewerEntry[pid] = other.id; typeChanged(); setTimeout(() => run(() => load(false)), 0); }
+            }
+            drawMenu();
+        }
         if (r) drawSpTypes(r.config);
         if (!r || !r.locations.length) return;
         locData = r;
@@ -2941,7 +2958,12 @@ async function showViewer(config, preset) {
                 bool('userid', 'User identification', 'userid-enable'), bool('pbp', 'Packet buffer protection', 'packetbufferprotection-set'),
                 row.template ? { key: 'template', label: 'Template', kind: 'ro', value: row.template } : null, loc].filter(f => f);
         }
-        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel', 'interface', 'imp', 'zpp', 'routing', 'sroute', 'gre', 'dhcp', 'vwire', 'gpportal', 'gpgateway'].includes(kind)) return networkFields(kind, row, m, loc);
+        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel', 'interface', 'imp', 'zpp', 'routing', 'sroute', 'gre', 'dhcp', 'vwire', 'gpportal', 'gpgateway'].includes(kind)) {
+            // the object stays at the firewall / template (location shared); the vsys that import it are named
+            const f = networkFields(kind, row, m, loc);
+            if (row.vsys) { const v = { key: 'vsys', label: 'Imported by vsys', kind: 'ro', value: row.vsys }, i = f.indexOf(loc); if (i < 0) f.push(v); else f.splice(i, 0, v); }
+            return f;
+        }
         if (kind === 'generic') {
             // every other type: all its fields, read only - the list row and what the structured model adds
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];

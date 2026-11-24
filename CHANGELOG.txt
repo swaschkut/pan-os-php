@@ -2,6 +2,10 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* config-viewer | menu Policies: Captive Portal only for a Panorama / firewall configuration before PAN-OS 8.0 (then no Authentication); 8.0 and later and SCM: Authentication only (GET …/locations returns 'version')
+* type=interface | location=shared: every interface of the firewall / template (PANConf) - also the ones imported into a vsys (before: only the ones in no vsys); location=any lists each interface once
+* network types | display: an interface, virtual / logical router, static route (its router), virtual wire or DHCP (its interface) imported into a vsys / shared gateway names it ("vsys: vsys1"; shadow-json 'vsys') - PH::importingVsys, one place for all types (CallContext); PH::vsysImportedNames (NETWORKUTIL::vsysImportedNames uses it)
+* config-viewer | network lists: column "vsys" (the vsys that import the object); window of a network object: "Imported by vsys"
 * network types | location=<vsys> (firewall, and the vsys of a template / template stack with template=): also what the vsys imports from the firewall / template (PANConf) - its virtual / logical routers (type=routing) and their static routes (type=static-route), its virtual wires (type=virtualwire), the DHCP of its interfaces (type=dhcp); the objects stay at the PANConf (location=shared), location=any lists them once - NETWORKUTIL::vsysImportSets
 * config-viewer | Panorama, network types: a "Template" choice (any, templates, template stacks: template=) instead of the device groups; location shared (the template itself) or a vsys of the template; GET …/locations returns the templates with their vsys
 * location=predefined | the predefined objects of a type, read only, never a target (an argument "…location…" = predefined: SKIPPED): service (service-http, service-https), application, log-profile, threat, securityprofile (securityprofiletype=<type>; the old securityprofiletype=predefined-<type> stays as before and is an alias here) - UTIL::predefinedObjectSets; they stay listed at shared / any as before
@@ -65,6 +69,10 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* config-viewer | refcount of an object listed in another location than its owner (an interface in the vsys it is imported into): "?" - now the count of the object
+* type=virtualwire | a filter ended with "unsupported object type 'virtualwire'" (RQuery had no context for the type) - the config viewer could not open a virtual wire
+* config-viewer | an object of a template listed in a vsys (interface) could not be opened ("not found"): the window read it with location=any, which lists it at the template itself; now with its location and template
+* type=static-route display | shadow-json: the details of the route replaced every entry of the output (name, template, …), and name / type were written under the name of the router; now added to the entry of the route, plus 'router'
 * network types | Panorama: location=<vsys> with template=<template / template stack> was refused ("location 'vsys1' was not found" - only device groups were searched); now the vsys of the templates (UTIL::templateVirtualSystem)
 * network types | Panorama: a template stack was handled twice for certificates (templates and stacks are already one list)
 * config-viewer | location "predefined": after "any", before shared (hierarchy)

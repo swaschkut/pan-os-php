@@ -570,7 +570,9 @@ class StaticRoute
         if( $includingName )
             PH::$JSON_TMP['sub']['object'][$virtualRouter->name()]['staticroute'] = $tmpArray;
         else
-            PH::$JSON_TMP['sub']['object'] = $tmpArray;
+            // added to what the action wrote for the route (name, template, vsys, …) - not in its place
+            foreach( $tmpArray as $k => $v )
+                PH::$JSON_TMP['sub']['object'][$k] = array_merge( is_array( PH::$JSON_TMP['sub']['object'][$k] ?? null ) ? PH::$JSON_TMP['sub']['object'][$k] : array(), $v );
 
         return $text;
     }

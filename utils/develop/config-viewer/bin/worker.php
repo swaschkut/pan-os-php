@@ -102,7 +102,8 @@ function viewerStatus()
 
 /**
  * the locations of the loaded configuration, for the location choice of the page: Panorama - shared and every device
- * group (network types: the templates / template stacks with their vsys); firewall - shared and every vsys (and shared
+ * group (network types: the templates / template stacks with their vsys); 'version': PAN-OS version as pan-os-php
+ * keeps it (e.g. 101 = 10.1); firewall - shared and every vsys (and shared
  * gateway); SCM - every container (folder) and snippet
  */
 function viewerLocations()
@@ -130,14 +131,15 @@ function viewerLocations()
                         $vsys[] = $v->name();
                 $templates[] = array( 'name' => $t->name(), 'kind' => $kind, 'vsys' => $vsys );
             }
-        return array( 'config' => 'panorama', 'locations' => $out, 'templates' => $templates, 'ancestor' => $pan->ancestorObjectsTakePrecedence() );
+        return array( 'config' => 'panorama', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => $out, 'templates' => $templates,
+            'ancestor' => $pan->ancestorObjectsTakePrecedence() );
     }
     if( $pan instanceof PANConf )
     {
         $out[] = array( 'name' => 'shared', 'kind' => 'shared', 'levels' => array( 'shared' ) );
         $add( 'vsys', $pan->getVirtualSystems() );
         $add( 'shared-gateway', $pan->getSharedGateways() );
-        return array( 'config' => 'firewall', 'locations' => $out, 'ancestor' => FALSE );
+        return array( 'config' => 'firewall', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => $out, 'ancestor' => FALSE );
     }
     if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
     {

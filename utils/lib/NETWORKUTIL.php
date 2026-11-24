@@ -53,20 +53,10 @@ class NETWORKUTIL extends UTIL
     }
 
 
-    /** the names a vsys imports (import/network/<tag>/member): interface, virtual-router, logical-router, virtual-wire */
+    /** the names a vsys imports (import/network/<tag>/member) - PH::vsysImportedNames */
     static public function vsysImportedNames( $vsys, string $tag ): array
     {
-        $out = array();
-        if( !isset( $vsys->xmlroot ) || !( $vsys->xmlroot instanceof DOMElement ) )
-            return $out;
-        $import = DH::findFirstElement( 'import', $vsys->xmlroot );
-        $network = $import !== FALSE ? DH::findFirstElement( 'network', $import ) : FALSE;
-        $node = $network !== FALSE ? DH::findFirstElement( $tag, $network ) : FALSE;
-        if( $node !== FALSE )
-            foreach( $node->childNodes as $m )
-                if( $m->nodeType == XML_ELEMENT_NODE )
-                    $out[] = trim( $m->textContent );
-        return $out;
+        return PH::vsysImportedNames( $vsys, $tag );
     }
 
     /**
@@ -124,8 +114,8 @@ class NETWORKUTIL extends UTIL
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualWireStore, 'objects' => $this->pan->network->virtualWireStore->virtualWires());
                     elseif( $this->utilType == 'interface' )
                     {
-                        #$this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
-                        $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getNoneVsysUsedInterfaces());
+                        // every interface of the PANConf (also the ones imported into a vsys - the vsys is named)
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
                     }
                     elseif( $this->utilType == 'routing' && !$this->pan->_advance_routing_enabled )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualRouterStore, 'objects' => $this->pan->network->virtualRouterStore->getAll());
@@ -260,7 +250,11 @@ class NETWORKUTIL extends UTIL
                             if( $this->utilType == 'virtualwire' )
                             {}
                             elseif( $this->utilType == 'interface' )
-                                $this->objectsToProcess[] = Array('store' => $sub->importedInterfaces, 'objects' => $sub->importedInterfaces->getAll());
+                            {
+                                // location=any: every interface once, at the PANConf (location shared)
+                                if( $location != 'any' )
+                                    $this->objectsToProcess[] = Array('store' => $sub->importedInterfaces, 'objects' => $sub->importedInterfaces->getAll());
+                            }
                             elseif( $this->utilType == 'routing' )
                             {}
                             elseif( $this->utilType == 'zone' )
@@ -304,7 +298,10 @@ class NETWORKUTIL extends UTIL
                         if( $this->utilType == 'virtualwire' )
                         {}
                         elseif( $this->utilType == 'interface' )
-                            $this->objectsToProcess[] = Array('store' => $sub->importedInterfaces, 'objects' => $sub->importedInterfaces->getAll());
+                        {
+                            if( $location != 'any' )
+                                $this->objectsToProcess[] = Array('store' => $sub->importedInterfaces, 'objects' => $sub->importedInterfaces->getAll());
+                        }
                         elseif( $this->utilType == 'routing' )
                         {}
                         elseif( $this->utilType == 'zone' )
@@ -372,8 +369,8 @@ class NETWORKUTIL extends UTIL
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->virtualWireStore, 'objects' => $template->deviceConfiguration->network->virtualWireStore->virtualWires());
                                 elseif( $this->utilType == 'interface' )
                                 {
-                                    #$this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getAllInterfaces());
-                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getNoneVsysUsedInterfaces());
+                                    // every interface of the PANConf of the template (also the imported ones - the vsys is named)
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getAllInterfaces());
                                 }
                                 elseif( $this->utilType == 'routing' )
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->virtualRouterStore, 'objects' => $template->deviceConfiguration->network->virtualRouterStore->getAll());
@@ -457,7 +454,10 @@ class NETWORKUTIL extends UTIL
                                     if( $this->utilType == 'virtualwire' )
                                     {}
                                     elseif( $this->utilType == 'interface' )
-                                        $this->objectsToProcess[] = array('store' => $sub->importedInterfaces, 'objects' => $sub->importedInterfaces->getAll());
+                                    {
+                                        if( $location != 'any' )
+                                            $this->objectsToProcess[] = array('store' => $sub->importedInterfaces, 'objects' => $sub->importedInterfaces->getAll());
+                                    }
                                     elseif( $this->utilType == 'routing' )
                                     {}
                                     elseif( $this->utilType == 'zone' )

@@ -20,8 +20,8 @@
 /**
  * Network types and location / template=: the objects live on the PANConf (location=shared) of the firewall or of a
  * template / template-stack; a vsys lists what it imports (interfaces, virtual / logical routers and their static
- * routes, virtual wires, DHCP of the imported interfaces). Synthetic configurations, pan-os-php type=… as on the
- * command line.
+ * routes, virtual wires, DHCP of the imported interfaces). At the PANConf every object is listed, an imported one with
+ * its vsys (shadow-json 'vsys'). Synthetic configurations, pan-os-php type=… as on the command line.
  *
  *   php tests/test_network_vsys_import.php
  */
@@ -89,7 +89,8 @@ file_put_contents( $dir . '/pano.xml', $head . '<device-group/>'
     . $tail );
 
 // the object names pan-os-php selects (display, shadow-json); null: the location is refused
-$names = function( string $file, string $type, string $location, ?string $template = null ) use ( $repo ) {
+// $withVsys: "<name>@<vsys that import it>" ('-': none)
+$names = function( string $file, string $type, string $location, ?string $template = null, bool $withVsys = FALSE ) use ( $repo ) {
     $args = array( 'type=' . $type, 'in=' . $file, 'location=' . $location, 'actions=display', 'shadow-json' );
     if( $template !== null )
         $args[] = 'template=' . $template;
@@ -99,12 +100,12 @@ $names = function( string $file, string $type, string $location, ?string $templa
     if( !is_array( $j ) || isset( $j['error'] ) )
         return null;
     $out = array();
-    $walk = function( $x ) use ( &$walk, &$out ) {
+    $walk = function( $x ) use ( &$walk, &$out, $withVsys ) {
         if( !is_array( $x ) )
             return;
         if( isset( $x['object'] ) && is_array( $x['object'] ) )
-            foreach( array_keys( $x['object'] ) as $k )
-                $out[] = (string)$k;
+            foreach( $x['object'] as $k => $o )
+                $out[] = (string)$k . ( $withVsys ? '@' . ( $o['vsys'] ?? '-' ) : '' );
         foreach( $x as $v )
             $walk( $v );
     };
@@ -134,6 +135,21 @@ $eq( $names( $fw, 'interface-management-profile', 'shared' ), array( 'imp-1' ), 
 $eq( $names( $fw, 'interface-management-profile', 'vsys1' ), array(), 'firewall: interface-management-profile is not imported into a vsys' );
 $eq( $names( $fw, 'routing', 'any' ), array( 'vr-1', 'vr-2' ), 'firewall: routing at any - each router once' );
 
+// every interface at the PANConf, each named with the vsys that imports it; location=any lists each once
+$eq( $names( $fw, 'interface', 'shared', null, TRUE ), array( 'ethernet1/1@vsys1', 'ethernet1/2@vsys2', 'ethernet1/3@vsys1', 'ethernet1/4@vsys1' ),
+    'firewall: interface at shared - all interfaces of the PANConf with their vsys' );
+$eq( $names( $fw, 'interface', 'any' ), array( 'ethernet1/1', 'ethernet1/2', 'ethernet1/3', 'ethernet1/4' ), 'firewall: interface at any - each once' );
+$eq( $names( $fw, 'routing', 'shared', null, TRUE ), array( 'vr-1@vsys1', 'vr-2@vsys2' ), 'firewall: routers with the vsys that imports them' );
+$eq( $names( $fw, 'static-route', 'shared', null, TRUE ), array( 'r-1@vsys1', 'r-2@vsys2' ), 'firewall: static routes with the vsys of their router' );
+$eq( $names( $fw, 'virtualwire', 'shared', null, TRUE ), array( 'vw-1@vsys1' ), 'firewall: virtual wire with its vsys' );
+$eq( $names( $fw, 'dhcp', 'shared', null, TRUE ), array( 'ethernet1/2@vsys2' ), 'firewall: DHCP with the vsys of its interface' );
+$eq( $names( $fw, 'interface-management-profile', 'shared', null, TRUE ), array( 'imp-1@-' ), 'firewall: a profile is not imported - no vsys' );
+
+// a filter for virtual wires (before: "unsupported object type 'virtualwire'" - the config viewer could not open one)
+exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=virtualwire ' . escapeshellarg( 'in=' . $fw )
+    . ' location=any ' . escapeshellarg( 'filter=(name eq vw-1)' ) . ' actions=display 2>&1', $vwOut );
+$eq( (bool)preg_match( "/object 'vw-1'/", implode( "\n", $vwOut ) ), TRUE, 'virtualwire: filter (name eq vw-1)' );
+
 // ---- firewall with advanced routing: logical routers
 $ar = $dir . '/fw-ar.xml';
 $eq( $names( $ar, 'routing', 'shared' ), array( 'lr-1', 'lr-2' ), 'advanced routing: routing at shared - all logical routers' );
@@ -154,6 +170,11 @@ $eq( $names( $pa, 'zone', 'vsys1', 'T1' ), array( 't1-z1' ), 'panorama: zone tem
 $eq( $names( $pa, 'zone', 'vsys1', 'any' ), array( 't1-z1', 'ts-z1' ), 'panorama: zone template=any location=vsys1 - every template and stack' );
 $eq( $names( $pa, 'routing', 'any', 'any' ), array( 't1-vr-1', 't1-vr-2', 'ts-vr-1', 'ts-vr-2' ), 'panorama: routing template=any location=any' );
 $eq( $names( $pa, 'routing', 'vsys9', 'T1' ), null, 'panorama: unknown vsys is refused' );
+$eq( $names( $pa, 'interface', 'shared', 'T1', TRUE ), array( 'ethernet1/1@vsys1', 'ethernet1/2@vsys2', 'ethernet1/3@vsys1', 'ethernet1/4@vsys1' ),
+    'panorama: interface template=T1 location=shared - all interfaces of the template with their vsys' );
+$eq( $names( $ar, 'routing', 'shared', null, TRUE ), array( 'lr-1@vsys1', 'lr-2@vsys2' ), 'advanced routing: logical routers with their vsys' );
+// the details of a static route are added to its entry (before: they replaced every entry - vsys, template, … lost)
+$eq( $names( $pa, 'static-route', 'shared', 'T1', TRUE ), array( 't1-r-1@vsys1', 't1-r-2@vsys2' ), 'panorama: static routes of a template keep their vsys' );
 
 // cleanup
 foreach( glob( $dir . '/*' ) as $f )

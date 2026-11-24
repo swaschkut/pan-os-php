@@ -2404,6 +2404,73 @@ class PH
      * or null when the object is not inside a template / template-stack.
      * @return Template|TemplateStack|null
      */
+    /** the names a vsys imports (import/network/<tag>/member): interface, virtual-router, logical-router, virtual-wire */
+    public static function vsysImportedNames( $vsys, string $tag ): array
+    {
+        $out = array();
+        if( !is_object( $vsys ) || !isset( $vsys->xmlroot ) || !( $vsys->xmlroot instanceof DOMElement ) )
+            return $out;
+        $import = DH::findFirstElement( 'import', $vsys->xmlroot );
+        $network = $import !== FALSE ? DH::findFirstElement( 'network', $import ) : FALSE;
+        $node = $network !== FALSE ? DH::findFirstElement( $tag, $network ) : FALSE;
+        if( $node !== FALSE )
+            foreach( $node->childNodes as $m )
+                if( $m->nodeType == XML_ELEMENT_NODE )
+                    $out[] = trim( $m->textContent );
+        return $out;
+    }
+
+    /**
+     * a network object of a firewall / template (PANConf): the vsys / shared gateways that import it - interface (also DHCP of the
+     * interface), virtual / logical router (also its static routes), virtual wire. The object itself stays at the
+     * PANConf; empty: not imported / not such an object.
+     */
+    public static function importingVsys( $object ): array
+    {
+        if( !is_object( $object ) || !method_exists( $object, 'name' ) )
+            return array();
+        $name = $object->name();
+        if( $object instanceof StaticRoute )
+        {
+            $router = isset( $object->owner ) ? $object->owner : null;
+            return ( $router instanceof VirtualRouter || $router instanceof LogicalRouter ) ? self::importingVsys( $router ) : array();
+        }
+        if( $object instanceof VirtualRouter )
+            $tag = 'virtual-router';
+        elseif( $object instanceof LogicalRouter )
+            $tag = 'logical-router';
+        elseif( $object instanceof VirtualWire )
+            $tag = 'virtual-wire';
+        elseif( $object instanceof DHCP )
+            $tag = 'interface';
+        elseif( $object instanceof EthernetInterface || $object instanceof LoopbackInterface || $object instanceof TunnelInterface
+            || $object instanceof VlanInterface || $object instanceof IPsecTunnel || $object instanceof GreTunnel || $object instanceof GPGatewayTunnel )
+            $tag = null;    // an interface: checked below (the object of that name in the PANConf)
+        else
+            return array();
+
+        // the PANConf of the object (firewall or template / template stack)
+        $conf = isset( $object->owner ) ? $object->owner : null;
+        for( $i = 0; $i < 25 && is_object( $conf ) && !( $conf instanceof PANConf ); $i++ )
+            $conf = isset( $conf->owner ) ? $conf->owner : null;
+        if( !( $conf instanceof PANConf ) )
+            return array();
+
+        // an interface: the object of that name in the interface stores of the PANConf
+        if( $tag === null )
+        {
+            if( !isset( $conf->network ) || !is_object( $conf->network ) || !is_string( $name ) || $conf->network->findInterface( $name ) !== $object )
+                return array();
+            $tag = 'interface';
+        }
+
+        $out = array();
+        foreach( array_merge( $conf->getVirtualSystems(), $conf->getSharedGateways() ) as $vsys )
+            if( in_array( $name, self::vsysImportedNames( $vsys, $tag ), TRUE ) )
+                $out[] = $vsys->name();
+        return $out;
+    }
+
     public static function findTemplateOwner($object)
     {
         $cur = isset($object->owner) ? $object->owner : null;

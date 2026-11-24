@@ -1283,8 +1283,8 @@ $fw = '<?xml version="1.0"?><config version="10.1.0" urldb="paloaltonetworks"><m
     . '<devices><entry name="localhost.localdomain"><deviceconfig><system><hostname>fw1</hostname></system></deviceconfig><vsys><entry name="vsys1"/><entry name="vsys2"/></vsys></entry></devices></config>';
 $fwc = $alice->call( 'POST', $R . '/configs', null, array( 'fw.xml', $fw ) )[1]['cid'] ?? '';
 $r = $alice->call( 'GET', $R . '/configs/' . $fwc . '/locations' );
-eq( array( $r[1]['config'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), $r[1]['templates'] ?? null ), array( 'firewall', array( 'shared', 'vsys1', 'vsys2' ), array() ),
-    'locations: firewall - shared and every vsys, no templates' );
+eq( array( $r[1]['config'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), $r[1]['templates'] ?? null, $r[1]['version'] ?? null ), array( 'firewall', array( 'shared', 'vsys1', 'vsys2' ), array(), 101 ),
+    'locations: firewall - shared and every vsys, no templates, PAN-OS version (authentication / captive portal rules in the menu)' );
 $scmc = $alice->call( 'POST', $R . '/configs', null, array( 'scm.xml', file_get_contents( $here . '/input/SCM-import.xml' ) ) )[1]['cid'] ?? '';
 $r = $alice->call( 'GET', $R . '/configs/' . $scmc . '/locations' );
 if( ( $r[1]['config'] ?? '' ) !== 'scm' ) print "SCM locations: " . json_encode( $r ) . " cid " . json_encode( $scmc ) . "\n";
