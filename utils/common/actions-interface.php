@@ -250,6 +250,9 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                         }
                     }
                 }
+                // not a firewall / template (e.g. SCM folder, snippet, device): both cells all the same, so the columns stay in place
+                else
+                    $lines .= $context->encloseTemplateLocationOther( $object );
 
 
                 $lines .= $context->encloseFunction($object->name());

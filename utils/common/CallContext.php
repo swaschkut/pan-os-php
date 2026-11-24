@@ -302,6 +302,17 @@ class CallContext
         return $ret;
     }
 
+    /**
+     * exportToExcel / exportToHtml: the cells "template" and "location" of a network / device object that is not in a
+     * firewall or template configuration (PANConf) - SCM (folder, snippet, device): "---" and its name; Panorama: "---"
+     * and "shared". Always both cells, so the columns of the row stay in place.
+     */
+    public function encloseTemplateLocationOther( $object ): string
+    {
+        $loc = PH::getLocationString( $object );
+        return $this->encloseFunction( "---" ) . $this->encloseFunction( is_string( $loc ) && $loc !== '' ? $loc : "---" );
+    }
+
     public function encloseFunction( $value, $nowrap = TRUE )
     {
         if( $value == NULL )

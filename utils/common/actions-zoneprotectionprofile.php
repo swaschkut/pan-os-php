@@ -222,11 +222,9 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction($object->owner->owner->name());
                     }
                 }
+                // not a firewall / template (e.g. SCM folder, snippet, device): both cells all the same, so the columns stay in place
                 else
-                {
-                    $lines .= $context->encloseFunction("---");
-                    $lines .= $context->encloseFunction("---");
-                }
+                    $lines .= $context->encloseTemplateLocationOther( $object );
 
 
                 #$lines .= $context->encloseFunction(PH::getLocationString($object));

@@ -106,7 +106,31 @@ $all = $pan->findContainer( 'All' );
 $eq( array( $n( '' ), $xp->query( "//container/entry[@name='Branches']/network" )->length, $all !== null && count( $all->network->ikeCryptoProfileStore->ikeCryptoProfil() ) > 0 ),
     array( 1, 0, TRUE ), 'the network part where SCM keeps it (devices/entry[@name=localhost.localdomain]/network) - read by the loader, also the one of the base configuration (All)' );
 
-if( !getenv( 'KEEP' ) ) exec( 'rm -rf ' . escapeshellarg( $dir ) );
+// exportToHtml of the network types on an SCM configuration: every row has the cells template / location (before: only
+// for a firewall / template - the values moved two columns to the left)
+$html = array();
+foreach( array( 'ike-gateway' => 'gw-branch', 'ike-profile' => 'ike-p1', 'ipsec-profile' => 'ipsec-p2', 'ipsec-tunnel' => 'tun-branch', 'interface' => 'tunnel.1' ) as $t => $name )
+{
+    exec( 'cd ' . escapeshellarg( $dir ) . ' && ' . escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=' . $t . ' '
+        . escapeshellarg( 'in=' . $out ) . ' ' . escapeshellarg( 'actions=exportToHtml:export-' . $t . '.html' ) . ' 2>&1', $o );
+    $h = is_file( $dir . '/export-' . $t . '.html' ) ? (string)file_get_contents( $dir . '/export-' . $t . '.html' ) : '';
+    preg_match_all( '#<th[^>]*>(.*?)</th>#s', $h, $th );
+    $row = null;
+    foreach( preg_split( '#<tr#', $h ) as $r )
+    {
+        preg_match_all( '#<td[^>]*>(.*?)</td>#s', $r, $td );
+        $cells = array_map( function( $c ) { return trim( strip_tags( $c ) ); }, $td[1] );
+        if( count( $cells ) > 3 && $cells[3] === $name )
+            $row = array_combine( array_slice( $th[1], 0, count( $cells ) ), $cells ) + array( '#cells' => count( $cells ), '#th' => count( $th[1] ) );
+    }
+    $html[$t] = $row === null ? null : array( $row['#cells'] === $row['#th'], $row['template'] ?? null, $row['location'] ?? null, $row['name'] ?? null );
+}
+$eq( $html, array( 'ike-gateway' => array( TRUE, '---', 'Branches', 'gw-branch' ), 'ike-profile' => array( TRUE, '---', 'Branches', 'ike-p1' ),
+        'ipsec-profile' => array( TRUE, '---', 'Branches', 'ipsec-p2' ), 'ipsec-tunnel' => array( TRUE, '---', 'Branches', 'tun-branch' ),
+        'interface' => array( TRUE, '---', 'Branches', 'tunnel.1' ) ),
+    'exportToHtml of SCM network objects: as many cells as columns, template "---", location the SCM folder' );
+
+exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 if( count( $failed ) ) { print implode( "\n", array_slice( $lines, -15 ) ) . "\n"; exit( 1 ); }
 exit( 0 );

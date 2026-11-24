@@ -156,6 +156,9 @@ IPsecprofileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction(get_class($object->owner->owner));
                     }
                 }
+                // not a firewall / template (e.g. SCM folder, snippet, device): both cells all the same, so the columns stay in place
+                else
+                    $lines .= $context->encloseTemplateLocationOther( $object );
 
                 $lines .= $context->encloseFunction($object->name());
 
