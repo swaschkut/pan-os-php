@@ -1275,11 +1275,16 @@ $r = $alice->call( 'GET', $RC . '/locations' );
 eq( array( status( $r ), $r[1]['config'] ?? null, $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), array_values( array_unique( array_column( $r[1]['locations'] ?? array(), 'kind' ) ) ) ),
     array( 200, 'panorama', TRUE, array( 'shared', 'Perimeter-FWs', 'Datacenter-Firewalls', 'testDG', 'DE-Berlin Office', 'FR Datacenter' ), array( 'shared', 'device-group' ) ),
     'locations: Panorama - shared and every device group' );
+$tk = array_values( array_unique( array_column( $r[1]['templates'] ?? array(), 'kind' ) ) );
+eq( array( is_array( $r[1]['templates'] ?? null ), array_diff( $tk, array( 'template', 'template-stack' ) ),
+        count( array_filter( $r[1]['templates'] ?? array(), function( $t ) { return !is_array( $t['vsys'] ?? null ); } ) ) ),
+    array( TRUE, array(), 0 ), 'locations: Panorama - templates / template stacks with their vsys (network types, template=)' );
 $fw = '<?xml version="1.0"?><config version="10.1.0" urldb="paloaltonetworks"><mgt-config/><shared><address><entry name="h1"><ip-netmask>1.1.1.1</ip-netmask></entry></address></shared>'
     . '<devices><entry name="localhost.localdomain"><deviceconfig><system><hostname>fw1</hostname></system></deviceconfig><vsys><entry name="vsys1"/><entry name="vsys2"/></vsys></entry></devices></config>';
 $fwc = $alice->call( 'POST', $R . '/configs', null, array( 'fw.xml', $fw ) )[1]['cid'] ?? '';
 $r = $alice->call( 'GET', $R . '/configs/' . $fwc . '/locations' );
-eq( array( $r[1]['config'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ) ), array( 'firewall', array( 'shared', 'vsys1', 'vsys2' ) ), 'locations: firewall - shared and every vsys' );
+eq( array( $r[1]['config'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), $r[1]['templates'] ?? null ), array( 'firewall', array( 'shared', 'vsys1', 'vsys2' ), array() ),
+    'locations: firewall - shared and every vsys, no templates' );
 $scmc = $alice->call( 'POST', $R . '/configs', null, array( 'scm.xml', file_get_contents( $here . '/input/SCM-import.xml' ) ) )[1]['cid'] ?? '';
 $r = $alice->call( 'GET', $R . '/configs/' . $scmc . '/locations' );
 if( ( $r[1]['config'] ?? '' ) !== 'scm' ) print "SCM locations: " . json_encode( $r ) . " cid " . json_encode( $scmc ) . "\n";
@@ -1423,7 +1428,8 @@ eq( status( $bob->call( 'GET', $RC . '/addresses' ) ), 404, 'REST: no access' );
 eq( status( $alice->call( 'PUT', $R . '/members', array( 'user' => 'bob', 'role' => 'read', 'types' => array( 'address', 'application' ), 'scope' => array( 'shared' ) ) ) ), 200, 'REST: bob limited' );
 eq( status( $bob->call( 'GET', $RC . '/addresses?location=shared' ) ), 200, 'REST limited: granted' );
 $r = $bob->call( 'GET', $RC . '/locations' );
-eq( array( status( $r ), $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ) ), array( 200, FALSE, array( 'shared' ) ), 'locations limited: only the granted ones, no any' );
+eq( array( status( $r ), $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), $r[1]['templates'] ?? null ), array( 200, FALSE, array( 'shared' ), array() ),
+    'locations limited: only the granted ones, no any, no templates' );
 $r = $bob->call( 'GET', $RC . '/references?type=address&location=shared&name=' . rawurlencode( 'new test 2' ) );
 $o = $r[1]['objects'][0] ?? array();
 eq( array( status( $r ), array_column( $o['references'] ?? array(), 'name' ), $o['hidden'] ?? null ), array( 200, array( 'group-with-duplicate-child' ), 5 ),

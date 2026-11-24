@@ -1844,6 +1844,8 @@ class UTIL
             {
                 $this->sub = $this->pan->findSubSystemByName($this->location);
                 if( $this->sub === null )
+                    $this->sub = $this->templateVirtualSystem($this->location);
+                if( $this->sub === null )
                 {
                     $this->locationNotFound($this->location);
                 }
@@ -2336,6 +2338,30 @@ class UTIL
                 $this->locationNotFound($location);
             }
         }
+    }
+
+    /**
+     * Panorama: a vsys of a template / template-stack (network types, argument template=).
+     * Templates are filtered by template= ('any' = all). Returns the first match or null.
+     */
+    public function templateVirtualSystem( $name )
+    {
+        if( $this->configType != 'panorama' || !is_object($this->pan) || !isset($this->pan->templates) )
+            return null;
+
+        $wanted = array_map( 'trim', explode(',', is_array($this->objectsTemplate) ? implode(',', $this->objectsTemplate) : (string)$this->objectsTemplate) );
+        $all = in_array( 'any', array_map('strtolower', $wanted) ) || in_array( 'all', array_map('strtolower', $wanted) );
+
+        foreach( array_merge( $this->pan->templates, $this->pan->templatestacks ) as $template )
+        {
+            if( !$all && !in_array( $template->name(), $wanted ) )
+                continue;
+            $vsys = $template->deviceConfiguration->findVirtualSystem( $name );
+            if( $vsys !== null )
+                return $vsys;
+        }
+
+        return null;
     }
 
     public function locationNotFound($location, $configType = null, $pan = null)

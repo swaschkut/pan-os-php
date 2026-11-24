@@ -53,6 +53,60 @@ class NETWORKUTIL extends UTIL
     }
 
 
+    /** the names a vsys imports (import/network/<tag>/member): interface, virtual-router, logical-router, virtual-wire */
+    static public function vsysImportedNames( $vsys, string $tag ): array
+    {
+        $out = array();
+        if( !isset( $vsys->xmlroot ) || !( $vsys->xmlroot instanceof DOMElement ) )
+            return $out;
+        $import = DH::findFirstElement( 'import', $vsys->xmlroot );
+        $network = $import !== FALSE ? DH::findFirstElement( 'network', $import ) : FALSE;
+        $node = $network !== FALSE ? DH::findFirstElement( $tag, $network ) : FALSE;
+        if( $node !== FALSE )
+            foreach( $node->childNodes as $m )
+                if( $m->nodeType == XML_ELEMENT_NODE )
+                    $out[] = trim( $m->textContent );
+        return $out;
+    }
+
+    /**
+     * a vsys (firewall / template / template stack): the objects of the PANConf it imports - routers (virtual / logical)
+     * and their static routes, virtual wires, DHCP of the imported interfaces. The objects stay at the PANConf
+     * (location shared), a vsys only names them.
+     */
+    public function vsysImportSets( $vsys, $network ): array
+    {
+        $sets = array();
+        if( !is_object( $network ) )
+            return $sets;
+        $routerNames = array_merge( self::vsysImportedNames( $vsys, 'virtual-router' ), self::vsysImportedNames( $vsys, 'logical-router' ) );
+        $routers = array();
+        foreach( array( $network->virtualRouterStore, $network->logicalRouterStore ) as $store )
+            if( is_object( $store ) )
+                foreach( $store->getAll() as $r )
+                    if( in_array( $r->name(), $routerNames, TRUE ) )
+                        $routers[] = array( $store, $r );
+        if( $this->utilType == 'routing' )
+            foreach( $routers as $sr )
+                $sets[] = array( 'store' => $sr[0], 'objects' => array( $sr[1] ) );
+        elseif( $this->utilType == 'static-route' )
+            foreach( $routers as $sr )
+                $sets[] = array( 'store' => $sr[1], 'objects' => $sr[1]->staticRoutes() );
+        elseif( $this->utilType == 'virtualwire' )
+        {
+            $names = self::vsysImportedNames( $vsys, 'virtual-wire' );
+            $sets[] = array( 'store' => $network->virtualWireStore, 'objects' => array_values( array_filter( $network->virtualWireStore->virtualWires(),
+                function( $o ) use ( $names ) { return in_array( $o->name(), $names, TRUE ); } ) ) );
+        }
+        elseif( $this->utilType == 'dhcp' )
+        {
+            $names = self::vsysImportedNames( $vsys, 'interface' );
+            $sets[] = array( 'store' => $network->dhcpStore, 'objects' => array_values( array_filter( $network->dhcpStore->getAll(),
+                function( $o ) use ( $names ) { return in_array( $o->name(), $names, TRUE ); } ) ) );
+        }
+        return $sets;
+    }
+
     public function location_filter_object()
     {
         $sub = null;
@@ -197,6 +251,12 @@ class NETWORKUTIL extends UTIL
                     {
                         if( ($location == 'any' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
                         {
+                            // imported from the PANConf: routers, their static routes, virtual wires, DHCP (location=any
+                            // lists them once, at the PANConf)
+                            if( $location != 'any' )
+                                foreach( $this->vsysImportSets( $sub, $this->pan->network ) as $set )
+                                    $this->objectsToProcess[] = $set;
+
                             if( $this->utilType == 'virtualwire' )
                             {}
                             elseif( $this->utilType == 'interface' )
@@ -388,6 +448,12 @@ class NETWORKUTIL extends UTIL
                             {
                                 if( ($location == 'any' || $location == $sub->name()) && !isset($util->objectsToProcess[$sub->name() . '%pre']) )
                                 {
+                                    // imported from the PANConf of the template: routers, their static routes, virtual wires,
+                                    // DHCP (location=any lists them once, at the PANConf of the template)
+                                    if( $location != 'any' )
+                                        foreach( $this->vsysImportSets( $sub, $template->deviceConfiguration->network ) as $set )
+                                            $this->objectsToProcess[] = $set;
+
                                     if( $this->utilType == 'virtualwire' )
                                     {}
                                     elseif( $this->utilType == 'interface' )
@@ -416,17 +482,7 @@ class NETWORKUTIL extends UTIL
 
                     }
 
-                    foreach( $this->pan->templatestacks as $templatestack )
-                    {
-                        if( $this->templateName == 'any' || $this->templateName == $templatestack->name() )
-                        {
-                            if( $location == 'shared' || $location == 'any' )
-                            {
-                                if( $this->utilType == 'certificate' )
-                                    $this->objectsToProcess[] = Array('store' => $templatestack->certificateStore, 'objects' => $templatestack->certificateStore->getAll());
-                            }
-                        }
-                    }
+                    // the template stacks are in the loop above (templates and template stacks) - their certificates too
                 }
                 else
                 {

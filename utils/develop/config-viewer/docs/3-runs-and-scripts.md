@@ -36,6 +36,11 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   shared; SCM folder → its snippets → parent folders → All; template), grouped by location, without the ones it has
   already and without the ones the action would refuse (the group itself, an interface of another zone, …); a rule of
   a Panorama device group gets the zones of the templates. A name can still be typed.
+- **Network types** (zones, interfaces, routers, static routes, virtual wires, DHCP, IKE / IPsec, profiles, …): the
+  objects live on the firewall itself (location *shared*) - a vsys imports interfaces, virtual / logical routers and
+  virtual wires and lists what it imports (routers with their static routes, DHCP of its interfaces). Panorama: a
+  **Template** choice (any, templates, template stacks; pan-os-php `template=`) instead of the device groups; location
+  *shared* is the template itself, a vsys of the template lists what it imports. SCM: containers and snippets as before.
 - **Rule window** (security rules): the security profiles one by one (each with the profiles of its type; a profile
   replaces a profile group and the other way round), rule type, source HIP profile, QoS marking, disable server response
   inspection; Panorama: target firewalls (serial or serial and vsys), target negate, all firewalls. An action that refuses the change (pan-os-php

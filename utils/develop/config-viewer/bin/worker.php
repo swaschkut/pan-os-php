@@ -102,7 +102,8 @@ function viewerStatus()
 
 /**
  * the locations of the loaded configuration, for the location choice of the page: Panorama - shared and every device
- * group; firewall - shared and every vsys (and shared gateway); SCM - every container (folder) and snippet
+ * group (network types: the templates / template stacks with their vsys); firewall - shared and every vsys (and shared
+ * gateway); SCM - every container (folder) and snippet
  */
 function viewerLocations()
 {
@@ -118,7 +119,18 @@ function viewerLocations()
     {
         $out[] = array( 'name' => 'shared', 'kind' => 'shared', 'levels' => array( 'shared' ) );
         $add( 'device-group', $pan->getDeviceGroups() );
-        return array( 'config' => 'panorama', 'locations' => $out, 'ancestor' => $pan->ancestorObjectsTakePrecedence() );
+        // network types: template / template-stack (argument template=), each a PANConf (location shared) with its vsys
+        $templates = array();
+        foreach( array( 'template' => $pan->templates, 'template-stack' => $pan->templatestacks ) as $kind => $list )
+            foreach( is_array( $list ) ? $list : array() as $t )
+            {
+                $vsys = array();
+                if( isset( $t->deviceConfiguration ) && is_object( $t->deviceConfiguration ) )
+                    foreach( $t->deviceConfiguration->getVirtualSystems() as $v )
+                        $vsys[] = $v->name();
+                $templates[] = array( 'name' => $t->name(), 'kind' => $kind, 'vsys' => $vsys );
+            }
+        return array( 'config' => 'panorama', 'locations' => $out, 'templates' => $templates, 'ancestor' => $pan->ancestorObjectsTakePrecedence() );
     }
     if( $pan instanceof PANConf )
     {

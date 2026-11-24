@@ -2451,7 +2451,48 @@ async function showViewer(config, preset) {
     });
     filterLocations();
     let locationsLoaded = false;
+    let locData = null;
     const locationInfo = { config: null, ancestor: false };
+    // Panorama, network types (zones, interfaces, routers, …): no device groups - template= picks the template /
+    // template stack; location: shared (= the PANConf of the template, where the objects live) or one of its vsys
+    // (what the vsys imports)
+    const tplSel = el('select', {}, el('option', { value: 'any', text: 'any (all templates)' }));
+    const tplField = field('Template', tplSel);
+    tplField.hidden = true;
+    function networkTemplates() {
+        return cur && cur.section === 'Network' && locationInfo.config === 'panorama' && locData && (locData.templates || []).length ? locData.templates : null;
+    }
+    function drawTemplates() {
+        const tl = networkTemplates();
+        tplField.hidden = !tl;
+        if (!tl) return;
+        const was = view.template || tplSel.value || 'any';
+        const kinds = { 'template': 'templates', 'template-stack': 'template stacks' };
+        tplSel.replaceChildren(el('option', { value: 'any', text: 'any (all templates)' }),
+            ...Object.keys(kinds).filter(k => tl.some(t => t.kind === k)).map(k => el('optgroup', { label: kinds[k] },
+                tl.filter(t => t.kind === k).map(t => el('option', { value: t.name, text: t.name })))));
+        tplSel.value = [...tplSel.options].some(o => o.value === was) ? was : 'any';
+        view.template = tplSel.value === 'any' ? null : tplSel.value;
+    }
+    function drawLocationOptions() {
+        if (!locData || !locData.locations.length) return;
+        const r = locData, was = location.value, tl = networkTemplates();
+        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'snippet': 'snippets' };
+        let groups;
+        if (tl) {
+            const vs = [...new Set(tl.filter(t => tplSel.value === 'any' || t.name === tplSel.value).flatMap(t => t.vsys || []))];
+            groups = [el('optgroup', { label: 'template' }, el('option', { value: 'shared', text: 'shared (the template itself)' })),
+                ...(vs.length ? [el('optgroup', { label: 'vsys (imported)' }, vs.map(v => el('option', { value: v, text: v })))] : [])];
+        } else
+            groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
+                r.locations.filter(l => l.kind === k).map(l => el('option', { value: l.name, text: l.name }))));
+        location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
+        drawPredefined();
+        location.value = [...location.options].some(o => o.value === was) ? was : location.options[0].value;
+        drawDgScope();
+        filterLocations();
+    }
+    tplSel.addEventListener('change', () => { view.template = tplSel.value === 'any' ? null : tplSel.value; drawLocationOptions(); });
     async function loadLocations() {
         if (locationsLoaded) return;
         locationsLoaded = true;
@@ -2459,14 +2500,9 @@ async function showViewer(config, preset) {
         if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor });
         if (r) drawSpTypes(r.config);
         if (!r || !r.locations.length) return;
-        const was = location.value, kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'snippet': 'snippets' };
-        const groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
-            r.locations.filter(l => l.kind === k).map(l => el('option', { value: l.name, text: l.name }))));
-        location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
-        drawPredefined();
-        if ([...location.options].some(o => o.value === was)) location.value = was;
-        drawDgScope();
-        filterLocations();
+        locData = r;
+        drawTemplates();
+        drawLocationOptions();
     }
     // Panorama: a device group with its child device groups (pan-os-php location=<DG>:includechilddgs) or only its
     // child device groups (location=<DG>:excludemaindg) - offered when a device group is chosen as location; not with
@@ -2560,7 +2596,12 @@ async function showViewer(config, preset) {
     function drawPredefined() {
         const pre = location.querySelector('option[value="predefined"]');
         if (PREDEFINED_TYPES.includes(type.value) && !p.scope && !(locationInfo && locationInfo.config === 'scm')) {
-            if (!pre) location.append(el('option', { value: 'predefined', text: 'predefined (read only)' }));
+            // hierarchy: after "any", before shared (predefined objects are above shared)
+            if (!pre) {
+                const opt = el('option', { value: 'predefined', text: 'predefined (read only)' });
+                const any = location.querySelector('option[value="any"]');
+                if (any) any.after(opt); else location.prepend(opt);
+            }
         } else if (pre) {
             if (location.value === 'predefined') location.value = location.options[0].value;
             pre.remove();
@@ -2568,6 +2609,9 @@ async function showViewer(config, preset) {
     }
     function typeChanged() {
         view.template = null;
+        // Panorama network types: the chosen template stays; other types: device groups again
+        drawTemplates();
+        drawLocationOptions();
         drawPredefined();
         spField.hidden = type.value !== 'securityprofile';
         devField.hidden = type.value !== 'device';
@@ -4051,13 +4095,13 @@ async function showViewer(config, preset) {
             canWrite ? field('Auto save as version', autosave) : el('span', { class: 'muted', text: 'read only' }), canWrite ? saveBtn : null, canWrite ? discardBtn : null),
         el('div', { class: 'viewer' }, menu, el('div', { class: 'vmain' },
             el('form', { class: 'row', onsubmit: (ev) => { ev.preventDefault(); run(() => load(false)); } },
-                field('Location', el('div', { class: 'locpick' }, locFilter, location, locCount)), dgScopeField, sameNameField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
+                tplField, field('Location', el('div', { class: 'locpick' }, locFilter, location, locCount)), dgScopeField, sameNameField, spField, devField, el('label', { class: 'grow' }, 'pan-os-php filter (runs on the server)', filterBox),
                 el('button', { class: 'primary', type: 'submit', text: 'Show' }), el('button', { type: 'button', text: 'Reload', onclick: () => run(() => load(true)) })),
             heading,
             el('div', { class: 'row' }, field('Quick filter (in the browser)', quick), extraBox, info),
             tableWrap, pager, changesCard, changeBox)));
     // a new location / device group scope / same-name choice / profile or device type: the list at once (no "Show")
-    for (const sel of [location, dgScope, sameName, sptype, devtype]) if (sel) sel.addEventListener('change', () => { view.page = 1; run(() => load(false)); });
+    for (const sel of [tplSel, location, dgScope, sameName, sptype, devtype]) if (sel) sel.addEventListener('change', () => { view.page = 1; run(() => load(false)); });
     drawMenu();
     typeChanged();
     if (preset) {
@@ -4070,7 +4114,11 @@ async function showViewer(config, preset) {
         if (preset.securityprofiletype) sptype.value = preset.securityprofiletype;
         if (preset.devicetype) devtype.value = preset.devicetype;
         // an object of a template: the list only of that template (until the filter is changed)
-        if (preset.template) view.template = preset.template;
+        if (preset.template) {
+            view.template = preset.template;
+            if (!tplField.hidden && ![...tplSel.options].some(o => o.value === preset.template)) tplSel.append(el('option', { value: preset.template, text: preset.template }));
+            if (!tplField.hidden) tplSel.value = preset.template;
+        }
         // a link "Open ↗": the window of that object opens when the list is there
         if (preset.open) view.openAfterLoad = { name: preset.open, location: preset.at || (preset.location === 'any' ? '' : preset.location), template: preset.template || '', profile: preset.profile || '' };
         // a location with the device groups below (<DG>:includechilddgs / :excludemaindg)

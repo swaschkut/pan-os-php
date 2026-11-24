@@ -6030,7 +6030,7 @@ class ViewerApp
     /**
      * The locations of a version, for the location choice: Panorama - shared + device groups, firewall - shared + vsys,
      * SCM - containers + snippets (loads the version like a read). A member limited to locations gets only those, and
-     * no 'any'.
+     * no 'any'. Panorama also: the templates / template stacks with their vsys (network types, template=).
      */
     public function locations( array $user, $pid, $cid ): array
     {
@@ -6046,8 +6046,15 @@ class ViewerApp
             $scope = array_map( 'strtolower', $p['scope'] );
             $list = array_values( array_filter( $list, function( $l ) use ( $scope ) { return in_array( strtolower( $l['name'] ), $scope, TRUE ); } ) );
         }
+        // Panorama, network types: templates / template stacks with their vsys (not for a member limited to locations)
+        $templates = array();
+        if( $p['scope'] === null )
+            foreach( is_array( $r['templates'] ?? null ) ? $r['templates'] : array() as $t )
+                if( is_array( $t ) && is_string( $t['name'] ?? null ) && in_array( $t['kind'] ?? null, array( 'template', 'template-stack' ), TRUE ) )
+                    $templates[] = array( 'name' => $t['name'], 'kind' => $t['kind'],
+                        'vsys' => is_array( $t['vsys'] ?? null ) ? array_values( array_filter( $t['vsys'], 'is_string' ) ) : array() );
         return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list,
-            'ancestor' => !empty( $r['ancestor'] ) );
+            'templates' => $templates, 'ancestor' => !empty( $r['ancestor'] ) );
     }
 
     /**

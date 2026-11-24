@@ -2,6 +2,8 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* network types | location=<vsys> (firewall, and the vsys of a template / template stack with template=): also what the vsys imports from the firewall / template (PANConf) - its virtual / logical routers (type=routing) and their static routes (type=static-route), its virtual wires (type=virtualwire), the DHCP of its interfaces (type=dhcp); the objects stay at the PANConf (location=shared), location=any lists them once - NETWORKUTIL::vsysImportSets
+* config-viewer | Panorama, network types: a "Template" choice (any, templates, template stacks: template=) instead of the device groups; location shared (the template itself) or a vsys of the template; GET …/locations returns the templates with their vsys
 * location=predefined | the predefined objects of a type, read only, never a target (an argument "…location…" = predefined: SKIPPED): service (service-http, service-https), application, log-profile, threat, securityprofile (securityprofiletype=<type>; the old securityprofiletype=predefined-<type> stays as before and is an alias here) - UTIL::predefinedObjectSets; they stay listed at shared / any as before
 * actions | read only also: a threat, a threat rule / DNS rule of a security profile, a predefined security profile / URL category (predefined.xml)
 * config-viewer | location "predefined" for the types with predefined objects (not SCM: its predefined snippet); a predefined object is listed with location "predefined", its window read only with the XML of predefined.xml (no history)
@@ -63,6 +65,9 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* network types | Panorama: location=<vsys> with template=<template / template stack> was refused ("location 'vsys1' was not found" - only device groups were searched); now the vsys of the templates (UTIL::templateVirtualSystem)
+* network types | Panorama: a template stack was handled twice for certificates (templates and stacks are already one list)
+* config-viewer | location "predefined": after "any", before shared (hierarchy)
 * config-viewer | the window of an interface had no XML (listed in the vsys it is imported into, its XML belongs to the firewall / template)
 * type=address display | a region wrote each network as a key of the object - in a list (config viewer) every network became an empty column; now under 'members'
 * config-viewer | lists and nested values were shown as "[object Object]" (e.g. the details of an application): now as text; the window of an application shows its details (category, technology, risk, ports, …) as fields
