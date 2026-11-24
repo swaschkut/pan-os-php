@@ -29,8 +29,9 @@
 class IKEPSKList
 {
     const PSK_LIST_COLUMNS = array( 'serial', 'firewall', 'config_version', 'config_timestamp', 'location', 'ike_gateway',
-        'peer_address', 'local_address', 'ike_version', 'psk_status', 'psk_current', 'psk_sha1' );
-    /** the SHA-1 list: the columns of the PSK list without the clear text */
+        'peer_address', 'local_address', 'ike_version', 'psk_status', 'psk_current', 'psk_encrypted', 'psk_sha1' );
+    /** the SHA-1 list: the columns of the PSK list without the clear text and without the encrypted value (with the
+     *  default master key it is as good as the clear text) */
     const SHA1_LIST_COLUMNS = array( 'serial', 'firewall', 'config_version', 'config_timestamp', 'location', 'ike_gateway',
         'peer_address', 'local_address', 'ike_version', 'psk_status', 'psk_sha1' );
     const COMPARE_COLUMNS = array( 'ike_gateway', 'result', 'a_where', 'a_peer_address', 'a_psk_status', 'b_where', 'b_peer_address', 'b_psk_status' );
@@ -72,8 +73,9 @@ class IKEPSKList
     /**
      * the IKE gateways of a configuration
      * @return array of ['location', 'ike_gateway', 'peer_address', 'local_address', 'ike_version', 'psk_status',
-     *               'psk_current' (clear text, only when decrypted), 'psk_sha1' (base64 SHA-1 of the clear text, from the
-     *               encrypted value - also when it can not be decrypted), 'psk_prefix' (first 5 characters of the encrypted
+     *               'psk_current' (clear text, only when decrypted), 'psk_encrypted' (the whole value of the configuration,
+     *               e.g. "-AQ==…"), 'psk_sha1' (only the base64 SHA-1 of the clear text kept in the encrypted value: the 28
+     *               characters after "-AQ==" - also when it can not be decrypted; not the key), 'psk_prefix' (first 5 characters of the encrypted
      *               value: its format)]
      */
     public static function gateways( DOMXPath $xp, ?string $masterKey = null ): array
@@ -96,12 +98,14 @@ class IKEPSKList
 
             $row = array( 'location' => $at !== null ? $at->parentNode->nodeName . " " . $at->getAttribute('name') : '',
                 'ike_gateway' => $gw->getAttribute('name'), 'peer_address' => implode(" | ", $peer), 'local_address' => implode(" | ", $local),
-                'ike_version' => $ver !== null ? trim($ver->textContent) : '', 'psk_status' => self::PSK_NONE, 'psk_current' => '', 'psk_sha1' => '', 'psk_prefix' => '' );
+                'ike_version' => $ver !== null ? trim($ver->textContent) : '', 'psk_status' => self::PSK_NONE, 'psk_current' => '', 'psk_encrypted' => '', 'psk_sha1' => '', 'psk_prefix' => '' );
 
             $key = $xp->query("authentication/pre-shared-key/key", $gw)->item(0);
             if( $key !== null )
             {
                 $value = trim($key->textContent);
+                // the whole value as the configuration has it (SCM: as the API gave it)
+                $row['psk_encrypted'] = $value;
                 $row['psk_prefix'] = substr($value, 0, 5);
                 if( strpos($value, "-AQ==") !== 0 )
                     $row['psk_status'] = self::PSK_OTHER_FORMAT;
@@ -215,7 +219,7 @@ class IKEPSKList
             if( count($l) !== count($head) )
                 continue;
             $r = array_combine( $head, $l );
-            unset( $r['psk_current'] );
+            unset( $r['psk_current'], $r['psk_encrypted'] );
             $out[] = $r;
         }
         fclose( $fh );

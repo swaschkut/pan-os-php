@@ -116,6 +116,9 @@ $dir = sys_get_temp_dir() . '/ngfwpsk-' . getmypid();
 $file = $dir . '/psk-list.csv';
 $rows = IKEPSKList::writePSKList( $file, array( array( 'serial' => '007900000000001', 'firewall' => 'fw-1', 'config_version' => '3', 'config_timestamp' => '2026-11-20T10:00:00Z', 'gateways' => $gws ) ) );
 $csv = array_map( function( $l ) { return str_getcsv( $l, ',', '"', '' ); }, file( $file, FILE_IGNORE_NEW_LINES ) );
+$encA = ( new DOMXPath( $doc ) )->evaluate( "string(//gateway/entry[@name='gw-a']/authentication/pre-shared-key/key)" );
+$eq( array( $csv[1][11], strlen( $csv[1][11] ) > 40, substr( $csv[1][11], 0, 5 ), $csv[1][12] === substr( $encA, 5, 28 ), $by['gw-a']['psk_encrypted'] === $encA ),
+    array( $encA, TRUE, '-AQ==', TRUE, TRUE ), 'PSK list: psk_encrypted is the whole value of the configuration (not cut at "="), psk_sha1 only the SHA-1 part of it' );
 $eq( array( $rows, decoct( fileperms( $file ) & 0777 ), $csv[0], array_slice( $csv[1], 0, 10 ), $csv[1][10] ),
     array( 4, '600', IKEPSKList::PSK_LIST_COLUMNS, array( '007900000000001', 'fw-1', '3', '2026-11-20T10:00:00Z', '', 'gw-a', '203.0.113.10', 'ethernet1/1 | 198.51.100.1/24', 'ikev2', 'default-master-key' ), 'synthetic-psk-a' ),
     'writePSKList(): one row per gateway, chmod 600, clear text only in this file' );
@@ -140,8 +143,8 @@ list( $rcA, $oA ) = $cli( array( 'in=' . $dir . '/a.xml', 'psk-list=' . $dir . '
 $sha1 = (string)@file_get_contents( $dir . '/a-sha1.csv' );
 $eq( array( $rcA, strpos( $oA, 'gw-a (container Branches)' ) !== FALSE, strpos( $oA, 'synthetic' ), decoct( fileperms( $dir . '/.sensitive/a.csv' ) & 0777 ),
         strpos( (string)file_get_contents( $dir . '/.sensitive/a.csv' ), 'synthetic-psk-a' ) !== FALSE, strpos( $sha1, 'synthetic' ), strpos( $sha1, IKEPSKList::cleartextSha1( 'synthetic-psk-a' ) ) !== FALSE,
-        strpos( $sha1, 'psk_current' ) ),
-    array( 0, TRUE, FALSE, '600', TRUE, FALSE, TRUE, FALSE ),
+        strpos( $sha1, 'psk_current' ), strpos( $sha1, 'psk_encrypted' ), strpos( $sha1, '-AQ==' ), strpos( $oA, '-AQ==' ) ),
+    array( 0, TRUE, FALSE, '600', TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE ),
     'in=<file.xml>: gateways of an SCM folder (location), PSK list chmod 600 with clear text, SHA-1 list without, output without secret' );
 list( $rcB, $oB ) = $cli( array( 'in=' . $dir . '/b.xml', 'compare=' . $dir . '/a-sha1.csv', 'compare-out=' . $dir . '/cmp.csv' ) );
 list( $rcB2, $oB2 ) = $cli( array( 'in=' . $dir . '/b2.xml', 'compare=' . $dir . '/.sensitive/a.csv' ) );

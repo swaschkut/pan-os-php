@@ -28,7 +28,15 @@ pan-os-php type=scm-ngfw-psk-list in=scm-api://<TSG> serial=<s1>,<s2> [master-ke
 | `base=` | URL of the operations API; default: the probable ones are tried (the documentation gives only the paths) |
 
 PSK list columns: `serial, firewall, config_version, config_timestamp, location, ike_gateway, peer_address,
-local_address, ike_version, psk_status, psk_current, psk_sha1`.
+local_address, ike_version, psk_status, psk_current, psk_encrypted, psk_sha1`.
+
+* `psk_current`: the clear text (when it could be decrypted)
+* `psk_encrypted`: the whole value of the configuration, as it is (SCM: as the API gave it), e.g. `-AQ==…`
+* `psk_sha1`: **not the key** - only the SHA-1 of the clear text that PAN-OS keeps in an encrypted value of level 1
+  (the 28 characters after `-AQ==`, ending with `=`); the same for the same key with any master key
+
+The SHA-1 list (`sha1-list=`) has neither `psk_current` nor `psk_encrypted` (with the default master key the encrypted
+value is as good as the clear text).
 
 `psk_status`: `default-master-key` / `given-master-key` (clear text in `psk_current`), `not-decryptable`,
 `other-format` (e.g. master key encryption level 2 - not readable by pan-os-php), `no-psk` (e.g. certificate).

@@ -2014,7 +2014,7 @@ eq( array( array_column( $pkDone[1]['sensitive'] ?? array(), 'name' ), in_array(
         in_array( '.sensitive/psk-list-version.csv', array_column( $pkDone[1]['files'] ?? array(), 'name' ), TRUE ), $pkCarolView[1]['sensitive'] ?? null,
         $pkPerm ),
     array( array( 'psk-list-version.csv' ), TRUE, FALSE, array(), '600' ), 'PSK list: the clear text list a sensitive result (chmod 600, not a result file, not for read members), the SHA-1 list a result file' );
-eq( array( strpos( $pkLog, 'synthetic-' ), strpos( $pkSha1, 'synthetic-' ), strpos( $pkLog, 'gw-branch' ) !== FALSE, strpos( $pkLog, 'NOT decryptable' ) !== FALSE,
+eq( array( strpos( $pkLog, 'synthetic-' ), strpos( $pkSha1, 'synthetic-' ) || strpos( $pkSha1, '-AQ==' ), strpos( $pkLog, 'gw-branch' ) !== FALSE, strpos( $pkLog, 'NOT decryptable' ) !== FALSE,
         status( $pkTake ), strpos( json_encode( $pkTake ), 'synthetic-viewer-psk' ) !== FALSE, strpos( json_encode( $pkTake ), 'synthetic-other-psk' ), $pkTake2 ),
     array( FALSE, FALSE, TRUE, TRUE, 200, TRUE, FALSE, 404 ),
     'PSK list: run.log / SHA-1 list without a secret; the download holds the clear text that could be decrypted, once' );

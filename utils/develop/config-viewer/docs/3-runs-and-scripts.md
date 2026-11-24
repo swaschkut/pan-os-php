@@ -113,7 +113,8 @@ A run works on a copy of one version in its own folder and container (no network
 - `run.log`: per gateway its place, peer and whether the pre-shared key can be decrypted (PAN-OS default master
   key) - never a secret.
 - **Sensitive - download once**: `psk-list-version.csv` / `psk-list-firewalls.csv` - one row per gateway with the clear
-  text of the keys that could be decrypted. Only members with write permission see them; the download removes the file
+  text of the keys that could be decrypted (`psk_current`) and the whole encrypted value as the configuration has it
+  (`psk_encrypted`, e.g. `-AQ==…`; `psk_sha1` is only the SHA-1 kept in that value, not the key). Only members with write permission see them; the download removes the file
   on the server (a second download is not possible - start the run again); not downloaded: removed after 7 days
   (`PANOSPHP_VIEWER_SENSITIVE_DAYS`). The download is in the audit log, its content never.
 - Result files without clear text: `psk-sha1-version.csv` / `psk-sha1-firewalls.csv` (the SHA-1 of each key, as PAN-OS
