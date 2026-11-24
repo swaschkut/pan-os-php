@@ -2355,6 +2355,19 @@ const VIEWER_MENU = [
     ['Other', 'dns-rules', 'DNS Rules', 'dns-rule'],
 ];
 /** the entries the user can open: types of the meta (and of a limited access); every other type of the meta under "Other" */
+// the fields that name other objects: window kind -> field key -> kind of pan-os-php ObjectCandidates (the drop down
+// offers what the object can take: its location and the locations above it - vsys / device group / SCM folder, template)
+const FIELD_PICKS = {
+    addressgroup: { members: 'address', tag: 'tag' }, servicegroup: { members: 'service', tag: 'tag' }, address: { tag: 'tag' }, service: { tag: 'tag' },
+    rule: { from: 'zone', to: 'zone', source: 'address', destination: 'address', service: 'service', application: 'application', tag: 'tag',
+        category: 'url-category', schedule: 'schedule', profilegroup: 'securityprofilegroup', logsetting: 'log-profile' },
+    zone: { interfaces: 'interface', zpp: 'zone-protection-profile', log: 'log-profile' },
+    ikegateway: { ike1: 'ike-crypto-profile', ike2: 'ike-crypto-profile', lif: 'interface' },
+    ipsectunnel: { gw: 'ike-gateway', prof: 'ipsec-crypto-profile', tif: 'tunnel-interface' },
+    interface: { imp: 'interface-management-profile' }, routing: { if: 'interface' }, sroute: { if: 'interface' },
+    gre: { lif: 'interface', tif: 'tunnel-interface' }, vwire: { if1: 'interface', if2: 'interface' },
+    gpportal: { lif: 'interface' }, gpgateway: { lif: 'interface', tif: 'tunnel-interface' }, gptunnel: { lif: 'interface', tif: 'tunnel-interface' },
+};
 // several entries of one pan-os-php type (addresses / address groups, services / service groups): "classes" names the
 // PHP classes of an entry; an object of another class goes to the entry of the type without "classes"
 function viewerEntryFor(entries, type, ruletype, cls) {
@@ -2857,7 +2870,12 @@ async function showViewer(config, preset) {
             const bool = (key, label, action) => ({ key, label, kind: 'select', value: '', choices: ['', 'yes', 'no'], needs: [action],
                 note: 'the current value is not in the list of pan-os-php - choose to set it', act: (o, n) => n === '' ? '' : action + ':' + (n === 'yes' ? 'true' : 'false') });
             return [name, { key: 'type', label: 'Type', kind: 'ro', value: m.network ? Object.keys(m.network).join(', ') : (row.type || '') },
-                { key: 'interfaces', label: 'Interfaces', kind: 'ro', value: fmtTree(m.network) || fmtTree(row.interfaces) || '-' },
+                (() => {
+                    const zt = m.network && typeof m.network === 'object' ? Object.keys(m.network).find(k => ['layer3', 'layer2', 'virtual_wire', 'tap'].includes(k)) : null;
+                    return zt ? { key: 'interfaces', label: 'Interfaces', kind: 'list', value: Array.isArray(m.network[zt]) ? m.network[zt].map(String) : [], needs: ['interface-add'], needsRemove: ['interface-remove'],
+                        add: x => 'interface-add:' + actArg(x), remove: x => 'interface-remove:' + actArg(x), note: 'an interface of the zone type, imported into the vsys, in no other zone' }
+                        : { key: 'interfaces', label: 'Interfaces', kind: 'ro', value: fmtTree(m.network) || fmtTree(row.interfaces) || '-' };
+                })(),
                 { key: 'zpp', label: 'Zone protection profile', kind: 'text', value: row.zpp || '', needs: ['zpp-set'],
                     act: (o, n) => { if (n === '') throw new Error('removing it: no pan-os-php action yet'); return 'zpp-set:' + actArg(n); } },
                 { key: 'log', label: 'Log setting', kind: 'text', value: row.log || '', placeholder: 'empty = PAN-OS default', needs: ['logsetting-set'], act: (o, n) => 'logsetting-set:' + (n === '' ? 'none' : actArg(n)) },
@@ -3337,13 +3355,18 @@ async function showViewer(config, preset) {
             row.destinationnegated !== undefined ? { key: 'destinationnegated', label: 'Negate destination', kind: 'select', value: yesno(row.destinationnegated), choices: ['no', 'yes'], needs: ['dst-negate-set'], act: (o, n) => 'dst-negate-set:' + n } : null,
             list('application', 'Application', m.application, 'app'),
             m.service !== undefined || row.service !== undefined ? list('service', 'Service', m.service !== undefined ? m.service : row.service, 'service') : null,
-            m.category !== undefined || row.urlcategory !== undefined ? { key: 'category', label: 'URL category', kind: 'ro', value: listOf(m.category !== undefined ? m.category : row.urlcategory).join(', ').replace('**ANY**', 'any') || 'any', note: 'no pan-os-php action to change it yet' } : null,
+            m.category !== undefined || row.urlcategory !== undefined || ['security', 'decryption'].includes(ruletype.value) ? (() => {
+                const cats = listOf(m.category !== undefined ? m.category : (row.urlcategory || [])).map(x => x.replace('**ANY**', 'any'));
+                return { key: 'category', label: 'URL category', kind: 'list', value: cats.filter(x => x !== 'any'), any: cats.length === 0 || cats.includes('any'),
+                    needs: ['category-add'], needsRemove: ['category-remove'], add: x => 'category-add:' + actArg(x), remove: x => 'category-remove:' + actArg(x),
+                    buttons: [['category-set-any', 'set to any']], note: 'custom URL category, EDL (URL) or predefined category; the last one: set to any' };
+            })() : null,
             m.action !== undefined && sec ? { key: 'action', label: 'Action', kind: 'select', value: m.action, choices: ['allow', 'deny', 'drop', 'reset-client', 'reset-server', 'reset-both'], needs: ['action-set'], act: (o, n) => 'action-set:' + n }
                 : ( m.action !== undefined ? { key: 'action', label: 'Action', kind: 'ro', value: m.action } : null),
             sec ? { key: 'profilegroup', label: 'Profile group', kind: 'text', value: row.securityprofilegroup && row.securityprofilegroup !== 'null' ? row.securityprofilegroup : '', needs: ['securityprofile-group-set', 'securityprofile-remove'],
                 act: (o, n) => n === '' ? 'securityprofile-remove:any' : 'securityprofile-group-set:' + actArg(n) } : null,
             sec && row.securityprofile && row.securityprofile !== 'null' ? { key: 'profiles', label: 'Profiles', kind: 'ro', value: typeof row.securityprofile === 'string' ? row.securityprofile : fmtTree(row.securityprofile) } : null,
-            sec ? { key: 'logsetting', label: 'Log forwarding', kind: 'text', value: m.log_setting || '', needs: ['logsetting-set'], act: (o, n) => n === '' ? (() => { throw new Error('removing the log forwarding: no pan-os-php action yet'); })() : 'logsetting-set:' + actArg(n) } : null,
+            sec ? { key: 'logsetting', label: 'Log forwarding', kind: 'text', value: m.log_setting || '', needs: ['logsetting-set', 'logsetting-disable'], placeholder: 'empty = none', act: (o, n) => n === '' ? 'logsetting-disable' : 'logsetting-set:' + actArg(n) } : null,
             sec ? { key: 'logstart', label: 'Log at session start', kind: 'select', value: yesno(log.start), choices: ['no', 'yes'], needs: ['logstart-enable', 'logstart-disable'], act: (o, n) => n === 'yes' ? 'logstart-enable' : 'logstart-disable' } : null,
             sec ? { key: 'logend', label: 'Log at session end', kind: 'select', value: yesno(log.end), choices: ['no', 'yes'], needs: ['logend-enable', 'logend-disable'], act: (o, n) => n === 'yes' ? 'logend-enable' : 'logend-disable' } : null,
             sec ? { key: 'schedule', label: 'Schedule', kind: 'text', value: m.schedule || '', needs: ['schedule-set', 'schedule-remove'], act: (o, n) => n === '' ? 'schedule-remove' : 'schedule-set:' + actArg(n) } : null,
@@ -3514,6 +3537,25 @@ async function showViewer(config, preset) {
             } catch (e) { errors[f.key] = e.message; }
             render();
         }
+        // what a field can take (GET …/candidates): groups by location, nearest first - once per kind and window
+        const candCache = {};
+        function candidates(kind) {
+            if (!candCache[kind]) {
+                const q = new URLSearchParams({ type: cur.type, location: obj.row.location, name: obj.row.name, kind });
+                if (cur.type === 'rule') q.set('ruletype', ruletype.value);
+                if (cur.type === 'securityprofile') q.set('securityprofiletype', spTypeOf(obj.row));
+                for (const k of ['template', 'profile']) if (obj.row[k]) q.set(k, obj.row[k]);
+                candCache[kind] = api('GET', base() + '/candidates?' + q.toString()).then(r => r.groups || []).catch(() => null);
+            }
+            return candCache[kind];
+        }
+        // a text field that names an object: the candidates as suggestions (free text stays possible)
+        function pickList(f, input) {
+            const dl = el('datalist', { id: 'pick-' + f.key + '-' + Math.random().toString(36).slice(2) });
+            input.setAttribute('list', dl.id);
+            candidates(f.pick).then(gs => { if (gs) dl.append(...gs.flatMap(g => g.names.map(n => el('option', { value: n, label: g.location })))); });
+            return el('span', { class: 'pick' }, input, dl);
+        }
         async function listChange(f, actions) {
             delete errors[f.key];
             try { await apply(f, actions); obj = await fetchObject(obj.row.name, obj.row.location, obj.row.template, obj.row.profile, obj.row.type); } catch (e) { errors[f.key] = e.message; }
@@ -3533,7 +3575,7 @@ async function showViewer(config, preset) {
                 // applied when the field is left after a change (or Enter) - one action, no common OK
                 i.addEventListener('change', () => run(() => change(f, i.value.trim())));
                 i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
-                return i;
+                return f.pick ? pickList(f, i) : i;
             }
             if (f.kind === 'select') {
                 const sel = el('select', { 'aria-label': f.label }, (f.choices.includes(f.value) ? f.choices : [f.value, ...f.choices]).map(c => el('option', { value: c, text: c })));
@@ -3575,12 +3617,25 @@ async function showViewer(config, preset) {
             add.addEventListener('change', () => { const v = add.value.trim(); if (v) run(async () => { try { await listChange(f, f.add(v)); } catch (e) { errors[f.key] = e.message; render(); } }); });
             add.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); add.blur(); } });
             const extra = (f.buttons || []).filter(b => offered[b[0]]).map(b => el('button', { type: 'button', class: 'small', text: b[1], onclick: () => run(() => listChange(f, b[0])) }));
+            // the objects the field can take (own store, the locations above, template): a drop down by location - without the ones in the list
+            let pick = null;
+            if (f.pick) {
+                pick = el('select', { class: 'pick', 'aria-label': 'choose to add to ' + f.label }, el('option', { value: '', text: 'reading the list …' }));
+                candidates(f.pick).then(gs => {
+                    const have = new Set(f.value.map(String));
+                    const groups = (gs || []).map(g => ({ location: g.location, names: g.names.filter(n => !have.has(n)) })).filter(g => g.names.length);
+                    pick.replaceChildren(el('option', { value: '', text: gs === null ? '(no list - type the name)' : groups.length ? 'add from the list …' : 'nothing more to add' }),
+                        ...groups.map(g => el('optgroup', { label: g.location }, g.names.map(n => el('option', { value: n, text: n })))));
+                });
+                pick.addEventListener('change', () => { const v = pick.value; if (v) run(async () => { try { await listChange(f, f.add(v)); } catch (e) { errors[f.key] = e.message; render(); } }); });
+            }
             return el('div', { class: 'chips' }, f.any ? el('span', { class: 'chip any', text: 'any' }) : null, f.value.map(v => el('span', { class: 'chip' }, v,
                 canRemove ? el('button', { type: 'button', class: 'chipx', text: '✕', title: 'remove ' + v, 'aria-label': 'remove ' + v, onclick: () => run(async () => {
-                    try { await listChange(f, f.remove(v)); } catch (e) { errors[f.key] = e.message; render(); } }) }) : null)), add, extra);
+                    try { await listChange(f, f.remove(v)); } catch (e) { errors[f.key] = e.message; render(); } }) }) : null)), pick, add, extra);
         }
         function render() {
-            const fields = windowFields(cur.window, obj.row, obj.model);
+            const picks = FIELD_PICKS[cur.window] || {};
+            const fields = windowFields(cur.window, obj.row, obj.model).map(f => f && !f.pick && picks[f.key] ? Object.assign(f, { pick: picks[f.key] }) : f);
             box.replaceChildren(
                 el('div', { class: 'objhead' }, el('h3', { text: (cur.one || cur.label) + ': ' + obj.row.name }), obj.row.template ? el('span', { class: 'badge', text: 'template ' + obj.row.template }) : null, el('span', { class: 'badge', text: obj.row.location }),
                     el('button', { type: 'button', class: 'objclose', text: '✕', 'aria-label': 'close', onclick: close })),

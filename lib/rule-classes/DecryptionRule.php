@@ -467,6 +467,14 @@ class DecryptionRule extends RuleWithUserID
         return $this->_urlCategories;
     }
 
+    /** the category list after a change of $this->urlCategories (UrlCategoryRuleContainer::rewriteXML): from the XML */
+    public function syncUrlCategoriesFromContainer(): void
+    {
+        $this->_urlCategories = array();
+        foreach( $this->urlCategories->memberNames() as $name )
+            $this->_urlCategories[$name] = $name;
+    }
+
     public function urlCategoriescount()
     {
         return count($this->_urlCategories);

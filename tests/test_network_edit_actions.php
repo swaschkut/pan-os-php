@@ -20,7 +20,7 @@
 /**
  * The change actions of the network objects (IKE / IPsec, interfaces, profiles, routing, GRE, DHCP, virtual wire,
  * GlobalProtect):
- * XML, references, refused values - on a synthetic firewall configuration. pan-os-php type=… as on the command line.
+ * XML, references, refused values (SKIPPED with the reason) - on a synthetic firewall configuration. pan-os-php type=… as on the command line.
  *
  *   php tests/test_network_edit_actions.php
  */
@@ -112,7 +112,7 @@ foreach( array( 'ike-crypto-profile-set:nope,ikev2' => "IKE crypto profile 'nope
         'local-id-set:email,x' => 'unsupported value', 'version-set:ikev3' => 'unsupported value' ) as $a => $why )
 {
     list( $rc, $o ) = $cli( 'ike-gateway', $dir . '/in.xml', $dir . '/bad.xml', 'gw-1', $a );
-    $eq( array( $rc !== 0 || strpos( $o, 'ERROR' ) !== FALSE, strpos( $o, $why ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, TRUE, FALSE ), 'ike-gateway ' . $a . ': refused (' . $why . '), nothing written' );
+    $eq( array( strpos( $o, $why ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'ike-gateway ' . $a . ': refused (' . $why . ')' );
 }
 
 // ---- IKE crypto profile
@@ -123,7 +123,7 @@ $eq( array( $rc, $x( $dir . '/p.xml', $P . "/encryption/member" ), $x( $dir . '/
     array( 0, array( 'aes-256-gcm', 'aes-128-cbc' ), array( 'sha384' ), array( 'group19', 'group20' ), array( '1' ), 1, array( '3' ) ),
     'ike-profile: encryption / hash / DH groups as members, lifetime (one unit), authentication multiple' );
 list( $rc, $o ) = $cli( 'ike-profile', $dir . '/in.xml', $dir . '/bad.xml', 'ike-a', 'lifetime-set:seconds,60' );
-$eq( array( strpos( $o, 'seconds 180-65535' ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'ike-profile lifetime-set:seconds,60: refused (range)' );
+$eq( array( strpos( $o, 'seconds 180-65535' ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'ike-profile lifetime-set:seconds,60: refused (range)' );
 
 // ---- IPsec crypto profile
 $Q = "//ipsec-crypto-profiles/entry[@name='ipsec-b']";
@@ -148,7 +148,7 @@ $eq( array( $refs( $pan->network->ikeGatewayStore->findIKEGateway( 'gw-1' ) ), $
         $refs( $pan->network->ipsecCryptoProfileStore->findIpsecCryptoProfil( 'ipsec-a' ) ), $refs( $pan->network->ipsecCryptoProfileStore->findIpsecCryptoProfil( 'ipsec-b' ) ) ),
     array( array(), array( 'tun-1' ), array(), array( 'tun-1' ) ), 'ipsec-tunnel: references moved to the new gateway / profile' );
 list( $rc, $o ) = $cli( 'ipsec-tunnel', $dir . '/in.xml', $dir . '/bad.xml', 'tun-1', 'ike-gateway-set:gw-nope' );
-$eq( array( strpos( $o, "IKE gateway 'gw-nope' not found" ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'ipsec-tunnel ike-gateway-set: an unknown gateway is refused' );
+$eq( array( strpos( $o, "IKE gateway 'gw-nope' not found" ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'ipsec-tunnel ike-gateway-set: an unknown gateway is refused' );
 
 // ---- interfaces (ethernet layer3 / sub-interface / aggregate / tunnel), interface management profile, zone protection profile
 copy( $hereIn = __DIR__ . '/input/network-edit.xml', $dir . '/if.xml' );
@@ -176,7 +176,7 @@ foreach( array( array( 'ethernet1/2', 'mtu-set:1400', 'only a layer3 interface' 
         array( 'loopback.1', 'tag-set:5', 'only a sub-interface' ), array( 'tunnel.1', 'mtu-set:100', 'MTU: 576-9216' ), array( 'tunnel.1', 'ip-remove:10.9.9.9//32', 'is not set' ) ) as $t )
 {
     list( $rc, $o ) = $cli( 'interface', $dir . '/if.xml', $dir . '/bad.xml', $t[0], $t[1] );
-    $eq( array( strpos( $o, $t[2] ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'interface ' . $t[0] . ' ' . $t[1] . ': refused (' . $t[2] . ')' );
+    $eq( array( strpos( $o, $t[2] ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'interface ' . $t[0] . ' ' . $t[1] . ': refused (' . $t[2] . ')' );
 }
 $M = "//interface-management-profile/entry[@name='mgmt-a']";
 list( $rc, $o ) = $cli( 'interface-management-profile', $dir . '/if.xml', $dir . '/m.xml', 'mgmt-a', 'service-set:ssh,yes/service-set:ping,no/permitted-ip-add:10.0.0.0//8/permitted-ip-add:192.0.2.0//24/permitted-ip-remove:192.0.2.0//24' );
@@ -195,7 +195,7 @@ foreach( array( 'packet-set:discard-ip-spoof,maybe' => 'discard-ip-spoof: yes, n
         'flood-set:udp,yes,1,2,3,syn-cookies' => 'only for tcp-syn' ) as $a => $why )
 {
     list( $rc, $o ) = $cli( 'zone-protection-profile', $dir . '/if.xml', $dir . '/bad.xml', 'zpp-1', $a );
-    $eq( array( strpos( $o, $why ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'zone-protection-profile ' . $a . ': refused (' . $why . ')' );
+    $eq( array( strpos( $o, $why ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'zone-protection-profile ' . $a . ': refused (' . $why . ')' );
 }
 
 // ---- routing (virtual router, logical router), static routes, GRE tunnel, DHCP, virtual wire, GlobalProtect
@@ -219,7 +219,7 @@ foreach( array( array( 'routing', 'default', 'interface-add:ethernet9//9', 'not 
         array( 'static-route', 'r-default', 'nexthop-set:next-vr,nope', 'nope' ), array( 'routing', 'default', 'admin-distance-set:static,5', '10-240' ) ) as $t )
 {
     list( $rc, $o ) = $cli( $t[0], $in2, $dir . '/bad.xml', $t[1], $t[2] );
-    $eq( array( strpos( $o, $t[3] ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), $t[0] . ' ' . $t[2] . ': refused (' . $t[3] . ')' );
+    $eq( array( strpos( $o, $t[3] ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), $t[0] . ' ' . $t[2] . ': refused (' . $t[3] . ')' );
 }
 // logical router (advanced routing): the settings of vrf "default"
 file_put_contents( $dir . '/lr.xml', '<config version="11.1.0" urldb="paloaltonetworks"><mgt-config><users/></mgt-config><shared/><devices><entry name="localhost.localdomain">'
@@ -244,7 +244,7 @@ $eq( array( $refs( $pan->network->findInterface( 'tunnel.2' ) ) !== array(), $pa
 foreach( array( 'tunnel-interface-set:ethernet1//2' => 'not a tunnel interface', 'ttl-set:300' => 'TTL: 1-255', 'keep-alive-set:yes,99' => 'interval: 1-50' ) as $a => $why )
 {
     list( $rc, $o ) = $cli( 'gre-tunnel', $in2, $dir . '/bad.xml', 'gre-1', $a );
-    $eq( array( strpos( $o, $why ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'gre-tunnel ' . $a . ': refused (' . $why . ')' );
+    $eq( array( strpos( $o, $why ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'gre-tunnel ' . $a . ': refused (' . $why . ')' );
 }
 
 $D = "//network/dhcp/interface/entry[@name='ethernet1/2']/server";
@@ -262,7 +262,7 @@ foreach( array( array( 'ethernet1/2', 'relay-set:yes', 'not a relay' ), array( '
         array( 'ethernet1/2', 'reservation-add:10.2.1.9,zz', 'MAC' ) ) as $t )
 {
     list( $rc, $o ) = $cli( 'dhcp', $in2, $dir . '/bad.xml', $t[0], $t[1] );
-    $eq( array( strpos( $o, $t[2] ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'dhcp ' . $t[0] . ' ' . $t[1] . ': refused (' . $t[2] . ')' );
+    $eq( array( strpos( $o, $t[2] ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'dhcp ' . $t[0] . ' ' . $t[1] . ': refused (' . $t[2] . ')' );
 }
 
 $V = "//network/virtual-wire/entry[@name='vw-1']";
@@ -272,7 +272,7 @@ $eq( array( $rc, $x( $dir . '/v.xml', $V . "/interface2|" . $V . "/tag-allowed|"
 foreach( array( 'interface-set:1,ethernet1//1' => 'needs a virtual-wire interface', 'interface-set:1,ethernet1//4' => 'other side', 'tag-allowed-set:abc' => 'tag allowed' ) as $a => $why )
 {
     list( $rc, $o ) = $cli( 'virtualwire', $in2, $dir . '/bad.xml', '', $a );
-    $eq( array( strpos( $o, $why ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), 'virtualwire ' . $a . ': refused (' . $why . ')' );
+    $eq( array( strpos( $o, $why ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), 'virtualwire ' . $a . ': refused (' . $why . ')' );
 }
 
 $P = "//global-protect-portal/entry[@name='portal-1']/portal-config";
@@ -299,7 +299,7 @@ foreach( array( array( 'gp-portal', 'portal-1', 'ssl-tls-profile-set:nope', "'no
         array( 'gp-gateway', 'gw-1', 'client-ip-pool-add:cfg-x,10.1.0.0//24', "'cfg-x' not found" ), array( 'gp-portal', 'portal-1', 'local-interface-set:ethernet9//9', 'not an interface of vsys1' ) ) as $t )
 {
     list( $rc, $o ) = $cli( $t[0], $in2, $dir . '/bad.xml', $t[1], $t[2] );
-    $eq( array( strpos( $o, $t[3] ) !== FALSE, is_file( $dir . '/bad.xml' ) ), array( TRUE, FALSE ), $t[0] . ' ' . $t[2] . ': refused (' . $t[3] . ')' );
+    $eq( array( strpos( $o, $t[3] ) !== FALSE, ( strpos( $o, 'SKIPPED' ) !== FALSE || strpos( $o, 'ERROR' ) !== FALSE ) ), array( TRUE, TRUE ), $t[0] . ' ' . $t[2] . ': refused (' . $t[3] . ')' );
 }
 
 exec( 'rm -rf ' . escapeshellarg( $dir ) );

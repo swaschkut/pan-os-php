@@ -178,4 +178,36 @@ CallContext::registerAction( array( 'AddressCallContext', 'ServiceCallContext', 
         "Example: 'actions=description-set:web servers\$\$comma\$\$ DMZ'"
 ) );
 
+// ---- interfaces of a router / zone: the objects bring editInterfaceAdd / editInterfaceRemove (RouterObjectEdit,
+// Zone); a refused change is SKIPPED with the reason (CallContext::runEdit)
+
+CallContext::registerAction( array( 'RoutingCallContext', 'ZoneCallContext' ), array(
+    'name' => 'interface-add',
+    'MainFunction' => function (CallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            if( !method_exists( $o, 'editInterfaceAdd' ) )
+                throw new Exception( "this object has no interfaces to add" );
+            $o->editInterfaceAdd( $a['interface'] );
+            return "interface '" . trim( $a['interface'] ) . "' added";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*',
+        'help' => "an interface of the location or above it ('/' written as '//'); a zone: of its type, imported into its vsys, in no other zone; a router: in no other router" ) ),
+    'help' => "adds an interface to a virtual / logical router or a zone. Example: 'actions=interface-add:ethernet1//2'"
+) );
+
+CallContext::registerAction( array( 'RoutingCallContext', 'ZoneCallContext' ), array(
+    'name' => 'interface-remove',
+    'MainFunction' => function (CallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            if( !method_exists( $o, 'editInterfaceRemove' ) )
+                throw new Exception( "this object has no interfaces to remove" );
+            $o->editInterfaceRemove( $a['interface'] );
+            return "interface '" . trim( $a['interface'] ) . "' removed";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "removes an interface from a virtual / logical router or a zone. Example: 'actions=interface-remove:ethernet1//2'"
+) );
+
 // </editor-fold>

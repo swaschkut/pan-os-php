@@ -435,10 +435,10 @@ function viewerSetObjects( $set ): array
  * who uses the objects named $name of a type (in the location of $args): every object found, with its references -
  * the referencing object (type, rule type, location, name, pre / post) and the field (source, destination, member, …)
  */
-function viewerReferences( $type, array $args, $name, $profile = null )
+/** the objects of a read with this name (location / template / rule type as in $args) - references, candidates */
+function viewerFindObjects( $type, array $args, $name, $profile = null ): array
 {
     global $configFile;
-    // the run only selects the objects of the location (no object has this name, so nothing is shown)
     $argv = array_merge( array( 'config-viewer', 'in=' . $configFile, 'shadow-json' ), $args, array( 'actions=display', 'filter=(name eq config-viewer-load)' ) );
     PH::resetCliArgs( $argv );
     PH::$JSON_OUT = array();
@@ -455,10 +455,31 @@ function viewerReferences( $type, array $args, $name, $profile = null )
                 continue;
             if( $profile !== null && PH::jsonObjectKey( $o ) !== $profile . '/' . $name )
                 continue;
-            $refs = viewerUsers( $o );
-            $loc = PH::getLocationString( $o );
-            $out[] = array( 'location' => is_string( $loc ) ? $loc : null, 'class' => get_class( $o ), 'references' => $refs );
+            $out[] = $o;
         }
+    return $out;
+}
+
+/**
+ * what a field of an object can take (drop down of the page): ObjectCandidates of pan-os-php for the first object of
+ * this name - its location and the locations above it (vsys / device group / SCM folder hierarchy, template)
+ */
+function viewerCandidates( $type, array $args, $name, $profile, string $kind ): array
+{
+    $objects = viewerFindObjects( $type, $args, $name, $profile );
+    if( $objects === array() )
+        throw new Exception( 'object not found' );
+    return ObjectCandidates::forObject( $objects[0], $kind );
+}
+
+function viewerReferences( $type, array $args, $name, $profile = null )
+{
+    $out = array();
+    foreach( viewerFindObjects( $type, $args, $name, $profile ) as $o )
+    {
+        $loc = PH::getLocationString( $o );
+        $out[] = array( 'location' => is_string( $loc ) ? $loc : null, 'class' => get_class( $o ), 'references' => viewerUsers( $o ) );
+    }
     return $out;
 }
 
@@ -960,7 +981,7 @@ while( TRUE )
 
     if( $cmd['cmd'] === 'status' )
         viewerSend( $conn, array( 'ok' => TRUE, 'status' => viewerStatus() ) );
-    elseif( $cmd['cmd'] === 'references' )
+    elseif( $cmd['cmd'] === 'references' || $cmd['cmd'] === 'candidates' )
     {
         // in a child, like a read: whatever pan-os-php does on the way can not hurt the loaded configuration
         $name = isset( $cmd['name'] ) && is_string( $cmd['name'] ) ? $cmd['name'] : '';
@@ -977,11 +998,17 @@ while( TRUE )
                 while( ob_get_level() > 0 )
                     ob_end_clean();
                 if( !$sent )
-                    viewerSend( $conn, array( 'ok' => FALSE, 'error' => 'the references could not be read' ) );
+                    viewerSend( $conn, array( 'ok' => FALSE, 'error' => 'the ' . $cmd['cmd'] . ' could not be read' ) );
                 posix_kill( getmypid(), SIGKILL );
             } );
-            try { $r = array( 'ok' => TRUE, 'objects' => viewerReferences( $type, $args, $name, $profile ) ); }
-            catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => 'references: ' . $e->getMessage() ); }
+            try
+            {
+                if( $cmd['cmd'] === 'candidates' )
+                    $r = array( 'ok' => TRUE, 'groups' => viewerCandidates( $type, $args, $name, $profile, (string)( $cmd['kind'] ?? '' ) ) );
+                else
+                    $r = array( 'ok' => TRUE, 'objects' => viewerReferences( $type, $args, $name, $profile ) );
+            }
+            catch( Throwable $e ) { $r = array( 'ok' => FALSE, 'error' => $cmd['cmd'] . ': ' . $e->getMessage() ); }
             while( ob_get_level() > 0 )
                 ob_end_clean();
             viewerSend( $conn, $r );

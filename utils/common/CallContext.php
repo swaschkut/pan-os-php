@@ -338,7 +338,9 @@ class CallContext
         }
         catch( Exception $e )
         {
-            derr( $this->object->name() . ": " . $e->getMessage(), null, FALSE );
+            // refused: SKIPPED with the reason - a run over many objects goes on; the config viewer shows a SKIPPED
+            // that changed nothing as an error at the field
+            PH::ACTIONstatus( $this, "SKIPPED", $e->getMessage() );
             return;
         }
         if( is_string( $msg ) && $msg !== '' )

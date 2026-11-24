@@ -195,64 +195,60 @@ class UrlCategoryRuleContainer extends ObjRuleContainer
             }
 
 
-            //customURLcategory
-            $f = $this->parentCentralStore->find($node->textContent, $this);
+            // custom URL category, EDL, predefined category (findCategory)
+            $f = $this->findCategory( $node->textContent );
             if( $f !== null )
                 $this->o[] = $f;
-            else
-            {
-                //external-list
-                $f = $this->owner->owner->owner->EDLStore->find($node->textContent, $this);
-                if( $f !== null )
-                    $this->o[] = $f;
-                else
-                {
-                    //$all_Predefined = $this->owner->owner->owner->urlStore->getURLPredefinedStore($this->owner->owner->owner->urlStore);
-                    //$predefined_url_store = $this->owner->owner->owner->urlStore;
-                    //search in predefined URL
-                    #PH::print_stdout(get_class($this->owner->owner->owner->owner));
-                    #PH::print_stdout("search for: ".$node->textContent);
-                    if(  isset($this->owner->owner->owner->owner) && ( get_class($this->owner->owner->owner->owner) == "PanoramaConf" || get_class($this->owner->owner->owner->owner) == "PANConf" || get_class($this->owner->owner->owner->owner) == "FawkesConf" || get_class($this->owner->owner->owner->owner) == "BuckbeakConf" ) )
-                    {
-                        //Panorama->DeviceGroup->RuleStore
-                        $predefined_url_store = $this->owner->owner->owner->owner->urlStore;
-                    }
-                    elseif(  isset($this->owner->owner->owner) && ( get_class($this->owner->owner->owner) == "PanoramaConf" || get_class($this->owner->owner->owner) == "PANConf" || get_class($this->owner->owner->owner) == "FawkesConf" || get_class($this->owner->owner->owner) == "BuckbeakConf" ) )
-                    {
-                        //Panorama->RuleStore
-                        //shared
-                        $predefined_url_store = $this->owner->owner->owner->urlStore;
-                    }
-                    else
-                        $predefined_url_store = $this->owner->owner->owner->owner->owner->urlStore;
-
-                    if( count( $predefined_url_store->getAll() ) == 0 )
-                    {
-                        #PH::print_stdout("empty");
-                    }
-                    else
-                        #PH::print_stdout("count: ".count( $predefined_url_store->getAll()) );
-
-                    $all_Predefined = $predefined_url_store->getURLPredefinedStore($predefined_url_store);
-                    $f = $predefined_url_store->find($node->textContent, $this);
-                    if( $f !== null )
-                        $this->o[] = $f;
-                    else
-                    {
-                        //mwarning( "DG: ".$this->owner->owner->owner->name()." Rule: ".$this->owner->name()." UrlCategory has objects which are not referenced: '".$node->textContent."'", null, false );
-                    }
-
-                }
-            }
             $i++;
         }
     }
 
 
+    /**
+     * a URL category by name as a rule refers to it: custom URL category (this location or above), EDL, predefined
+     * category - null: not known to pan-os-php
+     * @return customURLProfile|EDL|PredefinedSecurityProfileURL|null
+     */
+    public function findCategory( string $name )
+    {
+        $f = $this->parentCentralStore->find( $name, $this );
+        if( $f !== null )
+            return $f;
+        if( isset( $this->owner->owner->owner->EDLStore ) )
+        {
+            $f = $this->owner->owner->owner->EDLStore->find( $name, $this );
+            if( $f !== null )
+                return $f;
+        }
+        $root = array( 'PanoramaConf', 'PANConf', 'FawkesConf', 'BuckbeakConf' );
+        if( isset( $this->owner->owner->owner->owner ) && in_array( get_class( $this->owner->owner->owner->owner ), $root, TRUE ) )
+            $predefined_url_store = $this->owner->owner->owner->owner->urlStore;      // Panorama -> DeviceGroup -> RuleStore
+        elseif( isset( $this->owner->owner->owner ) && in_array( get_class( $this->owner->owner->owner ), $root, TRUE ) )
+            $predefined_url_store = $this->owner->owner->owner->urlStore;             // shared
+        else
+            $predefined_url_store = $this->owner->owner->owner->owner->owner->urlStore;
+        $predefined_url_store->getURLPredefinedStore( $predefined_url_store );
+        return $predefined_url_store->find( $name, $this );
+    }
+
+    /** the member names in the XML (also the ones pan-os-php does not know) */
+    public function memberNames(): array
+    {
+        $out = array();
+        if( $this->xmlroot !== null )
+            foreach( $this->xmlroot->childNodes as $n )
+                if( $n->nodeType == XML_ELEMENT_NODE && $n->textContent !== 'any' )
+                    $out[] = $n->textContent;
+        return $out;
+    }
+
     public function rewriteXML()
     {
         //todo: fix it
         DH::Hosts_to_xmlDom($this->xmlroot, $this->o, 'member', TRUE);
+        // the rule keeps the names as a list too (urlCategories(), display, filters)
+        if( method_exists( $this->owner, 'syncUrlCategoriesFromContainer' ) )
+            $this->owner->syncUrlCategoriesFromContainer();
     }
 
 

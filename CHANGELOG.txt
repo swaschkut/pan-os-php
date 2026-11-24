@@ -2,6 +2,12 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* type=zone / routing | interface-add / interface-remove: one common action (actions-common.php) for zones (new: Zone::editInterfaceAdd / editInterfaceRemove - layer3 / layer2 / virtual-wire / tap; an interface of the zone type, imported into the vsys, in no other zone) and virtual / logical routers (now also: in no other router)
+* type=rule | new actions category-add / category-remove / category-set-any (URL category of security / decryption rules: custom URL category, EDL, predefined); refused when the rule has categories pan-os-php does not know (a change would drop them) or for the last one (use category-set-any)
+* actions | a change of the network edit actions (CallContext::runEdit) that is refused is SKIPPED with the reason (before: an error that stopped the run) - a run over many objects goes on
+* ObjectCandidates (new) | what an object can refer to: per kind (address, service, tag, schedule, application, url-category, security profile group, log profile, zone, interface, tunnel interface, IKE / IPsec crypto profile, IKE gateway, interface management / zone protection profile, virtual router) the names of the location and the locations above it (PH::firewallResolutionLevels / networkScope: vsys -> shared, device group -> parents -> shared, SCM folder -> snippets -> parents -> All, template; Panorama device group: zones of the templates; predefined applications / URL categories) - without what the action would refuse (the group itself / a group that holds it, wildcard address, interface of another zone / type / router)
+* config-viewer | object window: every field that names objects offers them as a drop down (lists: grouped by location, without the ones already in the list; text fields: suggestions) - GET …/candidates (ObjectCandidates); firewall, Panorama, SCM
+* config-viewer | zone window: interfaces can be added / removed; rule window: URL categories (add / remove / set to any), log forwarding can be removed (logsetting-disable)
 * type=address / service / rule / securityprofile | new common action description-set (replaces the description, empty: removed; aliases $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$)
 * type=address | new action value-set:<value>[,<type>] - value and type (ip-netmask IPv4 / IPv6, ip-range, ip-wildcard, fqdn) checked (Address::valueProblem); IPv6 with $$colon$$; not to ip-wildcard while a member of an address group
 * type=service | new actions protocol-set (tcp / udp) and dstport-set (ports / ranges separated by | ; or $$comma$$)
@@ -44,6 +50,7 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* rule | the URL categories kept by the rule (urlCategories(), display) were not updated after a change of the category container
 * description | setDescription converted every text from ISO-8859-1 to UTF-8: a description with umlauts written by an action or the config viewer became "PrÃ¼fung"; now only a text that is no UTF-8
 * Address::setType | the same type was never recognised (string compared with the type constant)
 * Service::setProtocol | the source port was written with the value of the destination port; the timeout override was lost in the XML (kept in the object) - now kept (udp: only timeout)

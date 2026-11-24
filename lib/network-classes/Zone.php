@@ -26,6 +26,7 @@ class Zone
     use ReferenceableObject;
     use PathableName;
     use XmlConvertible;
+    use NetworkObjectEdit;
 
     /** @var null|ZoneStore */
     public $owner = null;
@@ -141,6 +142,83 @@ class Zone
         return $ret;
     }
 
+
+    // ---- interface-add / interface-remove (common actions, actions-common.php - the same names as a router)
+
+    /** the network configuration of the zone's location: a vsys -> its firewall / template, else the location */
+    protected function editLookup( ?string $storeProperty, string $name, string $findMethod )
+    {
+        $loc = $this->owner->owner;
+        if( $loc instanceof VirtualSystem )
+            $loc = $loc->owner;
+        return PH::findInNetworkScope( $loc, $storeProperty, $name, $findMethod );
+    }
+
+    /** the zone type an interface fits: layer3 / layer2 / virtual-wire / tap; null: not known */
+    static public function interfaceZoneType( $if ): ?string
+    {
+        if( $if instanceof LoopbackInterface || $if instanceof TunnelInterface || $if instanceof VlanInterface )
+            return 'layer3';
+        if( method_exists( $if, 'type' ) && in_array( $if->type(), array( 'layer3', 'layer2', 'virtual-wire', 'tap' ), TRUE ) )
+            return $if->type();
+        return null;
+    }
+
+    /** the member names of the zone (network/<type>/member) */
+    public function interfaceNames(): array
+    {
+        if( !in_array( $this->type, array( 'layer3', 'layer2', 'virtual-wire', 'tap' ), TRUE ) )
+            return array();
+        return $this->editMembersOf( array( 'network', $this->type ) );
+    }
+
+    public function editInterfaceAdd( string $interface ): void
+    {
+        if( !in_array( $this->type, array( 'layer3', 'layer2', 'virtual-wire', 'tap' ), TRUE ) )
+            throw new Exception( "a zone of type " . $this->type . " has no interfaces to add (layer3, layer2, virtual-wire, tap)" );
+        $interface = self::editName( $interface, 'interface' );
+        $if = $this->editLookup( null, $interface, 'findInterface' );
+        if( !is_object( $if ) )
+            throw new Exception( "interface '" . $interface . "' not found in the location of the zone or above it" );
+        $fits = self::interfaceZoneType( $if );
+        if( $fits !== null && $fits !== $this->type )
+            throw new Exception( "interface " . $interface . " is " . $fits . " - the zone is " . $this->type );
+        $vsys = $this->owner->owner;
+        if( $vsys instanceof VirtualSystem && isset( $vsys->importedInterfaces ) && count( $vsys->importedInterfaces->interfaces() ) > 0
+            && !$vsys->importedInterfaces->hasInterfaceNamed( $interface ) )
+            throw new Exception( "interface " . $interface . " is not imported into " . $vsys->name() );
+        foreach( $this->owner->getAll() as $zone )
+            if( in_array( $interface, $zone->interfaceNames(), TRUE ) )
+                throw new Exception( "interface " . $interface . ( $zone === $this ? " is in this zone already" : " is in zone " . $zone->name() . " - an interface is in one zone" ) );
+
+        $node = DH::findFirstElementOrCreate( $this->type, DH::findFirstElementOrCreate( 'network', $this->xmlroot ) );
+        if( $this->attachedInterfaces !== null && in_array( $this->type, array( 'layer3', 'virtual-wire' ), TRUE ) )
+        {
+            // the container writes the member and keeps the reference
+            if( $this->attachedInterfaces->xmlroot === null )
+                $this->attachedInterfaces->xmlroot = $node;
+            $this->attachedInterfaces->addInterface( $if );
+        }
+        else
+            DH::createElement( $node, 'member', $interface );
+    }
+
+    public function editInterfaceRemove( string $interface ): void
+    {
+        $interface = trim( $interface );
+        if( !in_array( $interface, $this->interfaceNames(), TRUE ) )
+            throw new Exception( "interface " . $interface . " is not in the zone" );
+        if( $this->attachedInterfaces !== null )
+            foreach( $this->attachedInterfaces->interfaces() as $if )
+                if( $if->name() === $interface )
+                    $this->attachedInterfaces->removeInterface( $if );
+        // the XML (also layer2 / tap, and a member the container did not know)
+        $node = $this->editFind( array( 'network', $this->type ) );
+        if( $node !== FALSE )
+            foreach( iterator_to_array( $node->childNodes ) as $m )
+                if( $m->nodeType == XML_ELEMENT_NODE && $m->nodeName == 'member' && $m->textContent === $interface )
+                    $node->removeChild( $m );
+    }
 
     public function isTmp()
     {

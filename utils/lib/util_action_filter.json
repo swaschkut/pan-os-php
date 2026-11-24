@@ -7330,18 +7330,19 @@
                 }
             },
             "interface-add": {
-                "name": "interface-Add",
+                "name": "interface-add",
                 "MainFunction": {},
                 "args": {
                     "interface": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "an interface of the location or above it ('\/' written as '\/\/'); a zone: of its type, imported into its vsys, in no other zone; a router: in no other router"
                     }
                 },
-                "help": "add an interface to the virtual \/ logical router (it must exist)"
+                "help": "adds an interface to a virtual \/ logical router or a zone. Example: 'actions=interface-add:ethernet1\/\/2'"
             },
             "interface-remove": {
-                "name": "interface-Remove",
+                "name": "interface-remove",
                 "MainFunction": {},
                 "args": {
                     "interface": {
@@ -7349,7 +7350,7 @@
                         "default": "*nodefault*"
                     }
                 },
-                "help": "remove an interface from the router"
+                "help": "removes an interface from a virtual \/ logical router or a zone. Example: 'actions=interface-remove:ethernet1\/\/2'"
             },
             "static-route-add": {
                 "name": "static-route-Add",
@@ -7515,6 +7516,33 @@
                         "default": "-DST"
                     }
                 }
+            },
+            "category-add": {
+                "name": "category-add",
+                "MainFunction": {},
+                "args": {
+                    "category": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "adds a URL category (custom URL category, EDL of type URL, predefined category) to a security \/ decryption rule. Example: 'actions=category-add:social-networking'"
+            },
+            "category-remove": {
+                "name": "category-remove",
+                "MainFunction": {},
+                "args": {
+                    "category": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes a URL category of a security \/ decryption rule (not the last one - see category-set-any). Example: 'actions=category-remove:social-networking'"
+            },
+            "category-set-any": {
+                "name": "category-set-any",
+                "MainFunction": {},
+                "help": "sets the URL category of a security \/ decryption rule to any"
             },
             "clone": {
                 "name": "clone",
@@ -16556,6 +16584,29 @@
                         "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
                     }
                 }
+            },
+            "interface-add": {
+                "name": "interface-add",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "an interface of the location or above it ('\/' written as '\/\/'); a zone: of its type, imported into its vsys, in no other zone; a router: in no other router"
+                    }
+                },
+                "help": "adds an interface to a virtual \/ logical router or a zone. Example: 'actions=interface-add:ethernet1\/\/2'"
+            },
+            "interface-remove": {
+                "name": "interface-remove",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes an interface from a virtual \/ logical router or a zone. Example: 'actions=interface-remove:ethernet1\/\/2'"
             },
             "logsetting-set": {
                 "name": "logsetting-Set",

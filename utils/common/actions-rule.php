@@ -6910,6 +6910,108 @@ RuleCallContext::$supportedActions[] = Array(
 //                                                   //
 //                HIP Based Actions     //
 //                                                   //
+/** the URL categories of a security / decryption rule - null (SKIPPED) when the rule has none or pan-os-php does not
+ *  know all of them (a change would drop the unknown ones) */
+function ruleUrlCategories( RuleCallContext $context ): ?UrlCategoryRuleContainer
+{
+    $rule = $context->object;
+    if( !( $rule->isSecurityRule() || $rule->isDecryptionRule() ) || !isset( $rule->urlCategories ) || !( $rule->urlCategories instanceof UrlCategoryRuleContainer ) )
+    {
+        PH::ACTIONstatus( $context, "SKIPPED", "because only a security / decryption rule has URL categories" );
+        return null;
+    }
+    $c = $rule->urlCategories;
+    $known = array_map( function( $o ) { return $o->name(); }, $c->members() );
+    $unknown = array_values( array_diff( $c->memberNames(), $known ) );
+    if( $unknown !== array() )
+    {
+        PH::ACTIONstatus( $context, "SKIPPED", "because the rule has URL categories pan-os-php does not know (" . implode( ', ', $unknown ) . ") - a change would drop them" );
+        return null;
+    }
+    if( $c->xmlroot === null )
+        $c->xmlroot = DH::findFirstElementOrCreate( 'category', $rule->xmlroot );
+    return $c;
+}
+
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'category-add',
+    'MainFunction' => function (RuleCallContext $context) {
+        $c = ruleUrlCategories( $context );
+        if( $c === null )
+            return;
+        $name = trim( $context->arguments['category'] );
+        $cat = $c->findCategory( $name );
+        if( $cat === null )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because URL category '" . $name . "' not found (custom URL category of the location or above, EDL, predefined)" );
+            return;
+        }
+        if( $c->has( $cat ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because '" . $name . "' is a URL category of the rule already" );
+            return;
+        }
+        if( $context->isAPI )
+            $c->API_add( $cat );
+        else
+            $c->add( $cat );
+        PH::ACTIONlog( $context, "URL category '" . $name . "' added" );
+    },
+    'args' => array( 'category' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "adds a URL category (custom URL category, EDL of type URL, predefined category) to a security / decryption rule. Example: 'actions=category-add:social-networking'"
+);
+
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'category-remove',
+    'MainFunction' => function (RuleCallContext $context) {
+        $c = ruleUrlCategories( $context );
+        if( $c === null )
+            return;
+        $name = trim( $context->arguments['category'] );
+        $cat = null;
+        foreach( $c->members() as $m )
+            if( $m->name() === $name )
+                $cat = $m;
+        if( $cat === null )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because '" . $name . "' is not a URL category of the rule" );
+            return;
+        }
+        if( count( $c->members() ) === 1 )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because '" . $name . "' is the last URL category - the rule would match any category (use category-set-any)" );
+            return;
+        }
+        if( $context->isAPI )
+            $c->API_remove( $cat, TRUE, TRUE );
+        else
+            $c->remove( $cat, TRUE, TRUE );
+        PH::ACTIONlog( $context, "URL category '" . $name . "' removed" );
+    },
+    'args' => array( 'category' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "removes a URL category of a security / decryption rule (not the last one - see category-set-any). Example: 'actions=category-remove:social-networking'"
+);
+
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'category-set-any',
+    'MainFunction' => function (RuleCallContext $context) {
+        $c = ruleUrlCategories( $context );
+        if( $c === null )
+            return;
+        if( $c->isAny() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the URL category is any already" );
+            return;
+        }
+        if( $context->isAPI )
+            $c->API_setAny();
+        else
+            $c->setAny();
+        PH::ACTIONlog( $context, "URL category any" );
+    },
+    'help' => "sets the URL category of a security / decryption rule to any"
+);
+
 RuleCallContext::$supportedActions[] = array(
     'name' => 'hip-Set',
     'MainFunction' => function (RuleCallContext $context) {

@@ -361,6 +361,17 @@ eq( $bob->call( 'GET', $C . '/status' )[1]['dirty'] ?? null, FALSE, 'a failing a
 $r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq test-group2)', 'actions' => 'remove-member:shared-host2' ) );
 eq( array( status( $r ), strpos( json_encode( $r[1] ), 'last member' ) !== FALSE, $bob->call( 'GET', $C . '/status' )[1]['dirty'] ?? null ),
     array( 400, TRUE, FALSE ), 'a SKIPPED action is an error with its reason (remove-member: last member) and changes nothing' );
+// what a field can take (drop down): pan-os-php ObjectCandidates - the location of the object and the ones above it
+$r = $bob->call( 'GET', $C . '/candidates?type=address&location=testDG&name=grp-test-1&kind=address' );
+$cg = array(); foreach( $r[1]['groups'] ?? array() as $g ) $cg[$g['location']] = $g['names'];
+eq( array( status( $r ), array_keys( $cg ), in_array( 'test-addr1', $cg['testDG'] ?? array(), TRUE ), in_array( 'shared-host1', $cg['shared'] ?? array(), TRUE ) ),
+    array( 200, array( 'testDG', 'shared' ), TRUE, TRUE ), 'candidates: addresses for a group of a device group - the device group, then shared' );
+$r = $bob->call( 'GET', $C . '/candidates?type=rule&ruletype=security&location=testDG&name=' . rawurlencode( 'local dg' ) . '&kind=zone' );
+eq( array( status( $r ), count( $r[1]['groups'] ?? array() ) > 0 ), array( 200, TRUE ), 'candidates: zones for a rule of a device group (templates)' );
+eq( array( status( $bob->call( 'GET', $C . '/candidates?type=address&location=testDG&name=grp-test-1&kind=nope' ) ),
+        status( $bob->call( 'GET', $C . '/candidates?type=address&location=testDG&kind=address' ) ),
+        status( $bob->call( 'GET', $C . '/candidates?type=address&location=testDG&name=no-such-object&kind=address' ) ) ),
+    array( 400, 400, 400 ), 'candidates: unknown kind, no name, unknown object - 400' );
 $r = $bob->call( 'POST', $C . '/change', $change );
 eq( status( $r ), 200, 'bob (write) changes an object' );
 eq( $r[1]['status']['dirty'] ?? null, TRUE, 'unsaved change is reported' );

@@ -47,6 +47,10 @@ trait RouterObjectEdit
             throw new Exception( "interface '" . $interface . "' not found in the location of the router or above it" );
         if( $this->attachedInterfaces->hasInterfaceNamed( $interface ) )
             throw new Exception( "interface " . $interface . " is in the router already" );
+        if( isset( $this->owner ) && is_object( $this->owner ) && method_exists( $this->owner, 'getAll' ) )
+            foreach( $this->owner->getAll() as $other )
+                if( $other !== $this && isset( $other->attachedInterfaces ) && $other->attachedInterfaces->hasInterfaceNamed( $interface ) )
+                    throw new Exception( "interface " . $interface . " is in router " . $other->name() . " - an interface is in one router" );
         if( $this->attachedInterfaces->xmlroot === null )
             $this->attachedInterfaces->load_from_domxml( DH::findFirstElementOrCreate( 'interface', $this->routerBase() ) );
         if( !$this->attachedInterfaces->addInterface( $if ) )

@@ -621,6 +621,8 @@ try
                 viewerOut( $app->objects( $user, $pid, $cid, $_GET ) );
             if( $n == 5 && $method === 'GET' && $op === 'references' )
                 viewerOut( $app->references( $user, $pid, $cid, $_GET ) );
+            if( $n == 5 && $method === 'GET' && $op === 'candidates' )
+                viewerOut( $app->candidates( $user, $pid, $cid, $_GET ) );
             // the change list as a pan-os-php playbook (?source=unsaved / version)
             if( $n == 5 && $method === 'GET' && $op === 'playbook' )
                 viewerOut( $app->playbook( $user, $pid, $cid, (string)( $_GET['source'] ?? 'unsaved' ) ) );

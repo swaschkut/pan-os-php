@@ -5658,6 +5658,45 @@ class ViewerApp
     }
 
     /**
+     * What a field of an object can take (the drop down of the object window): GET …/configs/<cid>/candidates?type=
+     * &location=&name=&kind= (+ template / ruletype / securityprofiletype / profile as for a read). The names of that
+     * kind (address, service, tag, zone, interface, url-category, …) in the location of the object and the locations
+     * above it - pan-os-php ObjectCandidates, the levels pan-os-php resolves a name in. A member limited to locations
+     * gets only the groups of those locations.
+     */
+    public function candidates( array $user, $pid, $cid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        $name = $in['name'] ?? null;
+        if( !is_string( $name ) || $name === '' || strlen( $name ) > 300 || preg_match( '/[\x00-\x1F\x7F]/', $name ) )
+            throw new ViewerException( 'name: the name of the object', 400 );
+        $kind = $in['kind'] ?? null;
+        if( !is_string( $kind ) || !preg_match( '/^[a-z][a-z-]{1,40}$/', $kind ) )
+            throw new ViewerException( 'kind: e.g. address, service, tag, zone, interface, url-category', 400 );
+        $profile = $in['profile'] ?? '';
+        if( !is_string( $profile ) || strlen( $profile ) > 300 || preg_match( '/[\x00-\x1F\x7F]/', $profile ) )
+            throw new ViewerException( 'profile: the security profile of the rule', 400 );
+        $args = $this->queryArgs( array( 'filter' => '' ) + $in, $p );
+        $type = substr( array_shift( $args ), 5 );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'candidates', 'type' => $type, 'args' => $args, 'name' => $name,
+            'profile' => $profile, 'kind' => $kind ), 300 );
+        if( empty( $r['ok'] ) )
+            throw new ViewerException( is_string( $r['error'] ?? null ) ? $this->hidePaths( $r['error'] ) : 'the candidates could not be read', 400 );
+        $groups = array();
+        foreach( is_array( $r['groups'] ?? null ) ? $r['groups'] : array() as $g )
+        {
+            $loc = (string)( $g['location'] ?? '' );
+            // a member limited to locations: only those (the label without "template ", " / vsys…", " (used in rules)")
+            $base = preg_replace( '/^template | \/ .*$| \(used in rules\)$/', '', $loc );
+            if( $p['scope'] !== null && !in_array( $base, $p['scope'], TRUE ) && $loc !== 'predefined' )
+                continue;
+            $groups[] = array( 'location' => $loc, 'names' => array_values( array_filter( (array)( $g['names'] ?? array() ), 'is_string' ) ) );
+        }
+        return array( 'kind' => $kind, 'groups' => $groups );
+    }
+
+    /**
      * Who uses an object: GET …/configs/<cid>/references?type=&location=&name= (+ ruletype / securityprofiletype as for a
      * read). Every object of that name in the location, with the objects that reference it (type, location, name, rule
      * type / pre-post, fields). A member limited to types / locations sees only references inside them (the others are

@@ -1178,6 +1178,15 @@
             "bidirnat-split": {
                 "class": "change"
             },
+            "category-add": {
+                "class": "change"
+            },
+            "category-remove": {
+                "class": "change"
+            },
+            "category-set-any": {
+                "class": "change"
+            },
             "clone": {
                 "class": "change"
             },
@@ -2219,6 +2228,12 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "interface-add": {
+                "class": "change"
+            },
+            "interface-remove": {
+                "class": "change"
             },
             "logsetting-set": {
                 "class": "change"

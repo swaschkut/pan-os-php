@@ -236,29 +236,7 @@ RoutingCallContext::$supportedActions['display-route-table-fast'] = Array(
 
 // ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
 
-RoutingCallContext::$supportedActions['interface-add'] = array(
-    'name' => 'interface-Add',
-    'MainFunction' => function ( RoutingCallContext $context ) {
-        $context->runEdit( function ( $o, $a ) {
-            $o->editInterfaceAdd( $a['interface'] );
-            return "interface '" . $a['interface'] . "' added";
-        } );
-    },
-    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
-    'help' => 'add an interface to the virtual / logical router (it must exist)',
-);
-
-RoutingCallContext::$supportedActions['interface-remove'] = array(
-    'name' => 'interface-Remove',
-    'MainFunction' => function ( RoutingCallContext $context ) {
-        $context->runEdit( function ( $o, $a ) {
-            $o->editInterfaceRemove( $a['interface'] );
-            return "interface '" . $a['interface'] . "' removed";
-        } );
-    },
-    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
-    'help' => 'remove an interface from the router',
-);
+// interface-add / interface-remove: actions-common.php (router and zone - one definition)
 
 RoutingCallContext::$supportedActions['ecmp-set'] = array(
     'name' => 'ecmp-Set',

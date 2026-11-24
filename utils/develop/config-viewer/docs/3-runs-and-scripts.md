@@ -25,7 +25,12 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   `description-set:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, type and value of an address →
   `value-set:…` (also IPv6), protocol / destination port of a service → `protocol-set:…` / `dstport-set:…`, the name → `name-rename:…` (tags too), a member of an address / service group → `add-member:…` / ✕ `remove-member:…`, the color of a tag →
   `color-set:…`, its comments → `comments-delete/comments-add:…`. Under the field the action is shown (✓). A field
-  without a pan-os-php action for it is read only (and says why). An action that refuses the change (pan-os-php
+  without a pan-os-php action for it is read only (and says why). A field that names other objects (members, tags,
+  zones, addresses, services, applications, URL categories, interfaces, profiles, …) offers them as a drop down: the
+  objects of its own location and of the locations above it (vsys → shared; device group → parent device groups →
+  shared; SCM folder → its snippets → parent folders → All; template), grouped by location, without the ones it has
+  already and without the ones the action would refuse (the group itself, an interface of another zone, …); a rule of
+  a Panorama device group gets the zones of the templates. A name can still be typed. An action that refuses the change (pan-os-php
   SKIPPED, e.g. the last member of a group) leaves the version as it was and shows its reason at the field. Descriptions, tag comments and address values may contain `,` `:`
   `/` `|` (written as the pan-os-php aliases `$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`); in every other
   value `,` and `:` can not be used (they separate the arguments of an action).
