@@ -24,6 +24,7 @@ class VirtualWire
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     /** @var VirtualWireStore */
     public $owner;
@@ -86,6 +87,48 @@ class VirtualWire
      * @param string $name new name for the VirtualWire
      * @return bool
      */
+    // ---- changes of the actions (virtualwire …-set): XML and object together; an invalid value: Exception
+
+    /** interface 1 / 2: an interface of type virtual-wire (it must exist) */
+    public function editInterface( string $number, string $interface ): void
+    {
+        if( !in_array( trim( $number ), array( '1', '2' ), TRUE ) )
+            throw new Exception( "interface: 1 or 2" );
+        $interface = self::editName( $interface, 'interface' );
+        $if = $this->editLookup( null, $interface, 'findInterface' );
+        if( $if === null )
+            throw new Exception( "interface '" . $interface . "' not found" );
+        if( $if instanceof EthernetInterface && $if->type() !== 'virtual-wire' )
+            throw new Exception( "interface " . $interface . " is " . $if->type() . " - a virtual wire needs a virtual-wire interface" );
+        $other = trim( $number ) === '1' ? $this->attachedInterface2 : $this->attachedInterface1;
+        if( $other === $interface )
+            throw new Exception( "interface " . $interface . " is the other side of the virtual wire" );
+        $this->editText( array( 'interface' . trim( $number ) ), $interface );
+        $this->{'attachedInterface' . trim( $number )} = $interface;
+    }
+
+    /** allowed VLAN tags, e.g. 0, 10-20 (',' can not be used in an action argument: '|' or ';' instead); '' removes it */
+    public function editTagAllowed( string $tags ): void
+    {
+        $tags = str_replace( array( '|', ';' ), ',', trim( $tags ) );
+        if( $tags === '' )
+        {
+            $this->editRemove( array( 'tag-allowed' ) );
+            return;
+        }
+        if( !preg_match( '/^[0-9]{1,4}(-[0-9]{1,4})?(,[0-9]{1,4}(-[0-9]{1,4})?)*$/', str_replace( ' ', '', $tags ) ) )
+            throw new Exception( "tag allowed: tags / ranges 0-4094, e.g. 0|10-20" );
+        $this->editText( array( 'tag-allowed' ), str_replace( ' ', '', $tags ) );
+    }
+
+    /** multicast-firewalling, link-state-pass-through (…/enable) */
+    public function editFlag( string $flag, bool $enable ): void
+    {
+        if( !in_array( $flag, array( 'multicast-firewalling', 'link-state-pass-through' ), TRUE ) )
+            throw new Exception( "multicast-firewalling or link-state-pass-through" );
+        $this->editText( array( $flag, 'enable' ), self::editYesNo( $enable ) );
+    }
+
     public function setName($name)
     {
         if( $this->name == $name )

@@ -47,9 +47,20 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   hash, DH groups, key lifetime, authentication multiple. **IPsec crypto profiles**: ESP encryption / authentication,
   DH group, lifetime, lifesize. **IPsec tunnels**: IKE gateway, IPsec crypto profile, tunnel interface, proxy IDs (add:
   `name local remote`, ✕ remove), anti replay, copy TOS, tunnel monitor, disabled. A profile / gateway must exist in
-  the location or above it (template stack, SCM parent folder / snippet / All), else the change is refused. Every
-  other value of these objects - and every other network / device type - is shown read only (all values of the
-  object). Panorama: zones, interfaces, … of a template
+  the location or above it (template stack, SCM parent folder / snippet / All), else the change is refused.
+  **Interfaces** (layer3 ethernet / aggregate, sub-interface, loopback, tunnel, VLAN): comment, IPv4 addresses, MTU,
+  interface management profile, adjust TCP MSS, link state, VLAN tag - another mode is shown read only. **Interface
+  management profiles**: services, permitted IPs. **Zone protection profiles**: description, flood protection,
+  reconnaissance scans, packet based options. **Virtual / logical routers** (logical: vrf default): interfaces, ECMP,
+  administrative distance, add a static route. **Static routes**: destination, next hop, interface, metric,
+  administrative distance, route table. **GRE tunnels**: local interface / IP, peer, tunnel interface, TTL, copy TOS,
+  keep alive, disabled. **DHCP**: server (mode, IP pools, gateway, subnet mask, DNS, lease, reserved addresses) or
+  relay (on / off, servers). **Virtual wires**: interfaces, allowed tags, multicast firewalling, link state pass
+  through. **GlobalProtect portals / gateways**: local interface / IPv4, SSL/TLS service profile; gateway also tunnel
+  interface and the IP pool / access route lists of each client setting. **GlobalProtect gateway tunnels**: local
+  interface / IP, tunnel interface, disabled. IPv6 values can not be entered (":" separates the arguments of an
+  action); a change works on the version (offline), not through an API connection. Every other value of these
+  objects - and every other network / device type - is shown read only (all values of the object). Panorama: zones, interfaces, … of a template
   show the template (column and window); a change names it.
 - **Unsaved changes**: every change as one line - when, who, type, location, filter → action (and the field of the
   window). Nothing is written until **Save as new version**; **Discard changes** drops them all.

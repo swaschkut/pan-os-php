@@ -24,6 +24,7 @@ class LogicalRouter
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use RouterObjectEdit;
     use RouteZoneMapping;
 
     /** @var LogicalRouterStore */

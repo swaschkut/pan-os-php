@@ -49,3 +49,53 @@ GPGatewaytunnelCallContext::$supportedActions['display'] = Array(
     },
 
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+GPGatewaytunnelCallContext::$supportedActions['local-interface-set'] = array(
+    'name' => 'local-interface-Set',
+    'MainFunction' => function ( GPGatewaytunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLocalInterface( $a['interface'] );
+            return "local interface '" . $a['interface'] . "'";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'local interface (it must exist)',
+);
+
+GPGatewaytunnelCallContext::$supportedActions['local-ip-set'] = array(
+    'name' => 'local-ip-Set',
+    'MainFunction' => function ( GPGatewaytunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLocalIp( $a['ip'] );
+            return $a['ip'] === '' ? "local IP removed" : "local IP '" . $a['ip'] . "'";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'local IPv4 address; empty: removed',
+);
+
+GPGatewaytunnelCallContext::$supportedActions['tunnel-interface-set'] = array(
+    'name' => 'tunnel-interface-Set',
+    'MainFunction' => function ( GPGatewaytunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editTunnelInterface( $a['interface'] );
+            return "tunnel interface '" . $a['interface'] . "'";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'tunnel interface (it must exist)',
+);
+
+GPGatewaytunnelCallContext::$supportedActions['disabled-set'] = array(
+    'name' => 'disabled-Set',
+    'MainFunction' => function ( GPGatewaytunnelCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDisabled( $a['disabled'] );
+            return "disabled " . ( $a['disabled'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'disabled' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'disable the tunnel',
+);

@@ -784,3 +784,101 @@ InterfaceCallContext::$supportedActions['ethernet2aggregate'] = array(
         }
     }
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+InterfaceCallContext::$supportedActions['comment-set'] = array(
+    'name' => 'comment-Set',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editComment( $a['comment'] );
+            return $a['comment'] === '' ? "comment removed" : "comment '" . $a['comment'] . "'";
+        } );
+    },
+    'args' => array( 'comment' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'comment; empty: removed',
+);
+
+InterfaceCallContext::$supportedActions['ip-add'] = array(
+    'name' => 'ip-Add',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIpAdd( $a['ip'] );
+            return "IPv4 '" . $a['ip'] . "' added";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'IPv4 address with mask (e.g. 10.0.0.1//24 - // is a /) or an address object' ) ),
+    'help' => 'add an IPv4 address (layer3 / loopback / tunnel / VLAN / sub-interface)',
+);
+
+InterfaceCallContext::$supportedActions['ip-remove'] = array(
+    'name' => 'ip-Remove',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIpRemove( $a['ip'] );
+            return "IPv4 '" . $a['ip'] . "' removed";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove an IPv4 address',
+);
+
+InterfaceCallContext::$supportedActions['mtu-set'] = array(
+    'name' => 'mtu-Set',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editMtu( $a['mtu'] );
+            return $a['mtu'] === '' ? "MTU removed (default)" : "MTU " . $a['mtu'];
+        } );
+    },
+    'args' => array( 'mtu' => array( 'type' => 'string', 'default' => '', 'help' => '576-9216; empty: default' ) ),
+    'help' => 'MTU',
+);
+
+InterfaceCallContext::$supportedActions['interface-management-profile-set'] = array(
+    'name' => 'interface-management-profile-Set',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editManagementProfile( $a['profile'] );
+            return $a['profile'] === '' ? "interface management profile removed" : "interface management profile '" . $a['profile'] . "'";
+        } );
+    },
+    'args' => array( 'profile' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'interface management profile - must exist in the location or above it; empty: removed',
+);
+
+InterfaceCallContext::$supportedActions['adjust-tcp-mss-set'] = array(
+    'name' => 'adjust-tcp-mss-Set',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editAdjustTcpMss( $a['enable'] );
+            return "adjust TCP MSS " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'adjust TCP MSS',
+);
+
+InterfaceCallContext::$supportedActions['link-state-set'] = array(
+    'name' => 'link-state-Set',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLinkState( $a['state'] );
+            return "link state " . $a['state'];
+        } );
+    },
+    'args' => array( 'state' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'auto', 'up', 'down' ) ) ),
+    'help' => 'link state of an ethernet / aggregate interface',
+);
+
+InterfaceCallContext::$supportedActions['tag-set'] = array(
+    'name' => 'tag-Set',
+    'MainFunction' => function ( InterfaceCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editTag( $a['tag'] );
+            return "VLAN tag " . $a['tag'];
+        } );
+    },
+    'args' => array( 'tag' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => '1-4094' ) ),
+    'help' => 'VLAN tag of a sub-interface',
+);

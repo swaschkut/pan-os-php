@@ -2331,21 +2331,21 @@ const VIEWER_MENU = [
     ['Policies', 'rule-captiveportal', 'Captive Portal', 'rule', { ruletype: 'captiveportal', window: 'rule', one: 'Captive Portal rule' }],
     ['Policies', 'rule-defaultsecurity', 'Default Security Rules', 'rule', { ruletype: 'defaultsecurity', window: 'rule', one: 'Default Security Rules rule' }],
     ['Network', 'zones', 'Zones', 'zone', { window: 'zone', one: 'Zone' }],
-    ['Network', 'interfaces', 'Interfaces', 'interface'],
-    ['Network', 'virtual-wires', 'Virtual Wires', 'virtualwire'],
-    ['Network', 'routing', 'Virtual Routers / Routing', 'routing'],
-    ['Network', 'static-routes', 'Static Routes', 'static-route'],
+    ['Network', 'interfaces', 'Interfaces', 'interface', { window: 'interface', one: 'Interface' }],
+    ['Network', 'virtual-wires', 'Virtual Wires', 'virtualwire', { window: 'vwire', one: 'Virtual wire' }],
+    ['Network', 'routing', 'Virtual Routers / Routing', 'routing', { window: 'routing', one: 'Router' }],
+    ['Network', 'static-routes', 'Static Routes', 'static-route', { window: 'sroute', one: 'Static route' }],
     ['Network', 'ike-gateways', 'IKE Gateways', 'ike-gateway', { window: 'ikegateway', one: 'IKE gateway' }],
     ['Network', 'ipsec-tunnels', 'IPSec Tunnels', 'ipsec-tunnel', { window: 'ipsectunnel', one: 'IPsec tunnel' }],
-    ['Network', 'gre-tunnels', 'GRE Tunnels', 'gre-tunnel'],
-    ['Network', 'dhcp', 'DHCP', 'dhcp'],
-    ['Network', 'gp-portals', 'GlobalProtect Portals', 'gp-portal'],
-    ['Network', 'gp-gateways', 'GlobalProtect Gateways', 'gp-gateway'],
-    ['Network', 'gp-gateway-tunnels', 'GlobalProtect Gateway Tunnels', 'gpgateway-tunnel'],
+    ['Network', 'gre-tunnels', 'GRE Tunnels', 'gre-tunnel', { window: 'gre', one: 'GRE tunnel' }],
+    ['Network', 'dhcp', 'DHCP', 'dhcp', { window: 'dhcp', one: 'DHCP' }],
+    ['Network', 'gp-portals', 'GlobalProtect Portals', 'gp-portal', { window: 'gpportal', one: 'GlobalProtect portal' }],
+    ['Network', 'gp-gateways', 'GlobalProtect Gateways', 'gp-gateway', { window: 'gpgateway', one: 'GlobalProtect gateway' }],
+    ['Network', 'gp-gateway-tunnels', 'GlobalProtect Gateway Tunnels', 'gpgateway-tunnel', { window: 'gptunnel', one: 'GlobalProtect gateway tunnel' }],
     ['Network', 'ike-profiles', 'IKE Crypto Profiles', 'ike-profile', { window: 'ikeprofile', one: 'IKE crypto profile' }],
     ['Network', 'ipsec-profiles', 'IPSec Crypto Profiles', 'ipsec-profile', { window: 'ipsecprofile', one: 'IPsec crypto profile' }],
-    ['Network', 'interface-mgmt-profiles', 'Interface Management Profiles', 'interface-management-profile'],
-    ['Network', 'zone-protection-profiles', 'Zone Protection Profiles', 'zone-protection-profile'],
+    ['Network', 'interface-mgmt-profiles', 'Interface Management Profiles', 'interface-management-profile', { window: 'imp', one: 'Interface management profile' }],
+    ['Network', 'zone-protection-profiles', 'Zone Protection Profiles', 'zone-protection-profile', { window: 'zpp', one: 'Zone protection profile' }],
     ['Device', 'devices', 'Devices', 'device'],
     ['Device', 'certificates', 'Certificates', 'certificate'],
     ['Device', 'certificate-profiles', 'Certificate Profiles', 'certificate-profile'],
@@ -2839,7 +2839,7 @@ async function showViewer(config, preset) {
                 bool('userid', 'User identification', 'userid-enable'), bool('pbp', 'Packet buffer protection', 'packetbufferprotection-set'),
                 row.template ? { key: 'template', label: 'Template', kind: 'ro', value: row.template } : null, loc].filter(f => f);
         }
-        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel'].includes(kind)) return networkFields(kind, row, m, loc);
+        if (['ikegateway', 'ikeprofile', 'ipsecprofile', 'ipsectunnel', 'interface', 'imp', 'zpp', 'routing', 'sroute', 'gre', 'dhcp', 'vwire', 'gpportal', 'gpgateway', 'gptunnel'].includes(kind)) return networkFields(kind, row, m, loc);
         if (kind === 'generic') {
             // every other type: all its fields, read only - the list row and what the structured model adds
             const skip = ['name', 'location', 'template', 'refcount', 'store', 'model'];
@@ -2955,6 +2955,244 @@ async function showViewer(config, preset) {
                 amount('life', 'Lifetime', m.lifetime, 'lifetime-set', ['seconds', 'minutes', 'hours', 'days']),
                 amount('size', 'Lifesize', m.lifesize, 'lifesize-set', ['kb', 'mb', 'gb', 'tb'], true),
                 ...rest(['esp', 'dh_group', 'lifetime', 'lifesize']), loc];
+        if (kind === 'interface') {
+            // ethernet / aggregate: the layer3 settings below layer3 (another mode: read only); a sub-interface, loopback,
+            // tunnel, VLAN: below the entry
+            const eth = /^(Ethernet|AggregateEthernet)Interface$/.test(String(row.type || '')) || m.layer3 !== undefined || m.layer2 !== undefined || m.aggregate_group !== undefined;
+            const sub = eth && String(row.name).includes('.');
+            const main = eth && !sub;
+            const l3 = main ? m.layer3 : m;
+            const used = ['comment', 'link_state'].concat(main ? ['layer3'] : ['ip', 'mtu', 'interface_management_profile', 'adjust_tcp_mss', 'tag']);
+            const f = [nameRo, ro('class', 'Type', row.type || ''),
+                { key: 'comment', label: 'Comment', kind: 'text', value: m.comment || '', needs: ['comment-set'], act: (o, n) => n === '' ? 'comment-set' : 'comment-set:' + actArg(n) }];
+            if (main) f.push(sel('link', 'Link state', m.link_state || '', ['auto', 'up', 'down'], 'link-state-set'));
+            if (sub) f.push({ key: 'tag', label: 'VLAN tag', kind: 'text', value: m.tag !== undefined ? String(m.tag) : '', needs: ['tag-set'],
+                act: (o, n) => { if (!/^[0-9]+$/.test(n)) throw new Error('1-4094'); return 'tag-set:' + n; } });
+            if (l3 && typeof l3 === 'object')
+                f.push({ key: 'ip', label: 'IPv4 addresses', kind: 'list', value: (Array.isArray(l3.ip) ? l3.ip : []).map(x => x.name || String(x)), needs: ['ip-add'], needsRemove: ['ip-remove'],
+                        note: 'address with mask, e.g. 10.0.0.1/24 (or an address object)', add: x => 'ip-add:' + actArg(x), remove: x => 'ip-remove:' + actArg(x) },
+                    { key: 'mtu', label: 'MTU', kind: 'text', value: l3.mtu !== undefined ? String(l3.mtu) : '', placeholder: 'empty = default', needs: ['mtu-set'],
+                        act: (o, n) => { if (n !== '' && !/^[0-9]+$/.test(n)) throw new Error('576-9216'); return n === '' ? 'mtu-set' : 'mtu-set:' + n; } },
+                    { key: 'imp', label: 'Interface management profile', kind: 'text', value: l3.interface_management_profile || '', placeholder: 'empty = none', needs: ['interface-management-profile-set'],
+                        note: 'must exist here or above', act: (o, n) => n === '' ? 'interface-management-profile-set' : 'interface-management-profile-set:' + actArg(n) },
+                    flag('mss', 'Adjust TCP MSS', get(l3, 'adjust_tcp_mss', 'enable'), 'adjust-tcp-mss-set'));
+            else
+                f.push(ro('mode', 'Mode', Object.keys(m).filter(k => ['layer2', 'virtual_wire', 'tap', 'ha', 'aggregate_group', 'decrypt_mirror', 'log_card'].includes(k)).join(', '),
+                    'not layer3: IP, MTU, profile can not be set here'));
+            const extra = main && l3 && typeof l3 === 'object' ? Object.entries(l3).filter(([k]) => !['ip', 'mtu', 'interface_management_profile', 'adjust_tcp_mss'].includes(k))
+                .map(([k, v]) => ro('l3-' + k, 'layer3 ' + k, typeof v === 'object' && v !== null ? fmtTree(v) : String(v))) : [];
+            return [...f, ...extra, ...rest(used), loc];
+        }
+        if (kind === 'imp') {
+            const services = ['ping', 'telnet', 'ssh', 'http', 'https', 'snmp', 'response-pages', 'http-ocsp', 'userid-service', 'userid-syslog-listener-ssl', 'userid-syslog-listener-udp'];
+            const key = sv => sv.replace(/-/g, '_');
+            return [nameRo, ...services.map(sv => flag('svc-' + sv, sv, m[key(sv)], 'service-set', sv + ',')),
+                { key: 'pip', label: 'Permitted IP addresses', kind: 'list', value: (Array.isArray(m.permitted_ip) ? m.permitted_ip : []).map(x => x.name || String(x)), needs: ['permitted-ip-add'], needsRemove: ['permitted-ip-remove'],
+                    note: 'address / network, e.g. 10.0.0.0/8 - empty list: every address', add: x => 'permitted-ip-add:' + actArg(x), remove: x => 'permitted-ip-remove:' + actArg(x) },
+                ...rest(services.map(key).concat(['permitted_ip'])), loc];
+        }
+        if (kind === 'zpp') {
+            const fl = m.flood || {};
+            const flood = t => {
+                const v = fl[t.replace(/-/g, '_')] || {};
+                const mode = v.syn_cookies ? 'syn-cookies' : 'red';
+                const r = v.syn_cookies || v.red || {};
+                return { key: 'flood-' + t, label: 'Flood ' + t, kind: 'parts', needs: ['flood-set'],
+                    value: { enable: yn(v.enable) || 'no', alarm: r.alarm_rate !== undefined ? String(r.alarm_rate) : '', activate: r.activate_rate !== undefined ? String(r.activate_rate) : '',
+                        maximal: r.maximal_rate !== undefined ? String(r.maximal_rate) : '', mode },
+                    parts: [{ key: 'enable', kind: 'select', label: 'enabled', choices: [['no', 'no'], ['yes', 'yes']] }]
+                        .concat(t === 'tcp-syn' ? [{ key: 'mode', kind: 'select', label: 'action', choices: [['red', 'random early drop'], ['syn-cookies', 'SYN cookies']] }] : [])
+                        .concat([{ key: 'alarm', kind: 'text', label: 'alarm /s' }, { key: 'activate', kind: 'text', label: 'activate /s' }, { key: 'maximal', kind: 'text', label: 'maximal /s' }]),
+                    act: (o, x) => {
+                        for (const k of ['alarm', 'activate', 'maximal']) if (x[k] !== '' && !/^[0-9]+$/.test(x[k].trim())) return { hint: k + ': a number' };
+                        return 'flood-set:' + t + ',' + x.enable + ',' + x.alarm.trim() + ',' + x.activate.trim() + ',' + x.maximal.trim() + (t === 'tcp-syn' ? ',' + x.mode : '');
+                    } };
+            };
+            const scans = Array.isArray(m.scan) ? m.scan : [];
+            const scan = (nm, id) => {
+                const e = scans.find(x => String(x.name) === id) || {};
+                const act = e.action && typeof e.action === 'object' ? Object.keys(e.action)[0] || '' : '';
+                const bip = act && e.action[act] && typeof e.action[act] === 'object' ? e.action[act] : {};
+                return { key: 'scan-' + nm, label: 'Scan ' + nm, kind: 'parts', needs: ['scan-set'],
+                    value: { action: act.replace(/_/g, '-'), interval: e.interval !== undefined ? String(e.interval) : '', threshold: e.threshold !== undefined ? String(e.threshold) : '',
+                        track: (bip.track_by || '').replace(/_/g, '-'), duration: bip.duration !== undefined ? String(bip.duration) : '' },
+                    parts: [{ key: 'action', kind: 'select', label: 'action', choices: [['', '-'], ['allow', 'allow'], ['alert', 'alert'], ['block', 'block'], ['block-ip', 'block IP']] },
+                        { key: 'interval', kind: 'text', label: 'interval s', show: v => v.action !== '' }, { key: 'threshold', kind: 'text', label: 'threshold', show: v => v.action !== '' },
+                        { key: 'track', kind: 'select', label: 'track by', choices: [['source', 'source'], ['source-and-destination', 'source and destination']], show: v => v.action === 'block-ip' },
+                        { key: 'duration', kind: 'text', label: 'duration s', show: v => v.action === 'block-ip' }],
+                    act: (o, x) => {
+                        if (x.action === '') return '';
+                        if (x.action === 'block-ip' && !/^[0-9]+$/.test(x.duration.trim())) return { hint: 'block IP: duration in seconds' };
+                        return 'scan-set:' + nm + ',' + x.action + ',' + x.interval.trim() + ',' + x.threshold.trim() + (x.action === 'block-ip' ? ',' + (x.track || 'source') + ',' + x.duration.trim() : '');
+                    } };
+            };
+            const PACKET = ['discard-ip-spoof', 'discard-ip-frag', 'strict-ip-check', 'discard-strict-source-routing', 'discard-loose-source-routing', 'discard-timestamp',
+                'discard-record-route', 'discard-security', 'discard-stream-id', 'discard-unknown-option', 'discard-malformed-option', 'discard-overlapping-tcp-segment-mismatch',
+                'discard-tcp-split-handshake', 'discard-tcp-syn-with-data', 'discard-tcp-synack-with-data', 'tcp-reject-non-syn', 'asymmetric-path', 'remove-tcp-timestamp',
+                'strip-tcp-fast-open-and-data', 'strip-mptcp-option', 'discard-icmp-ping-zero-id', 'discard-icmp-frag', 'discard-icmp-large-packet', 'discard-icmp-error',
+                'suppress-icmp-timeexceeded', 'suppress-icmp-needfrag', 'routing-header-0', 'routing-header-1', 'routing-header-3', 'routing-header-4-252', 'routing-header-253',
+                'routing-header-254', 'routing-header-255', 'ipv4-compatible-address', 'options-invalid-ipv6-discard', 'reserved-field-set-discard', 'anycast-source',
+                'needless-fragment-hdr', 'icmpv6-too-big-small-mtu-discard', 'hop-by-hop-hdr', 'routing-hdr', 'dest-option-hdr', 'dest-unreach', 'pkt-too-big', 'time-exceeded',
+                'param-problem', 'redirect'];
+            return [nameRo,
+                { key: 'desc', label: 'Description', kind: 'text', value: m.description || '', needs: ['description-set'], act: (o, n) => n === '' ? 'description-set' : 'description-set:' + actArg(n) },
+                ...['tcp-syn', 'udp', 'icmp', 'icmpv6', 'other-ip'].map(flood),
+                scan('tcp-port-scan', '8001'), scan('host-sweep', '8002'), scan('udp-port-scan', '8003'),
+                { key: 'packet', label: 'Packet based protection', kind: 'parts', value: { option: '', value: 'yes' }, needs: ['packet-set'],
+                    note: 'set one option - the current values are listed below',
+                    parts: [{ key: 'option', kind: 'select', label: 'option', choices: [['', '- choose -']].concat(PACKET.map(x => [x, x])) },
+                        { key: 'value', kind: 'select', label: 'value', choices: [['yes', 'yes'], ['no', 'no'], ['global', 'global'], ['drop', 'drop'], ['bypass', 'bypass']] }],
+                    act: (o, x) => x.option === '' ? '' : 'packet-set:' + x.option + ',' + x.value },
+                ...rest(['description', 'flood', 'scan']), loc];
+        }
+        // a text field: empty removes the value (action without argument), else action:value
+        const opt = (key, label, value, action, note, check) => ({ key, label, kind: 'text', value: value === undefined || value === null ? '' : String(value), needs: [action], note,
+            placeholder: 'empty = none', act: (o, n) => { if (n !== '' && check && !check.test(n)) throw new Error(note || label); return n === '' ? action : action + ':' + actArg(n); } });
+        const req = (key, label, value, action, note, check) => ({ key, label, kind: 'text', value: value === undefined || value === null ? '' : String(value), needs: [action], note,
+            act: (o, n) => { if (n === '' || (check && !check.test(n))) throw new Error(note || label + ': a value is needed'); return action + ':' + actArg(n); } });
+        const members = v => (Array.isArray(v) ? v : words(v)).map(x => x && typeof x === 'object' ? x.name || fmtTree(x) : String(x));
+        const num = /^[0-9]+$/;
+        if (kind === 'routing') {
+            // a logical router keeps its settings in vrf "default"
+            const lr = Array.isArray(m.vrf);
+            const b = lr ? (m.vrf.find(v => String(v.name) === 'default') || {}) : m;
+            const routes = Array.isArray(get(b, 'routing_table', 'ip', 'static_route')) ? get(b, 'routing_table', 'ip', 'static_route') : [];
+            const ad = b.admin_dists && typeof b.admin_dists === 'object' ? b.admin_dists : {};
+            const DISTS = ['static', 'static-ipv6', 'ospf-int', 'ospf-ext', 'ospfv3-int', 'ospfv3-ext', 'ibgp', 'ebgp', 'rip'];
+            const hop = r => { const n = r.nexthop && typeof r.nexthop === 'object' ? Object.keys(r.nexthop)[0] || '' : ''; return n ? n.replace(/_/g, '-') + (typeof r.nexthop[n] === 'object' ? '' : ' ' + r.nexthop[n]) : 'none'; };
+            return [nameRo, ro('class', 'Type', lr ? 'logical router (advanced routing) - vrf default' : 'virtual router'),
+                { key: 'if', label: 'Interfaces', kind: 'list', value: members(b.interface), needs: ['interface-add'], needsRemove: ['interface-remove'],
+                    note: 'an interface of the location (it must exist)', add: x => 'interface-add:' + actArg(x), remove: x => 'interface-remove:' + actArg(x) },
+                flag('ecmp', 'ECMP', get(b, 'ecmp', 'enable'), 'ecmp-set'),
+                { key: 'ad', label: 'Administrative distance', kind: 'parts', value: { type: 'static', value: ad.static !== undefined ? String(ad.static) : '' }, needs: ['admin-distance-set'],
+                    note: 'current: ' + (Object.keys(ad).length ? Object.entries(ad).map(([k, v]) => k.replace(/_/g, '-') + ' ' + v).join(', ') : 'defaults') + ' - empty value: default',
+                    parts: [{ key: 'type', kind: 'select', label: 'protocol', choices: DISTS.map(x => [x, x]) }, { key: 'value', kind: 'text', label: '10-240' }],
+                    act: (o, v) => { if (v.value.trim() !== '' && !num.test(v.value.trim())) return { hint: '10-240' }; if (v.type === o.type && v.value === o.value) return '';
+                        if (v.type !== o.type && v.value === o.value && v.value !== '') return { hint: 'enter the distance for ' + v.type + ' (empty: default)' }; return 'admin-distance-set:' + v.type + (v.value.trim() !== '' ? ',' + v.value.trim() : ''); } },
+                ro('routes', 'Static routes', routes.map(r => r.name + ': ' + (r.destination || '') + ' → ' + hop(r) + (r.interface ? ' (' + r.interface + ')' : '')).join('\n'), 'change a route in Static Routes'),
+                { key: 'radd', label: 'Add a static route', kind: 'parts', value: { name: '', dest: '', type: 'ip-address', hop: '', iface: '', metric: '' }, needs: ['static-route-add'],
+                    parts: [{ key: 'name', kind: 'text', label: 'name' }, { key: 'dest', kind: 'text', label: 'destination (10.0.0.0/8)' },
+                        { key: 'type', kind: 'select', label: 'next hop', choices: [['ip-address', 'IP address'], ['next-vr', 'next VR'], ['discard', 'discard'], ['none', 'none']] },
+                        { key: 'hop', kind: 'text', label: 'next hop', show: v => v.type === 'ip-address' || v.type === 'next-vr' },
+                        { key: 'iface', kind: 'text', label: 'interface' }, { key: 'metric', kind: 'text', label: 'metric' }],
+                    act: (o, v) => {
+                        if (v.name.trim() === '' && v.dest.trim() === '') return '';
+                        if (v.name.trim() === '' || v.dest.trim() === '') return { hint: 'name and destination' };
+                        if ((v.type === 'ip-address' || v.type === 'next-vr') && v.hop.trim() === '') return { hint: 'enter the next hop' };
+                        if (v.metric.trim() !== '' && !num.test(v.metric.trim())) return { hint: 'metric: a number' };
+                        return 'static-route-add:' + [v.name, v.dest, v.type, v.hop, v.iface, v.metric].map(x => actArg(x.trim())).join(',');
+                    } },
+                ...rest(['interface', 'routing_table', 'ecmp', 'admin_dists', 'vrf']), loc];
+        }
+        if (kind === 'sroute') {
+            const nh = m.nexthop && typeof m.nexthop === 'object' ? Object.keys(m.nexthop)[0] || '' : '';
+            const rt = m.route_table && typeof m.route_table === 'object' ? (Object.keys(m.route_table)[0] || '').replace(/_/g, '-') : '';
+            return [nameRo,
+                req('dest', 'Destination', m.destination, 'destination-set', 'IPv4 network, e.g. 10.0.0.0/8, or an address object'),
+                { key: 'nh', label: 'Next hop', kind: 'parts', value: { type: nh ? nh.replace(/_/g, '-') : 'none', value: nh && typeof m.nexthop[nh] !== 'object' ? String(m.nexthop[nh]) : '' }, needs: ['nexthop-set'],
+                    parts: [{ key: 'type', kind: 'select', label: 'type', choices: [['ip-address', 'IP address'], ['next-vr', 'next VR'], ['discard', 'discard'], ['none', 'none']] },
+                        { key: 'value', kind: 'text', label: 'value', show: v => v.type === 'ip-address' || v.type === 'next-vr' }],
+                    act: (o, v) => { if ((v.type === 'ip-address' || v.type === 'next-vr') && v.value.trim() === '') return { hint: 'enter the next hop' };
+                        return 'nexthop-set:' + v.type + (v.type === 'ip-address' || v.type === 'next-vr' ? ',' + actArg(v.value.trim()) : ''); } },
+                opt('if', 'Interface', m.interface, 'interface-set', 'must exist'),
+                req('metric', 'Metric', m.metric, 'metric-set', '1-65535', num),
+                opt('ad', 'Administrative distance', m.admin_dist, 'admin-distance-set', '10-240 (empty: default of the router)', num),
+                sel('rt', 'Route table', rt, ['unicast', 'multicast', 'both', 'no-install'], 'route-table-set'),
+                ...rest(['destination', 'nexthop', 'interface', 'metric', 'admin_dist', 'route_table']), loc];
+        }
+        if (kind === 'gre') {
+            const ka = m.keep_alive || {};
+            return [nameRo,
+                req('lif', 'Local interface', get(m, 'local_address', 'interface'), 'local-interface-set', 'must exist'),
+                opt('lip', 'Local IP', get(m, 'local_address', 'ip'), 'local-ip-set', 'address with mask, e.g. 10.0.0.1/24, or an address object'),
+                req('peer', 'Peer address', get(m, 'peer_address', 'ip'), 'peer-address-set', 'IPv4 address or address object'),
+                req('tif', 'Tunnel interface', m.tunnel_interface, 'tunnel-interface-set', 'must exist'),
+                req('ttl', 'TTL', m.ttl, 'ttl-set', '1-255', num),
+                flag('tos', 'Copy TOS header', m.copy_tos, 'copy-tos-set'),
+                flag('dis', 'Disabled', m.disabled, 'disabled-set'),
+                { key: 'ka', label: 'Keep alive', kind: 'parts', needs: ['keep-alive-set'],
+                    value: { enable: yn(ka.enable) || 'no', interval: ka.interval !== undefined ? String(ka.interval) : '', retry: ka.retry !== undefined ? String(ka.retry) : '', hold: ka.hold_timer !== undefined ? String(ka.hold_timer) : '' },
+                    parts: [{ key: 'enable', kind: 'select', label: 'enabled', choices: [['no', 'no'], ['yes', 'yes']] },
+                        { key: 'interval', kind: 'text', label: 'interval s' }, { key: 'retry', kind: 'text', label: 'retry' }, { key: 'hold', kind: 'text', label: 'hold timer' }],
+                    act: (o, v) => { for (const k of ['interval', 'retry', 'hold']) if (v[k].trim() !== '' && !num.test(v[k].trim())) return { hint: k + ': a number' };
+                        return 'keep-alive-set:' + v.enable + ',' + v.interval.trim() + ',' + v.retry.trim() + ',' + v.hold.trim(); } },
+                ...rest(['local_address', 'peer_address', 'tunnel_interface', 'ttl', 'copy_tos', 'disabled', 'keep_alive']), loc];
+        }
+        if (kind === 'dhcp') {
+            if (m.relay) {
+                const r4 = get(m, 'relay', 'ip') || {};
+                return [nameRo, ro('class', 'Type', 'DHCP relay'),
+                    flag('relay', 'Relay (IPv4) enabled', r4.enabled, 'relay-set'),
+                    { key: 'rs', label: 'Relay servers', kind: 'list', value: members(r4.server), needs: ['relay-server-add'], needsRemove: ['relay-server-remove'],
+                        note: 'IPv4 address of a DHCP server', add: x => 'relay-server-add:' + actArg(x), remove: x => 'relay-server-remove:' + actArg(x) },
+                    ...rest(['relay']), loc];
+            }
+            const sv = m.server || {};
+            const op = sv.option || {};
+            const lease = op.lease && typeof op.lease === 'object' ? op.lease : {};
+            const res = Array.isArray(sv.reserved) ? sv.reserved : [];
+            return [nameRo, ro('class', 'Type', 'DHCP server'),
+                sel('mode', 'Mode', sv.mode || '', ['auto', 'enabled', 'disabled'], 'mode-set'),
+                { key: 'pool', label: 'IP pools', kind: 'list', value: members(sv.ip_pool), needs: ['ip-pool-add'], needsRemove: ['ip-pool-remove'],
+                    note: 'a range (10.0.0.10-10.0.0.99) or a network (10.0.0.0/24)', add: x => 'ip-pool-add:' + actArg(x), remove: x => 'ip-pool-remove:' + actArg(x) },
+                opt('gw', 'Gateway', op.gateway, 'gateway-set', 'IPv4 address'),
+                opt('mask', 'Subnet mask', op.subnet_mask, 'subnet-mask-set', 'e.g. 255.255.255.0'),
+                { key: 'dns', label: 'DNS servers', kind: 'parts', value: { p: get(op, 'dns', 'primary') || '', s: get(op, 'dns', 'secondary') || '' }, needs: ['dns-set'],
+                    parts: [{ key: 'p', kind: 'text', label: 'primary' }, { key: 's', kind: 'text', label: 'secondary' }],
+                    act: (o, v) => 'dns-set:' + actArg(v.p.trim()) + ',' + actArg(v.s.trim()) },
+                { key: 'lease', label: 'Lease', kind: 'parts', value: { type: lease.timeout !== undefined ? 'timeout' : (lease.unlimited !== undefined ? 'unlimited' : ''), min: lease.timeout !== undefined ? String(lease.timeout) : '' }, needs: ['lease-set'],
+                    parts: [{ key: 'type', kind: 'select', label: 'lease', choices: [['', '-'], ['unlimited', 'unlimited'], ['timeout', 'timeout']] }, { key: 'min', kind: 'text', label: 'minutes', show: v => v.type === 'timeout' }],
+                    act: (o, v) => { if (v.type === '') return ''; if (v.type === 'timeout' && !num.test(v.min.trim())) return { hint: 'minutes' }; return 'lease-set:' + v.type + (v.type === 'timeout' ? ',' + v.min.trim() : ''); } },
+                { key: 'res', label: 'Reserved addresses', kind: 'list', value: res.map(r => r.name + ' ' + (r.mac || '') + (r.description ? ' ' + r.description : '')), needs: ['reservation-add'], needsRemove: ['reservation-remove'],
+                    note: 'add: IP MAC [description], e.g. 10.0.0.50 00-11-22-33-44-55 printer',
+                    add: x => { const p = x.trim().split(/\s+/); if (p.length < 2) throw new Error('IP MAC [description]'); return 'reservation-add:' + actArg(p[0]) + ',' + actArg(p[1].replace(/:/g, '-')) + ',' + actArg(p.slice(2).join(' ')); },
+                    remove: x => 'reservation-remove:' + actArg(x.split(' ')[0]) },
+                ...rest(['server']), loc];
+        }
+        if (kind === 'vwire') {
+            const vwIf = (i, v) => ({ key: 'if' + i, label: 'Interface ' + i, kind: 'text', value: v || '', needs: ['interface-set'], note: 'a virtual-wire interface',
+                act: (o, n) => { if (n === '') throw new Error('an interface'); return 'interface-set:' + i + ',' + actArg(n); } });
+            return [nameRo,
+                vwIf(1, m.interface1), vwIf(2, m.interface2),
+                { key: 'tags', label: 'Tag allowed', kind: 'text', value: m.tag_allowed !== undefined ? String(m.tag_allowed) : '', needs: ['tag-allowed-set'], placeholder: 'empty = untagged only',
+                    note: 'tags / ranges, e.g. 0,10-20', act: (o, n) => { if (n !== '' && !/^[0-9]+(-[0-9]+)?([,|][0-9]+(-[0-9]+)?)*$/.test(n.replace(/\s/g, ''))) throw new Error('e.g. 0,10-20'); return n === '' ? 'tag-allowed-set' : 'tag-allowed-set:' + n.replace(/\s/g, '').replace(/,/g, '|'); } },
+                flag('mc', 'Multicast firewalling', get(m, 'multicast_firewalling', 'enable'), 'multicast-firewalling-set'),
+                flag('ls', 'Link state pass through', get(m, 'link_state_pass_through', 'enable'), 'link-state-pass-through-set'),
+                ...rest(['interface1', 'interface2', 'tag_allowed', 'multicast_firewalling', 'link_state_pass_through']), loc];
+        }
+        if (kind === 'gpportal' || kind === 'gpgateway') {
+            const b = kind === 'gpportal' ? (m.portal_config || {}) : m;
+            const la = b.local_address || {};
+            const f = [nameRo,
+                req('lif', 'Local interface', la.interface, 'local-interface-set', 'an interface of the vsys'),
+                opt('lip', 'Local IPv4 address', get(la, 'ip', 'ipv4'), 'local-ip-set', 'address with mask, or an address object'),
+                opt('ssl', 'SSL/TLS service profile', b.ssl_tls_service_profile, 'ssl-tls-profile-set', 'of the vsys or shared')];
+            if (kind === 'gpportal') {
+                const pcRest = Object.entries(b).filter(([k]) => !['local_address', 'ssl_tls_service_profile'].includes(k))
+                    .map(([k, v]) => ro('pc-' + k, 'portal ' + k, typeof v === 'object' && v !== null ? fmtTree(v) : String(v)));
+                return [...f, ...pcRest, ...rest(['portal_config']), loc];
+            }
+            f.push(req('tif', 'Tunnel interface', m.remote_user_tunnel, 'tunnel-interface-set', 'a tunnel interface of the vsys'));
+            const cfgs = Array.isArray(m.remote_user_tunnel_configs) ? m.remote_user_tunnel_configs : [];
+            for (const c of cfgs) {
+                const cn = String(c.name);
+                const lists = [['ip-pool', 'IP pool', c.ip_pool], ['access-route', 'access routes', get(c, 'split_tunneling', 'access_route')], ['exclude-access-route', 'excluded access routes', get(c, 'split_tunneling', 'exclude_access_route')]];
+                for (const [l, label, v] of lists)
+                    f.push({ key: 'c-' + cn + '-' + l, label: 'Client setting ' + cn + ': ' + label, kind: 'list', value: members(v), needs: ['client-' + l + '-add'], needsRemove: ['client-' + l + '-remove'],
+                        note: 'network (10.0.0.0/8), range or address object', add: x => 'client-' + l + '-add:' + actArg(cn) + ',' + actArg(x), remove: x => 'client-' + l + '-remove:' + actArg(cn) + ',' + actArg(x) });
+                const other = Object.entries(c).filter(([k]) => !['name', 'ip_pool', 'split_tunneling'].includes(k)).concat(Object.entries(c.split_tunneling || {}).filter(([k]) => !['access_route', 'exclude_access_route'].includes(k)));
+                if (other.length) f.push(ro('c-' + cn + '-rest', 'Client setting ' + cn + ': other', other.map(([k, v]) => k + ': ' + (typeof v === 'object' && v !== null ? fmtTree(v) : String(v))).join('\n')));
+            }
+            return [...f, ...rest(['local_address', 'ssl_tls_service_profile', 'remote_user_tunnel', 'remote_user_tunnel_configs']), loc];
+        }
+        if (kind === 'gptunnel') {
+            return [nameRo,
+                req('lif', 'Local interface', get(m, 'local_address', 'interface'), 'local-interface-set', 'must exist'),
+                opt('lip', 'Local IPv4 address', get(m, 'local_address', 'ip', 'ipv4'), 'local-ip-set', 'address with mask, or an address object'),
+                req('tif', 'Tunnel interface', m.tunnel_interface, 'tunnel-interface-set', 'must exist'),
+                flag('dis', 'Disabled', m.disabled, 'disabled-set'),
+                ...rest(['local_address', 'tunnel_interface', 'disabled']), loc];
+        }
         // IPsec tunnel
         const ak = m.auto_key || {};
         const proxies = Array.isArray(ak.proxy_id) ? ak.proxy_id : [];

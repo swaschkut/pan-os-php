@@ -233,3 +233,65 @@ RoutingCallContext::$supportedActions['display-route-table-fast'] = Array(
         echo $line;
     },
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+RoutingCallContext::$supportedActions['interface-add'] = array(
+    'name' => 'interface-Add',
+    'MainFunction' => function ( RoutingCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editInterfaceAdd( $a['interface'] );
+            return "interface '" . $a['interface'] . "' added";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'add an interface to the virtual / logical router (it must exist)',
+);
+
+RoutingCallContext::$supportedActions['interface-remove'] = array(
+    'name' => 'interface-Remove',
+    'MainFunction' => function ( RoutingCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editInterfaceRemove( $a['interface'] );
+            return "interface '" . $a['interface'] . "' removed";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove an interface from the router',
+);
+
+RoutingCallContext::$supportedActions['ecmp-set'] = array(
+    'name' => 'ecmp-Set',
+    'MainFunction' => function ( RoutingCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editEcmp( $a['enable'] );
+            return "ECMP " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'ECMP',
+);
+
+RoutingCallContext::$supportedActions['admin-distance-set'] = array(
+    'name' => 'admin-distance-Set',
+    'MainFunction' => function ( RoutingCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editAdminDistance( $a['type'], $a['value'] );
+            return "administrative distance " . $a['type'] . " " . ( $a['value'] === '' ? 'default' : $a['value'] );
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'static', 'static-ipv6', 'ospf-int', 'ospf-ext', 'ospfv3-int', 'ospfv3-ext', 'ibgp', 'ebgp', 'rip' ) ), 'value' => array( 'type' => 'string', 'default' => '', 'help' => '10-240; empty: default' ) ),
+    'help' => 'administrative distance of a route type',
+);
+
+RoutingCallContext::$supportedActions['static-route-add'] = array(
+    'name' => 'static-route-Add',
+    'MainFunction' => function ( RoutingCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $r = $o->editStaticRouteAdd( $a['name'], $a['destination'], $a['nexthop-type'], $a['nexthop'], $a['interface'], $a['metric'] );
+            return "static route '" . $r->name() . "' " . $a['destination'] . " added";
+        } );
+    },
+    'args' => array( 'name' => array( 'type' => 'string', 'default' => '*nodefault*' ), 'destination' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'IPv4 network (e.g. 10.0.0.0//8 - // is a /) or address object' ), 'nexthop-type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'ip-address', 'next-vr', 'discard', 'none' ) ), 'nexthop' => array( 'type' => 'string', 'default' => '' ), 'interface' => array( 'type' => 'string', 'default' => '' ), 'metric' => array( 'type' => 'string', 'default' => '', 'help' => '1-65535; empty: 10' ) ),
+    'help' => 'add an IPv4 static route',
+);

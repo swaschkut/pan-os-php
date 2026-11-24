@@ -450,3 +450,53 @@ ZoneProtectionProfileCallContext::$supportedActions['alert-only-set'] = array(
 
     }
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+ZoneProtectionProfileCallContext::$supportedActions['description-set'] = array(
+    'name' => 'description-Set',
+    'MainFunction' => function ( ZoneProtectionProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDescription( $a['description'] );
+            return $a['description'] === '' ? "description removed" : "description '" . $a['description'] . "'";
+        } );
+    },
+    'args' => array( 'description' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'description; empty: removed',
+);
+
+ZoneProtectionProfileCallContext::$supportedActions['flood-set'] = array(
+    'name' => 'flood-Set',
+    'MainFunction' => function ( ZoneProtectionProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editFlood( $a['type'], $a['enable'], $a['alarm-rate'], $a['activate-rate'], $a['maximal-rate'], $a['syn-action'] );
+            return "flood " . $a['type'] . " " . ( $a['enable'] ? 'yes' : 'no' ) . ( $a['alarm-rate'] . $a['activate-rate'] . $a['maximal-rate'] !== '' ? " (alarm " . $a['alarm-rate'] . ", activate " . $a['activate-rate'] . ", maximal " . $a['maximal-rate'] . ")" : "" ) . ( $a['syn-action'] !== '' ? " " . $a['syn-action'] : "" );
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'tcp-syn', 'udp', 'icmp', 'icmpv6', 'other-ip' ) ), 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ), 'alarm-rate' => array( 'type' => 'string', 'default' => '', 'help' => 'connections / s; empty: kept' ), 'activate-rate' => array( 'type' => 'string', 'default' => '', 'help' => 'connections / s; empty: kept' ), 'maximal-rate' => array( 'type' => 'string', 'default' => '', 'help' => 'connections / s; empty: kept' ), 'syn-action' => array( 'type' => 'string', 'default' => '', 'choices' => array( '', 'red', 'syn-cookies' ) ) ),
+    'help' => 'flood protection of a type',
+);
+
+ZoneProtectionProfileCallContext::$supportedActions['scan-set'] = array(
+    'name' => 'scan-Set',
+    'MainFunction' => function ( ZoneProtectionProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editScan( $a['scan'], $a['action'], $a['interval'], $a['threshold'], $a['track-by'], $a['duration'] );
+            return "scan " . $a['scan'] . " " . $a['action'];
+        } );
+    },
+    'args' => array( 'scan' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'tcp-port-scan', 'host-sweep', 'udp-port-scan' ) ), 'action' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'allow', 'alert', 'block', 'block-ip' ) ), 'interval' => array( 'type' => 'string', 'default' => '', 'help' => 'seconds 2-65535; empty: kept' ), 'threshold' => array( 'type' => 'string', 'default' => '', 'help' => 'events 2-65535; empty: kept' ), 'track-by' => array( 'type' => 'string', 'default' => '', 'choices' => array( '', 'source', 'source-and-destination' ) ), 'duration' => array( 'type' => 'string', 'default' => '', 'help' => 'block-ip: seconds 1-3600' ) ),
+    'help' => 'reconnaissance protection of a scan',
+);
+
+ZoneProtectionProfileCallContext::$supportedActions['packet-set'] = array(
+    'name' => 'packet-Set',
+    'MainFunction' => function ( ZoneProtectionProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editPacket( $a['option'], $a['value'] );
+            return $a['option'] . " " . $a['value'];
+        } );
+    },
+    'args' => array( 'option' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'a packet based protection, e.g. discard-ip-spoof, strict-ip-check, discard-tcp-split-handshake, routing-header-0' ), 'value' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'yes / no (tcp-reject-non-syn: global / yes / no; asymmetric-path: global / drop / bypass)' ) ),
+    'help' => 'packet based attack protection',
+);

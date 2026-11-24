@@ -28,6 +28,7 @@ class InterfaceManagementProfile
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     public $owner;
 
@@ -146,6 +147,56 @@ class InterfaceManagementProfile
         return TRUE;
     }
 
+
+    // ---- changes of the actions (interface-management-profile …): XML and object together; an invalid value: Exception
+
+    /** the services a profile can allow */
+    const SERVICES = array( 'ping', 'telnet', 'ssh', 'http', 'https', 'snmp', 'response-pages', 'http-ocsp', 'userid-service',
+        'userid-syslog-listener-ssl', 'userid-syslog-listener-udp' );
+
+    public function editService( string $service, bool $enable ): void
+    {
+        $service = strtolower( trim( $service ) );
+        if( !in_array( $service, self::SERVICES, TRUE ) )
+            throw new Exception( "service: one of " . implode( ', ', self::SERVICES ) );
+        $this->editText( array( $service ), self::editYesNo( $enable ) );
+        // as the load keeps them: service => yes / no
+        if( is_array( $this->enabledServices ) )
+            $this->enabledServices[$service] = self::editYesNo( $enable );
+    }
+
+    /** a permitted IP (address / network) */
+    public function editPermittedIpAdd( string $ip ): void
+    {
+        $ip = trim( $ip );
+        if( $ip === '' || strlen( $ip ) > 255 || preg_match( '/[\s<>]/', $ip ) )
+            throw new Exception( "permitted IP: an address / network (or an address object)" );
+        $node = $this->editNode( array( 'permitted-ip' ) );
+        foreach( $node->childNodes as $c )
+            if( $c instanceof DOMElement && $c->getAttribute( 'name' ) === $ip )
+                throw new Exception( "permitted IP " . $ip . " is set already" );
+        $e = $node->ownerDocument->createElement( 'entry' );
+        $e->setAttribute( 'name', $ip );
+        $node->appendChild( $e );
+        $this->permittedIPs[] = $ip;
+    }
+
+    public function editPermittedIpRemove( string $ip ): void
+    {
+        $ip = trim( $ip );
+        $node = $this->editFind( array( 'permitted-ip' ) );
+        if( $node !== FALSE )
+            foreach( $node->childNodes as $c )
+                if( $c instanceof DOMElement && $c->getAttribute( 'name' ) === $ip )
+                {
+                    $node->removeChild( $c );
+                    if( !$node->hasChildNodes() )
+                        $node->parentNode->removeChild( $node );
+                    $this->permittedIPs = array_values( array_filter( $this->permittedIPs, function( $x ) use ( $ip ) { return $x !== $ip; } ) );
+                    return;
+                }
+        throw new Exception( "permitted IP " . $ip . " is not set" );
+    }
 
     public function isInterfaceManagementProfileType()
     {

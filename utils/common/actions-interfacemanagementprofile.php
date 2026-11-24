@@ -180,3 +180,41 @@ InterfaceManagementProfileCallContext::$supportedActions[] = array(
     )
 );
 InterfaceManagementProfileCallContext::$supportedActions[] = array_merge(InterfaceManagementProfileCallContext::$supportedActions[array_key_last(InterfaceManagementProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+InterfaceManagementProfileCallContext::$supportedActions['service-set'] = array(
+    'name' => 'service-Set',
+    'MainFunction' => function ( InterfaceManagementProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editService( $a['service'], $a['enable'] );
+            return $a['service'] . " " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'service' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'ping', 'telnet', 'ssh', 'http', 'https', 'snmp', 'response-pages', 'http-ocsp', 'userid-service', 'userid-syslog-listener-ssl', 'userid-syslog-listener-udp' ) ), 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'allow a service',
+);
+
+InterfaceManagementProfileCallContext::$supportedActions['permitted-ip-add'] = array(
+    'name' => 'permitted-ip-Add',
+    'MainFunction' => function ( InterfaceManagementProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editPermittedIpAdd( $a['ip'] );
+            return "permitted IP '" . $a['ip'] . "' added";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'address / network (e.g. 10.0.0.0//24 - // is a /)' ) ),
+    'help' => 'add a permitted IP',
+);
+
+InterfaceManagementProfileCallContext::$supportedActions['permitted-ip-remove'] = array(
+    'name' => 'permitted-ip-Remove',
+    'MainFunction' => function ( InterfaceManagementProfileCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editPermittedIpRemove( $a['ip'] );
+            return "permitted IP '" . $a['ip'] . "' removed";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove a permitted IP',
+);

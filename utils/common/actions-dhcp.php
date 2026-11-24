@@ -282,3 +282,149 @@ DHCPCallContext::$supportedActions['exportToExcel'] = array(
 
 );
 DHCPCallContext::$supportedActions['exportToHtml'] = array_merge(DHCPCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+DHCPCallContext::$supportedActions['mode-set'] = array(
+    'name' => 'mode-Set',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editServerMode( $a['mode'] );
+            return "DHCP server mode " . $a['mode'];
+        } );
+    },
+    'args' => array( 'mode' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'auto', 'enabled', 'disabled' ) ) ),
+    'help' => 'DHCP server mode',
+);
+
+DHCPCallContext::$supportedActions['ip-pool-add'] = array(
+    'name' => 'ip-pool-Add',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIpPoolAdd( $a['pool'] );
+            return "IP pool '" . $a['pool'] . "' added";
+        } );
+    },
+    'args' => array( 'pool' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'a range (10.0.0.10-10.0.0.99) or a network (// is a /)' ) ),
+    'help' => 'add an IP pool',
+);
+
+DHCPCallContext::$supportedActions['ip-pool-remove'] = array(
+    'name' => 'ip-pool-Remove',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editIpPoolRemove( $a['pool'] );
+            return "IP pool '" . $a['pool'] . "' removed";
+        } );
+    },
+    'args' => array( 'pool' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove an IP pool',
+);
+
+DHCPCallContext::$supportedActions['gateway-set'] = array(
+    'name' => 'gateway-Set',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editOption( 'gateway', $a['ip'] );
+            return $a['ip'] === '' ? "gateway removed" : "gateway " . $a['ip'];
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'default gateway; empty: removed',
+);
+
+DHCPCallContext::$supportedActions['subnet-mask-set'] = array(
+    'name' => 'subnet-mask-Set',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editOption( 'subnet-mask', $a['mask'] );
+            return $a['mask'] === '' ? "subnet mask removed" : "subnet mask " . $a['mask'];
+        } );
+    },
+    'args' => array( 'mask' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'subnet mask; empty: removed',
+);
+
+DHCPCallContext::$supportedActions['dns-set'] = array(
+    'name' => 'dns-Set',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDns( $a['primary'], $a['secondary'] );
+            return "DNS " . $a['primary'] . ( $a['secondary'] !== '' ? ", " . $a['secondary'] : "" );
+        } );
+    },
+    'args' => array( 'primary' => array( 'type' => 'string', 'default' => '' ), 'secondary' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'DNS servers; empty: removed',
+);
+
+DHCPCallContext::$supportedActions['lease-set'] = array(
+    'name' => 'lease-Set',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLease( $a['type'], $a['minutes'] );
+            return "lease " . $a['type'] . ( $a['type'] === 'timeout' ? " " . $a['minutes'] . " min" : "" );
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'unlimited', 'timeout' ) ), 'minutes' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'lease',
+);
+
+DHCPCallContext::$supportedActions['reservation-add'] = array(
+    'name' => 'reservation-Add',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editReservationAdd( $a['ip'], $a['mac'], $a['description'] );
+            return "reserved " . $a['ip'] . " for " . $a['mac'];
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '*nodefault*' ), 'mac' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'e.g. 00-11-22-33-44-55' ), 'description' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'reserve an address for a MAC',
+);
+
+DHCPCallContext::$supportedActions['reservation-remove'] = array(
+    'name' => 'reservation-Remove',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editReservationRemove( $a['ip'] );
+            return "reservation " . $a['ip'] . " removed";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove a reserved address',
+);
+
+DHCPCallContext::$supportedActions['relay-set'] = array(
+    'name' => 'relay-Set',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editRelay( $a['enable'] );
+            return "DHCP relay " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => 'DHCP relay (IPv4)',
+);
+
+DHCPCallContext::$supportedActions['relay-server-add'] = array(
+    'name' => 'relay-server-Add',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editRelayServerAdd( $a['server'] );
+            return "relay server " . $a['server'] . " added";
+        } );
+    },
+    'args' => array( 'server' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'add a DHCP relay server',
+);
+
+DHCPCallContext::$supportedActions['relay-server-remove'] = array(
+    'name' => 'relay-server-Remove',
+    'MainFunction' => function ( DHCPCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editRelayServerRemove( $a['server'] );
+            return "relay server " . $a['server'] . " removed";
+        } );
+    },
+    'args' => array( 'server' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'remove a DHCP relay server',
+);

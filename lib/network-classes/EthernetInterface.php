@@ -22,6 +22,7 @@
 class EthernetInterface
 {
     use InterfaceType;
+    use InterfaceObjectEdit;
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
@@ -353,6 +354,19 @@ class EthernetInterface
 
                         $this->l3ipv6Addresses[] = $l3ipNode->getAttribute('name');
                     }
+                }
+            }
+
+            // its interface management profile (as the main interface; before: no reference from a sub-interface)
+            $intMgmtProfileNode = DH::findFirstElement('interface-management-profile', $xml);
+            if( $intMgmtProfileNode !== FALSE )
+            {
+                $this->intMgmtProfile = $intMgmtProfileNode->textContent;
+                $tmp_IntMgmtProfile = PH::findInNetworkScope( $this->owner->owner, 'interfaceManagementProfileStore', $this->intMgmtProfile, 'find' );
+                if( is_object( $tmp_IntMgmtProfile ) )
+                {
+                    $tmp_IntMgmtProfile->addReference( $this );
+                    $this->intMgmtProfileObj = $tmp_IntMgmtProfile;
                 }
             }
         }

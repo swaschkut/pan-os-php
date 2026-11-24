@@ -30,6 +30,7 @@ class GreTunnel
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use TunnelObjectEdit;
 
     public $owner;
 
@@ -277,6 +278,64 @@ class GreTunnel
     public function getDisabled()
     {
         return $this->disabled;
+    }
+
+    // ---- changes of the actions (gre-tunnel …-set): XML, object and references together; an invalid value: Exception
+
+    /** the local IP of the interface (address with mask, or an address object); '' removes it */
+    public function editLocalIp( string $ip ): void
+    {
+        $ip = trim( $ip );
+        if( $ip === '' )
+        {
+            $this->editRemove( array( 'local-address', 'ip' ) );
+            $this->localIP = null;
+            return;
+        }
+        if( strlen( $ip ) > 63 || preg_match( '/[\s<>:]/', $ip ) )
+            throw new Exception( "local IP: an IPv4 address with mask, or an address object" );
+        $this->editText( array( 'local-address', 'ip' ), $ip );
+        $this->localIP = $ip;
+    }
+
+    /** the peer address (IPv4 or an address object) */
+    public function editPeerAddress( string $ip ): void
+    {
+        $ip = trim( $ip );
+        if( $ip === '' || strlen( $ip ) > 63 || preg_match( '/[\s<>:]/', $ip ) )
+            throw new Exception( "peer address: an IPv4 address or an address object" );
+        $this->editText( array( 'peer-address', 'ip' ), $ip );
+    }
+
+    /** TTL 1-255 */
+    public function editTtl( string $ttl ): void
+    {
+        if( !preg_match( '/^[0-9]{1,3}$/', trim( $ttl ) ) || (int)$ttl < 1 || (int)$ttl > 255 )
+            throw new Exception( "TTL: 1-255" );
+        $this->editText( array( 'ttl' ), (string)(int)$ttl );
+    }
+
+    /** copy-tos, disabled */
+    public function editFlag( string $flag, bool $value ): void
+    {
+        if( !in_array( $flag, array( 'copy-tos', 'disabled' ), TRUE ) )
+            throw new Exception( "copy-tos or disabled" );
+        $this->editText( array( $flag ), self::editYesNo( $value ) );
+        if( $flag === 'disabled' )
+            $this->disabled = self::editYesNo( $value );
+    }
+
+    /** keep alive: on / off, interval 1-50 s, retry 1-255, hold timer 1-64 ('' keeps a value) */
+    public function editKeepAlive( bool $enable, string $interval = '', string $retry = '', string $holdTimer = '' ): void
+    {
+        $limits = array( 'interval' => array( $interval, 1, 50 ), 'retry' => array( $retry, 1, 255 ), 'hold-timer' => array( $holdTimer, 1, 64 ) );
+        foreach( $limits as $k => $l )
+            if( trim( $l[0] ) !== '' && ( !preg_match( '/^[0-9]{1,3}$/', trim( $l[0] ) ) || (int)$l[0] < $l[1] || (int)$l[0] > $l[2] ) )
+                throw new Exception( "keep alive " . $k . ": " . $l[1] . "-" . $l[2] );
+        $this->editText( array( 'keep-alive', 'enable' ), self::editYesNo( $enable ) );
+        foreach( $limits as $k => $l )
+            if( trim( $l[0] ) !== '' )
+                $this->editText( array( 'keep-alive', $k ), (string)(int)$l[0] );
     }
 
     public function isGreTunnelType()

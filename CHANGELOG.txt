@@ -7,6 +7,17 @@ UTIL:
 * type=ipsec-profile | new actions: esp-encryption-set, esp-authentication-set, dh-group-set, lifetime-set, lifesize-set
 * type=ipsec-tunnel | new actions: ike-gateway-set, ipsec-crypto-profile-set, tunnel-interface-set, anti-replay-set, copy-tos-set, disabled-set, tunnel-monitor-set, proxy-id-add, proxy-id-remove - references updated
 * config-viewer | the windows of IKE gateways, IKE / IPsec crypto profiles and IPsec tunnels can change these values (the new actions, reviewed one by one in action-classes.json); every other value read only
+* type=interface | new actions: comment-set, ip-add, ip-remove, mtu-set, interface-management-profile-set, adjust-tcp-mss-set, link-state-set, tag-set (ethernet / aggregate layer3, sub-interface, loopback, tunnel, VLAN) - references updated
+* type=interface-management-profile | new actions: service-set, permitted-ip-add, permitted-ip-remove
+* type=zone-protection-profile | new actions: description-set, flood-set, scan-set, packet-set
+* type=routing | new actions (virtual router; logical router: vrf default): interface-add, interface-remove, ecmp-set, admin-distance-set, static-route-add
+* type=static-route | new actions: destination-set, nexthop-set (ip-address / next-vr / discard / none), interface-set, metric-set, admin-distance-set, route-table-set
+* type=gre-tunnel | new actions: local-interface-set, local-ip-set, peer-address-set, tunnel-interface-set, ttl-set, copy-tos-set, disabled-set, keep-alive-set
+* type=dhcp | new actions: server - mode-set, ip-pool-add / -remove, gateway-set, subnet-mask-set, dns-set, lease-set, reservation-add / -remove; relay - relay-set, relay-server-add / -remove
+* type=virtualwire | new actions: interface-set, tag-allowed-set, multicast-firewalling-set, link-state-pass-through-set
+* type=gp-portal / gp-gateway | new actions: local-interface-set, local-ip-set, ssl-tls-profile-set; gp-gateway also tunnel-interface-set, client-ip-pool-add / -remove, client-access-route-add / -remove, client-exclude-access-route-add / -remove
+* type=gpgateway-tunnel | new actions: local-interface-set, local-ip-set, tunnel-interface-set, disabled-set
+* config-viewer | the windows of interfaces, interface management profiles, zone protection profiles, virtual / logical routers, static routes, GRE tunnels, DHCP, virtual wires and GlobalProtect portals / gateways / gateway tunnels can change these values (the new actions, reviewed in action-classes.json); every other value read only
 * config-viewer | the window of a network object (IKE gateway, IKE / IPsec crypto profile, IPsec tunnel, interfaces, virtual / logical router, static route, GRE tunnel, GlobalProtect, interface management profile, virtual wire, DHCP) shows all its values: ApiObjectModel knows these classes (SCM schema: ike-gateways, ike-crypto-profiles, ipsec-crypto-profiles, ipsec-tunnels, virtual-routers, logical-routers; the others as their XML) - before only name and location
 * config-viewer | PSK list: only the SCM keys the project may use (bound to a tenant: that one; bound to a firewall / Panorama: none; roles: the tenants of the SCM roles)
 * config-viewer | run "IKE gateways / PSK list" (psk-list): the IKE gateways of a version and / or - with an SCM key of the user - of the firewalls managed by the SCM tenant, compared by the SHA-1 of the pre-shared key (same / different / only in one / unknown); the PSK lists with clear text are sensitive results (download once), SHA-1 lists and comparison are result files; write members, not with an API token
@@ -25,6 +36,7 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* interface | a layer3 sub-interface did not reference its interface management profile (only the main interface did)
 * IKE gateway | the IKE crypto profile was only read below protocol/<version>: with ikev2-preferred (SCM default) or without version no profile (proposal "default") and no reference; now the ikev1 / ikev2 profile, each referenced
 * IKE gateway / IPsec tunnel | references to IKE / IPsec crypto profiles, IKE gateways and tunnel interfaces only in the own location (and a template stack): SCM - also the parent folders, the attached snippets and All (PH::networkScope / findInNetworkScope)
 * actions=exportToExcel / exportToHtml | ike-gateway, ike-profile, ipsec-profile, ipsec-tunnel, interface, dhcp, interface-management-profile, routing, zone-protection-profile: an object not in a firewall / template configuration (SCM folder, snippet, device; Panorama) had no cells template / location - its values moved two columns to the left; now "---" and the SCM folder / snippet / device (CallContext::encloseTemplateLocationOther); zone-protection-profile showed "---" as location

@@ -24,6 +24,7 @@ class VirtualRouter
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use RouterObjectEdit;
     use RouteZoneMapping;
 
     /** @var VirtualRouterStore */

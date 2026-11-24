@@ -22,6 +22,7 @@
 class LoopbackInterface
 {
     use InterfaceType;
+    use InterfaceObjectEdit;
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;

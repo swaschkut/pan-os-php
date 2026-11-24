@@ -44,3 +44,41 @@ GPPortalCallContext::$supportedActions['display'] = Array(
     },
 
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+GPPortalCallContext::$supportedActions['local-interface-set'] = array(
+    'name' => 'local-interface-Set',
+    'MainFunction' => function ( GPPortalCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLocalInterface( $a['interface'] );
+            return "local interface '" . $a['interface'] . "'";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => 'local interface (an interface of the vsys)',
+);
+
+GPPortalCallContext::$supportedActions['local-ip-set'] = array(
+    'name' => 'local-ip-Set',
+    'MainFunction' => function ( GPPortalCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editLocalIp( $a['ip'] );
+            return $a['ip'] === '' ? "local IP removed" : "local IP '" . $a['ip'] . "'";
+        } );
+    },
+    'args' => array( 'ip' => array( 'type' => 'string', 'default' => '', 'help' => 'IPv4 address with mask (// is a /) or address object; empty: removed' ) ),
+    'help' => 'local IPv4 address',
+);
+
+GPPortalCallContext::$supportedActions['ssl-tls-profile-set'] = array(
+    'name' => 'ssl-tls-profile-Set',
+    'MainFunction' => function ( GPPortalCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editSslTlsProfile( $a['profile'] );
+            return $a['profile'] === '' ? "SSL/TLS service profile removed" : "SSL/TLS service profile '" . $a['profile'] . "'";
+        } );
+    },
+    'args' => array( 'profile' => array( 'type' => 'string', 'default' => '', 'help' => 'empty: removed' ) ),
+    'help' => 'SSL/TLS service profile of the portal',
+);

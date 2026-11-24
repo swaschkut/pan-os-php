@@ -28,6 +28,7 @@ class ZoneProtectionProfile
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     public $owner;
 
@@ -662,6 +663,138 @@ class ZoneProtectionProfile
         return TRUE;
     }
 
+
+    // ---- changes of the actions (zone-protection-profile …-set): XML and object together; an invalid value: Exception
+
+    const FLOOD_TYPES = array( 'tcp-syn', 'udp', 'icmp', 'icmpv6', 'other-ip' );
+    /** reconnaissance protection: name => threat id of the scan entry */
+    const SCANS = array( 'tcp-port-scan' => '8001', 'host-sweep' => '8002', 'udp-port-scan' => '8003' );
+
+    public function editDescription( string $description ): void
+    {
+        $description = trim( $description );
+        if( strlen( $description ) > 255 || preg_match( '/[\x00-\x08\x0B-\x1F]/', $description ) )
+            throw new Exception( "description: up to 255 characters" );
+        if( $description === '' )
+            $this->editRemove( array( 'description' ) );
+        else
+            $this->editText( array( 'description' ), $description );
+    }
+
+    /**
+     * flood protection of a type: on / off and its rates (connections per second; '' keeps a rate);
+     * tcp-syn: action red or syn-cookies
+     */
+    public function editFlood( string $type, bool $enable, string $alarm = '', string $activate = '', string $maximal = '', string $synAction = '' ): void
+    {
+        $type = strtolower( trim( $type ) );
+        if( !in_array( $type, self::FLOOD_TYPES, TRUE ) )
+            throw new Exception( "flood type: one of " . implode( ', ', self::FLOOD_TYPES ) );
+        $synAction = strtolower( trim( $synAction ) );
+        if( $synAction !== '' && ( $type !== 'tcp-syn' || !in_array( $synAction, array( 'red', 'syn-cookies' ), TRUE ) ) )
+            throw new Exception( "action: red or syn-cookies, only for tcp-syn" );
+        $rates = array( 'alarm-rate' => array( $alarm, 0 ), 'activate-rate' => array( $activate, 1 ), 'maximal-rate' => array( $maximal, 1 ) );
+        foreach( $rates as $k => $r )
+            if( trim( $r[0] ) !== '' && ( !preg_match( '/^[0-9]{1,7}$/', trim( $r[0] ) ) || (int)$r[0] < $r[1] || (int)$r[0] > 2000000 ) )
+                throw new Exception( $k . ": " . $r[1] . "-2000000" );
+        $this->editText( array( 'flood', $type, 'enable' ), self::editYesNo( $enable ) );
+        $this->flood[$type]['enable'] = self::editYesNo( $enable );
+        // the rates are below red (or syn-cookies for tcp-syn)
+        $mode = 'red';
+        if( $type === 'tcp-syn' )
+        {
+            $cur = $this->editFind( array( 'flood', 'tcp-syn', 'syn-cookies' ) ) !== FALSE ? 'syn-cookies' : 'red';
+            $mode = $synAction !== '' ? $synAction : $cur;
+            $other = $mode === 'red' ? 'syn-cookies' : 'red';
+            $old = $this->editFind( array( 'flood', 'tcp-syn', $other ) );
+            if( $old !== FALSE )
+            {
+                // the rates go with the action
+                $new = $this->editNode( array( 'flood', 'tcp-syn', $mode ) );
+                foreach( iterator_to_array( $old->childNodes ) as $c )
+                    if( $c instanceof DOMElement && DH::findFirstElement( $c->nodeName, $new ) === FALSE )
+                        $new->appendChild( $c );
+                $old->parentNode->removeChild( $old );
+            }
+        }
+        foreach( $rates as $k => $r )
+            if( trim( $r[0] ) !== '' )
+            {
+                $this->editText( array( 'flood', $type, $mode, $k ), (string)(int)$r[0] );
+                $this->flood[$type][$mode][$k] = (string)(int)$r[0];
+            }
+    }
+
+    /** reconnaissance protection of a scan: action allow / alert / block / block-ip (track by, duration), interval, threshold */
+    public function editScan( string $scan, string $action, string $interval = '', string $threshold = '', string $trackBy = '', string $duration = '' ): void
+    {
+        $scan = strtolower( trim( $scan ) );
+        if( !isset( self::SCANS[$scan] ) )
+            throw new Exception( "scan: one of " . implode( ', ', array_keys( self::SCANS ) ) );
+        $action = strtolower( trim( $action ) );
+        if( !in_array( $action, array( 'allow', 'alert', 'block', 'block-ip' ), TRUE ) )
+            throw new Exception( "action: allow, alert, block or block-ip" );
+        foreach( array( 'interval' => $interval, 'threshold' => $threshold ) as $k => $v )
+            if( trim( $v ) !== '' && ( !preg_match( '/^[0-9]{1,5}$/', trim( $v ) ) || (int)$v < 2 || (int)$v > 65535 ) )
+                throw new Exception( $k . ": 2-65535" );
+        if( $action === 'block-ip' )
+        {
+            if( !in_array( strtolower( trim( $trackBy ) ), array( 'source', 'source-and-destination' ), TRUE ) )
+                throw new Exception( "block-ip: track by source or source-and-destination" );
+            if( !preg_match( '/^[0-9]{1,7}$/', trim( $duration ) ) || (int)$duration < 1 || (int)$duration > 3600 )
+                throw new Exception( "block-ip: duration 1-3600 seconds" );
+        }
+        $id = self::SCANS[$scan];
+        $scanNode = $this->editNode( array( 'scan' ) );
+        $entry = DH::findFirstElementByNameAttr( 'entry', $id, $scanNode );
+        if( $entry === null || $entry === FALSE )
+        {
+            $entry = $scanNode->ownerDocument->createElement( 'entry' );
+            $entry->setAttribute( 'name', $id );
+            $scanNode->appendChild( $entry );
+        }
+        $actionNode = DH::findFirstElementOrCreate( 'action', $entry );
+        foreach( iterator_to_array( $actionNode->childNodes ) as $c )
+            $actionNode->removeChild( $c );
+        $a = $actionNode->ownerDocument->createElement( $action );
+        $actionNode->appendChild( $a );
+        $this->scan[$id] = array( 'action' => $action );
+        if( $action === 'block-ip' )
+        {
+            DH::createElement( $a, 'track-by', strtolower( trim( $trackBy ) ) );
+            DH::createElement( $a, 'duration', (string)(int)$duration );
+            $this->scan[$id]['track-by'] = strtolower( trim( $trackBy ) );
+            $this->scan[$id]['duration'] = (string)(int)$duration;
+        }
+        foreach( array( 'interval' => $interval, 'threshold' => $threshold ) as $k => $v )
+            if( trim( $v ) !== '' )
+                DH::setDomNodeText( DH::findFirstElementOrCreate( $k, $entry ), (string)(int)$v );
+        foreach( array( 'interval', 'threshold' ) as $k )
+        {
+            $n = DH::findFirstElement( $k, $entry );
+            if( $n !== FALSE )
+                $this->scan[$id][$k] = trim( $n->textContent );
+        }
+        unset( $this->disabled_scans[$id] );
+    }
+
+    /** a packet based protection (the settings of xmlMap: discard-ip-spoof, strict-ip-check, ipv6 routing-header-0, …) */
+    public function editPacket( string $option, string $value ): void
+    {
+        $option = strtolower( trim( $option ) );
+        $value = strtolower( trim( $value ) );
+        $item = null;
+        foreach( $this->xmlMap as $i )
+            if( $i['tag'] === $option )
+                $item = $i;
+        if( $item === null )
+            throw new Exception( "option: one of " . implode( ', ', array_column( $this->xmlMap, 'tag' ) ) );
+        $allowed = $option === 'tcp-reject-non-syn' ? array( 'global', 'yes', 'no' ) : ( $option === 'asymmetric-path' ? array( 'global', 'drop', 'bypass' ) : array( 'yes', 'no' ) );
+        if( !in_array( $value, $allowed, TRUE ) )
+            throw new Exception( $option . ": " . implode( ', ', $allowed ) );
+        $this->editText( array_merge( $item['parents'], array( $option ) ), $value );
+        $this->{$item['prop']} = $value;
+    }
 
     public function isZoneProtectionProfileType()
     {

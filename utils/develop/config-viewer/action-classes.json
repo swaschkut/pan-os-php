@@ -68,7 +68,74 @@
         "ipsec-tunnel:proxy-id-add",
         "ipsec-tunnel:proxy-id-remove",
         "ipsec-tunnel:tunnel-interface-set",
-        "ipsec-tunnel:tunnel-monitor-set"
+        "ipsec-tunnel:tunnel-monitor-set",
+        "interface:comment-set",
+        "interface:ip-add",
+        "interface:ip-remove",
+        "interface:mtu-set",
+        "interface:interface-management-profile-set",
+        "interface:adjust-tcp-mss-set",
+        "interface:link-state-set",
+        "interface:tag-set",
+        "interface-management-profile:service-set",
+        "interface-management-profile:permitted-ip-add",
+        "interface-management-profile:permitted-ip-remove",
+        "zone-protection-profile:description-set",
+        "zone-protection-profile:flood-set",
+        "zone-protection-profile:scan-set",
+        "zone-protection-profile:packet-set",
+        "routing:interface-add",
+        "routing:interface-remove",
+        "routing:ecmp-set",
+        "routing:admin-distance-set",
+        "routing:static-route-add",
+        "static-route:destination-set",
+        "static-route:nexthop-set",
+        "static-route:interface-set",
+        "static-route:metric-set",
+        "static-route:admin-distance-set",
+        "static-route:route-table-set",
+        "gre-tunnel:local-interface-set",
+        "gre-tunnel:local-ip-set",
+        "gre-tunnel:peer-address-set",
+        "gre-tunnel:tunnel-interface-set",
+        "gre-tunnel:ttl-set",
+        "gre-tunnel:copy-tos-set",
+        "gre-tunnel:disabled-set",
+        "gre-tunnel:keep-alive-set",
+        "dhcp:mode-set",
+        "dhcp:ip-pool-add",
+        "dhcp:ip-pool-remove",
+        "dhcp:gateway-set",
+        "dhcp:subnet-mask-set",
+        "dhcp:dns-set",
+        "dhcp:lease-set",
+        "dhcp:reservation-add",
+        "dhcp:reservation-remove",
+        "dhcp:relay-set",
+        "dhcp:relay-server-add",
+        "dhcp:relay-server-remove",
+        "virtualwire:interface-set",
+        "virtualwire:tag-allowed-set",
+        "virtualwire:multicast-firewalling-set",
+        "virtualwire:link-state-pass-through-set",
+        "gp-portal:local-interface-set",
+        "gp-portal:local-ip-set",
+        "gp-portal:ssl-tls-profile-set",
+        "gp-gateway:local-interface-set",
+        "gp-gateway:local-ip-set",
+        "gp-gateway:ssl-tls-profile-set",
+        "gp-gateway:tunnel-interface-set",
+        "gp-gateway:client-ip-pool-add",
+        "gp-gateway:client-ip-pool-remove",
+        "gp-gateway:client-access-route-add",
+        "gp-gateway:client-access-route-remove",
+        "gp-gateway:client-exclude-access-route-add",
+        "gp-gateway:client-exclude-access-route-remove",
+        "gpgateway-tunnel:local-interface-set",
+        "gpgateway-tunnel:local-ip-set",
+        "gpgateway-tunnel:tunnel-interface-set",
+        "gpgateway-tunnel:disabled-set"
     ],
     "override": {},
     "types": {
@@ -497,6 +564,9 @@
             "display": {
                 "class": "read"
             },
+            "dns-set": {
+                "class": "change"
+            },
             "exporttoexcel": {
                 "class": "writes-file",
                 "file_arg": 0
@@ -504,6 +574,39 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "gateway-set": {
+                "class": "change"
+            },
+            "ip-pool-add": {
+                "class": "change"
+            },
+            "ip-pool-remove": {
+                "class": "change"
+            },
+            "lease-set": {
+                "class": "change"
+            },
+            "mode-set": {
+                "class": "change"
+            },
+            "relay-server-add": {
+                "class": "change"
+            },
+            "relay-server-remove": {
+                "class": "change"
+            },
+            "relay-set": {
+                "class": "change"
+            },
+            "reservation-add": {
+                "class": "change"
+            },
+            "reservation-remove": {
+                "class": "change"
+            },
+            "subnet-mask-set": {
+                "class": "change"
             }
         },
         "dns-rule": {
@@ -575,23 +678,98 @@
             }
         },
         "gp-gateway": {
+            "client-access-route-add": {
+                "class": "change"
+            },
+            "client-access-route-remove": {
+                "class": "change"
+            },
+            "client-exclude-access-route-add": {
+                "class": "change"
+            },
+            "client-exclude-access-route-remove": {
+                "class": "change"
+            },
+            "client-ip-pool-add": {
+                "class": "change"
+            },
+            "client-ip-pool-remove": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
+            },
+            "local-interface-set": {
+                "class": "change"
+            },
+            "local-ip-set": {
+                "class": "change"
+            },
+            "ssl-tls-profile-set": {
+                "class": "change"
+            },
+            "tunnel-interface-set": {
+                "class": "change"
             }
         },
         "gp-portal": {
             "display": {
                 "class": "read"
+            },
+            "local-interface-set": {
+                "class": "change"
+            },
+            "local-ip-set": {
+                "class": "change"
+            },
+            "ssl-tls-profile-set": {
+                "class": "change"
             }
         },
         "gpgateway-tunnel": {
+            "disabled-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
+            },
+            "local-interface-set": {
+                "class": "change"
+            },
+            "local-ip-set": {
+                "class": "change"
+            },
+            "tunnel-interface-set": {
+                "class": "change"
             }
         },
         "gre-tunnel": {
+            "copy-tos-set": {
+                "class": "change"
+            },
+            "disabled-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
+            },
+            "keep-alive-set": {
+                "class": "change"
+            },
+            "local-interface-set": {
+                "class": "change"
+            },
+            "local-ip-set": {
+                "class": "change"
+            },
+            "peer-address-set": {
+                "class": "change"
+            },
+            "ttl-set": {
+                "class": "change"
+            },
+            "tunnel-interface-set": {
+                "class": "change"
             }
         },
         "ike-gateway": {
@@ -690,7 +868,13 @@
             }
         },
         "interface": {
+            "adjust-tcp-mss-set": {
+                "class": "change"
+            },
             "ae-group-set": {
+                "class": "change"
+            },
+            "comment-set": {
                 "class": "change"
             },
             "display": {
@@ -710,6 +894,21 @@
                 "class": "writes-file",
                 "file_arg": 0
             },
+            "interface-management-profile-set": {
+                "class": "change"
+            },
+            "ip-add": {
+                "class": "change"
+            },
+            "ip-remove": {
+                "class": "change"
+            },
+            "link-state-set": {
+                "class": "change"
+            },
+            "mtu-set": {
+                "class": "change"
+            },
             "name-rename": {
                 "class": "change"
             },
@@ -720,6 +919,9 @@
                 "class": "change"
             },
             "replace_ipv6_objects_by_value": {
+                "class": "change"
+            },
+            "tag-set": {
                 "class": "change"
             },
             "type-aggregate-ethernet-set": {
@@ -740,6 +942,15 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "permitted-ip-add": {
+                "class": "change"
+            },
+            "permitted-ip-remove": {
+                "class": "change"
+            },
+            "service-set": {
+                "class": "change"
             }
         },
         "ipsec-profile": {
@@ -894,11 +1105,17 @@
             }
         },
         "routing": {
+            "admin-distance-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
             "display-route-table-fast": {
                 "class": "read"
+            },
+            "ecmp-set": {
+                "class": "change"
             },
             "exporttoexcel": {
                 "class": "writes-file",
@@ -907,6 +1124,15 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "interface-add": {
+                "class": "change"
+            },
+            "interface-remove": {
+                "class": "change"
+            },
+            "static-route-add": {
+                "class": "change"
             }
         },
         "rule": {
@@ -1782,7 +2008,13 @@
             }
         },
         "static-route": {
+            "admin-distance-set": {
+                "class": "change"
+            },
             "delete": {
+                "class": "change"
+            },
+            "destination-set": {
                 "class": "change"
             },
             "display": {
@@ -1798,6 +2030,18 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "interface-set": {
+                "class": "change"
+            },
+            "metric-set": {
+                "class": "change"
+            },
+            "nexthop-set": {
+                "class": "change"
+            },
+            "route-table-set": {
+                "class": "change"
             }
         },
         "tag": {
@@ -1908,6 +2152,18 @@
         "virtualwire": {
             "display": {
                 "class": "read"
+            },
+            "interface-set": {
+                "class": "change"
+            },
+            "link-state-pass-through-set": {
+                "class": "change"
+            },
+            "multicast-firewalling-set": {
+                "class": "change"
+            },
+            "tag-allowed-set": {
+                "class": "change"
             }
         },
         "zone": {
@@ -1981,6 +2237,9 @@
             "alert-only-set": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
@@ -1994,6 +2253,15 @@
             "exporttohtml": {
                 "class": "writes-file",
                 "file_arg": 0
+            },
+            "flood-set": {
+                "class": "change"
+            },
+            "packet-set": {
+                "class": "change"
+            },
+            "scan-set": {
+                "class": "change"
             },
             "scan.alert-only-set": {
                 "class": "change"

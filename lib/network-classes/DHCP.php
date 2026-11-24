@@ -24,6 +24,7 @@ class DHCP
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     /** @var DHCPStore */
     public $owner;
@@ -155,6 +156,156 @@ class DHCP
      * @param string $name new name for the VirtualRouter
      * @return bool
      */
+    // ---- changes of the actions (dhcp …-set): XML and object together; an invalid value: Exception
+
+    /** an IPv4 address (or a network / range for an IP pool) - no spaces, no ":" */
+    private static function editDhcpValue( string $v, string $what ): string
+    {
+        $v = trim( $v );
+        if( $v === '' || strlen( $v ) > 63 || preg_match( '/[\s<>:]/', $v ) )
+            throw new Exception( $what . ": an IPv4 value" );
+        return $v;
+    }
+
+    /** DHCP server mode: auto, enabled, disabled */
+    public function editServerMode( string $mode ): void
+    {
+        $mode = strtolower( trim( $mode ) );
+        if( !in_array( $mode, array( 'auto', 'enabled', 'disabled' ), TRUE ) )
+            throw new Exception( "mode: auto, enabled or disabled" );
+        if( $this->editFind( array( 'relay' ) ) !== FALSE )
+            throw new Exception( "the interface is a DHCP relay - not a server" );
+        $this->editText( array( 'server', 'mode' ), $mode );
+    }
+
+    public function editIpPoolAdd( string $pool ): void
+    {
+        $pool = self::editDhcpValue( $pool, 'IP pool' );
+        $members = $this->editMembersOf( array( 'server', 'ip-pool' ) );
+        if( in_array( $pool, $members, TRUE ) )
+            throw new Exception( "IP pool " . $pool . " is there already" );
+        $members[] = $pool;
+        $this->editMembers( array( 'server', 'ip-pool' ), $members );
+        $this->server_ip_pool = $members;
+    }
+
+    public function editIpPoolRemove( string $pool ): void
+    {
+        $pool = trim( $pool );
+        $members = $this->editMembersOf( array( 'server', 'ip-pool' ) );
+        if( !in_array( $pool, $members, TRUE ) )
+            throw new Exception( "IP pool " . $pool . " is not there" );
+        $members = array_values( array_diff( $members, array( $pool ) ) );
+        if( count( $members ) === 0 )
+            $this->editRemove( array( 'server', 'ip-pool' ) );
+        else
+            $this->editMembers( array( 'server', 'ip-pool' ), $members );
+        $this->server_ip_pool = $members;
+    }
+
+    /** an option: gateway, subnet-mask ('' removes it) */
+    public function editOption( string $option, string $value ): void
+    {
+        if( !in_array( $option, array( 'gateway', 'subnet-mask' ), TRUE ) )
+            throw new Exception( "option: gateway or subnet-mask" );
+        if( trim( $value ) === '' )
+            $this->editRemove( array( 'server', 'option', $option ) );
+        else
+            $this->editText( array( 'server', 'option', $option ), self::editDhcpValue( $value, $option ) );
+    }
+
+    /** DNS servers: primary, secondary ('' removes one) */
+    public function editDns( string $primary, string $secondary = '' ): void
+    {
+        foreach( array( 'primary' => $primary, 'secondary' => $secondary ) as $k => $v )
+            if( trim( $v ) === '' )
+                $this->editRemove( array( 'server', 'option', 'dns', $k ) );
+            else
+                $this->editText( array( 'server', 'option', 'dns', $k ), self::editDhcpValue( $v, 'DNS ' . $k ) );
+    }
+
+    /** lease: unlimited, or timeout in minutes (0-1000000) */
+    public function editLease( string $type, string $minutes = '' ): void
+    {
+        $type = strtolower( trim( $type ) );
+        if( $type === 'unlimited' )
+            $this->editChoice( array( 'server', 'option', 'lease' ), 'unlimited', null );
+        elseif( $type === 'timeout' )
+        {
+            if( !preg_match( '/^[0-9]{1,7}$/', trim( $minutes ) ) || (int)$minutes > 1000000 )
+                throw new Exception( "lease timeout: minutes 0-1000000" );
+            $this->editChoice( array( 'server', 'option', 'lease' ), 'timeout', (string)(int)$minutes );
+        }
+        else
+            throw new Exception( "lease: unlimited or timeout" );
+    }
+
+    /** a reserved address: IP and MAC */
+    public function editReservationAdd( string $ip, string $mac, string $description = '' ): void
+    {
+        $ip = self::editDhcpValue( $ip, 'reserved IP' );
+        $mac = strtolower( trim( $mac ) );
+        if( !preg_match( '/^([0-9a-f]{2}[.-]){5}[0-9a-f]{2}$/', $mac ) )
+            throw new Exception( "MAC: e.g. 00-11-22-33-44-55 (- or . between the bytes; \":\" can not be used in an action argument)" );
+        $mac = str_replace( array( '-', '.' ), ':', $mac );
+        $node = $this->editNode( array( 'server', 'reserved' ) );
+        if( DH::findFirstElementByNameAttr( 'entry', $ip, $node ) !== null )
+            throw new Exception( "reserved IP " . $ip . " is there already" );
+        $e = $node->ownerDocument->createElement( 'entry' );
+        $e->setAttribute( 'name', $ip );
+        $node->appendChild( $e );
+        DH::createElement( $e, 'mac', $mac );
+        if( trim( $description ) !== '' )
+            DH::createElement( $e, 'description', trim( $description ) );
+        $this->server_leases[] = array( 'ip' => $ip, 'mac' => $mac );
+    }
+
+    public function editReservationRemove( string $ip ): void
+    {
+        $ip = trim( $ip );
+        $node = $this->editFind( array( 'server', 'reserved' ) );
+        $e = $node !== FALSE ? DH::findFirstElementByNameAttr( 'entry', $ip, $node ) : null;
+        if( $e === null )
+            throw new Exception( "reserved IP " . $ip . " is not there" );
+        $node->removeChild( $e );
+        if( !$node->hasChildNodes() )
+            $node->parentNode->removeChild( $node );
+        $this->server_leases = array_values( array_filter( $this->server_leases, function( $l ) use ( $ip ) { return $l['ip'] !== $ip; } ) );
+    }
+
+    /** DHCP relay (IPv4): on / off */
+    public function editRelay( bool $enable ): void
+    {
+        if( $this->editFind( array( 'server' ) ) !== FALSE )
+            throw new Exception( "the interface is a DHCP server - not a relay" );
+        $this->editText( array( 'relay', 'ip', 'enabled' ), self::editYesNo( $enable ) );
+        $this->relay_ipv4_status = $enable;
+    }
+
+    public function editRelayServerAdd( string $server ): void
+    {
+        if( $this->editFind( array( 'server' ) ) !== FALSE )
+            throw new Exception( "the interface is a DHCP server - not a relay" );
+        $server = self::editDhcpValue( $server, 'relay server' );
+        $members = $this->editMembersOf( array( 'relay', 'ip', 'server' ) );
+        if( in_array( $server, $members, TRUE ) )
+            throw new Exception( "relay server " . $server . " is there already" );
+        $members[] = $server;
+        $this->editMembers( array( 'relay', 'ip', 'server' ), $members );
+        $this->relay_ipv4 = $members;
+    }
+
+    public function editRelayServerRemove( string $server ): void
+    {
+        $server = trim( $server );
+        $members = $this->editMembersOf( array( 'relay', 'ip', 'server' ) );
+        if( !in_array( $server, $members, TRUE ) )
+            throw new Exception( "relay server " . $server . " is not there" );
+        $members = array_values( array_diff( $members, array( $server ) ) );
+        $this->editMembers( array( 'relay', 'ip', 'server' ), $members );
+        $this->relay_ipv4 = $members;
+    }
+
     public function setName($name)
     {
         if( $this->name == $name )

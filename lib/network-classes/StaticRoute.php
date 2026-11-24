@@ -25,6 +25,7 @@ class StaticRoute
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;
+    use NetworkObjectEdit;
 
     //Todo:
     //set interface
@@ -260,6 +261,108 @@ class StaticRoute
     /**
      * @return string
      */
+    // ---- changes of the actions (static-route …-set): XML and object together; an invalid value: Exception
+
+    /** a static route belongs to a router: names are looked up from the configuration of the router */
+    protected function editLookup( ?string $storeProperty, string $name, string $findMethod )
+    {
+        return PH::findInNetworkScope( $this->owner->owner->owner, $storeProperty, $name, $findMethod );
+    }
+
+    /** destination: an IPv4 network (a.b.c.d/n) or an address object */
+    public function editDestination( string $destination ): void
+    {
+        $destination = trim( $destination );
+        $cidr = explode( '/', $destination );
+        if( $destination === '' || strlen( $destination ) > 63 || preg_match( '/[\s<>:]/', $destination )
+            || ( count( $cidr ) > 1 && ( count( $cidr ) !== 2 || filter_var( $cidr[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) === FALSE
+                || !preg_match( '/^[0-9]{1,2}$/', $cidr[1] ) || (int)$cidr[1] > 32 ) ) )
+            throw new Exception( "destination: an IPv4 network (e.g. 10.0.0.0/8) or an address object" );
+        $this->editText( array( 'destination' ), $destination );
+        $this->_destination = $destination;
+    }
+
+    /** next hop: ip-address (an address or address object), next-vr (a virtual router), discard, none */
+    public function editNexthop( string $type, string $value = '' ): void
+    {
+        $type = strtolower( trim( $type ) );
+        $value = trim( $value );
+        if( !in_array( $type, array( 'ip-address', 'next-vr', 'discard', 'none' ), TRUE ) )
+            throw new Exception( "next hop: ip-address, next-vr, discard or none" );
+        if( $type === 'none' )
+        {
+            $this->editRemove( array( 'nexthop' ) );
+            $this->_nexthopType = 'none';
+            $this->_nexthopIP = null;
+            $this->_nexthopVR = null;
+            return;
+        }
+        if( $type === 'ip-address' && ( $value === '' || strlen( $value ) > 63 || preg_match( '/[\s<>:]/', $value ) ) )
+            throw new Exception( "next hop ip-address: an IPv4 address or an address object" );
+        if( $type === 'next-vr' )
+        {
+            $value = self::editName( $value, 'next virtual router' );
+            if( $this->editLookup( 'virtualRouterStore', $value, 'findVirtualRouter' ) === null )
+                throw new Exception( "virtual router '" . $value . "' not found" );
+        }
+        $this->editChoice( array( 'nexthop' ), $type, $type === 'discard' ? null : $value );
+        $this->_nexthopType = $type;
+        $this->_nexthopIP = $type === 'ip-address' ? $value : null;
+        $this->_nexthopVR = $type === 'next-vr' ? $value : null;
+    }
+
+    /** the interface; '' removes it */
+    public function editInterface( string $interface ): void
+    {
+        $interface = trim( $interface );
+        $old = is_object( $this->_interface ) ? $this->_interface : null;
+        if( $interface === '' )
+        {
+            $this->editRemove( array( 'interface' ) );
+            $this->editSwapReference( $old, null );
+            $this->_interface = null;
+            return;
+        }
+        $interface = self::editName( $interface, 'interface' );
+        $new = $this->editLookup( null, $interface, 'findInterface' );
+        if( $new === null )
+            throw new Exception( "interface '" . $interface . "' not found in the location of the router or above it" );
+        $this->editText( array( 'interface' ), $interface );
+        $this->editSwapReference( $old, $new );
+        $this->_interface = $new;
+    }
+
+    /** metric 1-65535 */
+    public function editMetric( string $metric ): void
+    {
+        if( !preg_match( '/^[0-9]{1,5}$/', trim( $metric ) ) || (int)$metric < 1 || (int)$metric > 65535 )
+            throw new Exception( "metric: 1-65535" );
+        $this->editText( array( 'metric' ), (string)(int)$metric );
+        $this->_metric = (string)(int)$metric;
+    }
+
+    /** administrative distance 10-240; '' removes it (default of the router) */
+    public function editAdminDistance( string $value ): void
+    {
+        if( trim( $value ) === '' )
+        {
+            $this->editRemove( array( 'admin-dist' ) );
+            return;
+        }
+        if( !preg_match( '/^[0-9]{1,3}$/', trim( $value ) ) || (int)$value < 10 || (int)$value > 240 )
+            throw new Exception( "administrative distance: 10-240" );
+        $this->editText( array( 'admin-dist' ), (string)(int)$value );
+    }
+
+    /** route table: unicast, multicast, both, no-install */
+    public function editRouteTable( string $table ): void
+    {
+        $table = strtolower( trim( $table ) );
+        if( !in_array( $table, array( 'unicast', 'multicast', 'both', 'no-install' ), TRUE ) )
+            throw new Exception( "route table: unicast, multicast, both or no-install" );
+        $this->editChoice( array( 'route-table' ), $table, null );
+    }
+
     public function destination()
     {
         return $this->_destination;

@@ -22,6 +22,7 @@ class GPPortal
 {
 
     use ReferenceableObject;
+    use GlobalProtectObjectEdit;
     use PathableName;
     use XmlConvertible;
 
@@ -107,6 +108,13 @@ class GPPortal
         return $ret;
     }
 
+
+    // ---- changes of the actions (gp-portal …-set): see GlobalProtectObjectEdit
+
+    protected function gpEditBase(): array
+    {
+        return array( 'portal-config' );
+    }
 
     public function isTmp()
     {

@@ -22,6 +22,7 @@ class GPGateway
 {
 
     use ReferenceableObject;
+    use GlobalProtectObjectEdit;
     use PathableName;
     use XmlConvertible;
 
@@ -109,6 +110,94 @@ class GPGateway
         return $ret;
     }
 
+
+    // ---- changes of the actions (gp-gateway …-set): see GlobalProtectObjectEdit
+
+    protected function gpEditBase(): array
+    {
+        return array();
+    }
+
+    /** the tunnel interface for remote users (tunnel mode) */
+    public function editTunnelInterface( string $interface ): void
+    {
+        $interface = self::editName( $interface, 'tunnel interface' );
+        $new = null;
+        foreach( $this->locationInterfaces() as $if )
+            if( $if->name() === $interface )
+                $new = $if;
+        if( $new === null || !( $new instanceof TunnelInterface ) )
+            throw new Exception( "tunnel interface '" . $interface . "' is not a tunnel interface of " . $this->owner->owner->name() );
+        $this->editText( array( 'remote-user-tunnel' ), $interface );
+        $this->editSwapReference( $this->remote_user_tunnel, $new );
+        $this->remote_user_tunnel = $new;
+    }
+
+    const CLIENT_LISTS = array( 'ip-pool' => array( 'ip-pool' ), 'access-route' => array( 'split-tunneling', 'access-route' ),
+        'exclude-access-route' => array( 'split-tunneling', 'exclude-access-route' ) );
+
+    /** a client setting (remote-user-tunnel-configs entry) of the gateway (it must exist) */
+    private function gpClientConfig( string $config ): DOMElement
+    {
+        $configs = $this->editFind( array( 'remote-user-tunnel-configs' ) );
+        $e = $configs !== FALSE ? DH::findFirstElementByNameAttr( 'entry', trim( $config ), $configs ) : null;
+        if( $e === null )
+            throw new Exception( "client setting '" . trim( $config ) . "' not found in the gateway" );
+        return $e;
+    }
+
+    /** add / remove a value of a list of a client setting: ip-pool, access-route, exclude-access-route */
+    public function editClientList( string $config, string $list, string $value, bool $add ): void
+    {
+        if( !isset( self::CLIENT_LISTS[$list] ) )
+            throw new Exception( "list: ip-pool, access-route or exclude-access-route" );
+        $value = trim( $value );
+        if( $value === '' || strlen( $value ) > 63 || preg_match( '/[\s<>:]/', $value ) )
+            throw new Exception( $list . ": an IPv4 network / range or an address object" );
+        $node = $this->gpClientConfig( $config );
+        foreach( self::CLIENT_LISTS[$list] as $tag )
+        {
+            $child = DH::findFirstElement( $tag, $node );
+            if( $child === FALSE )
+            {
+                if( !$add )
+                    throw new Exception( $list . " " . $value . " is not there" );
+                $child = DH::createElement( $node, $tag );
+            }
+            $node = $child;
+        }
+        $members = array();
+        foreach( $node->childNodes as $m )
+            if( $m->nodeType == XML_ELEMENT_NODE )
+                $members[] = $m->textContent;
+        if( $add && in_array( $value, $members, TRUE ) )
+            throw new Exception( $list . " " . $value . " is there already" );
+        if( !$add && !in_array( $value, $members, TRUE ) )
+            throw new Exception( $list . " " . $value . " is not there" );
+        if( $add )
+            DH::createElement( $node, 'member', $value );
+        else
+        {
+            foreach( iterator_to_array( $node->childNodes ) as $m )
+                if( $m->nodeType == XML_ELEMENT_NODE && $m->textContent === $value )
+                    $node->removeChild( $m );
+            // empty lists go, up to the client setting
+            while( !$node->hasChildNodes() && $node->nodeName !== 'entry' )
+            {
+                $parent = $node->parentNode;
+                $parent->removeChild( $node );
+                $node = $parent;
+            }
+        }
+        $address = $this->gpEditFind( 'addressStore', $value );
+        if( $address !== null )
+        {
+            if( $add )
+                $address->addReference( $this );
+            elseif( strpos( $this->xmlroot->C14N(), '<member>' . htmlspecialchars( $value ) . '</member>' ) === FALSE )
+                $address->removeReference( $this );
+        }
+    }
 
     public function isTmp()
     {

@@ -22,6 +22,7 @@
 class VlanInterface
 {
     use InterfaceType;
+    use InterfaceObjectEdit;
     use XmlConvertible;
     use PathableName;
     use ReferenceableObject;

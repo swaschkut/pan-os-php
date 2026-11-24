@@ -3200,6 +3200,21 @@ var subjectObject =
                 "name": "display",
                 "MainFunction": {}
             },
+            "dns-set": {
+                "name": "dns-Set",
+                "MainFunction": {},
+                "args": {
+                    "primary": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "secondary": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "DNS servers; empty: removed"
+            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -3247,6 +3262,150 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
                     }
                 }
+            },
+            "gateway-set": {
+                "name": "gateway-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "default gateway; empty: removed"
+            },
+            "ip-pool-add": {
+                "name": "ip-pool-Add",
+                "MainFunction": {},
+                "args": {
+                    "pool": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "a range (10.0.0.10-10.0.0.99) or a network (\/\/ is a \/)"
+                    }
+                },
+                "help": "add an IP pool"
+            },
+            "ip-pool-remove": {
+                "name": "ip-pool-Remove",
+                "MainFunction": {},
+                "args": {
+                    "pool": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove an IP pool"
+            },
+            "lease-set": {
+                "name": "lease-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "unlimited",
+                            "timeout"
+                        ]
+                    },
+                    "minutes": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "lease"
+            },
+            "mode-set": {
+                "name": "mode-Set",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "auto",
+                            "enabled",
+                            "disabled"
+                        ]
+                    }
+                },
+                "help": "DHCP server mode"
+            },
+            "relay-server-add": {
+                "name": "relay-server-Add",
+                "MainFunction": {},
+                "args": {
+                    "server": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "add a DHCP relay server"
+            },
+            "relay-server-remove": {
+                "name": "relay-server-Remove",
+                "MainFunction": {},
+                "args": {
+                    "server": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove a DHCP relay server"
+            },
+            "relay-set": {
+                "name": "relay-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "DHCP relay (IPv4)"
+            },
+            "reservation-add": {
+                "name": "reservation-Add",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "mac": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "e.g. 00-11-22-33-44-55"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "reserve an address for a MAC"
+            },
+            "reservation-remove": {
+                "name": "reservation-Remove",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove a reserved address"
+            },
+            "subnet-mask-set": {
+                "name": "subnet-mask-Set",
+                "MainFunction": {},
+                "args": {
+                    "mask": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "subnet mask; empty: removed"
             }
         },
         "filter": {
@@ -3964,9 +4123,151 @@ var subjectObject =
     "gp-gateway": {
         "name": "gp-gateway",
         "action": {
+            "client-access-route-add": {
+                "name": "client-access-route-Add",
+                "MainFunction": {},
+                "args": {
+                    "config": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "network (\/\/ is a \/), range or address object"
+                    }
+                },
+                "help": "add access route (split tunnel) of a client setting"
+            },
+            "client-access-route-remove": {
+                "name": "client-access-route-Remove",
+                "MainFunction": {},
+                "args": {
+                    "config": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "network (\/\/ is a \/), range or address object"
+                    }
+                },
+                "help": "remove access route (split tunnel) of a client setting"
+            },
+            "client-exclude-access-route-add": {
+                "name": "client-exclude-access-route-Add",
+                "MainFunction": {},
+                "args": {
+                    "config": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "network (\/\/ is a \/), range or address object"
+                    }
+                },
+                "help": "add excluded access route (split tunnel) of a client setting"
+            },
+            "client-exclude-access-route-remove": {
+                "name": "client-exclude-access-route-Remove",
+                "MainFunction": {},
+                "args": {
+                    "config": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "network (\/\/ is a \/), range or address object"
+                    }
+                },
+                "help": "remove excluded access route (split tunnel) of a client setting"
+            },
+            "client-ip-pool-add": {
+                "name": "client-ip-pool-Add",
+                "MainFunction": {},
+                "args": {
+                    "config": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "network (\/\/ is a \/), range or address object"
+                    }
+                },
+                "help": "add IP pool of a client setting"
+            },
+            "client-ip-pool-remove": {
+                "name": "client-ip-pool-Remove",
+                "MainFunction": {},
+                "args": {
+                    "config": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "network (\/\/ is a \/), range or address object"
+                    }
+                },
+                "help": "remove IP pool of a client setting"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "local-interface-set": {
+                "name": "local-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "local interface (an interface of the vsys)"
+            },
+            "local-ip-set": {
+                "name": "local-ip-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "",
+                        "help": "IPv4 address with mask (\/\/ is a \/) or address object; empty: removed"
+                    }
+                },
+                "help": "local IPv4 address"
+            },
+            "ssl-tls-profile-set": {
+                "name": "ssl-tls-profile-Set",
+                "MainFunction": {},
+                "args": {
+                    "profile": {
+                        "type": "string",
+                        "default": "",
+                        "help": "empty: removed"
+                    }
+                },
+                "help": "SSL\/TLS service profile of the gateway"
+            },
+            "tunnel-interface-set": {
+                "name": "tunnel-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "tunnel interface for remote users"
             }
         },
         "filter": {
@@ -4139,6 +4440,41 @@ var subjectObject =
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "local-interface-set": {
+                "name": "local-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "local interface (an interface of the vsys)"
+            },
+            "local-ip-set": {
+                "name": "local-ip-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "",
+                        "help": "IPv4 address with mask (\/\/ is a \/) or address object; empty: removed"
+                    }
+                },
+                "help": "local IPv4 address"
+            },
+            "ssl-tls-profile-set": {
+                "name": "ssl-tls-profile-Set",
+                "MainFunction": {},
+                "args": {
+                    "profile": {
+                        "type": "string",
+                        "default": "",
+                        "help": "empty: removed"
+                    }
+                },
+                "help": "SSL\/TLS service profile of the portal"
             }
         },
         "filter": {
@@ -4308,9 +4644,53 @@ var subjectObject =
     "gpgateway-tunnel": {
         "name": "gpgateway-tunnel",
         "action": {
+            "disabled-set": {
+                "name": "disabled-Set",
+                "MainFunction": {},
+                "args": {
+                    "disabled": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "disable the tunnel"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "local-interface-set": {
+                "name": "local-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "local interface (it must exist)"
+            },
+            "local-ip-set": {
+                "name": "local-ip-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "local IPv4 address; empty: removed"
+            },
+            "tunnel-interface-set": {
+                "name": "tunnel-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "tunnel interface (it must exist)"
             }
         },
         "filter": {
@@ -4336,9 +4716,114 @@ var subjectObject =
     "gre-tunnel": {
         "name": "gre-tunnel",
         "action": {
+            "copy-tos-set": {
+                "name": "copy-tos-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "copy TOS header"
+            },
+            "disabled-set": {
+                "name": "disabled-Set",
+                "MainFunction": {},
+                "args": {
+                    "disabled": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "disable the tunnel"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "keep-alive-set": {
+                "name": "keep-alive-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    },
+                    "interval": {
+                        "type": "string",
+                        "default": "",
+                        "help": "1-50 s; empty: kept"
+                    },
+                    "retry": {
+                        "type": "string",
+                        "default": "",
+                        "help": "1-255; empty: kept"
+                    },
+                    "hold-timer": {
+                        "type": "string",
+                        "default": "",
+                        "help": "1-64; empty: kept"
+                    }
+                },
+                "help": "keep alive"
+            },
+            "local-interface-set": {
+                "name": "local-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "local interface (it must exist)"
+            },
+            "local-ip-set": {
+                "name": "local-ip-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "",
+                        "help": "IPv4 address with mask (\/\/ is a \/) or address object; empty: removed"
+                    }
+                },
+                "help": "local IP"
+            },
+            "peer-address-set": {
+                "name": "peer-address-Set",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "peer address"
+            },
+            "ttl-set": {
+                "name": "ttl-Set",
+                "MainFunction": {},
+                "args": {
+                    "ttl": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "1-255"
+                    }
+                },
+                "help": "TTL"
+            },
+            "tunnel-interface-set": {
+                "name": "tunnel-interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "tunnel interface (it must exist)"
             }
         },
         "filter": {
@@ -4890,6 +5375,17 @@ var subjectObject =
     "interface": {
         "name": "interface",
         "action": {
+            "adjust-tcp-mss-set": {
+                "name": "adjust-tcp-mss-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "adjust TCP MSS"
+            },
             "ae-group-set": {
                 "name": "ae-group-set",
                 "MainFunction": {},
@@ -4899,6 +5395,17 @@ var subjectObject =
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "comment-set": {
+                "name": "comment-Set",
+                "MainFunction": {},
+                "args": {
+                    "comment": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "comment; empty: removed"
             },
             "display": {
                 "name": "display",
@@ -4960,6 +5467,68 @@ var subjectObject =
                     }
                 }
             },
+            "interface-management-profile-set": {
+                "name": "interface-management-profile-Set",
+                "MainFunction": {},
+                "args": {
+                    "profile": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "interface management profile - must exist in the location or above it; empty: removed"
+            },
+            "ip-add": {
+                "name": "ip-Add",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "IPv4 address with mask (e.g. 10.0.0.1\/\/24 - \/\/ is a \/) or an address object"
+                    }
+                },
+                "help": "add an IPv4 address (layer3 \/ loopback \/ tunnel \/ VLAN \/ sub-interface)"
+            },
+            "ip-remove": {
+                "name": "ip-Remove",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove an IPv4 address"
+            },
+            "link-state-set": {
+                "name": "link-state-Set",
+                "MainFunction": {},
+                "args": {
+                    "state": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "auto",
+                            "up",
+                            "down"
+                        ]
+                    }
+                },
+                "help": "link state of an ethernet \/ aggregate interface"
+            },
+            "mtu-set": {
+                "name": "mtu-Set",
+                "MainFunction": {},
+                "args": {
+                    "mtu": {
+                        "type": "string",
+                        "default": "",
+                        "help": "576-9216; empty: default"
+                    }
+                },
+                "help": "MTU"
+            },
             "name-rename": {
                 "name": "name-Rename",
                 "MainFunction": {},
@@ -4982,6 +5551,18 @@ var subjectObject =
             "replace_ipv6_objects_by_value": {
                 "name": "replace_IPv6_objects_by_value",
                 "MainFunction": {}
+            },
+            "tag-set": {
+                "name": "tag-Set",
+                "MainFunction": {},
+                "args": {
+                    "tag": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "1-4094"
+                    }
+                },
+                "help": "VLAN tag of a sub-interface"
             },
             "type-aggregate-ethernet-set": {
                 "name": "type-aggregate-ethernet-set",
@@ -5190,6 +5771,57 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
                     }
                 }
+            },
+            "permitted-ip-add": {
+                "name": "permitted-ip-Add",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "address \/ network (e.g. 10.0.0.0\/\/24 - \/\/ is a \/)"
+                    }
+                },
+                "help": "add a permitted IP"
+            },
+            "permitted-ip-remove": {
+                "name": "permitted-ip-Remove",
+                "MainFunction": {},
+                "args": {
+                    "ip": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove a permitted IP"
+            },
+            "service-set": {
+                "name": "service-Set",
+                "MainFunction": {},
+                "args": {
+                    "service": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ping",
+                            "telnet",
+                            "ssh",
+                            "http",
+                            "https",
+                            "snmp",
+                            "response-pages",
+                            "http-ocsp",
+                            "userid-service",
+                            "userid-syslog-listener-ssl",
+                            "userid-syslog-listener-udp"
+                        ]
+                    },
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "allow a service"
             }
         },
         "filter": {
@@ -6567,6 +7199,33 @@ var subjectObject =
     "routing": {
         "name": "routing",
         "action": {
+            "admin-distance-set": {
+                "name": "admin-distance-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "static",
+                            "static-ipv6",
+                            "ospf-int",
+                            "ospf-ext",
+                            "ospfv3-int",
+                            "ospfv3-ext",
+                            "ibgp",
+                            "ebgp",
+                            "rip"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "",
+                        "help": "10-240; empty: default"
+                    }
+                },
+                "help": "administrative distance of a route type"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -6574,6 +7233,17 @@ var subjectObject =
             "display-route-table-fast": {
                 "name": "display-route-table-fast",
                 "MainFunction": {}
+            },
+            "ecmp-set": {
+                "name": "ecmp-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "ECMP"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -6618,6 +7288,67 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
                     }
                 }
+            },
+            "interface-add": {
+                "name": "interface-Add",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "add an interface to the virtual \/ logical router (it must exist)"
+            },
+            "interface-remove": {
+                "name": "interface-Remove",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "remove an interface from the router"
+            },
+            "static-route-add": {
+                "name": "static-route-Add",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "destination": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "IPv4 network (e.g. 10.0.0.0\/\/8 - \/\/ is a \/) or address object"
+                    },
+                    "nexthop-type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ip-address",
+                            "next-vr",
+                            "discard",
+                            "none"
+                        ]
+                    },
+                    "nexthop": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "interface": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "metric": {
+                        "type": "string",
+                        "default": "",
+                        "help": "1-65535; empty: 10"
+                    }
+                },
+                "help": "add an IPv4 static route"
             }
         },
         "filter": {
@@ -14078,9 +14809,33 @@ var subjectObject =
     "static-route": {
         "name": "static-route",
         "action": {
+            "admin-distance-set": {
+                "name": "admin-distance-Set",
+                "MainFunction": {},
+                "args": {
+                    "value": {
+                        "type": "string",
+                        "default": "",
+                        "help": "10-240; empty: default of the router"
+                    }
+                },
+                "help": "administrative distance"
+            },
             "delete": {
                 "name": "delete",
                 "MainFunction": {}
+            },
+            "destination-set": {
+                "name": "destination-Set",
+                "MainFunction": {},
+                "args": {
+                    "destination": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "IPv4 network (e.g. 10.0.0.0\/\/8 - \/\/ is a \/) or address object"
+                    }
+                },
+                "help": "destination"
             },
             "display": {
                 "name": "display",
@@ -14139,6 +14894,67 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
                     }
                 }
+            },
+            "interface-set": {
+                "name": "interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "interface": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "interface; empty: removed"
+            },
+            "metric-set": {
+                "name": "metric-Set",
+                "MainFunction": {},
+                "args": {
+                    "metric": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "1-65535"
+                    }
+                },
+                "help": "metric"
+            },
+            "nexthop-set": {
+                "name": "nexthop-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ip-address",
+                            "next-vr",
+                            "discard",
+                            "none"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "next hop"
+            },
+            "route-table-set": {
+                "name": "route-table-Set",
+                "MainFunction": {},
+                "args": {
+                    "table": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "unicast",
+                            "multicast",
+                            "both",
+                            "no-install"
+                        ]
+                    }
+                },
+                "help": "route table"
             }
         },
         "filter": {
@@ -15458,6 +16274,59 @@ var subjectObject =
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "interface-set": {
+                "name": "interface-Set",
+                "MainFunction": {},
+                "args": {
+                    "number": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "1",
+                            "2"
+                        ]
+                    },
+                    "interface": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "interface 1 \/ 2 (of type virtual-wire)"
+            },
+            "link-state-pass-through-set": {
+                "name": "link-state-pass-through-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "link state pass through"
+            },
+            "multicast-firewalling-set": {
+                "name": "multicast-firewalling-Set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "multicast firewalling"
+            },
+            "tag-allowed-set": {
+                "name": "tag-allowed-Set",
+                "MainFunction": {},
+                "args": {
+                    "tags": {
+                        "type": "string",
+                        "default": "",
+                        "help": "tags \/ ranges, separated by | (e.g. 0|10-20); empty: removed"
+                    }
+                },
+                "help": "allowed VLAN tags"
             }
         },
         "filter": {
@@ -16002,6 +16871,17 @@ var subjectObject =
                 "name": "alert-only-set",
                 "MainFunction": {}
             },
+            "description-set": {
+                "name": "description-Set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "help": "description; empty: removed"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -16055,6 +16935,119 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
                     }
                 }
+            },
+            "flood-set": {
+                "name": "flood-Set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "tcp-syn",
+                            "udp",
+                            "icmp",
+                            "icmpv6",
+                            "other-ip"
+                        ]
+                    },
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    },
+                    "alarm-rate": {
+                        "type": "string",
+                        "default": "",
+                        "help": "connections \/ s; empty: kept"
+                    },
+                    "activate-rate": {
+                        "type": "string",
+                        "default": "",
+                        "help": "connections \/ s; empty: kept"
+                    },
+                    "maximal-rate": {
+                        "type": "string",
+                        "default": "",
+                        "help": "connections \/ s; empty: kept"
+                    },
+                    "syn-action": {
+                        "type": "string",
+                        "default": "",
+                        "choices": [
+                            "",
+                            "red",
+                            "syn-cookies"
+                        ]
+                    }
+                },
+                "help": "flood protection of a type"
+            },
+            "packet-set": {
+                "name": "packet-Set",
+                "MainFunction": {},
+                "args": {
+                    "option": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "a packet based protection, e.g. discard-ip-spoof, strict-ip-check, discard-tcp-split-handshake, routing-header-0"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "yes \/ no (tcp-reject-non-syn: global \/ yes \/ no; asymmetric-path: global \/ drop \/ bypass)"
+                    }
+                },
+                "help": "packet based attack protection"
+            },
+            "scan-set": {
+                "name": "scan-Set",
+                "MainFunction": {},
+                "args": {
+                    "scan": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "tcp-port-scan",
+                            "host-sweep",
+                            "udp-port-scan"
+                        ]
+                    },
+                    "action": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "allow",
+                            "alert",
+                            "block",
+                            "block-ip"
+                        ]
+                    },
+                    "interval": {
+                        "type": "string",
+                        "default": "",
+                        "help": "seconds 2-65535; empty: kept"
+                    },
+                    "threshold": {
+                        "type": "string",
+                        "default": "",
+                        "help": "events 2-65535; empty: kept"
+                    },
+                    "track-by": {
+                        "type": "string",
+                        "default": "",
+                        "choices": [
+                            "",
+                            "source",
+                            "source-and-destination"
+                        ]
+                    },
+                    "duration": {
+                        "type": "string",
+                        "default": "",
+                        "help": "block-ip: seconds 1-3600"
+                    }
+                },
+                "help": "reconnaissance protection of a scan"
             },
             "scan.alert-only-set": {
                 "name": "scan.alert-only-set",

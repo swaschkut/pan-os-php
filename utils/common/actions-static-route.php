@@ -216,3 +216,77 @@ StaticRouteCallContext::$supportedActions['display-nexthop-ips'] = array(
     }
 
 );
+
+// ---- changes (offline: an XML file / the config viewer) - one edit… method of the class each (NetworkObjectEdit)
+
+StaticRouteCallContext::$supportedActions['destination-set'] = array(
+    'name' => 'destination-Set',
+    'MainFunction' => function ( StaticRouteCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editDestination( $a['destination'] );
+            return "destination " . $a['destination'];
+        } );
+    },
+    'args' => array( 'destination' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'IPv4 network (e.g. 10.0.0.0//8 - // is a /) or address object' ) ),
+    'help' => 'destination',
+);
+
+StaticRouteCallContext::$supportedActions['nexthop-set'] = array(
+    'name' => 'nexthop-Set',
+    'MainFunction' => function ( StaticRouteCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editNexthop( $a['type'], $a['value'] );
+            return "next hop " . $a['type'] . ( $a['value'] !== '' ? " " . $a['value'] : "" );
+        } );
+    },
+    'args' => array( 'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'ip-address', 'next-vr', 'discard', 'none' ) ), 'value' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'next hop',
+);
+
+StaticRouteCallContext::$supportedActions['interface-set'] = array(
+    'name' => 'interface-Set',
+    'MainFunction' => function ( StaticRouteCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editInterface( $a['interface'] );
+            return $a['interface'] === '' ? "interface removed" : "interface '" . $a['interface'] . "'";
+        } );
+    },
+    'args' => array( 'interface' => array( 'type' => 'string', 'default' => '' ) ),
+    'help' => 'interface; empty: removed',
+);
+
+StaticRouteCallContext::$supportedActions['metric-set'] = array(
+    'name' => 'metric-Set',
+    'MainFunction' => function ( StaticRouteCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editMetric( $a['metric'] );
+            return "metric " . $a['metric'];
+        } );
+    },
+    'args' => array( 'metric' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => '1-65535' ) ),
+    'help' => 'metric',
+);
+
+StaticRouteCallContext::$supportedActions['admin-distance-set'] = array(
+    'name' => 'admin-distance-Set',
+    'MainFunction' => function ( StaticRouteCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editAdminDistance( $a['value'] );
+            return "administrative distance " . ( $a['value'] === '' ? 'default' : $a['value'] );
+        } );
+    },
+    'args' => array( 'value' => array( 'type' => 'string', 'default' => '', 'help' => '10-240; empty: default of the router' ) ),
+    'help' => 'administrative distance',
+);
+
+StaticRouteCallContext::$supportedActions['route-table-set'] = array(
+    'name' => 'route-table-Set',
+    'MainFunction' => function ( StaticRouteCallContext $context ) {
+        $context->runEdit( function ( $o, $a ) {
+            $o->editRouteTable( $a['table'] );
+            return "route table " . $a['table'];
+        } );
+    },
+    'args' => array( 'table' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'unicast', 'multicast', 'both', 'no-install' ) ) ),
+    'help' => 'route table',
+);

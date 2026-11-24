@@ -1,0 +1,13 @@
+<config version="11.1.0" urldb="paloaltonetworks"><mgt-config><users/></mgt-config><shared/><devices><entry name="localhost.localdomain"><network>
+<interface><ethernet>
+<entry name="ethernet1/1"><layer3><ip><entry name="198.51.100.1/24"/></ip><units><entry name="ethernet1/1.10"><tag>10</tag><ip><entry name="10.10.0.1/24"/></ip></entry></units></layer3></entry>
+<entry name="ethernet1/2"><layer2/></entry>
+<entry name="ethernet1/3"><aggregate-group>ae1</aggregate-group></entry>
+</ethernet>
+<aggregate-ethernet><entry name="ae1"><layer3><ip><entry name="192.0.2.1/24"/></ip></layer3></entry></aggregate-ethernet>
+<loopback><units><entry name="loopback.1"><ip><entry name="10.255.0.1/32"/></ip></entry></units></loopback>
+<tunnel><units><entry name="tunnel.1"/></units></tunnel>
+<vlan><units><entry name="vlan.5"/></units></vlan>
+</interface>
+<profiles><zone-protection-profile><entry name="zpp-1"><flood><tcp-syn><red><alarm-rate>10000</alarm-rate><activate-rate>10000</activate-rate><maximal-rate>40000</maximal-rate></red><enable>no</enable></tcp-syn></flood></entry></zone-protection-profile><interface-management-profile><entry name="mgmt-a"><ping>yes</ping></entry><entry name="mgmt-b"><https>yes</https></entry></interface-management-profile></profiles>
+</network><vsys><entry name="vsys1"><import><network><interface><member>ethernet1/1</member><member>ethernet1/1.10</member><member>ae1</member><member>loopback.1</member><member>tunnel.1</member><member>vlan.5</member></interface></network></import></entry></vsys></entry></devices></config>
