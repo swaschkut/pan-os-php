@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared>
+    <address>
+      <entry name="h-shared"><ip-netmask>198.51.100.10/32</ip-netmask></entry>
+    </address>
+    <service>
+      <entry name="tcp-shared"><protocol><tcp><port>8080</port></tcp></protocol></entry>
+    </service>
+  </shared>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <address>
+            <entry name="h-1"><ip-netmask>192.0.2.1/32</ip-netmask></entry>
+            <entry name="h-2"><ip-netmask>192.0.2.2/32</ip-netmask></entry>
+            <entry name="h-3"><ip-netmask>192.0.2.3/32</ip-netmask></entry>
+            <entry name="w-1"><ip-wildcard>10.0.0.1/0.255.0.255</ip-wildcard></entry>
+          </address>
+          <address-group>
+            <entry name="g-1"><static><member>h-1</member><member>h-2</member></static></entry>
+            <entry name="g-2"><static><member>g-1</member></static></entry>
+            <entry name="g-dyn"><dynamic><filter>'tag-a'</filter></dynamic></entry>
+          </address-group>
+          <service>
+            <entry name="tcp-1"><protocol><tcp><port>8443</port></tcp></protocol></entry>
+            <entry name="tcp-2"><protocol><tcp><port>8444</port></tcp></protocol></entry>
+          </service>
+          <service-group>
+            <entry name="sg-1"><members><member>tcp-1</member></members></entry>
+            <entry name="sg-2"><members><member>sg-1</member></members></entry>
+          </service-group>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

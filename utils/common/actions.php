@@ -169,3 +169,8 @@ LogProfileCallContext::prepareSupportedActions();
 require_once("ProfileCallContext.php");
 require_once "actions-profile.php";
 ProfileCallContext::prepareSupportedActions();
+
+
+// actions with one definition for several types (CallContext::registerAction) - after the types, so a type-specific
+// action of the same name wins
+require_once "actions-common.php";

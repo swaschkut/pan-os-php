@@ -23,9 +23,10 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   edit dialog of PAN-OS) with its fields. A field is applied **when you leave it after a change** (or press Enter) -
   as **one pan-os-php action on exactly this object** (its location, filter `(name eq …)`): e.g. the description →
   `description-delete/description-append:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, the value of an ip-netmask →
-  `value-replace:…`, the name → `name-rename:…` (tags too), a member → `add-member:…`, the color of a tag →
+  `value-replace:…`, the name → `name-rename:…` (tags too), a member of an address / service group → `add-member:…` / ✕ `remove-member:…`, the color of a tag →
   `color-set:…`, its comments → `comments-delete/comments-add:…`. Under the field the action is shown (✓). A field
-  without a pan-os-php action for it is read only (and says why). Descriptions and tag comments may contain `,` `:`
+  without a pan-os-php action for it is read only (and says why). An action that refuses the change (pan-os-php
+  SKIPPED, e.g. the last member of a group) leaves the version as it was and shows its reason at the field. Descriptions and tag comments may contain `,` `:`
   `/` `|` (written as the pan-os-php aliases `$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`); in every other
   value `,` and `:` can not be used (they separate the arguments of an action).
 - **Rule window** (every entry under *Policies*: Security, NAT, QoS, PBF, Decryption, …): the fields the rule has -
@@ -110,8 +111,9 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   location + filter) - type part of the name; the suggestions show the arguments of each action.
 - **refcount** (address, service, tag, zone, schedule, security profile (group), …): how many objects use this one.
   Click the number to see them right below the object (0: not used, nothing to click): the rules (with rule type, pre / post and the field, e.g. `source`), groups and
-  profile groups, with their location. **Open ↗** shows the user in a new window - same version, its type, location
-  and `(name eq …)` already set. A member limited to types / locations sees only the users inside them.
+  profile groups, with their location. **Open ↗** shows the user in a new window - same version, the entry of its
+  class (an address group under *Address Groups*, a service group under *Service Groups*), location and `(name eq …)`
+  already set. A member limited to types / locations sees only the users inside them.
 
 
 ## Runs

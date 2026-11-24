@@ -253,6 +253,9 @@
             "name-touppercase": {
                 "class": "change"
             },
+            "remove-member": {
+                "class": "change"
+            },
             "removewhereused": {
                 "class": "change"
             },
@@ -1865,6 +1868,9 @@
             }
         },
         "service": {
+            "add-member": {
+                "class": "change"
+            },
             "addobjectwhereused": {
                 "class": "change"
             },
@@ -1937,6 +1943,9 @@
                 "class": "change"
             },
             "name-touppercase": {
+                "class": "change"
+            },
+            "remove-member": {
                 "class": "change"
             },
             "removewhereused": {

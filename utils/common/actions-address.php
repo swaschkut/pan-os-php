@@ -274,53 +274,7 @@ AddressCallContext::$supportedActions[] = array(
         'skipNatRules' => array('type' => 'bool', 'default' => FALSE))
 );
 
-AddressCallContext::$supportedActions[] = array(
-    'name' => 'add-member',
-    'MainFunction' => function (AddressCallContext $context) {
-        $object = $context->object;
-        $addressObjectName = $context->arguments['addressobjectname'];
-
-        if( !$object->isGroup() )
-        {
-            $string = "because object is not an address group";
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
-        }
-
-        $address0bjectToAdd = $object->owner->find($addressObjectName);
-        if( $address0bjectToAdd === null )
-        {
-            $string = "because address object name: " . $addressObjectName . " not found";
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
-        }
-
-        if( $object->has($address0bjectToAdd) )
-        {
-            $string = "because address object is already a member of this address group";
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
-        }
-
-        if( $address0bjectToAdd->isType_ipWildcard() )
-        {
-            $string = "because wildcard address object can not be added as a member to a address group";
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
-        }
-
-        if( $context->isAPI )
-            $object->API_addMember($address0bjectToAdd);
-        else
-            $object->addMember($address0bjectToAdd);
-
-        return;
-
-    },
-    'args' => array(
-        'addressobjectname' => array('type' => 'string', 'default' => '*nodefault*')
-    )
-);
+// add-member / remove-member: actions-common.php (address and service groups)
 
 AddressCallContext::$supportedActions[] = array(
     'name' => 'AddToGroup',

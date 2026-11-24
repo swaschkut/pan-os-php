@@ -2300,15 +2300,15 @@ function filterSuggest(filters, text, pos) {
 }
 
 // ---------------------------------------------------------------- viewer / editor
-// preset (a link "Open" of a reference, in a new window): type, ruletype, securityprofiletype, location, filter
+// preset (a link "Open" of a reference, in a new window): type, entry (menu entry of the object's class), ruletype, securityprofiletype, location, filter
 // ---------------------------------------------------------------- the menu of the viewer (as in PAN-OS)
 // an entry: a pan-os-php type (+ rule type, + a filter of its own); 'window': the object opens in the object window
 const VIEWER_MENU_SECTIONS = ['Objects', 'Policies', 'Network', 'Device', 'Other'];
 const VIEWER_MENU = [
     ['Objects', 'addresses', 'Addresses', 'address', { filter: '!(object is.group)', window: 'address', one: 'Address' }],
-    ['Objects', 'address-groups', 'Address Groups', 'address', { filter: '(object is.group)', window: 'addressgroup', one: 'Address Group' }],
+    ['Objects', 'address-groups', 'Address Groups', 'address', { filter: '(object is.group)', window: 'addressgroup', one: 'Address Group', classes: ['AddressGroup'] }],
     ['Objects', 'services', 'Services', 'service', { filter: '!(object is.group)', window: 'service', one: 'Service' }],
-    ['Objects', 'service-groups', 'Service Groups', 'service', { filter: '(object is.group)', window: 'servicegroup', one: 'Service Group' }],
+    ['Objects', 'service-groups', 'Service Groups', 'service', { filter: '(object is.group)', window: 'servicegroup', one: 'Service Group', classes: ['ServiceGroup'] }],
     ['Objects', 'tags', 'Tags', 'tag', { window: 'tag', one: 'Tag' }],
     ['Objects', 'applications', 'Applications', 'application'],
     ['Objects', 'edls', 'External Dynamic Lists', 'edl'],
@@ -2355,6 +2355,12 @@ const VIEWER_MENU = [
     ['Other', 'dns-rules', 'DNS Rules', 'dns-rule'],
 ];
 /** the entries the user can open: types of the meta (and of a limited access); every other type of the meta under "Other" */
+// several entries of one pan-os-php type (addresses / address groups, services / service groups): "classes" names the
+// PHP classes of an entry; an object of another class goes to the entry of the type without "classes"
+function viewerEntryFor(entries, type, ruletype, cls) {
+    const same = entries.filter(e => e.type === type && (type !== 'rule' || e.ruletype === (ruletype || 'security')));
+    return same.find(e => cls && (e.classes || []).includes(cls)) || same.find(e => !e.classes) || same[0] || entries.find(e => e.type === type) || null;
+}
 function viewerMenu(types) {
     // every entry opens its objects in a window: an own one (fields with actions) or the generic one (all fields, read only)
     const list = VIEWER_MENU.filter(m => types.includes(m[3])).map(m => Object.assign({ section: m[0], id: m[1], label: m[2], type: m[3], window: 'generic' }, m[4] || {}));
@@ -2681,6 +2687,9 @@ async function showViewer(config, preset) {
         // an object of a template: pan-os-php finds a vsys of a template only with location=any (+ template) - the
         // list then shows all locations of the template, "at" says which row to open
         const h = new URLSearchParams({ p: pid, c: state.config.cid, type: ref.type, location: ref.template ? 'any' : ref.location, filter: '(name eq ' + ref.name + ')', open: ref.name });
+        // the entry of the object's class: an address group opens as address group (not in the list / window of addresses)
+        const e = viewerEntryFor(entries, ref.type, ref.ruletype, ref.class);
+        if (e) h.set('entry', e.id);
         if (ref.template && ref.location) h.set('at', ref.location);
         for (const k of ['ruletype', 'securityprofiletype', 'devicetype', 'template', 'profile']) if (ref[k]) h.set(k, ref[k]);
         return window.location.pathname + '#' + h.toString();
@@ -2688,7 +2697,8 @@ async function showViewer(config, preset) {
     // the references of one object as a box (list rows and the object window): who uses it, each with "Open ↗"
     function refsTable(refs) {
         return table(['Used by', 'Location', 'Name', 'Where', ''], refs.map(ref => el('tr', {},
-            el('td', { text: ref.type ? ref.type + (ref.ruletype ? ' (' + ref.ruletype + ')' : '') + (ref.securityprofiletype ? ' (' + ref.securityprofiletype + ')' : '') + (ref.devicetype ? ' (' + ref.devicetype + ')' : '') : ref.class }),
+            el('td', { text: ref.type && (viewerEntryFor(entries, ref.type, ref.ruletype, ref.class) || {}).classes ? viewerEntryFor(entries, ref.type, ref.ruletype, ref.class).one
+                : ref.type ? ref.type + (ref.ruletype ? ' (' + ref.ruletype + ')' : '') + (ref.securityprofiletype ? ' (' + ref.securityprofiletype + ')' : '') + (ref.devicetype ? ' (' + ref.devicetype + ')' : '') : ref.class }),
             el('td', { text: (ref.location || '') + (ref.template ? ' (template ' + ref.template + ')' : '') }),
             el('td', { text: ref.name + (ref.profile ? ' (profile ' + ref.profile + ')' : '') }),
             el('td', { class: 'wrap', text: [ref.rulebase ? ref.rulebase + ' rule' : null, ...(ref.fields || [])].filter(x => x).join(', ') }),
@@ -2809,8 +2819,9 @@ async function showViewer(config, preset) {
                 desc, tags, loc];
         if (kind === 'addressgroup')
             return [name, { key: 'type', label: 'Type', kind: 'ro', value: row.type },
-                Array.isArray(m.static) ? { key: 'members', label: 'Members', kind: 'list', value: m.static, needs: ['add-member'], add: x => 'add-member:' + actArg(x),
-                    note: 'removing a member: no pan-os-php action yet' }
+                Array.isArray(m.static) ? { key: 'members', label: 'Members', kind: 'list', value: m.static, needs: ['add-member'], needsRemove: ['remove-member'],
+                    add: x => 'add-member:' + actArg(x), remove: x => 'remove-member:' + actArg(x),
+                    note: 'an object / group of the location or above it; the last member can not be removed' }
                     : { key: 'filter', label: 'Dynamic filter', kind: 'ro', value: row.filter || '', note: 'no pan-os-php action to change it yet' },
                 desc, tags, loc];
         if (kind === 'service') {
@@ -2825,7 +2836,9 @@ async function showViewer(config, preset) {
                 { key: 'timeouts', label: '', kind: 'button', text: 'Inherit all timeouts', needs: ['timeout-inherit'], act: () => 'timeout-inherit' }, loc];
         }
         if (kind === 'servicegroup')
-            return [name, { key: 'members', label: 'Members', kind: 'ro', value: (Array.isArray(m.members) ? m.members : []).join(', '), note: 'no pan-os-php action to change members of a service group yet' },
+            return [name, { key: 'members', label: 'Members', kind: 'list', value: Array.isArray(m.members) ? m.members : [], needs: ['add-member'], needsRemove: ['remove-member'],
+                    add: x => 'add-member:' + actArg(x), remove: x => 'remove-member:' + actArg(x),
+                    note: 'a service / service group of the location or above it; the last member can not be removed' },
                 tags, loc];
         if (kind === 'rule') return ruleFields(row, m, name, loc);
         if (kind === 'zone') {
@@ -3888,7 +3901,7 @@ async function showViewer(config, preset) {
         // a link from the references: the entry of the type (and rule type) - without the filter of the entry (an address
         // group is in the list of the addresses then)
         if (preset.type && types.includes(preset.type)) {
-            const e = entries.find(x => x.type === preset.type && (preset.type !== 'rule' || x.ruletype === (preset.ruletype || 'security'))) || entries.find(x => x.type === preset.type);
+            const e = entries.find(x => x.id === preset.entry && x.type === preset.type) || viewerEntryFor(entries, preset.type, preset.ruletype, null);
             if (e) { cur = Object.assign({}, e, { noBase: !!e.filter }); typeChanged(); drawMenu(); }
         }
         if (preset.securityprofiletype) sptype.value = preset.securityprofiletype;
@@ -3939,7 +3952,7 @@ async function openFromHash() {
     const c = (await api('GET', 'projects/' + p.pid + '/configs')).configs.find(x => x.cid === h.get('c'));
     if (!c) throw new Error('this version does not exist any more');
     state.project = p;
-    await showViewer(c, Object.fromEntries(['type', 'ruletype', 'securityprofiletype', 'devicetype', 'location', 'filter', 'template', 'profile', 'open', 'at'].map(k => [k, h.get(k)])));
+    await showViewer(c, Object.fromEntries(['type', 'entry', 'ruletype', 'securityprofiletype', 'devicetype', 'location', 'filter', 'template', 'profile', 'open', 'at'].map(k => [k, h.get(k)])));
     return true;
 }
 run(async () => {

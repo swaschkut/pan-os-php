@@ -776,6 +776,29 @@ function viewerDecode( $out )
     return array( 'ok' => FALSE, 'error' => trim( $msg ) !== '' ? trim( $msg ) : 'pan-os-php stopped with an error - check the syntax of filter / actions' );
 }
 
+/** the loaded configuration as a hash (did a change change anything?); null: not loaded */
+function viewerConfigHash()
+{
+    $pan = UTIL::$sharedConfig['pan'] ?? null;
+    if( !is_object( $pan ) || !isset( $pan->xmldoc ) || !( $pan->xmldoc instanceof DOMDocument ) )
+        return null;
+    return md5( $pan->xmldoc->saveXML() );
+}
+
+/** the messages of the objects an action SKIPPED (PH::ACTIONstatus: status type SKIPPED) in the JSON of a run */
+function viewerSkipped( $json ): array
+{
+    $out = array();
+    if( !is_array( $json ) )
+        return $out;
+    if( isset( $json['status']['type'] ) && $json['status']['type'] === 'SKIPPED' )
+        $out[] = preg_replace( '/^because /', '', (string)( $json['status']['message'] ?? 'skipped' ) );
+    foreach( $json as $v )
+        if( is_array( $v ) )
+            $out = array_merge( $out, viewerSkipped( $v ) );
+    return $out;
+}
+
 function viewerSend( $conn, array $answer )
 {
     viewerQuiet( function() use ( $conn, $answer ) {
@@ -811,10 +834,21 @@ function viewerChild( $conn, $type, array $args, $send )
             $r['xml'] = $GLOBALS['viewerXml'];
         if( !$done && $r['ok'] )
             $r = array( 'ok' => FALSE, 'error' => 'the run stopped' );
+        // the trial of a change: an action SKIPPED (refused) and the configuration is the same as before - an error of
+        // the change with the reason, else the field looks applied. A SKIPPED next to a real change (e.g.
+        // description-delete on an object without description before description-append, or some objects of a wider
+        // filter) is no error.
+        if( !$send && $r['ok'] )
+        {
+            $skipped = viewerSkipped( $r['json'] );
+            if( $skipped !== array() && $GLOBALS['viewerTrialHash'] !== null && viewerConfigHash() === $GLOBALS['viewerTrialHash'] )
+                $r = array( 'ok' => FALSE, 'error' => 'not changed: ' . implode( '; ', array_unique( $skipped ) ) );
+        }
         if( $send || !$r['ok'] )
             viewerSend( $conn, $r + array( 'status' => viewerStatus() ) );
         posix_kill( getmypid(), $r['ok'] ? SIGUSR1 : SIGKILL );
     } );
+    $GLOBALS['viewerTrialHash'] = $send ? null : viewerConfigHash();
     try
     {
         ob_start();

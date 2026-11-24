@@ -303,6 +303,25 @@ class CallContext
     }
 
     /**
+     * An action with the same definition for several object types (the counterpart of RQuery::registerFilter): written
+     * once in actions-common.php and registered for every listed CallContext class. A type-specific action of the same
+     * name wins - it is kept, the common one is not added for that type.
+     * @param string[] $contextClasses e.g. array( 'AddressCallContext', 'ServiceCallContext' )
+     */
+    static public function registerAction( array $contextClasses, array $definition ): void
+    {
+        $key = strtolower( $definition['name'] );
+        foreach( $contextClasses as $class )
+        {
+            foreach( $class::$supportedActions as $k => $a )
+                if( strtolower( is_string( $k ) ? $k : $a['name'] ) === $key )
+                    continue 2;
+            $class::$supportedActions[$key] = $definition;
+            ksort( $class::$supportedActions );
+        }
+    }
+
+    /**
      * an action that changes a network object with one of its edit… methods (NetworkObjectEdit): offline only (an XML
      * file, the config viewer); an invalid value stops with its reason. $fn( $object, $arguments ) returns the log line.
      */

@@ -357,6 +357,10 @@ eq( status( $alice->call( 'PUT', $P . '/members', array( 'user' => 'bob', 'role'
 $r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'shared', 'actions' => 'tag-add:tag-that-does-not-exist' ) );
 eq( status( $r ), 400, 'failing action is an error' );
 eq( $bob->call( 'GET', $C . '/status' )[1]['dirty'] ?? null, FALSE, 'a failing action changes nothing' );
+// an action that SKIPPED the object (refused, nothing done) is an error of the change, with the reason - not "applied"
+$r = $bob->call( 'POST', $C . '/change', array( 'type' => 'address', 'location' => 'shared', 'filter' => '(name eq test-group2)', 'actions' => 'remove-member:shared-host2' ) );
+eq( array( status( $r ), strpos( json_encode( $r[1] ), 'last member' ) !== FALSE, $bob->call( 'GET', $C . '/status' )[1]['dirty'] ?? null ),
+    array( 400, TRUE, FALSE ), 'a SKIPPED action is an error with its reason (remove-member: last member) and changes nothing' );
 $r = $bob->call( 'POST', $C . '/change', $change );
 eq( status( $r ), 200, 'bob (write) changes an object' );
 eq( $r[1]['status']['dirty'] ?? null, TRUE, 'unsaved change is reported' );

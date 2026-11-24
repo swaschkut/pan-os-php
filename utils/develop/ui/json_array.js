@@ -7,11 +7,12 @@ var subjectObject =
                 "name": "add-member",
                 "MainFunction": {},
                 "args": {
-                    "addressobjectname": {
+                    "membername": {
                         "type": "string",
                         "default": "*nodefault*"
                     }
-                }
+                },
+                "help": "adds an object \/ group of the location of the group or above it to a static address \/ service group.\nExample: 'actions=add-member:h-10.0.0.1'"
             },
             "addobjectwhereused": {
                 "name": "addObjectWhereUsed",
@@ -384,6 +385,17 @@ var subjectObject =
             "name-touppercase": {
                 "name": "name-toUpperCase",
                 "MainFunction": {}
+            },
+            "remove-member": {
+                "name": "remove-member",
+                "MainFunction": {},
+                "args": {
+                    "membername": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes a member of a static address \/ service group (not the last one).\nExample: 'actions=remove-member:h-10.0.0.1'"
             },
             "removewhereused": {
                 "name": "removeWhereUsed",
@@ -13678,6 +13690,17 @@ var subjectObject =
     "service": {
         "name": "service",
         "action": {
+            "add-member": {
+                "name": "add-member",
+                "MainFunction": {},
+                "args": {
+                    "membername": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "adds an object \/ group of the location of the group or above it to a static address \/ service group.\nExample: 'actions=add-member:h-10.0.0.1'"
+            },
             "addobjectwhereused": {
                 "name": "addObjectWhereUsed",
                 "MainFunction": {},
@@ -13934,6 +13957,17 @@ var subjectObject =
             "name-touppercase": {
                 "name": "name-toUpperCase",
                 "MainFunction": {}
+            },
+            "remove-member": {
+                "name": "remove-member",
+                "MainFunction": {},
+                "args": {
+                    "membername": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes a member of a static address \/ service group (not the last one).\nExample: 'actions=remove-member:h-10.0.0.1'"
             },
             "removewhereused": {
                 "name": "removeWhereUsed",

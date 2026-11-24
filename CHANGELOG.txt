@@ -2,6 +2,10 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* type=address / service | new common actions add-member / remove-member for static address groups and service groups (one definition: utils/common/actions-common.php); a refused change is SKIPPED with the reason (not a member, last member, loop, dynamic group, wildcard address) - a run over several groups goes on. address add-member: moved there, argument now "membername"
+* CallContext::registerAction | an action with one definition for several types (counterpart of RQuery::registerFilter); a type-specific action of the same name wins
+* config-viewer | address group and service group window: members can be added and removed
+* config-viewer | a change whose action SKIPPED and that changed nothing is refused with the reason at the field (before: shown as applied)
 * type=ike-gateway | new actions (offline: XML file / config viewer): version-set, ike-crypto-profile-set (IKEv1 / IKEv2), peer-address-set (ip / fqdn / dynamic), local-interface-set, local-ip-set, local-id-set, peer-id-set, nat-traversal-set, fragmentation-set, passive-mode-set, dpd-set, exchange-mode-set, disabled-set - references updated; a profile that does not exist in the location or above it is refused
 * type=ike-profile | new actions: encryption-set, hash-set, dh-group-set, lifetime-set, authentication-multiple-set
 * type=ipsec-profile | new actions: esp-encryption-set, esp-authentication-set, dh-group-set, lifetime-set, lifesize-set
@@ -36,6 +40,7 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* config-viewer | references: "Open ↗" of an address group / service group opened it in the list and window of addresses / services (first entry of the type); now in Address Groups / Service Groups (menu entry by the class of the object), "Used by" names the class
 * interface | a layer3 sub-interface did not reference its interface management profile (only the main interface did)
 * IKE gateway | the IKE crypto profile was only read below protocol/<version>: with ikev2-preferred (SCM default) or without version no profile (proposal "default") and no reference; now the ikev1 / ikev2 profile, each referenced
 * IKE gateway / IPsec tunnel | references to IKE / IPsec crypto profiles, IKE gateways and tunnel interfaces only in the own location (and a template stack): SCM - also the parent folders, the attached snippets and All (PH::networkScope / findInNetworkScope)
