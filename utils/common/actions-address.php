@@ -2196,6 +2196,61 @@ AddressCallContext::$supportedActions[] = array(
     }
 );
 AddressCallContext::$supportedActions[] = array(
+    'name' => 'value-set',
+    'MainFunction' => function (AddressCallContext $context) {
+        $address = $context->object;
+        if( !$address->isAddress() || $address->isTmpAddr() || ( method_exists( $address, 'isRegion' ) && $address->isRegion() ) || ( method_exists( $address, 'isEDL' ) && $address->isEDL() ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because object is no address of type ip-netmask / ip-range / ip-wildcard / fqdn" );
+            return;
+        }
+        // the aliases ($$colon$$ for an IPv6 address, $$forwardslash$$, ...) - "," and ":" separate the arguments
+        $value = trim( PH::textAliases( $context->arguments['value'] ) );
+        $type = strtolower( trim( $context->arguments['type'] ) );
+        if( $type === '' || $type === '*nodefault*' )
+            $type = $address->type();
+        $problem = Address::valueProblem( $type, $value );
+        if( $problem !== null )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the value '" . $value . "' does not fit - " . $problem );
+            return;
+        }
+        if( $type === $address->type() && $value === $address->value() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the value is the same" );
+            return;
+        }
+        if( $type === 'ip-wildcard' )
+            foreach( $address->getReferences() as $ref )
+                if( $ref instanceof AddressGroup )
+                {
+                    PH::ACTIONstatus( $context, "SKIPPED", "because it is a member of address group '" . $ref->name() . "' - a wildcard address can not be one" );
+                    return;
+                }
+        $old = $address->type() . ' ' . $address->value();
+        if( $context->isAPI )
+        {
+            $address->API_setType( $type );
+            $address->API_setValue( $value );
+        }
+        else
+        {
+            $address->setType( $type );
+            $address->setValue( $value );
+        }
+        PH::ACTIONlog( $context, "value '" . $old . "' -> '" . $type . " " . $value . "'" );
+    },
+    'args' => array(
+        'value' => array( 'type' => 'string', 'default' => '*nodefault*',
+            'help' => "the new value; '/' written as '//' or \$\$forwardslash\$\$, ':' (IPv6) as \$\$colon\$\$" ),
+        'type' => array( 'type' => 'string', 'default' => '',
+            'help' => "ip-netmask, ip-range, ip-wildcard or fqdn; empty: the type stays" )
+    ),
+    'help' => "sets the value (and the type) of an address object. Examples: 'actions=value-set:10.0.0.0//24', " .
+        "'actions=value-set:www.example.com,fqdn', 'actions=value-set:2001\$\$colon\$\$db8\$\$colon\$\$\$\$colon\$\$1,ip-netmask'"
+);
+
+AddressCallContext::$supportedActions[] = array(
     'name' => 'value-replace',
     'MainFunction' => function (AddressCallContext $context) {
         $address = $context->object;

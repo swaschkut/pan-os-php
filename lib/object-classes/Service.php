@@ -339,8 +339,25 @@ class Service
 
         DH::createElement($tcpOrUdpRoot, 'port', $this->_dport);
 
+        // the source port (before: written with the destination port)
         if( strlen($this->_sport) > 0 )
-            DH::createElement($tcpOrUdpRoot, 'source-port', $this->_dport);
+            DH::createElement($tcpOrUdpRoot, 'source-port', $this->_sport);
+
+        // the timeout override goes with the protocol: udp has only "timeout" - half-close / time-wait back to inherit
+        if( $this->_protocol == 'udp' )
+        {
+            $this->_halfclose_timeout = '';
+            $this->_timewait_timeout = '';
+        }
+        $this->overrideroot = FALSE;
+        if( $this->_timeout !== '' || $this->_halfclose_timeout !== '' || $this->_timewait_timeout !== '' )
+        {
+            $yes = DH::createElement( DH::createElement( $tcpOrUdpRoot, 'override' ), 'yes' );
+            foreach( array( 'timeout' => $this->_timeout, 'halfclose-timeout' => $this->_halfclose_timeout, 'timewait-timeout' => $this->_timewait_timeout ) as $tag => $v )
+                if( $v !== '' )
+                    DH::createElement( $yes, $tag, $v );
+            $this->overrideroot = TRUE;
+        }
     }
 
     /**

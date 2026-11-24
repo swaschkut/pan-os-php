@@ -2806,16 +2806,21 @@ async function showViewer(config, preset) {
         m = m || {};
         const name = { key: 'name', label: 'Name', kind: 'text', value: row.name, needs: ['name-rename'], rename: true,
             act: (o, n) => { if (n === '') throw new Error('a name is needed'); return 'name-rename:' + actArg(n); } };
-        const desc = { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-delete', 'description-append'],
-            act: (o, n) => n === '' ? 'description-delete' : (o === '' ? '' : 'description-delete/') + 'description-append:' + ruleText(n) };
+        const desc = { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-set'],
+            act: (o, n) => n === '' ? 'description-set' : 'description-set:' + ruleText(n) };
         const tags = { key: 'tag', label: 'Tags', kind: 'list', value: Array.isArray(m.tag) ? m.tag : [], needs: ['tag-add'], needsRemove: ['tag-remove'],
             add: t => 'tag-add:' + actArg(t), remove: t => 'tag-remove:' + actArg(t) };
         const loc = { key: 'location', label: 'Location', kind: 'ro', value: row.location };
         if (kind === 'address')
-            return [name, { key: 'type', label: 'Type', kind: 'ro', value: row.type },
-                row.type === 'ip-netmask' ? { key: 'value', label: 'Value', kind: 'text', value: row.value || '', needs: ['value-replace'],
-                    act: (o, n) => { if (n === '') throw new Error('a value is needed'); return 'value-replace:' + actArg(o) + ',' + actArg(n); } }
-                    : { key: 'value', label: 'Value', kind: 'ro', value: row.value || '', note: 'only an ip-netmask value can be changed (pan-os-php value-replace)' },
+            return [name, ['ip-netmask', 'ip-range', 'ip-wildcard', 'fqdn'].includes(row.type)
+                ? { key: 'value', label: 'Type / value', kind: 'parts', value: { type: row.type, value: row.value || '' }, needs: ['value-set'],
+                    note: 'e.g. 10.0.0.0/24, 2001:db8::/32, 10.0.0.1-10.0.0.99, 10.0.0.1/0.255.0.255, www.example.com',
+                    parts: [{ key: 'type', kind: 'select', label: 'type', choices: [['ip-netmask', 'ip-netmask'], ['ip-range', 'ip-range'], ['ip-wildcard', 'ip-wildcard'], ['fqdn', 'fqdn']] },
+                        { key: 'value', kind: 'text', label: 'value' }],
+                    act: (o, v) => { const n = v.value.trim(); if (n === '') return { hint: 'enter the value' }; if (n === o.value && v.type === o.type) return '';
+                        if (v.type !== o.type && n === o.value) return { hint: 'enter the value for ' + v.type };
+                        return 'value-set:' + ruleText(n) + ',' + v.type; } }
+                : { key: 'value', label: 'Type / value', kind: 'ro', value: (row.type || '') + ' ' + (row.value || '') },
                 desc, tags, loc];
         if (kind === 'addressgroup')
             return [name, { key: 'type', label: 'Type', kind: 'ro', value: row.type },
@@ -2827,13 +2832,20 @@ async function showViewer(config, preset) {
         if (kind === 'service') {
             const timeout = (key, label, action, def) => ({ key, label, kind: 'text', value: row[key] || '', needs: [action], placeholder: 'default ' + def + ' (= inherit)',
                 act: (o, n) => { if (n === '') throw new Error('empty: use "Inherit all timeouts"'); if (!/^[0-9]+$/.test(n)) throw new Error('seconds (digits)'); return action + ':' + n; } });
-            return [name, { key: 'value', label: 'Protocol / port', kind: 'ro', value: row.value || '', note: 'no pan-os-php action to change it yet' },
+            const proto = String(m.protocol && typeof m.protocol === 'object' ? Object.keys(m.protocol)[0] || '' : (row.protocol || ''));
+            const pm = m.protocol && typeof m.protocol === 'object' && m.protocol[proto] && typeof m.protocol[proto] === 'object' ? m.protocol[proto] : {};
+            const dport = pm.port !== undefined ? String(pm.port) : (row.dport || '');
+            return [name, ['tcp', 'udp'].includes(proto) ? { key: 'protocol', label: 'Protocol', kind: 'select', value: proto, choices: ['tcp', 'udp'], needs: ['protocol-set'],
+                    note: 'udp: the half-close / time-wait timeouts go back to inherit', act: (o, n) => 'protocol-set:' + n }
+                    : { key: 'value', label: 'Protocol / port', kind: 'ro', value: row.value || '' },
+                ['tcp', 'udp'].includes(proto) ? { key: 'dport', label: 'Destination port', kind: 'text', value: dport, needs: ['dstport-set'], note: 'ports / ranges, e.g. 80,443,8000-8080',
+                    act: (o, n) => { const p = n.replace(/\s/g, ''); if (!/^[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*$/.test(p)) throw new Error('ports / ranges, e.g. 80,443,8000-8080'); return 'dstport-set:' + p.replace(/,/g, '|'); } } : null,
                 desc, tags,
                 { key: 'sourceport', label: 'Source port', kind: 'text', value: row.sourceport || '', needs: ['sourceport-set', 'sourceport-delete'],
                     act: (o, n) => n === '' ? 'sourceport-delete' : 'sourceport-set:' + actArg(n) },
                 timeout('timeout', 'Timeout', 'timeout-set', 3600), timeout('halfclosetimeout', 'Half-close timeout', 'timeout-halfclose-set', 120),
                 timeout('timewaittimeout', 'Time-wait timeout', 'timeout-timewait-set', 15),
-                { key: 'timeouts', label: '', kind: 'button', text: 'Inherit all timeouts', needs: ['timeout-inherit'], act: () => 'timeout-inherit' }, loc];
+                { key: 'timeouts', label: '', kind: 'button', text: 'Inherit all timeouts', needs: ['timeout-inherit'], act: () => 'timeout-inherit' }, loc].filter(f => f);
         }
         if (kind === 'servicegroup')
             return [name, { key: 'members', label: 'Members', kind: 'list', value: Array.isArray(m.members) ? m.members : [], needs: ['add-member'], needsRemove: ['remove-member'],
@@ -3306,8 +3318,8 @@ async function showViewer(config, preset) {
         // the default security rules (intrazone / interzone): fixed name and place
         const fixed = ruletype.value === 'defaultsecurity';
         return [fixed ? { key: 'name', label: 'Name', kind: 'ro', value: row.name } : name,
-            { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-append', 'description-replace-character'],
-                act: (o, n) => o === '' ? (n === '' ? '' : 'description-append:' + ruleText(n)) : 'description-replace-character:' + ruleText(o) + ',' + ruleText(n) },
+            { key: 'description', label: 'Description', kind: 'text', value: row.description || '', needs: ['description-set'],
+                act: (o, n) => n === '' ? 'description-set' : 'description-set:' + ruleText(n) },
             { key: 'tag', label: 'Tags', kind: 'list', value: Array.isArray(m.tag) ? m.tag : listOf(row.tag), needs: ['tag-add'], needsRemove: ['tag-remove'],
                 add: t => 'tag-add:' + actArg(t), remove: t => 'tag-remove:' + actArg(t) },
             row.disabled !== undefined ? { key: 'disabled', label: 'Disabled', kind: 'select', value: yesno(row.disabled), choices: ['no', 'yes'], needs: ['disabled-set'],

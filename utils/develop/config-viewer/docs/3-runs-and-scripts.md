@@ -22,11 +22,11 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
 - **Object window**: click an address, address group, service, service group or tag - it opens over the list (as the
   edit dialog of PAN-OS) with its fields. A field is applied **when you leave it after a change** (or press Enter) -
   as **one pan-os-php action on exactly this object** (its location, filter `(name eq …)`): e.g. the description →
-  `description-delete/description-append:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, the value of an ip-netmask →
-  `value-replace:…`, the name → `name-rename:…` (tags too), a member of an address / service group → `add-member:…` / ✕ `remove-member:…`, the color of a tag →
+  `description-set:…`, a tag → `tag-add:…` / ✕ `tag-remove:…`, type and value of an address →
+  `value-set:…` (also IPv6), protocol / destination port of a service → `protocol-set:…` / `dstport-set:…`, the name → `name-rename:…` (tags too), a member of an address / service group → `add-member:…` / ✕ `remove-member:…`, the color of a tag →
   `color-set:…`, its comments → `comments-delete/comments-add:…`. Under the field the action is shown (✓). A field
   without a pan-os-php action for it is read only (and says why). An action that refuses the change (pan-os-php
-  SKIPPED, e.g. the last member of a group) leaves the version as it was and shows its reason at the field. Descriptions and tag comments may contain `,` `:`
+  SKIPPED, e.g. the last member of a group) leaves the version as it was and shows its reason at the field. Descriptions, tag comments and address values may contain `,` `:`
   `/` `|` (written as the pan-os-php aliases `$$comma$$`, `$$colon$$`, `$$forwardslash$$`, `$$pipe$$`); in every other
   value `,` and `:` can not be used (they separate the arguments of an action).
 - **Rule window** (every entry under *Policies*: Security, NAT, QoS, PBF, Decryption, …): the fields the rule has -

@@ -188,6 +188,46 @@ class Address
      * @return bool
      * @throws Exception
      */
+    /**
+     * Checks a value for an address type (ip-netmask, ip-range, ip-wildcard, fqdn).
+     * @return string|null the problem, null: the value is fine
+     */
+    static public function valueProblem( string $type, string $value ): ?string
+    {
+        $ip = function( $v ) { return filter_var( $v, FILTER_VALIDATE_IP ) !== FALSE; };
+        $v4 = function( $v ) { return filter_var( $v, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) !== FALSE; };
+        if( $value === '' || strlen( $value ) > 255 || preg_match( '/\s/', $value ) )
+            return "a value without spaces, at most 255 characters";
+        switch( $type )
+        {
+            case 'ip-netmask':
+                $p = explode( '/', $value );
+                if( count( $p ) > 2 || !$ip( $p[0] ) )
+                    return "ip-netmask: an IPv4 / IPv6 address, optional with /mask (e.g. 10.0.0.0/24, 2001:db8::/32)";
+                $max = $v4( $p[0] ) ? 32 : 128;
+                if( count( $p ) === 2 && ( !preg_match( '/^[0-9]{1,3}$/', $p[1] ) || (int)$p[1] > $max ) )
+                    return "ip-netmask: the mask 0-" . $max;
+                return null;
+            case 'ip-range':
+                $p = explode( '-', $value );
+                if( count( $p ) !== 2 || !$ip( $p[0] ) || !$ip( $p[1] ) || $v4( $p[0] ) !== $v4( $p[1] ) )
+                    return "ip-range: two addresses of the same family, e.g. 10.0.0.1-10.0.0.99";
+                if( strcmp( inet_pton( $p[0] ), inet_pton( $p[1] ) ) > 0 )
+                    return "ip-range: the first address is above the last one";
+                return null;
+            case 'ip-wildcard':
+                $p = explode( '/', $value );
+                if( count( $p ) !== 2 || !$v4( $p[0] ) || !$v4( $p[1] ) )
+                    return "ip-wildcard: IPv4 address / wildcard mask, e.g. 10.0.0.1/0.255.0.255";
+                return null;
+            case 'fqdn':
+                if( !preg_match( '/^(?=.{1,255}$)([a-zA-Z0-9_*]([a-zA-Z0-9_-]{0,61}[a-zA-Z0-9_])?)(\.[a-zA-Z0-9_]([a-zA-Z0-9_-]{0,61}[a-zA-Z0-9_])?)*\.?$/', $value ) )
+                    return "fqdn: a host name, e.g. www.example.com";
+                return null;
+        }
+        return "type: ip-netmask, ip-range, ip-wildcard or fqdn";
+    }
+
     public function setValue($newValue, $rewriteXml = TRUE)
     {
         if( isset($this->_ip4Map) )
@@ -232,7 +272,7 @@ class Address
         if( $tmp === FALSE )
             derr('this type is not supported : ' . $newType);
 
-        if( $newType === $tmp )
+        if( $this->type === $tmp )
             return FALSE;
 
         $this->type = $tmp;

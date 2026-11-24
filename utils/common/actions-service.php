@@ -20,6 +20,86 @@
  */
 
 
+/** a service of tcp / udp (no group, no tmp object) - else SKIPPED, FALSE */
+function serviceEditable( ServiceCallContext $context ): bool
+{
+    $o = $context->object;
+    if( $o->isGroup() || $o->isTmpSrv() || !( $o->isTcp() || $o->isUdp() ) )
+    {
+        PH::ACTIONstatus( $context, "SKIPPED", "because object is no service of tcp / udp" );
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/** a port list: the aliases, '|' or ';' for ',' - null: not a list of ports / ranges 0-65535 */
+function servicePortList( string $ports ): ?string
+{
+    $ports = str_replace( array( '|', ';', ' ' ), array( ',', ',', '' ), PH::textAliases( trim( $ports ) ) );
+    if( $ports === '' || strlen( $ports ) > 1023 || !preg_match( '/^[0-9]{1,5}(-[0-9]{1,5})?(,[0-9]{1,5}(-[0-9]{1,5})?)*$/', $ports ) )
+        return null;
+    foreach( explode( ',', $ports ) as $p )
+    {
+        $r = explode( '-', $p );
+        if( (int)$r[0] > 65535 || ( isset( $r[1] ) && ( (int)$r[1] > 65535 || (int)$r[1] < (int)$r[0] ) ) )
+            return null;
+    }
+    return $ports;
+}
+
+ServiceCallContext::$supportedActions[] = array(
+    'name' => 'protocol-set',
+    'MainFunction' => function (ServiceCallContext $context) {
+        $o = $context->object;
+        if( !serviceEditable( $context ) )
+            return;
+        $protocol = $context->arguments['protocol'];
+        if( ( $protocol === 'tcp' && $o->isTcp() ) || ( $protocol === 'udp' && $o->isUdp() ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the protocol is " . $protocol . " already" );
+            return;
+        }
+        $o->setProtocol( $protocol );
+        if( $context->isAPI )
+            $o->API_sync();
+        PH::ACTIONlog( $context, "protocol " . $protocol . ( $protocol === 'udp' ? " (half-close / time-wait timeout: inherit)" : "" ) );
+    },
+    'args' => array(
+        'protocol' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'tcp', 'udp' ) )
+    ),
+    'help' => "sets the protocol of a service (tcp / udp); ports and timeout stay. Example: 'actions=protocol-set:udp'"
+);
+
+ServiceCallContext::$supportedActions[] = array(
+    'name' => 'dstport-set',
+    'MainFunction' => function (ServiceCallContext $context) {
+        $o = $context->object;
+        if( !serviceEditable( $context ) )
+            return;
+        $ports = servicePortList( $context->arguments['ports'] );
+        if( $ports === null )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because '" . $context->arguments['ports'] . "' is no list of ports / ranges 0-65535 (e.g. 80|443|8000-8080)" );
+            return;
+        }
+        if( $ports === $o->getDestPort() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the destination port is the same" );
+            return;
+        }
+        if( $context->isAPI )
+            $o->API_setDestPort( $ports );
+        else
+            $o->setDestPort( $ports );
+        PH::ACTIONlog( $context, "destination port " . $ports );
+    },
+    'args' => array(
+        'ports' => array( 'type' => 'string', 'default' => '*nodefault*',
+            'help' => "ports / ranges, separated by | (or ; or \$\$comma\$\$), e.g. 80|443|8000-8080" )
+    ),
+    'help' => "sets the destination port(s) of a service. Example: 'actions=dstport-set:80|443|8000-8080'"
+);
+
 ServiceCallContext::$supportedActions[] = array(
     'name' => 'delete',
     'MainFunction' => function (ServiceCallContext $context) {

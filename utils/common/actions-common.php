@@ -139,4 +139,43 @@ CallContext::registerAction( array( 'AddressCallContext', 'ServiceCallContext' )
         "Example: 'actions=remove-member:h-10.0.0.1'"
 ) );
 
+CallContext::registerAction( array( 'AddressCallContext', 'ServiceCallContext', 'RuleCallContext', 'SecurityProfileCallContext' ), array(
+    'name' => 'description-set',
+    'MainFunction' => function (CallContext $context) {
+        $object = $context->object;
+        if( !method_exists( $object, 'setDescription' ) )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because this object has no description" );
+            return;
+        }
+        // the aliases: $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$ (they separate the arguments / actions)
+        $text = PH::textAliases( (string)$context->arguments['description'] );
+        if( $text === '*nodefault*' )
+            $text = '';
+        $root = PH::findRootObjectOrDie( $object->owner );
+        $max = isset( $root->version ) && $root->version < 71 ? 253 : 1020;
+        if( strlen( $text ) > $max )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the description is longer than " . $max . " characters" );
+            return;
+        }
+        if( $text === $object->description() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "because the description is the same" );
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setDescription( $text );
+        else
+            $object->setDescription( $text );
+        PH::ACTIONlog( $context, $text === '' ? "description removed" : "description set" );
+    },
+    'args' => array(
+        'description' => array( 'type' => 'string', 'default' => '',
+            'help' => "the new description (empty: removed); , : / | written as \$\$comma\$\$ \$\$colon\$\$ \$\$forwardslash\$\$ \$\$pipe\$\$" )
+    ),
+    'help' => "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\n" .
+        "Example: 'actions=description-set:web servers\$\$comma\$\$ DMZ'"
+) );
+
 // </editor-fold>

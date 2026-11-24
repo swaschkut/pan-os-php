@@ -186,6 +186,18 @@ var subjectObject =
                 },
                 "help": "possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$  or $$pipe$$; example \"actions=description-Replace-Character:$$comma$$word1\""
             },
+            "description-set": {
+                "name": "description-set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "help": "the new description (empty: removed); , : \/ | written as $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$"
+                    }
+                },
+                "help": "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\nExample: 'actions=description-set:web servers$$comma$$ DMZ'"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -594,6 +606,23 @@ var subjectObject =
                     }
                 },
                 "help": "search for a full or partial value and replace; example \"actions=value-replace:1.1.1.,2.2.2.\" it is recommend to use additional filter: \"filter=(value string.regex \/^1.1.1.\/)\"\n                \"actions=value-replace:$$netmask.32$$,$$netmask.blank32$$\"\n    "
+            },
+            "value-set": {
+                "name": "value-set",
+                "MainFunction": {},
+                "args": {
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "the new value; '\/' written as '\/\/' or $$forwardslash$$, ':' (IPv6) as $$colon$$"
+                    },
+                    "type": {
+                        "type": "string",
+                        "default": "",
+                        "help": "ip-netmask, ip-range, ip-wildcard or fqdn; empty: the type stays"
+                    }
+                },
+                "help": "sets the value (and the type) of an address object. Examples: 'actions=value-set:10.0.0.0\/\/24', 'actions=value-set:www.example.com,fqdn', 'actions=value-set:2001$$colon$$db8$$colon$$$$colon$$1,ip-netmask'"
             },
             "value-set-ip-for-fqdn": {
                 "name": "value-set-ip-for-fqdn",
@@ -7598,6 +7627,18 @@ var subjectObject =
                 },
                 "help": "possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ or $$appRID#$$; example \"actions=description-Replace-Character:$$comma$$word1\""
             },
+            "description-set": {
+                "name": "description-set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "help": "the new description (empty: removed); , : \/ | written as $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$"
+                    }
+                },
+                "help": "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\nExample: 'actions=description-set:web servers$$comma$$ DMZ'"
+            },
             "disabled-set": {
                 "name": "disabled-Set",
                 "MainFunction": {},
@@ -11467,6 +11508,18 @@ var subjectObject =
                 "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
                 "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
+            "description-set": {
+                "name": "description-set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "help": "the new description (empty: removed); , : \/ | written as $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$"
+                    }
+                },
+                "help": "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\nExample: 'actions=description-set:web servers$$comma$$ DMZ'"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -13783,6 +13836,18 @@ var subjectObject =
                 "name": "description-Delete",
                 "MainFunction": {}
             },
+            "description-set": {
+                "name": "description-set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "help": "the new description (empty: removed); , : \/ | written as $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$"
+                    }
+                },
+                "help": "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\nExample: 'actions=description-set:web servers$$comma$$ DMZ'"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -13790,6 +13855,18 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "dstport-set": {
+                "name": "dstport-set",
+                "MainFunction": {},
+                "args": {
+                    "ports": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "ports \/ ranges, separated by | (or ; or $$comma$$), e.g. 80|443|8000-8080"
+                    }
+                },
+                "help": "sets the destination port(s) of a service. Example: 'actions=dstport-set:80|443|8000-8080'"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -13957,6 +14034,21 @@ var subjectObject =
             "name-touppercase": {
                 "name": "name-toUpperCase",
                 "MainFunction": {}
+            },
+            "protocol-set": {
+                "name": "protocol-set",
+                "MainFunction": {},
+                "args": {
+                    "protocol": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "tcp",
+                            "udp"
+                        ]
+                    }
+                },
+                "help": "sets the protocol of a service (tcp \/ udp); ports and timeout stay. Example: 'actions=protocol-set:udp'"
             },
             "remove-member": {
                 "name": "remove-member",

@@ -185,6 +185,9 @@
             "description-replace-character": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
@@ -308,6 +311,9 @@
                 "class": "change"
             },
             "value-replace": {
+                "class": "change"
+            },
+            "value-set": {
                 "class": "change"
             },
             "value-set-ip-for-fqdn": {
@@ -1196,6 +1202,9 @@
             "description-replace-character": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "disabled-set": {
                 "class": "change"
             },
@@ -1646,6 +1655,9 @@
             "deleteforce": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
@@ -1895,11 +1907,17 @@
             "description-delete": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
             "displayreferences": {
                 "class": "read"
+            },
+            "dstport-set": {
+                "class": "change"
             },
             "exporttoexcel": {
                 "class": "writes-file",
@@ -1943,6 +1961,9 @@
                 "class": "change"
             },
             "name-touppercase": {
+                "class": "change"
+            },
+            "protocol-set": {
                 "class": "change"
             },
             "remove-member": {

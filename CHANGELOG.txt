@@ -2,6 +2,10 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* type=address / service / rule / securityprofile | new common action description-set (replaces the description, empty: removed; aliases $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$)
+* type=address | new action value-set:<value>[,<type>] - value and type (ip-netmask IPv4 / IPv6, ip-range, ip-wildcard, fqdn) checked (Address::valueProblem); IPv6 with $$colon$$; not to ip-wildcard while a member of an address group
+* type=service | new actions protocol-set (tcp / udp) and dstport-set (ports / ranges separated by | ; or $$comma$$)
+* config-viewer | address window: type and value of every address type (before: only an ip-netmask value); service window: protocol and destination port; description of address, address group, service and rule with description-set
 * type=address / service | new common actions add-member / remove-member for static address groups and service groups (one definition: utils/common/actions-common.php); a refused change is SKIPPED with the reason (not a member, last member, loop, dynamic group, wildcard address) - a run over several groups goes on. address add-member: moved there, argument now "membername"
 * CallContext::registerAction | an action with one definition for several types (counterpart of RQuery::registerFilter); a type-specific action of the same name wins
 * config-viewer | address group and service group window: members can be added and removed
@@ -40,6 +44,9 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* description | setDescription converted every text from ISO-8859-1 to UTF-8: a description with umlauts written by an action or the config viewer became "PrÃ¼fung"; now only a text that is no UTF-8
+* Address::setType | the same type was never recognised (string compared with the type constant)
+* Service::setProtocol | the source port was written with the value of the destination port; the timeout override was lost in the XML (kept in the object) - now kept (udp: only timeout)
 * config-viewer | references: "Open ↗" of an address group / service group opened it in the list and window of addresses / services (first entry of the type); now in Address Groups / Service Groups (menu entry by the class of the object), "Used by" names the class
 * interface | a layer3 sub-interface did not reference its interface management profile (only the main interface did)
 * IKE gateway | the IKE crypto profile was only read below protocol/<version>: with ikev2-preferred (SCM default) or without version no profile (proposal "default") and no reference; now the ikev1 / ikev2 profile, each referenced
