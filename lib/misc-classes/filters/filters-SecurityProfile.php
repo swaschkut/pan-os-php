@@ -135,7 +135,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['alert.has'] = ar
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->alert) )
@@ -157,7 +157,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['alert-credential
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->alert_credential) )
@@ -180,7 +180,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['block.has'] = ar
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->block) )
@@ -202,7 +202,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['block-credential
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->block_credential) )
@@ -225,7 +225,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['allow.has'] = ar
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->allow) )
@@ -247,7 +247,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['allow-credential
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->allow_credential) )
@@ -271,7 +271,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['continue.has'] =
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->continue) )
@@ -294,7 +294,7 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['override.has'] =
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( array_key_exists($value, $object->override) )
@@ -314,7 +314,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( $object->credential_mode == "disabled")
@@ -336,7 +336,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
         $value = $context->value;
         $value = strtolower($value);
 
-        if( !$object->secprof_type == 'url-filtering'  )
+        if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
 
         if( $object->credential_mode == "ip-user")

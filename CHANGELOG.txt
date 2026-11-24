@@ -17,6 +17,7 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* type=securityprofile | url credential filter
 * config-viewer | a cancelled run kept what it had written of its sensitive results (.sensitive/) - removed now with the run's key store and sensitive inputs
 * SCM | type=scm-export-xml (SCM import of the config viewer): the IKE / IPsec objects of the NGFW folders, snippets and devices were in the export (JSON) but not in the XML - IKE / IPsec crypto profiles, tunnel interfaces, IKE gateways and IPsec tunnels are written now (pre-shared key encrypted as SCM gives it); the loaders of folders, snippets and devices read the network part where SCM keeps it (devices/entry[@name='localhost.localdomain']/network - before: only <network> directly below the entry), so also the network part of an XML from SCM itself is loaded; in=scm-api:// loads them for type=ike-gateway / ike-profile / ipsec-profile / ipsec-tunnel
 * type=scm-local-config-probe | version=<id> was answered by pan-os-php itself (framework version, the probe did not run) and an existing out=<file> was loaded by UTIL as the SCM base configuration (a downloaded firewall configuration: slow load / XML error) - the arguments are config-version= and save= now
