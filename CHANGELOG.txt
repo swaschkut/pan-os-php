@@ -121,6 +121,7 @@ UTIL:
 * location=shared:includechilddgs / shared:excludemaindg | Panorama: shared + all device groups / all device groups; SCM: location=<container>:includechilddgs / :excludemaindg - the container and the containers / devices below it
 
 BUGFIX:
+* type=securityprofile | url credential filter
 * type=securityprofile | a vulnerability inline ML model (mica-engine-vulnerability-enabled) without inline-policy-action stopped the load of the configuration (PAN-OS refuses such a commit - a hand edited / uncommitted file): now read as disable, the XML stays
 * type=securityprofile | an anti-spyware inline ML detector (mica-engine-spyware-enabled) without inline-policy-action: 'disable' was written into the configuration while loading it - now only read as disable; the set-actions (alert-only-set / best-practice-set) write a complete inline-policy-action (no empty element, no incomplete set command)
 * type=securityprofile securityprofiletype=wildfire-analysis | a WildFire inline analysis rule (mica-engine-wildfire-rules) without action - PAN-OS commits it, the GUI shows allow: actions=display stopped (no 'action' read); now read as allow (the XML stays at load)
