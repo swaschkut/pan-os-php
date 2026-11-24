@@ -142,27 +142,34 @@ class IKEGateway
                 if( $this->version != null )
                     $this->version = $this->version->textContent;
 
-                $tmp_ikevX = DH::findFirstElement($this->version, $node);
+                // the IKE crypto profile: ikev1 / ikev2 each can name one; the version decides which one is used
+                // (ikev2-preferred or no version: ikev2, else ikev1) - every one named is referenced
+                $proposals = array();
+                foreach( array( 'ikev2', 'ikev1' ) as $v )
+                {
+                    $tmp_v = DH::findFirstElement($v, $node);
+                    $proposalNode = $tmp_v !== FALSE ? DH::findFirstElement('ike-crypto-profile', $tmp_v) : FALSE;
+                    if( $proposalNode !== FALSE && $proposalNode !== null && $proposalNode->textContent !== '' )
+                        $proposals[$v] = $proposalNode->textContent;
+                }
+                if( count($proposals) > 0 )
+                    $this->proposal = isset($proposals[$this->version]) ? $proposals[$this->version] : reset($proposals);
+                // template stack: the profile can come from one of its templates; SCM: from a parent folder / snippet
+                $inTemplateScope = PH::templateScopeOwner( $this->owner->owner ) !== null;
+                foreach( array_unique($proposals) as $proposal )
+                {
+                    $tmp_ike_profile = PH::findInNetworkScope( $this->owner->owner, 'ikeCryptoProfileStore', $proposal, 'findIKECryptoProfil' );
+                    if( $tmp_ike_profile != NULL )
+                        $tmp_ike_profile->addReference($this);
+                    elseif( $inTemplateScope && !in_array( $proposal, array( 'default', 'Suite-B-GCM-128', 'Suite-B-GCM-256' ), TRUE ) )
+                        mwarning( "Template '" . $this->owner->owner->owner->name() . "' IKE-gateway: '" . $this->name() . "' IKE-crypto-profile '" . $proposal . "' not found", null, false );
+                }
+
+                $tmp_ikevX = DH::findFirstElement( $this->version !== null && $this->version !== '' && $this->version !== 'ikev2-preferred' ? $this->version : 'ikev2', $node );
+                if( $tmp_ikevX === FALSE || $tmp_ikevX === null )
+                    $tmp_ikevX = DH::findFirstElement( 'ikev1', $node );
                 if( $tmp_ikevX != null )
                 {
-                    $proposalNode = DH::findFirstElement('ike-crypto-profile', $tmp_ikevX);
-                    if( $proposalNode != null )
-                    {
-                        $this->proposal = $proposalNode->textContent;
-
-                        $tmp_ike_profile = $this->owner->owner->network->ikeCryptoProfileStore->findIKECryptoProfil($this->proposal);
-                        // template stack: the IKE crypto profile can come from one of its templates (stack first,
-                        // then the templates in the stack's order)
-                        $inTemplateScope = PH::templateScopeOwner( $this->owner->owner ) !== null;
-                        if( $tmp_ike_profile == NULL && $inTemplateScope )
-                            $tmp_ike_profile = PH::findInTemplateScopeNetworks( $this->owner->owner, 'ikeCryptoProfileStore', $this->proposal, 'findIKECryptoProfil' );
-                        if( $tmp_ike_profile != NULL )
-                            $tmp_ike_profile->addReference($this);
-                        elseif( $inTemplateScope && !in_array( $this->proposal, array( 'default', 'Suite-B-GCM-128', 'Suite-B-GCM-256' ), TRUE ) )
-                            mwarning( "Template '" . $this->owner->owner->owner->name() . "' IKE-gateway: '" . $this->name() . "' IKE-crypto-profile '" . $this->proposal . "' not found", null, false );
-                    }
-
-
                     $exchangemodeNode = DH::findFirstElement('exchange-mode', $tmp_ikevX);
                     if( $exchangemodeNode != null )
                         $this->exchangemode = $exchangemodeNode->textContent;

@@ -164,6 +164,37 @@ ob_end_clean();
 eq( ApiObjectModel::item( $pano->addressStore->find( 'h1' ) )['item']['device_group'] ?? null, 'shared', 'Panorama shared: device_group "shared"' );
 eq( ApiObjectModel::item( $pano->findDeviceGroup( 'DG1' )->addressStore->find( 'dg-h' ) )['item'], array( 'name' => 'dg-h', 'ip_netmask' => '10.1.1.1/32', 'device_group' => 'DG1' ), 'Panorama device group' );
 
+// ---- network objects (IKE / IPsec with the SCM schema; interfaces as their XML): every value of the object
+$fwn = new PANConf();
+ob_start();
+$fwnXml = '<config version="11.1.0"><mgt-config><users/></mgt-config><shared/><devices><entry name="localhost.localdomain"><network>'
+    . '<interface><tunnel><units><entry name="tunnel.1"><ip><entry name="169.254.0.1/30"/></ip><mtu>1400</mtu></entry></units></tunnel></interface>'
+    . '<ike><crypto-profiles><ike-crypto-profiles><entry name="ike-p1"><encryption><member>aes-256-cbc</member></encryption><hash><member>sha256</member></hash>'
+    . '<dh-group><member>group14</member></dh-group><lifetime><hours>8</hours></lifetime></entry></ike-crypto-profiles>'
+    . '<ipsec-crypto-profiles><entry name="ipsec-p2"><esp><encryption><member>aes-256-gcm</member></encryption><authentication><member>none</member></authentication></esp>'
+    . '<dh-group>group14</dh-group><lifetime><hours>1</hours></lifetime></entry></ipsec-crypto-profiles></crypto-profiles>'
+    . '<gateway><entry name="gw-1"><authentication><pre-shared-key><key>-AQ==synthetic</key></pre-shared-key></authentication><peer-address><ip>203.0.113.10</ip></peer-address>'
+    . '<local-address><interface>ethernet1/1</interface></local-address><protocol><version>ikev2</version><ikev2><ike-crypto-profile>ike-p1</ike-crypto-profile><dpd><enable>yes</enable></dpd></ikev2></protocol>'
+    . '<protocol-common><nat-traversal><enable>yes</enable></nat-traversal></protocol-common></entry></gateway></ike>'
+    . '<tunnel><ipsec><entry name="tun-1"><tunnel-interface>tunnel.1</tunnel-interface><auto-key><ike-gateway><entry name="gw-1"/></ike-gateway><ipsec-crypto-profile>ipsec-p2</ipsec-crypto-profile></auto-key></entry></ipsec></tunnel>'
+    . '</network><vsys><entry name="vsys1"><import><network><interface><member>tunnel.1</member></interface></network></import></entry></vsys></entry></devices></config>';
+$fwn->load_from_xmlstring( $fwnXml );
+ob_end_clean();
+$gw = ApiObjectModel::item( $fwn->network->ikeGatewayStore->findIKEGateway( 'gw-1' ) );
+eq( array( $gw['resource'] ?? null, $gw['item']['authentication']['pre_shared_key']['key'] ?? null, $gw['item']['peer_address'] ?? null, $gw['item']['local_address'] ?? null,
+        $gw['item']['protocol'] ?? null, $gw['item']['protocol_common']['nat_traversal']['enable'] ?? null ),
+    array( 'ike-gateways', '-AQ==synthetic', array( 'ip' => '203.0.113.10' ), array( 'interface' => 'ethernet1/1' ),
+        array( 'version' => 'ikev2', 'ikev2' => array( 'ike_crypto_profile' => 'ike-p1', 'dpd' => array( 'enable' => TRUE ) ) ), TRUE ),
+    'network: IKE gateway in the SCM shape - pre-shared key (as the configuration has it), peer, local address, protocol' );
+eq( array( ApiObjectModel::item( $fwn->network->ikeCryptoProfileStore->findIkeCryptoProfil( 'ike-p1' ) )['item']['dh_group'] ?? null,
+        ApiObjectModel::item( $fwn->network->ipsecCryptoProfileStore->findIpsecCryptoProfil( 'ipsec-p2' ) )['item']['esp']['encryption'] ?? null,
+        ApiObjectModel::item( $fwn->network->ipsecTunnelStore->findIpsecTunnel( 'tun-1' ) )['item']['auto_key'] ?? null ),
+    array( array( 'group14' ), array( 'aes-256-gcm' ), array( 'ike_gateway' => array( array( 'name' => 'gw-1' ) ), 'ipsec_crypto_profile' => 'ipsec-p2' ) ),
+    'network: IKE / IPsec crypto profiles, IPsec tunnel' );
+$ti = ApiObjectModel::item( $fwn->network->tunnelIfStore->find( 'tunnel.1' ) );
+eq( array( $ti['resource'] ?? null, $ti['item']['ip'] ?? null, $ti['item']['mtu'] ?? null ), array( 'tunnel-interfaces', array( array( 'name' => '169.254.0.1/30' ) ), '1400' ),
+    'network: tunnel interface as its XML (own resource)' );
+
 // ---- no model: other classes, objects without XML
 eq( ApiObjectModel::item( $v ), null, 'no model for a class that is not listed' );
 eq( ApiObjectModel::item( $v->addressStore->findOrCreate( '192.0.2.99' ) ), null, 'tmp object without XML: no item' );

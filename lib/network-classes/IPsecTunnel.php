@@ -107,7 +107,8 @@ class IPsecTunnel
                         #if( $this->gateway === FALSE )
                         #    mwarning("ike-gateway not found", null, False);
 
-                        $tmp_ike_gateway = $this->owner->owner->network->ikeGatewayStore->findIKEGateway($this->gateway);
+                        // also of a template of the stack / a parent folder or snippet of SCM (PH::networkScope)
+                        $tmp_ike_gateway = PH::findInNetworkScope( $this->owner->owner, 'ikeGatewayStore', $this->gateway, 'findIKEGateway' );
                         if( $tmp_ike_gateway != NULL )
                             $tmp_ike_gateway->addReference($this);
                     }
@@ -120,7 +121,7 @@ class IPsecTunnel
                 {
                     $this->proposal = $tmp_proposal->textContent;
 
-                    $tmp_ipsec_profile = $this->owner->owner->network->ipsecCryptoProfileStore->findIpsecCryptoProfil($this->proposal);
+                    $tmp_ipsec_profile = PH::findInNetworkScope( $this->owner->owner, 'ipsecCryptoProfileStore', $this->proposal, 'findIpsecCryptoProfil' );
                     if( $tmp_ipsec_profile != NULL )
                         $tmp_ipsec_profile->addReference($this);
                 }
@@ -331,7 +332,7 @@ class IPsecTunnel
             {
                 $this->interface = $node->textContent;
 
-                $tmp_interface = $this->owner->owner->network->findInterface($this->interface);
+                $tmp_interface = PH::findInNetworkScope( $this->owner->owner, null, $this->interface, 'findInterface' );
                 if( $tmp_interface != NULL )
                     $tmp_interface->addReference($this);
             }

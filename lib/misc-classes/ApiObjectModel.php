@@ -70,6 +70,26 @@ class ApiObjectModel
         'DefaultSecurityRule' => 'default-security-rules',
         'SDWanRule' => 'sdwan-rules',
         'NetworkPacketBrokerRule' => 'network-packet-broker-rules',
+        // network (IKE / IPsec, interfaces, routing, GlobalProtect, …) - the first ones with the SCM schema
+        'IkeCryptoProfil' => 'ike-crypto-profiles',
+        'IPSecCryptoProfil' => 'ipsec-crypto-profiles',
+        'IKEGateway' => 'ike-gateways',
+        'IPsecTunnel' => 'ipsec-tunnels',
+        'VirtualRouter' => 'virtual-routers',
+        'LogicalRouter' => 'logical-routers',
+        'GreTunnel' => 'gre-tunnels',
+        'GPGateway' => 'globalprotect-gateways',
+        'GPPortal' => 'globalprotect-portals',
+        'GPGatewayTunnel' => 'globalprotect-gateway-tunnels',
+        'InterfaceManagementProfile' => 'interface-management-profiles',
+        'EthernetInterface' => 'ethernet-interfaces',
+        'AggregateEthernetInterface' => 'aggregate-interfaces',
+        'LoopbackInterface' => 'loopback-interfaces',
+        'TunnelInterface' => 'tunnel-interfaces',
+        'VlanInterface' => 'vlan-interfaces',
+        'VirtualWire' => 'virtual-wires',
+        'StaticRoute' => 'static-routes',
+        'DHCP' => 'dhcp',
     );
 
     /**
@@ -77,7 +97,12 @@ class ApiObjectModel
      * Panorama / firewall keep antivirus and WildFire analysis apart; SCM has them in wildfire-anti-virus-profiles.
      */
     public static $ownResources = array( 'antivirus-profiles', 'wildfire-analysis-profiles',
-        'dos-rules', 'tunnel-inspection-rules', 'captive-portal-rules', 'default-security-rules', 'sdwan-rules', 'network-packet-broker-rules' );
+        'dos-rules', 'tunnel-inspection-rules', 'captive-portal-rules', 'default-security-rules', 'sdwan-rules', 'network-packet-broker-rules',
+        // network: the XML of the object (the SCM schema has no such resource, or another shape - interfaces of a firewall
+        // keep their sub-interfaces, zones and IPs in one entry)
+        'gre-tunnels', 'globalprotect-gateways', 'globalprotect-portals', 'globalprotect-gateway-tunnels', 'interface-management-profiles',
+        'ethernet-interfaces', 'aggregate-interfaces', 'loopback-interfaces', 'tunnel-interfaces', 'vlan-interfaces', 'virtual-wires',
+        'static-routes', 'dhcp' );
 
     /**
      * TRUE: item() adds the computed values (never configuration) as _panosphp: references, ip_count, visibility,

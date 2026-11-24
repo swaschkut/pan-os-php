@@ -44,13 +44,24 @@ $put( 'Branches', '52_ike-gateways.json', array(
         'protocol_common' => array( 'nat_traversal' => array( 'enable' => TRUE ), 'fragmentation' => array( 'enable' => FALSE ) ) ),
     array( 'id' => 'g2', 'name' => 'gw-dynamic', 'folder' => 'Branches', 'authentication' => array( 'pre_shared_key' => array( 'key' => $psk ) ),
         'peer_address' => array( 'dynamic' => array() ), 'protocol' => array( 'version' => 'ikev1', 'ikev1' => array( 'ike_crypto_profile' => 'ike-p1' ) ) ),
+    // ikev2-preferred: a profile for ikev2 (from the parent folder) and one for ikev1
+    array( 'id' => 'g4', 'name' => 'gw-preferred', 'folder' => 'Branches', 'peer_address' => array( 'ip' => '203.0.113.20' ),
+        'protocol' => array( 'version' => 'ikev2-preferred', 'ikev2' => array( 'ike_crypto_profile' => 'ike-shared' ), 'ikev1' => array( 'ike_crypto_profile' => 'ike-p1' ) ) ),
     // an object of another folder in the answer (the API returns the parents too): not in Branches
     array( 'id' => 'g3', 'name' => 'gw-parent', 'folder' => 'ngfw-shared', 'peer_address' => array( 'fqdn' => 'peer.example.net' ),
         'protocol' => array( 'version' => 'ikev2' ) ) ) );
+// in the parent folder ngfw-shared / in All: used by Branches (references across the SCM hierarchy)
+$put( 'ngfw-shared', '50_ike-crypto-profiles.json', array(
+    array( 'id' => 'c3', 'name' => 'ike-shared', 'folder' => 'ngfw-shared', 'encryption' => array( 'aes-128-cbc' ), 'hash' => array( 'sha256' ), 'dh_group' => array( 'group19' ) ) ) );
+$put( 'All', '51_ipsec-crypto-profiles.json', array(
+    array( 'id' => 'c4', 'name' => 'ipsec-all', 'folder' => 'All', 'esp' => array( 'encryption' => array( 'aes-128-gcm' ), 'authentication' => array( 'none' ) ) ) ) );
 $put( 'Branches', '53_ipsec-tunnels.json', array(
     array( 'id' => 'p1', 'name' => 'tun-branch', 'folder' => 'Branches', 'tunnel_interface' => 'tunnel.1', 'anti_replay' => TRUE,
         'auto_key' => array( 'ike_gateway' => array( array( 'name' => 'gw-branch' ) ), 'ipsec_crypto_profile' => 'ipsec-p2',
-            'proxy_id' => array( array( 'name' => 'pid1', 'local' => '10.0.0.0/24', 'remote' => '10.1.0.0/24', 'protocol' => array( 'any' => array() ) ) ) ) ) ) );
+            'proxy_id' => array( array( 'name' => 'pid1', 'local' => '10.0.0.0/24', 'remote' => '10.1.0.0/24', 'protocol' => array( 'any' => array() ) ) ) ) ),
+    // the IPsec crypto profile of All
+    array( 'id' => 'p2', 'name' => 'tun-preferred', 'folder' => 'Branches', 'tunnel_interface' => 'tunnel.2',
+        'auto_key' => array( 'ike_gateway' => array( array( 'name' => 'gw-preferred' ) ), 'ipsec_crypto_profile' => 'ipsec-all' ) ) ) );
 
 $out = $dir . '/out.xml';
 exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=scm-export-xml ' . escapeshellarg( 'in=scm-export://' . $dir . '/1234567890' )
@@ -101,7 +112,18 @@ $tun = $sub !== null ? $sub->network->ipsecTunnelStore->findIPsecTunnel( 'tun-br
 $eq( array( $sub !== null, $gw !== null, $tun !== null, $sub !== null ? count( $sub->network->ikeGatewayStore->gateways() ) : -1,
         $sub !== null && $sub->network->ikeCryptoProfileStore->findIkeCryptoProfil( 'ike-p1' ) !== null,
         $sub !== null && $sub->network->ipsecCryptoProfileStore->findIpsecCryptoProfil( 'ipsec-p2' ) !== null ),
-    array( TRUE, TRUE, TRUE, 2, TRUE, TRUE ), 'BuckbeakConf loads the XML: gateways, tunnel, crypto profiles of the folder Branches' );
+    array( TRUE, TRUE, TRUE, 3, TRUE, TRUE ), 'BuckbeakConf loads the XML: gateways, tunnel, crypto profiles of the folder Branches' );
+$refs = function( $o ) { return $o === null ? null : array_values( array_unique( array_map( function( $r ) { return $r->name(); }, $o->getReferences() ) ) ); };
+$shared = $pan->findContainer( 'ngfw-shared' );
+$allC = $pan->findContainer( 'All' );
+$p1Refs = $sub !== null ? $refs( $sub->network->ikeCryptoProfileStore->findIkeCryptoProfil( 'ike-p1' ) ) : null;
+if( is_array( $p1Refs ) ) sort( $p1Refs );
+$eq( array( $p1Refs, $shared !== null ? $refs( $shared->network->ikeCryptoProfileStore->findIkeCryptoProfil( 'ike-shared' ) ) : null,
+        $allC !== null ? $refs( $allC->network->ipsecCryptoProfileStore->findIpsecCryptoProfil( 'ipsec-all' ) ) : null,
+        $sub !== null ? $refs( $sub->network->ikeGatewayStore->findIKEGateway( 'gw-preferred' ) ) : null,
+        $sub !== null ? $sub->network->ikeGatewayStore->findIKEGateway( 'gw-preferred' )->proposal : null ),
+    array( array( 'gw-branch', 'gw-dynamic', 'gw-preferred' ), array( 'gw-preferred' ), array( 'tun-preferred' ), array( 'tun-preferred' ), 'ike-shared' ),
+    'references: IKE gateway -> IKE crypto profile also with ikev2-preferred (ikev1 and ikev2 profile) and from the parent folder; IPsec tunnel -> IPsec profile of All' );
 $all = $pan->findContainer( 'All' );
 $eq( array( $n( '' ), $xp->query( "//container/entry[@name='Branches']/network" )->length, $all !== null && count( $all->network->ikeCryptoProfileStore->ikeCryptoProfil() ) > 0 ),
     array( 1, 0, TRUE ), 'the network part where SCM keeps it (devices/entry[@name=localhost.localdomain]/network) - read by the loader, also the one of the base configuration (All)' );

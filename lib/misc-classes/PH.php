@@ -2130,6 +2130,51 @@ class PH
     }
 
     /**
+     * the network configurations a name used by a network object of $location (the owner of its store: PANConf,
+     * SCM folder / snippet / device) is looked up in, highest priority first: its own; a Panorama template / template
+     * stack: then as templateScopeNetworks(); SCM: then the levels of scmObjectLevels() (parent folders, attached
+     * snippets, All).
+     * @return NetworkPropertiesContainer[]
+     */
+    public static function networkScope( $location ): array
+    {
+        $networks = array();
+        $add = function( $n ) use ( &$networks ) {
+            if( is_object( $n ) && !in_array( $n, $networks, TRUE ) )
+                $networks[] = $n;
+        };
+        if( isset($location->network) )
+            $add( $location->network );
+        foreach( self::templateScopeNetworks( $location ) as $n )
+            $add( $n );
+        if( $location instanceof Container || $location instanceof Snippet || $location instanceof DeviceCloud || $location instanceof DeviceOnPrem )
+            foreach( self::scmObjectLevels( $location ) as $level )
+                if( isset($level->network) )
+                    $add( $level->network );
+        return $networks;
+    }
+
+    /**
+     * first object named $name in the network store $storeProperty (e.g. 'ikeCryptoProfileStore') of networkScope():
+     * $findMethod of that store; $storeProperty null: $findMethod of the network configuration (e.g. findInterface)
+     */
+    public static function findInNetworkScope( $location, ?string $storeProperty, $name, string $findMethod = 'find' )
+    {
+        if( $name === null || $name === '' || $name === FALSE )
+            return null;
+        foreach( self::networkScope( $location ) as $network )
+        {
+            $store = $storeProperty === null ? $network : ( $network->$storeProperty ?? null );
+            if( !is_object( $store ) || !method_exists( $store, $findMethod ) )
+                continue;
+            $found = $store->$findMethod( $name );
+            if( is_object( $found ) )
+                return $found;
+        }
+        return null;
+    }
+
+    /**
      * SCM: locations a name used by an object stored in $location is looked up in.
      * Folder / device: as scmResolutionLevels(). Snippet: the snippet itself, then 'All' - the view of a
      * snippet ends there (no other snippet, also not the ones attached to 'All'; no predefined-snippet).

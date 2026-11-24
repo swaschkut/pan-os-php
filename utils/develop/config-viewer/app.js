@@ -860,7 +860,12 @@ async function showProject(pid) {
         const pbField = field('Playbook', rPlaybook), locField = field('Location', rLocation), bpField = field('BP JSON', rBp), versionField = field('Version', rVersion);
         // PSK list: this version and / or - with an SCM key of mine - the firewalls managed by SCM (newest local
         // configuration), both compared by the SHA-1 of the pre-shared key; the PSK lists are sensitive (download once)
-        const pskKeys = canWrite ? (await api('GET', 'keys').catch(() => ({ keys: [] }))).keys.filter(k => k.kind === 'scm' && !k.refused) : [];
+        // only SCM keys the project may use: bound to a tenant - only that one; bound to a firewall / Panorama - none; a
+        // project type with roles - the tenants of its SCM roles (a free SCM role: any)
+        const pskRoles = (state.projectRoles || []).filter(r => r.kind === 'scm');
+        const pskFits = k => p.binding && !pskRoles.length ? p.binding.kind === 'scm' && (!p.binding.target || p.binding.target === k.target)
+            : !pskRoles.length || pskRoles.some(r => !r.target || r.target === k.target);
+        const pskKeys = canWrite ? (await api('GET', 'keys').catch(() => ({ keys: [] }))).keys.filter(k => k.kind === 'scm' && !k.refused && pskFits(k)) : [];
         const pskNoVersion = el('option', { value: '', text: '- no version (only the firewalls of SCM) -' });
         const pskKey = el('select', {}, el('option', { value: '', text: '- none (only the version) -' }),
             pskKeys.map(k => el('option', { value: k.kid, text: 'SCM TSG ' + k.target + (k.label && k.label !== k.target ? ' (' + k.label + ')' : '') })));
