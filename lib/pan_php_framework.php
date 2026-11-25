@@ -301,6 +301,7 @@ require_once $basedir . '/object-classes/trait/sp_action_spyware.php';
 
 require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileFields.php';
+require_once $basedir . '/object-classes/ApplicationFields.php';
 require_once $basedir . '/misc-classes/ObjectFieldData.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroup.php';

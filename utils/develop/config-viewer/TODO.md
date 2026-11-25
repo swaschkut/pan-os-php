@@ -54,7 +54,7 @@ file blocking and WildFire rules), `detail-option-set`, `url.credential-action-s
 | ~~EDL, schedule~~ windows built 2026-11-25 | certificates, certificate profiles |
 | ~~security profiles~~ window built 2026-11-25 (Details) | SSL/TLS service profiles |
 | ~~security profile groups~~ window built 2026-11-25 (Details: one profile per type) | |
-| ~~log forwarding~~ window built 2026-11-25, application (create / delete / move) | |
+| ~~log forwarding~~, ~~application~~ windows built 2026-11-25 (application: create of a custom app / group / filter still open) | |
 | device (41 actions) | |
 
 Built 2026-11-24: windows of the network types (interfaces, zone protection / interface management profiles, IKE /

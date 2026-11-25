@@ -6149,7 +6149,9 @@ class ViewerApp
                     $templates[] = array( 'name' => $t['name'], 'kind' => $t['kind'],
                         'vsys' => is_array( $t['vsys'] ?? null ) ? array_values( array_filter( $t['vsys'], 'is_string' ) ) : array() );
         return array( 'config' => is_string( $r['config'] ?? null ) ? $r['config'] : 'unknown', 'any' => $p['scope'] === null, 'locations' => $list,
-            'templates' => $templates, 'version' => is_int( $r['version'] ?? null ) ? $r['version'] : null, 'ancestor' => !empty( $r['ancestor'] ) );
+            'templates' => $templates, 'version' => is_int( $r['version'] ?? null ) ? $r['version'] : null, 'ancestor' => !empty( $r['ancestor'] ),
+            // the types with predefined objects (UTIL::predefinedTypes): the page offers location "predefined (read only)"
+            'predefined' => is_array( $r['predefined'] ?? null ) ? array_values( array_filter( $r['predefined'], 'is_string' ) ) : array() );
     }
 
     /**

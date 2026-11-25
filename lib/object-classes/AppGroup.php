@@ -115,6 +115,28 @@ class AppGroup extends App
         return $ret;
     }
 
+    /** ApplicationFields: the members are read again from the XML - their references go first */
+    public function resetGroupMembers()
+    {
+        foreach( $this->groupapps as $m )
+            $m->removeReference( $this );
+        $this->groupapps = array();
+    }
+
+    /**
+     * a member was renamed: the index of the members and the XML
+     * @ignore
+     */
+    public function referencedObjectRenamed( $h, $oldName = '' )
+    {
+        if( $oldName === '' || !isset( $this->groupapps[$oldName] ) || $this->groupapps[$oldName] !== $h )
+            return;
+        unset( $this->groupapps[$oldName] );
+        $this->groupapps[$h->name()] = $h;
+        ksort( $this->groupapps );
+        $this->rewriteMembersXML();
+    }
+
     /** writes the members list from groupapps */
     public function rewriteMembersXML()
     {

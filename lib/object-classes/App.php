@@ -146,6 +146,42 @@ class App
         #    $this->_characteristics[$characteristicName] = "0";
     }
 
+    /**
+     * ApplicationFields: the properties read from the XML back to their defaults, before load_from_domxml() reads the
+     * changed XML again (custom application / application filter; group: its members and their references)
+     * @ignore
+     */
+    public function resetLoadedProperties()
+    {
+        if( $this instanceof AppGroup )
+        {
+            $this->resetGroupMembers();
+            return;
+        }
+        foreach( array( 'tcp', 'udp', 'icmp', 'icmp6', 'icmpsub', 'icmp6sub', 'icmpcode', 'icmp6code', 'proto', 'timeout', 'tcp_timeout', 'udp_timeout',
+                     'tcp_half_closed_timeout', 'tcp_time_wait_timeout', 'category', 'subCategory', 'technology', 'risk' ) as $p )
+            $this->$p = null;
+        foreach( array( 'subcategory', 'tagging', 'exclude' ) as $p )
+            if( property_exists( $this, $p ) )
+                $this->$p = null;
+        $this->app_filter_details = null;
+        $this->apptag = array();
+        $this->_characteristics = array();
+        $this->virusident = FALSE;
+        $this->filetypeident = FALSE;
+        $this->fileforward = FALSE;
+        $this->custom_signature = FALSE;
+    }
+
+    /**
+     * ApplicationFields::rename(): the name, the users are told (rules, groups)
+     * @ignore
+     */
+    public function editSetName( string $newName )
+    {
+        $this->setRefName( $newName );
+    }
+
     public function isUsingSpecialProto()
     {
         if( $this->isContainer() )

@@ -133,14 +133,15 @@ function viewerLocations()
                 $templates[] = array( 'name' => $t->name(), 'kind' => $kind, 'vsys' => $vsys );
             }
         return array( 'config' => 'panorama', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => $out, 'templates' => $templates,
-            'ancestor' => $pan->ancestorObjectsTakePrecedence() );
+            'ancestor' => $pan->ancestorObjectsTakePrecedence(), 'predefined' => UTIL::predefinedTypes( $pan ) );
     }
     if( $pan instanceof PANConf )
     {
         $out[] = array( 'name' => 'shared', 'kind' => 'shared', 'levels' => array( 'shared' ) );
         $add( 'vsys', $pan->getVirtualSystems() );
         $add( 'shared-gateway', $pan->getSharedGateways() );
-        return array( 'config' => 'firewall', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => $out, 'ancestor' => FALSE );
+        return array( 'config' => 'firewall', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => $out, 'ancestor' => FALSE,
+            'predefined' => UTIL::predefinedTypes( $pan ) );
     }
     if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
     {
@@ -152,7 +153,7 @@ function viewerLocations()
         if( method_exists( $pan, 'getDeviceOnPrems' ) )
             $add( 'on-prem', $pan->getDeviceOnPrems() );
         $add( 'snippet', $pan->getSnippets() );
-        return array( 'config' => 'scm', 'locations' => $out, 'ancestor' => FALSE );
+        return array( 'config' => 'scm', 'locations' => $out, 'ancestor' => FALSE, 'predefined' => UTIL::predefinedTypes( $pan ) );
     }
     return array( 'config' => 'unknown', 'locations' => $out, 'ancestor' => FALSE );
 }

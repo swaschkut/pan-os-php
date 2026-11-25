@@ -292,7 +292,10 @@ class AppCustom extends App
             }
 
 
-            $tmp = DH::findFirstElement('virusident-ident', $appx);
+            // PAN-OS: virus-ident (before: only the misspelled 'virusident-ident' was read)
+            $tmp = DH::findFirstElement('virus-ident', $appx);
+            if( $tmp === FALSE )
+                $tmp = DH::findFirstElement('virusident-ident', $appx);
             if( $tmp !== FALSE )
             {
                 if( $tmp->textContent == 'yes' )

@@ -2035,10 +2035,29 @@ class UTIL
      * categories (securityprofiletype). Also location=predefined.
      * SCM: its predefined objects are in the predefined snippet (a location of its own) - none here.
      */
+    /**
+     * the types with predefined objects in a configuration (location=predefined, predefinedObjectSets()) - the one list
+     * the config viewer offers the location "predefined (read only)" for. SCM: only the regions (the other predefined
+     * objects of SCM are in the predefined snippet, a location of its own).
+     * @param object|null $pan
+     * @return string[]
+     */
+    public static function predefinedTypes( $pan ): array
+    {
+        if( !is_object( $pan ) )
+            return array();
+        if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
+            return array( 'region' );
+        return array( 'service', 'application', 'log-profile', 'threat', 'securityprofile', 'region' );
+    }
+
     public function predefinedObjectSets(): array
     {
+        if( !in_array( $this->utilType, self::predefinedTypes( $this->pan ), TRUE ) )
+            return array();
+
         // the predefined regions (country codes) - read only; SCM knows them as well
-        if( $this->utilType == 'region' && is_object( $this->pan ) )
+        if( $this->utilType == 'region' )
         {
             $pre = AddressStore::getPredefinedRegionStore( $this->pan );
             return array( array( 'store' => $pre, 'objects' => $pre->regions() ) );
@@ -2088,10 +2107,14 @@ class UTIL
             // location=predefined: only the predefined objects of the type (never a target - CallContext)
             if( $location == 'predefined' )
             {
-                foreach( $this->predefinedObjectSets() as $set )
+                $sets = $this->predefinedObjectSets();
+                foreach( $sets as $set )
                     $this->objectsToProcess[] = $set;
-                if( $this->predefinedObjectSets() === array() )
+                if( $sets === array() )
                     $this->locationNotFound( $location );
+                else
+                    // the global init of the actions (e.g. application display: its counters) - as for every location
+                    self::GlobalInitAction( $this->pan );
                 continue;
             }
 

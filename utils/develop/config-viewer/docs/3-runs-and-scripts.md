@@ -68,6 +68,16 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   application logging, the match list: log type, filter, send to Panorama, quarantine, server profiles (syslog /
   email / http / snmptrap, add / ✕), *Add entry*, ✕. Every change one action (`type-set`, `recurring-set`,
   `range-add`, `match-set`, …).
+- **Location "predefined (read only)"**: for every type with predefined objects (services, applications, log
+  forwarding, threats, security profiles / URL categories, regions; SCM: regions) - pan-os-php names the types
+  (`UTIL::predefinedTypes`), the page offers exactly these. Predefined objects belong to no location, so also with
+  access limited to locations.
+- **Application window - Details** (custom application, application group, application filter; predefined
+  applications read only): custom - category / subcategory / technology (those of the App-ID database), risk,
+  description, timeouts, characteristics, content scanning, parent application, IP protocol, the default ports
+  (tcp/… or udp/…, add / ✕; ports or IP protocol); group - the members (add / ✕, the last one stays); filter - the
+  characteristics, category, subcategory, technology, risk, tags, excluded applications. Every change one action
+  (`detail-option-set`, `detail-entry-add`, `detail-entry-remove`, `name-rename`).
 - **Security profile group window - Details**: the name and one field per profile type of the configuration
   (PAN-OS: virus, spyware, vulnerability, file-blocking, wildfire-analysis, url-filtering, data-filtering; SCM:
   virus-and-wildfire-analysis, dns-security, saas-security, …). The profiles of the location, above it and the

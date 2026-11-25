@@ -1307,7 +1307,7 @@ $R = 'projects/' . $r[1]['pid'];
 $r = $alice->call( 'POST', $R . '/configs', null, array( 'r.xml', $xml ) );
 $RC = $R . '/configs/' . $r[1]['cid'];
 $meta = $alice->call( 'GET', 'meta' )[1]['types'];
-eq( array( $meta['address']['resource'], $meta['securityprofile']['resource'], $meta['address']['readonly'], $meta['application']['readonly'] ?? null ),
+eq( array( $meta['address']['resource'], $meta['securityprofile']['resource'], $meta['address']['readonly'], $meta['profile']['readonly'] ?? null ),
     array( 'addresses', 'security-profiles', FALSE, TRUE ), 'REST: meta lists resource names; other display types are read only' );
 eq( count( $meta ) > 25, TRUE, 'REST: all types with objects are offered (' . count( $meta ) . ')' );
 // locations of a version (choice in the page) and the filters with operators (suggestions in the page)
@@ -1856,7 +1856,10 @@ $meta = $alice->call( 'GET', 'meta' )[1]['types'];
 eq( array( isset( $meta['address']['actions']['description-append'] ), isset( $meta['address']['actions']['value-set-reverse-dns'] ), isset( $meta['address']['actions']['exporttoexcel'] ),
     isset( $meta['address']['actions']['create-address-from-file'] ), isset( $meta['rule']['actions']['logend-enable'] ), isset( $meta['rule']['actions']['logend-enable-fastapi'] ) ),
     array( TRUE, FALSE, FALSE, FALSE, TRUE, FALSE ), 'allow list: change actions offered; network / file actions not' );
-eq( array( $meta['application']['readonly'] ?? null, count( $meta['application']['actions'] ?? array( 1 ) ) ), array( TRUE, 0 ), 'allow list: a type that is not reviewed stays read only' );
+eq( array( $meta['profile']['readonly'] ?? null, count( $meta['profile']['actions'] ?? array( 1 ) ) ), array( TRUE, 0 ), 'allow list: a type that is not reviewed stays read only' );
+eq( array( $meta['application']['readonly'] ?? null, isset( $meta['application']['actions']['detail-option-set'] ), isset( $meta['application']['actions']['move'] ),
+    isset( $meta['region']['actions']['address-add'] ), isset( $meta['securityprofilegroup']['actions']['name-rename'] ) ),
+    array( FALSE, TRUE, TRUE, TRUE, TRUE ), 'allow list: application (fields and the old actions), region and profile groups reviewed' );
 eq( array( $meta['edl']['readonly'] ?? null, isset( $meta['edl']['actions']['type-set'] ), isset( $meta['edl']['actions']['name-addprefix'] ),
         isset( $meta['log-profile']['actions']['match-add'] ), isset( $meta['log-profile']['actions']['delete'] ) ),
     array( FALSE, TRUE, TRUE, TRUE, TRUE ), 'allow list: EDL and log forwarding reviewed - the new field actions and the old ones' );

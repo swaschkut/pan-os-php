@@ -62,6 +62,8 @@ class ObjectFieldData
                 'logTypes' => array_values( array_unique( array_merge( $object->type_available ?? array(), array( 'gtp', 'sctp' ) ) ) ),
                 'sendKinds' => array_keys( LogProfile::MATCH_SEND ), 'matchList' => $object->matchList() );
         }
+        if( $object instanceof App && ( $d = ApplicationFields::describe( $object ) ) !== null )
+            return array( 'kind' => 'application' ) + $d;
         if( $object instanceof SecurityProfileGroup && $object->owner !== null )
         {
             // the profile slots: the type the actions take (securityProfile-Set:<type>,<name>), the candidates kind

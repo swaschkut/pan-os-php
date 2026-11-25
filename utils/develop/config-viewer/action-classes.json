@@ -12,6 +12,7 @@
         "edl",
         "log-profile",
         "region",
+        "application",
         "device:devicegroup-addserial",
         "device:devicegroup-removeserial",
         "device:devicegroup-setparentdg",
@@ -344,6 +345,15 @@
             "delete-force": {
                 "class": "change"
             },
+            "detail-entry-add": {
+                "class": "change"
+            },
+            "detail-entry-remove": {
+                "class": "change"
+            },
+            "detail-option-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
@@ -359,6 +369,9 @@
                 "file_arg": 0
             },
             "move": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             }
         },

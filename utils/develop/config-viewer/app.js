@@ -2462,7 +2462,7 @@ async function showViewer(config, preset) {
     filterLocations();
     let locationsLoaded = false;
     let locData = null;
-    const locationInfo = { config: null, ancestor: false, version: null };
+    const locationInfo = { config: null, ancestor: false, version: null, predefined: [] };
     // Panorama, network types (zones, interfaces, routers, …): no device groups - template= picks the template /
     // template stack; location: shared (= the PANConf of the template, where the objects live) or one of its vsys
     // (what the vsys imports)
@@ -2507,7 +2507,8 @@ async function showViewer(config, preset) {
         if (locationsLoaded) return;
         locationsLoaded = true;
         const r = await api('GET', base() + '/locations').catch(() => null);
-        if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor, version: Number.isInteger(r.version) ? r.version : null });
+        if (r) Object.assign(locationInfo, { config: r.config, ancestor: !!r.ancestor, version: Number.isInteger(r.version) ? r.version : null,
+            predefined: Array.isArray(r.predefined) ? r.predefined : [] });
         if (r) {
             // the rule base of this PAN-OS version: authentication (8.0 and later) / captive portal (before)
             if (!entryOffered(cur) && cur.ruletype) {
@@ -2608,12 +2609,12 @@ async function showViewer(config, preset) {
     const log = el('pre', { class: 'log', hidden: true });
     let lastStatus = null;
 
-    // the types with predefined objects (pan-os-php UTIL::predefinedObjectSets): location "predefined" - only to read
-    // them (they are also listed at shared); never a target. SCM: the predefined snippet is a location of its own
-    const PREDEFINED_TYPES = ['service', 'application', 'log-profile', 'threat', 'securityprofile'];
+    // the types with predefined objects (pan-os-php UTIL::predefinedTypes, from GET …/locations): location "predefined"
+    // - only to read them (they are also listed at shared); never a target. Also with access limited to locations
+    // (predefined objects belong to no location). SCM: the predefined snippet is a location of its own (regions: here)
     function drawPredefined() {
         const pre = location.querySelector('option[value="predefined"]');
-        if (PREDEFINED_TYPES.includes(type.value) && !p.scope && !(locationInfo && locationInfo.config === 'scm')) {
+        if (locationInfo.predefined.includes(type.value)) {
             // hierarchy: after "any", before shared (predefined objects are above shared)
             if (!pre) {
                 const opt = el('option', { value: 'predefined', text: 'predefined (read only)' });
@@ -3827,7 +3828,7 @@ async function showViewer(config, preset) {
         // decoders, DNS categories) as tables, its options, URL categories. Every change: one action on this object.
         function objDetails() {
             const F = obj.fields;
-            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile', 'region', 'securityprofilegroup'].includes(F.kind)) return null;
+            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile', 'region', 'securityprofilegroup', 'application'].includes(F.kind)) return null;
             const can = a => writable && !!offered[a];
             const err = key => errors[key] ? el('p', { class: 'error', text: errors[key] }) : null;
             const act = (key, action) => run(() => listChange({ key }, action));
@@ -3900,6 +3901,44 @@ async function showViewer(config, preset) {
                     : el('p', { class: 'muted', text: 'no entries' }));
                 const ne = inp('new exception', 'IP / domain / URL');
                 parts.push(addRow('fd-exc', 'exception-add', [ne], 'Add exception', () => ne.value.trim() ? 'exception-add:' + arg(ne.value.trim()) : null), err('fd-exc'));
+                return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+            }
+            if (F.kind === 'application') {
+                // custom application / application group / application filter (ApplicationFields): options, then the
+                // lists (ports, members, categories, …) with ✕ and add; a text that names an application: suggestions
+                const withList = (input, pick) => {
+                    if (!pick) return [input];
+                    const id = 'app-' + pick + '-' + Math.random().toString(36).slice(2), dl = el('datalist', { id });
+                    input.setAttribute('list', id);
+                    candidates(pick).then(gs => { if (gs) dl.append(...gs.flatMap(g => g.names.map(n => el('option', { value: n, label: g.location })))); });
+                    return [input, dl];
+                };
+                const rows = [nameRow()];
+                for (const [o, O] of Object.entries(F.options || {})) {
+                    const key = 'fd-o-' + o, action = 'detail-option-set:' + arg(o) + ',';
+                    let c;
+                    if (O.choices && O.choices.length) c = ctl(key, O.value, O.choices, action, o);
+                    else if (!can('detail-option-set')) c = el('span', { class: 'objro', text: O.value || '' });
+                    else {
+                        const i = el('input', { value: O.value, autocomplete: 'off', spellcheck: false, 'aria-label': o, placeholder: O.kind === 'number' ? 'empty = not set' : '' });
+                        i.addEventListener('change', () => { if (i.value.trim() !== O.value) act(key, action + arg(i.value.trim())); });
+                        i.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                        c = el('div', { class: 'row' }, ...withList(i, O.pick));
+                    }
+                    rows.push([o, c]);
+                }
+                parts.push(kv(rows), err('fd-name'), ...Object.keys(F.options || {}).map(o => err('fd-o-' + o)));
+                if (F.signature) parts.push(el('p', { class: 'muted', text: 'signatures: in the XML (not changed here)' }));
+                for (const [l, L] of Object.entries(F.lists || {})) {
+                    const key = 'fd-l-' + l;
+                    parts.push(el('h4', { text: l === 'port' ? 'default ports' : l === 'member' ? 'members' : l }));
+                    parts.push(L.entries.length ? table([l, ''], L.entries.map(x => el('tr', {}, el('td', { text: x }), el('td', {}, delBtn(key, x, 'detail-entry-remove:' + arg(l) + ',' + arg(x))))))
+                        : el('p', { class: 'muted', text: 'no entries' }));
+                    const free = L.choices && L.choices.length ? L.choices.filter(c => !L.entries.includes(c)) : null;
+                    const ni = free ? sel('new ' + l, free) : inp('new ' + l, l === 'port' ? 'tcp/443 or udp/5000-5010' : l === 'tag' ? 'tag' : 'application');
+                    parts.push(addRow(key, 'detail-entry-add', free ? [ni] : withList(ni, L.pick), 'Add ' + l,
+                        () => ni.value.trim() ? 'detail-entry-add:' + arg(l) + ',' + arg(ni.value.trim()) : null), err(key));
+                }
                 return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
             }
             if (F.kind === 'securityprofilegroup') {

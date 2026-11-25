@@ -707,3 +707,74 @@ ApplicationCallContext::$supportedActions['delete-Force'] = array(
             $object->owner->remove($object);
     },
 );
+
+// <editor-fold desc=" ***** custom application / application group / application filter fields (offline) *****" defaultstate="collapsed" >
+// ApplicationFields: one table for the actions and the window of the config viewer. Predefined applications: read only.
+// Texts with ':' '/' ',': the aliases $$colon$$ $$forwardslash$$ $$comma$$.
+
+ApplicationCallContext::$supportedActions[] = array(
+    'name' => 'detail-option-set',
+    'MainFunction' => function (ApplicationCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $v = PH::textAliases( (string)$a['value'] );
+            ApplicationFields::optionSet( $o, (string)$a['option'], $v );
+            return $a['option'] . ( trim( $v ) === '' ? ' removed' : " '" . trim( $v ) . "'" );
+        } );
+    },
+    'args' => array(
+        'option' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'custom application: ' . implode( ', ', array_keys( ApplicationFields::CUSTOM_OPTIONS ) ) .
+            ' - application filter: ' . implode( ', ', ApplicationFields::FILTER_OPTIONS ) ),
+        'value' => array( 'type' => 'string', 'default' => '', 'help' => 'empty: removed (description, timeouts, parent-app, ip-protocol); yes / no for the characteristics' ),
+    ),
+    'help' => "an option of a custom application (category, subcategory, technology, risk, description, timeouts, characteristics, " .
+        "content scanning, parent-app, ip-protocol) or a characteristic of an application filter. Example: 'actions=detail-option-set:risk,4'"
+);
+
+ApplicationCallContext::$supportedActions[] = array(
+    'name' => 'detail-entry-add',
+    'MainFunction' => function (ApplicationCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $v = PH::textAliases( (string)$a['value'] );
+            ApplicationFields::entryAdd( $o, (string)$a['list'], $v );
+            return $a['list'] . " '" . trim( $v ) . "' added";
+        } );
+    },
+    'args' => array(
+        'list' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'custom application: port; group: member; filter: ' . implode( ', ', array_keys( ApplicationFields::FILTER_LISTS ) ) ),
+        'value' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+    ),
+    'help' => "adds an entry: the default port of a custom application (tcp/80,443 - '/' and ',' as aliases), a member of an application group, " .
+        "a category / subcategory / technology / risk / tag / excluded application of an application filter. Example: " .
+        "'actions=detail-entry-add:port,tcp\$\$forwardslash\$\$8443'"
+);
+
+ApplicationCallContext::$supportedActions[] = array(
+    'name' => 'detail-entry-remove',
+    'MainFunction' => function (ApplicationCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $v = PH::textAliases( (string)$a['value'] );
+            ApplicationFields::entryRemove( $o, (string)$a['list'], $v );
+            return $a['list'] . " '" . trim( $v ) . "' removed";
+        } );
+    },
+    'args' => array(
+        'list' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'value' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+    ),
+    'help' => "removes an entry (see detail-entry-add); the last member of a group stays"
+);
+
+ApplicationCallContext::$supportedActions[] = array(
+    'name' => 'name-rename',
+    'MainFunction' => function (ApplicationCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $old = $o->name();
+            $n = ApplicationFields::rename( $o, (string)$a['newname'] );
+            return "renamed '" . $old . "' -> '" . $o->name() . "' (users updated: " . $n . ")";
+        } );
+    },
+    'args' => array( 'newname' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "renames a custom application, application group or filter and every rule / group that uses it"
+);
+// </editor-fold>
+
