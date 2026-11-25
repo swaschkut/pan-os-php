@@ -57,6 +57,16 @@ Counted from [action-classes.json](action-classes.json), class `change`.
 * **search text in the whole XML** (as `type=xpath`): exact / contains / regex; element names, values or attributes
   (`name=`); limited to a location / template; the hits with their XPath and a link to the object window
 * more network / device types editable as soon as their actions are reviewed (`action-classes.json` `reviewed`)
+* **XML view in general: fold every large part** (wish 2026-11-25) - today an XML of more than 20 lines can be folded
+  down to the 2nd level only; wanted: every element whose content is larger than about 30-40 lines can be folded, on
+  every level (e.g. one interface, one router, one static-route list), with expand / collapse all
+* **Virtual / logical router window: static routes** (wish 2026-11-25)
+  - show the existing static routes of the router clearly: one table (name, destination, next hop type / value,
+    interface, metric, admin distance, route table, BFD / path monitor), for a logical router per VRF
+  - per static route a link to its own window (type=static-route) to change it
+  - remove a static route from the router window (per row)
+  - "add static route": the fields are shown, but there is no button to add more - today only one route per change;
+    wanted: a button "+ static route" for several new routes in one change (each row checked before it is sent)
 
 ### 1.3b Menu areas of PAN-OS still missing in the viewer (checked 2026-11-22)
 
@@ -245,6 +255,36 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   custom-report, xml-op-json
 
 ---
+
+## 8c. Administration: certificate, login with LDAP / Entra ID (wish 2026-11-25)
+
+* **Install a certificate in the admin area** - today the HTTPS certificate is set only with `setup` / `.env`
+  (Caddy's own CA, `VIEWER_CERTS` with `cert.pem` + `key.pem`, Let's Encrypt). Wanted: Account → Administration →
+  Certificate (administrator only):
+  - upload PEM (certificate + chain, private key - also encrypted with a passphrase) or PKCS#12 (`.p12` / `.pfx`)
+  - checks before it is used: key matches the certificate, chain complete, not expired / not yet valid, the DNS name
+    of the viewer in the SAN, key size / algorithm; show subject, issuer, SAN, validity, fingerprint
+  - the proxy (Caddy) takes it over without a restart (reload); the previous certificate is kept for a roll back
+  - also a CSR from the viewer (key created on the server, never leaves it) for a company CA
+  - the private key is stored encrypted, never returned to the browser, never in the audit log; the audit log names
+    the change (who, when, fingerprint); a warning to the administrators some days before it expires
+  - air gap: no internet needed; Let's Encrypt stays a `setup` choice
+* **Login with LDAP / Active Directory** (users of the viewer - not the LDAP tab of a project, which asks the
+  customer's directory with the personal account):
+  - server(s), LDAPS / StartTLS (CA certificate to trust, uploaded as above), base DN, bind (service account, stored
+    encrypted) or direct bind with the user's UPN, user filter
+  - group → role mapping (administrator / user; project membership stays in the viewer), nested AD groups
+  - the user is created at the first login (just in time); disabled / removed in the directory: no login; the
+    password is never stored in the viewer
+  - a local administrator always stays (break glass), also when LDAP is not reachable; login lock (5 failures) and
+    audit log as for local users
+* **Login with Microsoft Entra ID** (OpenID Connect, authorization code flow with PKCE):
+  - tenant ID, client ID, client secret or certificate (stored encrypted; the certificate from the admin area),
+    redirect URI of the viewer
+  - group / app-role claims → role mapping as for LDAP; MFA / conditional access stay with Entra ID
+  - same rules: local break-glass administrator, users created at the first login, audit log
+  - later maybe generic OIDC / SAML (Okta, ADFS, …)
+* API tokens and the personal API keys (key store) stay as they are - they are not replaced by the directory login.
 
 ## 9. Other
 
