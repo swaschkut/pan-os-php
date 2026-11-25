@@ -1,3 +1,6 @@
+> **Config viewer on macOS / Windows:** the step by step installation (Docker Desktop or Colima / Docker Engine in WSL,
+> then the viewer with one command) is [utils/develop/config-viewer/docs/0-installation.md](utils/develop/config-viewer/docs/0-installation.md).
+
 Deploy PAN-OS-PHP with Docker
 ===========
 

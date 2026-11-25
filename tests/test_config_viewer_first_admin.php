@@ -74,7 +74,8 @@ function call( string $method, string $path, $body = null, array $headers = arra
 
 // ---- help pages: without login
 $r = call( 'GET', 'docs' );
-eq( array( $r[0], array_keys( $r[1]['docs'] ?? array() )[0] ?? null, $r[1]['docs']['1-first-steps'] ?? null ), array( 200, '1-first-steps', 'First steps' ), 'help pages: listed without login' );
+eq( array( $r[0], array_keys( $r[1]['docs'] ?? array() )[0] ?? null, $r[1]['docs']['0-installation'] ?? null, $r[1]['docs']['1-first-steps'] ?? null ),
+    array( 200, '0-installation', 'Installation (macOS, Windows)', 'First steps' ), 'help pages: listed without login (installation first)' );
 $r = call( 'GET', 'docs/1-first-steps' );
 eq( array( $r[0], strpos( $r[1]['markdown'] ?? '', 'one-time code' ) !== FALSE ), array( 200, TRUE ), 'help page: Markdown without login' );
 foreach( array( 'docs/..%2Fapi', 'docs/x', 'docs/1-first-steps/x' ) as $bad )

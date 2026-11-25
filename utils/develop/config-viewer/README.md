@@ -78,6 +78,8 @@ exists (adding a member); sessions are PHP file sessions.
 
 ## Start it: ./panosphp-viewer
 
+**Installing Docker on macOS / Windows (Docker Desktop or without it):** [docs/0-installation.md](docs/0-installation.md).
+
 **For customers - one command** (computer with internet and Docker; nothing else to download):
 
 ```bash

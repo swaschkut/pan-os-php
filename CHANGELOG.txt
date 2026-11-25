@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* config-viewer | docs/0-installation.md: installation on macOS and Windows - Docker as the one requirement; Docker Desktop (licence note) or without it: Colima + Docker CLI (macOS), Docker Engine in WSL 2 Ubuntu (Windows); check of Docker, then install-viewer.sh; also a help page of the login page
 * filter | (object is.missconfigured): service - the name says the other protocol (/udp/i with protocol tcp, /tcp/i with protocol udp; a name with both is not checked); address - the name names another IPv4 value than the object (ip-netmask: address and prefix - /24 _24 -24 or the dotted netmask -, ip-range: start / end, an IPv4 address in the name of an fqdn / ip-wildcard object)
 * config-viewer | predefined objects (services, applications, EDLs, regions, profiles, …) only at the locations "predefined" and "any" - at "shared" only the objects of the configuration (the CLI lists them at shared too, unchanged)
 * type=edl | the predefined lists of Palo Alto Networks (predefined.xml: ip-block-list-v2 - panw-known-ip-list, panw-highrisk-ip-list, panw-bulletproof-ip-list, panw-torexit-ip-list, panw-aipd-… -, url-predefined - panw-auth-portal-exclude-list) as predefined EDL objects (location=predefined, read only, also listed at shared / any - EDLStore::getPredefinedStore()); an EDL of type predefined-ip / predefined-url only takes a predefined list of that type
