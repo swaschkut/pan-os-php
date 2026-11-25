@@ -454,6 +454,8 @@ class UTIL
             $tmp_array = &ScheduleCallContext::$supportedActions;
         elseif( $this->utilType == 'edl' )
             $tmp_array = &EDLCallContext::$supportedActions;
+        elseif( $this->utilType == 'region' )
+            $tmp_array = &RegionCallContext::$supportedActions;
         elseif( $this->utilType == 'application' )
             $tmp_array = &ApplicationCallContext::$supportedActions;
         elseif( $this->utilType == 'threat' )
@@ -614,6 +616,8 @@ class UTIL
                 ScheduleCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'edl' )
                 EDLCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'region' )
+                RegionCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'application' )
                 ApplicationCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'threat' )
@@ -1465,6 +1469,8 @@ class UTIL
                 $context = new ScheduleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'edl' )
                 $context = new EDLCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'region' )
+                $context = new RegionCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'application' )
                 $context = new ApplicationCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat' )
@@ -2031,6 +2037,12 @@ class UTIL
      */
     public function predefinedObjectSets(): array
     {
+        // the predefined regions (country codes) - read only; SCM knows them as well
+        if( $this->utilType == 'region' && is_object( $this->pan ) )
+        {
+            $pre = AddressStore::getPredefinedRegionStore( $this->pan );
+            return array( array( 'store' => $pre, 'objects' => $pre->regions() ) );
+        }
         if( !is_object( $this->pan ) || $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf )
             return array();
         if( $this->utilType == 'service' )
@@ -2108,6 +2120,12 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
                     elseif( $this->utilType == 'edl' )
                         $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
+                    elseif( $this->utilType == 'region' )
+                    {
+                        foreach( $this->predefinedObjectSets() as $set )
+                            $this->objectsToProcess[] = $set;
+                        $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->regions());
+                    }
                     elseif( $this->utilType == 'application' )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->predefinedappStore, 'objects' => $this->pan->predefinedappStore->apps());
@@ -2146,6 +2164,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->resultingObjectSet());
                         elseif( $this->utilType == 'edl' )
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->resultingObjectSet());
+                        elseif( $this->utilType == 'region' )
+                            $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => array_values( array_filter( $sub->addressStore->resultingObjectSet(), function( $o ) { return $o instanceof Region; } ) ));
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->resultingObjectSet());
                         elseif( $this->utilType == 'threat-rule' )
@@ -2172,6 +2192,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
                         elseif( $this->utilType == 'edl' )
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
+                        elseif( $this->utilType == 'region' )
+                            $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->regions());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         elseif( $this->utilType == 'threat-rule' )
@@ -2202,6 +2224,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
                         elseif( $this->utilType == 'edl' )
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
+                        elseif( $this->utilType == 'region' )
+                            $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->regions());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         elseif( $this->utilType == 'threat-rule' )
@@ -2239,6 +2263,12 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
                     elseif( $this->utilType == 'edl' )
                         $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
+                    elseif( $this->utilType == 'region' )
+                    {
+                        foreach( $this->predefinedObjectSets() as $set )
+                            $this->objectsToProcess[] = $set;
+                        $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->regions());
+                    }
                     elseif( $this->utilType == 'application' )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->predefinedappStore, 'objects' => $this->pan->predefinedappStore->apps());
@@ -2318,6 +2348,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
                         elseif( $this->utilType == 'edl' )
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
+                        elseif( $this->utilType == 'region' )
+                            $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->regions());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         elseif( $this->utilType == 'threat-rule' )

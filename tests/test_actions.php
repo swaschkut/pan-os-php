@@ -242,6 +242,12 @@ foreach( $json_a as $type => $UTILtype )
             PH::print_stdout("******* SKIPPED for now *******");
             continue;
         }
+        elseif( $type == 'region' )
+        {
+            // tests/test_regions.php
+            PH::print_stdout("******* SKIPPED: tests/test_regions.php *******");
+            continue;
+        }
         elseif( $type == 'threat-log' )
         {
             PH::print_stdout("******* SKIPPED for now *******");

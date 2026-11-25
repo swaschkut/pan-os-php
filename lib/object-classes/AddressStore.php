@@ -163,12 +163,11 @@ class AddressStore
             /** @var DOMElement $node */
             if( $node->nodeType != XML_ELEMENT_NODE ) continue;
 
+            // an entry without addresses is a custom region as well (geo-location only) - unless it names a predefined
+            // region (country code): that one is the predefined region, see getPredefinedRegionStore()
             $tmp = DH::findFirstElement( "address", $node);
-            if ( $tmp === false )
-            {
-                //object is TMP - predefined
+            if ( $tmp === false && self::isPredefinedRegionName( DH::findAttribute('name', $node) ) )
                 continue;
-            }
 
             $ns = new Region('', $this);
             $loadedOK = $ns->load_from_domxml($node);
@@ -373,6 +372,121 @@ class AddressStore
     }
 
     /**
+     * the custom regions of this store
+     * @return Region[]
+     */
+    public function regions()
+    {
+        return array_values( $this->_regionObjects );
+    }
+
+    /** @var AddressStore|null the predefined regions of PAN-OS (predefined.xml, country codes) */
+    protected static $predefinedRegionStore = null;
+
+    /** @var array|null name => help string of every predefined region of predefined.xml */
+    protected static $predefinedRegionNames = null;
+
+    /**
+     * every region of the 'region' section of predefined.xml: name => help string (the country name).
+     * The reserved IPv4 ranges ('10.0.0.0-10.255.255.255', …) are left out: pan-os-php uses such a name as an IP
+     * value (ip-range), as before.
+     * @return array
+     */
+    public static function predefinedRegionNames()
+    {
+        if( self::$predefinedRegionNames !== null )
+            return self::$predefinedRegionNames;
+
+        self::$predefinedRegionNames = array();
+        $filename = dirname(__FILE__) . '/predefined.xml';
+        if( !file_exists( $filename ) )
+            return self::$predefinedRegionNames;
+
+        $xmlDoc = PH::getPredefinedXmlDoc( $filename, array('region') );
+        $cursor = DH::findXPathSingleEntry( '/predefined/region', $xmlDoc );
+        if( $cursor === FALSE || $cursor === null )
+            return self::$predefinedRegionNames;
+
+        foreach( $cursor->childNodes as $entry )
+        {
+            if( $entry->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $name = DH::findAttribute( 'name', $entry );
+            if( $name === FALSE || $name === '' || self::isIPValueName( $name ) )
+                continue;
+            $help = DH::findAttribute( 'help-string', $entry );
+            self::$predefinedRegionNames[$name] = $help === FALSE ? '' : $help;
+        }
+
+        return self::$predefinedRegionNames;
+    }
+
+    /**
+     * @param string $name
+     * @return bool TRUE if the name is an IP value (ip-netmask / ip-range)
+     */
+    private static function isIPValueName( $name )
+    {
+        return Region::isValidMember( $name );
+    }
+
+    /**
+     * @param string|bool $name
+     * @return bool TRUE for the name of a predefined region (country code)
+     */
+    public static function isPredefinedRegionName( $name )
+    {
+        if( !is_string( $name ) || $name === '' )
+            return FALSE;
+        $names = self::predefinedRegionNames();
+        return isset( $names[$name] );
+    }
+
+    /**
+     * the store of the predefined regions (read only, location 'predefined'); one per process
+     * @param PANConf|PanoramaConf|null $owner
+     * @return AddressStore
+     */
+    public static function getPredefinedRegionStore( $owner = null )
+    {
+        if( self::$predefinedRegionStore !== null )
+            return self::$predefinedRegionStore;
+
+        $store = new AddressStore( null );
+        $store->owner = $owner;
+        $store->name = 'predefined';
+
+        $doc = new DOMDocument();
+        $root = $doc->createElement( 'region' );
+        $doc->appendChild( $root );
+        $store->regionRoot = $root;
+
+        foreach( self::predefinedRegionNames() as $name => $help )
+        {
+            $entry = $doc->createElement( 'entry' );
+            $entry->setAttribute( 'name', $name );
+            $root->appendChild( $entry );
+
+            $region = new Region( '', $store );
+            $region->load_from_domxml( $entry );
+            $region->setPredefined( $help );
+            $store->_regionObjects[$name] = $region;
+            $store->_all[$name] = $region;
+        }
+
+        self::$predefinedRegionStore = $store;
+        return $store;
+    }
+
+    /**
+     * @return bool TRUE for the store of the predefined regions
+     */
+    public function isPredefinedRegionStore()
+    {
+        return self::$predefinedRegionStore !== null && $this === self::$predefinedRegionStore;
+    }
+
+    /**
      *
      * @ignore
      */
@@ -491,6 +605,10 @@ class AddressStore
 
             if( $this->parentCentralStore !== null )
                 $f = $this->parentCentralStore->find($objectName, $ref, $nested);
+
+            // top of the hierarchy: a predefined region (country code) - not a temporary address
+            if( $f === null && $this->parentCentralStore === null && !$this->isPredefinedRegionStore() && self::isPredefinedRegionName( $objectName ) )
+                $f = self::getPredefinedRegionStore( $this->owner )->find( $objectName, $ref, FALSE );
         }
 
         return $f;

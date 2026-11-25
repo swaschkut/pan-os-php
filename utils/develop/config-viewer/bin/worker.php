@@ -313,7 +313,7 @@ function viewerTypeOf( $o )
         'SDWanRule' => 'sdwan' );
     // profiles: the types of the page (ViewerApp::SPCLASSES - SCM: virus-and-wildfire-analysis, before 'virus')
     $profiles = ViewerApp::SPCLASSES;
-    static $plain = array( 'Address' => 'address', 'AddressGroup' => 'address', 'Region' => 'address', 'Service' => 'service', 'ServiceGroup' => 'service',
+    static $plain = array( 'Address' => 'address', 'AddressGroup' => 'address', 'Region' => 'region', 'Service' => 'service', 'ServiceGroup' => 'service',
         'Tag' => 'tag', 'Zone' => 'zone', 'Schedule' => 'schedule', 'SecurityProfileGroup' => 'securityprofilegroup', 'App' => 'application',
         'AppGroup' => 'application', 'AppFilter' => 'application', 'AppCustom' => 'application', 'EDL' => 'edl', 'LogProfile' => 'log-profile',
         // network / device objects that use other objects (certificates, profiles, interfaces, …) - so a reference names

@@ -82,6 +82,10 @@ require_once("EDLCallContext.php");
 require_once "actions-edl.php";
 EDLCallContext::prepareSupportedActions();
 
+require_once("RegionCallContext.php");
+require_once "actions-region.php";
+RegionCallContext::prepareSupportedActions();
+
 require_once("ApplicationCallContext.php");
 require_once "actions-application.php";
 ApplicationCallContext::prepareSupportedActions();

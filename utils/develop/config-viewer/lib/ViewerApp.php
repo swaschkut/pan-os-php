@@ -104,7 +104,7 @@ class ViewerApp
     }
 
     /** types a grant limited to locations (scope) can use: their objects live in a location (device group, vsys, shared, SCM folder) */
-    const SCOPE_TYPES = array( 'address', 'service', 'tag', 'rule', 'schedule', 'securityprofile', 'securityprofilegroup', 'edl', 'log-profile' );
+    const SCOPE_TYPES = array( 'address', 'service', 'tag', 'rule', 'schedule', 'securityprofile', 'securityprofilegroup', 'edl', 'log-profile', 'region' );
     /** REST resource name of a type, where "<type>s" does not fit */
     const RESOURCES = array( 'address' => 'addresses', 'securityprofile' => 'security-profiles', 'securityprofilegroup' => 'security-profile-groups',
         'routing' => 'routing', 'dhcp' => 'dhcp', 'virtualwire' => 'virtual-wires' );

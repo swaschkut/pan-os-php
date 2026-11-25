@@ -2305,8 +2305,9 @@ function filterSuggest(filters, text, pos) {
 // an entry: a pan-os-php type (+ rule type, + a filter of its own); 'window': the object opens in the object window
 const VIEWER_MENU_SECTIONS = ['Objects', 'Policies', 'Network', 'Device', 'Other'];
 const VIEWER_MENU = [
-    ['Objects', 'addresses', 'Addresses', 'address', { filter: '!(object is.group)', window: 'address', one: 'Address' }],
+    ['Objects', 'addresses', 'Addresses', 'address', { filter: '!(object is.group) and !(object is.region)', window: 'address', one: 'Address' }],
     ['Objects', 'address-groups', 'Address Groups', 'address', { filter: '(object is.group)', window: 'addressgroup', one: 'Address Group', classes: ['AddressGroup'] }],
+    ['Objects', 'regions', 'Regions', 'region'],
     ['Objects', 'services', 'Services', 'service', { filter: '!(object is.group)', window: 'service', one: 'Service' }],
     ['Objects', 'service-groups', 'Service Groups', 'service', { filter: '(object is.group)', window: 'servicegroup', one: 'Service Group', classes: ['ServiceGroup'] }],
     ['Objects', 'tags', 'Tags', 'tag', { window: 'tag', one: 'Tag' }],
@@ -3826,7 +3827,7 @@ async function showViewer(config, preset) {
         // decoders, DNS categories) as tables, its options, URL categories. Every change: one action on this object.
         function objDetails() {
             const F = obj.fields;
-            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile'].includes(F.kind)) return null;
+            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile', 'region'].includes(F.kind)) return null;
             const can = a => writable && !!offered[a];
             const err = key => errors[key] ? el('p', { class: 'error', text: errors[key] }) : null;
             const act = (key, action) => run(() => listChange({ key }, action));
@@ -3899,6 +3900,30 @@ async function showViewer(config, preset) {
                     : el('p', { class: 'muted', text: 'no entries' }));
                 const ne = inp('new exception', 'IP / domain / URL');
                 parts.push(addRow('fd-exc', 'exception-add', [ne], 'Add exception', () => ne.value.trim() ? 'exception-add:' + arg(ne.value.trim()) : null), err('fd-exc'));
+                return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+            }
+            if (F.kind === 'region') {
+                // region: predefined (country code, read only) or custom - geo-location and addresses
+                if (F.predefined) {
+                    parts.push(kv([['name', el('span', { class: 'objro', text: obj.row.name })], ['country', el('span', { class: 'objro', text: F.country })],
+                        ['addresses', el('span', { class: 'objro', text: 'only known on the firewall (country database)' })]]));
+                    return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+                }
+                const hasGeo = F.latitude !== null || F.longitude !== null;
+                const la = inp('latitude', '-90 .. 90'), lo = inp('longitude', '-180 .. 180');
+                la.value = F.latitude ?? ''; lo.value = F.longitude ?? '';
+                const geoCtl = can('geo-location-set')
+                    ? el('div', { class: 'row' }, la, lo,
+                        el('button', { type: 'button', text: 'Set', title: 'geo-location-set', onclick: () => { if (la.value.trim() && lo.value.trim()) act('fd-geo', 'geo-location-set:' + arg(la.value.trim()) + ',' + arg(lo.value.trim())); } }),
+                        hasGeo ? delBtn('fd-geo', 'geo-location', 'geo-location-remove') : null)
+                    : el('span', { class: 'objro', text: hasGeo ? F.latitude + ', ' + F.longitude : '(not set)' });
+                parts.push(kv([nameRow(), ['geo-location', geoCtl]]));
+                for (const k of ['fd-name', 'fd-geo']) parts.push(err(k));
+                parts.push(el('h4', { text: 'addresses' }));
+                parts.push(F.addresses.length ? table(['address', ''], F.addresses.map(x => el('tr', {}, el('td', { text: x }), el('td', {}, delBtn('fd-addr', x, 'address-remove:' + arg(x))))))
+                    : el('p', { class: 'muted', text: 'no addresses' }));
+                const na = inp('new address', 'ip-netmask / ip-range');
+                parts.push(addRow('fd-addr', 'address-add', [na], 'Add address', () => na.value.trim() ? 'address-add:' + arg(na.value.trim()) : null), err('fd-addr'));
                 return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
             }
             if (F.kind === 'schedule') {

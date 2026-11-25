@@ -78,6 +78,7 @@ $actionsData['interface'] = generateActionJSON(InterfaceCallContext::$supportedA
 $actionsData['routing'] = generateActionJSON(RoutingCallContext::$supportedActions);
 $actionsData['virtualwire'] = generateActionJSON(VirtualWireCallContext::$supportedActions);
 $actionsData['schedule'] = generateActionJSON(ScheduleCallContext::$supportedActions);
+$actionsData['region'] = generateActionJSON(RegionCallContext::$supportedActions);
 
 
 function &generateFilterJSON($filters)
@@ -123,6 +124,7 @@ $filtersData['interface'] = generateFilterJSON(RQuery::$defaultFilters['interfac
 $filtersData['routing'] = generateFilterJSON(RQuery::$defaultFilters['routing']);
 $filtersData['virtualwire'] = generateFilterJSON(RQuery::$defaultFilters['virtualwire']);
 $filtersData['schedule'] = generateFilterJSON(RQuery::$defaultFilters['schedule']);
+$filtersData['region'] = generateFilterJSON(RQuery::$defaultFilters['region']);
 
 
 $data = array('actions' => &$actionsData, 'filters' => &$filtersData);

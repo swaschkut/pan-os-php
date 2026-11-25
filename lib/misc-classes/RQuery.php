@@ -110,6 +110,8 @@ class RQuery
             $this->contextObject = new ScheduleRQueryContext($this);
         elseif( $this->objectType == 'edl' )
             $this->contextObject = new EDLRQueryContext($this);
+        elseif( $this->objectType == 'region' )
+            $this->contextObject = new RegionRQueryContext($this);
         elseif( $this->objectType == 'application' )
             $this->contextObject = new ApplicationRQueryContext($this);
         elseif( $this->objectType == 'device' )
@@ -779,6 +781,7 @@ require_once 'filters/filters-GREtunnel.php';
 require_once 'filters/filters-ZoneProtectionProfile.php';
 require_once 'filters/filters-InterfaceManagementProfile.php';
 require_once 'filters/filters-LogProfile.php';
+require_once 'filters/filters-Region.php';
 
 require_once 'filters/filters-Profile.php';
 

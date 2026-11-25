@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared>
+    <region>
+      <entry name="shared-region">
+        <address><member>203.0.113.0/24</member></address>
+      </entry>
+    </region>
+  </shared>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <region>
+            <entry name="hq-region">
+              <geo-location><latitude>48.1</latitude><longitude>11.5</longitude></geo-location>
+              <address><member>192.0.2.0/24</member><member>198.51.100.1-198.51.100.20</member></address>
+            </entry>
+            <entry name="geo-only">
+              <geo-location><latitude>1</latitude><longitude>2</longitude></geo-location>
+            </entry>
+          </region>
+          <address>
+            <entry name="h-1"><ip-netmask>192.0.2.10</ip-netmask></entry>
+          </address>
+          <address-group>
+            <entry name="g-geo"><static><member>DE</member><member>hq-region</member><member>h-1</member></static></entry>
+          </address-group>
+          <rulebase>
+            <security>
+              <rules>
+                <entry name="r-country">
+                  <from><member>any</member></from><to><member>any</member></to>
+                  <source><member>FR</member></source><destination><member>hq-region</member></destination>
+                  <source-user><member>any</member></source-user><category><member>any</member></category>
+                  <application><member>any</member></application><service><member>any</member></service>
+                  <action>allow</action>
+                </entry>
+                <entry name="r-reserved">
+                  <from><member>any</member></from><to><member>any</member></to>
+                  <source><member>10.0.0.0-10.255.255.255</member></source><destination><member>g-geo</member></destination>
+                  <source-user><member>any</member></source-user><category><member>any</member></category>
+                  <application><member>any</member></application><service><member>any</member></service>
+                  <action>allow</action>
+                </entry>
+              </rules>
+            </security>
+          </rulebase>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

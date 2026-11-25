@@ -49,7 +49,7 @@ if( !is_array( $def ) )
     exit( 2 );
 }
 $old = is_file( $target ) ? json_decode( (string)file_get_contents( $target ), TRUE ) : null;
-$reviewed = is_array( $old['reviewed'] ?? null ) ? $old['reviewed'] : array( 'address', 'service', 'tag', 'rule', 'zone', 'schedule', 'securityprofile', 'securityprofilegroup', 'edl', 'log-profile' );
+$reviewed = is_array( $old['reviewed'] ?? null ) ? $old['reviewed'] : array( 'address', 'service', 'tag', 'rule', 'zone', 'schedule', 'securityprofile', 'securityprofilegroup', 'edl', 'log-profile', 'region' );
 $override = is_array( $old['override'] ?? null ) ? $old['override'] : array();
 
 // source of every action: "<file key without dashes>" => "<action>" => code

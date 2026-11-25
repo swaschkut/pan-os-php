@@ -2,6 +2,9 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* type=region | new type: the custom regions of a location and the predefined regions of PAN-OS (country codes of predefined.xml, location=predefined, read only); actions display, displayReferences, address-add / -remove (ip-netmask / ip-range, IPv4 / IPv6), geo-location-set / -remove, name-rename (rules and address groups updated; not to a country code or an IP value), delete (unused only); filters object is.custom / is.predefined, address has / is.empty, address.count, geo-location is.set and the common name / location / ref filters
+* config-viewer | menu "Regions" (type=region) with a window: custom region - name, geo-location (set / ✕), addresses (add / ✕); predefined region - country, read only. "Addresses" lists no regions any more
+* display | shadow-json: 'fields' of a region (predefined, country, geo-location, addresses) - ObjectFieldData
 * config-viewer | windows of EDL, schedule and log forwarding: section "Details" - EDL: name, type, source, update interval (hour / day), description, certificate profile, expand domain, exception list; schedule: its ranges (✕), a range more, the type with one range; log forwarding: description, enhanced logging, the match list (log type, filter, panorama, quarantine, server profiles, add / ✕) - every change one action of type=edl / schedule / log-profile
 * type=edl | description-set without a value removes the description
 * type=securityprofile | url.category-action-set: the site access action of one URL category (only this category, the credential detection untouched)
@@ -82,6 +85,10 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* address | a predefined region (country code, e.g. DE, FR) used in a rule or address group became a temporary address (type tmp, IP count 1, not shown as group member) - now the predefined region (AddressStore::getPredefinedRegionStore(), read only; its addresses are unresolved in IP maps - only known on the firewall). The reserved ranges of predefined.xml (10.0.0.0-10.255.255.255, …) stay IP values as before
+* address | firewall: the shared regions (/config/shared/region) were not loaded - their users got temporary addresses
+* address | a custom region with only a geo-location (no addresses) was not loaded - its users got a temporary address
+* address | Region: the IPv4 map also read the IPv6 addresses of a custom region; Region::equals() was always FALSE (now: same addresses and geo-location)
 * config-viewer | SCM: the location choice listed only containers and snippets - the Prisma Access folders (clouds: Mobile Users, Mobile Users Explicit Proxy, Remote Networks, Service Connections, Colo Connect, …) and the on-prem firewalls were missing (pan-os-php location= knew them)
 * type=securityprofile | url.user-credential-detection.action-set was registered with the name url.action-set (copy) - it replaced url.action-set; now under its own name
 * config-viewer | refcount of an object listed in another location than its owner (an interface in the vsys it is imported into): "?" - now the count of the object

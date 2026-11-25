@@ -19,7 +19,7 @@
 
 /**
  * The fields of an object for a window (shadow-json of 'display': 'fields') - values and what they can be, from the
- * same classes the field actions use (EDL, Schedule, LogProfile, SecurityProfileFields): nothing of it is kept twice
+ * same classes the field actions use (EDL, Schedule, LogProfile, Region, SecurityProfileFields): nothing of it is kept twice
  * in the config viewer.
  */
 class ObjectFieldData
@@ -62,6 +62,9 @@ class ObjectFieldData
                 'logTypes' => array_values( array_unique( array_merge( $object->type_available ?? array(), array( 'gtp', 'sctp' ) ) ) ),
                 'sendKinds' => array_keys( LogProfile::MATCH_SEND ), 'matchList' => $object->matchList() );
         }
+        if( $object instanceof Region )
+            return array( 'kind' => 'region', 'predefined' => $object->isPredefined(), 'country' => $object->description(),
+                'latitude' => $object->latitude(), 'longitude' => $object->longitude(), 'addresses' => $object->members() );
         if( isset( $object->secprof_type ) && is_object( $object ) && property_exists( $object, 'xmlroot' ) )
         {
             $d = SecurityProfileFields::describe( $object );

@@ -2624,7 +2624,7 @@ class PH
 
     public static $supportedUTILTypes = array(
         "stats",
-        "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
+        "address", "service", "tag", "schedule", "application", "threat", "edl", "region", "threat-rule", "dns-rule",
         "rule",
         "device", "securityprofile", "securityprofilegroup", "profile",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile", "certificate-profile",
@@ -3016,6 +3016,7 @@ class PH
             || $type == 'tag'
             || $type == 'schedule'
             || $type == 'edl'
+            || $type == 'region'
             || $type == 'securityprofilegroup'
             || $type == 'application'
             || $type == 'threat'

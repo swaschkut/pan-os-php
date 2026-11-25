@@ -7554,6 +7554,293 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "region": {
+        "name": "region",
+        "action": {
+            "address-add": {
+                "name": "address-add",
+                "MainFunction": {},
+                "args": {
+                    "address": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "ip-netmask or ip-range, IPv4 or IPv6"
+                    }
+                },
+                "help": "adds an address to the region. '\/' and ':' as aliases. Example: 'actions=address-add:192.0.2.0$$forwardslash$$24', 'actions=address-add:198.51.100.1-198.51.100.20'"
+            },
+            "address-remove": {
+                "name": "address-remove",
+                "MainFunction": {},
+                "args": {
+                    "address": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes an address of the region"
+            },
+            "delete": {
+                "name": "delete",
+                "MainFunction": {}
+            },
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            },
+            "geo-location-remove": {
+                "name": "geo-location-remove",
+                "MainFunction": {},
+                "help": "removes the geo-location of the region"
+            },
+            "geo-location-set": {
+                "name": "geo-location-set",
+                "MainFunction": {},
+                "args": {
+                    "latitude": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "-90 .. 90"
+                    },
+                    "longitude": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "-180 .. 180"
+                    }
+                },
+                "help": "the place of the region on the map (ACC \/ reports). Example: 'actions=geo-location-set:48.137,11.575'"
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames the region and every rule \/ address group that uses it; not to a predefined region (country code) or an IP value"
+            }
+        },
+        "filter": {
+            "address": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "the region has this address (ip-netmask \/ ip-range, as written)",
+                        "ci": {
+                            "fString": "(%PROP% 192.0.2.0\/24)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.empty": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a custom region without addresses"
+                    }
+                }
+            },
+            "address.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "count( $object->members() ) !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "geo-location": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
+            "location": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the regular expression specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its descendants (shared: every object). Objects in a template are not listed.",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) is the one specified in argument or one of its ancestors (shared: only objects in shared). Objects in a template are not listed.",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name": {
+                "operators": {
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument (case-sensitive; see contains.nocase)",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches the one specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name contains the string specified in argument, ignoring upper \/ lower case",
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.custom": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a region of the configuration (not a predefined region \/ country code)"
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reflocation": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if the object is referenced from the location (shared\/device-group\/vsys name) specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if the object is referenced, and only from the location (shared\/device-group\/vsys name) specified in argument",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refstore": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reftype": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
     "register-ip-mgr": {
         "name": "register-ip-mgr",
         "action": [],

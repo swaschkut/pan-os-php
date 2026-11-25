@@ -11,6 +11,7 @@
         "securityprofilegroup",
         "edl",
         "log-profile",
+        "region",
         "device:devicegroup-addserial",
         "device:devicegroup-removeserial",
         "device:devicegroup-setparentdg",
@@ -1183,6 +1184,32 @@
                 "class": "change"
             },
             "name-touppercase": {
+                "class": "change"
+            }
+        },
+        "region": {
+            "address-add": {
+                "class": "change"
+            },
+            "address-remove": {
+                "class": "change"
+            },
+            "delete": {
+                "class": "change"
+            },
+            "display": {
+                "class": "read"
+            },
+            "displayreferences": {
+                "class": "read"
+            },
+            "geo-location-remove": {
+                "class": "change"
+            },
+            "geo-location-set": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             }
         },

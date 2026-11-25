@@ -592,9 +592,9 @@ class PANConf
 
 
             //
-            // Extract region objects
+            // Extract region objects (shared: /config/shared/region)
             //
-            $tmp = DH::findFirstElement('region', $xml);
+            $tmp = DH::findFirstElement('region', $this->sharedroot);
             if( $tmp !== FALSE )
                 $this->addressStore->load_regions_from_domxml($tmp);
             //print "VSYS '".$this->name."' address objectsloaded\n" ;

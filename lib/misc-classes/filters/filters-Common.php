@@ -126,6 +126,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'edl',
+    'region',
     'gp-gateway',
     'gp-portal',
     'interface-management-profile',
@@ -161,6 +162,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'rule',
+    'region',
     'address',
     'dns-rule',
     'edl',
@@ -295,6 +297,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'dns-rule',
+    'region',
     'edl',
     'gp-gateway',
     'gp-portal',
@@ -356,6 +359,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'dns-rule',
+    'region',
     'device',
     'edl',
     'gp-gateway',
@@ -407,6 +411,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'dns-rule',
+    'region',
     'edl',
     'gp-gateway',
     'gp-portal',
@@ -457,6 +462,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'rule',
+    'region',
     'address',
     'dns-rule',
     'device',
@@ -510,6 +516,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'application',
+    'region',
     'interface',
     'dns-rule',
     'device',
@@ -753,6 +760,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'edl',
+    'region',
     'log-profile',
     'profile',
     'schedule',
@@ -888,6 +896,7 @@ RQuery::registerFilter( array(
 // (no countReferences) never matches
 RQuery::registerFilter( array(
     'address',
+    'region',
     'application',
     'certificate',
     'certificate-profile',
@@ -923,6 +932,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'address',
+    'region',
     'service',
     'dns-rule',
     'edl',
@@ -989,6 +999,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'address',
+    'region',
     'edl',
     'gp-gateway',
     'gp-portal',
@@ -1078,6 +1089,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'address',
+    'region',
     'edl',
     'gp-gateway',
     'gp-portal',
@@ -1153,6 +1165,7 @@ RQuery::registerFilter( array(
 // location hierarchy: one definition for every type with a location; logic in PH::locationIsChildOf() / PH::locationIsParentOf()
 RQuery::registerFilter( array(
     'profile',
+    'region',
     'address',
     'dns-rule',
     'edl',
@@ -1183,6 +1196,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'profile',
+    'region',
     'address',
     'dns-rule',
     'edl',
@@ -1229,6 +1243,7 @@ RQuery::registerFilter( array(
 
 RQuery::registerFilter( array(
     'address',
+    'region',
     'certificate',
     'dns-rule',
     'edl',
@@ -1286,6 +1301,7 @@ RQuery::registerFilter( array(
 // reflocation is.only: referenced at least once, and only from the location specified (one definition for all types)
 RQuery::registerFilter( array(
     'address',
+    'region',
     'dns-rule',
     'edl',
     'gp-gateway',
@@ -1610,6 +1626,7 @@ RQuery::registerFilter( array(
 // is.predefined: application / log-profile / securityprofile
 RQuery::registerFilter( array(
     'application',
+    'region',
     'log-profile',
     'securityprofile'
 ), 'object', 'is.predefined', array(
