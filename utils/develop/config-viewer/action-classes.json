@@ -1875,6 +1875,9 @@
             "url.best-practice-set": {
                 "class": "change"
             },
+            "url.category-action-set": {
+                "class": "change"
+            },
             "url.credential-action-set": {
                 "class": "change"
             },
@@ -1894,6 +1897,9 @@
                 "class": "change"
             },
             "url.siteaccess.alert-only-set": {
+                "class": "change"
+            },
+            "url.user-credential-detection.action-set": {
                 "class": "change"
             },
             "virus-and-wildfire.alert-only-set": {

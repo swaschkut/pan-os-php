@@ -393,17 +393,29 @@ class SecurityProfileFields
         return $out;
     }
 
+    /** url.category-action-set: the site access action of a URL category (one action list per category) */
+    static public function urlCategoryActionSet( $profile, string $category, string $action ): void
+    {
+        self::urlMove( $profile, $profile->xmlroot, array( 'alert', 'allow', 'block', 'continue', 'override' ), $category, $action );
+    }
+
     /** url.credential-action-set: the action of a URL category for the credential detection (one action list per category) */
     static public function urlCredentialActionSet( $profile, string $category, string $action ): void
     {
         if( self::profileType( $profile ) !== 'url-filtering' )
             throw new Exception( 'only for a url-filtering profile' );
-        $actions = array( 'alert', 'allow', 'block', 'continue' );
+        self::urlMove( $profile, self::node( $profile->xmlroot, 'credential-enforcement', TRUE ), array( 'alert', 'allow', 'block', 'continue' ), $category, $action );
+    }
+
+    /** a category into the list of $action below $ce, out of the other action lists (an empty list goes) */
+    static private function urlMove( $profile, DOMElement $ce, array $actions, string $category, string $action ): void
+    {
+        if( self::profileType( $profile ) !== 'url-filtering' )
+            throw new Exception( 'only for a url-filtering profile' );
         if( !in_array( $action, $actions, TRUE ) )
             throw new Exception( "action '" . $action . "': " . implode( ', ', $actions ) );
         if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,62}$/', $category ) )
             throw new Exception( "category '" . $category . "': a name" );
-        $ce = self::node( $profile->xmlroot, 'credential-enforcement', TRUE );
         $found = null;
         foreach( $actions as $a )
         {

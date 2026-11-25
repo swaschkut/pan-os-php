@@ -268,3 +268,6 @@ p.notice { background: #e8f4ec; border: 1px solid #b9dcc5; padding: 6px 10px; bo
 .xmltree pre.xmlleaf { white-space: pre; }
 .xmltree { max-height: 480px; overflow: auto; font-size: 12px; background: var(--code-bg, #f5f5f5); padding: .5em; }
 .xmltree pre.objxml, .xmltree summary.objxml { max-height: none; overflow: visible; background: none; padding: 0; font-size: 12px; }
+/* object window - Details of a security profile (lists as tables): names in one line, compact controls */
+.spdetails td:first-child { white-space: nowrap; }
+.spdetails td input, .spdetails td select { width: auto; min-width: 7em; max-width: 14em; }

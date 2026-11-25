@@ -3809,7 +3809,7 @@ async function showViewer(config, preset) {
                 }))),
                 el('p', { class: 'muted', text: writable ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
                 // replaceChildren() writes null as the text "null" - only the sections there are
-                ...[objHierarchy(), objLinks(), objVariables(), objNatSecurity(), objRefs(), objXml(), objHistory()].filter(x => x),
+                ...[objDetails(), objHierarchy(), objLinks(), objVariables(), objNatSecurity(), objRefs(), objXml(), objHistory()].filter(x => x),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
         }
         // the XML of the object (as it is in memory) and its history (git: every commit that changed its entry)
@@ -3817,9 +3817,81 @@ async function showViewer(config, preset) {
         function section(key, title, body) {
             const d = el('details', { class: 'objsection' }, el('summary', { text: title }), body);
             // the hierarchy of a device group is open unless closed (XML / history: closed unless opened)
-            d.open = key === 'hierarchy' || key === 'refs' || key === 'links' || key === 'vars' ? opened[key] !== false : !!opened[key];
+            d.open = key === 'hierarchy' || key === 'refs' || key === 'links' || key === 'vars' || key === 'details' ? opened[key] !== false : !!opened[key];
             d.addEventListener('toggle', () => { opened[key] = d.open; });
             return d;
+        }
+        // the details of an object from pan-os-php ('fields' of display: values and choices from the classes of the
+        // field actions - nothing of PAN-OS is kept here): a security profile - its lists (rules, exceptions,
+        // decoders, DNS categories) as tables, its options, URL categories. Every change: one action on this object.
+        function objDetails() {
+            const F = obj.fields;
+            if (!F || F.kind !== 'securityprofile') return null;
+            const can = a => writable && !!offered[a];
+            const err = key => errors[key] ? el('p', { class: 'error', text: errors[key] }) : null;
+            const act = (key, action) => run(() => listChange({ key }, action));
+            const arg = v => ruleText(String(v));
+            const parts = [];
+            const ctl = (key, value, choices, action, label) => {
+                // a value: a select with the choices (the current one also when it is not among them), else a text;
+                // action: the prefix the value is appended to, or a function value -> action
+                const build = typeof action === 'function' ? action : v => action + v;
+                const name = (typeof action === 'function' ? action('x') : action).split(':')[0];
+                const shown = Array.isArray(value) ? value.join('+') : String(value ?? '');
+                if (!can(name)) return el('span', { class: 'objro', text: shown });
+                if (choices && !Array.isArray(value)) {
+                    const list = choices.includes(shown) ? choices : [shown, ...choices];
+                    const sel = el('select', { 'aria-label': label }, list.map(c => el('option', { value: c, text: c || '(not set)' })));
+                    sel.value = shown;
+                    sel.addEventListener('change', () => { if (sel.value) act(key, build(arg(sel.value))); });
+                    return sel;
+                }
+                const i = el('input', { value: shown, autocomplete: 'off', spellcheck: false, 'aria-label': label,
+                    title: choices ? 'one or more of: ' + choices.join(', ') + ' - joined with +' : (Array.isArray(value) ? 'several values joined with +' : null) });
+                i.addEventListener('change', () => { if (i.value.trim() !== shown) act(key, build(i.value.trim().split('+').map(x => arg(x.trim())).join('+'))); });
+                i.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                return i;
+            };
+            for (const [list, L] of Object.entries(F.lists || {})) {
+                const fields = Object.keys(L.fields);
+                const names = Object.keys(L.entries || {});
+                // a fixed list (decoders): also the entries PAN-OS knows that are not in the XML yet (set: created)
+                for (const k of L.known || []) if (!names.includes(k)) names.push(k);
+                const key = 'spd-' + list;
+                parts.push(el('h4', { text: list }));
+                const rows = names.map(n => {
+                    const e = (L.entries || {})[n] || {};
+                    return el('tr', {}, el('td', { text: n }),
+                        ...fields.map(f => el('td', {}, ctl(key, e[f] ?? (L.fields[f].kind === 'list' || L.fields[f].kind === 'entries' ? [] : ''), L.fields[f].choices,
+                            'detail-entry-set:' + arg(list) + ',' + arg(n) + ',' + arg(f) + ',', list + ' ' + n + ' ' + f))),
+                        el('td', {}, !L.fixed && can('detail-entry-remove') ? el('button', { type: 'button', text: '✕', title: 'detail-entry-remove', 'aria-label': 'remove ' + n,
+                            onclick: () => act(key, 'detail-entry-remove:' + arg(list) + ',' + arg(n)) }) : null));
+                });
+                parts.push(names.length ? table([list === 'decoder' ? 'protocol' : 'name', ...fields, ''], rows) : el('p', { class: 'muted', text: 'no entries' }));
+                if (!L.fixed && can('detail-entry-add')) {
+                    const ni = el('input', { autocomplete: 'off', spellcheck: false, 'aria-label': 'new ' + list, placeholder: list === 'threat-exception' ? 'threat ID' : list === 'dns-category' ? 'pan-dns-sec-…' : 'name' });
+                    parts.push(el('div', { class: 'row' }, ni, el('button', { type: 'button', text: 'Add ' + list, title: 'detail-entry-add (PAN-OS defaults)',
+                        onclick: () => { if (ni.value.trim()) act(key, 'detail-entry-add:' + arg(list) + ',' + arg(ni.value.trim())); } })));
+                }
+                parts.push(err(key));
+            }
+            if (Object.keys(F.options || {}).length) {
+                parts.push(el('h4', { text: 'options' }));
+                parts.push(table(['option', 'value'], Object.entries(F.options).map(([o, O]) => el('tr', {}, el('td', { text: o }),
+                    el('td', {}, ctl('spd-options', O.value, O.choices, 'detail-option-set:' + arg(o) + ',', o))))));
+                parts.push(err('spd-options'));
+            }
+            if (F.categories) {
+                // URL filtering: the action per category (url.action-set) and of the credential detection
+                parts.push(el('h4', { text: 'categories' }));
+                const cats = [...new Set([...Object.keys(F.categories), ...Object.keys(F.credential || {})])].sort();
+                parts.push(table(['category', 'site access', 'user credential submission'], cats.map(c => el('tr', {}, el('td', { text: c }),
+                    el('td', {}, ctl('spd-cat', F.categories[c] || '', F.categoryActions, v => 'url.category-action-set:' + arg(c) + ',' + v, c)),
+                    el('td', {}, ctl('spd-cat', (F.credential || {})[c] || '', F.credentialActions, 'url.credential-action-set:' + arg(c) + ',', c + ' credential'))))));
+                parts.push(err('spd-cat'));
+            }
+            if (!parts.length) return null;
+            return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
         }
         // NAT rule: the security rules its traffic meets, in their order (pan-os-php display-nat-security) - per
         // direction (bi-directional static NAT: also reverse) and firewall context; read when the section is opened

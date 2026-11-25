@@ -60,6 +60,13 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   `actions=nat-security-fix:fix|clone|report,approvePartial,suffix`. Filters: `(nat.security is.full|is.partial|
   is.missing|is.blocked|is.unknown)`, `(nat.security has <rule>)`, `(nat.security.mismatch is.set|is.full|is.partial)`,
   `(nat.security.mismatch has <rule>)`.
+- **Security profile window - Details**: the lists of the profile type as tables - antivirus: decoders (protocol ×
+  action / WildFire / ML action), application and threat exceptions; anti-spyware: rules, threat exceptions (exempt
+  IPs), DNS security categories, sinkhole; vulnerability: rules (host, CVE, vendor ID), threat exceptions; file blocking
+  and WildFire analysis: rules; URL filtering: site access and user credential submission per category and the logging
+  options. A select per field with the values pan-os-php allows (several values of a list field joined with +), a new
+  entry gets the PAN-OS defaults, ✕ removes one; every change is one action (`detail-entry-add` / `-remove` / `-set`,
+  `detail-option-set`, `url.category-action-set`, `url.credential-action-set`). Predefined profiles: read only.
 - **Rule window** (security rules): the security profiles one by one (each with the profiles of its type; a profile
   replaces a profile group and the other way round), rule type, source HIP profile, QoS marking, disable server response
   inspection; Panorama: target firewalls (serial or serial and vsys), target negate, all firewalls. An action that refuses the change (pan-os-php

@@ -144,6 +144,10 @@ list( $f, $l ) = $runSp( 'vulnerability', $sp, 'detail-entry-add:rule,client-cri
 $eq( array( $xp( $f, "//vulnerability/entry[@name='vp-1']/rules/entry[@name='client-crit']/host" ), $xp( $f, "//vulnerability/entry[@name='vp-1']/rules/entry[@name='client-crit']/cve/member" ), count( $l ) ),
     array( array( 'client' ), array( 'CVE-2021-44228' ), 1 ), 'vulnerability: rule with host and CVE; block-ip (needs more fields) refused' );
 
+list( $f, $l ) = $runSp( 'url-filtering', $sp, 'url.category-action-set:news,block/url.category-action-set:malware,block' );
+$eq( array( $xp( $f, "//url-filtering/entry/block/member" ), $xp( $f, "//url-filtering/entry/alert" ), $xp( $f, "//url-filtering/entry/credential-enforcement" ), $l ),
+    array( array( 'malware', 'news' ), array(), array(), array( "*** SKIPPED : category 'malware' is block already" ) ),
+    'url filtering: site access action of one category (moved, the credential detection untouched)' );
 list( $f, $l ) = $runSp( 'url-filtering', $sp, 'detail-option-set:log-http-hdr-xff,yes/url.credential-action-set:financial-services,block/url.credential-action-set:financial-services,alert/detail-option-set:safe-search-enforcement,maybe' );
 $eq( array( $xp( $f, "//url-filtering/entry/log-http-hdr-xff" ), $xp( $f, "//url-filtering/entry/credential-enforcement/alert/member" ), $xp( $f, "//url-filtering/entry/credential-enforcement/block" ), $l ),
     array( array( 'yes' ), array( 'financial-services' ), array(), array( "*** SKIPPED : safe-search-enforcement 'maybe': yes, no" ) ),

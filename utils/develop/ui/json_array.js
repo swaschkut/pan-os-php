@@ -12474,6 +12474,28 @@ var subjectObject =
                 "name": "url.best-practice-set",
                 "MainFunction": {}
             },
+            "url.category-action-set": {
+                "name": "url.category-action-set",
+                "MainFunction": {},
+                "args": {
+                    "category": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "action": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "alert",
+                            "allow",
+                            "block",
+                            "continue",
+                            "override"
+                        ]
+                    }
+                },
+                "help": "url-filtering: the site access action of one URL category (the credential detection: url.credential-action-set). Example: 'actions=url.category-action-set:gambling,block'"
+            },
             "url.credential-action-set": {
                 "name": "url.credential-action-set",
                 "MainFunction": {},
@@ -12532,6 +12554,22 @@ var subjectObject =
             "url.siteaccess.alert-only-set": {
                 "name": "url.siteaccess.alert-only-set",
                 "MainFunction": {}
+            },
+            "url.user-credential-detection.action-set": {
+                "name": "url.user-credential-detection.action-set",
+                "MainFunction": {},
+                "args": {
+                    "action": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "allow, alert, block, continue, override"
+                    },
+                    "filter": {
+                        "type": "string",
+                        "default": "all",
+                        "help": "all \/ all-[action] \/ category"
+                    }
+                }
             },
             "virus-and-wildfire.alert-only-set": {
                 "name": "virus-and-wildfire.alert-only-set",

@@ -842,6 +842,16 @@ $snNames = array_map( function( $x ) { return $x['type'] . ':' . $x['name']; }, 
 sort( $snNames );
 eq( array( status( $snc ), $snNames ), array( 200, array( 'URLProfile:Same-Name', 'VirusAndWildfireProfile:x-Same-Name' ) ),
     'SCM: a change of the virus-and-wildfire-analysis profile leaves the URL profile of the same name' );
+// security profile details: a change from the window (detail-entry-set / url.category-action-set) and the fields after it
+$SD = $up( 'securityprofile-details.xml' );
+$sdc = $alice->call( 'POST', $SD . '/change', array( 'type' => 'securityprofile', 'securityprofiletype' => 'spyware', 'location' => 'vsys1',
+    'filter' => '(name eq as-1)', 'actions' => 'detail-entry-set:rule,r-critical,severity,critical+high' ) );
+$sdu = $alice->call( 'POST', $SD . '/change', array( 'type' => 'securityprofile', 'securityprofiletype' => 'url-filtering', 'location' => 'vsys1',
+    'filter' => '(name eq url-1)', 'actions' => 'url.category-action-set:news,block' ) );
+$as = $alice->call( 'GET', $SD . '/object?type=securityprofile&securityprofiletype=spyware&location=vsys1&name=as-1' )[1];
+$uf = $alice->call( 'GET', $SD . '/object?type=securityprofile&securityprofiletype=url-filtering&location=vsys1&name=url-1' )[1];
+eq( array( status( $sdc ), status( $sdu ), $as['fields']['lists']['rule']['entries']['r-critical']['severity'] ?? null, $uf['fields']['categories']['news'] ?? null ),
+    array( 200, 200, array( 'critical', 'high' ), 'block' ), 'security profile details: changed from the window, the fields after it' );
 // variables: the window of a firewall - the value and where it comes from; an override set from there
 $VV = $up( 'variables-panorama.xml' );
 $vo = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();

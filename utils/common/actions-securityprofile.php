@@ -510,7 +510,7 @@ SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
     ),
 );
 SecurityProfileCallContext::$supportedActions['url.user-credential-detection.action-set'] = array(
-    'name' => 'url.action-set',
+    'name' => 'url.user-credential-detection.action-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $action = $context->arguments['action'];
@@ -5826,6 +5826,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
         'value' => array( 'type' => 'string', 'default' => '*nodefault*' ),
     ),
     'help' => "an option of the profile. Example: 'actions=detail-option-set:log-http-hdr-xff,yes'"
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'url.category-action-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            SecurityProfileFields::urlCategoryActionSet( $o, (string)$a['category'], (string)$a['action'] );
+            return "site access: category '" . $a['category'] . "' " . $a['action'];
+        } );
+    },
+    'args' => array(
+        'category' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'action' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'alert', 'allow', 'block', 'continue', 'override' ) ),
+    ),
+    'help' => "url-filtering: the site access action of one URL category (the credential detection: url.credential-action-set). Example: 'actions=url.category-action-set:gambling,block'"
 );
 
 SecurityProfileCallContext::$supportedActions[] = array(
