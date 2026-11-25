@@ -1126,9 +1126,8 @@ RQuery::$defaultFilters['rule']['src.ip.count']['operators']['>,<,=,!'] = array(
         if( $overallCounter == FALSE )
             return FALSE;
 
-        $operator_string = $overallCounter." ".$operator." ".$arg;
 
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $overallCounter, $operator, $arg ) )
             return true;
 
         return FALSE;
@@ -1154,9 +1153,8 @@ RQuery::$defaultFilters['rule']['dst.ip.count']['operators']['>,<,=,!'] = array(
         if( $overallCounter == FALSE )
             return FALSE;
 
-        $operator_string = $overallCounter." ".$operator." ".$arg;
 
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $overallCounter, $operator, $arg ) )
             return true;
 
         return FALSE;
@@ -2435,8 +2433,7 @@ RQuery::$defaultFilters['rule']['service.port.count']['operators']['>,<,=,!'] = 
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;
@@ -2464,8 +2461,7 @@ RQuery::$defaultFilters['rule']['service.port.tcp.count']['operators']['>,<,=,!'
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;
@@ -2493,8 +2489,7 @@ RQuery::$defaultFilters['rule']['service.port.udp.count']['operators']['>,<,=,!'
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;
@@ -2530,8 +2525,7 @@ RQuery::$defaultFilters['rule']['service.object.count']['operators']['>,<,=,!'] 
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;

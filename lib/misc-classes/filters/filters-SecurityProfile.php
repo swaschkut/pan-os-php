@@ -420,8 +420,7 @@ RQuery::$defaultFilters['securityprofile']['exempt-ip.count']['operators']['>,<,
 
         foreach ($object->threatException as $exception) {
             if (isset($exception['exempt-ip'])) {
-                $operator_string = count($exception['exempt-ip']) . " " . $operator . " " . $value;
-                if (eval("return $operator_string;"))
+                if (RQuery::mathCompare( count($exception['exempt-ip']), $operator, $value ))
                     return true;
                 else
                     return false;

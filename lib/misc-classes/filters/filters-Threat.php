@@ -171,8 +171,7 @@ RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $ip_exception_counter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $ip_exception_counter, $operator, $counter ) )
             return TRUE;
 
         return false;

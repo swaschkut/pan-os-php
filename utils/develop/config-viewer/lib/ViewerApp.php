@@ -3735,6 +3735,8 @@ class ViewerApp
         {
             if( preg_match( '/\.file\b/i', $arg ) )
                 $bad( $at . 'filter operators that read a file are not available' );
+            if( strpos( $arg, '`' ) !== FALSE )
+                $bad( $at . 'filter: the character ` is not allowed' );
             return;
         }
         if( $name === 'actions' )
@@ -5223,6 +5225,9 @@ class ViewerApp
             // operators like 'is.in.file' read a file on the server
             if( preg_match( '/\.file\b/i', $filter ) )
                 throw new ViewerException( 'filter operators that read a file are not available here', 400 );
+            // nothing of a filter is a shell command: refused here already (pan-os-php never evaluates a filter value)
+            if( strpos( $filter, '`' ) !== FALSE )
+                throw new ViewerException( 'filter: the character ` is not allowed', 400 );
             $args[] = 'filter=' . $filter;
         }
         return $args;

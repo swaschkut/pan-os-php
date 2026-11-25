@@ -1759,9 +1759,8 @@ RQuery::$defaultFilters['address']['ip.count']['operators']['>,<,=,!'] = array(
         if( $int == FALSE )
             return FALSE;
 
-        $operator_string = $int." ".$operator." ".$arg;
 
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $int, $operator, $arg ) )
             return true;
         else
             return false;

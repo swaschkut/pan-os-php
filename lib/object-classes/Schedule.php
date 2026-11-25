@@ -544,9 +544,15 @@ class Schedule
             $d = $d_actual;
             if( $futuredate !== 0 )
             {
+                if( !is_numeric($futuredate) )
+                    derr("schedule filter: the value has to be a number of days or a date ( YYYY/MM/DD or DD-MM-YYYY )", null, FALSE);
                 $d = $d_actual + ($futuredate)*24*3600;
             }
         }
+
+        // 'object expire.in.days 5' / 'object expired.at.date …' come without a math operator: before the date
+        if( !isset(RQuery::$mathOps[$operator]) )
+            $operator = '<';
 
         $expired = false;
         foreach( $this->recurring_array['non-recurring'] as $member )
@@ -555,13 +561,13 @@ class Schedule
             $timestamp = $d2->getTimestamp();
 
             if( $operator === "<" && $futuredate !== 0 && $futuredate > 0 )
-                $operator_string = "(".$timestamp." ".$operator." ".$d.") && (".$timestamp." > ".$d_actual.")";
+                $matched = RQuery::mathCompare( $timestamp, $operator, $d ) && $timestamp > $d_actual;
             else
-                $operator_string = $timestamp." ".$operator." ".$d;
+                $matched = RQuery::mathCompare( $timestamp, $operator, $d );
 
             #print "timestamp_schedule end: ".$timestamp." |operator: ".$operator."| calculated: ".$d."\n";
 
-            if( eval("return $operator_string;" ) )
+            if( $matched )
                 $expired = true;
             else
                 $expired = false;

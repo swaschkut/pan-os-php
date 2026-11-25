@@ -221,7 +221,9 @@ class RQuery
                     {
                         if( is_string($this->refOperator['argObjectFinder']) )
                         {
-                            $eval = str_replace('!value!', $this->argument, $this->refOperator['argObjectFinder']);
+                            // the filter value is handed over as a variable, it never becomes part of the evaluated code
+                            $rqValue = $this->argument;
+                            $eval = self::templateWithValueVariable($this->refOperator['argObjectFinder']);
                             if( eval($eval) === FALSE )
                             {
                                 derr("\neval code was : $eval\n");
@@ -298,7 +300,18 @@ class RQuery
                         }
                         else
                         {
-                            $eval = '$boolReturn = (' . str_replace('!value!', $this->argument, $this->refOperator['eval']) . ');';
+                            // the filter value is handed over as a variable, it never becomes part of the evaluated code;
+                            // with a math operator ( > < = != >= <= ) it has to be a number
+                            if( isset(self::$mathOps[$this->operator]) )
+                            {
+                                if( !is_numeric($this->argument) )
+                                    derr("filter '" . $this->field . ' ' . $this->operator . "': the value has to be a number", null, FALSE);
+                                $rqValue = $this->argument + 0;
+                            }
+                            else
+                                $rqValue = $this->argument;
+
+                            $eval = '$boolReturn = (' . self::templateWithValueVariable($this->refOperator['eval']) . ');';
 
                             if( isset(self::$mathOps[$this->operator]) )
                             {
@@ -622,6 +635,15 @@ class RQuery
 
         $this->argument = $subtext;
 
+        // filters written as a code template ( 'eval' => '… !operator! !value!' ): the value of a math operator
+        // has to be a number - said here, when the filter is read, and not for every object
+        if( $isMathOp && isset($this->refOperator['eval']) && is_string($this->refOperator['eval'])
+            && !isset($this->refOperator['argObjectFinder']) && !is_numeric($subtext) )
+        {
+            $errorMessage = "the value of '" . $this->field . ' ' . $this->operator . "' has to be a number in expression '$text'";
+            return FALSE;
+        }
+
         if( isset($this->refOperator['argType']) && $this->refOperator['argType'] == 'commaSeparatedList' )
         {
             $this->argumentList = explode(',', $subtext);
@@ -667,6 +689,58 @@ class RQuery
 
         return TRUE;
 
+    }
+
+    /**
+     * Code template of a filter ( 'eval' / 'argObjectFinder' given as text ): every place of the filter value -
+     * '!value!', "!value!" or !value! - becomes the variable $rqValue. The value the user typed is never part of the
+     * code that is evaluated.
+     */
+    static public function templateWithValueVariable(string $template): string
+    {
+        return str_replace(array("'!value!'", '"!value!"', '!value!'), '$rqValue', $template);
+    }
+
+    /**
+     * left <operator> right for the math operators of a filter ( > < = == != >= <= ), without eval. left is the
+     * number of the object, right the value of the filter.
+     */
+    static public function mathCompare($left, string $operator, $right): bool
+    {
+        if( !isset(self::$mathOps[$operator]) )
+            derr("unsupported math operator '" . $operator . "'", null, FALSE);
+        if( is_bool($left) )
+            $left = (int)$left;
+        if( is_bool($right) )
+            $right = (int)$right;
+        if( is_string($left) )
+            $left = trim($left);
+        if( is_string($right) )
+            $right = trim($right);
+        // right: the value of the filter; left: what the object has ( nothing to compare: no match )
+        if( !is_numeric($right) )
+            derr("filter with operator '" . $operator . "': the value has to be a number", null, FALSE);
+        if( !is_numeric($left) )
+            return FALSE;
+        $left = $left + 0;
+        $right = $right + 0;
+
+        switch( self::$mathOps[$operator] )
+        {
+            case '>':
+                return $left > $right;
+            case '<':
+                return $left < $right;
+            case '==':
+                return $left == $right;
+            case '!=':
+                return $left != $right;
+            case '<=':
+                return $left <= $right;
+            case '>=':
+                return $left >= $right;
+        }
+        return FALSE;
     }
 
     static private function extractOperatorFromString($text, &$errorMessage)

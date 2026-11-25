@@ -565,8 +565,7 @@ RQuery::$defaultFilters['service']['port.count']['operators']['>,<,=,!'] = array
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;
@@ -588,8 +587,7 @@ RQuery::$defaultFilters['service']['port.tcp.count']['operators']['>,<,=,!'] = a
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;
@@ -611,8 +609,7 @@ RQuery::$defaultFilters['service']['port.udp.count']['operators']['>,<,=,!'] = a
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $calculatedCounter." ".$operator." ".$counter;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $calculatedCounter, $operator, $counter ) )
             return TRUE;
 
         return FALSE;

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared/>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <tag>
+            <entry name="prod"/>
+            <entry name="it's"/>
+          </tag>
+          <service>
+            <entry name="web"><protocol><tcp><port>80</port></tcp></protocol></entry>
+            <entry name="web-alt"><protocol><tcp><port>8080,8443</port></tcp></protocol></entry>
+            <entry name="dns"><protocol><udp><port>53</port></udp></protocol></entry>
+          </service>
+          <service-group><entry name="web-group"><members><member>web</member><member>web-alt</member></members></entry></service-group>
+          <address>
+            <entry name="h-192.0.2.10"><ip-netmask>192.0.2.10</ip-netmask><tag><member>prod</member></tag></entry>
+            <entry name="h-192.0.2.11"><ip-netmask>192.0.2.11</ip-netmask><tag><member>it's</member></tag></entry>
+            <entry name="n-198.51.100.0_24"><ip-netmask>198.51.100.0/24</ip-netmask></entry>
+          </address>
+          <address-group>
+            <entry name="servers"><static><member>h-192.0.2.10</member><member>h-192.0.2.11</member></static></entry>
+          </address-group>
+          <schedule>
+            <entry name="old-project"><schedule-type><non-recurring><member>2020/01/01@00:00-2020/01/31@23:59</member></non-recurring></schedule-type></entry>
+            <entry name="far-future"><schedule-type><non-recurring><member>2090/01/01@00:00-2090/01/31@23:59</member></non-recurring></schedule-type></entry>
+          </schedule>
+          <rulebase><security><rules/></security></rulebase>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

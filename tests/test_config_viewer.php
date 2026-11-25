@@ -318,6 +318,7 @@ eq( status( $alice->call( 'GET', $P . '/configs/' . basename( $stored[0], '.xml'
 eq( status( $alice->call( 'GET', $C . '/objects?type=upload' ) ), 400, 'type outside the whitelist' );
 eq( status( $alice->call( 'GET', $C . '/objects?type=address&location=' . urlencode( '../../x' ) ) ), 400, 'location with path characters' );
 eq( status( $alice->call( 'GET', $C . '/objects?type=address&filter=' . urlencode( '(name is.in.file /etc/passwd)' ) ) ), 400, 'filter that reads a file' );
+eq( status( $alice->call( 'GET', $C . '/objects?type=address&filter=' . urlencode( '(refcount > `id`)' ) ) ), 400, 'filter with a backtick' );
 eq( status( $alice->call( 'POST', $C . '/change', array( 'type' => 'address', 'actions' => 'exporttoexcel:/tmp/x.xls' ) ) ), 400, 'action that writes a file' );
 eq( status( $alice->call( 'POST', $C . '/change', array( 'type' => 'address', 'actions' => 'display/create-address-from-file:/etc/passwd' ) ) ), 400, 'second action not offered' );
 

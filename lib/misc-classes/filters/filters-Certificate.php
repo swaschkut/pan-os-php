@@ -119,8 +119,7 @@ RQuery::$defaultFilters['certificate']['publickey-hash']['operators']['>,<,=,!']
             $hashvaluesearch = str_replace( "sha", "", $hashvaluesearch );
         }
 
-        $operator_string = $hashvalue." ".$operator." ".$hashvaluesearch;
-        if( eval("return $operator_string;" ) )
+        if( RQuery::mathCompare( $hashvalue, $operator, $hashvaluesearch ) )
             return TRUE;
 
         return FALSE;
@@ -165,10 +164,9 @@ RQuery::$defaultFilters['certificate']['expired']['operators']['>,<,=,!'] = arra
         if( $operator == '=' )
             $operator = '==';
 
-        $operator_string = $timestamp_value." ".$operator." ".$filter_timestamp;
         if( $operator == '==' && $timestamp_value == 0 )
             return true;
-        elseif( $timestamp_value != 0 && eval("return $operator_string;" ) )
+        elseif( $timestamp_value != 0 && RQuery::mathCompare( $timestamp_value, $operator, $filter_timestamp ) )
             return true;
 
         return false;
