@@ -132,7 +132,9 @@ RQuery::$defaultFilters['certificate']['publickey-hash']['operators']['>,<,=,!']
 )
 );
 RQuery::$defaultFilters['certificate']['publickey-length']['operators']['>,<,=,!'] = array(
-    'eval' => '$object->hasPublicKey() && $object->getPkeyBits() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return $object->hasPublicKey() && RQuery::compare( $object->getPkeyBits(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',

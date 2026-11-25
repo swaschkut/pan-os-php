@@ -319,6 +319,10 @@ eq( status( $alice->call( 'GET', $C . '/objects?type=upload' ) ), 400, 'type out
 eq( status( $alice->call( 'GET', $C . '/objects?type=address&location=' . urlencode( '../../x' ) ) ), 400, 'location with path characters' );
 eq( status( $alice->call( 'GET', $C . '/objects?type=address&filter=' . urlencode( '(name is.in.file /etc/passwd)' ) ) ), 400, 'filter that reads a file' );
 eq( status( $alice->call( 'GET', $C . '/objects?type=address&filter=' . urlencode( '(refcount > `id`)' ) ) ), 400, 'filter with a backtick' );
+eq( array( status( $alice->call( 'GET', $C . '/objects?type=rule&filter=' . urlencode( '(src is.fully.included.in.list @/etc/hosts)' ) ) ),
+    status( $alice->call( 'GET', $C . '/objects?type=rule&filter=' . urlencode( '(name is.in.csv-report-file /etc/hosts)' ) ) ),
+    status( $alice->call( 'GET', $C . '/objects?type=rule&filter=' . urlencode( '(nat find.dnat.sec.pair.beta)' ) ) ) ),
+    array( 400, 400, 400 ), 'filter: a list read from a file (@file), the csv report file, the filter that writes a file' );
 eq( status( $alice->call( 'POST', $C . '/change', array( 'type' => 'address', 'actions' => 'exporttoexcel:/tmp/x.xls' ) ) ), 400, 'action that writes a file' );
 eq( status( $alice->call( 'POST', $C . '/change', array( 'type' => 'address', 'actions' => 'display/create-address-from-file:/etc/passwd' ) ) ), 400, 'second action not offered' );
 

@@ -400,7 +400,9 @@ RQuery::$defaultFilters['application']['object']['operators']['has.member'] = ar
     )
 );
 RQuery::$defaultFilters['application']['risk']['operators']['>,<,=,!'] = array(
-    'eval' => '$object->risk !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return RQuery::compare( $object->risk, $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',

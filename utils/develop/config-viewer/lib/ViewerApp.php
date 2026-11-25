@@ -3733,7 +3733,7 @@ class ViewerApp
         }
         if( $name === 'filter' || $subquery )
         {
-            if( preg_match( '/\.file\b/i', $arg ) )
+            if( self::filterTouchesFile( $arg ) )
                 $bad( $at . 'filter operators that read a file are not available' );
             if( strpos( $arg, '`' ) !== FALSE )
                 $bad( $at . 'filter: the character ` is not allowed' );
@@ -4982,7 +4982,7 @@ class ViewerApp
             $ops = array();
             foreach( (array)( $f['operators'] ?? array() ) as $op => $o )
             {
-                if( preg_match( '/\.file$|\.file\./', (string)$op ) )
+                if( preg_match( '/\.file$|\.file\./', (string)$op ) || self::filterTouchesFile( 'x ' . $op . ' y' ) )
                     continue;
                 $fs = is_array( $o ) && is_string( $o['ci']['fString'] ?? null ) ? $o['ci']['fString'] : null;
                 $ops[(string)$op] = array( 'arg' => is_array( $o ) && !empty( $o['arg'] ),
@@ -5223,7 +5223,7 @@ class ViewerApp
             if( strlen( $filter ) > 2000 || preg_match( '/[\x00-\x1F\x7F]/', $filter ) )
                 throw new ViewerException( 'filter too long or with control characters', 400 );
             // operators like 'is.in.file' read a file on the server
-            if( preg_match( '/\.file\b/i', $filter ) )
+            if( self::filterTouchesFile( $filter ) )
                 throw new ViewerException( 'filter operators that read a file are not available here', 400 );
             // nothing of a filter is a shell command: refused here already (pan-os-php never evaluates a filter value)
             if( strpos( $filter, '`' ) !== FALSE )
@@ -5231,6 +5231,16 @@ class ViewerApp
             $args[] = 'filter=' . $filter;
         }
         return $args;
+    }
+
+    /**
+     * A filter that reads or writes a file on the server: an operator *.file ( is.in.file, ip4.match.exact.from.file,
+     * … ), is.in.csv-report-file, find.dnat.sec.pair.beta ( writes dnatfile.txt ), and the list operators with
+     * "@file" instead of a list ( src is.fully.included.in.list @/path - pan-os-php reads the list from that file ).
+     */
+    private static function filterTouchesFile( string $filter ): bool
+    {
+        return (bool)preg_match( '/\.file\b|\bis\.in\.csv-report-file\b|\bfind\.dnat\.sec\.pair\b|\.list\s+@/i', $filter );
     }
 
     /** validates "actions" of a change request: every action must be an offered action of the type */

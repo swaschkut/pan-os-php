@@ -403,7 +403,9 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
     )
 );
 RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
-    'eval' => "!\$object->isGroup() && !\$object->isRegion() && !\$object->isEDL() && \$object->isType_ipNetmask() && \$object->getNetworkMask() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() && RQuery::compare( $object->getNetworkMask(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 27)',
@@ -411,7 +413,9 @@ RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
     )
 );
 RQuery::$defaultFilters['address']['members.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->isGroup() && !\$object->isDynamic() && \$object->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return $object->isGroup() && !$object->isDynamic() && RQuery::compare( $object->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -419,7 +423,9 @@ RQuery::$defaultFilters['address']['members.count']['operators']['>,<,=,!'] = ar
     )
 );
 RQuery::$defaultFilters['address']['tag.count']['operators']['>,<,=,!'] = array(
-    'eval' => "!\$object->isRegion() && !\$object->isEDL() && \$object->tags->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isRegion() && !$object->isEDL() && RQuery::compare( $object->tags->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -433,7 +439,9 @@ RQuery::$defaultFilters['address']['tag']['operators']['is.set'] = array(
         return count($context->object->tags->getAll()) > 0;
     },
     'arg' => FALSE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->tags->parentCentralStore->find( $value );
+    },
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'

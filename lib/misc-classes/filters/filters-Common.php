@@ -566,7 +566,9 @@ RQuery::registerFilter( array(
     'address',
     'securityprofile'
 ), 'name.length', '>,<,=,!', array(
-    'eval' => "strlen(\$object->name()) !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return RQuery::compare( strlen($object->name()), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 63)',
@@ -922,7 +924,9 @@ RQuery::registerFilter( array(
     'zone',
     'zone-protection-profile'
 ), 'refcount', '>,<,=,!', array(
-    'eval' => 'method_exists( $object, "countReferences" ) && $object->countReferences() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return method_exists( $object, "countReferences" ) && RQuery::compare( $object->countReferences(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -989,7 +993,9 @@ RQuery::registerFilter( array(
     'address',
     'service'
 ), 'reflocationcount', '>,<,=,!', array(
-    'eval' => '$object->countLocationReferences() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return RQuery::compare( $object->countLocationReferences(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -1154,7 +1160,9 @@ RQuery::registerFilter( array(
     'rule',
     'service'
 ), 'tag.count', '>,<,=,!', array(
-    'eval' => "\$object->tags->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return RQuery::compare( $object->tags->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -1536,7 +1544,9 @@ RQuery::registerFilter( array(
         return $context->object->tags->hasTag($context->value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->tags->parentCentralStore->find( $value );
+    },
     'ci' => array(
         'fString' => '(%PROP% grp.shared-group1)',
         'input' => 'input/panorama-8.0.xml'

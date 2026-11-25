@@ -18,7 +18,9 @@ RQuery::$defaultFilters['rule']['from']['operators']['has'] = array(
         return $object->from->hasZone($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->from->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->from->parentCentralStore->find( $value );
+    }
 
 
 );
@@ -33,7 +35,9 @@ RQuery::$defaultFilters['rule']['from']['operators']['has.only'] = array(
         return $object->from->count() == 1 && $object->from->hasZone($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->from->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->from->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['from']['operators']['has.from.query'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -275,7 +279,9 @@ RQuery::$defaultFilters['rule']['to']['operators']['has.only'] = array(
         return $object->to->count() == 1 && $object->to->hasZone($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->to->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->to->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['to']['operators']['has.from.query'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -388,7 +394,9 @@ RQuery::$defaultFilters['rule']['to']['operators']['has.regex'] = array(
 );
 
 RQuery::$defaultFilters['rule']['from.count']['operators']['>,<,=,!'] = array(
-    'eval' => "!\$object->isPbfRule() && \$object->from->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isPbfRule() && RQuery::compare( $object->from->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -396,7 +404,9 @@ RQuery::$defaultFilters['rule']['from.count']['operators']['>,<,=,!'] = array(
     )
 );
 RQuery::$defaultFilters['rule']['to.count']['operators']['>,<,=,!'] = array(
-    'eval' => "!\$object->isPbfRule() && \$object->to->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isPbfRule() && RQuery::compare( $object->to->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -622,7 +632,9 @@ RQuery::$defaultFilters['rule']['snathost']['operators']['has'] = array(
         return $object->snathosts->has($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->owner->owner->addressStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->owner->owner->addressStore->find( $value );
+    }
 
 );
 RQuery::$defaultFilters['rule']['snathost']['operators']['has.from.query'] = array(
@@ -662,7 +674,9 @@ RQuery::$defaultFilters['rule']['snathost']['operators']['has.from.query'] = arr
     'help' => 'example: \'filter=(snathost has.from.query subquery1)\' \'subquery1=(netmask < 32)\'',
 );
 RQuery::$defaultFilters['rule']['snathost.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->isNatRule() && \$object->snathosts->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return $object->isNatRule() && RQuery::compare( $object->snathosts->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -678,7 +692,9 @@ RQuery::$defaultFilters['rule']['dnathost']['operators']['has'] = array(
         return $object->dnathost === $value;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->owner->owner->addressStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->owner->owner->addressStore->find( $value );
+    }
 );
 
 RQuery::$defaultFilters['rule']['dnathost']['operators']['included-in.full'] = array(
@@ -1065,7 +1081,9 @@ RQuery::$defaultFilters['rule']['src']['operators']['has'] = array(
         return $object->source->has($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->source->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->source->parentCentralStore->find( $value );
+    }
 
 );
 RQuery::$defaultFilters['rule']['src']['operators']['has.edl'] = array(
@@ -1081,7 +1099,9 @@ RQuery::$defaultFilters['rule']['src']['operators']['has.only'] = array(
         return $object->source->count() == 1 && $object->source->has($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->source->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->source->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['src']['operators']['has.recursive'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
@@ -1089,7 +1109,9 @@ RQuery::$defaultFilters['rule']['src']['operators']['has.recursive'] = array(
         return $object->source->hasObjectRecursive($value, FALSE) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->source->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->source->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['src']['operators']['has.recursive.regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -1167,7 +1189,9 @@ RQuery::$defaultFilters['rule']['dst']['operators']['has'] = array(
         return $object->destination->has($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->destination->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->destination->parentCentralStore->find( $value );
+    }
 
 );
 RQuery::$defaultFilters['rule']['dst']['operators']['has.edl'] = array(
@@ -1183,12 +1207,18 @@ RQuery::$defaultFilters['rule']['dst']['operators']['has.only'] = array(
         return $object->destination->count() == 1 && $object->destination->has($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->destination->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->destination->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['dst']['operators']['has.recursive'] = array(
-    'eval' => '$object->destination->hasObjectRecursive(!value!, false) === true',
+    'eval' => function( $object, &$nestedQueries, $value ) {
+        return $object->destination->hasObjectRecursive($value, false) === true;
+    },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->destination->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->destination->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['dst']['operators']['has.recursive.regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -1664,7 +1694,9 @@ RQuery::$defaultFilters['rule']['tag']['operators']['has'] = array(
         return $object->tags->hasTag($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->tags->parentCentralStore->find( $value );
+    },
     'ci' => array(
         'fString' => '(%PROP% test.tag)',
         'input' => 'input/panorama-8.0.xml'
@@ -1713,7 +1745,9 @@ RQuery::$defaultFilters['rule']['group-tag']['operators']['is'] = array(
         return $object->grouptag->hasTag( $value ) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->tags->parentCentralStore->find( $value );
+    },
     'ci' => array(
         'fString' => '(%PROP% test.tag)',
         'input' => 'input/panorama-8.0.xml'
@@ -1786,7 +1820,9 @@ RQuery::$defaultFilters['rule']['app']['operators']['has'] = array(
         return $object->apps->hasApp($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->apps->parentCentralStore->find('!value!');",
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->apps->parentCentralStore->find( $value );
+    },
 );
 RQuery::$defaultFilters['rule']['app']['operators']['has.nocase'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -2053,7 +2089,9 @@ RQuery::$defaultFilters['rule']['service']['operators']['has'] = array(
         return $object->isSecurityRule() && $object->services->has($value) === TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->services->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->services->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['service']['operators']['has.only'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
@@ -2073,7 +2111,9 @@ RQuery::$defaultFilters['rule']['service']['operators']['has.only'] = array(
         return TRUE;
     },
     'arg' => TRUE,
-    'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->services->parentCentralStore->find('!value!');"
+    'argObjectFinder' => function( $object, $value ) {
+        return $object->services->parentCentralStore->find( $value );
+    }
 );
 RQuery::$defaultFilters['rule']['service']['operators']['has.regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -3921,7 +3961,9 @@ RQuery::$defaultFilters['rule']['user']['operators']['is.in.file'] = array(
     'help' => 'returns TRUE if rule name matches one of the names found in text file provided in argument'
 );
 RQuery::$defaultFilters['rule']['user.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->isSecurityRule() && \$object->userID_count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return $object->isSecurityRule() && RQuery::compare( $object->userID_count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -3962,7 +4004,9 @@ RQuery::$defaultFilters['rule']['url.category']['operators']['has'] = array(
     )
 );
 RQuery::$defaultFilters['rule']['url.category.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->isSecurityRule() && \$object->urlCategoriescount() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return $object->isSecurityRule() && RQuery::compare( $object->urlCategoriescount(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -4072,7 +4116,9 @@ RQuery::$defaultFilters['rule']['description']['operators']['regex'] = array(
     )
 );
 RQuery::$defaultFilters['rule']['description.length']['operators']['>,<,=,!'] = array(
-    'eval' => "strlen(\$object->description() ) !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return RQuery::compare( strlen($object->description() ), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',

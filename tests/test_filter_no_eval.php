@@ -19,7 +19,7 @@
 
 /**
  * The value of a filter never becomes code: a value that is not a number is refused for the math operators
- * ( > < = != >= <= ), a name with a quote is only a name, and no filter file builds a string for eval().
+ * ( > < = != >= <= ), a name with a quote is only a name, every filter is a function and nothing below lib/ uses eval().
  * Synthetic input tests/input/filter-eval.xml.
  *
  *   php tests/test_filter_no_eval.php
@@ -91,23 +91,61 @@ $eq( RQuery::mathCompare( 3, '!=', 4 ), TRUE, 'mathCompare 3 != 4' );
 $eq( RQuery::mathCompare( 3, '>=', 3 ), TRUE, 'mathCompare 3 >= 3' );
 $eq( RQuery::mathCompare( 3, '<=', 2 ), FALSE, 'mathCompare 3 <= 2' );
 $eq( RQuery::mathCompare( '', '>', 0 ), FALSE, 'mathCompare: an object without a number does not match' );
-$eq( RQuery::templateWithValueVariable( "\$o->find('!value!') && \$o->count() !operator! !value!" ), "\$o->find(\$rqValue) && \$o->count() !operator! \$rqValue",
-    'template: the value becomes a variable' );
+$eq( array( RQuery::compare( 5, '>', 3 ), RQuery::compare( 5, '=', 5 ), RQuery::compare( 5, '!=', 5 ), RQuery::compare( 2, '<=', '3' ) ),
+    array( TRUE, TRUE, FALSE, TRUE ), 'compare: the math operators of an eval filter' );
 
-// 4) no filter and no class builds text for eval(); RQuery evaluates the fixed templates only
-$found = array();
+// 4) nothing below lib/ evaluates text as code, and no filter is defined as text
+$found = array(); $asText = array();
 $it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $repo . '/lib', FilesystemIterator::SKIP_DOTS ) );
 foreach( $it as $f )
 {
-    if( substr( $f->getFilename(), -4 ) !== '.php' || $f->getFilename() === 'RQuery.php' )
+    if( substr( $f->getFilename(), -4 ) !== '.php' )
         continue;
     foreach( file( $f->getPathname() ) as $no => $line )
-        if( preg_match( '/(?<![\w>$:])eval\s*\(/', $line ) && !preg_match( '~^\s*(//|#|\*)~', $line ) )
-            $found[] = substr( $f->getPathname(), strlen( $repo ) + 1 ) . ':' . ( $no + 1 );
+    {
+        if( preg_match( '~^\s*(//|#|\*)~', $line ) )
+            continue;
+        $at = substr( $f->getPathname(), strlen( $repo ) + 1 ) . ':' . ( $no + 1 );
+        if( preg_match( '/(?<![\w>$:])eval\s*\(/', $line ) )
+            $found[] = $at;
+        if( preg_match( '/[\'"](eval|argObjectFinder)[\'"]\s*=>\s*[\'"]/', $line ) )
+            $asText[] = $at;
+    }
 }
-$eq( $found, array(), 'no eval() below lib/ outside of RQuery.php' );
-$rq = file_get_contents( $repo . '/lib/misc-classes/RQuery.php' );
-$eq( (bool)preg_match( '/str_replace\(\s*\'!value!\'\s*,\s*\$this->argument/', $rq ), FALSE, 'RQuery does not put the filter value into the code' );
+$eq( $found, array(), 'no eval() below lib/' );
+$eq( $asText, array(), "no filter with 'eval' / 'argObjectFinder' written as text" );
+$bad = array();
+foreach( RQuery::$defaultFilters as $type => $fields )
+    foreach( $fields as $field => $def )
+        foreach( (array)( $def['operators'] ?? array() ) as $op => $o )
+        {
+            if( !is_array( $o ) )
+                continue;
+            foreach( array( 'eval', 'argObjectFinder' ) as $k )
+                if( isset( $o[$k] ) && !( $o[$k] instanceof Closure ) )
+                    $bad[] = $type . ' ' . $field . ' ' . $op . ' ' . $k;
+            if( !isset( $o['eval'] ) && !isset( $o['Function'] ) )
+                $bad[] = $type . ' ' . $field . ' ' . $op . ' (neither eval nor Function)';
+        }
+$eq( $bad, array(), 'every registered filter is a function' );
+
+// a filter written as text is refused, not evaluated
+PH::$useExceptions = TRUE;
+RQuery::$defaultFilters['address']['zz-text']['operators']['is.set'] = array( 'eval' => 'touch("' . $marker . '")', 'arg' => FALSE );
+$refused = FALSE;
+try
+{
+    $q = new RQuery( 'address' ); $err = '';
+    $q->parseFromString( '(zz-text is.set)', $err );
+    $q->matchSingleObject( new stdClass() );
+}
+catch( Throwable $e )
+{
+    $refused = (bool)preg_match( '/has to be a function/', $e->getMessage() );
+}
+$eq( array( $refused, file_exists( $marker ) ), array( TRUE, FALSE ), 'a filter defined as text is refused and not executed' );
+if( file_exists( $marker ) )
+    unlink( $marker );
 
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

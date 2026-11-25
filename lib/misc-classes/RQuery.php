@@ -214,152 +214,52 @@ class RQuery
             }
             else
             {
-                #PH::print_stdout("2");
+                // a filter is a function ( 'eval' / 'argObjectFinder' as closure ): nothing is evaluated as text
+                $evalFunction = isset($this->refOperator['eval']) ? $this->refOperator['eval'] : null;
+                if( !($evalFunction instanceof Closure) )
+                    derr("filter '" . $this->field . ' ' . $this->operator . "': 'eval' has to be a function - a filter written as text ( '... !operator! !value!' ) is not supported any more", null, FALSE);
+
+                $boolReturn = FALSE;
                 if( $this->refOperator['arg'] == TRUE )
                 {
                     if( isset($this->refOperator['argObjectFinder']) )
                     {
-                        if( is_string($this->refOperator['argObjectFinder']) )
-                        {
-                            // the filter value is handed over as a variable, it never becomes part of the evaluated code
-                            $rqValue = $this->argument;
-                            $eval = self::templateWithValueVariable($this->refOperator['argObjectFinder']);
-                            if( eval($eval) === FALSE )
-                            {
-                                derr("\neval code was : $eval\n");
-                            }
+                        $finderFunction = $this->refOperator['argObjectFinder'];
+                        if( !($finderFunction instanceof Closure) )
+                            derr("filter '" . $this->field . ' ' . $this->operator . "': 'argObjectFinder' has to be a function - written as text it is not supported any more", null, FALSE);
 
-                            if( $objectFind === null )
-                            {
-                                $locationStr = PH::getLocationString($object);
-                                //derr("\n\n**ERROR** cannot find object with name '{$this->argument}' in location '{$locationStr}' or its parents. If you didn't write a typo then try a REGEX based filter instead\n\n");
-                                return false;
-                            }
-                            if( !is_string($this->refOperator['eval']) )
-                            {
-                                $boolReturn = $this->refOperator['eval']($object, $nestedQueries, $objectFind);
-                            }
-                            else
-                            {
-                                $eval = '$boolReturn = (' . str_replace('!value!', '$objectFind', $this->refOperator['eval']) . ');';
+                        $objectFind = $finderFunction($object, $this->argument);
+                        // FALSE: the filter is not for this object; null: no object of that name in the location
+                        // or above it ( a typo, or try a REGEX based filter instead )
+                        if( $objectFind === FALSE || $objectFind === null )
+                            return FALSE;
 
-                                if( eval($eval) === FALSE )
-                                {
-                                    derr("\neval code was : $eval\n");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            $objectFind = $this->refOperator['argObjectFinder']($object, $this->argument);
-                            if( $objectFind === FALSE )
-                                return FALSE;
-                            else
-                            {
-                                if( $objectFind === null )
-                                {
-                                    $locationStr = PH::getLocationString($object);
-                                    //derr("\n\n**ERROR** cannot find object with name '{$this->argument}' in location '{$locationStr}' or its parents. If you didn't write a typo then try a REGEX based filter instead\n\n");
-                                    return false;
-                                }
-                                if( !is_string($this->refOperator['eval']) )
-                                {
-                                    $boolReturn = $this->refOperator['eval']($object, $nestedQueries, $objectFind);
-                                }
-                                else
-                                {
-                                    $eval = '$boolReturn = (' . str_replace('!value!', '$objectFind', $this->refOperator['eval']) . ');';
-
-                                    if( eval($eval) === FALSE )
-                                    {
-                                        derr("\neval code was : $eval\n");
-                                    }
-                                }
-                            }
-
-                        }
-
-                        if( $boolReturn === null )
-                            if( $this->level == 0 )
-                                return FALSE;
-                            else return null;
-
-                        if( $this->inverted )
-                            return !$boolReturn;
-                        return $boolReturn;
+                        $boolReturn = $evalFunction($object, $nestedQueries, $objectFind);
                     }
-                    else
+                    elseif( isset(self::$mathOps[$this->operator]) )
                     {
-                        $boolReturn = FALSE;
-                        if( !is_string($this->refOperator['eval']) )
-                        {
-                            if( $this->argumentList !== null )
-                                $boolReturn = $this->refOperator['eval']($object, $nestedQueries, $this->argumentList);
-                            else
-                                $boolReturn = $this->refOperator['eval']($object, $nestedQueries, $this->argument);
-                        }
-                        else
-                        {
-                            // the filter value is handed over as a variable, it never becomes part of the evaluated code;
-                            // with a math operator ( > < = != >= <= ) it has to be a number
-                            if( isset(self::$mathOps[$this->operator]) )
-                            {
-                                if( !is_numeric($this->argument) )
-                                    derr("filter '" . $this->field . ' ' . $this->operator . "': the value has to be a number", null, FALSE);
-                                $rqValue = $this->argument + 0;
-                            }
-                            else
-                                $rqValue = $this->argument;
+                        // a math operator ( > < = != >= <= ) takes a number
+                        if( !is_numeric($this->argument) )
+                            derr("filter '" . $this->field . ' ' . $this->operator . "': the value has to be a number", null, FALSE);
 
-                            $eval = '$boolReturn = (' . self::templateWithValueVariable($this->refOperator['eval']) . ');';
-
-                            if( isset(self::$mathOps[$this->operator]) )
-                            {
-                                $eval = str_replace('!operator!', self::$mathOps[$this->operator], $eval);
-                            }
-
-                            if( eval($eval) === FALSE )
-                            {
-                                derr("\neval code was : $eval\n");
-                            }
-                        }
-
-                        if( $boolReturn === null )
-                            if( $this->level == 0 )
-                                return FALSE;
-                            else return null;
-
-                        if( $this->inverted )
-                            return !$boolReturn;
-                        return $boolReturn;
+                        $boolReturn = $evalFunction($object, $nestedQueries, $this->argument + 0, $this->operator);
                     }
+                    elseif( $this->argumentList !== null )
+                        $boolReturn = $evalFunction($object, $nestedQueries, $this->argumentList);
+                    else
+                        $boolReturn = $evalFunction($object, $nestedQueries, $this->argument);
                 }
                 else
-                {
-                    $boolReturn = FALSE;
-                    if( !is_string($this->refOperator['eval']) )
-                    {
-                        $boolReturn = $this->refOperator['eval']($object, $nestedQueries, null);
-                    }
-                    else
-                    {
-                        $eval = '$boolReturn = (' . $this->refOperator['eval'] . ');';
+                    $boolReturn = $evalFunction($object, $nestedQueries, null);
 
-                        if( eval($eval) === FALSE )
-                        {
-                            derr("\neval code was : $eval\n");
-                        }
+                if( $boolReturn === null )
+                    if( $this->level == 0 )
+                        return FALSE;
+                    else return null;
 
-                    }
-                    if( $boolReturn === null )
-                        if( $this->level == 0 )
-                            return FALSE;
-                        else return null;
-
-                    if( $this->inverted )
-                        return !$boolReturn;
-                    return $boolReturn;
-                }
+                if( $this->inverted )
+                    return !$boolReturn;
+                return $boolReturn;
             }
         }
 
@@ -635,10 +535,9 @@ class RQuery
 
         $this->argument = $subtext;
 
-        // filters written as a code template ( 'eval' => '… !operator! !value!' ): the value of a math operator
-        // has to be a number - said here, when the filter is read, and not for every object
-        if( $isMathOp && isset($this->refOperator['eval']) && is_string($this->refOperator['eval'])
-            && !isset($this->refOperator['argObjectFinder']) && !is_numeric($subtext) )
+        // 'eval' filters with a math operator ( refcount > 1 ): the value has to be a number - said here, when the
+        // filter is read, and not for every object
+        if( $isMathOp && isset($this->refOperator['eval']) && !isset($this->refOperator['argObjectFinder']) && !is_numeric($subtext) )
         {
             $errorMessage = "the value of '" . $this->field . ' ' . $this->operator . "' has to be a number in expression '$text'";
             return FALSE;
@@ -692,13 +591,37 @@ class RQuery
     }
 
     /**
-     * Code template of a filter ( 'eval' / 'argObjectFinder' given as text ): every place of the filter value -
-     * '!value!', "!value!" or !value! - becomes the variable $rqValue. The value the user typed is never part of the
-     * code that is evaluated.
+     * left <operator> right for an 'eval' filter with a math operator ( > < = == != >= <= ): the comparison PHP does
+     * for the two values - left is what the object has ( a number, or a text like a port list ), right the number of
+     * the filter.
      */
-    static public function templateWithValueVariable(string $template): string
+    static public function compare($left, string $operator, $right): bool
     {
-        return str_replace(array("'!value!'", '"!value!"', '!value!'), '$rqValue', $template);
+        if( !isset(self::$mathOps[$operator]) )
+            derr("unsupported math operator '" . $operator . "'", null, FALSE);
+        if( !is_int($right) && !is_float($right) )
+        {
+            if( !is_numeric($right) )
+                derr("filter with operator '" . $operator . "': the value has to be a number", null, FALSE);
+            $right = $right + 0;
+        }
+
+        switch( self::$mathOps[$operator] )
+        {
+            case '>':
+                return $left > $right;
+            case '<':
+                return $left < $right;
+            case '==':
+                return $left == $right;
+            case '!=':
+                return $left != $right;
+            case '<=':
+                return $left <= $right;
+            case '>=':
+                return $left >= $right;
+        }
+        return FALSE;
     }
 
     /**

@@ -31,7 +31,9 @@ RQuery::$defaultFilters['region']['address']['operators']['is.empty'] = array(
 );
 
 RQuery::$defaultFilters['region']['address.count']['operators']['>,<,=,!'] = array(
-    'eval' => 'count( $object->members() ) !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return RQuery::compare( count( $object->members() ), $operator, $value );
+    },
     'arg' => true,
     'ci' => array(
         'fString' => '(%PROP% 1)',

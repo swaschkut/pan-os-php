@@ -63,7 +63,9 @@ RQuery::$defaultFilters['threat']['cve']['operators']['contains'] = array(
     )
 );
 RQuery::$defaultFilters['threat']['min-engine-version']['operators']['>,<,=,!'] = array(
-    'eval' => "!empty(\$object->min_engine_version) && \$object->min_engine_version !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !empty($object->min_engine_version) && RQuery::compare( $object->min_engine_version, $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -71,7 +73,9 @@ RQuery::$defaultFilters['threat']['min-engine-version']['operators']['>,<,=,!'] 
     )
 );
 RQuery::$defaultFilters['threat']['max-engine-version']['operators']['>,<,=,!'] = array(
-    'eval' => "!empty(\$object->max_engine_version) && \$object->max_engine_version !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !empty($object->max_engine_version) && RQuery::compare( $object->max_engine_version, $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -80,7 +84,9 @@ RQuery::$defaultFilters['threat']['max-engine-version']['operators']['>,<,=,!'] 
 );
 
 RQuery::$defaultFilters['threat']['max-engine-version']['operators']['is.empty'] = array(
-    'eval' => "empty(\$object->max_engine_version)",
+    'eval' => function( $object, &$nestedQueries, $value ) {
+        return empty($object->max_engine_version);
+    },
     'arg' => false,
     'ci' => array(
         'fString' => '(%PROP% 1)',

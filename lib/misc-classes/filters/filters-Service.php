@@ -179,7 +179,9 @@ RQuery::$defaultFilters['service']['name']['operators']['regex'] = array(
     )
 );
 RQuery::$defaultFilters['service']['members.count']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->isGroup() && \$object->count() !operator! !value!",
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return $object->isGroup() && RQuery::compare( $object->count(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -257,7 +259,9 @@ RQuery::$defaultFilters['service']['value']['operators']['string.eq'] = array(
     )
 );
 RQuery::$defaultFilters['service']['value']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && $object->getDestPort() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && RQuery::compare( $object->getDestPort(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -375,7 +379,9 @@ RQuery::$defaultFilters['service']['sourceport.value']['operators']['string.eq']
     )
 );
 RQuery::$defaultFilters['service']['sourceport.value']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && $object->getSourcePort() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && RQuery::compare( $object->getSourcePort(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -472,7 +478,9 @@ RQuery::$defaultFilters['service']['sourceport.value']['operators']['regex'] = a
 );
 #################
 RQuery::$defaultFilters['service']['value.length']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && strlen($object->getDestPort()) !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && RQuery::compare( strlen($object->getDestPort()), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -497,7 +505,9 @@ RQuery::$defaultFilters['service']['timeout']['operators']['is.set'] = array(
     'arg' => FALSE
 );
 RQuery::$defaultFilters['service']['timeout.value']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && $object->getTimeout() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && RQuery::compare( $object->getTimeout(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -521,7 +531,9 @@ RQuery::$defaultFilters['service']['timeout-halfclose']['operators']['is.set'] =
     'arg' => FALSE
 );
 RQuery::$defaultFilters['service']['timeout-halfclose.value']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && $object->getHalfcloseTimeout() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && RQuery::compare( $object->getHalfcloseTimeout(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -545,7 +557,9 @@ RQuery::$defaultFilters['service']['timeout-timewait']['operators']['is.set'] = 
     'arg' => FALSE
 );
 RQuery::$defaultFilters['service']['timeout-timewait.value']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && $object->getTimewaitTimeout() !operator! !value!',
+    'eval' => function( $object, &$nestedQueries, $value, $operator ) {
+        return !$object->isGroup() && RQuery::compare( $object->getTimewaitTimeout(), $operator, $value );
+    },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
