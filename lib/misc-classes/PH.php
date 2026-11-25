@@ -2531,6 +2531,41 @@ class PH
             unset( self::$JSON_TMP['sub']['object'][$owner] );
     }
 
+    /**
+     * Is an object predefined (comes with PAN-OS / SCM, not part of the configuration)? The one answer for the filter
+     * (object is.predefined) and the config viewer (read only, CallContext::readOnlyReason):
+     *  - the class knows it (isPredefined(): service-http / -https, App-ID applications, predefined regions, SCM snippet)
+     *  - it lives in a predefined store (security profiles / URL categories, log forwarding profiles, applications)
+     *  - a threat of the threat database (ThreatStore)
+     *  - SCM: an object of the predefined snippet
+     *  - a threat rule / DNS rule of a predefined security profile
+     */
+    public static function isPredefinedObject( $object ): bool
+    {
+        if( !is_object( $object ) )
+            return FALSE;
+        if( method_exists( $object, 'isPredefined' ) && $object->isPredefined() )
+            return TRUE;
+        if( $object instanceof ThreatPolicy || $object instanceof DNSPolicy )
+            return is_object( $object->owner ?? null ) && self::isPredefinedObject( $object->owner );
+        $store = $object->owner ?? null;
+        if( !is_object( $store ) )
+            return FALSE;
+        if( $store instanceof SecurityProfileStore && in_array( $store, SecurityProfileStore::predefinedStores(), TRUE ) )
+            return TRUE;
+        if( $store instanceof LogProfileStore && $store === LogProfileStore::$predefinedLogProfStore )
+            return TRUE;
+        if( $store instanceof AppStore && $store === AppStore::$predefinedStore )
+            return TRUE;
+        if( $store instanceof ThreatStore )
+            return TRUE;
+        // SCM: the location of the store is the predefined snippet
+        $location = $store->owner ?? null;
+        if( $location instanceof Snippet && $location->isPredefined() )
+            return TRUE;
+        return FALSE;
+    }
+
     public static function jsonObjectKey( $object ): string
     {
         $name = (string)$object->name();

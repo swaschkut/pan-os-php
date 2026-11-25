@@ -1623,25 +1623,34 @@ RQuery::registerFilter( array(
     )
 ) );
 
-// is.predefined: application / log-profile / securityprofile
+// is.predefined: every type with predefined objects (PAN-OS: services, applications, log forwarding profiles, threats,
+// security profiles / URL categories, regions; SCM: also the objects of the predefined snippet) - PH::isPredefinedObject,
+// the same answer the config viewer uses for read only
 RQuery::registerFilter( array(
-    'application',
+    'address',
+    'service',
+    'tag',
+    'schedule',
+    'edl',
     'region',
+    'application',
     'log-profile',
-    'securityprofile'
+    'threat',
+    'threat-rule',
+    'dns-rule',
+    'securityprofile',
+    'securityprofilegroup',
+    'device'
 ), 'object', 'is.predefined', array(
     'Function' => function (RQueryContext $context) {
         $object = $context->object;
         if( is_string($object) )
             return null;
 
-        // application: own type information; log-profile / security profile: object lives in a predefined store
-        if( method_exists($object, 'isPredefined') )
-            return $object->isPredefined() == TRUE;
-
-        return str_contains($object->owner->name(), "predefined");
+        return PH::isPredefinedObject( $object );
     },
     'arg' => FALSE,
+    'help' => 'a predefined object (PAN-OS / SCM: predefined store, threat database, predefined snippet), read only',
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'

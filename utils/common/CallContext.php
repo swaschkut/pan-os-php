@@ -184,10 +184,8 @@ class CallContext
             return "a threat of the threat database";
         if( $object instanceof ThreatPolicy || $object instanceof DNSPolicy )
             return "a rule of a security profile (threat rule / DNS rule) - change the security profile";
-        if( method_exists( $object, 'isPredefined' ) && $object->isPredefined() )
-            return "predefined";
-        // a predefined security profile / URL category (predefined.xml)
-        if( isset( $object->owner ) && $object->owner instanceof SecurityProfileStore && in_array( $object->owner, SecurityProfileStore::predefinedStores(), TRUE ) )
+        // predefined (PAN-OS / SCM) - the same answer as the filter (object is.predefined)
+        if( PH::isPredefinedObject( $object ) )
             return "predefined";
         foreach( array( 'isTmpAddr', 'isTmpSrv', 'isTmp' ) as $m )
             if( method_exists( $object, $m ) && $object->$m() )

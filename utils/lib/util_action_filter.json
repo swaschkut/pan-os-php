@@ -924,6 +924,15 @@
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.region": {
                         "Function": {},
                         "arg": false,
@@ -1739,6 +1748,7 @@
                     "is.predefined": {
                         "Function": {},
                         "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -3191,6 +3201,19 @@
                     }
                 }
             },
+            "object": {
+                "operators": {
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
@@ -3720,6 +3743,15 @@
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -4234,6 +4266,15 @@
                     "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -7154,6 +7195,7 @@
                     "is.predefined": {
                         "Function": {},
                         "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -7827,6 +7869,7 @@
                     "is.predefined": {
                         "Function": {},
                         "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -12231,6 +12274,15 @@
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.expired": {
                         "Function": {},
                         "arg": false
@@ -13673,6 +13725,7 @@
                     "is.predefined": {
                         "Function": {},
                         "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -14546,6 +14599,15 @@
                     "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -15528,6 +15590,15 @@
                     "is.group": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -16684,6 +16755,15 @@
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -16937,6 +17017,15 @@
             },
             "object": {
                 "operators": {
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.disabled": {
                         "Function": {},
                         "arg": false,
@@ -17327,6 +17416,15 @@
                     "is.unused": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "a predefined object (PAN-OS \/ SCM: predefined store, threat database, predefined snippet), read only",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
