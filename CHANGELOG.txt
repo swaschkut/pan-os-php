@@ -2,6 +2,8 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* config-viewer | windows of EDL, schedule and log forwarding: section "Details" - EDL: name, type, source, update interval (hour / day), description, certificate profile, expand domain, exception list; schedule: its ranges (✕), a range more, the type with one range; log forwarding: description, enhanced logging, the match list (log type, filter, panorama, quarantine, server profiles, add / ✕) - every change one action of type=edl / schedule / log-profile
+* type=edl | description-set without a value removes the description
 * type=securityprofile | url.category-action-set: the site access action of one URL category (only this category, the credential detection untouched)
 * config-viewer | security profile window: section "Details" - the lists of the profile type as tables (antivirus decoders / exceptions, anti-spyware and vulnerability rules / threat exceptions / DNS categories, file blocking and WildFire rules) with a select / text per field, add / ✕, the options, URL filtering: site access and credential detection per category; every change one action (detail-entry-*, detail-option-set, url.category-action-set, url.credential-action-set) - drawn from pan-os-php 'fields', nothing of PAN-OS kept in the page
 * display | shadow-json: 'fields' - the fields of an EDL, schedule, log forwarding profile and the details of a security profile (lists with their fields / choices / defaults and entries, options, URL category actions) for a window, from the classes of the field actions (ObjectFieldData, SecurityProfileFields::describe) - the one place for all types

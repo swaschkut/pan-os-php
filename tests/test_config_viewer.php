@@ -852,6 +852,17 @@ $as = $alice->call( 'GET', $SD . '/object?type=securityprofile&securityprofilety
 $uf = $alice->call( 'GET', $SD . '/object?type=securityprofile&securityprofiletype=url-filtering&location=vsys1&name=url-1' )[1];
 eq( array( status( $sdc ), status( $sdu ), $as['fields']['lists']['rule']['entries']['r-critical']['severity'] ?? null, $uf['fields']['categories']['news'] ?? null ),
     array( 200, 200, array( 'critical', 'high' ), 'block' ), 'security profile details: changed from the window, the fields after it' );
+// EDL / schedule / log forwarding: changes as from their windows, the fields after it
+$ES = $up( 'edl-schedule-logprofile.xml' );
+$c1 = $alice->call( 'POST', $ES . '/change', array( 'type' => 'edl', 'location' => 'vsys1', 'filter' => '(name eq edl-domain)', 'actions' => 'recurring-set:weekly,3,monday' ) );
+$c2 = $alice->call( 'POST', $ES . '/change', array( 'type' => 'schedule', 'location' => 'vsys1', 'filter' => '(name eq weekend)', 'actions' => 'range-add:weekly,sunday,08$$colon$$00-12$$colon$$00' ) );
+$c3 = $alice->call( 'POST', $ES . '/change', array( 'type' => 'log-profile', 'location' => 'vsys1', 'filter' => '(name eq lf-default)', 'actions' => 'match-add:threat-high,threat,(severity geq high)' ) );
+$e1 = $alice->call( 'GET', $ES . '/object?type=edl&location=vsys1&name=edl-domain' )[1]['fields'] ?? array();
+$e2 = $alice->call( 'GET', $ES . '/object?type=schedule&location=vsys1&name=weekend' )[1]['fields'] ?? array();
+$e3 = $alice->call( 'GET', $ES . '/object?type=log-profile&location=vsys1&name=lf-default' )[1]['fields'] ?? array();
+eq( array( status( $c1 ), status( $c2 ), status( $c3 ), $e1['recurring'] ?? null, array_column( $e2['ranges'] ?? array(), 'range' ), $e3['matchList']['threat-high']['filter'] ?? null ),
+    array( 200, 200, 200, array( 'interval' => 'weekly', 'at' => '03', 'day' => 'monday' ), array( '08:00-12:00', '00:00-23:59' ), '(severity geq high)' ),
+    'EDL / schedule / log forwarding: changed as from their windows, the fields after it' );
 // variables: the window of a firewall - the value and where it comes from; an override set from there
 $VV = $up( 'variables-panorama.xml' );
 $vo = $alice->call( 'GET', $VV . '/object?type=device&devicetype=manageddevice&location=shared&name=001122334455' )[1]['row'] ?? array();

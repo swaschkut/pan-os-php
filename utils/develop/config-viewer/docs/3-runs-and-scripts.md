@@ -60,6 +60,13 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   `actions=nat-security-fix:fix|clone|report,approvePartial,suffix`. Filters: `(nat.security is.full|is.partial|
   is.missing|is.blocked|is.unknown)`, `(nat.security has <rule>)`, `(nat.security.mismatch is.set|is.full|is.partial)`,
   `(nat.security.mismatch has <rule>)`.
+- **EDL / schedule / log forwarding window - Details**: EDL - name, type, source (URL or the predefined list), update
+  interval with hour and day, description, certificate profile, expand domain (type domain), exception list (add / ✕);
+  schedule - the ranges of its type (✕, the last one stays), *Add range* (weekly: with the day), *Set type* (daily /
+  weekly / non-recurring with one range - every other range goes); log forwarding - description, enhanced
+  application logging, the match list: log type, filter, send to Panorama, quarantine, server profiles (syslog /
+  email / http / snmptrap, add / ✕), *Add entry*, ✕. Every change one action (`type-set`, `recurring-set`,
+  `range-add`, `match-set`, …).
 - **Security profile window - Details**: the lists of the profile type as tables - antivirus: decoders (protocol ×
   action / WildFire / ML action), application and threat exceptions; anti-spyware: rules, threat exceptions (exempt
   IPs), DNS security categories, sinkhole; vulnerability: rules (host, CVE, vendor ID), threat exceptions; file blocking

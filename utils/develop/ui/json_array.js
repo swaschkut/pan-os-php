@@ -3777,7 +3777,7 @@ var subjectObject =
                 "args": {
                     "description": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": ""
                     }
                 },
                 "help": "the description of the list (empty: removed); in the type element of the EDL"

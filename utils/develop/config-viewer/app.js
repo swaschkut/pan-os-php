@@ -3826,7 +3826,7 @@ async function showViewer(config, preset) {
         // decoders, DNS categories) as tables, its options, URL categories. Every change: one action on this object.
         function objDetails() {
             const F = obj.fields;
-            if (!F || F.kind !== 'securityprofile') return null;
+            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile'].includes(F.kind)) return null;
             const can = a => writable && !!offered[a];
             const err = key => errors[key] ? el('p', { class: 'error', text: errors[key] }) : null;
             const act = (key, action) => run(() => listChange({ key }, action));
@@ -3852,6 +3852,99 @@ async function showViewer(config, preset) {
                 i.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
                 return i;
             };
+            const delBtn = (key, label, action) => can(action.split(':')[0])
+                ? el('button', { type: 'button', text: '✕', title: action.split(':')[0], 'aria-label': 'remove ' + label, onclick: () => act(key, action) }) : null;
+            const addRow = (key, actName, inputs, label, build) => can(actName)
+                ? el('div', { class: 'row' }, ...inputs, el('button', { type: 'button', text: label, title: actName, onclick: () => { const a = build(); if (a) act(key, a); } })) : null;
+            const inp = (label, placeholder) => el('input', { autocomplete: 'off', spellcheck: false, 'aria-label': label, placeholder: placeholder || null });
+            const sel = (label, choices, value) => { const x = el('select', { 'aria-label': label }, choices.map(c => el('option', { value: c, text: c }))); if (value !== undefined) x.value = value; return x; };
+            const kv = rows => table(['field', 'value'], rows.filter(x => x).map(([l, c]) => el('tr', {}, el('td', { text: l }), el('td', {}, c))));
+            const nameRow = () => ['name', ctl('fd-name', obj.row.name, null, 'name-rename:', 'name')];
+            if (F.kind === 'edl') {
+                // EDL: type, source, update interval (hour / day), description, certificate profile, exceptions, expand domain
+                const predefined = F.type.startsWith('predefined-');
+                const iv = sel('update interval', F.intervals, F.recurring.interval);
+                const at = sel('at hour', ['', ...Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'))], F.recurring.at);
+                const dayList = F.recurring.interval === 'monthly' ? Array.from({ length: 31 }, (_, d) => String(d + 1)) : F.weekdays;
+                const day = sel('day', ['', ...dayList], F.recurring.day);
+                const applyRec = () => {
+                    const v = iv.value, needAt = ['daily', 'weekly', 'monthly'].includes(v), needDay = ['weekly', 'monthly'].includes(v);
+                    // not complete yet: wait for the other part
+                    if ((needAt && !at.value) || (needDay && !day.value)) return;
+                    act('fd-rec', 'recurring-set:' + v + (needAt ? ',' + at.value : '') + (needDay ? ',' + day.value : ''));
+                };
+                // daily / weekly / monthly: the hour (and day) are chosen next - no new drawing until then
+                const dayChoices = v => v === 'monthly' ? Array.from({ length: 31 }, (_, d) => String(d + 1)) : F.weekdays;
+                iv.addEventListener('change', () => {
+                    if (['five-minute', 'hourly'].includes(iv.value)) return applyRec();
+                    day.replaceChildren(...['', ...dayChoices(iv.value)].map(c => el('option', { value: c, text: c })));
+                    day.hidden = iv.value === 'daily';
+                });
+                day.hidden = F.recurring.interval !== 'weekly' && F.recurring.interval !== 'monthly';
+                at.addEventListener('change', applyRec);
+                day.addEventListener('change', applyRec);
+                const recCtl = predefined ? el('span', { class: 'objro', text: '(predefined list)' })
+                    : can('recurring-set') ? el('div', { class: 'row' }, iv, ' at ', at, ' day ', day)
+                    : el('span', { class: 'objro', text: [F.recurring.interval, F.recurring.at, F.recurring.day].filter(x => x).join(' ') });
+                parts.push(kv([nameRow(),
+                    ['type', ctl('fd-type', F.type, F.types, 'type-set:', 'type')],
+                    ['source', ctl('fd-src', F.source, null, 'source-set:', 'source')],
+                    ['update', recCtl],
+                    ['description', ctl('fd-desc', F.description, null, 'description-set:', 'description')],
+                    predefined ? null : ['certificate profile', ctl('fd-cp', F['certificate-profile'] || 'none', null, 'certificate-profile-set:', 'certificate profile')],
+                    F.type === 'domain' ? ['expand domain', ctl('fd-exp', F['expand-domain'] ? 'yes' : 'no', ['yes', 'no'], v => 'expand-domain-set:' + (v === 'yes' ? 'true' : 'false'), 'expand domain')] : null]));
+                for (const k of ['fd-name', 'fd-type', 'fd-src', 'fd-rec', 'fd-desc', 'fd-cp', 'fd-exp']) parts.push(err(k));
+                parts.push(el('h4', { text: 'exception list' }));
+                parts.push(F.exceptions.length ? table(['entry', ''], F.exceptions.map(x => el('tr', {}, el('td', { text: x }), el('td', {}, delBtn('fd-exc', x, 'exception-remove:' + arg(x))))))
+                    : el('p', { class: 'muted', text: 'no entries' }));
+                const ne = inp('new exception', 'IP / domain / URL');
+                parts.push(addRow('fd-exc', 'exception-add', [ne], 'Add exception', () => ne.value.trim() ? 'exception-add:' + arg(ne.value.trim()) : null), err('fd-exc'));
+                return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+            }
+            if (F.kind === 'schedule') {
+                // schedule: its ranges (one type), a range more, the type with one range
+                parts.push(kv([nameRow(), ['type', el('span', { class: 'objro', text: F.type })]]), err('fd-name'));
+                const rangeAct = r => arg(r.type) + ',' + (r.day ? arg(r.day) : '-') + ',' + arg(r.range);
+                parts.push(el('h4', { text: 'ranges' }));
+                parts.push(table(['day', 'range', ''], F.ranges.map(r => el('tr', {}, el('td', { text: r.day || '' }), el('td', { text: r.range }),
+                    el('td', {}, F.ranges.length > 1 ? delBtn('fd-rng', r.range, 'range-remove:' + rangeAct(r)) : null)))));
+                const fmt = t => t === 'non-recurring' ? 'YYYY/MM/DD@HH:MM-YYYY/MM/DD@HH:MM' : 'HH:MM-HH:MM';
+                const d1 = sel('day', F.days), r1 = inp('new range', fmt(F.type));
+                parts.push(addRow('fd-rng', 'range-add', [...(F.type === 'weekly' ? [d1] : []), r1], 'Add range',
+                    () => r1.value.trim() ? 'range-add:' + rangeAct({ type: F.type, day: F.type === 'weekly' ? d1.value : '', range: r1.value.trim() }) : null), err('fd-rng'));
+                const t2 = sel('new type', F.types, F.type), d2 = sel('day of the new type', F.days), r2 = inp('range of the new type', 'range');
+                t2.addEventListener('change', () => { d2.hidden = t2.value !== 'weekly'; r2.placeholder = fmt(t2.value); });
+                d2.hidden = t2.value !== 'weekly';
+                parts.push(el('h4', { text: 'change the type (every range goes, this one stays)' }));
+                parts.push(addRow('fd-type', 'type-set', [t2, d2, r2], 'Set type', () => r2.value.trim() ? 'type-set:' + rangeAct({ type: t2.value, day: t2.value === 'weekly' ? d2.value : '', range: r2.value.trim() }) : null), err('fd-type'));
+                return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+            }
+            if (F.kind === 'log-profile') {
+                // log forwarding: description, enhanced logging, the match list (log type, filter, panorama, quarantine,
+                // server profiles per kind)
+                parts.push(kv([nameRow(),
+                    ['description', ctl('fd-desc', F.description, null, 'description-set:', 'description')],
+                    ['enhanced application logging', ctl('fd-eal', F['enhanced-application-logging'] ? 'yes' : 'no', ['yes', 'no'], v => 'enhanced-application-logging-set:' + (v === 'yes' ? 'true' : 'false'), 'enhanced application logging')]]));
+                for (const k of ['fd-name', 'fd-desc', 'fd-eal']) parts.push(err(k));
+                parts.push(el('h4', { text: 'match list' }));
+                const yn = ['yes', 'no'];
+                const rows = Object.entries(F.matchList || {}).map(([n, m]) => {
+                    const set = f => 'match-set:' + arg(n) + ',' + f + ',';
+                    const servers = el('div', {}, ...F.sendKinds.flatMap(k => (m[k] || []).map(sv => el('div', { class: 'row' }, el('span', { text: k + ': ' + sv }), delBtn('fd-ml', k + ' ' + sv, 'match-send-remove:' + arg(n) + ',' + k + ',' + arg(sv))))));
+                    const sk = sel('kind of server profile for ' + n, F.sendKinds), sp = inp('server profile for ' + n, 'server profile');
+                    return el('tr', {}, el('td', { text: n }),
+                        el('td', {}, ctl('fd-ml', m['log-type'], F.logTypes, set('log-type'), n + ' log type')),
+                        el('td', {}, ctl('fd-ml', m.filter, null, set('filter'), n + ' filter')),
+                        el('td', {}, ctl('fd-ml', m['send-to-panorama'] || 'no', yn, set('send-to-panorama'), n + ' panorama')),
+                        el('td', {}, ctl('fd-ml', m.quarantine || 'no', yn, set('quarantine'), n + ' quarantine')),
+                        el('td', {}, servers, addRow('fd-ml', 'match-send-add', [sk, sp], 'Add', () => sp.value.trim() ? 'match-send-add:' + arg(n) + ',' + sk.value + ',' + arg(sp.value.trim()) : null)),
+                        el('td', {}, delBtn('fd-ml', n, 'match-remove:' + arg(n))));
+                });
+                parts.push(rows.length ? table(['name', 'log type', 'filter', 'panorama', 'quarantine', 'send to', ''], rows) : el('p', { class: 'muted', text: 'no entries' }));
+                const mn = inp('new match list entry', 'name'), mt = sel('log type of the new entry', F.logTypes), mf = inp('filter of the new entry', 'All Logs');
+                parts.push(addRow('fd-ml', 'match-add', [mn, mt, mf], 'Add entry', () => mn.value.trim() ? 'match-add:' + arg(mn.value.trim()) + ',' + mt.value + ',' + arg(mf.value.trim() || 'All Logs') : null), err('fd-ml'));
+                return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+            }
             for (const [list, L] of Object.entries(F.lists || {})) {
                 const fields = Object.keys(L.fields);
                 const names = Object.keys(L.entries || {});

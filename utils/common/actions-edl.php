@@ -731,7 +731,7 @@ EDLCallContext::$supportedActions[] = array(
             return "description '" . $text . "'";
         } );
     },
-    'args' => array( 'description' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'args' => array( 'description' => array( 'type' => 'string', 'default' => '' ) ),
     'help' => "the description of the list (empty: removed); in the type element of the EDL"
 );
 
