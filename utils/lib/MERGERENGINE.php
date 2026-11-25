@@ -233,6 +233,8 @@ trait MergerEngine
                 PH::print_stdout( " - value '{$index}'" );
 
                 $pickedObject = $this->PickObject( $hash);
+                if( $pickedObject === null )
+                    continue;
 
                 if( !$check( $index, $pickedObject ) )
                     continue;
@@ -392,6 +394,8 @@ trait MergerEngine
                 PH::print_stdout( " - {$mainIndexLabel} '{$index}'" );
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
+                if( $pickedObject === null )
+                    continue;
 
                 if( !$check( $index, $pickedObject ) )
                     continue;
@@ -406,6 +410,17 @@ trait MergerEngine
                     {
                         $ancestor = $object->ancestor;
                         $ancestor_different_value = "";
+                        // an ancestor that was a value used directly and is an object now (materializeTmpAncestor)
+                        if( isset( $this->materializedTmp[spl_object_id( $ancestor )] ) )
+                            $ancestor = $object->ancestor = $this->materializedTmp[spl_object_id( $ancestor )];
+
+                        // a predefined object of the same name above: never merged into it
+                        if( PH::isPredefinedObject( $ancestor ) )
+                        {
+                            PH::print_stdout( "    - SKIP: object name '{$object->_PANC_shortName()}': a predefined object of the same name above - never merged into it" );
+                            $this->skippedObject( $index, $object, $ancestor, "predefined object of the same name above" );
+                            continue;
+                        }
 
                         if( !$spec['ancestorTypeOk']( $ancestor ) )
                         {
@@ -423,6 +438,20 @@ trait MergerEngine
 
                             $sameValueHook = $this->mergeHook($spec, 'ancestorSameValue');
                             $sameValue = $sameValueHook !== null ? $sameValueHook( $object, $ancestor ) : ( $object->sameValue($ancestor) || $this->dupAlg == 'samename' );
+                            if( $sameValue && $ancestor instanceof Address && $ancestor->isTmpAddr() )
+                            {
+                                // the ancestor is a value used directly (tmp): the merger never keeps it - a real
+                                // object of the same name at its location (the top level: shared / SCM 'All' / …)
+                                if( $this->action === "merge" )
+                                {
+                                    $real = $this->materializeTmpAncestor( $ancestor, $object );
+                                    if( $real === null )
+                                        continue;
+                                    $ancestor = $object->ancestor = $real;
+                                }
+                                else
+                                    PH::print_stdout( "   * would create object '{$ancestor->name()}' at the location of the value used directly (tmp) - " . $ancestor->_PANC_shortName() );
+                            }
                             if( $sameValue )
                             {
                                 $preMergeHook = $this->mergeHook($spec, 'ancestorPreMerge');
@@ -1915,6 +1944,8 @@ trait MergerEngine
                     PH::print_stdout( " - duplicate set : '" . PH::list_to_string($setList) . "'" );
 
                     $pickedObject = $this->PickObject( $hash);
+                    if( $pickedObject === null )
+                        continue;
 
                     if( !$hashCheck( $index, $pickedObject ) )
                         continue;
@@ -2151,6 +2182,8 @@ trait MergerEngine
                 PH::print_stdout( " - value '{$index}'" );
 
                 $pickedObject = $this->PickObject( $hash );
+                if( $pickedObject === null )
+                    continue;
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -2294,6 +2327,8 @@ trait MergerEngine
                 }
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
+                if( $pickedObject === null )
+                    continue;
 
                 // Merging loop finally!
                 foreach( $hash as $object )
@@ -3125,7 +3160,96 @@ trait MergerEngine
 
     // ---- picking the object to keep
 
+    /**
+     * may an object be the one that is kept? Never a temporary object (a value used directly in a rule - ghost mode
+     * replaces it, it is never kept) and never a predefined object (PAN-OS / SCM).
+     */
+    public static function keepable( $object ): bool
+    {
+        if( !is_object( $object ) )
+            return FALSE;
+        if( $object instanceof Address && $object->isTmpAddr() )
+            return FALSE;
+        if( method_exists( $object, 'isTmp' ) && !( $object instanceof Address ) && $object->isTmp() )
+            return FALSE;
+        return !PH::isPredefinedObject( $object );
+    }
+
+    /** the first object of $list that may be kept, null if none */
+    private static function firstKeepable( $list )
+    {
+        foreach( is_array( $list ) ? $list : array() as $o )
+            if( self::keepable( $o ) )
+                return $o;
+        return null;
+    }
+
+    /** the picked object, or the first one that may be kept; null (with a message): nothing to keep */
+    private function keepableOrNull( $picked, $hash, $upper = null )
+    {
+        if( self::keepable( $picked ) )
+            return $picked;
+        $o = self::firstKeepable( $upper );
+        if( $o === null )
+            $o = self::firstKeepable( $hash );
+        if( $o === null )
+            PH::print_stdout( "    - SKIP: no object to keep - only values used directly (tmp) / predefined objects" );
+        else
+            PH::print_stdout( "   * keeping object '{$o->_PANC_shortName()}' ('" . ( is_object( $picked ) ? $picked->_PANC_shortName() : '?' ) . "' is a value used directly (tmp) / predefined - never kept)" );
+        return $o;
+    }
+
+    /** @var string|null the message of the pick (printed when the picked object is kept) */
+    private $pickNoteText = null;
+
+    private function pickNote( string $text ): void
+    {
+        $this->pickNoteText = $text;
+    }
+
     function hashMapPickfilter( $upperHashMap, $index, &$hash)
+    {
+        $this->pickNoteText = null;
+        $picked = $this->hashMapPickfilterRaw( $upperHashMap, $index, $hash );
+        if( self::keepable( $picked ) && $this->pickNoteText !== null )
+            PH::print_stdout( $this->pickNoteText );
+        return $this->keepableOrNull( $picked, $hash, $upperHashMap[$index] ?? null );
+    }
+
+    /** @var array spl_object_id( tmp ) => the object that replaced it (materializeTmpAncestor) */
+    private $materializedTmp = array();
+
+    /**
+     * a value used directly (tmp address) that is the ancestor of an object to merge: a real address of the same name
+     * and the value of $like at the location of the tmp; everything that used the value uses the object now
+     * @return Address|null null: not possible (message)
+     */
+    private function materializeTmpAncestor( Address $tmp, $like )
+    {
+        $key = spl_object_id( $tmp );
+        if( isset( $this->materializedTmp[$key] ) )
+            return $this->materializedTmp[$key];
+        $store = $tmp->owner;
+        if( !( $store instanceof AddressStore ) || !( $like instanceof Address ) || !in_array( $like->type(), array( 'ip-netmask', 'ip-range' ), TRUE ) )
+        {
+            PH::print_stdout( "    - SKIP: '{$tmp->name()}' is a value used directly (tmp) - no object can be created for it here" );
+            return null;
+        }
+        $name = $tmp->name();
+        $location = $store->owner->name() === '' ? 'shared' : $store->owner->name();
+        $store->remove( $tmp );
+        if( $this->apiMode )
+            $new = $store->API_newAddress( $name, $like->type(), $like->value() );
+        else
+            $new = $store->newAddress( $name, $like->type(), $like->value() );
+        $tmp->replaceMeGlobally( $new, $this->apiMode );
+        $this->materializedTmp[$key] = $new;
+        PH::print_stdout( "   * create object in DG: '" . $location . "' : '" . $name . "' type: " . $like->type() . " value: " . $like->value()
+            . " (it was a value used directly - tmp; the merger never keeps a tmp object)" );
+        return $new;
+    }
+
+    function hashMapPickfilterRaw( $upperHashMap, $index, &$hash)
     {
         $pickedObject = null;
         if( $this->dupAlg == 'identical' )
@@ -3191,7 +3315,7 @@ trait MergerEngine
                     $pickedObject = reset($hash);
             }
 
-            PH::print_stdout($printString . "'{$pickedObject->_PANC_shortName()}'");
+            $this->pickNote($printString . "'{$pickedObject->_PANC_shortName()}'");
         }
         else
         {
@@ -3202,15 +3326,15 @@ trait MergerEngine
                 if( get_class($pickedObject) === "Address" && $pickedObject->isType_TMP() )
                 {
                     $pickedObject = reset($hash);
-                    PH::print_stdout( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
+                    $this->pickNote( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
                 }
                 else
-                    PH::print_stdout( "   * using object from upper level : '{$pickedObject->_PANC_shortName()}'" );
+                    $this->pickNote( "   * using object from upper level : '{$pickedObject->_PANC_shortName()}'" );
             }
             else
             {
                 $pickedObject = reset($hash);
-                PH::print_stdout( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
+                $this->pickNote( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
             }
         }
 
@@ -3231,6 +3355,11 @@ trait MergerEngine
     }
 
     function PickObject(&$hash)
+    {
+        return $this->keepableOrNull( $this->PickObjectRaw( $hash ), $hash );
+    }
+
+    function PickObjectRaw(&$hash)
     {
         $pickedObject = null;
         if( $this->pickFilter !== null )
