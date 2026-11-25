@@ -7774,6 +7774,11 @@ var subjectObject =
                 "name": "display-app-seen",
                 "MainFunction": {}
             },
+            "display-nat-security": {
+                "name": "display-nat-security",
+                "MainFunction": {},
+                "help": "NAT rule: the allow security rules its traffic really reaches, in their order (a deny rule that blocks it before is named) - pre-NAT addresses and service, post-NAT zones (destination NAT: the zone of the translated address by the route lookup in the virtual \/ logical router of the ingress interface). Per rule zones \/ source \/ destination \/ service full or partial, until the first rule that covers the traffic fully. Destination NAT: also the allow rules to adapt (written the way of other vendors - see nat-security-fix). Panorama: per firewall of the device group (template stack merged, variables of the firewall); bi-directional static NAT also the reverse direction. Limits: dynamic routes are not in the configuration (default route: uncertain), IPv4 NAT rules only."
+            },
             "dnat-remove": {
                 "name": "DNat-remove",
                 "MainFunction": {}
@@ -8413,6 +8418,33 @@ var subjectObject =
             "name-touppercase": {
                 "name": "name-toUpperCase",
                 "MainFunction": {}
+            },
+            "nat-security-fix": {
+                "name": "nat-security-fix",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "report",
+                        "choices": [
+                            "report",
+                            "fix",
+                            "clone"
+                        ],
+                        "help": "report: only show; fix: adapt the security rule in place where it carries only this NAT traffic, else a clone before it; clone: always a clone before it (the rule stays)"
+                    },
+                    "approvePartial": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "also adapt rules that cover only a part (the corrected rule would allow more than the rule names) - only after a review"
+                    },
+                    "suffix": {
+                        "type": "string",
+                        "default": "-nat",
+                        "help": "name of a clone: the name of the rule + suffix"
+                    }
+                },
+                "help": "destination NAT rule: allow security rules written the way of other vendors - the translated (post-NAT) address instead of the original one, the pre-NAT zone instead of the post-NAT zone, the translated port instead of the original one - adapted to PAN-OS (pre-NAT addresses \/ service, post-NAT zones). A full match is adapted (in place or as a clone) so that it allows exactly the NAT traffic the rule names; a partial one only with approvePartial. Panorama: other post-NAT zones on other firewalls = partial."
             },
             "position-move-after": {
                 "name": "position-Move-After",
@@ -10031,6 +10063,104 @@ var subjectObject =
                     "find.dnat.sec.pair.beta": {
                         "Function": {},
                         "arg": false
+                    }
+                }
+            },
+            "nat.security": {
+                "operators": {
+                    "is.full": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "NAT rule: every direction \/ firewall has a security rule that covers the traffic fully (the worst of all directions and firewalls; display-nat-security shows the details)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.partial": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "NAT rule: only security rules that cover a part of the traffic (somewhere) (the worst of all directions and firewalls; display-nat-security shows the details)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.missing": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "NAT rule: no security rule for the traffic (somewhere) (the worst of all directions and firewalls; display-nat-security shows the details)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.blocked": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "NAT rule: the traffic is blocked by a deny \/ drop \/ reset rule before any allow rule (somewhere) (the worst of all directions and firewalls; display-nat-security shows the details)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unknown": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "NAT rule: not determined (zones unknown, IPv6 NAT rule types, \u2026) (the worst of all directions and firewalls; display-nat-security shows the details)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "NAT rule: its traffic meets the security rule (name) - not shadowed by an earlier one",
+                        "ci": {
+                            "fString": "(%PROP% allow-web)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "nat.security.mismatch": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "destination NAT rule: has allow security rules to adapt (post-NAT address, pre-NAT zone or translated port)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.full": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "destination NAT rule: has allow security rules to adapt that can be corrected exactly (nat-security-fix)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.partial": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "destination NAT rule: has allow security rules to adapt that cover only a part - a correction would allow more, needs approval",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "destination NAT rule: the allow security rule (name) is written for it the way of another vendor and needs to be adapted",
+                        "ci": {
+                            "fString": "(%PROP% allow-web)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },

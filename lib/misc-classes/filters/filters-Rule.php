@@ -4751,3 +4751,99 @@ RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['has.rege
 
 // </editor-fold>
 
+
+// NAT rule -> security rules (NatSecurityMatch): the summary over all directions and contexts
+foreach( array( 'full' => 'every direction / firewall has a security rule that covers the traffic fully',
+                'partial' => 'only security rules that cover a part of the traffic (somewhere)',
+                'missing' => 'no security rule for the traffic (somewhere)',
+                'blocked' => 'the traffic is blocked by a deny / drop / reset rule before any allow rule (somewhere)',
+                'unknown' => 'not determined (zones unknown, IPv6 NAT rule types, …)' ) as $natSecState => $natSecHelp )
+    RQuery::$defaultFilters['rule']['nat.security']['operators']['is.' . $natSecState] = array(
+        'Function' => function (RuleRQueryContext $context) use ( $natSecState ) {
+            if( !$context->object->isNatRule() )
+                return FALSE;
+            $a = NatSecurityMatch::cachedAnalyse( $context->object );
+            $list = array_column( $a['directions'], 'summary' );
+            $worst = 'unknown';
+            if( count( $list ) )
+            {
+                $worst = 'full';
+                foreach( array( 'missing', 'blocked', 'unknown', 'partial' ) as $s )
+                    if( in_array( $s, $list, TRUE ) )
+                    {
+                        $worst = $s;
+                        break;
+                    }
+            }
+            return $worst === $natSecState;
+        },
+        'arg' => FALSE,
+        'help' => 'NAT rule: ' . $natSecHelp . ' (the worst of all directions and firewalls; display-nat-security shows the details)',
+        'ci' => array(
+            'fString' => '(%PROP%)',
+            'input' => 'input/panorama-8.0.xml'
+        )
+    );
+
+RQuery::$defaultFilters['rule']['nat.security']['operators']['has'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        if( !$context->object->isNatRule() )
+            return FALSE;
+        $a = NatSecurityMatch::cachedAnalyse( $context->object );
+        foreach( $a['directions'] as $d )
+            foreach( $d['contexts'] as $c )
+                foreach( $c['matches'] as $m )
+                    if( $m['rule'] === $context->value && $m['state'] === 'match' )
+                        return TRUE;
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'NAT rule: its traffic meets the security rule (name) - not shadowed by an earlier one',
+    'ci' => array(
+        'fString' => '(%PROP% allow-web)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+// destination NAT: allow rules written the way of other vendors (post-NAT address, pre-NAT zone, translated port)
+$natSecMismatches = function( NatRule $nat ): array {
+    $out = array();
+    $a = NatSecurityMatch::cachedAnalyse( $nat );
+    foreach( $a['directions'] as $d )
+        foreach( $d['contexts'] as $c )
+            foreach( $c['mismatches'] as $m )
+                $out[] = $m;
+    return $out;
+};
+foreach( array( 'is.set' => 'has allow security rules to adapt (post-NAT address, pre-NAT zone or translated port)',
+                'is.full' => 'has allow security rules to adapt that can be corrected exactly (nat-security-fix)',
+                'is.partial' => 'has allow security rules to adapt that cover only a part - a correction would allow more, needs approval' ) as $natMmOp => $natMmHelp )
+    RQuery::$defaultFilters['rule']['nat.security.mismatch']['operators'][$natMmOp] = array(
+        'Function' => function (RuleRQueryContext $context) use ( $natMmOp, $natSecMismatches ) {
+            if( !$context->object->isNatRule() )
+                return FALSE;
+            $list = $natSecMismatches( $context->object );
+            if( $natMmOp === 'is.set' )
+                return count( $list ) > 0;
+            return in_array( substr( $natMmOp, 3 ), array_column( $list, 'scope' ), TRUE );
+        },
+        'arg' => FALSE,
+        'help' => 'destination NAT rule: ' . $natMmHelp,
+        'ci' => array(
+            'fString' => '(%PROP%)',
+            'input' => 'input/panorama-8.0.xml'
+        )
+    );
+RQuery::$defaultFilters['rule']['nat.security.mismatch']['operators']['has'] = array(
+    'Function' => function (RuleRQueryContext $context) use ( $natSecMismatches ) {
+        if( !$context->object->isNatRule() )
+            return FALSE;
+        return in_array( $context->value, array_column( $natSecMismatches( $context->object ), 'rule' ), TRUE );
+    },
+    'arg' => TRUE,
+    'help' => 'destination NAT rule: the allow security rule (name) is written for it the way of another vendor and needs to be adapted',
+    'ci' => array(
+        'fString' => '(%PROP% allow-web)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);

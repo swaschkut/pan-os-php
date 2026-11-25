@@ -42,6 +42,24 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   column / field *vsys* names the vsys that import an object. Panorama: a
   **Template** choice (any, templates, template stacks; pan-os-php `template=`) instead of the device groups; location
   *shared* is the template itself, a vsys of the template lists what it imports. SCM: containers and snippets as before.
+- **NAT rule window - Security rules** (closed until opened): the allow security rules the traffic of the NAT rule
+  really reaches, in their order (pan-os-php `actions=display-nat-security`): pre-NAT addresses and service, post-NAT
+  zones - for destination NAT the zone of the translated address by the route lookup in the virtual / logical router of
+  the ingress interface (connected networks, static routes; a zone found only by the default route is marked
+  *uncertain*, dynamic routes are not in the configuration). Per rule: zones, source, destination, service *full* /
+  *partial*, until the first rule that covers the traffic fully; a deny / drop / reset rule that blocks the traffic
+  before is named. Panorama: one block per device group / template stack / vsys of the firewalls of the device group
+  (the template stack merged, variables with the values of the firewall; rule targets); without firewalls the template
+  stacks. Bi-directional static NAT: also the reverse direction.
+  **Allow rules to adapt** (destination NAT): rules written the way of other vendors - the security rule after the NAT,
+  with the translated (post-NAT) address, the pre-NAT zone or the translated port. The corrected rule is shown;
+  *Adapt* changes an exact one in place (it carries only this NAT traffic) or clones it before the rule (the rule stays
+  for its other traffic), *Clone only* always clones - never more traffic than the rule names. A *partial* one (a part
+  of a translated pool, more ports, other post-NAT zones on other firewalls) would allow more: only after the review
+  checkbox. Rules whose traffic is allowed already are shown greyed, not changed. pan-os-php:
+  `actions=nat-security-fix:fix|clone|report,approvePartial,suffix`. Filters: `(nat.security is.full|is.partial|
+  is.missing|is.blocked|is.unknown)`, `(nat.security has <rule>)`, `(nat.security.mismatch is.set|is.full|is.partial)`,
+  `(nat.security.mismatch has <rule>)`.
 - **Rule window** (security rules): the security profiles one by one (each with the profiles of its type; a profile
   replaces a profile group and the other way round), rule type, source HIP profile, QoS marking, disable server response
   inspection; Panorama: target firewalls (serial or serial and vsys), target negate, all firewalls. An action that refuses the change (pan-os-php

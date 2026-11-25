@@ -1252,6 +1252,9 @@
             "display-app-seen": {
                 "class": "read"
             },
+            "display-nat-security": {
+                "class": "read"
+            },
             "dnat-remove": {
                 "class": "change"
             },
@@ -1411,6 +1414,9 @@
                 "class": "change"
             },
             "name-touppercase": {
+                "class": "change"
+            },
+            "nat-security-fix": {
                 "class": "change"
             },
             "position-move-after": {

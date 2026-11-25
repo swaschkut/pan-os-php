@@ -3809,7 +3809,7 @@ async function showViewer(config, preset) {
                 }))),
                 el('p', { class: 'muted', text: writable ? 'A field is applied when you leave it after a change (or press Enter) - as one pan-os-php action on this object; nothing is written until "Save as new version".' : 'read only' }),
                 // replaceChildren() writes null as the text "null" - only the sections there are
-                ...[objHierarchy(), objLinks(), objVariables(), objRefs(), objXml(), objHistory()].filter(x => x),
+                ...[objHierarchy(), objLinks(), objVariables(), objNatSecurity(), objRefs(), objXml(), objHistory()].filter(x => x),
                 el('div', { class: 'row' }, el('button', { type: 'button', text: 'Close', onclick: close })));
         }
         // the XML of the object (as it is in memory) and its history (git: every commit that changed its entry)
@@ -3819,6 +3819,80 @@ async function showViewer(config, preset) {
             // the hierarchy of a device group is open unless closed (XML / history: closed unless opened)
             d.open = key === 'hierarchy' || key === 'refs' || key === 'links' || key === 'vars' ? opened[key] !== false : !!opened[key];
             d.addEventListener('toggle', () => { opened[key] = d.open; });
+            return d;
+        }
+        // NAT rule: the security rules its traffic meets, in their order (pan-os-php display-nat-security) - per
+        // direction (bi-directional static NAT: also reverse) and firewall context; read when the section is opened
+        function objNatSecurity() {
+            if (cur.type !== 'rule' || ruletype.value !== 'nat') return null;
+            const body = el('div', { class: 'muted', text: 'reading the security rules ...' });
+            const d = section('natsec', 'Security rules', body);
+            const COV = { full: 'covers it fully', partial: 'covers a part', missing: 'no allow rule', blocked: 'traffic blocked by a rule', unknown: 'not determined' };
+            const PATTERN = { 'post-nat-address': 'post-NAT address', 'pre-nat-zone': 'pre-NAT zone', 'translated-port': 'translated port' };
+            const target = t => [t.destination ? 'destination ' + t.destination.join(', ') : null, 'to ' + t.to.join(', '), t.from ? 'from ' + t.from.join(', ') : null, t.service ? 'service ' + t.service : null].filter(x => x).join('; ');
+            const fill = () => {
+                if (d.dataset.loaded) return;
+                d.dataset.loaded = '1';
+                const q = new URLSearchParams({ type: 'rule', ruletype: 'nat', location: obj.row.location, name: obj.row.name });
+                api('GET', base() + '/natsecurity?' + q.toString()).then(res => {
+                    body.className = '';
+                    const parts = [el('p', { class: 'muted', text: 'pre-NAT addresses and service, post-NAT zones (destination NAT: zone of the translated address by the route of the ingress router); only the allow rules allowed traffic really reaches, in their order (a rule that blocks it before is named)' })];
+                    if (errors.natsec) parts.push(el('p', { class: 'error', text: errors.natsec }));
+                    let toAdapt = 0, partial = 0;
+                    for (const n of res.notes || []) parts.push(el('p', { class: 'error', text: n }));
+                    for (const dir of res.directions || []) {
+                        const nc = (dir.contexts || []).length, nf = (dir.contexts || []).filter(c => c.summary === 'full').length;
+                        parts.push(el('h4', { text: (dir.direction === 'reverse' ? 'reverse direction (bi-directional)' : 'direction of the NAT rule') + ': '
+                            + (nc > 1 && nf > 0 && nf < nc ? 'covered fully for ' + nf + ' of ' + nc + ' firewall contexts' : (COV[dir.summary] || dir.summary)) }));
+                        if (dir.hiddenContexts) parts.push(el('p', { class: 'muted', text: dir.hiddenContexts + ' firewall context(s) outside your locations' }));
+                        for (const c of dir.contexts || []) {
+                            parts.push(el('p', {}, el('b', { text: c.context }), c.devices && c.devices.length ? ' - firewalls ' + c.devices.join(', ') : '', ': ' + (COV[c.summary] || c.summary)));
+                            if ((c.postNatZones || []).length) parts.push(el('p', { class: 'muted', text: 'post-NAT zone: ' + c.postNatZones.map(z => z.zone + ' (' + z.router + ' ' + z.network + (z.uncertain ? ', uncertain' : '') + ')').join(', ') }));
+                            for (const n of [...(c.notes || []).filter(x => !x.startsWith('traffic blocked by rule')), ...new Set(c.zoneNotes || [])]) parts.push(el('p', { class: 'error', text: n }));
+                            const open = (loc, name) => el('a', { href: openLink({ type: 'rule', ruletype: 'security', location: loc, name }), target: '_blank', rel: 'noopener', text: 'Open ↗', title: 'show this security rule in a new window' });
+                            if (c.blockedBy) parts.push(el('p', {}, 'blocked by ', el('b', { text: c.blockedBy.rule }), ' (' + c.blockedBy.action + (c.blockedBy.location ? ', ' + c.blockedBy.location : '') + ') ', c.blockedBy.locationName ? open(c.blockedBy.locationName, c.blockedBy.rule) : null));
+                            if ((c.matches || []).length)
+                                parts.push(table(['#', 'Allow rule', 'Location', 'Result', 'Zones', 'Source', 'Destination', 'Service', ''], c.matches.map(m => el('tr', {},
+                                    el('td', { text: String(m.position) }), el('td', { text: m.rule }), el('td', { text: m.location }),
+                                    el('td', { text: COV[m.coverage] || m.coverage, title: (m.notes || []).join('\n') }),
+                                    ...['zones', 'source', 'destination', 'service'].map(k => el('td', { text: (m.details || {})[k] || '' })),
+                                    el('td', {}, open(m.locationName, m.rule))))));
+                            else if (!c.blockedBy) parts.push(el('p', { class: 'muted', text: 'no allow rule' + (c.hidden ? ' you can see (' + c.hidden + ' outside your types / locations)' : '') }));
+                            if (c.hidden && (c.matches || []).length) parts.push(el('p', { class: 'muted', text: c.hidden + ' more outside your types / locations' }));
+                            // allow rules written the way of other vendors (post-NAT address, pre-NAT zone, translated port)
+                            if ((c.mismatches || []).length) {
+                                parts.push(el('p', {}, el('b', { text: 'Allow rules to adapt (written for the traffic after the NAT)' })));
+                                parts.push(table(['#', 'Allow rule', 'Location', 'Written with', 'Scope', 'Change', 'Corrected rule', ''], c.mismatches.map(m => {
+                                    if (!m.covered) { toAdapt++; if (m.scope === 'partial') partial++; }
+                                    return el('tr', { class: m.covered ? 'muted' : '' },
+                                        el('td', { text: String(m.position) }), el('td', { text: m.rule }), el('td', { text: m.location }),
+                                        el('td', { text: m.patterns.map(x => PATTERN[x] || x).join(' + ') }),
+                                        el('td', { text: m.scope === 'full' ? 'exact' : 'partial - would allow more', title: (m.notes || []).join('\n') }),
+                                        el('td', { text: m.covered ? 'not needed: allowed by ' + m.covered : m.fix === 'in-place' ? 'in place' : 'clone before it' }),
+                                        el('td', { class: 'wrap', text: target(m.target) }),
+                                        el('td', {}, open(m.locationName, m.rule)));
+                                })));
+                            }
+                        }
+                    }
+                    // adapt: one pan-os-php action on the NAT rule (nat-security-fix) - exact ones in place / as a clone,
+                    // partial ones only after the review checkbox
+                    if (toAdapt && writable && offered['nat-security-fix']) {
+                        const f = { key: 'natsec' };
+                        const ok = el('input', { type: 'checkbox', 'aria-label': 'partial ones reviewed' });
+                        const pbtn = el('button', { type: 'button', text: 'Clone the partial ones too', disabled: true, title: 'nat-security-fix:clone,true',
+                            onclick: () => run(() => listChange(f, 'nat-security-fix:clone,true')) });
+                        ok.addEventListener('change', () => { pbtn.disabled = !ok.checked; });
+                        if (toAdapt > partial) parts.push(el('div', { class: 'row' },
+                            el('button', { type: 'button', text: 'Adapt (in place / clone)', title: 'nat-security-fix:fix - exact ones only', onclick: () => run(() => listChange(f, 'nat-security-fix:fix')) }),
+                            el('button', { type: 'button', text: 'Clone only', title: 'nat-security-fix:clone - exact ones only, the rules stay', onclick: () => run(() => listChange(f, 'nat-security-fix:clone')) })));
+                        if (partial) parts.push(el('div', { class: 'row' }, el('label', {}, ok, ' reviewed: the ' + partial + ' partial one(s) will allow more traffic than the rule names'), pbtn));
+                    }
+                    body.replaceChildren(...parts);
+                }).catch(e => { body.className = 'error'; body.textContent = e.message; });
+            };
+            d.addEventListener('toggle', () => { if (d.open) fill(); });
+            if (d.open) fill();
             return d;
         }
         // who uses the object (as the References of the list), each with "Open ↗" - read when the section is opened

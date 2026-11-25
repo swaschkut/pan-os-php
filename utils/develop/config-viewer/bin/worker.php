@@ -22,6 +22,7 @@
  * bin/service.php on request of ViewerApp::session(), never by a user. Requests arrive on a unix socket inside the project folder, one JSON line
  * per connection:
  *   references type, args, name -> who uses the objects of that name (in a forked child)
+ *   natsecurity type, args, name -> NAT rule: the security rules its traffic meets (in a forked child)
  *   locations                 -> the locations of the loaded configuration (device groups / vsys / containers, snippets)
  *   read    type, args        -> runs in a forked child (a failing run / exit() can not hurt the loaded configuration)
  *   change  type, args, note  -> tried in a forked child first; only when that worked it runs on the real memory
@@ -484,6 +485,15 @@ function viewerCandidates( $type, array $args, $name, $profile, string $kind ): 
     if( $objects === array() )
         throw new Exception( 'object not found' );
     return ObjectCandidates::forObject( $objects[0], $kind );
+}
+
+/** NAT rule -> the security rules its traffic meets (NatSecurityMatch, as actions=display-nat-security) */
+function viewerNatSecurity( $type, array $args, $name ): array
+{
+    foreach( viewerFindObjects( $type, $args, $name ) as $o )
+        if( $o instanceof NatRule )
+            return NatSecurityMatch::analyse( $o );
+    throw new Exception( 'NAT rule not found' );
 }
 
 function viewerReferences( $type, array $args, $name, $profile = null )
@@ -995,7 +1005,7 @@ while( TRUE )
 
     if( $cmd['cmd'] === 'status' )
         viewerSend( $conn, array( 'ok' => TRUE, 'status' => viewerStatus() ) );
-    elseif( $cmd['cmd'] === 'references' || $cmd['cmd'] === 'candidates' )
+    elseif( $cmd['cmd'] === 'references' || $cmd['cmd'] === 'candidates' || $cmd['cmd'] === 'natsecurity' )
     {
         // in a child, like a read: whatever pan-os-php does on the way can not hurt the loaded configuration
         $name = isset( $cmd['name'] ) && is_string( $cmd['name'] ) ? $cmd['name'] : '';
@@ -1019,6 +1029,8 @@ while( TRUE )
             {
                 if( $cmd['cmd'] === 'candidates' )
                     $r = array( 'ok' => TRUE, 'groups' => viewerCandidates( $type, $args, $name, $profile, (string)( $cmd['kind'] ?? '' ) ) );
+                elseif( $cmd['cmd'] === 'natsecurity' )
+                    $r = array( 'ok' => TRUE, 'result' => viewerNatSecurity( $type, $args, $name ) );
                 else
                     $r = array( 'ok' => TRUE, 'objects' => viewerReferences( $type, $args, $name, $profile ) );
             }

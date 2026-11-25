@@ -650,6 +650,21 @@ eq( array( $edl['EDL1']['edl-type'] ?? null, $edl['EDL1']['recurring'] ?? null, 
 // DNS rules: one per entry of a security profile - the same name in several profiles (default-paloalto-dns) is one row
 // per profile, with its own count, references and XML (before: one row, "used by" of all of them)
 $up = function( string $f ) use ( $alice, $SP, $here ) { $r = $alice->call( 'POST', $SP . '/configs', null, array( $f, file_get_contents( $here . '/input/' . $f ) ) ); return $SP . '/configs/' . ( $r[1]['cid'] ?? '' ); };
+// NAT rule -> security rules (NatSecurityMatch): one context per device group / template stack / vsys
+$NC = $up( 'nat-security-panorama.xml' );
+$ns = $alice->call( 'GET', $NC . '/natsecurity?location=DG1&name=dnat-app' );
+$nctx = array();
+foreach( $ns[1]['directions'][0]['contexts'] ?? array() as $c )
+    $nctx[$c['context']] = array_column( $c['matches'], 'rule' );
+eq( array( status( $ns ), $ns[1]['kind'] ?? null, $nctx, $ns[1]['directions'][0]['contexts'][0]['matches'][0]['locationName'] ?? null,
+        status( $alice->call( 'GET', $NC . '/natsecurity?location=DG1' ) ) ),
+    array( 200, 'destination', array( 'device-group DG1 / template TS-A / vsys1' => array( 'allow-app' ), 'device-group DG1 / template TS-B / vsys1' => array(),
+        'device-group DG1-child / template TS-A / vsys1' => array() ), 'DG1', 400 ),
+    'natsecurity: the security rules of a NAT rule per firewall context; no name: 400' );
+$ns = $alice->call( 'GET', $NC . '/natsecurity?location=DG1&name=dnat-port' )[1];
+eq( array( array_column( $ns['directions'][0]['contexts'][0]['mismatches'] ?? array(), 'rule' ), $ns['directions'][0]['contexts'][0]['mismatches'][0]['patterns'] ?? null,
+        array_key_exists( '_rule', $ns['directions'][0]['contexts'][0]['mismatches'][0] ?? array() ) ),
+    array( array( 'asa-port' ), array( 'post-nat-address', 'translated-port' ), FALSE ), 'natsecurity: the allow rules to adapt (written for the traffic after the NAT), no objects in the answer' );
 $DC = $up( 'dns-rules-panorama.xml' );
 $dr = $alice->call( 'GET', $DC . '/objects?type=dns-rule&location=any&' . http_build_query( array( 'filter' => '(name eq default-paloalto-dns)' ) ) )[1]['rows'] ?? array();
 $byP = array_column( $dr, null, 'profile' );

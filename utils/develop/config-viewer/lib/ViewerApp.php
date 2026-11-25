@@ -5762,6 +5762,77 @@ class ViewerApp
     }
 
     /**
+     * NAT rule: the security rules its traffic meets, in their order (pan-os-php NatSecurityMatch, as actions=
+     * display-nat-security) - per direction and firewall context. A member limited to types / locations: the security
+     * rules outside of them are counted, not named.
+     */
+    public function natSecurity( array $user, $pid, $cid, array $in ): array
+    {
+        $p = $this->projectGet( $user, $pid, 'read' );
+        $c = $this->configGet( $p, $cid );
+        $name = $in['name'] ?? null;
+        if( !is_string( $name ) || $name === '' || strlen( $name ) > 300 || preg_match( '/[\x00-\x1F\x7F]/', $name ) )
+            throw new ViewerException( 'name: the name of the NAT rule', 400 );
+        $args = $this->queryArgs( array( 'filter' => '', 'type' => 'rule', 'ruletype' => 'nat' ) + $in, $p );
+        $type = substr( array_shift( $args ), 5 );
+        if( $type !== 'rule' )
+            throw new ViewerException( 'type: rule (NAT) only', 400 );
+        $r = $this->workerCall( $this->session( $p, $c, $user ), array( 'cmd' => 'natsecurity', 'type' => 'rule', 'args' => $args, 'name' => $name ), 300 );
+        if( empty( $r['ok'] ) || !is_array( $r['result'] ?? null ) )
+            throw new ViewerException( is_string( $r['error'] ?? null ) ? $this->hidePaths( $r['error'] ) : 'the security rules could not be read', 500 );
+        $res = $r['result'];
+        $typeOk = $p['types'] === null || in_array( 'rule', $p['types'], TRUE );
+        foreach( $res['directions'] ?? array() as $di => $d )
+        {
+            // a firewall context of a device group outside the locations of the member: counted only
+            $res['directions'][$di]['hiddenContexts'] = 0;
+            foreach( $d['contexts'] ?? array() as $ci => $ctx )
+                if( $p['scope'] !== null && isset( $ctx['deviceGroup'] ) && !in_array( $ctx['deviceGroup'], $p['scope'], TRUE ) )
+                {
+                    unset( $res['directions'][$di]['contexts'][$ci] );
+                    $res['directions'][$di]['hiddenContexts']++;
+                }
+            $res['directions'][$di]['contexts'] = array_values( $res['directions'][$di]['contexts'] );
+        }
+        foreach( $res['directions'] ?? array() as $di => $d )
+            foreach( $d['contexts'] ?? array() as $ci => $ctx )
+            {
+                $kept = array();
+                $hidden = 0;
+                foreach( $ctx['matches'] ?? array() as $m )
+                {
+                    if( !$typeOk || ( $p['scope'] !== null && !in_array( $m['locationName'] ?? null, $p['scope'], TRUE ) ) )
+                    {
+                        $hidden++;
+                        continue;
+                    }
+                    $kept[] = $m;
+                }
+                $res['directions'][$di]['contexts'][$ci]['matches'] = $kept;
+                $keptMm = array();
+                foreach( $ctx['mismatches'] ?? array() as $m )
+                {
+                    if( !$typeOk || ( $p['scope'] !== null && !in_array( $m['locationName'] ?? null, $p['scope'], TRUE ) ) )
+                    {
+                        $hidden++;
+                        continue;
+                    }
+                    $keptMm[] = $m;
+                }
+                $res['directions'][$di]['contexts'][$ci]['mismatches'] = $keptMm;
+                // the rule that blocks the traffic: named only when the member may see it
+                $bb = $ctx['blockedBy'] ?? null;
+                if( is_array( $bb ) && ( !$typeOk || ( $p['scope'] !== null && !in_array( $bb['locationName'] ?? null, $p['scope'], TRUE ) ) ) )
+                {
+                    $res['directions'][$di]['contexts'][$ci]['blockedBy'] = array( 'rule' => '(outside your types / locations)', 'action' => $bb['action'] ?? '', 'location' => '', 'locationName' => null, 'position' => null );
+                    $res['directions'][$di]['contexts'][$ci]['notes'] = array_values( array_filter( $ctx['notes'] ?? array(), function( $n ) { return strpos( $n, 'traffic blocked by rule' ) !== 0; } ) );
+                }
+                $res['directions'][$di]['contexts'][$ci]['hidden'] = $hidden;
+            }
+        return $res;
+    }
+
+    /**
      * REST: GET …/configs/<cid>/<resource>[/<name>] - the objects of one type as items, with paging.
      * 'model' names the shape of an item: 'display-v0' = the fields of pan-os-php actions=display (not a stable model yet).
      */

@@ -442,6 +442,7 @@ require_once $basedir . '/rule-classes/RuleWithSchedule.php';
 
 require_once $basedir . '/rule-classes/SecurityRule.php';
 require_once $basedir . '/rule-classes/NatRule.php';
+require_once $basedir . '/rule-classes/NatSecurityMatch.php';
 require_once $basedir . '/rule-classes/DecryptionRule.php';
 require_once $basedir . '/rule-classes/AppOverrideRule.php';
 require_once $basedir . '/rule-classes/CaptivePortalRule.php';

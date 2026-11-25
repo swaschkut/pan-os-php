@@ -7768,3 +7768,71 @@ RuleCallContext::$supportedActions[] = array(
     },
     'args' => array('fileName' => array('type' => 'string', 'default' => '*nodefault*')),
 );
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'display-nat-security',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() )
+        {
+            $string = "this is not a NAT rule";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $a = NatSecurityMatch::analyse( $rule );
+        foreach( NatSecurityMatch::toText( $a, $context->padding ) as $line )
+            PH::print_stdout( $line );
+        PH::$JSON_TMP['sub']['object'][PH::jsonObjectKey( $rule )]['nat-security'] = $a;
+    },
+    'help' => "NAT rule: the allow security rules its traffic really reaches, in their order (a deny rule that blocks it before is named) - pre-NAT addresses and service, post-NAT zones " .
+        "(destination NAT: the zone of the translated address by the route lookup in the virtual / logical router of the ingress " .
+        "interface). Per rule zones / source / destination / service full or partial, until the first rule that covers the traffic " .
+        "fully. Destination NAT: also the allow rules to adapt (written the way of other vendors - see nat-security-fix). Panorama: per firewall of the device group (template stack merged, variables of the " .
+        "firewall); bi-directional static NAT also the reverse direction. Limits: dynamic routes are not in the configuration " .
+        "(default route: uncertain), IPv4 NAT rules only."
+);
+
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'nat-security-fix',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( !$rule->isNatRule() || !$rule->destinationNatIsEnabled() )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "this is not a destination NAT rule" );
+            return;
+        }
+        if( $context->isAPI )
+        {
+            PH::ACTIONstatus( $context, "SKIPPED", "not supported in API mode" );
+            return;
+        }
+
+        $mode = $context->arguments['mode'];
+        if( $mode === 'report' )
+        {
+            $a = NatSecurityMatch::analyse( $rule );
+            foreach( NatSecurityMatch::toText( $a, $context->padding ) as $line )
+                PH::print_stdout( $line );
+            PH::$JSON_TMP['sub']['object'][PH::jsonObjectKey( $rule )]['nat-security'] = $a;
+            return;
+        }
+
+        $lines = NatSecurityMatch::applyFix( $rule, $mode, $context->arguments['approvePartial'], $context->arguments['suffix'] );
+        foreach( $lines as $line )
+            PH::print_stdout( $context->padding . $line );
+        PH::$JSON_TMP['sub']['object'][PH::jsonObjectKey( $rule )]['nat-security-fix'] = $lines;
+        if( count( preg_grep( '/^SKIPPED /', $lines ) ) > 0 && count( preg_grep( '/^(CHANGED|CLONED) /', $lines ) ) == 0 )
+            PH::ACTIONstatus( $context, "SKIPPED", implode( '; ', $lines ) );
+    },
+    'args' => array(
+        'mode' => array('type' => 'string', 'default' => 'report', 'choices' => array('report', 'fix', 'clone'),
+            'help' => "report: only show; fix: adapt the security rule in place where it carries only this NAT traffic, else a clone before it; clone: always a clone before it (the rule stays)"),
+        'approvePartial' => array('type' => 'bool', 'default' => 'false',
+            'help' => "also adapt rules that cover only a part (the corrected rule would allow more than the rule names) - only after a review"),
+        'suffix' => array('type' => 'string', 'default' => '-nat', 'help' => 'name of a clone: the name of the rule + suffix'),
+    ),
+    'help' => "destination NAT rule: allow security rules written the way of other vendors - the translated (post-NAT) address instead " .
+        "of the original one, the pre-NAT zone instead of the post-NAT zone, the translated port instead of the original one - " .
+        "adapted to PAN-OS (pre-NAT addresses / service, post-NAT zones). A full match is adapted (in place or as a clone) so that it allows exactly " .
+        "the NAT traffic the rule names; a partial one only with approvePartial. Panorama: other post-NAT zones on other firewalls = partial."
+);
