@@ -18,7 +18,7 @@
  */
 
 /**
- * Filter (object is.misconfigured) - also spelled is.missconfigured: services whose name says the other protocol,
+ * Filter (object is.missconfigured) - also spelled is.missconfigured: services whose name says the other protocol,
  * addresses whose name names another IPv4 value. Synthetic input tests/input/misconfigured.xml.
  *
  *   php tests/test_misconfigured.php
@@ -37,12 +37,11 @@ $names = function( string $type, string $filter ) use ( $repo, $in ) {
     preg_match_all( "/- object '(?:\e\[1m)?([^'\e]+)/", implode( "\n", $o ), $m );
     return $m[1];
 };
-$eq( $names( 'service', '(object is.misconfigured)' ), array( 'udp-53-wrong', 'tcp-8080-wrong' ),
+$eq( $names( 'service', '(object is.missconfigured)' ), array( 'udp-53-wrong', 'tcp-8080-wrong' ),
     'service: /udp/i with protocol tcp, /tcp/i with protocol udp; a name with both, groups and other names not' );
-$eq( $names( 'address', '(object is.misconfigured)' ), array( 'h-192.0.2.11-wrong', 'n-198.51.100.0-25-wrong', 'r-192.0.2.100-192.0.2.120-wrong', 'f-192.0.2.5' ),
+$eq( $names( 'address', '(object is.missconfigured)' ), array( 'h-192.0.2.11-wrong', 'n-198.51.100.0-25-wrong', 'r-192.0.2.100-192.0.2.120-wrong', 'f-192.0.2.5' ),
     'address: another address / prefix / range end in the name, an IPv4 address in the name of an fqdn object; /32, _24, dotted netmask, names without an IPv4 address: fine' );
-$eq( array( $names( 'service', '(object is.missconfigured)' ), $names( 'address', '(object is.missconfigured)' ) ),
-    array( $names( 'service', '(object is.misconfigured)' ), $names( 'address', '(object is.misconfigured)' ) ), 'is.missconfigured is the same filter' );
+$eq( count( $names( 'service', '(object is.misconfigured)' ) ), 0, 'only is.missconfigured (no is.misconfigured)' );
 
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

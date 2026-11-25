@@ -55,9 +55,7 @@ $addressMisconfigured = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['address']['object']['operators']['is.misconfigured'] = $addressMisconfigured;
-// the spelling of the request (2026-11-25) - the same filter
-RQuery::$defaultFilters['address']['object']['operators']['is.missconfigured'] = array( 'help' => 'same as is.misconfigured' ) + $addressMisconfigured;
+RQuery::$defaultFilters['address']['object']['operators']['is.missconfigured'] = $addressMisconfigured;
 
 RQuery::$defaultFilters['address']['object']['operators']['is.region'] = array(
     'Function' => function (AddressRQueryContext $context) {

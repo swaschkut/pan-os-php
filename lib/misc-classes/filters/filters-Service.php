@@ -80,9 +80,7 @@ $serviceMisconfigured = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['service']['object']['operators']['is.misconfigured'] = $serviceMisconfigured;
-// the spelling of the request (2026-11-25) - the same filter
-RQuery::$defaultFilters['service']['object']['operators']['is.missconfigured'] = array( 'help' => 'same as is.misconfigured' ) + $serviceMisconfigured;
+RQuery::$defaultFilters['service']['object']['operators']['is.missconfigured'] = $serviceMisconfigured;
 
 RQuery::$defaultFilters['service']['object']['operators']['is.tmp'] = array(
     'Function' => function (ServiceRQueryContext $context) {
