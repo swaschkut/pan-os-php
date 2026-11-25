@@ -11,17 +11,28 @@ Todo: [todo/config-viewer-panos-style-edit.md](../../../todo/config-viewer-panos
 
 ### 1.1 Fields that can not be changed - a pan-os-php action is missing
 
+State 2026-11-25 (`alpha` up to `405cac7a`).
+
 | Type / field | Missing in pan-os-php |
 |---|---|
-| address: type, value of ip-range / fqdn / ip-wildcard | `value-set` / change of type (only `value-replace` for ip-netmask) |
-| address, service, rule: description | `description-set` (today `description-delete` + `description-append`: two actions) |
-| address group: remove a member, dynamic filter | `remove-member`, an action for the filter |
-| service: protocol / port | `protocol-set`, `dstport-set` |
-| service group: members | `add-member` / `remove-member` (none for service groups) |
-| rule: URL category | `category-add` / `category-remove` |
-| NAT: persistent dynamic IP, DNAT distribution, interface IP as an object | not in `snat-set` / `dnat-set` yet |
-| zone: remove the zone protection profile | an action for it; yes / no fields show no current value |
-| every field except descriptions and tag comments | `,` and `:` not possible (no aliases there) |
+| NAT: persistent dynamic IP, DNAT distribution, interface IP as an object, service, destination interface, NAT type | not in `snat-set` / `dnat-set` yet |
+| zone: remove the zone protection profile, user-ID ACLs (include / exclude) | an action for them; yes / no fields show no current value |
+| EDL: type, source, recurring, certificate profile, exception list, expand domain | only name actions, `delete`, `move` |
+| schedule: type, recurring daily / weekly, non-recurring entries | only name actions, `delete` |
+| log forwarding: match lists (log type, filter, send to syslog / e-mail / HTTP / SNMP / panorama) | only `create`, `delete`, `move` |
+| security profiles: the single fields of a profile (rules / exceptions per type) | `alert-only-set`, `best-practice-set` and a few per-type actions only |
+| other rule types: PBF, decryption, application override, authentication, DoS, QoS, tunnel inspection, SD-WAN | their own fields (actions of type=rule for the common fields only) |
+| interface: mode (layer3 / layer2 / virtual wire / tap), IPv6 | an action for them |
+| routing protocols (BGP, OSPF, RIP, multicast, redistribution) | none |
+| every field except descriptions and tag comments | `,` and `:` not possible (no aliases there; central textAliases for every action, IPv6) |
+
+Built 2026-11-24 (common actions `utils/common/actions-common.php`): ~~address `value-set` (every type, also the change
+of type)~~, ~~`description-set` (address, service, rule, tag, …)~~, ~~address group / service group `add-member` /
+`remove-member`~~, ~~service `protocol-set` / `dstport-set`~~, ~~rule `category-add` / `category-remove` /
+`category-set-any`~~, ~~zone `interface-add` / `interface-remove`~~, ~~`name-rename` of the network types (references
+renamed)~~, ~~network types: interface, zone protection, interface management profile, IKE / IPSec, GRE, DHCP, virtual
+wire, routing, static route, GlobalProtect portal / gateway (field actions)~~; read only for good: tmp objects,
+predefined objects (location `predefined`), GlobalProtect gateway tunnels, threats, threat rules, DNS rules.
 
 ### 1.1b References pan-os-php does not count yet
 
@@ -37,14 +48,15 @@ Todo: [todo/config-viewer-panos-style-edit.md](../../../todo/config-viewer-panos
 
 | pan-os-php has change actions - only the window is missing | pan-os-php has no change action |
 |---|---|
-| EDL, schedule (name actions) | threats, threat rules, DNS rules |
-| security profiles (61 actions, e.g. `alert-only-set`, `best-practice-set`) | virtual wires, routing |
-| security profile groups (`securityprofile-set` / `-remove`) | IKE gateways, IPSec / GRE tunnels |
-| log forwarding, application (create / delete / move) | GlobalProtect portals / gateways / tunnels |
-| interfaces (`name-rename`, AE group) | interface management profiles |
-| zone protection profiles (`alert-only-set`) | certificates, certificate profiles |
-| device (38 actions) | SSL/TLS service profiles |
-| static routes, IKE / IPSec crypto (delete only), DHCP (reservation) | |
+| EDL, schedule (name actions; field actions: 1.1) | certificates, certificate profiles |
+| security profiles (62 actions, e.g. `alert-only-set`, `best-practice-set`) | SSL/TLS service profiles |
+| security profile groups (`securityprofile-set` / `-remove`) | |
+| log forwarding, application (create / delete / move) | |
+| device (41 actions) | |
+
+Built 2026-11-24: windows of the network types (interfaces, zone protection / interface management profiles, IKE /
+IPSec, GRE, DHCP, virtual wires, routing, static routes, GlobalProtect). Read only for good (no window to change):
+threats, threat rules, DNS rules, GlobalProtect gateway tunnels.
 
 Counted from [action-classes.json](action-classes.json), class `change`.
 
@@ -56,7 +68,9 @@ Counted from [action-classes.json](action-classes.json), class `change`.
 * **run.log in a window** - shown in the page (as the LDAP results), not only as a download
 * **search text in the whole XML** (as `type=xpath`): exact / contains / regex; element names, values or attributes
   (`name=`); limited to a location / template; the hits with their XPath and a link to the object window
-* more network / device types editable as soon as their actions are reviewed (`action-classes.json` `reviewed`)
+* more types editable as soon as their actions are reviewed (`action-classes.json` `reviewed`)
+* NAT -> security (built 2026-11-25, `NatSecurityMatch`, NAT rule window): open - SCM (containers / snippets), IPv6
+  NAT rule types (nat64, nptv6), the vendor knowledge of the migration (private plug-in `pan-os-php_migration`)
 * **XML view in general: fold every large part** (wish 2026-11-25) - today an XML of more than 20 lines can be folded
   down to the 2nd level only; wanted: every element whose content is larger than about 30-40 lines can be folded, on
   every level (e.g. one interface, one router, one static-route list), with expand / collapse all
