@@ -3745,6 +3745,18 @@ var subjectObject =
     "edl": {
         "name": "edl",
         "action": {
+            "certificate-profile-set": {
+                "name": "certificate-profile-set",
+                "MainFunction": {},
+                "args": {
+                    "profile": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "name of the certificate profile, none: removed"
+                    }
+                },
+                "help": "the certificate profile that checks the server of an https source. Example: 'actions=certificate-profile-set:none'"
+            },
             "delete": {
                 "name": "delete",
                 "MainFunction": {}
@@ -3759,6 +3771,17 @@ var subjectObject =
                 "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
                 "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
+            "description-set": {
+                "name": "description-set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "the description of the list (empty: removed); in the type element of the EDL"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -3766,6 +3789,39 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "exception-add": {
+                "name": "exception-add",
+                "MainFunction": {},
+                "args": {
+                    "entry": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "an entry of the list the firewall ignores (IP, domain, URL). Example: 'actions=exception-add:192.0.2.10'"
+            },
+            "exception-remove": {
+                "name": "exception-remove",
+                "MainFunction": {},
+                "args": {
+                    "entry": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes an entry of the exception list"
+            },
+            "expand-domain-set": {
+                "name": "expand-domain-set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "type domain: also the subdomains of every entry. Example: 'actions=expand-domain-set:true'"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -3869,6 +3925,17 @@ var subjectObject =
                     }
                 }
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames the list and every rule that uses it (as source \/ destination)"
+            },
             "name-tolowercase": {
                 "name": "name-toLowerCase",
                 "MainFunction": {}
@@ -3880,6 +3947,70 @@ var subjectObject =
             "name-touppercase": {
                 "name": "name-toUpperCase",
                 "MainFunction": {}
+            },
+            "recurring-set": {
+                "name": "recurring-set",
+                "MainFunction": {},
+                "args": {
+                    "interval": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "five-minute",
+                            "hourly",
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ]
+                    },
+                    "at": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "daily \/ weekly \/ monthly: the hour 0-23"
+                    },
+                    "day": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "weekly: monday \u2026 sunday; monthly: 1-31"
+                    }
+                },
+                "help": "how often the firewall reads the list. Example: 'actions=recurring-set:hourly', 'actions=recurring-set:weekly,3,monday'"
+            },
+            "source-set": {
+                "name": "source-set",
+                "MainFunction": {},
+                "args": {
+                    "source": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "the URL of the list (predefined types: the name of the predefined list). ':' and '\/' as aliases. Example: 'actions=source-set:https$$colon$$$$forwardslash$$$$forwardslash$$lists.example.com$$forwardslash$$ip.txt'"
+            },
+            "type-set": {
+                "name": "type-set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "ip",
+                            "domain",
+                            "url",
+                            "imsi",
+                            "imei",
+                            "predefined-ip",
+                            "predefined-url"
+                        ]
+                    },
+                    "source": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "needed when the source does not fit the new type (URL \/ name of a predefined list)"
+                    }
+                },
+                "help": "the type of the list: ip, domain, url, imsi, imei, predefined-ip, predefined-url. Example: 'actions=type-set:domain' or 'actions=type-set:predefined-ip,panw-bulletproof-ip-list'"
             }
         },
         "filter": {
@@ -6566,6 +6697,18 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "description-set": {
+                "name": "description-set",
+                "MainFunction": {},
+                "args": {
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "help": "the new description (empty: removed); , : \/ | written as $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$"
+                    }
+                },
+                "help": "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\nExample: 'actions=description-set:web servers$$comma$$ DMZ'"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -6573,6 +6716,17 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "enhanced-application-logging-set": {
+                "name": "enhanced-application-logging-set",
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "bool",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "enhanced application logging to Cortex Data Lake \/ Strata Logging Service"
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
@@ -6620,6 +6774,119 @@ var subjectObject =
                     }
                 }
             },
+            "match-add": {
+                "name": "match-add",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "logtype": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "traffic, threat, wildfire, url, data, tunnel, auth, decryption, dns-security, gtp, sctp"
+                    },
+                    "filter": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "All Logs (default) or a log filter, e.g. (severity geq high)"
+                    },
+                    "panorama": {
+                        "type": "bool",
+                        "default": "false"
+                    }
+                },
+                "help": "a match list entry. Example: 'actions=match-add:threat-high,threat,(severity geq high),true'"
+            },
+            "match-remove": {
+                "name": "match-remove",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes a match list entry"
+            },
+            "match-send-add": {
+                "name": "match-send-add",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "kind": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "syslog",
+                            "email",
+                            "http",
+                            "snmptrap"
+                        ]
+                    },
+                    "profile": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "name of the server profile"
+                    }
+                },
+                "help": "sends the logs of a match list entry to a server profile. Example: 'actions=match-send-add:threat-high,syslog,siem'"
+            },
+            "match-send-remove": {
+                "name": "match-send-remove",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "kind": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "syslog",
+                            "email",
+                            "http",
+                            "snmptrap"
+                        ]
+                    },
+                    "profile": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "name of the server profile"
+                    }
+                },
+                "help": "stops sending to a server profile. Example: 'actions=match-send-remove:threat-high,syslog,siem'"
+            },
+            "match-set": {
+                "name": "match-set",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "field": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "log-type",
+                            "filter",
+                            "send-to-panorama",
+                            "quarantine"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "one field of a match list entry. Example: 'actions=match-set:threat-high,send-to-panorama,yes'"
+            },
             "move": {
                 "name": "move",
                 "MainFunction": {},
@@ -6637,6 +6904,17 @@ var subjectObject =
                         ]
                     }
                 }
+            },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames the profile and every rule \/ zone that names it"
             }
         },
         "filter": {
@@ -11314,6 +11592,17 @@ var subjectObject =
                     }
                 }
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames the schedule and every rule that uses it"
+            },
             "name-tolowercase": {
                 "name": "name-toLowerCase",
                 "MainFunction": {}
@@ -11326,6 +11615,56 @@ var subjectObject =
                 "name": "name-toUpperCase",
                 "MainFunction": {}
             },
+            "range-add": {
+                "name": "range-add",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "daily",
+                            "weekly",
+                            "non-recurring"
+                        ]
+                    },
+                    "day": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "weekly: monday \u2026 sunday, else - (or empty)"
+                    },
+                    "range": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "a range more, same type as the schedule. Example: 'actions=range-add:weekly,monday,0800-1200'"
+            },
+            "range-remove": {
+                "name": "range-remove",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "daily",
+                            "weekly",
+                            "non-recurring"
+                        ]
+                    },
+                    "day": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "weekly: monday \u2026 sunday, else - (or empty)"
+                    },
+                    "range": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes a range (the last one stays). Example: 'actions=range-remove:daily,-,0800-1700'"
+            },
             "replacewithobject": {
                 "name": "replaceWithObject",
                 "MainFunction": {},
@@ -11335,6 +11674,31 @@ var subjectObject =
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "type-set": {
+                "name": "type-set",
+                "MainFunction": {},
+                "args": {
+                    "type": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "daily",
+                            "weekly",
+                            "non-recurring"
+                        ]
+                    },
+                    "day": {
+                        "type": "string",
+                        "default": "-",
+                        "help": "weekly: monday \u2026 sunday, else - (or empty)"
+                    },
+                    "range": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "the type of the schedule with one range - every other range goes. Example: 'actions=type-set:non-recurring,-,20260101@0000-20260131@2359'"
             }
         },
         "filter": {
@@ -11735,6 +12099,79 @@ var subjectObject =
                 },
                 "help": "sets (replaces) the description of an address, service, rule or security profile; empty: removed.\nExample: 'actions=description-set:web servers$$comma$$ DMZ'"
             },
+            "detail-entry-add": {
+                "name": "detail-entry-add",
+                "MainFunction": {},
+                "args": {
+                    "list": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "rule, threat-exception, application-exception, dns-category (per profile type)"
+                    },
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "rule name, threat ID, application"
+                    }
+                },
+                "help": "an entry of a list of the profile with the PAN-OS defaults (rules: at the end) - detail-entry-set for its fields. Example: 'actions=detail-entry-add:rule,block-critical\/detail-entry-set:rule,block-critical,severity,critical+high\/detail-entry-set:rule,block-critical,action,reset-both'"
+            },
+            "detail-entry-remove": {
+                "name": "detail-entry-remove",
+                "MainFunction": {},
+                "args": {
+                    "list": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "removes an entry of a list of the profile (not the fixed ones: decoders)"
+            },
+            "detail-entry-set": {
+                "name": "detail-entry-set",
+                "MainFunction": {},
+                "args": {
+                    "list": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "field": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "e.g. action, severity, packet-capture, host, file-type, direction, analysis, wildfire-action, mlav-action, log-level, exempt-ip"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "several values joined with +"
+                    }
+                },
+                "help": "one field of an entry of a list of the profile. Examples: 'actions=detail-entry-set:decoder,smtp,action,reset-both', 'actions=detail-entry-set:dns-category,pan-dns-sec-malware,action,sinkhole', 'actions=detail-entry-set:threat-exception,30003,exempt-ip,192.0.2.10+192.0.2.11'"
+            },
+            "detail-option-set": {
+                "name": "detail-option-set",
+                "MainFunction": {},
+                "args": {
+                    "option": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "virus: packet-capture; spyware: sinkhole-ipv4, sinkhole-ipv6; url-filtering: log-container-page-only, safe-search-enforcement, log-http-hdr-xff, log-http-hdr-user-agent, log-http-hdr-referer, local-inline-cat, cloud-inline-cat"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "an option of the profile. Example: 'actions=detail-option-set:log-http-hdr-xff,yes'"
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -12036,6 +12473,27 @@ var subjectObject =
             "url.best-practice-set": {
                 "name": "url.best-practice-set",
                 "MainFunction": {}
+            },
+            "url.credential-action-set": {
+                "name": "url.credential-action-set",
+                "MainFunction": {},
+                "args": {
+                    "category": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "action": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "alert",
+                            "allow",
+                            "block",
+                            "continue"
+                        ]
+                    }
+                },
+                "help": "url-filtering: the action of a URL category for the user credential detection. Example: 'actions=url.credential-action-set:financial-services,block'"
             },
             "url.credential-enforcement.alert-only-set": {
                 "name": "url.credential-enforcement.alert-only-set",

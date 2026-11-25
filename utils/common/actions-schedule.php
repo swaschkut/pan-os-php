@@ -487,3 +487,43 @@ ScheduleCallContext::$supportedActions[] = array(
     'args' => array('objectName' => array('type' => 'string', 'default' => '*nodefault*')),
 );
 
+
+// <editor-fold desc=" ***** schedule ranges (offline) *****" defaultstate="collapsed" >
+// ranges: daily / weekly HH:MM-HH:MM (or HHMM-HHMM), non-recurring YYYY/MM/DD@HH:MM-YYYY/MM/DD@HH:MM (or
+// YYYYMMDD@HHMM-YYYYMMDD@HHMM) - ':' and '/' as aliases $$colon$$ / $$forwardslash$$ or in the short form
+
+foreach( array(
+    'range-add' => array( 'editRangeAdd', 'added', "a range more, same type as the schedule. Example: 'actions=range-add:weekly,monday,0800-1200'" ),
+    'range-remove' => array( 'editRangeRemove', 'removed', "removes a range (the last one stays). Example: 'actions=range-remove:daily,-,0800-1700'" ),
+    'type-set' => array( 'editTypeSet', 'set as the only range', "the type of the schedule with one range - every other range goes. Example: 'actions=type-set:non-recurring,-,20260101@0000-20260131@2359'" ),
+) as $schedActionName => $schedAction )
+    ScheduleCallContext::$supportedActions[] = array(
+        'name' => $schedActionName,
+        'MainFunction' => function (ScheduleCallContext $context) use ( $schedAction ) {
+            $context->runEdit( function( Schedule $o, $a ) use ( $schedAction ) {
+                $day = in_array( (string)$a['day'], array( '*nodefault*', '-', '' ), TRUE ) ? '' : (string)$a['day'];
+                $r = $o->{$schedAction[0]}( (string)$a['type'], $day, (string)$a['range'] );
+                return $a['type'] . ( $day !== '' ? ' ' . $day : '' ) . " '" . $r . "' " . $schedAction[1];
+            } );
+        },
+        'args' => array(
+            'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'daily', 'weekly', 'non-recurring' ) ),
+            'day' => array( 'type' => 'string', 'default' => '-', 'help' => 'weekly: monday … sunday, else - (or empty)' ),
+            'range' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        ),
+        'help' => $schedAction[2]
+    );
+
+ScheduleCallContext::$supportedActions[] = array(
+    'name' => 'name-rename',
+    'MainFunction' => function (ScheduleCallContext $context) {
+        $context->runEdit( function( Schedule $o, $a ) {
+            $old = $o->name();
+            $n = $o->editRename( (string)$a['newname'] );
+            return "renamed '" . $old . "' -> '" . $o->name() . "' (users updated: " . $n . ")";
+        } );
+    },
+    'args' => array( 'newname' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "renames the schedule and every rule that uses it"
+);
+// </editor-fold>

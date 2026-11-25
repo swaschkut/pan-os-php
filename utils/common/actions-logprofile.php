@@ -437,3 +437,96 @@ LogProfileCallContext::$supportedActions['delete'] = array(
             $object->owner->removeLogProfile($object);
     },
 );
+// <editor-fold desc=" ***** log forwarding profile: match list (offline) *****" defaultstate="collapsed" >
+// filter text: the aliases $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$
+
+LogProfileCallContext::$supportedActions[] = array(
+    'name' => 'match-add',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $context->runEdit( function( LogProfile $o, $a ) {
+            $filter = $a['filter'] === '*nodefault*' ? 'All Logs' : PH::textAliases( (string)$a['filter'] );
+            $o->editMatchAdd( (string)$a['name'], (string)$a['logtype'], $filter, (bool)$a['panorama'] );
+            return "match list entry '" . $a['name'] . "' (" . $a['logtype'] . ", " . $filter . ") added";
+        } );
+    },
+    'args' => array(
+        'name' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'logtype' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'traffic, threat, wildfire, url, data, tunnel, auth, decryption, dns-security, gtp, sctp' ),
+        'filter' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'All Logs (default) or a log filter, e.g. (severity geq high)' ),
+        'panorama' => array( 'type' => 'bool', 'default' => 'false' ),
+    ),
+    'help' => "a match list entry. Example: 'actions=match-add:threat-high,threat,(severity geq high),true'"
+);
+
+LogProfileCallContext::$supportedActions[] = array(
+    'name' => 'match-remove',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $context->runEdit( function( LogProfile $o, $a ) {
+            $o->editMatchRemove( (string)$a['name'] );
+            return "match list entry '" . $a['name'] . "' removed";
+        } );
+    },
+    'args' => array( 'name' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "removes a match list entry"
+);
+
+LogProfileCallContext::$supportedActions[] = array(
+    'name' => 'match-set',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $context->runEdit( function( LogProfile $o, $a ) {
+            $v = PH::textAliases( (string)$a['value'] );
+            $o->editMatchSet( (string)$a['name'], (string)$a['field'], $v );
+            return "match list entry '" . $a['name'] . "': " . $a['field'] . " '" . $v . "'";
+        } );
+    },
+    'args' => array(
+        'name' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'field' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'log-type', 'filter', 'send-to-panorama', 'quarantine' ) ),
+        'value' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+    ),
+    'help' => "one field of a match list entry. Example: 'actions=match-set:threat-high,send-to-panorama,yes'"
+);
+
+foreach( array( 'match-send-add' => TRUE, 'match-send-remove' => FALSE ) as $lpActionName => $lpAdd )
+    LogProfileCallContext::$supportedActions[] = array(
+        'name' => $lpActionName,
+        'MainFunction' => function (LogProfileCallContext $context) use ( $lpAdd ) {
+            $context->runEdit( function( LogProfile $o, $a ) use ( $lpAdd ) {
+                $o->editMatchSend( (string)$a['name'], (string)$a['kind'], (string)$a['profile'], $lpAdd );
+                return "match list entry '" . $a['name'] . "': " . $a['kind'] . " '" . $a['profile'] . "' " . ( $lpAdd ? 'added' : 'removed' );
+            } );
+        },
+        'args' => array(
+            'name' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+            'kind' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array_keys( LogProfile::MATCH_SEND ) ),
+            'profile' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'name of the server profile' ),
+        ),
+        'help' => ( $lpAdd ? "sends the logs of a match list entry to a server profile" : "stops sending to a server profile" ) .
+            ". Example: 'actions=" . $lpActionName . ":threat-high,syslog,siem'"
+    );
+
+LogProfileCallContext::$supportedActions[] = array(
+    'name' => 'enhanced-application-logging-set',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $context->runEdit( function( LogProfile $o, $a ) {
+            $o->editEnhancedLoggingSet( (bool)$a['enable'] );
+            return "enhanced application logging " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => "enhanced application logging to Cortex Data Lake / Strata Logging Service"
+);
+
+LogProfileCallContext::$supportedActions[] = array(
+    'name' => 'name-rename',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $context->runEdit( function( LogProfile $o, $a ) {
+            $old = $o->name();
+            $n = $o->editRename( (string)$a['newname'] );
+            return "renamed '" . $old . "' -> '" . $o->name() . "' (rules / zones updated: " . $n . ")";
+        } );
+    },
+    'args' => array( 'newname' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "renames the profile and every rule / zone that names it"
+);
+// </editor-fold>

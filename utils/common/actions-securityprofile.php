@@ -5756,3 +5756,90 @@ SecurityProfileCallContext::$supportedActions['best-practice-set'] = array(
         . "(any: all types): virus, spyware, vulnerability, url, wildfire, virus-and-wildfire, dns-security. "
         . "Predefined profiles and types without best-practice-set (e.g. file-blocking) are skipped."
 );
+
+// <editor-fold desc=" ***** security profile details: lists and options (offline, SecurityProfileFields) *****" defaultstate="collapsed" >
+// lists: virus decoder / application-exception / threat-exception; spyware rule / threat-exception / dns-category;
+// vulnerability rule / threat-exception; file-blocking rule; wildfire rule. Several values of a list field joined with '+'.
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'detail-entry-add',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $name = PH::textAliases( (string)$a['name'] );
+            SecurityProfileFields::entryAdd( $o, (string)$a['list'], $name );
+            return $a['list'] . " '" . $name . "' added (PAN-OS defaults)";
+        } );
+    },
+    'args' => array(
+        'list' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'rule, threat-exception, application-exception, dns-category (per profile type)' ),
+        'name' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'rule name, threat ID, application' ),
+    ),
+    'help' => "an entry of a list of the profile with the PAN-OS defaults (rules: at the end) - detail-entry-set for its fields. " .
+        "Example: 'actions=detail-entry-add:rule,block-critical/detail-entry-set:rule,block-critical,severity,critical+high/detail-entry-set:rule,block-critical,action,reset-both'"
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'detail-entry-remove',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $name = PH::textAliases( (string)$a['name'] );
+            SecurityProfileFields::entryRemove( $o, (string)$a['list'], $name );
+            return $a['list'] . " '" . $name . "' removed";
+        } );
+    },
+    'args' => array(
+        'list' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'name' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+    ),
+    'help' => "removes an entry of a list of the profile (not the fixed ones: decoders)"
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'detail-entry-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $name = PH::textAliases( (string)$a['name'] );
+            $v = SecurityProfileFields::entrySet( $o, (string)$a['list'], $name, (string)$a['field'], (string)$a['value'] );
+            return $a['list'] . " '" . $name . "': " . $a['field'] . " '" . $v . "'";
+        } );
+    },
+    'args' => array(
+        'list' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'name' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'field' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'e.g. action, severity, packet-capture, host, file-type, direction, analysis, wildfire-action, mlav-action, log-level, exempt-ip' ),
+        'value' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'several values joined with +' ),
+    ),
+    'help' => "one field of an entry of a list of the profile. Examples: 'actions=detail-entry-set:decoder,smtp,action,reset-both', " .
+        "'actions=detail-entry-set:dns-category,pan-dns-sec-malware,action,sinkhole', 'actions=detail-entry-set:threat-exception,30003,exempt-ip,192.0.2.10+192.0.2.11'"
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'detail-option-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            $v = SecurityProfileFields::optionSet( $o, (string)$a['option'], (string)$a['value'] );
+            return "option " . $a['option'] . " '" . $v . "'";
+        } );
+    },
+    'args' => array(
+        'option' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'virus: packet-capture; spyware: sinkhole-ipv4, sinkhole-ipv6; url-filtering: log-container-page-only, safe-search-enforcement, log-http-hdr-xff, log-http-hdr-user-agent, log-http-hdr-referer, local-inline-cat, cloud-inline-cat' ),
+        'value' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+    ),
+    'help' => "an option of the profile. Example: 'actions=detail-option-set:log-http-hdr-xff,yes'"
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'url.credential-action-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $context->runEdit( function( $o, $a ) {
+            SecurityProfileFields::urlCredentialActionSet( $o, (string)$a['category'], (string)$a['action'] );
+            return "credential detection: category '" . $a['category'] . "' " . $a['action'];
+        } );
+    },
+    'args' => array(
+        'category' => array( 'type' => 'string', 'default' => '*nodefault*' ),
+        'action' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => array( 'alert', 'allow', 'block', 'continue' ) ),
+    ),
+    'help' => "url-filtering: the action of a URL category for the user credential detection. Example: 'actions=url.credential-action-set:financial-services,block'"
+);
+// </editor-fold>

@@ -139,7 +139,7 @@ CallContext::registerAction( array( 'AddressCallContext', 'ServiceCallContext' )
         "Example: 'actions=remove-member:h-10.0.0.1'"
 ) );
 
-CallContext::registerAction( array( 'AddressCallContext', 'ServiceCallContext', 'RuleCallContext', 'SecurityProfileCallContext' ), array(
+CallContext::registerAction( array( 'AddressCallContext', 'ServiceCallContext', 'RuleCallContext', 'SecurityProfileCallContext', 'LogProfileCallContext' ), array(
     'name' => 'description-set',
     'MainFunction' => function (CallContext $context) {
         $object = $context->object;

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared/>
+  <devices>
+    <entry name="localhost.localdomain">
+      <network>
+        <interface><ethernet><entry name="ethernet1/1"><layer3><ip><entry name="198.51.100.1/24"/></ip></layer3></entry></ethernet></interface>
+      </network>
+      <vsys>
+        <entry name="vsys1">
+          <import><network><interface><member>ethernet1/1</member></interface></network></import>
+          <zone>
+            <entry name="untrust"><network><layer3><member>ethernet1/1</member></layer3><log-setting>lf-default</log-setting></network></entry>
+          </zone>
+          <external-list>
+            <entry name="edl-ip"><type><ip><recurring><five-minute/></recurring><url>https://lists.example.com/ip.txt</url></ip></type></entry>
+            <entry name="edl-domain"><type><domain><recurring><hourly/></recurring><url>https://lists.example.com/domain.txt</url><description>domains</description></domain></type></entry>
+          </external-list>
+          <schedule>
+            <entry name="office-hours"><schedule-type><recurring><daily><member>08:00-17:00</member></daily></recurring></schedule-type></entry>
+            <entry name="weekend"><schedule-type><recurring><weekly><saturday><member>00:00-23:59</member></saturday></weekly></recurring></schedule-type></entry>
+            <entry name="project"><schedule-type><non-recurring><member>2026/01/01@00:00-2026/01/31@23:59</member></non-recurring></schedule-type></entry>
+          </schedule>
+          <log-settings>
+            <profiles>
+              <entry name="lf-default">
+                <match-list>
+                  <entry name="traffic-all"><log-type>traffic</log-type><filter>All Logs</filter><send-to-panorama>yes</send-to-panorama></entry>
+                </match-list>
+              </entry>
+            </profiles>
+          </log-settings>
+          <rulebase>
+            <security>
+              <rules>
+                <entry name="block-edl"><from><member>untrust</member></from><to><member>any</member></to><source><member>edl-ip</member></source><destination><member>any</member></destination><source-user><member>any</member></source-user><category><member>any</member></category><application><member>any</member></application><service><member>any</member></service><action>deny</action><log-setting>lf-default</log-setting></entry>
+                <entry name="office"><from><member>untrust</member></from><to><member>any</member></to><source><member>any</member></source><destination><member>any</member></destination><source-user><member>any</member></source-user><category><member>any</member></category><application><member>any</member></application><service><member>application-default</member></service><action>allow</action><schedule>office-hours</schedule><log-setting>lf-default</log-setting></entry>
+              </rules>
+            </security>
+          </rulebase>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

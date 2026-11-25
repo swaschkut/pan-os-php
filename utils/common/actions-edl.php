@@ -671,3 +671,128 @@ EDLCallContext::$supportedActions[] = array(
         'mode' => array('type' => 'string', 'default' => 'skipIfConflict', 'choices' => array('skipIfConflict', 'removeIfMatch'))
     ),
 );
+// <editor-fold desc=" ***** EDL fields (offline) *****" defaultstate="collapsed" >
+// the source URL and every text: the aliases $$comma$$ $$colon$$ $$forwardslash$$ $$pipe$$ (':' '/' ',' separate actions / arguments)
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'type-set',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $src = $a['source'] === '*nodefault*' ? '' : PH::textAliases( $a['source'] );
+            $o->editTypeSet( $a['type'], $src );
+            return "type '" . $o->type() . "', source '" . $o->url() . "'";
+        } );
+    },
+    'args' => array(
+        'type' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => EDL::EDL_TYPES ),
+        'source' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'needed when the source does not fit the new type (URL / name of a predefined list)' ),
+    ),
+    'help' => "the type of the list: ip, domain, url, imsi, imei, predefined-ip, predefined-url. Example: 'actions=type-set:domain' or " .
+        "'actions=type-set:predefined-ip,panw-bulletproof-ip-list'"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'source-set',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $o->editSourceSet( PH::textAliases( $a['source'] ) );
+            return "source '" . $o->url() . "'";
+        } );
+    },
+    'args' => array( 'source' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "the URL of the list (predefined types: the name of the predefined list). ':' and '/' as aliases. Example: " .
+        "'actions=source-set:https\$\$colon\$\$\$\$forwardslash\$\$\$\$forwardslash\$\$lists.example.com\$\$forwardslash\$\$ip.txt'"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'recurring-set',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $at = $a['at'] === '*nodefault*' ? '' : (string)$a['at'];
+            $day = $a['day'] === '*nodefault*' ? '' : (string)$a['day'];
+            $o->editRecurringSet( $a['interval'], $at, $day );
+            return "update '" . $a['interval'] . "'" . ( $at !== '' ? ' at ' . $at : '' ) . ( $day !== '' ? ', day ' . $day : '' );
+        } );
+    },
+    'args' => array(
+        'interval' => array( 'type' => 'string', 'default' => '*nodefault*', 'choices' => EDL::EDL_RECURRING ),
+        'at' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'daily / weekly / monthly: the hour 0-23' ),
+        'day' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'weekly: monday … sunday; monthly: 1-31' ),
+    ),
+    'help' => "how often the firewall reads the list. Example: 'actions=recurring-set:hourly', 'actions=recurring-set:weekly,3,monday'"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'description-set',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $text = $a['description'] === '*nodefault*' ? '' : PH::textAliases( (string)$a['description'] );
+            $o->editDescriptionSet( $text );
+            return "description '" . $text . "'";
+        } );
+    },
+    'args' => array( 'description' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "the description of the list (empty: removed); in the type element of the EDL"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'certificate-profile-set',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $o->editCertificateProfileSet( (string)$a['profile'] );
+            return "certificate profile '" . $a['profile'] . "'";
+        } );
+    },
+    'args' => array( 'profile' => array( 'type' => 'string', 'default' => '*nodefault*', 'help' => 'name of the certificate profile, none: removed' ) ),
+    'help' => "the certificate profile that checks the server of an https source. Example: 'actions=certificate-profile-set:none'"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'exception-add',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $o->editExceptionAdd( PH::textAliases( (string)$a['entry'] ) );
+            return "exception '" . PH::textAliases( (string)$a['entry'] ) . "' added";
+        } );
+    },
+    'args' => array( 'entry' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "an entry of the list the firewall ignores (IP, domain, URL). Example: 'actions=exception-add:192.0.2.10'"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'exception-remove',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $o->editExceptionRemove( PH::textAliases( (string)$a['entry'] ) );
+            return "exception '" . PH::textAliases( (string)$a['entry'] ) . "' removed";
+        } );
+    },
+    'args' => array( 'entry' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "removes an entry of the exception list"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'expand-domain-set',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $o->editExpandDomainSet( (bool)$a['enable'] );
+            return "expand domain " . ( $a['enable'] ? 'yes' : 'no' );
+        } );
+    },
+    'args' => array( 'enable' => array( 'type' => 'bool', 'default' => '*nodefault*' ) ),
+    'help' => "type domain: also the subdomains of every entry. Example: 'actions=expand-domain-set:true'"
+);
+
+EDLCallContext::$supportedActions[] = array(
+    'name' => 'name-rename',
+    'MainFunction' => function (EDLCallContext $context) {
+        $context->runEdit( function( EDL $o, $a ) {
+            $old = $o->name();
+            $n = $o->editRename( (string)$a['newname'] );
+            return "renamed '" . $old . "' -> '" . $o->name() . "' (users updated: " . $n . ")";
+        } );
+    },
+    'args' => array( 'newname' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "renames the list and every rule that uses it (as source / destination)"
+);
+// </editor-fold>

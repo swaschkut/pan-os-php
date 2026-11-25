@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared/>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <profiles>
+            <virus>
+              <entry name="av-1"><decoder><entry name="http"><action>default</action><wildfire-action>default</wildfire-action><mlav-action>default</mlav-action></entry><entry name="smtp"><action>default</action><wildfire-action>default</wildfire-action><mlav-action>default</mlav-action></entry></decoder></entry>
+            </virus>
+            <spyware>
+              <entry name="as-1"><rules><entry name="r-critical"><threat-name>any</threat-name><category>any</category><severity><member>critical</member></severity><action><default/></action><packet-capture>disable</packet-capture></entry></rules></entry>
+            </spyware>
+            <vulnerability>
+              <entry name="vp-1"><rules><entry name="r-all"><threat-name>any</threat-name><category>any</category><severity><member>any</member></severity><host>any</host><cve><member>any</member></cve><vendor-id><member>any</member></vendor-id><action><default/></action><packet-capture>disable</packet-capture></entry></rules></entry>
+            </vulnerability>
+            <url-filtering>
+              <entry name="url-1"><alert><member>news</member></alert><block><member>malware</member></block></entry>
+            </url-filtering>
+            <file-blocking>
+              <entry name="fb-1"><rules><entry name="log-all"><application><member>any</member></application><file-type><member>any</member></file-type><direction>both</direction><action>alert</action></entry></rules></entry>
+            </file-blocking>
+            <wildfire-analysis>
+              <entry name="wf-1"><rules><entry name="all"><application><member>any</member></application><file-type><member>any</member></file-type><direction>both</direction><analysis>public-cloud</analysis></entry></rules></entry>
+            </wildfire-analysis>
+          </profiles>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

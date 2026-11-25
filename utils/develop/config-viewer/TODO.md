@@ -17,10 +17,7 @@ State 2026-11-25 (`alpha` up to `405cac7a`).
 |---|---|
 | NAT: persistent dynamic IP, DNAT distribution, interface IP as an object, service, destination interface, NAT type | not in `snat-set` / `dnat-set` yet |
 | zone: remove the zone protection profile, user-ID ACLs (include / exclude) | an action for them; yes / no fields show no current value |
-| EDL: type, source, recurring, certificate profile, exception list, expand domain | only name actions, `delete`, `move` |
-| schedule: type, recurring daily / weekly, non-recurring entries | only name actions, `delete` |
-| log forwarding: match lists (log type, filter, send to syslog / e-mail / HTTP / SNMP / panorama) | only `create`, `delete`, `move` |
-| security profiles: the single fields of a profile (rules / exceptions per type) | `alert-only-set`, `best-practice-set` and a few per-type actions only |
+| security profiles: data filtering, DNS security (SCM), virus-and-wildfire-analysis (SCM), action block-ip (track by / duration) | not in `detail-entry-*` yet |
 | other rule types: PBF, decryption, application override, authentication, DoS, QoS, tunnel inspection, SD-WAN | their own fields (actions of type=rule for the common fields only) |
 | interface: mode (layer3 / layer2 / virtual wire / tap), IPv6 | an action for them |
 | routing protocols (BGP, OSPF, RIP, multicast, redistribution) | none |
@@ -33,6 +30,12 @@ of type)~~, ~~`description-set` (address, service, rule, tag, …)~~, ~~address 
 renamed)~~, ~~network types: interface, zone protection, interface management profile, IKE / IPSec, GRE, DHCP, virtual
 wire, routing, static route, GlobalProtect portal / gateway (field actions)~~; read only for good: tmp objects,
 predefined objects (location `predefined`), GlobalProtect gateway tunnels, threats, threat rules, DNS rules.
+Built 2026-11-25: ~~EDL `type-set`, `source-set`, `recurring-set`, `description-set`, `certificate-profile-set`,
+`exception-add` / `-remove`, `expand-domain-set`, `name-rename`~~, ~~schedule `range-add` / `range-remove` / `type-set`,
+`name-rename`~~, ~~log forwarding `match-add` / `-remove` / `-set`, `match-send-add` / `-remove`, `description-set`,
+`enhanced-application-logging-set`, `name-rename` (rules / zones)~~, ~~security profiles `detail-entry-add` / `-remove` /
+`-set` (antivirus decoders / exceptions, anti-spyware and vulnerability rules / threat exceptions / DNS categories,
+file blocking and WildFire rules), `detail-option-set`, `url.credential-action-set`~~ (`SecurityProfileFields`).
 
 ### 1.1b References pan-os-php does not count yet
 
@@ -48,10 +51,10 @@ predefined objects (location `predefined`), GlobalProtect gateway tunnels, threa
 
 | pan-os-php has change actions - only the window is missing | pan-os-php has no change action |
 |---|---|
-| EDL, schedule (name actions; field actions: 1.1) | certificates, certificate profiles |
-| security profiles (62 actions, e.g. `alert-only-set`, `best-practice-set`) | SSL/TLS service profiles |
+| EDL, schedule (field actions 2026-11-25) | certificates, certificate profiles |
+| security profiles (`alert-only-set`, `best-practice-set`, `detail-*`) | SSL/TLS service profiles |
 | security profile groups (`securityprofile-set` / `-remove`) | |
-| log forwarding, application (create / delete / move) | |
+| log forwarding (match list 2026-11-25), application (create / delete / move) | |
 | device (41 actions) | |
 
 Built 2026-11-24: windows of the network types (interfaces, zone protection / interface management profiles, IKE /

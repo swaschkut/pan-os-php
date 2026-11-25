@@ -348,6 +348,168 @@ class Schedule
         return TRUE;
     }
 
+    // ------------------------------------------------------------------------------------------------- edit (offline)
+
+    const SCHEDULE_DAYS = array( 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' );
+
+    /**
+     * a time range of the schedule type, normalised: daily / weekly 'HH:MM-HH:MM' (also 'HHMM-HHMM'),
+     * non-recurring 'YYYY/MM/DD@HH:MM-YYYY/MM/DD@HH:MM' (also 'YYYYMMDD@HHMM-YYYYMMDD@HHMM'); the aliases
+     * $$colon$$ / $$forwardslash$$ are replaced before
+     */
+    static public function normaliseRange( string $type, string $range ): string
+    {
+        $range = trim( PH::textAliases( $range ) );
+        if( $type === 'non-recurring' )
+        {
+            if( preg_match( '#^(\d{4})/?(\d{2})/?(\d{2})@(\d{2}):?(\d{2})-(\d{4})/?(\d{2})/?(\d{2})@(\d{2}):?(\d{2})$#', $range, $m ) )
+            {
+                $a = sprintf( '%s/%s/%s@%s:%s', $m[1], $m[2], $m[3], $m[4], $m[5] );
+                $b = sprintf( '%s/%s/%s@%s:%s', $m[6], $m[7], $m[8], $m[9], $m[10] );
+                $ta = DateTime::createFromFormat( '!Y/m/d@H:i', $a );
+                $tb = DateTime::createFromFormat( '!Y/m/d@H:i', $b );
+                if( $ta !== FALSE && $tb !== FALSE && $ta->format( 'Y/m/d@H:i' ) === $a && $tb->format( 'Y/m/d@H:i' ) === $b )
+                {
+                    if( $ta >= $tb )
+                        throw new Exception( "range '" . $range . "': the start must be before the end" );
+                    return $a . '-' . $b;
+                }
+            }
+            throw new Exception( "range '" . $range . "': YYYY/MM/DD@HH:MM-YYYY/MM/DD@HH:MM (or YYYYMMDD@HHMM-YYYYMMDD@HHMM)" );
+        }
+        if( preg_match( '/^([01][0-9]|2[0-3]):?([0-5][0-9])-([01][0-9]|2[0-3]):?([0-5][0-9])$/', $range, $m ) )
+        {
+            if( $m[1] . $m[2] === $m[3] . $m[4] )
+                throw new Exception( "range '" . $range . "': start and end are the same" );
+            return $m[1] . ':' . $m[2] . '-' . $m[3] . ':' . $m[4];
+        }
+        throw new Exception( "range '" . $range . "': HH:MM-HH:MM (or HHMM-HHMM)" );
+    }
+
+    /** every range of the schedule: list of 'type', 'day' (weekly), 'range' */
+    public function ranges(): array
+    {
+        $out = array();
+        foreach( $this->recurring_array['daily'] ?? array() as $e )
+            $out[] = array( 'type' => 'daily', 'day' => null, 'range' => $e['start'] . '-' . $e['end'] );
+        foreach( $this->recurring_array['weekly'] ?? array() as $day => $list )
+            foreach( $list as $e )
+                $out[] = array( 'type' => 'weekly', 'day' => $day, 'range' => $e['start'] . '-' . $e['end'] );
+        foreach( $this->recurring_array['non-recurring'] ?? array() as $e )
+            $out[] = array( 'type' => 'non-recurring', 'day' => null, 'range' => $e['start'] . '-' . $e['end'] );
+        return $out;
+    }
+
+    private function checkEditable(): void
+    {
+        if( $this->isTmp() )
+            throw new Exception( 'a tmp object can not be changed' );
+    }
+
+    static private function checkType( string $type, string $day ): string
+    {
+        if( !in_array( $type, array( 'daily', 'weekly', 'non-recurring' ), TRUE ) )
+            throw new Exception( "type '" . $type . "': daily, weekly or non-recurring" );
+        $day = strtolower( $day );
+        if( $type === 'weekly' && !in_array( $day, self::SCHEDULE_DAYS, TRUE ) )
+            throw new Exception( "day '" . $day . "': " . implode( ', ', self::SCHEDULE_DAYS ) );
+        return $type === 'weekly' ? $day : '';
+    }
+
+    /** the XML from the list of ranges (one type), then read again */
+    private function writeRanges( string $type, array $ranges ): void
+    {
+        $st = DH::findFirstElementOrCreate( 'schedule-type', $this->xmlroot );
+        DH::clearDomNodeChilds( $st );
+        if( $type === 'non-recurring' )
+        {
+            $n = DH::createElement( $st, 'non-recurring' );
+            foreach( $ranges as $r )
+                DH::createElement( $n, 'member', $r['range'] );
+        }
+        else
+        {
+            $n = DH::createElement( DH::createElement( $st, 'recurring' ), $type );
+            if( $type === 'daily' )
+                foreach( $ranges as $r )
+                    DH::createElement( $n, 'member', $r['range'] );
+            else
+                foreach( self::SCHEDULE_DAYS as $day )
+                {
+                    $list = array_values( array_filter( $ranges, function( $r ) use ( $day ) { return $r['day'] === $day; } ) );
+                    if( count( $list ) == 0 )
+                        continue;
+                    $d = DH::createElement( $n, $day );
+                    foreach( $list as $r )
+                        DH::createElement( $d, 'member', $r['range'] );
+                }
+        }
+        $this->recurring_type = null;
+        $this->recurring_array = array();
+        $this->load_from_domxml( $this->xmlroot );
+    }
+
+    /** name-rename: the object and every user that names it (references) */
+    public function editRename( string $newName ): int
+    {
+        if( $this->isTmp() )
+            throw new Exception( 'a tmp object can not be changed' );
+        if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/', $newName ) )
+            throw new Exception( "name '" . $newName . "': 1-31 characters, letters, digits, blank, . _ -" );
+        if( $newName === $this->name() )
+            throw new Exception( 'the name is the same' );
+        if( $this->owner->find( $newName, null, FALSE ) !== null )
+            throw new Exception( "'" . $newName . "' exists already" );
+        $this->setName( $newName );
+        return count( $this->getReferences() );
+    }
+
+    /** a range more (same type as the schedule has) */
+    public function editRangeAdd( string $type, string $day, string $range ): string
+    {
+        $this->checkEditable();
+        $day = self::checkType( $type, $day );
+        $range = self::normaliseRange( $type, $range );
+        $current = $this->recurring_type;
+        if( $current !== null && $current !== $type )
+            throw new Exception( 'the schedule is ' . $current . ' - type-set to change the type' );
+        $list = $this->ranges();
+        foreach( $list as $r )
+            if( $r['day'] === ( $day === '' ? null : $day ) && $r['range'] === $range )
+                throw new Exception( "'" . $range . "' is set already" );
+        $list[] = array( 'type' => $type, 'day' => $day === '' ? null : $day, 'range' => $range );
+        $this->writeRanges( $type, $list );
+        return $range;
+    }
+
+    /** a range less - the last one stays (PAN-OS needs one) */
+    public function editRangeRemove( string $type, string $day, string $range ): string
+    {
+        $this->checkEditable();
+        $day = self::checkType( $type, $day );
+        $range = self::normaliseRange( $type, $range );
+        $list = $this->ranges();
+        $kept = array_values( array_filter( $list, function( $r ) use ( $type, $day, $range ) {
+            return !( $r['type'] === $type && $r['day'] === ( $day === '' ? null : $day ) && $r['range'] === $range );
+        } ) );
+        if( count( $kept ) == count( $list ) )
+            throw new Exception( "'" . $range . "' is not set" );
+        if( count( $kept ) == 0 )
+            throw new Exception( 'the last range of a schedule can not be removed' );
+        $this->writeRanges( $type, $kept );
+        return $range;
+    }
+
+    /** type-set: the schedule type with one range (every other range goes) */
+    public function editTypeSet( string $type, string $day, string $range ): string
+    {
+        $this->checkEditable();
+        $day = self::checkType( $type, $day );
+        $range = self::normaliseRange( $type, $range );
+        $this->writeRanges( $type, array( array( 'type' => $type, 'day' => $day === '' ? null : $day, 'range' => $range ) ) );
+        return $range;
+    }
+
 
     public function getRecurring()
     {

@@ -646,6 +646,9 @@
             }
         },
         "edl": {
+            "certificate-profile-set": {
+                "class": "change"
+            },
             "delete": {
                 "class": "change"
             },
@@ -655,11 +658,23 @@
             "deleteforce": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
             "displayreferences": {
                 "class": "read"
+            },
+            "exception-add": {
+                "class": "change"
+            },
+            "exception-remove": {
+                "class": "change"
+            },
+            "expand-domain-set": {
+                "class": "change"
             },
             "exporttoexcel": {
                 "class": "writes-file",
@@ -684,6 +699,9 @@
             "name-removesuffix": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "name-tolowercase": {
                 "class": "change"
             },
@@ -691,6 +709,15 @@
                 "class": "change"
             },
             "name-touppercase": {
+                "class": "change"
+            },
+            "recurring-set": {
+                "class": "change"
+            },
+            "source-set": {
+                "class": "change"
+            },
+            "type-set": {
                 "class": "change"
             }
         },
@@ -1069,11 +1096,17 @@
             "delete": {
                 "class": "change"
             },
+            "description-set": {
+                "class": "change"
+            },
             "display": {
                 "class": "read"
             },
             "displayreferences": {
                 "class": "read"
+            },
+            "enhanced-application-logging-set": {
+                "class": "change"
             },
             "exporttoexcel": {
                 "class": "writes-file",
@@ -1083,7 +1116,25 @@
                 "class": "writes-file",
                 "file_arg": 0
             },
+            "match-add": {
+                "class": "change"
+            },
+            "match-remove": {
+                "class": "change"
+            },
+            "match-send-add": {
+                "class": "change"
+            },
+            "match-send-remove": {
+                "class": "change"
+            },
+            "match-set": {
+                "class": "change"
+            },
             "move": {
+                "class": "change"
+            },
+            "name-rename": {
                 "class": "change"
             }
         },
@@ -1652,6 +1703,9 @@
             "name-removesuffix": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "name-tolowercase": {
                 "class": "change"
             },
@@ -1661,7 +1715,16 @@
             "name-touppercase": {
                 "class": "change"
             },
+            "range-add": {
+                "class": "change"
+            },
+            "range-remove": {
+                "class": "change"
+            },
             "replacewithobject": {
+                "class": "change"
+            },
+            "type-set": {
                 "class": "change"
             }
         },
@@ -1694,6 +1757,18 @@
                 "class": "change"
             },
             "description-set": {
+                "class": "change"
+            },
+            "detail-entry-add": {
+                "class": "change"
+            },
+            "detail-entry-remove": {
+                "class": "change"
+            },
+            "detail-entry-set": {
+                "class": "change"
+            },
+            "detail-option-set": {
                 "class": "change"
             },
             "display": {
@@ -1796,6 +1871,9 @@
                 "class": "change"
             },
             "url.best-practice-set": {
+                "class": "change"
+            },
+            "url.credential-action-set": {
                 "class": "change"
             },
             "url.credential-enforcement.alert-only-set": {

@@ -25,6 +25,7 @@ class LogProfile
     use AddressCommon;
     use PathableName;
     use XmlConvertible;
+    use ObjectWithDescription;
 
     /** @var LogProfileStore|null */
     public $owner = null;
@@ -144,6 +145,9 @@ class LogProfile
 
         if( strlen($this->name) < 1 )
             derr("LogProfile name '" . $this->name . "' is not valid.", $xml);
+
+        $tmp_description = DH::findFirstElement('description', $xml);
+        $this->_description = $tmp_description !== FALSE ? $tmp_description->textContent : null;
 
 
         $tmp_match_list_node = DH::findFirstElement('match-list', $xml);
@@ -326,6 +330,206 @@ class LogProfile
     public function recurring()
     {
         return $this->recurring;
+    }
+
+    // ------------------------------------------------------------------------------------------------- edit (offline)
+
+    const MATCH_SEND = array( 'syslog' => 'send-syslog', 'email' => 'send-email', 'http' => 'send-http', 'snmptrap' => 'send-snmptrap' );
+
+    /** the match list: name => 'log-type', 'filter', 'send-to-panorama', 'quarantine', 'syslog' / 'email' / 'http' / 'snmptrap' (lists) */
+    public function matchList(): array
+    {
+        $out = array();
+        $ml = $this->xmlroot === null ? FALSE : DH::findFirstElement( 'match-list', $this->xmlroot );
+        if( $ml === FALSE )
+            return $out;
+        foreach( $ml->childNodes as $e )
+        {
+            if( $e->nodeType != XML_ELEMENT_NODE )
+                continue;
+            $m = array();
+            foreach( array( 'log-type', 'filter', 'send-to-panorama', 'quarantine' ) as $tag )
+            {
+                $n = DH::findFirstElement( $tag, $e );
+                $m[$tag] = $n === FALSE ? '' : $n->textContent;
+            }
+            foreach( self::MATCH_SEND as $k => $tag )
+            {
+                $m[$k] = array();
+                $n = DH::findFirstElement( $tag, $e );
+                if( $n !== FALSE )
+                    foreach( $n->childNodes as $c )
+                        if( $c->nodeType == XML_ELEMENT_NODE )
+                            $m[$k][] = $c->textContent;
+            }
+            $out[$e->getAttribute( 'name' )] = $m;
+        }
+        return $out;
+    }
+
+    private function matchNode( string $name ): DOMElement
+    {
+        if( $this->isTmp() )
+            throw new Exception( 'a tmp object can not be changed' );
+        $ml = DH::findFirstElement( 'match-list', $this->xmlroot );
+        if( $ml !== FALSE )
+            foreach( $ml->childNodes as $e )
+                if( $e->nodeType == XML_ELEMENT_NODE && $e->getAttribute( 'name' ) === $name )
+                    return $e;
+        throw new Exception( "match list entry '" . $name . "' not found" );
+    }
+
+    /** read the XML again (the arrays of the match list) */
+    private function reloadMatchList(): void
+    {
+        $this->type = array();
+        foreach( $this->type_available ?? array() as $t )
+            $this->type[$t] = array( 'notSet' => '--' );
+        $this->load_from_domxml( $this->xmlroot );
+    }
+
+    private function checkLogType( string $logType ): void
+    {
+        $ok = array_merge( $this->type_available ?? array(), array( 'gtp', 'sctp' ) );
+        if( !in_array( $logType, $ok, TRUE ) )
+            throw new Exception( "log type '" . $logType . "': " . implode( ', ', $ok ) );
+    }
+
+    static private function checkFilter( string $filter ): void
+    {
+        if( $filter === '' || strlen( $filter ) > 2047 || preg_match( '/[\x00-\x1F]/', $filter ) )
+            throw new Exception( 'filter: 1-2047 characters ("All Logs" or a log filter like (severity geq high))' );
+        if( $filter !== 'All Logs' && substr_count( $filter, '(' ) !== substr_count( $filter, ')' ) )
+            throw new Exception( "filter '" . $filter . "': the brackets do not match" );
+    }
+
+    static private function checkEntryName( string $name ): void
+    {
+        if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/', $name ) )
+            throw new Exception( "name '" . $name . "': 1-31 characters, letters, digits, blank, . _ -" );
+    }
+
+    /** match-add: a match list entry (log type, filter, send to panorama) */
+    public function editMatchAdd( string $name, string $logType, string $filter = 'All Logs', bool $panorama = FALSE ): void
+    {
+        if( $this->isTmp() )
+            throw new Exception( 'a tmp object can not be changed' );
+        self::checkEntryName( $name );
+        $this->checkLogType( $logType );
+        self::checkFilter( $filter );
+        if( isset( $this->matchList()[$name] ) )
+            throw new Exception( "match list entry '" . $name . "' exists already" );
+        $ml = DH::findFirstElementOrCreate( 'match-list', $this->xmlroot );
+        $e = DH::createElement( $ml, 'entry' );
+        $e->setAttribute( 'name', $name );
+        DH::createElement( $e, 'log-type', $logType );
+        DH::createElement( $e, 'filter', $filter );
+        DH::createElement( $e, 'send-to-panorama', $panorama ? 'yes' : 'no' );
+        $this->reloadMatchList();
+    }
+
+    public function editMatchRemove( string $name ): void
+    {
+        $e = $this->matchNode( $name );
+        $e->parentNode->removeChild( $e );
+        $this->reloadMatchList();
+    }
+
+    /** match-set: one field of an entry - log-type, filter, send-to-panorama (yes / no), quarantine (yes / no) */
+    public function editMatchSet( string $name, string $field, string $value ): void
+    {
+        $e = $this->matchNode( $name );
+        if( $field === 'log-type' )
+            $this->checkLogType( $value );
+        elseif( $field === 'filter' )
+            self::checkFilter( $value );
+        elseif( in_array( $field, array( 'send-to-panorama', 'quarantine' ), TRUE ) )
+        {
+            if( !in_array( $value, array( 'yes', 'no' ), TRUE ) )
+                throw new Exception( $field . ': yes or no' );
+        }
+        else
+            throw new Exception( "field '" . $field . "': log-type, filter, send-to-panorama, quarantine" );
+        $n = DH::findFirstElement( $field, $e );
+        if( $n !== FALSE && $n->textContent === $value )
+            throw new Exception( $field . ' is ' . $value . ' already' );
+        if( $n === FALSE )
+            $n = DH::createElement( $e, $field );
+        DH::setDomNodeText( $n, $value );
+        $this->reloadMatchList();
+    }
+
+    /** match-send-add / -remove: a server profile (syslog, email, http, snmptrap) of an entry */
+    public function editMatchSend( string $name, string $kind, string $profile, bool $add ): void
+    {
+        $e = $this->matchNode( $name );
+        if( !isset( self::MATCH_SEND[$kind] ) )
+            throw new Exception( "kind '" . $kind . "': " . implode( ', ', array_keys( self::MATCH_SEND ) ) );
+        if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,62}$/', $profile ) )
+            throw new Exception( "server profile '" . $profile . "': a name" );
+        $have = $this->matchList()[$name][$kind];
+        if( $add && in_array( $profile, $have, TRUE ) )
+            throw new Exception( "'" . $profile . "' is set already" );
+        if( !$add && !in_array( $profile, $have, TRUE ) )
+            throw new Exception( "'" . $profile . "' is not set" );
+        $tag = self::MATCH_SEND[$kind];
+        $list = DH::findFirstElementOrCreate( $tag, $e );
+        if( $add )
+            DH::createElement( $list, 'member', $profile );
+        else
+        {
+            foreach( iterator_to_array( $list->childNodes ) as $c )
+                if( $c->nodeType == XML_ELEMENT_NODE && $c->textContent === $profile )
+                    $list->removeChild( $c );
+            if( DH::firstChildElement( $list ) === FALSE )
+                $e->removeChild( $list );
+        }
+        $this->reloadMatchList();
+    }
+
+    /** enhanced-application-logging-set: yes / no */
+    public function editEnhancedLoggingSet( bool $yes ): void
+    {
+        if( $this->isTmp() )
+            throw new Exception( 'a tmp object can not be changed' );
+        $v = $yes ? 'yes' : 'no';
+        $n = DH::findFirstElement( 'enhanced-application-logging', $this->xmlroot );
+        if( ( $n === FALSE ? 'no' : $n->textContent ) === $v )
+            throw new Exception( 'enhanced application logging is ' . $v . ' already' );
+        if( $n === FALSE )
+            $n = DH::createElement( $this->xmlroot, 'enhanced-application-logging' );
+        DH::setDomNodeText( $n, $v );
+        $this->enhanced_application_logging = $v;
+    }
+
+    /**
+     * name-rename: the profile and every rule / zone that names it (rules and zones keep the name as text)
+     * @return int the users updated
+     */
+    public function editRename( string $newName ): int
+    {
+        if( $this->isTmp() )
+            throw new Exception( 'a tmp object can not be changed' );
+        if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,62}$/', $newName ) )
+            throw new Exception( "name '" . $newName . "': 1-63 characters, letters, digits, blank, . _ -" );
+        if( $newName === $this->name() )
+            throw new Exception( 'the name is the same' );
+        if( $this->owner->find( $newName ) !== null )
+            throw new Exception( "a log forwarding profile '" . $newName . "' exists already" );
+        $old = $this->name();
+        $users = $this->getReferences();
+        $this->setName( $newName );
+        $n = 0;
+        foreach( $users as $u )
+        {
+            $current = $u instanceof Zone ? $u->logsetting : ( method_exists( $u, 'logSetting' ) ? $u->logSetting() : null );
+            if( $current === $old && method_exists( $u, 'setLogSetting' ) )
+            {
+                $u->setLogSetting( $newName );
+                $n++;
+            }
+        }
+        return $n;
     }
 
     public function add_log_filter( $logType, $name, $filter = "All Logs", $sendToPanorama = true )
