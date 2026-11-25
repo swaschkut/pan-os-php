@@ -285,6 +285,12 @@ trait MergerEngine
                     if( $safety !== null && $this->mergeSafetyBlocks( $safety->checkPlace( $pickedObject, $store ), $index, $pickedObject, $pickedObject ) )
                         continue;
 
+                    // an address with tags created at the parent location: no dynamic address group there or below
+                    // may get it as a new member (more traffic)
+                    if( $pickedObject instanceof Address && $pickedObject->tags->count() > 0
+                        && $this->dagGainBlocks( $pickedObject, self::tagNamesOf( $pickedObject ), $store->owner, $index ) )
+                        continue;
+
                     $suffixHook = $this->mergeHook($spec, 'createMessageSuffix');
                     PH::print_stdout( "   * create object in DG: '".$tmp_DG_name."' : '".$tmpPickedName."'" . ( $suffixHook !== null ? $suffixHook( $pickedObject ) : "" ) );
 
@@ -1341,6 +1347,11 @@ trait MergerEngine
         };
         // TRUE = merging must not happen ("|| is needed, to not change the existing traffic flow")
         $tagBlocks = function( $object, $other, $index ) {
+            // $other is kept and gets the tags of $object: no dynamic address group at its location or below may get
+            // it as a new member (more traffic)
+            if( $object->tags->count() > 0 && $other instanceof Address && isset( $other->owner->owner )
+                && $this->dagGainBlocks( $other, self::tagNamesOf( $other, $object ), $other->owner->owner, $index, $object ) )
+                return TRUE;
             if( $object->tags->count() > 0 || $other->tags->count() > 0 )
             {
                 if( $this->address_tag_DAG_check( $object, $other, $index) )
@@ -3537,6 +3548,128 @@ trait MergerEngine
         }
 
         return TRUE;
+    }
+
+    /** the tag names of address objects (union) */
+    private static function tagNamesOf( ...$objects ): array
+    {
+        $names = array();
+        foreach( $objects as $o )
+            if( is_object( $o ) && isset( $o->tags ) )
+                foreach( $o->tags->getAll() as $t )
+                    $names[is_object( $t ) ? $t->name() : (string)$t] = TRUE;
+        return array_keys( $names );
+    }
+
+    /** the location and every location below it (device groups / virtual systems / containers) */
+    private static function locationsAtAndBelow( $location ): array
+    {
+        $out = array( $location );
+        $below = array();
+        if( $location instanceof DeviceGroup )
+            $below = $location->childDeviceGroups( TRUE );
+        elseif( $location instanceof Container )
+            $below = $location->childContainers( TRUE );
+        elseif( $location instanceof PanoramaConf )
+            $below = $location->getDeviceGroups();
+        elseif( $location instanceof PANConf )
+            $below = $location->getVirtualSystems();
+        elseif( method_exists( $location, 'getContainers' ) )
+            $below = array_merge( $location->getContainers(), method_exists( $location, 'getDeviceClouds' ) ? $location->getDeviceClouds() : array() );
+        foreach( $below as $l )
+            if( is_object( $l ) && !in_array( $l, $out, TRUE ) )
+                $out[] = $l;
+        return $out;
+    }
+
+    /**
+     * does the filter of a dynamic address group take an address with these tags? Not decidable (a filter not only
+     * about tags): TRUE - the safe answer
+     */
+    private static function dagFilterMatchesTags( AddressGroup $dag, array $tagNames ): bool
+    {
+        $filter = is_string( $dag->filter ) ? trim( $dag->filter ) : '';
+        if( $filter === '' )
+            return FALSE;
+        $stub = new class( $tagNames ) {
+            public $tags;
+            public $name = '';
+            public function __construct( array $names )
+            {
+                $this->tags = new class( $names ) {
+                    private $names;
+                    public $parentCentralStore;
+                    public function __construct( array $names )
+                    {
+                        $this->names = $names;
+                        $this->parentCentralStore = new class { public function find( $n ) { return null; } };
+                    }
+                    public function hasTag( $tag, $caseSensitive = TRUE )
+                    {
+                        $n = is_object( $tag ) ? $tag->name() : (string)$tag;
+                        $alt = $n;
+                        TAG::revertreplaceNamewith( $alt );
+                        foreach( $this->names as $x )
+                            if( $caseSensitive ? ( $x === $n || $x === $alt ) : ( strcasecmp( $x, $n ) == 0 || strcasecmp( $x, $alt ) == 0 ) )
+                                return TRUE;
+                        return FALSE;
+                    }
+                    public function count() { return count( $this->names ); }
+                };
+            }
+            public function isRegion() { return FALSE; }
+            public function name() { return $this->name; }
+        };
+        try
+        {
+            $rq = new RQuery( 'address' );
+            $err = '';
+            if( $rq->parseFromString( $filter, $err ) === FALSE )
+                return TRUE;
+            return $rq->matchSingleObject( array( 'object' => $stub, 'nestedQueries' => array() ) ) === TRUE;
+        }
+        catch( Throwable $e )
+        {
+            return TRUE;
+        }
+    }
+
+    /**
+     * An address with the value of $object and the tags $tagNames at $location (created there, moved there or kept
+     * there with more tags): does a dynamic address group at $location or below get it as a NEW member - its members
+     * had no object with this value before? Then the merge would allow more traffic: SKIP (TRUE).
+     */
+    private function dagGainBlocks( $object, array $tagNames, $location, $index, $other = null ): bool
+    {
+        if( $tagNames === array() || !is_object( $location ) )
+            return FALSE;
+        $map = $object->getIP4Mapping();
+        foreach( self::locationsAtAndBelow( $location ) as $loc )
+        {
+            if( !isset( $loc->addressStore ) || !is_object( $loc->addressStore ) )
+                continue;
+            foreach( $loc->addressStore->addressGroups() as $dag )
+            {
+                if( !$dag->isDynamic() || !self::dagFilterMatchesTags( $dag, $tagNames ) )
+                    continue;
+                $member = FALSE;
+                foreach( $dag->members() as $m )
+                    if( is_object( $m ) && method_exists( $m, 'getIP4Mapping' ) && $m->getIP4Mapping()->equals( $map ) )
+                    {
+                        $member = TRUE;
+                        break;
+                    }
+                if( $member )
+                    continue;
+                $locName = method_exists( $location, 'name' ) && $location->name() !== '' ? $location->name() : 'shared';
+                $dagLoc = $loc->name() === '' ? 'shared' : $loc->name();
+                $text = "    - SKIP-DAG: '{$object->_PANC_shortName()}' with tags [" . implode( ', ', $tagNames ) . "] at '{$locName}' would become a new member of the dynamic address group '{$dag->name()}' in '{$dagLoc}' (filter {$dag->filter}) - more traffic";
+                PH::print_stdout( $text );
+                $this->skippedObject( $index, $object, $other !== null ? $other : $dag, "new member of dynamic address group '{$dag->name()}' in '{$dagLoc}'" );
+                return TRUE;
+            }
+        }
+        return FALSE;
     }
 
     function address_tag_DAG_check( $pickedObject, $ancestor, $index)
