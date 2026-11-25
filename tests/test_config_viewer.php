@@ -1330,8 +1330,13 @@ $r = $alice->call( 'GET', $R . '/configs/' . $scmc . '/locations' );
 if( ( $r[1]['config'] ?? '' ) !== 'scm' ) print "SCM locations: " . json_encode( $r ) . " cid " . json_encode( $scmc ) . "\n";
 $kinds = array_values( array_unique( array_column( $r[1]['locations'] ?? array(), 'kind' ) ) );
 sort( $kinds );
-eq( array( $r[1]['config'] ?? null, $kinds, in_array( 'All', array_column( $r[1]['locations'] ?? array(), 'name' ), TRUE ) ), array( 'scm', array( 'container', 'snippet' ), TRUE ),
-    'locations: SCM - containers (folders) and snippets' );
+$scmNames = array_column( $r[1]['locations'] ?? array(), 'name' );
+eq( array( $r[1]['config'] ?? null, $kinds, in_array( 'All', $scmNames, TRUE ),
+        count( array_intersect( array( 'Mobile Users', 'Mobile Users Explicit Proxy', 'Remote Networks', 'Service Connections' ), $scmNames ) ) ),
+    array( 'scm', array( 'cloud', 'container', 'on-prem', 'snippet' ), TRUE, 4 ),
+    'locations: SCM - containers (folders), Prisma Access folders (clouds: Mobile Users, Remote Networks, …), on-prem firewalls and snippets' );
+$rn = $alice->call( 'GET', $R . '/configs/' . $scmc . '/objects?type=address&location=' . rawurlencode( 'Remote Networks' ) );
+eq( status( $rn ), 200, 'SCM: objects of a Prisma Access folder (Remote Networks)' );
 foreach( array( $fwc, $scmc ) as $x )
     $alice->call( 'DELETE', $R . '/configs/' . $x );
 $nf = $meta['address']['filters'] ?? array();

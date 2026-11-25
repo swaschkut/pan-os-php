@@ -82,6 +82,7 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* config-viewer | SCM: the location choice listed only containers and snippets - the Prisma Access folders (clouds: Mobile Users, Mobile Users Explicit Proxy, Remote Networks, Service Connections, Colo Connect, …) and the on-prem firewalls were missing (pan-os-php location= knew them)
 * type=securityprofile | url.user-credential-detection.action-set was registered with the name url.action-set (copy) - it replaced url.action-set; now under its own name
 * config-viewer | refcount of an object listed in another location than its owner (an interface in the vsys it is imported into): "?" - now the count of the object
 * type=virtualwire | a filter ended with "unsupported object type 'virtualwire'" (RQuery had no context for the type) - the config viewer could not open a virtual wire

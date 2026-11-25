@@ -2486,7 +2486,7 @@ async function showViewer(config, preset) {
     function drawLocationOptions() {
         if (!locData || !locData.locations.length) return;
         const r = locData, was = location.value, tl = networkTemplates();
-        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'snippet': 'snippets' };
+        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'cloud': 'Prisma Access folders', 'on-prem': 'firewalls (on-prem)', 'snippet': 'snippets' };
         let groups;
         if (tl) {
             const vs = [...new Set(tl.filter(t => tplSel.value === 'any' || t.name === tplSel.value).flatMap(t => t.vsys || []))];

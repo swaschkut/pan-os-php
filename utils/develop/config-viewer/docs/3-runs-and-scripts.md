@@ -8,7 +8,8 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
 *Other*. An entry shows its objects at once.
 
 - **Location**: *any* or one location of this configuration - Panorama: *shared* and every device group; firewall:
-  *shared* and every vsys; SCM: every folder (container) and snippet. A member limited to locations sees only those.
+  *shared* and every vsys; SCM: every folder (container), the Prisma Access folders (Mobile Users, Mobile Users
+  Explicit Proxy, Remote Networks, Service Connections, Colo Connect, …), every on-prem firewall and snippet. A member limited to locations sees only those.
 - **pan-os-php filter**: type and the page suggests - first the fields of the type (`name`, `object`, `value`, …),
   then their operators (`eq`, `regex`, `contains`, `is.unused`, …) with an example and whether a value is needed;
   after a term `and (` / `or (`. Arrow keys + Enter (or Tab) take a suggestion.

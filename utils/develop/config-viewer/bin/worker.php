@@ -105,7 +105,7 @@ function viewerStatus()
  * the locations of the loaded configuration, for the location choice of the page: Panorama - shared and every device
  * group (network types: the templates / template stacks with their vsys); 'version': PAN-OS version as pan-os-php
  * keeps it (e.g. 101 = 10.1); firewall - shared and every vsys (and shared
- * gateway); SCM - every container (folder) and snippet
+ * gateway); SCM - every container (folder), cloud (Prisma Access folder), on-prem device and snippet
  */
 function viewerLocations()
 {
@@ -145,6 +145,12 @@ function viewerLocations()
     if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
     {
         $add( 'container', $pan->getContainers() );
+        // the Prisma Access folders (Mobile Users, Mobile Users Explicit Proxy, Remote Networks, Service Connections,
+        // Colo Connect, …) are clouds of the configuration, NGFWs on-prem devices - folders of SCM too
+        if( method_exists( $pan, 'getDeviceClouds' ) )
+            $add( 'cloud', $pan->getDeviceClouds() );
+        if( method_exists( $pan, 'getDeviceOnPrems' ) )
+            $add( 'on-prem', $pan->getDeviceOnPrems() );
         $add( 'snippet', $pan->getSnippets() );
         return array( 'config' => 'scm', 'locations' => $out, 'ancestor' => FALSE );
     }
