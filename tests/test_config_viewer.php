@@ -636,6 +636,10 @@ $av = $alice->call( 'GET', $SPC . '/object?type=securityprofile&location=shared&
 eq( array( $rows['AV-shared']['refcount'] ?? null, $rows['AS-dg']['refcount'] ?? null, status( $refs ), count( $refs[1]['objects'][0]['references'] ?? $refs[1]['references'] ?? array() ),
     strpos( (string)( $av['xml'] ?? '' ), '<entry name="AV-shared">' ) === 0, is_array( $av['history'] ?? null ) ),
     array( 2, 1, 200, 2, TRUE, TRUE ), 'security profiles: count of references, references (profile group, rule), XML and history' );
+// the fields of the window (pan-os-php 'fields' of display): in the object, not in the list
+eq( array( $av['fields']['kind'] ?? null, $av['fields']['type'] ?? null, array_keys( $av['fields']['lists'] ?? array() ), array_key_exists( 'fields', $rows['AV-shared'] ?? array() ) ),
+    array( 'securityprofile', 'virus', array( 'decoder', 'application-exception', 'threat-exception' ), FALSE ),
+    'security profiles: the fields of the window (lists of the type, values, choices) in the object, not in the list' );
 // an object after the first 20 of its location (before: only the first 20 objects of a location had their XML - an
 // address group after 30 addresses had none); the first commit of a version is its start (subject "version …")
 $r = $alice->call( 'POST', $SP . '/configs', null, array( 'many.xml', file_get_contents( $here . '/input/many-objects-panorama.xml' ) ) );
@@ -1826,7 +1830,10 @@ $meta = $alice->call( 'GET', 'meta' )[1]['types'];
 eq( array( isset( $meta['address']['actions']['description-append'] ), isset( $meta['address']['actions']['value-set-reverse-dns'] ), isset( $meta['address']['actions']['exporttoexcel'] ),
     isset( $meta['address']['actions']['create-address-from-file'] ), isset( $meta['rule']['actions']['logend-enable'] ), isset( $meta['rule']['actions']['logend-enable-fastapi'] ) ),
     array( TRUE, FALSE, FALSE, FALSE, TRUE, FALSE ), 'allow list: change actions offered; network / file actions not' );
-eq( array( $meta['edl']['readonly'] ?? null, count( $meta['edl']['actions'] ?? array( 1 ) ) ), array( TRUE, 0 ), 'allow list: a type that is not reviewed stays read only' );
+eq( array( $meta['application']['readonly'] ?? null, count( $meta['application']['actions'] ?? array( 1 ) ) ), array( TRUE, 0 ), 'allow list: a type that is not reviewed stays read only' );
+eq( array( $meta['edl']['readonly'] ?? null, isset( $meta['edl']['actions']['type-set'] ), isset( $meta['edl']['actions']['name-addprefix'] ),
+        isset( $meta['log-profile']['actions']['match-add'] ), isset( $meta['log-profile']['actions']['delete'] ) ),
+    array( FALSE, TRUE, TRUE, TRUE, TRUE ), 'allow list: EDL and log forwarding reviewed - the new field actions and the old ones' );
 
 // ---- 12l. audit log
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'Audit' ) );

@@ -161,6 +161,11 @@ class CallContext
 
         if( $importingVsys !== array() )
             PH::print_stdout( "        vsys: " . implode( ', ', $importingVsys ) );
+
+        // the fields of an object for a window (EDL, schedule, log forwarding, security profile details): values and
+        // what they can be, from the classes of the field actions - the one place for all types
+        if( PH::$shadow_json && $this->actionRef['name'] === 'display' && ( $fieldData = ObjectFieldData::of( $object ) ) !== null )
+            PH::$JSON_TMP['sub']['object'][$key]['fields'] = $fieldData;
     }
 
     /**

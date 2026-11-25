@@ -343,6 +343,56 @@ class SecurityProfileFields
         return $value;
     }
 
+    /**
+     * Everything a window needs, from this one table: per list its fields (kind, choices, default), fixed / known
+     * entries and the entries with their values; per option the choices and the value; url-filtering: the action of
+     * every category and of the credential detection. null: a type without details here.
+     */
+    static public function describe( $profile ): ?array
+    {
+        if( !isset( $profile->secprof_type ) || !( $profile->xmlroot instanceof DOMElement ) )
+            return null;
+        $type = (string)$profile->secprof_type;
+        $out = array( 'type' => $type, 'lists' => array(), 'options' => array() );
+        foreach( self::lists()[$type] ?? array() as $list => $def )
+        {
+            $fields = array();
+            foreach( $def['fields'] as $f => $fd )
+                $fields[$f] = array( 'kind' => $fd[0], 'choices' => $fd[1], 'default' => $fd[2] );
+            $out['lists'][$list] = array( 'fields' => $fields, 'fixed' => !empty( $def['fixed'] ), 'known' => $def['known'] ?? null,
+                'entries' => self::entries( $profile, $list ) );
+        }
+        foreach( self::options()[$type] ?? array() as $opt => $od )
+        {
+            $n = self::node( $profile->xmlroot, $od[0], FALSE );
+            $out['options'][$opt] = array( 'choices' => $od[1], 'value' => $n === null ? '' : $n->textContent );
+        }
+        if( $type === 'url-filtering' )
+        {
+            $read = function( DOMElement $root, array $actions ) {
+                $r = array();
+                foreach( $actions as $a )
+                {
+                    $l = DH::findFirstElement( $a, $root );
+                    if( $l !== FALSE )
+                        foreach( $l->childNodes as $m )
+                            if( $m->nodeType == XML_ELEMENT_NODE )
+                                $r[$m->textContent] = $a;
+                }
+                ksort( $r );
+                return $r;
+            };
+            $out['categories'] = $read( $profile->xmlroot, array( 'alert', 'allow', 'block', 'continue', 'override' ) );
+            $ce = DH::findFirstElement( 'credential-enforcement', $profile->xmlroot );
+            $out['credential'] = $ce === FALSE ? array() : $read( $ce, array( 'alert', 'allow', 'block', 'continue' ) );
+            $out['categoryActions'] = array( 'alert', 'allow', 'block', 'continue', 'override' );
+            $out['credentialActions'] = array( 'alert', 'allow', 'block', 'continue' );
+        }
+        if( count( $out['lists'] ) == 0 && count( $out['options'] ) == 0 && !isset( $out['categories'] ) )
+            return null;
+        return $out;
+    }
+
     /** url.credential-action-set: the action of a URL category for the credential detection (one action list per category) */
     static public function urlCredentialActionSet( $profile, string $category, string $action ): void
     {

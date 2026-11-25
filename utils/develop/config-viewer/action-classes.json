@@ -9,6 +9,8 @@
         "schedule",
         "securityprofile",
         "securityprofilegroup",
+        "edl",
+        "log-profile",
         "device:devicegroup-addserial",
         "device:devicegroup-removeserial",
         "device:devicegroup-setparentdg",

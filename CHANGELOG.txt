@@ -2,6 +2,8 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* display | shadow-json: 'fields' - the fields of an EDL, schedule, log forwarding profile and the details of a security profile (lists with their fields / choices / defaults and entries, options, URL category actions) for a window, from the classes of the field actions (ObjectFieldData, SecurityProfileFields::describe) - the one place for all types
+* config-viewer | EDL and log forwarding reviewed (action-classes.json): every action of both types offered - the new field actions and the old ones (name, delete, move, create, …); GET …/object returns 'fields' (not in the list rows)
 * type=edl | field actions (offline): type-set, source-set, recurring-set (five-minute / hourly / daily / weekly / monthly with hour and day), description-set (in the type element of the EDL), certificate-profile-set, exception-add / -remove, expand-domain-set, name-rename (rules updated) - EDL::edit*
 * type=schedule | range-add / range-remove (the last range stays) / type-set (daily / weekly / non-recurring with one range), short forms HHMM-HHMM and YYYYMMDD@HHMM-YYYYMMDD@HHMM, name-rename (rules updated) - Schedule::edit*
 * type=log-profile | match-add / match-remove / match-set (log-type, filter, send-to-panorama, quarantine), match-send-add / -remove (syslog, email, http, snmptrap), enhanced-application-logging-set, description-set (common), name-rename (rules and zones updated) - LogProfile::edit*

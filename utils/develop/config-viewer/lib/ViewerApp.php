@@ -5502,7 +5502,7 @@ class ViewerApp
                     }
                     foreach( $o as $k => $v )
                         // the list: nested values flat (a list of texts); the object window: as they are ($nested)
-                        $row[(string)$k] = ( is_array( $v ) && $k !== 'model' && !$nested ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
+                        $row[(string)$k] = ( is_array( $v ) && $k !== 'model' && $k !== 'fields' && !$nested ) ? array_map( 'strval', self::flatten( $v ) ) : $v;
                     $rows[] = $row;
                 }
             }
@@ -5597,9 +5597,10 @@ class ViewerApp
                 $rows[$i] = $new;
             }
         }
+        // the list: no API model and no field data of the window (pan-os-php 'fields')
         if( $max !== PHP_INT_MAX )
             foreach( $rows as $i => $row )
-                unset( $rows[$i]['model'] );
+                unset( $rows[$i]['model'], $rows[$i]['fields'] );
         if( $overrideView && is_array( $r['override'] ?? null ) && count( $r['override'] ) )
             foreach( $rows as $i => $row )
             {
@@ -5912,7 +5913,9 @@ class ViewerApp
                 && ( $profile === '' || ( $row['profile'] ?? '' ) === $profile ) && self::spTypeMatches( $row['type'] ?? null, $st ) )
             {
                 $model = is_array( $row['model']['item'] ?? null ) ? $row['model']['item'] : null;
-                unset( $row['model'] );
+                // the fields of the window (EDL, schedule, log forwarding, security profile details): values and choices
+                $fields = is_array( $row['fields'] ?? null ) ? $row['fields'] : null;
+                unset( $row['model'], $row['fields'] );
                 // its XML and its history (git, the commits that changed its entry - the unsaved ones first)
                 $x = $r['xml'][( $row['location'] ?? '' ) . '|' . ( $row['template'] ?? '' ) . '|' . ( isset( $row['profile'] ) && is_string( $row['profile'] ) ? $row['profile'] . '/' : '' ) . $name] ?? null;
                 // an object listed in another location than its owner (an interface: in the vsys it is imported into,
@@ -5925,7 +5928,7 @@ class ViewerApp
                         $x = $r['xml'][$same[0]];
                 }
                 $path = is_array( $x ) && is_string( $x['path'] ?? null ) ? $x['path'] : null;
-                return array( 'row' => $row, 'model' => $model, 'xml' => is_array( $x ) && is_string( $x['xml'] ?? null ) ? $x['xml'] : null,
+                return array( 'row' => $row, 'model' => $model, 'fields' => $fields, 'xml' => is_array( $x ) && is_string( $x['xml'] ?? null ) ? $x['xml'] : null,
                     'history' => $path !== null ? $this->objectHistory( $user, $pid, $cid, $path, ( $row['location'] ?? '' ) . ':' . $name ) : null, 'status' => $r['status'] );
             }
         throw new ViewerException( 'not found', 404 );
