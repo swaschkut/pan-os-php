@@ -14254,6 +14254,17 @@ var subjectObject =
                     }
                 }
             },
+            "name-rename": {
+                "name": "name-rename",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "renames the profile group and every rule that uses it"
+            },
             "securityprofile-remove": {
                 "name": "securityProfile-Remove",
                 "MainFunction": {},
@@ -14271,10 +14282,12 @@ var subjectObject =
                             "spyware",
                             "wildfire",
                             "virus-and-wildfire",
-                            "dns-security"
+                            "dns-security",
+                            "saas-security"
                         ]
                     }
-                }
+                },
+                "help": "removes the profile of a type, any: every profile of the group"
             },
             "securityprofile-set": {
                 "name": "securityProfile-Set",
@@ -14292,14 +14305,16 @@ var subjectObject =
                             "spyware",
                             "wildfire",
                             "virus-and-wildfire",
-                            "dns-security"
+                            "dns-security",
+                            "saas-security"
                         ]
                     },
                     "profName": {
                         "type": "string",
                         "default": "*nodefault*"
                     }
-                }
+                },
+                "help": "sets the profile of a type - a profile of the location of the group, above it or a predefined one (default, strict, \u2026). SCM: virus \/ wildfire set the virus-and-wildfire-analysis profile. Example: 'actions=securityProfile-Set:spyware,strict'"
             }
         },
         "filter": {

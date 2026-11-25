@@ -2,6 +2,8 @@ CHANGELOG
 
 2.1.64
 UTIL:
+* config-viewer | security profile group window: section "Details" - name and one field per profile type (the profiles of the location, above it and the predefined ones as suggestions; ✕ removes it), "Remove all profiles" - every change one action (securityProfile-Set / -Remove, name-rename)
+* type=securityprofilegroup | name-rename (rules updated); securityProfile-Set / -Remove use SecurityProfileGroup::editProfileSet / editProfileRemove (also the type saas-security); display with shadow-json: 'fields' (the slots, ObjectFieldData)
 * type=region | new type: the custom regions of a location and the predefined regions of PAN-OS (country codes of predefined.xml, location=predefined, read only); actions display, displayReferences, address-add / -remove (ip-netmask / ip-range, IPv4 / IPv6), geo-location-set / -remove, name-rename (rules and address groups updated; not to a country code or an IP value), delete (unused only); filters object is.custom / is.predefined, address has / is.empty, address.count, geo-location is.set and the common name / location / ref filters
 * config-viewer | menu "Regions" (type=region) with a window: custom region - name, geo-location (set / ✕), addresses (add / ✕); predefined region - country, read only. "Addresses" lists no regions any more
 * display | shadow-json: 'fields' of a region (predefined, country, geo-location, addresses) - ObjectFieldData
@@ -85,6 +87,8 @@ UTIL:
 * SCM | new core class SCMCommon (security profile sections of the internal UI API, Strata Logging Service log types) - used by scm_pa_xml_to_change.php and the SCM best-practice actions; type=scm-import, scm-panorama-to-change and scm-sync are optional now (SCM migration, moves to the plug-in scm-migration): without them pan-os-php starts and these types say so
 
 BUGFIX:
+* type=securityprofilegroup | securityProfile-Set: a predefined profile (default, strict, best-practice, …) was "NOT found"; virus-and-wildfire on a PAN-OS configuration ended with "Undefined variable $found"; securityProfile-Remove:<type> changed nothing (it wrote the name 'null'); the references of the profiles were not updated (refcount of the old / new profile)
+* type=securityprofilegroup | renaming a profile group (name-addPrefix / -addSuffix / … ) left the old name in the security rules that use it - SecurityRule::referencedObjectRenamed() now rewrites profile-setting
 * address | a predefined region (country code, e.g. DE, FR) used in a rule or address group became a temporary address (type tmp, IP count 1, not shown as group member) - now the predefined region (AddressStore::getPredefinedRegionStore(), read only; its addresses are unresolved in IP maps - only known on the firewall). The reserved ranges of predefined.xml (10.0.0.0-10.255.255.255, …) stay IP values as before
 * address | firewall: the shared regions (/config/shared/region) were not loaded - their users got temporary addresses
 * address | a custom region with only a geo-location (no addresses) was not loaded - its users got a temporary address

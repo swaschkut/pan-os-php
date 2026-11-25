@@ -24,7 +24,7 @@ class SecurityRule extends RuleWithUserID
 {
     use NegatableRule;
     use RulewithLogging;
-    use RulewithSchedule;
+    use RulewithSchedule { referencedObjectRenamed as scheduleReferencedObjectRenamed; }
     use RuleDirectReferences;
 
     protected $action = self::ActionAllow;
@@ -870,6 +870,28 @@ class SecurityRule extends RuleWithUserID
         $this->rewriteSecProfXML();
 
         return TRUE;
+    }
+
+    /**
+     * a referenced object was renamed: the security profile group / a security profile of the rule (its name in
+     * profile-setting), else the schedule
+     * @ignore
+     */
+    public function referencedObjectRenamed($h, $oldname = "")
+    {
+        if( $h instanceof SecurityProfileGroup && $this->secproftype == 'group' && ( $this->secprofgroup_obj === $h || $this->secprofgroup === $oldname ) )
+        {
+            $this->secprofgroup = $h->name();
+            $this->secprofgroup_obj = $h;
+            $this->rewriteSecProfXML();
+            return;
+        }
+        if( $this->secproftype == 'profile' && is_array( $this->secprofProfiles_obj ) && in_array( $h, $this->secprofProfiles_obj, TRUE ) )
+        {
+            $this->rewriteSecProfXML();
+            return;
+        }
+        $this->scheduleReferencedObjectRenamed($h, $oldname);
     }
 
     public function rewriteSecProfXML()

@@ -133,194 +133,75 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
     },
 );
 
+// securityProfile-Set / securityProfile-Remove: SecurityProfileGroup::editProfileSet / editProfileRemove - the profile
+// is looked up at the location of the group, above it and among the predefined ones (default, strict, …); the
+// references of the profiles stay right
+$spgSendApi = function( SecurityProfileGroupCallContext $context ) {
+    $secprofgroup = $context->object;
+    $con = findConnectorOrDie( $secprofgroup );
+    if( $secprofgroup->xmlroot->hasChildNodes() )
+        $con->sendEditRequest( $secprofgroup->getXPath(), DH::dom_to_xml( $secprofgroup->xmlroot, -1, FALSE ) );
+    else
+        $con->sendDeleteRequest( $secprofgroup->getXPath() );
+};
+
 SecurityProfileGroupCallContext::$supportedActions[] = array(
     'name' => 'securityProfile-Set',
-    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) use ( $spgSendApi ) {
         $secprofgroup = $context->object;
-
-        $type = $context->arguments['type'];
-        $profName = $context->arguments['profName'];
-
-
-        $ret = TRUE;
-
-        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
-
-        //Todo: check if $profName is available
-        if( $type == 'virus' )
+        try
         {
-            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
-            {
-                $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
-                if( $found )
-                    $ret = $secprofgroup->setSecProf_AV($profName);
-            }
-            else
-            {
-                $found = $secprofgroup->owner->owner->AntiVirusProfileStore->find( $profName, null, true );
-                if( $found )
-                    $ret = $secprofgroup->setSecProf_AV($profName);
-            }
+            $secprofgroup->editProfileSet( (string)$context->arguments['type'], PH::textAliases( (string)$context->arguments['profName'] ) );
         }
-        elseif( $type == 'vulnerability' )
+        catch( Exception $e )
         {
-            $found = $secprofgroup->owner->owner->VulnerabilityProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_Vuln($profName);
-        }
-        elseif( $type == 'url-filtering' )
-        {
-            $found = $secprofgroup->owner->owner->URLProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_URL($profName);
-        }
-        elseif( $type == 'data-filtering' )
-        {
-            $found = $secprofgroup->owner->owner->DataFilteringProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_DataFilt($profName);
-        }
-        elseif( $type == 'file-blocking' )
-        {
-            $found = $secprofgroup->owner->owner->FileBlockingProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_FileBlock($profName);
-        }
-        elseif( $type == 'spyware' )
-        {
-            $found = $secprofgroup->owner->owner->AntiSpywareProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_Spyware($profName);
-        }
-        elseif( $type == 'wildfire' )
-        {
-            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
-            {
-                $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
-                if( $found )
-                    $ret = $secprofgroup->setSecProf_AV($profName);
-            }
-            else
-            {
-                $found = $secprofgroup->owner->owner->WildfireProfileStore->find( $profName, null, true );
-                if( $found )
-                    $ret = $secprofgroup->setSecProf_Wildfire($profName);
-            }
-
-        }
-        elseif( $type == 'virus-and-wildfire' )
-        {
-            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
-            {
-                $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
-                if( $found )
-                    $ret = $secprofgroup->setSecProf_AVWF($profName);
-            }
-        }
-        elseif( $type == 'dns-security' )
-        {
-            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
-            {
-                $found = $secprofgroup->owner->owner->DNSSecurityProfileStore->find( $profName, null, true );
-                if( $found )
-                    $ret = $secprofgroup->setSecProf_DNSSEC($profName);
-            }
-        }
-        else
-            derr("unsupported profile type '{$type}'");
-
-        if( !$ret )
-        {
-            $string = "no change detected";
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            PH::ACTIONstatus( $context, "SKIPPED", $e->getMessage() );
             return;
         }
-
-
-        if( $found !== null )
-        {
-            if( $context->isAPI )
-            {
-                $xpath = $secprofgroup->getXPath();
-                $con = findConnectorOrDie($secprofgroup);
-                $con->sendEditRequest($xpath, DH::dom_to_xml($secprofgroup->xmlroot, -1, FALSE));
-            }
-            else
-                $secprofgroup->rewriteXML();
-        }
-        else
-        {
-            $string = "Securityprofile: '".$profName."' NOT found - can not be added to this SecurityProfile Group: '".$secprofgroup->name()."'";
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-        }
+        PH::ACTIONlog( $context, $context->arguments['type'] . " '" . $context->arguments['profName'] . "'" );
+        if( $context->isAPI )
+            $spgSendApi( $context );
     },
     'args' => array('type' => array('type' => 'string', 'default' => '*nodefault*',
-        'choices' => array('virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', 'virus-and-wildfire', 'dns-security')),
-        'profName' => array('type' => 'string', 'default' => '*nodefault*'))
+        'choices' => array('virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', 'virus-and-wildfire', 'dns-security', 'saas-security')),
+        'profName' => array('type' => 'string', 'default' => '*nodefault*')),
+    'help' => "sets the profile of a type - a profile of the location of the group, above it or a predefined one (default, strict, …). " .
+        "SCM: virus / wildfire set the virus-and-wildfire-analysis profile. Example: 'actions=securityProfile-Set:spyware,strict'"
 );
 SecurityProfileGroupCallContext::$supportedActions[] = array(
     'name' => 'securityProfile-Remove',
-    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) use ( $spgSendApi ) {
         $secprofgroup = $context->object;
-        $type = $context->arguments['type'];
-
-
-        $ret = TRUE;
-        $profName = "null";
-
-        if( $type == "any" )
+        try
         {
-            if( $context->isAPI )
-                $secprofgroup->API_removeSecurityProfile();
-            else
-                $secprofgroup->removeSecurityProfile();
+            $secprofgroup->editProfileRemove( (string)$context->arguments['type'] );
         }
-        elseif( $type == 'virus' )
-            $ret = $secprofgroup->setSecProf_AV($profName);
-        elseif( $type == 'vulnerability' )
-            $ret = $secprofgroup->setSecProf_Vuln($profName);
-        elseif( $type == 'url-filtering' )
-            $ret = $secprofgroup->setSecProf_URL($profName);
-        elseif( $type == 'data-filtering' )
-            $ret = $secprofgroup->setSecProf_DataFilt($profName);
-        elseif( $type == 'file-blocking' )
-            $ret = $secprofgroup->setSecProf_FileBlock($profName);
-        elseif( $type == 'spyware' )
-            $ret = $secprofgroup->setSecProf_Spyware($profName);
-        elseif( $type == 'wildfire' )
-            $ret = $secprofgroup->setSecProf_Wildfire($profName);
-        elseif( $type == 'virus-and-wildfire' )
-            $ret = $secprofgroup->setSecProf_AVWF($profName);
-        elseif( $type == 'dns-security' )
-            $ret = $secprofgroup->setSecProf_DNSSEC($profName);
-        else
-            derr("unsupported profile type '{$type}'");
-
-        if( $type != "any" )
+        catch( Exception $e )
         {
-            if( !$ret )
-            {
-                $string = "no change detected";
-                PH::ACTIONstatus( $context, "SKIPPED", $string );
-                return;
-            }
-
-
-            if( $context->isAPI )
-            {
-                $xpath = $secprofgroup->getXPath();
-                $con = findConnectorOrDie($secprofgroup);
-                $con->sendEditRequest($xpath, DH::dom_to_xml($secprofgroup->xmlroot, -1, FALSE));
-            }
-            else
-                #$secprofgroup->rewriteSecProfXML();
-                $secprofgroup->rewriteXML();
+            PH::ACTIONstatus( $context, "SKIPPED", $e->getMessage() );
+            return;
         }
-
+        PH::ACTIONlog( $context, $context->arguments['type'] . " removed" );
+        if( $context->isAPI )
+            $spgSendApi( $context );
     },
     'args' => array('type' => array('type' => 'string', 'default' => 'any',
-        'choices' => array('any', 'virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', 'virus-and-wildfire', 'dns-security'))
-    )
+        'choices' => array('any', 'virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', 'virus-and-wildfire', 'dns-security', 'saas-security'))
+    ),
+    'help' => "removes the profile of a type, any: every profile of the group"
+);
+
+SecurityProfileGroupCallContext::$supportedActions[] = array(
+    'name' => 'name-rename',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+        $context->runEdit( function( SecurityProfileGroup $o, $a ) {
+            $old = $o->name();
+            $n = $o->editRename( (string)$a['newname'] );
+            return "renamed '" . $old . "' -> '" . $o->name() . "' (rules updated: " . $n . ")";
+        } );
+    },
+    'args' => array( 'newname' => array( 'type' => 'string', 'default' => '*nodefault*' ) ),
+    'help' => "renames the profile group and every rule that uses it"
 );
 
 SecurityProfileGroupCallContext::$commonActionFunctions['html-add-name'] = array(

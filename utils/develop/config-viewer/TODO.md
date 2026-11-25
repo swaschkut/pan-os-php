@@ -51,10 +51,10 @@ file blocking and WildFire rules), `detail-option-set`, `url.credential-action-s
 
 | pan-os-php has change actions - only the window is missing | pan-os-php has no change action |
 |---|---|
-| EDL, schedule (field actions 2026-11-25) | certificates, certificate profiles |
-| security profiles (`alert-only-set`, `best-practice-set`, `detail-*`) | SSL/TLS service profiles |
-| security profile groups (`securityprofile-set` / `-remove`) | |
-| log forwarding (match list 2026-11-25), application (create / delete / move) | |
+| ~~EDL, schedule~~ windows built 2026-11-25 | certificates, certificate profiles |
+| ~~security profiles~~ window built 2026-11-25 (Details) | SSL/TLS service profiles |
+| ~~security profile groups~~ window built 2026-11-25 (Details: one profile per type) | |
+| ~~log forwarding~~ window built 2026-11-25, application (create / delete / move) | |
 | device (41 actions) | |
 
 Built 2026-11-24: windows of the network types (interfaces, zone protection / interface management profiles, IKE /
@@ -93,7 +93,7 @@ Compared with the PAN-OS menus Objects / Policies / Network / Device (screenshot
 
 | Area | pan-os-php today | Viewer: what is needed |
 |---|---|---|
-| Regions | in the AddressStore (`Region`, filter `object is.region`); only custom regions (with `<address>`) | menu entry type=address with `(object is.region)`; Addresses also with `!(object is.region)` |
+| ~~Regions~~ | built 2026-11-25: type=region (custom and predefined), menu entry "Regions" with a window | - |
 | HIP Objects / HIP Profiles | loaded (`HipObjectsProfileStore` / `HipProfilesProfileStore`); `type=profile profiletype=hip-objects / hip-profiles` | menu entries type=profile + profiletype (as securityprofiletype) |
 | Decryption Profile | loaded (`DecryptionProfileStore`); `type=profile profiletype=decryption` | as above |
 | Custom Objects > Data Patterns | loaded (`DataObjectsProfileStore`, `<profiles><data-objects>`), not in `PROFILEUTIL::$profileTypeStores` | pan-os-php: profiletype `data-objects`; then menu entry |

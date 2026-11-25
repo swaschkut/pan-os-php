@@ -19,7 +19,7 @@
 
 /**
  * The fields of an object for a window (shadow-json of 'display': 'fields') - values and what they can be, from the
- * same classes the field actions use (EDL, Schedule, LogProfile, Region, SecurityProfileFields): nothing of it is kept twice
+ * same classes the field actions use (EDL, Schedule, LogProfile, Region, SecurityProfileGroup, SecurityProfileFields): nothing of it is kept twice
  * in the config viewer.
  */
 class ObjectFieldData
@@ -61,6 +61,20 @@ class ObjectFieldData
                 'enhanced-application-logging' => $e !== FALSE && $e->textContent === 'yes',
                 'logTypes' => array_values( array_unique( array_merge( $object->type_available ?? array(), array( 'gtp', 'sctp' ) ) ) ),
                 'sendKinds' => array_keys( LogProfile::MATCH_SEND ), 'matchList' => $object->matchList() );
+        }
+        if( $object instanceof SecurityProfileGroup && $object->owner !== null )
+        {
+            // the profile slots: the type the actions take (securityProfile-Set:<type>,<name>), the candidates kind
+            // of the viewer (ObjectCandidates profile-<type>, null: none), the profile set ('' = none)
+            $types = array( 'wildfire-analysis' => 'wildfire', 'virus-and-wildfire-analysis' => 'virus-and-wildfire' );
+            $slots = array();
+            foreach( array_keys( $object->slotStores() ) as $slot )
+            {
+                $t = $types[$slot] ?? $slot;
+                $slots[] = array( 'slot' => $slot, 'type' => $t, 'pick' => isset( SecurityRule::SECPROF_TYPES[$t] ) ? 'profile-' . $t : null,
+                    'value' => $object->slotProfileName( $slot ) );
+            }
+            return array( 'kind' => 'securityprofilegroup', 'slots' => $slots );
         }
         if( $object instanceof Region )
             return array( 'kind' => 'region', 'predefined' => $object->isPredefined(), 'country' => $object->description(),

@@ -2023,6 +2023,9 @@
             "name-removesuffix": {
                 "class": "change"
             },
+            "name-rename": {
+                "class": "change"
+            },
             "securityprofile-remove": {
                 "class": "change"
             },

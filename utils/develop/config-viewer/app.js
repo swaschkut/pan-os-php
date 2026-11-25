@@ -3827,7 +3827,7 @@ async function showViewer(config, preset) {
         // decoders, DNS categories) as tables, its options, URL categories. Every change: one action on this object.
         function objDetails() {
             const F = obj.fields;
-            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile', 'region'].includes(F.kind)) return null;
+            if (!F || !['securityprofile', 'edl', 'schedule', 'log-profile', 'region', 'securityprofilegroup'].includes(F.kind)) return null;
             const can = a => writable && !!offered[a];
             const err = key => errors[key] ? el('p', { class: 'error', text: errors[key] }) : null;
             const act = (key, action) => run(() => listChange({ key }, action));
@@ -3900,6 +3900,29 @@ async function showViewer(config, preset) {
                     : el('p', { class: 'muted', text: 'no entries' }));
                 const ne = inp('new exception', 'IP / domain / URL');
                 parts.push(addRow('fd-exc', 'exception-add', [ne], 'Add exception', () => ne.value.trim() ? 'exception-add:' + arg(ne.value.trim()) : null), err('fd-exc'));
+                return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
+            }
+            if (F.kind === 'securityprofilegroup') {
+                // profile group: one profile per type - the profiles of the location, above it and the predefined
+                // ones as suggestions; ✕ removes the profile of the type
+                const rows = F.slots.map(S => {
+                    const key = 'fd-sp-' + S.slot;
+                    let c;
+                    if (!can('securityprofile-set')) c = el('span', { class: 'objro', text: S.value || '(none)' });
+                    else {
+                        const listId = 'spg-' + S.slot + '-' + Math.random().toString(36).slice(2);
+                        const dl = el('datalist', { id: listId });
+                        const i = el('input', { value: S.value, autocomplete: 'off', spellcheck: false, 'aria-label': S.slot, placeholder: '(none)', list: listId });
+                        if (S.pick) candidates(S.pick).then(gs => { if (gs) dl.append(...gs.flatMap(g => g.names.map(n => el('option', { value: n, label: g.location })))); });
+                        i.addEventListener('change', () => { const v = i.value.trim(); if (v !== S.value) act(key, v === '' ? 'securityprofile-remove:' + S.type : 'securityprofile-set:' + S.type + ',' + arg(v)); });
+                        i.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); i.blur(); } });
+                        c = el('div', { class: 'row' }, i, dl, S.value && can('securityprofile-remove') ? delBtn(key, S.slot, 'securityprofile-remove:' + S.type) : null);
+                    }
+                    return [S.slot, c];
+                });
+                parts.push(kv([nameRow(), ...rows]), err('fd-name'), ...F.slots.map(S => err('fd-sp-' + S.slot)));
+                if (F.slots.some(S => S.value) && can('securityprofile-remove'))
+                    parts.push(el('div', { class: 'row' }, el('button', { type: 'button', text: 'Remove all profiles', title: 'securityprofile-remove:any', onclick: () => act('fd-spall', 'securityprofile-remove:any') })), err('fd-spall'));
                 return section('details', 'Details', el('div', { class: 'spdetails' }, ...parts.filter(x => x)));
             }
             if (F.kind === 'region') {

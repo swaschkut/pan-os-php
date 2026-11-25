@@ -68,6 +68,12 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
   application logging, the match list: log type, filter, send to Panorama, quarantine, server profiles (syslog /
   email / http / snmptrap, add / ✕), *Add entry*, ✕. Every change one action (`type-set`, `recurring-set`,
   `range-add`, `match-set`, …).
+- **Security profile group window - Details**: the name and one field per profile type of the configuration
+  (PAN-OS: virus, spyware, vulnerability, file-blocking, wildfire-analysis, url-filtering, data-filtering; SCM:
+  virus-and-wildfire-analysis, dns-security, saas-security, …). The profiles of the location, above it and the
+  predefined ones (default, strict, …) are suggested; empty or ✕ removes the profile of the type, *Remove all profiles*
+  every one. Every change one action (`securityProfile-Set:<type>,<profile>`, `securityProfile-Remove:<type>|any`,
+  `name-rename` - the rules follow).
 - **Regions** (*Objects*, type=region): the custom regions of the location and, at *any* / *shared* / *predefined*, the
   predefined regions of PAN-OS (country codes, location *predefined*, read only). A rule or address group that names a
   country (`DE`, `FR`, …) uses the predefined region - before it was a temporary address. *Addresses* lists no regions.

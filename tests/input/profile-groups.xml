@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared>
+    <profiles>
+      <virus><entry name="av-shared"><decoder><entry name="http"><action>reset-both</action></entry></decoder></entry></virus>
+    </profiles>
+  </shared>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <profiles>
+            <spyware><entry name="as-1"><rules/></entry></spyware>
+            <vulnerability><entry name="vp-1"><rules/></entry></vulnerability>
+          </profiles>
+          <profile-group>
+            <entry name="pg-1">
+              <virus><member>av-shared</member></virus>
+              <spyware><member>as-1</member></spyware>
+            </entry>
+            <entry name="pg-2">
+              <vulnerability><member>strict</member></vulnerability>
+            </entry>
+          </profile-group>
+          <rulebase>
+            <security>
+              <rules>
+                <entry name="r-1">
+                  <from><member>any</member></from><to><member>any</member></to>
+                  <source><member>any</member></source><destination><member>any</member></destination>
+                  <source-user><member>any</member></source-user><category><member>any</member></category>
+                  <application><member>any</member></application><service><member>application-default</member></service>
+                  <action>allow</action>
+                  <profile-setting><group><member>pg-1</member></group></profile-setting>
+                </entry>
+              </rules>
+            </security>
+          </rulebase>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

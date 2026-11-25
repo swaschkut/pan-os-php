@@ -893,6 +893,145 @@ class SecurityProfileGroup
         }
     }
 
+    // <editor-fold desc=" ***** edits of the profile slots (actions securityProfile-Set / -Remove, config viewer) *****" defaultstate="collapsed" >
+
+    /**
+     * the profile slots of the group in XML order: slot => store (PAN-OS / SCM)
+     * @return string[]
+     */
+    public function slotStores(): array
+    {
+        $isScm = in_array( get_class( $this->owner->owner ), array( 'FawkesConf', 'BuckbeakConf', 'Container', 'DeviceCloud', 'DeviceOnPrem', 'Snippet' ), TRUE );
+        return $isScm ? array_combine( $this->secprof_fawkes_array, $this->secprof_fawkes_store ) : array_combine( $this->secprof_array, $this->secprof_store );
+    }
+
+    /**
+     * the slot of a profile type as the actions name it: wildfire -> wildfire-analysis, virus-and-wildfire ->
+     * virus-and-wildfire-analysis; SCM: virus / wildfire -> virus-and-wildfire-analysis
+     * @return string|null null: the group has no such slot
+     */
+    public function slotOf( string $type ): ?string
+    {
+        $slots = $this->slotStores();
+        $map = array( 'wildfire' => 'wildfire-analysis', 'virus-and-wildfire' => 'virus-and-wildfire-analysis' );
+        if( isset( $slots['virus-and-wildfire-analysis'] ) )
+            $map += array( 'virus' => 'virus-and-wildfire-analysis', 'wildfire-analysis' => 'virus-and-wildfire-analysis' );
+        $slot = $map[$type] ?? $type;
+        return isset( $slots[$slot] ) ? $slot : null;
+    }
+
+    /**
+     * the name in a slot ('' = none)
+     */
+    public function slotProfileName( string $slot ): string
+    {
+        $p = $this->secprofProfiles_obj[$slot] ?? null;
+        if( is_object( $p ) )
+            return $p->name();
+        $t = $this->secprofiles[$slot] ?? null;
+        return is_string( $t ) ? $t : '';
+    }
+
+    /**
+     * a profile of the slot's type as seen from the group: its location and above, then the predefined profiles
+     * @return object|null
+     */
+    public function findSlotProfile( string $slot, string $name )
+    {
+        $slots = $this->slotStores();
+        $storeName = $slots[$slot];
+        $sub = $this->owner->owner;
+        if( isset( $sub->$storeName ) && is_object( $sub->$storeName ) )
+        {
+            $p = $sub->$storeName->find( $name, null, TRUE );
+            if( $p !== null && $p !== FALSE && !( method_exists( $p, 'isTmp' ) && $p->isTmp() ) )
+                return $p;
+        }
+        $pre = SecurityProfileStore::getPredefinedStore( $sub, $storeName );
+        if( $pre !== null )
+        {
+            $p = $pre->find( $name );
+            if( $p !== null && $p !== FALSE && !( method_exists( $p, 'isTmp' ) && $p->isTmp() ) )
+                return $p;
+        }
+        return null;
+    }
+
+    /**
+     * set the profile of a type (an Exception with the reason if refused)
+     */
+    public function editProfileSet( string $type, string $name ): void
+    {
+        $slot = $this->slotOf( $type );
+        if( $slot === null )
+            throw new Exception( "a profile group of this configuration has no profile type '" . $type . "' (" . implode( ', ', array_keys( $this->slotStores() ) ) . ")" );
+        $name = trim( $name );
+        if( $name === '' )
+            throw new Exception( 'no profile name' );
+        $profile = $this->findSlotProfile( $slot, $name );
+        if( $profile === null )
+            throw new Exception( "no " . $slot . " profile '" . $name . "' at the location of the group, above it or predefined" );
+        $old = $this->secprofProfiles_obj[$slot] ?? null;
+        if( $old === $profile )
+            throw new Exception( $slot . " is '" . $name . "' already" );
+        if( is_object( $old ) )
+            $old->removeReference( $this );
+        $this->secprofProfiles_obj[$slot] = $profile;
+        $this->secprofiles[$slot] = null;
+        $profile->addReference( $this );
+        $this->rewriteXML();
+    }
+
+    /**
+     * remove the profile of a type ('any': every profile)
+     */
+    public function editProfileRemove( string $type ): void
+    {
+        if( $type === 'any' )
+        {
+            $slots = array_filter( array_keys( $this->slotStores() ), function( $s ) { return $this->slotProfileName( $s ) !== ''; } );
+            if( count( $slots ) == 0 )
+                throw new Exception( 'the group has no profile' );
+        }
+        else
+        {
+            $slot = $this->slotOf( $type );
+            if( $slot === null )
+                throw new Exception( "a profile group of this configuration has no profile type '" . $type . "' (" . implode( ', ', array_keys( $this->slotStores() ) ) . ")" );
+            if( $this->slotProfileName( $slot ) === '' )
+                throw new Exception( 'no ' . $slot . ' profile in the group' );
+            $slots = array( $slot );
+        }
+        foreach( $slots as $slot )
+        {
+            $old = $this->secprofProfiles_obj[$slot] ?? null;
+            if( is_object( $old ) )
+                $old->removeReference( $this );
+            $this->secprofProfiles_obj[$slot] = null;
+            $this->secprofiles[$slot] = null;
+        }
+        $this->rewriteXML();
+    }
+
+    /**
+     * name-rename: the group and every rule that uses it
+     * @return int the number of rules
+     */
+    public function editRename( string $newName ): int
+    {
+        $newName = trim( $newName );
+        if( !preg_match( '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,62}$/', $newName ) )
+            throw new Exception( "name '" . $newName . "': 1-63 characters, letters, digits, blank, . _ -" );
+        if( $newName === $this->name() )
+            throw new Exception( 'the name is the same' );
+        if( $this->owner->find( $newName, null, FALSE ) !== null )
+            throw new Exception( "'" . $newName . "' exists already" );
+        $this->setName( $newName );
+        return count( $this->getReferences() );
+    }
+
+    // </editor-fold>
+
     static public $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
 }
