@@ -61,8 +61,40 @@ class SecurityProfileFields
             ) + $last );
         };
 
-        return array(
-            'virus' => array(
+        $inlineAction = array( 'alert', 'allow', 'drop', 'reset-client', 'reset-server', 'reset-both' );
+        // inline ML / inline cloud analysis: one entry per model of PAN-OS (predefined.xml - the ones of the PAN-OS
+        // version of the configuration); action per model
+        $mlav = array( 'path' => 'mlav-engine-filebased-enabled', 'fixed' => TRUE, 'knownFrom' => array( 'mlav-engine', 'mlav-engine-filebased' ), 'fields' => array(
+            'mlav-policy-action' => array( 'text', array( 'enable', 'enable(alert-only)', 'disable' ), null ),
+        ) );
+        $micaSpyware = array( 'path' => 'mica-engine-spyware-enabled', 'fixed' => TRUE, 'knownFrom' => array( 'tdb', 'mica-engine-anti-spyware' ), 'fields' => array(
+            'inline-policy-action' => array( 'text', $inlineAction, null ),
+        ) );
+        $micaVulnerability = array( 'path' => 'mica-engine-vulnerability-enabled', 'fixed' => TRUE, 'knownFrom' => array( 'tdb', 'mica-engine-vulnerability' ), 'fields' => array(
+            'inline-policy-action' => array( 'text', $inlineAction, null ),
+        ) );
+        // WildFire inline cloud analysis: rules (application, file type, direction, action)
+        $micaWildfire = array( 'path' => 'mica-engine-wildfire-rules', 'name' => '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/', 'fields' => array(
+            'application' => array( 'list', null, 'any' ),
+            'file-type' => array( 'list', null, 'any' ),
+            'direction' => array( 'text', array( 'upload', 'download', 'both' ), 'both' ),
+            'action' => array( 'text', array( 'allow', 'alert', 'block' ), 'allow' ),
+        ) );
+        // DNS (anti-spyware, SCM DNS security): the DNS signature lists (EDL of type domain / default-paloalto-dns), the DNS
+        // security categories, the DNS exceptions (whitelist)
+        $dnsList = array( 'path' => 'botnet-domains/lists', 'name' => '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,62}$/', 'fields' => array(
+            'action' => array( 'choice', array( 'alert', 'allow', 'block', 'sinkhole' ), 'sinkhole' ),
+            'packet-capture' => $pcap,
+        ) );
+        $dnsCategory = array( 'path' => 'botnet-domains/dns-security-categories', 'name' => '/^pan-dns-sec-[a-z0-9-]+$/', 'fields' => array(
+            'action' => array( 'text', array( 'default', 'allow', 'block', 'sinkhole' ), 'default' ),
+            'log-level' => array( 'text', array( 'default', 'none', 'low', 'informational', 'medium', 'high', 'critical' ), 'default' ),
+            'packet-capture' => $pcap,
+        ) );
+        $dnsException = array( 'path' => 'botnet-domains/whitelist', 'name' => '/^[A-Za-z0-9*][A-Za-z0-9*._-]{0,253}$/', 'fields' => array(
+            'description' => array( 'text', null, null ),
+        ) );
+        $virusLists = array(
                 'decoder' => array( 'path' => 'decoder', 'fixed' => TRUE, 'known' => array( 'http', 'http2', 'smtp', 'imap', 'pop3', 'ftp', 'smb' ), 'fields' => array(
                     'action' => array( 'text', self::AV_ACTIONS, null ),
                     'wildfire-action' => array( 'text', self::AV_ACTIONS, null ),
@@ -72,15 +104,27 @@ class SecurityProfileFields
                     'action' => array( 'text', self::AV_ACTIONS, 'default' ),
                 ) ),
                 'threat-exception' => array( 'path' => 'threat-exception', 'name' => '/^[0-9]{1,10}$/', 'fields' => array() ),
-            ),
+                'mlav-engine' => $mlav,
+        );
+        $wildfireRule = $fileRule( array( 'analysis' => array( 'text', array( 'public-cloud', 'private-cloud' ), 'public-cloud' ) ) );
+
+        return array(
+            'virus' => $virusLists,
+            // SCM: antivirus and WildFire analysis in one profile
+            'virus-and-wildfire-analysis' => $virusLists + array( 'rule' => $wildfireRule, 'mica-engine' => $micaWildfire ),
             'spyware' => array(
                 'rule' => array( 'path' => 'rules', 'name' => '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/', 'fields' => $tpRule ),
                 'threat-exception' => $tpException,
-                'dns-category' => array( 'path' => 'botnet-domains/dns-security-categories', 'name' => '/^pan-dns-sec-[a-z0-9-]+$/', 'fields' => array(
-                    'action' => array( 'text', array( 'default', 'allow', 'block', 'sinkhole' ), 'default' ),
-                    'log-level' => array( 'text', array( 'default', 'none', 'low', 'informational', 'medium', 'high', 'critical' ), 'default' ),
-                    'packet-capture' => $pcap,
-                ) ),
+                'mica-engine' => $micaSpyware,
+                'dns-list' => $dnsList,
+                'dns-category' => $dnsCategory,
+                'dns-exception' => $dnsException,
+            ),
+            // SCM: the DNS part of anti-spyware
+            'dns-security' => array(
+                'dns-list' => $dnsList,
+                'dns-category' => $dnsCategory,
+                'dns-exception' => $dnsException,
             ),
             'vulnerability' => array(
                 'rule' => array( 'path' => 'rules', 'name' => '/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/', 'fields' => $tpRule + array(
@@ -89,12 +133,14 @@ class SecurityProfileFields
                     'vendor-id' => array( 'list', null, 'any' ),
                 ) ),
                 'threat-exception' => $tpException,
+                'mica-engine' => $micaVulnerability,
             ),
             'file-blocking' => array(
                 'rule' => $fileRule( array( 'action' => array( 'text', array( 'alert', 'block', 'continue' ), 'alert' ) ) ),
             ),
             'wildfire' => array(
-                'rule' => $fileRule( array( 'analysis' => array( 'text', array( 'public-cloud', 'private-cloud' ), 'public-cloud' ) ) ),
+                'rule' => $wildfireRule,
+                'mica-engine' => $micaWildfire,
             ),
         );
     }
@@ -105,10 +151,18 @@ class SecurityProfileFields
         $yn = self::YESNO;
         return array(
             'virus' => array( 'packet-capture' => array( 'packet-capture', $yn ) ),
+            'virus-and-wildfire-analysis' => array( 'packet-capture' => array( 'packet-capture', $yn ) ),
             'spyware' => array(
                 'sinkhole-ipv4' => array( 'botnet-domains/sinkhole/ipv4-address', null ),
                 'sinkhole-ipv6' => array( 'botnet-domains/sinkhole/ipv6-address', null ),
+                'cloud-inline-analysis' => array( 'cloud-inline-analysis', $yn ),
             ),
+            'dns-security' => array(
+                'sinkhole-ipv4' => array( 'botnet-domains/sinkhole/ipv4-address', null ),
+                'sinkhole-ipv6' => array( 'botnet-domains/sinkhole/ipv6-address', null ),
+            ),
+            'vulnerability' => array( 'cloud-inline-analysis' => array( 'cloud-inline-analysis', $yn ) ),
+            'wildfire' => array( 'cloud-inline-analysis' => array( 'cloud-inline-analysis', $yn ) ),
             'url-filtering' => array(
                 'log-container-page-only' => array( 'log-container-page-only', $yn ),
                 'safe-search-enforcement' => array( 'safe-search-enforcement', $yn ),
@@ -128,6 +182,48 @@ class SecurityProfileFields
         if( method_exists( $profile, 'isTmp' ) && $profile->isTmp() )
             throw new Exception( 'a tmp object can not be changed' );
         return (string)$profile->secprof_type;
+    }
+
+    /** @var array path => name => minver (PAN-OS version as pan-os-php keeps it, e.g. 111) of predefined.xml */
+    static private $knownCache = array();
+
+    /**
+     * the entries PAN-OS knows for a fixed list: 'known', or 'knownFrom' (a path of predefined.xml) - the ones of the
+     * PAN-OS version of the configuration (minver)
+     */
+    static public function known( array $def, $profile ): array
+    {
+        if( isset( $def['known'] ) )
+            return $def['known'];
+        if( !isset( $def['knownFrom'] ) )
+            return array();
+        $key = implode( '/', $def['knownFrom'] );
+        if( !isset( self::$knownCache[$key] ) )
+        {
+            self::$knownCache[$key] = array();
+            PH::eachPredefinedEntry( $def['knownFrom'], function( $name, $node ) use ( $key ) {
+                if( !is_string( $name ) || $name === '' )
+                    return;
+                $min = $node === null ? '' : (string)$node->getAttribute( 'minver' );
+                $p = explode( '.', $min );
+                self::$knownCache[$key][$name] = $min === '' ? 0 : (int)$p[0] * 10 + (int)( $p[1] ?? 0 );
+            } );
+        }
+        $version = null;
+        try
+        {
+            $root = is_object( $profile->owner ?? null ) ? PH::findRootObjectOrDie( $profile->owner->owner ?? $profile->owner ) : null;
+            if( is_object( $root ) && is_numeric( $root->version ?? null ) )
+                $version = (int)$root->version;
+        }
+        catch( Throwable $e )
+        {
+        }
+        $out = array();
+        foreach( self::$knownCache[$key] as $name => $min )
+            if( $version === null || $min <= $version )
+                $out[] = $name;
+        return $out;
     }
 
     static private function listDef( $profile, string $list ): array
@@ -302,16 +398,19 @@ class SecurityProfileFields
             self::entryAdd( $profile, $list, $name );
             $e = self::entry( $listNode, $name );
         }
-        // a decoder of PAN-OS not in the XML yet: with 'default' in every field
-        if( $e === null && in_array( $name, $def['known'] ?? array(), TRUE ) )
+        // an entry of PAN-OS not in the XML yet (decoder, inline ML model): created
+        $known = self::known( $def, $profile );
+        if( $e === null && in_array( $name, $known, TRUE ) )
         {
             $e = DH::createElement( $listNode, 'entry' );
             $e->setAttribute( 'name', $name );
-            foreach( $def['fields'] as $f => $x )
-                self::writeField( $e, $f, 'text', 'default' );
+            // a decoder: 'default' in every field; an inline ML model: only the field that is set
+            if( $list === 'decoder' )
+                foreach( $def['fields'] as $f => $x )
+                    self::writeField( $e, $f, 'text', 'default' );
         }
         if( $e === null )
-            throw new Exception( $list . " '" . $name . "' not found" . ( isset( $def['known'] ) ? ' (' . implode( ', ', $def['known'] ) . ')' : '' ) );
+            throw new Exception( $list . " '" . $name . "' not found" . ( $known !== array() ? ' (' . implode( ', ', $known ) . ')' : '' ) );
         if( self::readField( $e, $field, $fd[0] ) === $v )
             throw new Exception( $field . ' is the same' );
         self::writeField( $e, $field, $fd[0], $v );
@@ -359,7 +458,7 @@ class SecurityProfileFields
             $fields = array();
             foreach( $def['fields'] as $f => $fd )
                 $fields[$f] = array( 'kind' => $fd[0], 'choices' => $fd[1], 'default' => $fd[2] );
-            $out['lists'][$list] = array( 'fields' => $fields, 'fixed' => !empty( $def['fixed'] ), 'known' => $def['known'] ?? null,
+            $out['lists'][$list] = array( 'fields' => $fields, 'fixed' => !empty( $def['fixed'] ), 'known' => !empty( $def['fixed'] ) ? self::known( $def, $profile ) : null,
                 'entries' => self::entries( $profile, $list ) );
         }
         foreach( self::options()[$type] ?? array() as $opt => $od )

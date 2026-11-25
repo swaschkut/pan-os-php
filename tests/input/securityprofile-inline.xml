@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared/>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <profiles>
+            <virus>
+              <entry name="av-1">
+                <decoder><entry name="http"><action>default</action><wildfire-action>default</wildfire-action><mlav-action>default</mlav-action></entry></decoder>
+                <mlav-engine-filebased-enabled>
+                  <entry name="Windows Executables"><mlav-policy-action>enable</mlav-policy-action></entry>
+                </mlav-engine-filebased-enabled>
+              </entry>
+            </virus>
+            <spyware>
+              <entry name="as-1">
+                <botnet-domains>
+                  <lists><entry name="default-paloalto-dns"><action><sinkhole/></action><packet-capture>disable</packet-capture></entry></lists>
+                  <sinkhole><ipv4-address>sinkhole.paloaltonetworks.com</ipv4-address><ipv6-address>2600:5200::1</ipv6-address></sinkhole>
+                </botnet-domains>
+                <mica-engine-spyware-enabled>
+                  <entry name="HTTP Command and Control detector"><inline-policy-action>alert</inline-policy-action></entry>
+                </mica-engine-spyware-enabled>
+                <cloud-inline-analysis>no</cloud-inline-analysis>
+              </entry>
+            </spyware>
+            <vulnerability>
+              <entry name="vp-1">
+                <mica-engine-vulnerability-enabled>
+                  <entry name="SQL Injection"><inline-policy-action>alert</inline-policy-action></entry>
+                </mica-engine-vulnerability-enabled>
+                <cloud-inline-analysis>no</cloud-inline-analysis>
+              </entry>
+            </vulnerability>
+            <wildfire-analysis>
+              <entry name="wf-1">
+                <rules><entry name="all"><application><member>any</member></application><file-type><member>any</member></file-type><direction>both</direction><analysis>public-cloud</analysis></entry></rules>
+              </entry>
+            </wildfire-analysis>
+          </profiles>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

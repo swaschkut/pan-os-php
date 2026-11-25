@@ -37,6 +37,23 @@ class EDL
     public $recurring = null;
     public $url = null;
 
+    /** @var bool a predefined list of Palo Alto Networks (predefined.xml ip-block-list-v2 / url-predefined) - read only */
+    private $predefined = FALSE;
+
+    /**
+     * @ignore EDLStore::getPredefinedStore()
+     */
+    public function setPredefined()
+    {
+        $this->predefined = TRUE;
+    }
+
+    /** @return bool TRUE for a predefined list of Palo Alto Networks (panw-…) */
+    public function isPredefined()
+    {
+        return $this->predefined;
+    }
+
     /**
      * @param string $name
      * @param EDLStore|null $owner
@@ -352,6 +369,13 @@ class EDL
         {
             if( !preg_match( '/^[a-z0-9][a-z0-9._-]*$/', $url ) )
                 throw new Exception( "source '" . $url . "': the name of a predefined list (e.g. panw-bulletproof-ip-list)" );
+            // the predefined lists of predefined.xml (when known): the name and the kind (ip / url) must fit
+            $known = EDLStore::predefinedEDLNames();
+            if( $known !== array() && ( !isset( $known[$url] ) || $known[$url]['type'] !== $type ) )
+            {
+                $fit = array_keys( array_filter( $known, function( $d ) use ( $type ) { return $d['type'] === $type; } ) );
+                throw new Exception( "source '" . $url . "': no predefined list of type " . $type . " (" . implode( ', ', $fit ) . ")" );
+            }
         }
         elseif( !preg_match( '#^https?://[^/]+#i', $url ) )
             throw new Exception( "source '" . $url . "': http:// or https:// URL" );

@@ -4049,7 +4049,7 @@ async function showViewer(config, preset) {
                 });
                 parts.push(names.length ? table([list === 'decoder' ? 'protocol' : 'name', ...fields, ''], rows) : el('p', { class: 'muted', text: 'no entries' }));
                 if (!L.fixed && can('detail-entry-add')) {
-                    const ni = el('input', { autocomplete: 'off', spellcheck: false, 'aria-label': 'new ' + list, placeholder: list === 'threat-exception' ? 'threat ID' : list === 'dns-category' ? 'pan-dns-sec-…' : 'name' });
+                    const ni = el('input', { autocomplete: 'off', spellcheck: false, 'aria-label': 'new ' + list, placeholder: list === 'threat-exception' ? 'threat ID' : list === 'dns-category' ? 'pan-dns-sec-…' : list === 'dns-list' ? 'EDL (domain) / default-paloalto-dns' : list === 'dns-exception' ? 'domain, e.g. *.example.com' : 'name' });
                     parts.push(el('div', { class: 'row' }, ni, el('button', { type: 'button', text: 'Add ' + list, title: 'detail-entry-add (PAN-OS defaults)',
                         onclick: () => { if (ni.value.trim()) act(key, 'detail-entry-add:' + arg(list) + ',' + arg(ni.value.trim())); } })));
                 }

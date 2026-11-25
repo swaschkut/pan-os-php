@@ -94,7 +94,9 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
 - **Security profile window - Details**: the lists of the profile type as tables - antivirus: decoders (protocol ×
   action / WildFire / ML action), application and threat exceptions; anti-spyware: rules, threat exceptions (exempt
   IPs), DNS security categories, sinkhole; vulnerability: rules (host, CVE, vendor ID), threat exceptions; file blocking
-  and WildFire analysis: rules; URL filtering: site access and user credential submission per category and the logging
+  and WildFire analysis: rules; inline ML / inline cloud analysis - antivirus models (mlav-engine), anti-spyware and
+  vulnerability detectors and WildFire inline rules (mica-engine), cloud-inline-analysis; DNS - signature lists,
+  categories and exceptions (also the SCM DNS security profile); URL filtering: site access and user credential submission per category and the logging
   options. A select per field with the values pan-os-php allows (several values of a list field joined with +), a new
   entry gets the PAN-OS defaults, ✕ removes one; every change is one action (`detail-entry-add` / `-remove` / `-set`,
   `detail-option-set`, `url.category-action-set`, `url.credential-action-set`). Predefined profiles: read only.

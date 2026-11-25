@@ -107,9 +107,82 @@ class EDLStore extends ObjStore
 
             if( $this->parentCentralStore !== null )
                 return $this->parentCentralStore->find($name, $ref, $nested);
+
+            // top of the hierarchy: a predefined list of Palo Alto Networks (panw-…) - not a temporary address
+            if( !$this->isPredefinedStore() && isset( self::predefinedEDLNames()[$name] ) )
+                return self::getPredefinedStore( $this->owner )->findByName( $name, $ref, FALSE );
         }
 
         return null;
+    }
+
+    /** @var EDLStore|null the predefined lists of Palo Alto Networks */
+    protected static $predefinedEDLStore = null;
+
+    /** @var array|null name => array( 'type' => predefined-ip|predefined-url, 'display' => display name, 'description' => text ) */
+    protected static $predefinedEDLNames = null;
+
+    /**
+     * the predefined lists of predefined.xml: ip-block-list-v2 (type predefined-ip) and url-predefined (predefined-url)
+     * @return array
+     */
+    public static function predefinedEDLNames(): array
+    {
+        if( self::$predefinedEDLNames !== null )
+            return self::$predefinedEDLNames;
+        self::$predefinedEDLNames = array();
+        $file = PH::predefinedXmlPath();
+        if( !is_string( $file ) || !is_file( $file ) )
+            return self::$predefinedEDLNames;
+        foreach( array( 'ip-block-list-v2' => 'predefined-ip', 'url-predefined' => 'predefined-url' ) as $section => $type )
+            PH::eachPredefinedEntry( array( $section ), function( $name, $node ) use ( $type ) {
+                if( !is_string( $name ) || $name === '' )
+                    return;
+                $d = $node === null ? FALSE : DH::findFirstElement( 'display-name', $node );
+                $t = $node === null ? FALSE : DH::findFirstElement( 'description', $node );
+                self::$predefinedEDLNames[$name] = array( 'type' => $type, 'display' => $d === FALSE ? '' : trim( $d->textContent ),
+                    'description' => $t === FALSE ? '' : trim( $t->textContent ) );
+            } );
+        return self::$predefinedEDLNames;
+    }
+
+    /**
+     * the store of the predefined lists (read only, location 'predefined'); one per process
+     * @param object|null $owner
+     * @return EDLStore
+     */
+    public static function getPredefinedStore( $owner = null ): EDLStore
+    {
+        if( self::$predefinedEDLStore !== null )
+            return self::$predefinedEDLStore;
+        $store = new EDLStore( null );
+        $store->owner = $owner;
+        $store->name = 'predefined';
+        $doc = new DOMDocument();
+        $root = $doc->createElement( 'external-list' );
+        $doc->appendChild( $root );
+        foreach( self::predefinedEDLNames() as $name => $d )
+        {
+            $entry = $doc->createElement( 'entry' );
+            $entry->setAttribute( 'name', $name );
+            $type = DH::createElement( DH::createElement( $entry, 'type' ), $d['type'] );
+            DH::createElement( $type, 'url', $name );
+            if( $d['display'] !== '' )
+                DH::createElement( $type, 'description', $d['display'] );
+            $root->appendChild( $entry );
+            $edl = new EDL( $name, $store );
+            $edl->load_from_domxml( $entry );
+            $edl->setPredefined();
+            $store->add( $edl );
+        }
+        self::$predefinedEDLStore = $store;
+        return $store;
+    }
+
+    /** @return bool TRUE for the store of the predefined lists */
+    public function isPredefinedStore(): bool
+    {
+        return self::$predefinedEDLStore !== null && $this === self::$predefinedEDLStore;
     }
 
     public function removeAllEDLs()

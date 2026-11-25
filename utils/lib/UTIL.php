@@ -2048,7 +2048,7 @@ class UTIL
             return array();
         if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
             return array( 'region' );
-        return array( 'service', 'application', 'log-profile', 'threat', 'securityprofile', 'region' );
+        return array( 'service', 'application', 'log-profile', 'threat', 'securityprofile', 'region', 'edl' );
     }
 
     public function predefinedObjectSets(): array
@@ -2064,6 +2064,12 @@ class UTIL
         }
         if( !is_object( $this->pan ) || $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf )
             return array();
+        if( $this->utilType == 'edl' )
+        {
+            // the predefined lists of Palo Alto Networks (panw-…)
+            $pre = EDLStore::getPredefinedStore( $this->pan );
+            return array( array( 'store' => $pre, 'objects' => $pre->getAll() ) );
+        }
         if( $this->utilType == 'service' )
         {
             $pre = ServiceStore::getPredefinedStore( $this->pan );
@@ -2142,7 +2148,12 @@ class UTIL
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
                     elseif( $this->utilType == 'edl' )
+                    {
+                        // the predefined lists belong to shared - before it, read only
+                        foreach( $this->predefinedObjectSets() as $set )
+                            $this->objectsToProcess[] = $set;
                         $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
+                    }
                     elseif( $this->utilType == 'region' )
                     {
                         foreach( $this->predefinedObjectSets() as $set )
@@ -2285,7 +2296,12 @@ class UTIL
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
                     elseif( $this->utilType == 'edl' )
+                    {
+                        // the predefined lists belong to shared - before it, read only
+                        foreach( $this->predefinedObjectSets() as $set )
+                            $this->objectsToProcess[] = $set;
                         $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
+                    }
                     elseif( $this->utilType == 'region' )
                     {
                         foreach( $this->predefinedObjectSets() as $set )

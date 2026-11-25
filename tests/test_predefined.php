@@ -43,7 +43,7 @@ foreach( array( 'service', 'application', 'log-profile', 'securityprofile', 'reg
     $got[$t] = array( $count( $t, $in, '(object is.predefined)' ) > 0, $count( $t, $in, '!(object is.predefined)' ) );
 $eq( $got, array( 'service' => array( TRUE, 0 ), 'application' => array( TRUE, 4 ), 'log-profile' => array( TRUE, 0 ), 'securityprofile' => array( TRUE, 0 ),
     'region' => array( TRUE, 0 ), 'threat-rule' => array( TRUE, 0 ), 'address' => array( FALSE, 0 ), 'tag' => array( FALSE, 0 ), 'schedule' => array( FALSE, 0 ),
-    'edl' => array( FALSE, 0 ), 'securityprofilegroup' => array( FALSE, 0 ) ),
+    'edl' => array( TRUE, 0 ), 'securityprofilegroup' => array( FALSE, 0 ) ),
     'object is.predefined: every type; not predefined = only the objects of the configuration (4 applications)' );
 
 // ---- library: names the App-ID database uses without an entry of their own (ctd-dummy, ftp-data, …) are predefined

@@ -638,7 +638,7 @@ eq( array( $rows['AV-shared']['refcount'] ?? null, $rows['AS-dg']['refcount'] ??
     array( 2, 1, 200, 2, TRUE, TRUE ), 'security profiles: count of references, references (profile group, rule), XML and history' );
 // the fields of the window (pan-os-php 'fields' of display): in the object, not in the list
 eq( array( $av['fields']['kind'] ?? null, $av['fields']['type'] ?? null, array_keys( $av['fields']['lists'] ?? array() ), array_key_exists( 'fields', $rows['AV-shared'] ?? array() ) ),
-    array( 'securityprofile', 'virus', array( 'decoder', 'application-exception', 'threat-exception' ), FALSE ),
+    array( 'securityprofile', 'virus', array( 'decoder', 'application-exception', 'threat-exception', 'mlav-engine' ), FALSE ),
     'security profiles: the fields of the window (lists of the type, values, choices) in the object, not in the list' );
 // an object after the first 20 of its location (before: only the first 20 objects of a location had their XML - an
 // address group after 30 addresses had none); the first commit of a version is its start (subject "version …")
