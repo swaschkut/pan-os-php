@@ -59,7 +59,6 @@ COPY --chmod=777 phpseclib ./phpseclib
 COPY --chmod=777 git-php ./git-php
 COPY --chmod=777 utils ./utils
 COPY --chmod=777 tests ./tests
-COPY --chmod=777 migration ./migration
 COPY --chmod=777 CHANGELOG.txt .
 
 

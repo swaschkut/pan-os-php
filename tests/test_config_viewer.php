@@ -47,7 +47,16 @@ foreach( array( 'badenv' => "'PANOSPHP_VIEWER_DATA' => '/tmp'", 'badenv2' => "'P
 file_put_contents( $plugins . '/badargs/plugin.php', "<?php return array( 'api' => 1, 'name' => 'badargs', 'runs' => array(
     'in' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'in=/etc/passwd' ); } ),
     'out' => array( 'tool' => 'address', 'args' => function( \$run ) { return array( 'actions=display', 'out=/tmp/x.xml' ); } ) ) );" );
-// a run type without a version: its input is a raw project file (a small Cisco switch configuration, migrated)
+// a run type without a version: its input is a raw project file (a small switch configuration, migrated). The 3rd party
+// parsers are not part of pan-os-php: the plug-in brings a parser root - here the stand-in tests/input/migration-stub
+$stubFiles = array();
+foreach( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $here . '/input/migration-stub', FilesystemIterator::SKIP_DOTS ) ) as $f )
+    $stubFiles[substr( $f->getPathname(), strlen( $here . '/input/migration-stub/' ) )] = file_get_contents( $f->getPathname() );
+foreach( $stubFiles as $rel => $content )
+{
+    @mkdir( dirname( $plugins . '/mig/' . $rel ), 0700, TRUE );
+    file_put_contents( $plugins . '/mig/' . $rel, $content );
+}
 file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1, 'name' => 'mig',
     'kinds' => array( 'source' => array( 'title' => 'source', 'format' => 'raw', 'max' => 2000,
         'check' => function( \$path ) { if( strpos( file_get_contents( \$path ), 'access-list' ) === FALSE ) return 'no access-list in the file'; } ) ),
@@ -55,7 +64,7 @@ file_put_contents( $plugins . '/mig/plugin.php', "<?php return array( 'api' => 1
         'fields' => array( array( 'name' => 'vendor', 'kind' => 'select', 'required' => TRUE, 'options' => array( 'ciscoswitch' => 'Cisco switch', 'ciscoisr' => 'Cisco router' ) ),
             array( 'name' => 'kinds', 'kind' => 'multi', 'options' => array( 'address' => 'addresses', 'rule' => 'rules' ) ),
             array( 'name' => 'source', 'kind' => 'file:source', 'required' => TRUE ) ),
-        'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/none' ),
+        'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' ),
         'args' => function( \$run ) { return array( 'vendor=' . \$run->choice( 'vendor' ), 'file=' . \$run->file( 'source', 'mig-source' ), 'out=' . \$run->out( 'out.xml' ),
             'shadow-ignoreinvalidaddressobjects', '#kinds=' . implode( '+', \$run->choices( 'kinds' ) ) ); } ) ) );" );
 
@@ -148,7 +157,7 @@ file_put_contents( $plugins . '/sec/plugin.php', "<?php return array( 'api' => 2
         'fields' => array( array( 'name' => 'psk', 'kind' => 'secret', 'label' => 'PSK list', 'required' => TRUE ) ),
         'args' => function( \$run ) { return array( 'actions=display', 'x-psk=' . \$run->secret( 'psk' ) ); } ) ) );" );
 
-// an encrypted plug-in package (licensed feature "test-pack"): its run uses a vendor parser from the package
+// an encrypted plug-in package (licensed feature "test-pack"): its run uses the migration base and a vendor parser from the package
 require_once $here . '/../lib/misc-classes/PluginLicense.php';
 require_once $here . '/../lib/misc-classes/PluginPackage.php';
 require_once $here . '/../lib/misc-classes/SupportFile.php';
@@ -160,8 +169,7 @@ $pkFiles = array( 'plugin.php' => "<?php return array( 'api' => 1, 'name' => 'pa
         'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' ),
         'fields' => array( array( 'name' => 'source', 'kind' => 'file:cfg', 'required' => TRUE ) ),
         'args' => function( \$run ) { return array( 'vendor=ciscoisr', 'file=' . \$run->file( 'source', 'pack-cfg' ), 'out=' . \$run->out( 'out.xml' ) ); } ) ) );" );
-foreach( glob( $here . '/../migration/parser/CISCOISR/*.php' ) as $f )
-    $pkFiles['parser/CISCOISR/' . basename( $f )] = file_get_contents( $f );
+$pkFiles += $stubFiles;
 $pkRel = testPack( $plugins, 'pack', '1.0', 'test-pack', $pkFiles );
 
 // ---- users, server
@@ -2264,7 +2272,8 @@ $lrun = $LP . '/runs/' . ( $r[1]['jid'] ?? 'x' );
 $r = waitRun( $alice, $lrun );
 eq( array( $r[1]['state'] ?? null, $r[1]['error'] ?? null ), array( 'done', null ), 'licence: run of the package done' );
 $log = (string)( $alice->call( 'GET', $lrun . '/files/run.log' )[1] ?? '' );
-eq( strpos( $log, 'vendor parser from PANOSPHP_MIGRATION_PARSERS: CISCOISR/CISCOISR.php' ) !== FALSE, TRUE, 'licence: the run used the parser from the package (decrypted in memory)' );
+eq( array( strpos( $log, 'migration plug-in: ppp://pack/parser' ) !== FALSE, strpos( $log, 'vendor parser: STUB/STUB.php [ppp://pack/parser]' ) !== FALSE ), array( TRUE, TRUE ),
+    'licence: the run used the migration base and the parser from the package (decrypted in memory)' );
 eq( preg_grep( '/BEGIN PAN-OS-PHP LICENSE|LICENSE-----/', array_column( $r[1]['files'] ?? array(), 'name' ) ), array(), 'licence: no licence among the result files' );
 $au = json_encode( $alice->call( 'GET', 'audit?limit=50' )[1] ?? array() );
 eq( array( strpos( $au, 'PUT' ) !== FALSE, strpos( $au, 'BEGIN PAN-OS-PHP' ) ), array( TRUE, FALSE ), 'licence: installing is in the audit log, the licence text is not' );

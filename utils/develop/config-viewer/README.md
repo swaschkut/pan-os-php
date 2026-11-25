@@ -547,7 +547,7 @@ A plug-in is PHP code inside the web part and the job runner - install only what
 
 **Files of a plug-in in its runs:** a run type can set environment variables for pan-os-php (`'env' => array( 'PANOSPHP_MIGRATION_PARSERS' => '%PLUGIN%/parser' )`; names `PANOSPHP_…`, not `PANOSPHP_VIEWER_…`; `%PLUGIN%` is the folder of the plug-in). With one container per run that folder is mounted read-only at `/plugin`.
 
-**Install a plug-in that is not in the image (Docker):** put its folder (e.g. `migration/` with `plugin.php`) into a folder on the host and start with that folder:
+**Install a plug-in that is not in the image (Docker):** put its folder (e.g. `migrationcisco/` with `plugin.php`) into a folder on the host and start with that folder:
 
 ```bash
 VIEWER_PLUGINS_DIR=/path/to/plugins docker compose -f docker-compose.yml up -d

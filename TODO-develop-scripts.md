@@ -24,7 +24,6 @@ Recommendation:
 | `address_object_move.php` | move shared address / address-group objects with a given tag into a vsys / DG, raw XML | DG / vsys name and tag **hard coded** (`vsys1`, `SVEN`) | `type=address 'filter=(tag has X)' actions=move:vsys1` | remove |
 | `tsf_request.php` | request tech support file (`<request><tech-support><dump/>`), also for all firewalls of a Panorama | `in=api://` | `type=tsf` (`utils/lib/TSF__.php`) – check if request + Panorama cycle is covered | remove after check |
 | `tsf_handler.php` | parse a TSF: system info, license info | file in script | `type=tsf` | remove after check |
-| `migration_playbook.php` | migration playbook: parser → address / service / tag / zone / rule edits → mergers | variables in script | `type=playbook` | remove after check |
 | `panorama_combine_multiple_shared.php` | several Panorama files: each `/config/shared` into its own DG `DGx` | file names in script; template arguments | – (related: `type=panorama-move`) | check: as option of `panorama-move`? |
 | `panorama-PA_cleanup.php` | Prisma Access Panorama: remove all DG / template stacks except Prisma Access (+ parent DGs), rename stacks to `Service_Conn_…`, `Mobile_User_…`, `Remote_Network_…`, `Explicit_Proxy_Template_Stack` | `in=` | – | check (SCM migration context) |
 | `panorama-PA_multi2singleTenant.php` | Prisma Access multi tenant → single tenant: keep one tenant, remove the others | `tenant=`; own Todo: list tenants, remove DG / templates of removed tenants | – | check (SCM migration context) |
@@ -53,7 +52,7 @@ Recommendation:
   `cycleconnectedfirewalls` argument in `UTIL` would make these thin actions.
 - **old argument parsing** (`checkpoint-exclude`, `ike`, `inventory_sw_export`): own `display_usage_and_exit()` /
   `PH::$args` loop instead of `new UTIL(...)`.
-- **values in the script** (`address_object_move`, `pppoe_session_clean`, `panos_filetype`, `migration_playbook`,
+- **values in the script** (`address_object_move`, `pppoe_session_clean`, `panos_filetype`, 
   `rule_create_dag_fullmesh`): need arguments before they can be used by anyone else.
 - **template copies** (`object-merger.php`, `panorama_combine_multiple_shared.php`, `shared_gateway.php`): still contain
   the `argument1` / `optional_argument2` placeholders.

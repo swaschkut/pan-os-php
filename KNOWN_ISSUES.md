@@ -25,6 +25,8 @@ one release); limitation fixed → remove the row and mention it in the release 
 
 ### Vendor migration (`type=vendor-migration`)
 
+The 3rd party parsers are not part of this repository any more (migration plug-in, private repository `pan-os-php_migration`); the issues stay listed here until they are closed.
+
 | Issue | Vendor | Problem | State / workaround |
 |---|---|---|---|
 | [#76](https://github.com/swaschkut/pan-os-php/issues/76) | `cp-r80` | interface IP addresses missing; they are in the export ("Gateways running this policy package"), but a package can hold several gateways / clusters | needs an argument which gateway is migrated |

@@ -236,13 +236,13 @@ class UPLOAD extends UTIL
                     if( strpos( $toXpath, "/vsys/entry[" ) !== false )
                     {
                         #$doc2->load( dirname(__FILE__) . "/../parser/panos_baseconfig.xml", XML_PARSE_BIG_LINES);
-                        $filename_load = dirname(__FILE__) . "/../../migration/parser/panos_baseconfig.xml";
+                        $filename_load = dirname(__FILE__) . "/../../lib/resources/baseconfig/panos_baseconfig.xml";
                         $argv2[] = "in=".$filename_load;
                     }
                     else
                     {
                         #$doc2->load( dirname(__FILE__) . "/../parser/panorama_baseconfig.xml", XML_PARSE_BIG_LINES);
-                        $filename_load = dirname(__FILE__) . "/../../migration/parser/panorama_baseconfig.xml";
+                        $filename_load = dirname(__FILE__) . "/../../lib/resources/baseconfig/panorama_baseconfig.xml";
                         $argv2[] = "in=".$filename_load;
                     }
 

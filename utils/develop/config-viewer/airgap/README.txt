@@ -30,7 +30,7 @@ Large configurations
     "Options for large configurations" (every step its own process). A run stopped for memory shows "out of memory".
 
 Licensed plug-ins (e.g. migration)
-    ./panosphp-viewer plugin migration.ppp      add a plug-in package (also: plug-ins in the folder plugins/ of this bundle)
+    ./panosphp-viewer plugin migrationcisco.ppp      add a plug-in package (also: plug-ins in the folder plugins/ of this bundle)
     ./panosphp-viewer license acme-2026.lic     install the licence (or in the browser: Account -> Licence)
     ./panosphp-viewer license                   show it
 

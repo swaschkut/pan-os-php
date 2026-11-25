@@ -111,7 +111,7 @@ Sources (former `utils/develop/panos-hw-compare/todo.txt`):
 
 | Folder | Purpose | Overlap / state | Proposal |
 |---|---|---|---|
-| `migration/` | vendor converters bluecoat, f5_bigip, mikrotik, pulse, sonicwall, sophos_xg, tmg, vmware_vrni, watchguard; each with "//Todo: possible to bring this in via argument" and variables in the script | sonicwall and sophos_xg also exist in `migration/parser/` (`SONICWALL`, `SOPHOSXG`); `migration/docs/vendors/watchguard.md` exists but there is no parser | per vendor: move to `migration/parser/` (`type=vendor-migration`) or drop; first compare the duplicates |
+| `migration/` | (moved) vendor converters bluecoat, f5_bigip, mikrotik, pulse, sonicwall, sophos_xg, tmg, vmware_vrni, watchguard | not in this repository any more: private repository `pan-os-php_migration`, folder `develop/vendors/` | - |
 | `create/` | create custom URL, DHCP reservation, interface, interface IPs, service in policy, tag, template mgmt permitted IPs, vwire | partly covered: `dhcp-server-reservation-create` (`type=dhcp`), `create` (`type=tag`), `custom-url-category-*`; no create actions for interface, vwire, permitted IP | add missing actions to existing types, remove covered scripts |
 | `cleanup_customer/` | NGFW vsys → Panorama DG, all security rules into one DG, Panorama cleanup | customer specific | generalise or archive |
 | `cisco_aci/get_epg.php` | Cisco ACI EPG info, installs the cisco plugin | – | keep in develop until needed |

@@ -119,8 +119,6 @@ UTIL scripts under development
    
 - **ike.php** : display IKE / IPsec / IKE profiles / IPsec profiles available in a PAN-OS XML configuration file.
 
-- **migration_playbook.php** : thoughts about calling multiple UTIL script to automate the full task
-
 - **pan_get_user_info.php** : display Panorama or Firewall configured system user
 
 - **pan_license.php** : Download Palo Alto Networks License for your device or full environment

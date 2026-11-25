@@ -103,9 +103,8 @@ require_once(dirname(__FILE__)."/SSH_CONNECTOR__.php");
 
 require_once(dirname(__FILE__)."/GCP.php");
 
-require_once dirname(__FILE__)."/../../migration/parser/lib/CONVERTER.php";
-require_once dirname(__FILE__)."/../../migration/parser/lib/PARSER.php";
-require_once dirname(__FILE__)."/../../migration/parser/lib/SHAREDNEW.php";
+// type=vendor-migration: the 3rd party parsers (CONVERTER, PARSER, SHAREDNEW, vendor parsers) are not part of pan-os-php -
+// they come from a migration plug-in and are loaded when the type is used (PH::migrationLoad)
 
 require_once dirname(__FILE__)."/APPIDTOOLBOX.php";
 
@@ -1056,7 +1055,7 @@ class UTIL
             if( $this->utilType == "threat" || $this->utilType == "application" )
             {
                 PH::$args['location'] = "shared";
-                PH::$args['in'] = dirname(__FILE__)."/../../migration/parser/panos_baseconfig.xml";
+                PH::$args['in'] = dirname(__FILE__)."/../../lib/resources/baseconfig/panos_baseconfig.xml";
             }
             else
                 $this->display_error_usage_exit('"in" is missing from arguments');

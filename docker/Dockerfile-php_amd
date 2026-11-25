@@ -23,7 +23,6 @@ COPY phpseclib /tools/pan-os-php/phpseclib
 COPY git-php /tools/pan-os-php/git-php
 COPY utils /tools/pan-os-php/utils
 COPY tests /tools/pan-os-php/tests
-COPY migration /tools/pan-os-php/migration
 
 
 # PHP library of pan-os-php

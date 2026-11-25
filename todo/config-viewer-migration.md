@@ -23,13 +23,16 @@ Migration (input 4):
 
 ## What exists
 
-* `migration/parser/` - `type=vendor-migration vendor=<v> file=<3rd party file> out=<pan-os.xml> [in=<base config>]
-  [routetable=<file>] [mapping=<file>] [location=]`; vendors in `CONVERTER::supportedVendors()`: ciscoasa, ciscoisr,
-  ciscoswitch, cp, cp-r80, cp-beta, fortinet, srx, netscreen, sonicwall, sophos, sophosxg, huawei, stonesoft,
-  sidewinder, pfsense. Base configs: `panos_baseconfig.xml`, `panorama_baseconfig.xml`.
-* `migration/docs/vendor_config_export.md`, `migration/docs/vendors/*.md` - how a customer exports the configuration
-  per vendor (some vendors need several files / an archive, CheckPoint and Stonesoft a mapping, some a route table).
-* `utils/lib/UTIL.php` loads the migration parser at start (the reason why the image must hold `migration/`).
+State 2026-11-25: the 3rd party parsers left this repository (see Progress). Here:
+
+* `type=vendor-migration vendor=<v> file=<3rd party file> out=<pan-os.xml> [in=<base config>] [routetable=<file>]
+  [mapping=<file>] [location=]` - the type stays, the code comes from a migration plug-in: `PH::migrationLoad()` loads
+  the migration base (CONVERTER, PARSER, SHAREDNEW) from a parser root, `PH::migrationVendors()` reads the vendors
+  from the `vendors.php` of every parser root. Parser roots: `PANOSPHP_MIGRATION_PARSERS=<folder>[,<folder>]`, else the
+  folder `parser/` of every mounted package (`PANOSPHP_PLUGIN_PACKAGES` + `PANOSPHP_LICENSE`).
+* Base configs: `lib/resources/baseconfig/panos_baseconfig.xml`, `panorama_baseconfig.xml`.
+* Private repository `pan-os-php_migration`: migration base, one folder / licence feature / package per vendor family
+  (`migration-<family>`, `migration<family>.ppp`), the vendor documentation, the former `utils/develop/migration`.
 
 ## To be clear before anything is protected
 
@@ -76,6 +79,7 @@ after a look at how clean the parsers separate.
 | 2026-11-20 | local migration report (`report/migration-report.php` in the private repository) | done; first real report: the file is in ASA / PIX / FWSM form (`access-list <name> extended …`, `static (if,if) …`), not IOS switch form |
 | 2026-11-20 | migration plug-in v0.1 (private repository, `migration/plugin.php`): upload → import (Cisco IOS router) → version in this or another project; parser `CISCOISR` in the plug-in with 4 fixes (lpd = 515, tcp / udp without a port = all ports of that protocol, icmp = application icmp / ping, wildcard mask that is no prefix = ip-wildcard object; dumps only with `debug`) | done, synthetic test (20 checks), checked on a real router configuration at Sven's side |
 | | Cisco router: zones from interfaces + ACL bindings, interfaces, static routes, NAT, IKE / IPsec (crypto profiles, gateways, tunnels); ACLs that only select traffic for VPN / NAT are no security rules | next |
+| 2026-11-25 | all 3rd party parsers moved to the private repository: `migration/`, `utils/develop/migration/`, `utils/develop/migration_playbook.php` removed here; the core starts without them (`utils/lib/UTIL.php`), `type=vendor-migration` loads base and vendor parsers from the plug-in (folder or licensed package, also on the command line); one package and one licence feature per vendor family | done |
 
 ## Order (proposal)
 
@@ -117,6 +121,5 @@ Synthetic test files for the repository are written from these command forms.
 1. Order: migration first and online inputs (XML API, SCM API as a source of a project) after it, or the other way round?
 2. Private repository: name, and how the plug-in gets from there into an installation while licences / encryption are
    not built (development: folder mounted through `PANOSPHP_VIEWER_PLUGINS`).
-3. The core without `migration/`: when is the parser removed from the public tree (new versions only in the private
-   repository)?
+3. ~~The core without `migration/`~~ - done 2026-11-25: removed from the public tree.
 4. Meaning of the link between projects (decision 5).

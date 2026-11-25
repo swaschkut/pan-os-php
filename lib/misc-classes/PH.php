@@ -2804,6 +2804,101 @@ class PH
         return realpath( dirname(__FILE__) . "/../.." );
     }
 
+    /**
+     * type=vendor-migration: the parser roots of the installed migration plug-ins. A parser root is a folder with
+     * vendors.php (vendor => file, class, title) and the parsers it names; the root of a complete plug-in also holds
+     * the migration base (lib/CONVERTER.php, lib/PARSER.php, lib/SHAREDNEW.php).
+     *   PANOSPHP_MIGRATION_PARSERS=<folder>[,<folder>…]   folders, or ppp://<name>/parser of a mounted package
+     *   not set: the folder parser/ of every mounted plug-in package that holds parser/vendors.php
+     *            (PANOSPHP_PLUGIN_PACKAGES + PANOSPHP_LICENSE, PluginPackage::bootFromEnv)
+     * @return string[]
+     */
+    public static function migrationRoots(): array
+    {
+        $roots = array();
+        $env = getenv( 'PANOSPHP_MIGRATION_PARSERS' );
+        if( is_string( $env ) && trim( $env ) !== '' )
+        {
+            foreach( explode( ',', $env ) as $root )
+            {
+                $root = rtrim( trim( $root ), '/' );
+                // ppp://<name> without a mounted package (no licence / PANOSPHP_PLUGIN_PACKAGES): not there
+                if( $root === '' || ( preg_match( '#^([A-Za-z][A-Za-z0-9+.-]*)://#', $root, $m ) && !in_array( $m[1], stream_get_wrappers(), TRUE ) ) )
+                    continue;
+                $roots[] = $root;
+            }
+        }
+        else
+        {
+            foreach( PluginPackage::$files as $name => $files )
+                if( isset( $files['parser/vendors.php'] ) )
+                    $roots[] = 'ppp://' . $name . '/parser';
+        }
+        return array_values( array_unique( $roots ) );
+    }
+
+    /** a file of the migration plug-ins: the first parser root that holds it, null: not there */
+    public static function migrationFile( string $relative ): ?string
+    {
+        foreach( self::migrationRoots() as $root )
+            if( is_file( $root . '/' . $relative ) )
+                return $root . '/' . $relative;
+        return null;
+    }
+
+    /**
+     * the vendors of the installed migration plug-ins
+     * @return array vendor => array( 'file' => relative to the root, 'class', 'title', 'root' )
+     */
+    public static function migrationVendors(): array
+    {
+        $out = array();
+        foreach( self::migrationRoots() as $root )
+        {
+            $file = $root . '/vendors.php';
+            if( !is_file( $file ) )
+                continue;
+            $list = ( static function() use ( $file ) { return require $file; } )();
+            foreach( is_array( $list ) ? $list : array() as $vendor => $v )
+            {
+                if( !is_string( $vendor ) || isset( $out[$vendor] ) || !is_array( $v ) || !is_string( $v['file'] ?? null ) || !is_string( $v['class'] ?? null )
+                    || strpos( $v['file'], '..' ) !== FALSE || !is_file( $root . '/' . $v['file'] ) )
+                    continue;
+                $out[$vendor] = array( 'file' => $v['file'], 'class' => $v['class'], 'title' => is_string( $v['title'] ?? null ) ? $v['title'] : $vendor, 'root' => $root );
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * loads the migration base (classes CONVERTER, PARSER, SHAREDNEW) - from the plug-in that brings $vendor, else from
+     * the first parser root that holds it
+     * @return string|null null: loaded; else why not
+     */
+    public static function migrationLoad( ?string $vendor = null ): ?string
+    {
+        if( class_exists( 'CONVERTER', FALSE ) )
+            return null;
+        $roots = self::migrationRoots();
+        $vendors = self::migrationVendors();
+        if( $vendor !== null && isset( $vendors[$vendor] ) )
+            $roots = array_values( array_unique( array_merge( array( $vendors[$vendor]['root'] ), $roots ) ) );
+        foreach( $roots as $root )
+        {
+            if( !is_file( $root . '/lib/CONVERTER.php' ) || !is_file( $root . '/lib/PARSER.php' ) || !is_file( $root . '/lib/SHAREDNEW.php' ) )
+                continue;
+            PH::print_stdout( " - migration plug-in: " . $root );
+            require_once $root . '/lib/CONVERTER.php';
+            require_once $root . '/lib/PARSER.php';
+            require_once $root . '/lib/SHAREDNEW.php';
+            return null;
+        }
+        return "type=vendor-migration needs a migration plug-in - the 3rd party parsers are not part of pan-os-php. "
+            . "Licensed package: PANOSPHP_PLUGIN_PACKAGES=<file>.ppp[:<file>.ppp] and PANOSPHP_LICENSE=<licence text>; "
+            . "or a folder: PANOSPHP_MIGRATION_PARSERS=<parser folder of the plug-in>[,<folder>]"
+            . ( count( $roots ) ? " (no migration base in: " . implode( ', ', $roots ) . ")" : "" );
+    }
+
     public static function scmMigrationFile( string $relative ): ?string
     {
         $dir = getenv( 'PANOSPHP_SCM_MIGRATION' );
@@ -3062,7 +3157,17 @@ class PH
             $util = new UTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "vendor-migration" )
+        {
+            // the 3rd party parsers come from a migration plug-in (a folder, or a licensed package)
+            $vendor = null;
+            foreach( $argv as $a )
+                if( is_string( $a ) && stripos( $a, 'vendor=' ) === 0 )
+                    $vendor = strtolower( substr( $a, 7 ) );
+            $why = self::migrationLoad( $vendor );
+            if( $why !== null )
+                derr( $why, null, FALSE );
             $util = new CONVERTER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+        }
 
         elseif( $type == "appid-toolbox" )
             $util = new AppIDToolbox($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);

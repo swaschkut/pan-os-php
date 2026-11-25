@@ -3,7 +3,7 @@
 Everything described in the other pages works without a licence. **Licensed plug-ins** (e.g. migration of other
 vendors) come as a package file `<name>.ppp` and need a licence.
 
-1. Put the package into the folder `plugins/` next to `panosphp-viewer`: `./panosphp-viewer plugin migration.ppp`
+1. Put the package into the folder `plugins/` next to `panosphp-viewer`: `./panosphp-viewer plugin migrationcisco.ppp`
 2. Install the licence: **Account → Licence** (paste the text or choose the file), or `./panosphp-viewer license <file>`
 3. **Account → Plug-ins** shows the plug-in as **on** - its runs appear in the projects.
 

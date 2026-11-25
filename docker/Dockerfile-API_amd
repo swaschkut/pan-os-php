@@ -26,7 +26,6 @@ COPY git-php /var/www/html/git-php
 COPY utils /var/www/html/utils
 COPY tests /var/www/html/tests
 COPY log /var/www/html/log
-COPY migration /var/www/html/migration
 COPY index.php /var/www/html/index.php
 
 RUN chmod -R 777 /var/www/html/utils/api/v1/project
