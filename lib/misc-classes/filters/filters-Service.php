@@ -59,6 +59,31 @@ RQuery::$defaultFilters['service']['object']['operators']['is.udp'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+// a service whose name says the other protocol: /udp/i in the name but protocol tcp, /tcp/i but protocol udp (a name
+// that names both is not checked)
+$serviceMisconfigured = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        $object = $context->object;
+        if( $object->isTmpSrv() || $object->isGroup() )
+            return FALSE;
+        $name = $object->name();
+        $tcp = preg_match( '/tcp/i', $name ) === 1;
+        $udp = preg_match( '/udp/i', $name ) === 1;
+        if( $tcp === $udp )
+            return FALSE;
+        return ( $udp && $object->isTcp() ) || ( $tcp && $object->isUdp() );
+    },
+    'arg' => FALSE,
+    'help' => 'the name says another protocol: /udp/i in the name but protocol tcp, /tcp/i but protocol udp',
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['service']['object']['operators']['is.misconfigured'] = $serviceMisconfigured;
+// the spelling of the request (2026-11-25) - the same filter
+RQuery::$defaultFilters['service']['object']['operators']['is.missconfigured'] = array( 'help' => 'same as is.misconfigured' ) + $serviceMisconfigured;
+
 RQuery::$defaultFilters['service']['object']['operators']['is.tmp'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         return $context->object->isTmpSrv();

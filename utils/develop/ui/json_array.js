@@ -934,6 +934,24 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.misconfigured": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "the name names another IPv4 value than the object has (ip-netmask: address \/ prefix, ip-range: start \/ end, fqdn with an IPv4 address in the name)",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.missconfigured": {
+                        "help": "same as is.misconfigured",
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.region": {
                         "Function": {},
                         "arg": false,
@@ -15622,6 +15640,24 @@ var subjectObject =
                         }
                     },
                     "is.udp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.misconfigured": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "the name says another protocol: \/udp\/i in the name but protocol tcp, \/tcp\/i but protocol udp",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.missconfigured": {
+                        "help": "same as is.misconfigured",
                         "Function": {},
                         "arg": false,
                         "ci": {

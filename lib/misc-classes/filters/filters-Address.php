@@ -2,6 +2,63 @@
 
 // <editor-fold desc=" ***** Address filters *****" defaultstate="collapsed" >
 
+// an address whose name names another IPv4 value than the object has: the IPv4 addresses (and a mask after an
+// address: /24 _24 -24) in the name against the value - ip-netmask: the network address (also the dotted netmask
+// of the prefix), the prefix length; ip-range: start / end; fqdn / ip-wildcard with an IPv4 address in the name: always.
+// Names without an IPv4 address, groups, regions, EDLs, temporary objects: not checked.
+$addressMisconfigured = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+        if( $object->isGroup() || $object->isRegion() || $object->isEDL() || $object->isTmpAddr() )
+            return FALSE;
+        if( !preg_match_all( '/(?<![0-9.])((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?![0-9]|\.[0-9])(?:[\/_-]([0-9]{1,2})(?![0-9.]))?/', $object->name(), $m, PREG_SET_ORDER ) )
+            return FALSE;
+        $hits = array();
+        foreach( $m as $x )
+            if( filter_var( $x[1], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) !== FALSE )
+                $hits[] = array( $x[1], isset( $x[2] ) && $x[2] !== '' ? (int)$x[2] : null );
+        if( $hits === array() )
+            return FALSE;
+        if( $object->isType_ipNetmask() )
+        {
+            $net = (string)$object->getNetworkValue();
+            if( filter_var( $net, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) === FALSE )
+                return TRUE;
+            $len = (int)$object->getNetworkMask();
+            $dotted = long2ip( $len == 0 ? 0 : ( ( 0xFFFFFFFF << ( 32 - $len ) ) & 0xFFFFFFFF ) );
+            foreach( $hits as $h )
+            {
+                if( $h[0] === $dotted && $h[0] !== $net )
+                    continue;
+                if( $h[0] !== $net )
+                    return TRUE;
+                if( $h[1] !== null && $h[1] !== $len )
+                    return TRUE;
+            }
+            return FALSE;
+        }
+        if( $object->isType_ipRange() )
+        {
+            $ends = array_map( 'trim', explode( '-', (string)$object->value() ) );
+            foreach( $hits as $h )
+                if( !in_array( $h[0], $ends, TRUE ) )
+                    return TRUE;
+            return FALSE;
+        }
+        // fqdn / ip-wildcard: an IPv4 address in the name does not fit
+        return TRUE;
+    },
+    'arg' => FALSE,
+    'help' => 'the name names another IPv4 value than the object has (ip-netmask: address / prefix, ip-range: start / end, fqdn with an IPv4 address in the name)',
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['object']['operators']['is.misconfigured'] = $addressMisconfigured;
+// the spelling of the request (2026-11-25) - the same filter
+RQuery::$defaultFilters['address']['object']['operators']['is.missconfigured'] = array( 'help' => 'same as is.misconfigured' ) + $addressMisconfigured;
+
 RQuery::$defaultFilters['address']['object']['operators']['is.region'] = array(
     'Function' => function (AddressRQueryContext $context) {
         return $context->object->isRegion() == TRUE;

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<config version="11.1.0" urldb="paloaltonetworks">
+  <mgt-config><users/></mgt-config>
+  <shared/>
+  <devices>
+    <entry name="localhost.localdomain">
+      <vsys>
+        <entry name="vsys1">
+          <service>
+            <entry name="udp-53-wrong"><protocol><tcp><port>53</port></tcp></protocol></entry>
+            <entry name="UDP-123"><protocol><udp><port>123</port></udp></protocol></entry>
+            <entry name="tcp-8080-wrong"><protocol><udp><port>8080</port></udp></protocol></entry>
+            <entry name="TCP_443"><protocol><tcp><port>443</port></tcp></protocol></entry>
+            <entry name="tcp-udp-53"><protocol><udp><port>53</port></udp></protocol></entry>
+            <entry name="web"><protocol><tcp><port>80</port></tcp></protocol></entry>
+          </service>
+          <service-group><entry name="udp-group"><members><member>TCP_443</member></members></entry></service-group>
+          <address>
+            <entry name="h-192.0.2.10"><ip-netmask>192.0.2.10</ip-netmask></entry>
+            <entry name="h-192.0.2.11-wrong"><ip-netmask>192.0.2.12</ip-netmask></entry>
+            <entry name="192.0.2.20"><ip-netmask>192.0.2.20/32</ip-netmask></entry>
+            <entry name="n-198.51.100.0_24"><ip-netmask>198.51.100.0/24</ip-netmask></entry>
+            <entry name="n-198.51.100.0-25-wrong"><ip-netmask>198.51.100.0/24</ip-netmask></entry>
+            <entry name="n-203.0.113.0-255.255.255.0"><ip-netmask>203.0.113.0/24</ip-netmask></entry>
+            <entry name="r-192.0.2.100-192.0.2.110"><ip-range>192.0.2.100-192.0.2.110</ip-range></entry>
+            <entry name="r-192.0.2.100-192.0.2.120-wrong"><ip-range>192.0.2.100-192.0.2.110</ip-range></entry>
+            <entry name="f-192.0.2.5"><fqdn>www.example.com</fqdn></entry>
+            <entry name="server-a"><ip-netmask>192.0.2.30</ip-netmask></entry>
+            <entry name="v2-host-1.2"><ip-netmask>192.0.2.31</ip-netmask></entry>
+          </address>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>
