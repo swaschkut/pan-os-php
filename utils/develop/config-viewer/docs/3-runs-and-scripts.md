@@ -71,7 +71,8 @@ type), *Network* (Zones, Interfaces, …) and *Device* (Certificates, …); type
 - **Location "predefined (read only)"**: for every type with predefined objects (services, applications, log
   forwarding, threats, security profiles / URL categories, regions; SCM: regions) - pan-os-php names the types
   (`UTIL::predefinedTypes`), the page offers exactly these. Predefined objects belong to no location, so also with
-  access limited to locations.
+  access limited to locations. They are listed at *predefined* and *any* - *shared* shows only the objects of the
+  configuration (the command line lists them at `location=shared` too).
 - **Application window - Details** (custom application, application group, application filter; predefined
   applications read only): custom - category / subcategory / technology (those of the App-ID database), risk,
   description, timeouts, characteristics, content scanning, parent application, IP protocol, the default ports

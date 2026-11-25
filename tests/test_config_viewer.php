@@ -392,9 +392,13 @@ $NW = $roP . '/configs/' . ( $r[1]['cid'] ?? '' );
 $r = $alice->call( 'GET', $NW . '/object?type=interface&location=vsys1&name=' . rawurlencode( 'ethernet1/1' ) );
 eq( array( status( $r ), strpos( (string)( $r[1]['xml'] ?? '' ), '<entry name="ethernet1/1">' ) === 0 ), array( 200, TRUE ), 'interface window: the XML of the interface (listed in vsys1)' );
 // a predefined object: listed with location "predefined", its window read only with the XML of predefined.xml
-$r = $alice->call( 'GET', $RO . '/objects?type=service&location=shared' );
-$locs = array(); foreach( $r[1]['rows'] ?? array() as $x ) $locs[$x['name']] = $x['location'] ?? null;
-eq( array( $locs['service-http'] ?? null, $locs['tcp-shared'] ?? null ), array( 'predefined', 'shared' ), 'predefined: service-http listed with location predefined (at shared)' );
+$locsAt = function( string $loc ) use ( $alice, $RO ) {
+    $r = $alice->call( 'GET', $RO . '/objects?type=service&location=' . $loc );
+    $locs = array(); foreach( $r[1]['rows'] ?? array() as $x ) $locs[$x['name']] = $x['location'] ?? null;
+    return array( $locs['service-http'] ?? null, $locs['tcp-shared'] ?? null );
+};
+eq( array( $locsAt( 'shared' ), $locsAt( 'any' ), $locsAt( 'predefined' ) ), array( array( null, 'shared' ), array( 'predefined', 'shared' ), array( 'predefined', null ) ),
+    'predefined: service-http listed with location predefined at any and predefined - not at shared (the CLI lists it there too)' );
 $r = $alice->call( 'GET', $RO . '/object?type=securityprofile&securityprofiletype=virus&location=predefined&name=default' );
 eq( array( status( $r ), $r[1]['row']['readonly'] ?? null, strpos( (string)( $r[1]['xml'] ?? '' ), '<entry name="default"' ) === 0, array_key_exists( 'history', $r[1] ?? array() ) ? $r[1]['history'] : 'x' ),
     array( 200, 'predefined', TRUE, null ), 'predefined: the window of a predefined virus profile - read only, XML of predefined.xml, no history' );
@@ -1741,7 +1745,7 @@ eq( array( status( $r ), $r[1]['version'] ?? null, $alice->call( 'GET', 'central
 $r = $alice->call( 'POST', 'projects', array( 'name' => 'AppID' ) );
 $AP = 'projects/' . $r[1]['pid'];
 $APC = $AP . '/configs/' . ( $alice->call( 'POST', $AP . '/configs', null, array( 'a.xml', $xml ) )[1]['cid'] ?? '' );
-$r = $alice->call( 'GET', $APC . '/objects?type=application&location=shared&filter=' . rawurlencode( '(name eq zz-viewer-test-app)' ) );
+$r = $alice->call( 'GET', $APC . '/objects?type=application&location=predefined&filter=' . rawurlencode( '(name eq zz-viewer-test-app)' ) );
 eq( array( status( $r ), $r[1]['total'] ?? null, $alice->call( 'GET', $AP . '/appid' )[1]['from'] ?? null ), array( 200, 1, 'installation' ), 'installation App-ID: the viewer uses it (an application only it has)' );
 $alice->call( 'DELETE', 'central/appid' );
 $alice->call( 'DELETE', $AP );

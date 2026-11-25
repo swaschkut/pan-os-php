@@ -5553,6 +5553,11 @@ class ViewerApp
                 $overrideView ? array( 'x-override' ) : array(),
                 $this->bpArg( $p, $in ) ) ) );
         $rows = self::rows( is_array( $r['json'] ?? null ) ? $r['json'] : array(), $nested );
+        // predefined objects only at the locations "predefined" and "any": pan-os-php (CLI) lists them at shared too,
+        // the viewer shows at shared only the objects of the configuration
+        $asked = array_map( function( $l ) { return strtolower( trim( preg_replace( '/:.*$/', '', $l ) ) ); }, explode( ',', $locArg === '' ? 'any' : $locArg ) );
+        if( !in_array( 'any', $asked, TRUE ) && !in_array( 'predefined', $asked, TRUE ) )
+            $rows = array_values( array_filter( $rows, function( $row ) { return ( $row['location'] ?? null ) !== 'predefined'; } ) );
         // "Extra columns" of the list: additional fields of exportToExcel (e.g. NestedMembers, ResolveIP), by name
         $extra = $in['columns'] ?? '';
         if( $extra !== '' && $extra !== null && $max !== PHP_INT_MAX )
