@@ -16,6 +16,15 @@ These rules apply to every repository of this project: `pan-os-php` (public), `p
 - Before building a patch: fetch the latest remote state. The maintainer often edits files directly on GitHub; a
   patch against an old head does not apply. If a patch has to sit on top of other, not yet pushed patches, say so and
   apply those first.
+- **A delivered patch is never replaced.** Once a patch file has been handed over, the maintainer may have applied it
+  already. Every later change - also a fix or an extension of that same patch - comes as a **follow-up patch** with a
+  running number (`<name>-02.patch`, `<name>-03.patch`, …) that applies on top of it. Never hand over a "new version"
+  of an already delivered patch, never ask the maintainer to revert one (`git apply -R`) to apply a new one.
+- A follow-up patch is built and checked against exactly the maintainer's state: current remote head + every delivered,
+  not yet pushed patch in delivery order (`git apply --check` on that stack). Each delivery names the patches it sits
+  on, in order. After a fetch: patches already in the remote head are dropped from the stack.
+- Every delivered patch file is kept unchanged (never overwritten) for the rest of the work, so the next patch can be
+  built against it.
 - Branches: `pan-os-php` → **alpha** (fetch dev and beta as well; fixes for dev / beta only when asked).
   `pan-os-php_scm-migration`, `pan-os-php_migration`, `pan-os-php_license` → **main**.
 - "nur beantworten" / "nicht arbeiten" / "erst darüber reden": answer only, no code, no patch.
