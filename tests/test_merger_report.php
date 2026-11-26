@@ -119,6 +119,23 @@ $g = array_values( array_filter( $j['findings'] ?? array(), function( $f ) { ret
 $ok( $rc === 0 && strpos( $o, 'Fatal' ) === FALSE && ( $g['status'] ?? '' ) === 'would-change-policy' && strpos( $g['blocked'][0]['reason'] ?? '', "has 'SRV' as address" ) !== FALSE,
     'merger-possible-report: name in the common parent as another object kind - blocked with the reason, no fatal error' );
 
+// SCM: the common parent of the folders of the copies - found by identity of the folders. (Comparing two folders by
+// value ended in the PHP fatal error "Nesting level too deep", which can not be caught: checked in a process of its own.)
+$code = 'require ' . var_export( $repo . '/lib/pan_php_framework.php', TRUE ) . '; require_once ' . var_export( $repo . '/utils/lib/UTIL.php', TRUE ) . ';'
+    . '$d = new DOMDocument(); $d->load( ' . var_export( $repo . '/tests/input/SCM-import.xml', TRUE ) . ' ); $pan = new BuckbeakConf(); $pan->load_from_domxml( $d );'
+    . '$locs = array(); foreach( array( "getContainers", "getDeviceClouds", "getDeviceOnPrems", "getSnippets" ) as $m ) foreach( $pan->$m() as $o ) $locs[$o->name()] = $o;'
+    . '$rc = new ReflectionClass( "MERGERPOSSIBLEREPORT" ); $r = $rc->newInstanceWithoutConstructor(); $m = $rc->getMethod( "commonParent" ); $m->setAccessible( TRUE );'
+    . '$n = 0; foreach( $locs as $a ) foreach( $locs as $b ) { $m->invoke( $r, array( $a, $b ) ); $n++; }'
+    . '$name = function( $p ) { return $p === null ? null : $p->name(); };'
+    . 'print json_encode( array( $n, $name( $m->invoke( $r, array( $locs["DE-Berlin Office"], $locs["FR Datacenter"] ) ) ),'
+    . ' $name( $m->invoke( $r, array( $locs["Perimeter-FWs"], $locs["Service Connections"], $locs["Perimeter-FWs"] ) ) ),'
+    . ' $name( $m->invoke( $r, array( $locs["DE-Berlin Office"], $locs["DE-Berlin Office"] ) ) ),'
+    . ' $name( $m->invoke( $r, array( $locs["Panorama-Shared"], $locs["Paris Datacenter"] ) ) ) ) );';
+$o = array(); $rc = 0;
+exec( escapeshellarg( PHP_BINARY ) . ' -r ' . escapeshellarg( $code ) . ' 2>&1', $o, $rc );
+$ok( $rc === 0 && json_decode( (string)end( $o ), TRUE ) === array( 529, 'ngfw-shared', 'All', 'DE-Berlin Office', null ),
+    'merger-possible-report on SCM: common parent of every pair of folders / devices / snippets - no "Nesting level too deep"; two snippets have none' );
+
 exec( 'rm -rf ' . escapeshellarg( $dir ) );
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );

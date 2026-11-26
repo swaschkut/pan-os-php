@@ -666,7 +666,15 @@ class MERGERPOSSIBLEREPORT extends MERGER
     /** the nearest location above all of them; null: none (snippets, templates) */
     private function commonParent( array $locs )
     {
-        $locs = array_values( array_unique( $locs, SORT_REGULAR ) );
+        // the same location only once - by identity: comparing two locations by value ( array_unique with
+        // SORT_REGULAR ) walks through everything they hold and ends in "Nesting level too deep" ( SCM folders )
+        $unique = array();
+        foreach( $locs as $l )
+            if( is_object( $l ) )
+                $unique[spl_object_id( $l )] = $l;
+        $locs = array_values( $unique );
+        if( count( $locs ) == 0 )
+            return null;
         $cands = array_merge( array( $locs[0] ), $this->chainUp( $locs[0] ) );
         foreach( $cands as $c )
         {

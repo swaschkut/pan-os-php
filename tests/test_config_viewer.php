@@ -812,6 +812,15 @@ eq( array( $h['path'] ?? null, trim( (string)( $h['commits'][0]['text'] ?? '' ) 
     array( 'devices/localhost.localdomain/device-group/DG3/devices/_order', '001122334466', TRUE ), 'devices: history of a device group (its firewalls) and of a template stack' );
 // SCM: containers (folders) with parent, children, devices and snippets; a snippet: where it is attached
 $SC = $up( 'SCM-import.xml' );
+// SCM: the predefined regions (country codes) are listed at "any" and at "predefined" - not at a folder
+$regionsAt = function( string $loc ) use ( $alice, $SC ) {
+    $locs = array();
+    foreach( $alice->call( 'GET', $SC . '/objects?type=region&location=' . rawurlencode( $loc ) )[1]['rows'] ?? array() as $x )
+        $locs[$x['name']] = $x['location'] ?? null;
+    return array( $locs['DE'] ?? null, count( $locs ) );
+};
+eq( array( $regionsAt( 'any' ), $regionsAt( 'predefined' ), $regionsAt( 'All' ) ), array( array( 'predefined', 260 ), array( 'predefined', 260 ), array( null, 0 ) ),
+    'SCM: predefined regions listed with location predefined at any and at predefined, not at a folder' );
 $c = array();
 foreach( $alice->call( 'GET', $SC . '/objects?type=device&devicetype=container&location=any' )[1]['rows'] ?? array() as $x )
     $c[$x['name']] = $x;

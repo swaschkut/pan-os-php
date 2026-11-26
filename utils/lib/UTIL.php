@@ -2123,6 +2123,12 @@ class UTIL
                 continue;
             }
 
+            // SCM has no shared the predefined objects could be listed with: location=any lists them first ( only the
+            // types of predefinedTypes() - the regions; firewall / Panorama: with shared, below )
+            if( $location == 'any' && ( $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf ) )
+                foreach( $this->predefinedObjectSets() as $set )
+                    $this->objectsToProcess[] = $set;
+
             if( $this->configType == 'panos' )
             {
                 if( $location == 'shared' || $location == 'any' )
