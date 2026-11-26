@@ -21,6 +21,10 @@
 
 class DeviceCallContext extends CallContext
 {
+    // set by actions while they run ( declared: PHP 8.2 deprecates properties created on the fly )
+    public $device_array;
+    public $rule;
+
     /** @var  VirtualSystem|DeviceGroup|Template|TemplateStack|Container|DeviceCloud|ManagedDevice */
     public $object;
 
@@ -28,6 +32,8 @@ class DeviceCallContext extends CallContext
     public static $supportedActions = array();
 
     public $first;
+    /** @var DOMDocument|null action xml-extract */
+    public $newdoc;
     public $jsonArray;
     public $fields;
     public $ruleContext;

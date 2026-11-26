@@ -905,6 +905,10 @@ class AddressStore
 
     public function rewriteAddressStoreXML()
     {
+        // a location without this section in the XML: nothing to rewrite
+        if( $this->addressRoot === null )
+            return;
+
         DH::clearDomNodeChilds($this->addressRoot);
         foreach( $this->_addressObjects as $s )
         {
@@ -914,6 +918,10 @@ class AddressStore
 
     public function rewriteAddressGroupStoreXML()
     {
+        // a location without this section in the XML: nothing to rewrite
+        if( $this->addressGroupRoot === null )
+            return;
+
         DH::clearDomNodeChilds($this->addressGroupRoot);
         foreach( $this->_addressGroups as $s )
         {

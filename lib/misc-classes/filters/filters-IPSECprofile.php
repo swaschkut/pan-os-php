@@ -11,7 +11,7 @@ RQuery::$defaultFilters['ipsec-profile']['authentication']['operators']['eq'] = 
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% sha1)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -26,7 +26,7 @@ RQuery::$defaultFilters['ipsec-profile']['dhgroup']['operators']['eq'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% group2)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -41,7 +41,7 @@ RQuery::$defaultFilters['ipsec-profile']['encryption']['operators']['eq'] = arra
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% aes-128-cbc)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

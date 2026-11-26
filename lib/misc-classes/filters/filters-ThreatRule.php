@@ -36,7 +36,7 @@ RQuery::$defaultFilters['threat-rule']['severity']['operators']['is.any'] = arra
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% critical )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -72,7 +72,7 @@ RQuery::$defaultFilters['threat-rule']['category']['operators']['is.any'] = arra
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% brute-force )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -161,7 +161,7 @@ RQuery::$defaultFilters['threat-rule']['application']['operators']['is.any'] = a
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -191,7 +191,7 @@ RQuery::$defaultFilters['threat-rule']['filetype']['operators']['is.any'] = arra
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -221,7 +221,7 @@ RQuery::$defaultFilters['threat-rule']['direction']['operators']['is.both'] = ar
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

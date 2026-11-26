@@ -333,8 +333,6 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
 RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.ip-user-mapping'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
-        $value = $context->value;
-        $value = strtolower($value);
 
         if( is_string($object) || $object->secprof_type != 'url-filtering' )
             return null;
@@ -346,7 +344,7 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
 
     },
     'ci' => array(
-        'fString' => '(%PROP% )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=url'"
@@ -395,7 +393,7 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['is.set'] =
 
     },
     'ci' => array(
-        'fString' => '(%PROP% securityrule )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware,vulnerability'"
@@ -452,7 +450,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware,vulnerability,wildfire'"
@@ -920,7 +918,6 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
             {
                 /** @var DNSPolicy $rule */
 
-                print "name: ".$rule->name()." action: ".$rule->action()."\n";
                 if( $rule->action() == $value )
                     return TRUE;
             }
@@ -930,7 +927,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
     },
     'arg' => true,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP% sinkhole)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert/allow/block/sinkhole"
@@ -992,7 +989,8 @@ RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators
         {
             foreach( $object->additional['botnet-domain']['lists'] as $name)
             {
-                if( isset($name['packet-capture']) && $name['packet-capture'] == $value )
+                /** @var DNSPolicy $name the entries are DNSPolicy objects, not arrays */
+                if( is_object($name) && $name->packetCapture() == $value )
                     return TRUE;
             }
         }
@@ -1001,7 +999,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators
     },
     'arg' => true,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP% disable)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
@@ -1025,7 +1023,8 @@ RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['
         {
             foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
             {
-                if( isset($name['action']) && $name['action'] == $value )
+                /** @var DNSPolicy $name the entries are DNSPolicy objects, not arrays */
+                if( is_object($name) && $name->action() == $value )
                     return TRUE;
             }
         }
@@ -1034,7 +1033,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['
     },
     'arg' => true,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP% sinkhole)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default/allow/block/sinkhole"
@@ -1057,7 +1056,8 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
         {
             foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
             {
-                if( isset($name['packet-capture']) && $name['packet-capture'] == $value )
+                /** @var DNSPolicy $name the entries are DNSPolicy objects, not arrays */
+                if( is_object($name) && $name->packetCapture() == $value )
                     return TRUE;
             }
         }
@@ -1066,7 +1066,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
     },
     'arg' => true,
     'ci' => array(
-        'fString' => '(%PROP% client )',
+        'fString' => '(%PROP% disable)',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable/single-packet/extended-capture"

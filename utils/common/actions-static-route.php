@@ -210,6 +210,10 @@ StaticRouteCallContext::$supportedActions['display-nexthop-ips'] = array(
 
     'GlobalFinishFunction' => function (StaticRouteCallContext $context)
     {
+        // no static route at all: nothing to list
+        if( !is_array($context->objectList) )
+            return;
+
         foreach( $context->objectList as $nexthopIP => $object )
         {
             PH::print_stdout( "      * ".$nexthopIP." [".count( $context->objectList[$nexthopIP] )." - static routes ]");

@@ -4593,7 +4593,8 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfile-SetAle
         $object = $context->object;
         $classtype = get_class($object);
 
-        $force = $context->arguments['force'];
+        // the action has no argument 'force'
+        $force = isset($context->arguments['force']) ? $context->arguments['force'] : FALSE;
 
         if( $context->first )
         {

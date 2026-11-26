@@ -25,6 +25,9 @@
  */
 class AddressCallContext extends CallContext
 {
+    // set by actions while they run ( declared: PHP 8.2 deprecates properties created on the fly )
+    public $cachedList;
+
     public static $commonActionFunctions = array();
     public static $supportedActions = array();
 

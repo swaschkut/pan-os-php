@@ -57,7 +57,7 @@ RQuery::$defaultFilters['application']['category']['operators']['eq'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% networking)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -162,7 +162,7 @@ RQuery::$defaultFilters['application']['subcategory']['operators']['eq'] = array
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% file-sharing)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -183,7 +183,7 @@ RQuery::$defaultFilters['application']['apptag']['operators']['has'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% Web App)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -196,7 +196,7 @@ RQuery::$defaultFilters['application']['type']['operators']['eq'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% application-group)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -247,7 +247,7 @@ RQuery::$defaultFilters['application']['tcp']['operators']['has'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% 80)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -298,7 +298,7 @@ RQuery::$defaultFilters['application']['udp']['operators']['has'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% 53)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -395,7 +395,7 @@ RQuery::$defaultFilters['application']['object']['operators']['has.member'] = ar
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% ftp)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -427,7 +427,7 @@ RQuery::$defaultFilters['application']['decoder']['operators']['has'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP% evasive) ',
+        'fString' => '(%PROP% http)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -446,7 +446,7 @@ RQuery::$defaultFilters['application']['decoder']['operators']['is.set'] = array
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% evasive) ',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -465,7 +465,7 @@ RQuery::$defaultFilters['application']['ip-protocol']['operators']['is.set'] = a
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% evasive) ',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -535,7 +535,7 @@ RQuery::$defaultFilters['application']['tunnelapp']['operators']['has'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% ssl)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

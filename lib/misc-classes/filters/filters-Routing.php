@@ -25,7 +25,7 @@ RQuery::$defaultFilters['routing']['protocol.bgp']['operators']['is.enabled'] = 
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

@@ -644,6 +644,10 @@ class ServiceStore
 
     public function rewriteServiceStoreXML()
     {
+        // a location without this section in the XML: nothing to rewrite
+        if( $this->serviceRoot === null )
+            return;
+
         DH::clearDomNodeChilds($this->serviceRoot);
         foreach( $this->_serviceObjects as $s )
         {
@@ -653,6 +657,10 @@ class ServiceStore
 
     public function rewriteServiceGroupStoreXML()
     {
+        // a location without this section in the XML: nothing to rewrite
+        if( $this->serviceGroupRoot === null )
+            return;
+
         DH::clearDomNodeChilds($this->serviceGroupRoot);
         foreach( $this->_serviceGroups as $s )
         {

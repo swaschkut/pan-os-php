@@ -726,7 +726,7 @@ var subjectObject =
             "members.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isGroup() && !$object->isDynamic() && $object->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -807,7 +807,7 @@ var subjectObject =
             "name.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "strlen($object->name()) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 63)",
@@ -819,7 +819,7 @@ var subjectObject =
             "netmask": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 27)",
@@ -1028,7 +1028,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1062,7 +1062,7 @@ var subjectObject =
             "reflocationcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countLocationReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1339,7 +1339,7 @@ var subjectObject =
                     "has": {
                         "Function": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -1364,7 +1364,7 @@ var subjectObject =
                     "is.set": {
                         "Function": {},
                         "arg": false,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -1375,7 +1375,7 @@ var subjectObject =
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isRegion() && !$object->isEDL() && $object->tags->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1654,7 +1654,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% Web App)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1666,7 +1666,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% networking)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1690,7 +1690,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% evasive) ",
+                            "fString": "(%PROP% http)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -1698,7 +1698,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% evasive) ",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1710,7 +1710,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% evasive) ",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -1800,7 +1800,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% ftp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -1865,7 +1865,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1877,7 +1877,7 @@ var subjectObject =
             "risk": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->risk !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1900,7 +1900,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% file-sharing)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1920,7 +1920,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% 80)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2012,7 +2012,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% ssl)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2024,7 +2024,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% application-group)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2044,7 +2044,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% 53)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2235,7 +2235,7 @@ var subjectObject =
             "publickey-length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->hasPublicKey() && $object->getPkeyBits() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -2247,7 +2247,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -2386,7 +2386,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3122,7 +3122,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3146,7 +3146,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3155,7 +3155,7 @@ var subjectObject =
             "level": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "PH::deviceLevelMatch( $object, '!operator!', !value! )",
+                        "eval": {},
                         "arg": true,
                         "help": "level in the hierarchy (shared = 1, top device group = 2, \u2026); a firewall \/ template stack \/ template: one of the levels of its device groups. ie: (level >= 3)",
                         "ci": {
@@ -3171,7 +3171,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3227,7 +3227,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3242,7 +3242,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3250,7 +3250,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3258,7 +3258,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3298,7 +3298,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3638,6 +3638,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3780,7 +3781,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4295,7 +4296,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4669,7 +4670,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4887,7 +4888,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5427,7 +5428,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5595,7 +5596,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% sha1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5607,7 +5608,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% group2)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5619,7 +5620,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% aes-128-cbc)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5653,7 +5654,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5874,7 +5875,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP% 192.0.2.1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5919,7 +5920,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5927,7 +5928,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5935,7 +5936,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5943,7 +5944,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5951,7 +5952,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5959,7 +5960,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5967,7 +5968,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5976,7 +5977,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5991,7 +5992,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5999,7 +6000,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6290,7 +6291,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -6514,7 +6515,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% sha1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6526,7 +6527,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% group2)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6538,7 +6539,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% aes-128-cbc)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6572,7 +6573,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7216,7 +7217,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7602,7 +7603,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7758,7 +7759,7 @@ var subjectObject =
             "address.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "count( $object->members() ) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7895,7 +7896,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -8143,7 +8144,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -9987,7 +9988,7 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->apps->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.nocase": {
                         "Function": {},
@@ -10169,7 +10170,7 @@ var subjectObject =
             "description.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "strlen($object->description() ) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -10227,7 +10228,7 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->owner->owner->addressStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "included-in.full": {
                         "Function": {},
@@ -10310,7 +10311,7 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.edl": {
                         "eval": {},
@@ -10319,12 +10320,12 @@ var subjectObject =
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive": {
-                        "eval": "$object->destination->hasObjectRecursive(!value!, false) === true",
+                        "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive.regex": {
                         "Function": {},
@@ -10458,12 +10459,12 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->from->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->from->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.from.query": {
                         "Function": {},
@@ -10515,7 +10516,7 @@ var subjectObject =
             "from.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isPbfRule() && $object->from->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -10529,7 +10530,7 @@ var subjectObject =
                     "is": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% test.tag)",
                             "input": "input\/panorama-8.0.xml"
@@ -11206,7 +11207,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% av-production)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -11259,12 +11260,12 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->services->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->services->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.regex": {
                         "Function": {},
@@ -11437,7 +11438,7 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->owner->owner->addressStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.from.query": {
                         "Function": {},
@@ -11449,7 +11450,7 @@ var subjectObject =
             "snathost.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isNatRule() && $object->snathosts->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11475,7 +11476,7 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.edl": {
                         "eval": {},
@@ -11484,12 +11485,12 @@ var subjectObject =
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive.regex": {
                         "Function": {},
@@ -11610,7 +11611,7 @@ var subjectObject =
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% test.tag)",
                             "input": "input\/panorama-8.0.xml"
@@ -11637,7 +11638,7 @@ var subjectObject =
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->tags->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11748,7 +11749,7 @@ var subjectObject =
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->to->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.from.query": {
                         "Function": {},
@@ -11790,7 +11791,7 @@ var subjectObject =
             "to.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isPbfRule() && $object->to->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11822,7 +11823,7 @@ var subjectObject =
             "url.category.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isSecurityRule() && $object->urlCategoriescount() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11891,7 +11892,7 @@ var subjectObject =
             "user.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isSecurityRule() && $object->userID_count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -12310,7 +12311,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -13317,7 +13318,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
@@ -13419,7 +13420,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% sinkhole)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert\/allow\/block\/sinkhole"
@@ -13432,7 +13433,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% disable)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
@@ -13483,7 +13484,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% sinkhole)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default\/allow\/block\/sinkhole"
@@ -13496,7 +13497,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% disable)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
@@ -13546,7 +13547,7 @@ var subjectObject =
                     "is.set": {
                         "Function": {},
                         "ci": {
-                            "fString": "(%PROP% securityrule )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware,vulnerability'"
@@ -13624,6 +13625,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13713,7 +13715,7 @@ var subjectObject =
             "name.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "strlen($object->name()) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 63)",
@@ -13806,7 +13808,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -14055,7 +14057,7 @@ var subjectObject =
                     "is.ip-user-mapping": {
                         "Function": {},
                         "ci": {
-                            "fString": "(%PROP% )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=url'"
@@ -14651,7 +14653,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% av-production)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14660,7 +14662,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -14698,7 +14700,7 @@ var subjectObject =
                         "arg": false,
                         "help": "returns TRUE if refobject is SecurityRule and disabled",
                         "ci": {
-                            "fString": "(%PROP% shared )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -15438,7 +15440,7 @@ var subjectObject =
             "members.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isGroup() && $object->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15712,7 +15714,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15746,7 +15748,7 @@ var subjectObject =
             "reflocationcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countLocationReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15811,7 +15813,7 @@ var subjectObject =
                         }
                     },
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getSourcePort() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15857,7 +15859,7 @@ var subjectObject =
                     "has": {
                         "Function": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -15884,7 +15886,7 @@ var subjectObject =
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->tags->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15912,7 +15914,7 @@ var subjectObject =
             "timeout-halfclose.value": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getHalfcloseTimeout() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15932,7 +15934,7 @@ var subjectObject =
             "timeout-timewait.value": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getTimewaitTimeout() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15944,7 +15946,7 @@ var subjectObject =
             "timeout.value": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getTimeout() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15964,7 +15966,7 @@ var subjectObject =
                         }
                     },
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getDestPort() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16008,7 +16010,7 @@ var subjectObject =
             "value.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && strlen($object->getDestPort()) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16286,7 +16288,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -16298,7 +16300,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -16318,7 +16320,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -16789,7 +16791,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16974,7 +16976,7 @@ var subjectObject =
             "max-engine-version": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!empty($object->max_engine_version) && $object->max_engine_version !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16982,10 +16984,10 @@ var subjectObject =
                         }
                     },
                     "is.empty": {
-                        "eval": "empty($object->max_engine_version)",
+                        "eval": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% 1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -16994,7 +16996,7 @@ var subjectObject =
             "min-engine-version": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!empty($object->min_engine_version) && $object->min_engine_version !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -17049,7 +17051,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ftp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17074,7 +17076,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -17089,7 +17091,7 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -17137,7 +17139,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ftp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17145,7 +17147,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ftp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -17237,7 +17239,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17265,7 +17267,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% brute-force )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -17277,7 +17279,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17297,7 +17299,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17336,6 +17338,7 @@ var subjectObject =
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -17466,7 +17469,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -17535,7 +17538,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% critical )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -18112,7 +18115,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -18599,7 +18602,7 @@ var subjectObject =
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",

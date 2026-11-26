@@ -26,6 +26,9 @@
  */
 class ServiceCallContext extends CallContext
 {
+    // set by actions while they run ( declared: PHP 8.2 deprecates properties created on the fly )
+    public $cachedList;
+
     /** @var  Service|ServiceGroup */
     public $object;
 

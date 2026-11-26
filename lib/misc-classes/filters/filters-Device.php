@@ -116,7 +116,7 @@ RQuery::$defaultFilters['device']['template']['operators']['has-multi-vsys'] = a
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -136,7 +136,7 @@ RQuery::$defaultFilters['device']['template']['operators']['is.unused'] = array(
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -165,7 +165,7 @@ RQuery::$defaultFilters['device']['template']['operators']['is.unused.recursive'
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -193,7 +193,7 @@ RQuery::$defaultFilters['device']['templatestack']['operators']['is.unused'] = a
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -223,7 +223,7 @@ RQuery::$defaultFilters['device']['manageddevice']['operators']['with-no-dg'] = 
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -243,7 +243,7 @@ RQuery::$defaultFilters['device']['devicegroup']['operators']['is.unused'] = arr
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -340,7 +340,7 @@ RQuery::$defaultFilters['device']['devicegroup']['operators']['with-no-serial'] 
     },
     'arg' => False,
     'ci' => array(
-        'fString' => '(%PROP% grp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

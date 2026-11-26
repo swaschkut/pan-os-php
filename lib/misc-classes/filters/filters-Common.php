@@ -99,25 +99,15 @@ RQuery::registerFilter( array(
     'threat-rule'
 ), 'location', 'is', array(
     'Function' => function (RQueryContext $context) {
-        if( is_object($context->object->owner->owner) )
-            $owner = $context->object->owner->owner;
-        else
+        // a security profile sits in a store of its location; a DNS / threat rule in a profile of such a store:
+        // the location is the first device group / vsys / Panorama / firewall ( SCM: folder, snippet, device ) above
+        if( !is_object($context->object) || !isset($context->object->owner) || !is_object($context->object->owner) )
             return FALSE;
 
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-        if( strtolower($context->value) == strtolower($owner->name()) )
-            return TRUE;
-
-        return FALSE;
+        return strtolower($context->value) == strtolower(PH::getLocationString($context->object));
     },
     'arg' => TRUE,
+    'help' => 'returns TRUE if object location (shared/device-group/vsys name) matches the one specified in argument',
     'ci' => array(
         'fString' => '(%PROP% shared )',
         'input' => 'input/panorama-8.0.xml'
@@ -718,6 +708,9 @@ RQuery::registerFilter( array(
     'zone-protection-profile'
 ), 'object', 'is.tmp', array(
     'Function' => function (RQueryContext $context) {
+        // objects that are never temporary ( DNS / threat rule of a profile, security profile group ) have no isTmp()
+        if( !is_object($context->object) || !method_exists($context->object, 'isTmp') )
+            return FALSE;
         return $context->object->isTmp();
     },
     'arg' => FALSE,

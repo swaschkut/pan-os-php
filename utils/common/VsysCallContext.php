@@ -21,6 +21,9 @@
 
 class VsysCallContext extends CallContext
 {
+    // set by actions while they run ( declared: PHP 8.2 deprecates properties created on the fly )
+    public $interface_wo_vsys;
+
     /** @var  Zone */
     public $object;
 

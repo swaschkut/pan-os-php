@@ -5591,6 +5591,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 PH::print_stdout("skip object as it predefined DataFiltering");
                 return false;
             }
+            if( get_class($object) == 'PredefinedSecurityProfileURL' )
+            {
+                // a predefined URL category: it has no XML of a profile that could be cloned
+                PH::print_stdout("skip object as it is a predefined URL category");
+                return false;
+            }
 
 
             if( count( $object->getReferences() ) > 0 )

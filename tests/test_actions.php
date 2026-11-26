@@ -17,11 +17,27 @@
  * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/**
+ * Runs every action that needs no argument through the CLI ( utils/lib/util_action_filter.json lists the actions ):
+ *   php pan-os-php.php type=<type> in=<input> out=/dev/null location=any actions=<action>
+ * An action fails when the CLI ends with an error. The run does not stop at the first failure: all failures are
+ * listed at the end and the exit code is 1. Actions with arguments are listed, they are tested by the tests of
+ * their own ( tests/test_*_actions.php, test_regions.php, … ).
+ *
+ *   php tests/test_actions.php                     all types
+ *   php tests/test_actions.php type=address,rule   only these types
+ *   php tests/test_actions.php in=<file>           this configuration instead of tests/input/panorama-8.0.xml
+ *   php tests/test_actions.php verbose             print the CLI output of every action (default: of failures only)
+ *   php tests/test_actions.php stoponerror         stop at the first failure
+ *   php tests/test_actions.php jobs=4              CLI runs at the same time (default 4)
+ *   php tests/test_actions.php timeout=900         seconds a CLI run may take (default 900): then it is stopped and failed
  */
 
 set_include_path(dirname(__FILE__) . '/../' . PATH_SEPARATOR . get_include_path());
 require_once dirname(__FILE__) . "/../lib/pan_php_framework.php";
+require_once dirname(__FILE__) . "/cli_test_runner.php";
 
 PH::print_stdout("\n*************************************************");
 PH::print_stdout("**************** ACTION TESTERS *****************\n");
@@ -33,94 +49,83 @@ if( ini_get('safe_mode') )
     derr("SAFE MODE IS ACTIVE");
 }
 
+// actions that are not run, with the reason; '*' : every type
+$skippedActions = array(
+    '*' => array(),
+    'address' => array(
+        'value-set-reverse-dns' => 'asks a DNS server',
+        'value-set-ip-for-fqdn' => 'asks a DNS server',
+    ),
+    'device' => array(
+        'authkey-display-all' => 'needs a device ( API )',
+        'authkey-display-default' => 'needs a device ( API )',
+        'system-restart' => 'needs a device ( API )',
+    ),
+    'interface' => array(
+        'remove' => 'not implemented yet ( the action says so )',
+    ),
+    'routing' => array(
+        'display-route-table-fast' => 'needs a device ( API )',
+    ),
+    'rule' => array(
+        'position-move-to-bottom' => 'needs a rule selection',
+        'position-move-to-top' => 'needs a rule selection',
+        'display-app-seen' => 'needs a device ( API )',
+    ),
+);
 
-function runCommand($bin, &$stream, $force = TRUE, $command = '')
-{
-    $stream = '';
-
-    $bin .= $force ? " 2>&1" : '';
-
-    $descriptorSpec = array
-    (
-        0 => array('pipe', 'r'),
-        1 => array('pipe', 'w'),
-        2 => array('pipe', 'w'),
-    );
-
-    $pipes = array();
-
-    $process = proc_open($bin, $descriptorSpec, $pipes);
-
-    if( $process !== FALSE )
-    {
-        fwrite($pipes[0], $command);
-        fclose($pipes[0]);
-
-        $stream = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-
-        $stream += stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-
-        return proc_close($process);
-    }
-    else
-        return -1;
-
-}
+$onlyTypes = null;
+if( isset(PH::$args['type']) )
+    $onlyTypes = array_map('trim', explode(',', PH::$args['type']));
+$verbose = isset(PH::$args['verbose']);
+$stopOnError = isset(PH::$args['stoponerror']);
+$jobs = isset(PH::$args['jobs']) ? max(1, (int)PH::$args['jobs']) : 4;
+$timeout = isset(PH::$args['timeout']) ? max(1, (int)PH::$args['timeout']) : 900;
 
 $totalActionCount = 0;
-
 $missingActionArgCount = 0;
+$missing_actionsArgument = array();
+$skipped = array();
+$queue = array();
 
-$totalActionWithCiCount = 0;
-$missing_actions = array();
-
-
-$pathString = dirname(__FILE__)."/../utils/lib";
-$JSONarray = file_get_contents( $pathString."/util_action_filter.json");
-$json_a = json_decode($JSONarray, true);
+$path = dirname(__FILE__) . "/";
+$JSONarray = file_get_contents($path . "../utils/lib/util_action_filter.json");
+$json_a = json_decode($JSONarray, TRUE);
 if( $json_a === null )
-    derr( "invalid JSON file provided", null, FALSE );
+    derr("invalid JSON file provided", null, FALSE);
 
-$start = FALSE;
+// the CLI runs in a folder of its own: a relative path is one of the folder the test is started in
+if( isset(PH::$args['in']) )
+    $input = realpath(PH::$args['in']) !== FALSE ? realpath(PH::$args['in']) : PH::$args['in'];
+else
+    $input = $path . 'input/panorama-8.0.xml';
+
 foreach( $json_a as $type => $UTILtype )
 {
-    #if( $type === "address" || $type === "rule" )
-    #    continue;
+    if( !isset($UTILtype['action']) || !is_array($UTILtype['action']) || count($UTILtype['action']) == 0 )
+        continue;
+    if( $onlyTypes !== null && !in_array($type, $onlyTypes) )
+        continue;
 
-
-
-    $ci = array();
-    if( isset(PH::$args['in']) )
-    {
-        $ci['input'] = PH::$args['in'];
-
-        #if( strpos( $filterString, "location" ) !== false )
-        #    continue;
-    }
-
-    else
-        $ci['input'] = 'input/panorama-8.0.xml';
-
-
-    foreach( $UTILtype['action'] as $actionName => &$action )
+    foreach( $UTILtype['action'] as $actionName => $action )
     {
         $totalActionCount++;
 
-        if( $type == "address" && ($actionName == 'value-set-reverse-dns' ||
-            $actionName == 'value-set-ip-for-fqdn' )
-        )
+        if( strpos($actionName, '-FastAPI') !== FALSE )
+        {
+            $skipped[$type][$actionName] = 'needs a device ( API )';
             continue;
-
-        if( $type == "rule" && ($actionName == 'position-move-to-bottom'
-                || $actionName == 'position-move-to-top'
-                || $actionName == 'display-app-seen'
-            )
-            || (strpos($actionName, '-FastAPI') !== FALSE)
-        )
+        }
+        if( isset($skippedActions[$type][$actionName]) )
+        {
+            $skipped[$type][$actionName] = $skippedActions[$type][$actionName];
             continue;
-
+        }
+        if( isset($skippedActions['*'][$actionName]) )
+        {
+            $skipped[$type][$actionName] = $skippedActions['*'][$actionName];
+            continue;
+        }
 
         if( isset($action['args']) )
         {
@@ -129,240 +134,45 @@ foreach( $json_a as $type => $UTILtype )
             continue;
         }
 
-
-
-        if( !isset($action['ci']) )
-        {
-            $missing_actions[$type][] = $actionName;
-            #continue;
-        }
-
-        $totalActionWithCiCount++;
-
-
-        //start from
-        #if( isset(PH::$args['in']) && $type === 'address' && strpos( $actionName, "display-NAT-usage" ) !== false )
-        #    $start = TRUE;
-
-        #if( !$start )
-        #    continue;
-
-
-
-        print "check TYPE: " . $type . " action: " . $actionName . "\n";
-
-
+        $cli = escapeshellarg(PHP_BINARY) . " " . escapeshellarg($path . "../utils/pan-os-php.php") . " type=" . escapeshellarg($type)
+            . " in=" . escapeshellarg($input) . " out=/dev/null location=any " . escapeshellarg("actions=" . $actionName);
         if( $type == 'rule' )
-            $util = '../utils/pan-os-php.php type=rule';
-        elseif( $type == 'address' )
-            $util = '../utils/pan-os-php.php type=address';
-        elseif( $type == 'service' )
-            $util = '../utils/pan-os-php.php type=service';
-        elseif( $type == 'tag' )
-            $util = '../utils/pan-os-php.php type=tag';
-        elseif( $type == 'zone' )
-            $util = '../utils/pan-os-php.php type=zone';
-        elseif( $type == 'schedule' )
-            $util = '../utils/pan-os-php.php type=schedule';
-        #elseif( $type == 'application' )
-        #    $util = '../utils/application-edit.php';
-
-
-        /*
-        if( $type == 'rule' ){ continue; }
-        elseif( $type == 'address' ){ continue; }
-        elseif( $type == 'service' ) { continue; }
-        elseif( $type == 'tag' ) { continue; }
-        elseif( $type == 'zone' ) { continue; }
-        elseif( $type == 'schedule' ) { continue; }
-        */
-
-        elseif( $type == 'securityprofile' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'securityprofilegroup' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'app' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'application' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'interface' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'virtualwire' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'routing' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'device' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'threat' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'dhcp' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'certificate' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'static-route' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'edl' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'region' )
-        {
-            // tests/test_regions.php
-            PH::print_stdout("******* SKIPPED: tests/test_regions.php *******");
-            continue;
-        }
-        elseif( $type == 'threat-log' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'threat-rule' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'dns-rule' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'gp-gateway' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'gp-portal' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'ike-gateway' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'ike-profile' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'ipsec-tunnel' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'ipsec-profile' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'gre-tunnel' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        elseif( $type == 'gpgateway-tunnel' )
-        {
-            PH::print_stdout("******* SKIPPED for now *******");
-            continue;
-        }
-        else
-        {
-            derr('unsupported type: '.$type);
-        }
-
-
-        $location = 'any';
-        $output = '/dev/null';
-        $ruletype = 'any';
-
-
-        $path = dirname(__FILE__)."/";
-        $cli = "php ".$path.$util." in=".$path.$ci['input']." out={$output} location={$location} 'actions={$actionName}'";
-
-        if( $type == 'rule' )
-            $cli .= " ruletype={$ruletype}";
-
+            $cli .= " ruletype=any";
         $cli .= ' shadow-ignoreinvalidaddressobjects';
         $cli .= ' 2>&1';
 
-        PH::print_stdout(" * Executing CLI: {$cli}");
-
-        $output = array();
-        $retValue = 0;
-
-        exec($cli, $output, $retValue);
-
-        foreach( $output as $line )
-        {
-            $string = '   ##  ';
-            $string .= $line;
-            PH::print_stdout($string);
-        }
-
-        if( $retValue != 0 )
-            derr("CLI exit with error code '{$retValue}'");
-
-        PH::print_stdout();
-
+        $queue[] = array('title' => "{$type} / {$actionName}", 'cli' => $cli);
     }
 }
 
+$failed = cliTestRun($queue, $jobs, $verbose, $stopOnError, $timeout);
+
 PH::print_stdout("\n*****  *****");
 PH::print_stdout(" - Processed {$totalActionCount} actions");
-PH::print_stdout(" - Found {$totalActionWithCiCount} that are CI enabled");
-PH::print_stdout(" - Found {$missingActionArgCount} that are missing because of actions argument available");
+PH::print_stdout(" - Run: " . count($queue) . ", failed: " . count($failed));
+PH::print_stdout(" - Found {$missingActionArgCount} that are not run because the action needs arguments");
 
+if( count($skipped) > 0 )
+{
+    PH::print_stdout("\n - actions not run:");
+    foreach( $skipped as $type => $actions )
+        foreach( $actions as $actionName => $reason )
+            PH::print_stdout("    {$type} / {$actionName}: {$reason}");
+}
 
 PH::print_stdout("\n");
-PH::print_stdout(" - the following actions has no test argument:");
-print_r($missing_actions);
-
-PH::print_stdout("\n");
-PH::print_stdout(" - the following actions are not tested:");
+PH::print_stdout(" - the following actions are not tested here ( they need arguments ):");
 print_r($missing_actionsArgument);
+
+if( count($failed) > 0 )
+{
+    PH::print_stdout("\n - FAILED actions:");
+    foreach( $failed as $line )
+        PH::print_stdout("    " . $line);
+}
 
 PH::print_stdout();
 PH::print_stdout("\n*********** FINISHED TESTING ACTIONS ************");
 PH::print_stdout("*************************************************\n");
 
-
-
-
+exit( count($failed) > 0 ? 1 : 0 );

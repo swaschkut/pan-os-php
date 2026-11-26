@@ -89,7 +89,7 @@ RQuery::$defaultFilters['threat']['max-engine-version']['operators']['is.empty']
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% 1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -100,7 +100,7 @@ RQuery::$defaultFilters['threat']['type']['operators']['is.vulnerability'] = arr
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% ftp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -110,7 +110,7 @@ RQuery::$defaultFilters['threat']['type']['operators']['is.spyware'] = array(
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% ftp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -121,7 +121,7 @@ RQuery::$defaultFilters['threat']['object']['operators']['is.disabled'] = array(
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% ftp)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -184,7 +184,7 @@ RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['
     },
     'arg' => true,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% 1)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

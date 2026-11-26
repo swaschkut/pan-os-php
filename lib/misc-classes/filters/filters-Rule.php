@@ -3250,7 +3250,7 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['has.predefined'] = arra
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% av-production)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

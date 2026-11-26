@@ -29,7 +29,7 @@ RQuery::$defaultFilters['interface']['ipv4']['operators']['includes'] = Array(
     },
     'arg' => true,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP% 192.0.2.1)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -48,7 +48,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.subinterface'] =
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -62,7 +62,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.aggregate-group'
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -76,7 +76,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.layer3'] = Array
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -90,7 +90,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.layer2'] = Array
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -104,7 +104,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.tunnel'] = Array
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -117,7 +117,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.virtual-wire'] =
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -130,7 +130,7 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.vlan'] = Array(
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -143,7 +143,7 @@ RQuery::$defaultFilters['interface']['type']['operators']['is.ethernet'] = Array
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -156,7 +156,7 @@ RQuery::$defaultFilters['interface']['type']['operators']['is.aggregate'] = Arra
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

@@ -10,7 +10,7 @@ RQuery::$defaultFilters['ike-profile']['authentication']['operators']['eq'] = ar
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% sha1)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -24,7 +24,7 @@ RQuery::$defaultFilters['ike-profile']['dhgroup']['operators']['eq'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% group2)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -38,7 +38,7 @@ RQuery::$defaultFilters['ike-profile']['encryption']['operators']['eq'] = array(
     },
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP%)',
+        'fString' => '(%PROP% aes-128-cbc)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

@@ -105,27 +105,31 @@ class ThreatStore extends ObjStore
         if( $this->predefinedThreatsXml === null )
             $this->predefinedThreatsXml = PH::getPredefinedXmlDoc( null, array('threats') );
 
-        $name = $threat->name();
-        foreach( array('vulnerability', 'phone-home') as $section )
+        // name => entry, built once ( an XPath search per threat is a walk over all 30000 entries each time )
+        if( $this->predefinedThreatsXmlIndex === null )
         {
-            $node = DH::findXPathSingleEntry( "/predefined/threats/".$section."/entry[@name=".self::xpathLiteral($name)."]", $this->predefinedThreatsXml );
-            if( $node !== FALSE && $node !== null )
-                return $node;
+            $this->predefinedThreatsXmlIndex = array();
+            $xpath = new DOMXPath( $this->predefinedThreatsXml );
+            foreach( array('phone-home', 'vulnerability') as $section )
+            {
+                $entries = $xpath->query( "/predefined/threats/".$section."/entry" );
+                if( $entries === FALSE )
+                    continue;
+                // 'vulnerability' is read last: as before it wins for a name both sections have
+                foreach( $entries as $entry )
+                    $this->predefinedThreatsXmlIndex[$entry->getAttribute('name')] = $entry;
+            }
         }
-        return null;
+
+        $name = $threat->name();
+        return isset($this->predefinedThreatsXmlIndex[$name]) ? $this->predefinedThreatsXmlIndex[$name] : null;
     }
+
+    /** @var DOMElement[]|null name => entry of $predefinedThreatsXml */
+    private $predefinedThreatsXmlIndex = null;
 
     /** @var DOMDocument|null 'threats' section of predefined.xml, read by predefinedThreatXml() on first use */
     private $predefinedThreatsXml = null;
-
-    private static function xpathLiteral( $value ): string
-    {
-        if( strpos($value, "'") === FALSE )
-            return "'".$value."'";
-        if( strpos($value, '"') === FALSE )
-            return '"'.$value.'"';
-        return "concat('".str_replace("'", "',\"'\",'", $value)."')";
-    }
 
     public function load_phone_home_entry( DOMElement $threatx ): Threat
     {

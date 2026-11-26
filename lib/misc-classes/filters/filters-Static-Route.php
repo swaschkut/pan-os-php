@@ -33,7 +33,7 @@ RQuery::$defaultFilters['static-route']['nexthop-ip']['operators']['is.set'] = A
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -57,7 +57,7 @@ RQuery::$defaultFilters['static-route']['nexthop-vr']['operators']['is.set'] = A
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -69,7 +69,7 @@ RQuery::$defaultFilters['static-route']['nexthop-interface']['operators']['is.se
     },
     'arg' => false,
     'ci' => Array(
-        'fString' => '(%PROP% ethernet1/1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

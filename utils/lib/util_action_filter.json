@@ -725,7 +725,7 @@
             "members.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isGroup() && !$object->isDynamic() && $object->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -806,7 +806,7 @@
             "name.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "strlen($object->name()) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 63)",
@@ -818,7 +818,7 @@
             "netmask": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 27)",
@@ -1027,7 +1027,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1061,7 +1061,7 @@
             "reflocationcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countLocationReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1338,7 +1338,7 @@
                     "has": {
                         "Function": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -1363,7 +1363,7 @@
                     "is.set": {
                         "Function": {},
                         "arg": false,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -1374,7 +1374,7 @@
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isRegion() && !$object->isEDL() && $object->tags->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1653,7 +1653,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% Web App)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1665,7 +1665,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% networking)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1689,7 +1689,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% evasive) ",
+                            "fString": "(%PROP% http)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -1697,7 +1697,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% evasive) ",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1709,7 +1709,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% evasive) ",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -1799,7 +1799,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% ftp)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -1864,7 +1864,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1876,7 +1876,7 @@
             "risk": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->risk !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1899,7 +1899,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% file-sharing)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1919,7 +1919,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% 80)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2011,7 +2011,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% ssl)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2023,7 +2023,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% application-group)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2043,7 +2043,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% 53)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2234,7 +2234,7 @@
             "publickey-length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->hasPublicKey() && $object->getPkeyBits() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -2246,7 +2246,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -2385,7 +2385,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3121,7 +3121,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3145,7 +3145,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3154,7 +3154,7 @@
             "level": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "PH::deviceLevelMatch( $object, '!operator!', !value! )",
+                        "eval": {},
                         "arg": true,
                         "help": "level in the hierarchy (shared = 1, top device group = 2, \u2026); a firewall \/ template stack \/ template: one of the levels of its device groups. ie: (level >= 3)",
                         "ci": {
@@ -3170,7 +3170,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3226,7 +3226,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -3241,7 +3241,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3249,7 +3249,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3257,7 +3257,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -3297,7 +3297,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% grp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3637,6 +3637,7 @@
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -3779,7 +3780,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4294,7 +4295,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4668,7 +4669,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -4886,7 +4887,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5426,7 +5427,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5594,7 +5595,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% sha1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5606,7 +5607,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% group2)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5618,7 +5619,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% aes-128-cbc)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5652,7 +5653,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5873,7 +5874,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP% 192.0.2.1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5918,7 +5919,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5926,7 +5927,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5934,7 +5935,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5942,7 +5943,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5950,7 +5951,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5958,7 +5959,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5966,7 +5967,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -5975,7 +5976,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -5990,7 +5991,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -5998,7 +5999,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6289,7 +6290,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -6513,7 +6514,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% sha1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6525,7 +6526,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% group2)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6537,7 +6538,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% aes-128-cbc)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6571,7 +6572,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7215,7 +7216,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7601,7 +7602,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7757,7 +7758,7 @@
             "address.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "count( $object->members() ) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -7894,7 +7895,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -8142,7 +8143,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -9986,7 +9987,7 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->apps->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.nocase": {
                         "Function": {},
@@ -10168,7 +10169,7 @@
             "description.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "strlen($object->description() ) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -10226,7 +10227,7 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->owner->owner->addressStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "included-in.full": {
                         "Function": {},
@@ -10309,7 +10310,7 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.edl": {
                         "eval": {},
@@ -10318,12 +10319,12 @@
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive": {
-                        "eval": "$object->destination->hasObjectRecursive(!value!, false) === true",
+                        "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive.regex": {
                         "Function": {},
@@ -10457,12 +10458,12 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->from->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->from->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.from.query": {
                         "Function": {},
@@ -10514,7 +10515,7 @@
             "from.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isPbfRule() && $object->from->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -10528,7 +10529,7 @@
                     "is": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% test.tag)",
                             "input": "input\/panorama-8.0.xml"
@@ -11205,7 +11206,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% av-production)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -11258,12 +11259,12 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->services->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->services->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.regex": {
                         "Function": {},
@@ -11436,7 +11437,7 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->owner->owner->addressStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.from.query": {
                         "Function": {},
@@ -11448,7 +11449,7 @@
             "snathost.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isNatRule() && $object->snathosts->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11474,7 +11475,7 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.edl": {
                         "eval": {},
@@ -11483,12 +11484,12 @@
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.recursive.regex": {
                         "Function": {},
@@ -11609,7 +11610,7 @@
                     "has": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% test.tag)",
                             "input": "input\/panorama-8.0.xml"
@@ -11636,7 +11637,7 @@
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->tags->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11747,7 +11748,7 @@
                     "has.only": {
                         "eval": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->to->parentCentralStore->find('!value!');"
+                        "argObjectFinder": {}
                     },
                     "has.from.query": {
                         "Function": {},
@@ -11789,7 +11790,7 @@
             "to.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isPbfRule() && $object->to->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11821,7 +11822,7 @@
             "url.category.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isSecurityRule() && $object->urlCategoriescount() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -11890,7 +11891,7 @@
             "user.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isSecurityRule() && $object->userID_count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -12309,7 +12310,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -13316,7 +13317,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
@@ -13418,7 +13419,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% sinkhole)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert\/allow\/block\/sinkhole"
@@ -13431,7 +13432,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% disable)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
@@ -13482,7 +13483,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% sinkhole)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default\/allow\/block\/sinkhole"
@@ -13495,7 +13496,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP% disable)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
@@ -13545,7 +13546,7 @@
                     "is.set": {
                         "Function": {},
                         "ci": {
-                            "fString": "(%PROP% securityrule )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware,vulnerability'"
@@ -13623,6 +13624,7 @@
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -13712,7 +13714,7 @@
             "name.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "strlen($object->name()) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 63)",
@@ -13805,7 +13807,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -14054,7 +14056,7 @@
                     "is.ip-user-mapping": {
                         "Function": {},
                         "ci": {
-                            "fString": "(%PROP% )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=url'"
@@ -14650,7 +14652,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% av-production)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -14659,7 +14661,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -14697,7 +14699,7 @@
                         "arg": false,
                         "help": "returns TRUE if refobject is SecurityRule and disabled",
                         "ci": {
-                            "fString": "(%PROP% shared )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -15437,7 +15439,7 @@
             "members.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->isGroup() && $object->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15711,7 +15713,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15745,7 +15747,7 @@
             "reflocationcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->countLocationReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15810,7 +15812,7 @@
                         }
                     },
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getSourcePort() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15856,7 +15858,7 @@
                     "has": {
                         "Function": {},
                         "arg": true,
-                        "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
+                        "argObjectFinder": {},
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
@@ -15883,7 +15885,7 @@
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "$object->tags->count() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15911,7 +15913,7 @@
             "timeout-halfclose.value": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getHalfcloseTimeout() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15931,7 +15933,7 @@
             "timeout-timewait.value": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getTimewaitTimeout() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15943,7 +15945,7 @@
             "timeout.value": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getTimeout() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -15963,7 +15965,7 @@
                         }
                     },
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && $object->getDestPort() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16007,7 +16009,7 @@
             "value.length": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && strlen($object->getDestPort()) !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16285,7 +16287,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -16297,7 +16299,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -16317,7 +16319,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ethernet1\/1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -16788,7 +16790,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16973,7 +16975,7 @@
             "max-engine-version": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!empty($object->max_engine_version) && $object->max_engine_version !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -16981,10 +16983,10 @@
                         }
                     },
                     "is.empty": {
-                        "eval": "empty($object->max_engine_version)",
+                        "eval": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% 1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -16993,7 +16995,7 @@
             "min-engine-version": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!empty($object->min_engine_version) && $object->min_engine_version !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -17048,7 +17050,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ftp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17073,7 +17075,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -17088,7 +17090,7 @@
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP%)",
+                            "fString": "(%PROP% 1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -17136,7 +17138,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ftp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17144,7 +17146,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% ftp)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -17236,7 +17238,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17264,7 +17266,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% brute-force )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -17276,7 +17278,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17296,7 +17298,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% client )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
@@ -17335,6 +17337,7 @@
                     "is": {
                         "Function": {},
                         "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches the one specified in argument",
                         "ci": {
                             "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
@@ -17465,7 +17468,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -17534,7 +17537,7 @@
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% critical )",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -18111,7 +18114,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -18598,7 +18601,7 @@
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "method_exists( $object, \"countReferences\" ) && $object->countReferences() !operator! !value!",
+                        "eval": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",

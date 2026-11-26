@@ -22,6 +22,18 @@
 
 class RuleCallContext extends CallContext
 {
+    // set by actions while they run ( declared: PHP 8.2 deprecates properties created on the fly )
+    public $cache;
+    public $cachedIPmapping;
+    public $dn;
+    public $end;
+    public $justthese;
+    public $ldapbind;
+    public $ldapconn;
+    public $numCount;
+    public $postCache;
+    public $preCache;
+
 
     public static $commonActionFunctions = array();
     public static $supportedActions = array();

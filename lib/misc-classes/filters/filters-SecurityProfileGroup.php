@@ -52,7 +52,7 @@ RQuery::$defaultFilters['securityprofilegroup']['refobject']['operators']['rule.
     'arg' => FALSE,
     'help' => 'returns TRUE if refobject is SecurityRule and disabled',
     'ci' => array(
-        'fString' => '(%PROP% shared )',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -376,7 +376,7 @@ RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['has.pred
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% av-production)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

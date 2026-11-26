@@ -17,11 +17,26 @@
  * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/**
+ * Runs every filter that has a CI example ( 'ci' => array( 'fString' => …, 'input' => … ) ) through the CLI:
+ *   php pan-os-php.php type=<type> in=<input> location=any actions=display 'filter=<example>'
+ * A filter fails when the CLI ends with an error. The run does not stop at the first failure: all failures are
+ * listed at the end and the exit code is 1.
+ *
+ *   php tests/test_filters.php                     all types
+ *   php tests/test_filters.php type=address,rule   only these types
+ *   php tests/test_filters.php in=<file>           this configuration instead of the input of the example
+ *   php tests/test_filters.php verbose             print the CLI output of every filter (default: of failures only)
+ *   php tests/test_filters.php stoponerror         stop at the first failure
+ *   php tests/test_filters.php jobs=4              CLI runs at the same time (default 4)
+ *   php tests/test_filters.php timeout=900         seconds a CLI run may take (default 900): then it is stopped and failed
  */
 
 set_include_path(dirname(__FILE__) . '/../' . PATH_SEPARATOR . get_include_path());
 require_once dirname(__FILE__)."/../lib/pan_php_framework.php";
+require_once dirname(__FILE__)."/cli_test_runner.php";
 
 PH::print_stdout( "\n*************************************************" );
 PH::print_stdout( "**************** FILTER TESTERS *****************\n" );
@@ -33,66 +48,41 @@ if( ini_get('safe_mode') )
     derr("SAFE MODE IS ACTIVE");
 }
 
+// filter type => type of the CLI, where the names differ
+$cliTypeOf = array(
+    'app' => 'application',
+);
 
-function runCommand($bin, &$stream, $force = TRUE, $command = '')
-{
-    $stream = '';
+// types that are not run, with the reason
+$skippedTypes = array();
 
-    $bin .= $force ? " 2>&1" : '';
-
-    $descriptorSpec = array
-    (
-        0 => array('pipe', 'r'),
-        1 => array('pipe', 'w'),
-        2 => array('pipe', 'w'),
-    );
-
-    $pipes = array();
-
-    $process = proc_open($bin, $descriptorSpec, $pipes);
-
-    if( $process !== FALSE )
-    {
-        fwrite($pipes[0], $command);
-        fclose($pipes[0]);
-
-        $stream = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-
-        $stream += stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-
-        return proc_close($process);
-    }
-    else
-        return -1;
-
-}
+$onlyTypes = null;
+if( isset(PH::$args['type']) )
+    $onlyTypes = array_map('trim', explode(',', PH::$args['type']));
+$verbose = isset(PH::$args['verbose']);
+$stopOnError = isset(PH::$args['stoponerror']);
+$jobs = isset(PH::$args['jobs']) ? max(1, (int)PH::$args['jobs']) : 4;
+$timeout = isset(PH::$args['timeout']) ? max(1, (int)PH::$args['timeout']) : 900;
 
 $totalFilterCount = 0;
 $totalFilterWithCiCount = 0;
 $missing_filters = array();
+$skipped = array();
+$queue = array();
 
-foreach( RQuery::$defaultFilters as $type => &$filtersByField )
+$path = dirname(__FILE__) . "/";
+
+foreach( RQuery::$defaultFilters as $type => $filtersByField )
 {
-
-    /*
-    $filterStart = false;
-    if( $type = 'static-route' )
-    {
-        #    continue;
-        $filterStart = true;
-    }
-
-    if(!$filterStart)
+    if( $onlyTypes !== null && !in_array($type, $onlyTypes) )
         continue;
-    */
 
-
-    $start = false;
-    foreach( $filtersByField as $fieldName => &$filtersByOperator )
+    foreach( $filtersByField as $fieldName => $filtersByOperator )
     {
-        foreach( $filtersByOperator['operators'] as $operator => &$filter )
+        if( !isset($filtersByOperator['operators']) || !is_array($filtersByOperator['operators']) )
+            continue;
+
+        foreach( $filtersByOperator['operators'] as $operator => $filter )
         {
             $totalFilterCount++;
 
@@ -102,237 +92,73 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
                 continue;
             }
 
-
             $totalFilterWithCiCount++;
 
             if( $operator == '>,<,=,!' )
                 $operator = '<';
 
-            PH::print_stdout( " *** Processing filter: {$type} / ({$fieldName} {$operator})" );
-
-            $ci = &$filter['ci'];
-
+            $ci = $filter['ci'];
             $filterString = str_replace('%PROP%', "{$fieldName} {$operator}", $ci['fString']);
+            $title = "{$type} / {$filterString}";
 
-
-/*
-            if( strpos( $filterString, "refobjectname is.recursive" ) !== false )
-                $start = true;
-
-            if( !$start )
-                continue;
-*/
-
-
-            if( $type == 'rule' )
-                $util = '../utils/pan-os-php.php type=rule';
-            elseif( $type == 'address' )
-                $util = '../utils/pan-os-php.php type=address';
-            elseif( $type == 'service' )
-                $util = '../utils/pan-os-php.php type=service';
-            elseif( $type == 'tag' )
-                $util = '../utils/pan-os-php.php type=tag';
-            elseif( $type == 'zone' )
-                $util = '../utils/pan-os-php.php type=zone';
-            elseif( $type == 'schedule' )
-                $util = '../utils/pan-os-php.php type=schedule';
-            elseif( $type == 'region' )
-                $util = '../utils/pan-os-php.php type=region';
-            elseif( $type == 'certificate-profile' )
-                $util = '../utils/pan-os-php.php type=certificate-profile';
-            #elseif( $type == 'application' )
-            #    $util = '../utils/application-edit.php';
-
-            /*
-            if( $type == 'rule' ){ continue; }
-            elseif( $type == 'address' ){ continue; }
-            elseif( $type == 'service' ) { continue; }
-            elseif( $type == 'tag' ) { continue; }
-            elseif( $type == 'zone' ) { continue; }
-            elseif( $type == 'schedule' ) { continue; }
-            */
-            elseif( $type == 'securityprofile' )
+            if( isset($skippedTypes[$type]) )
             {
-                PH::print_stdout( "******* SKIPPED for now *******" );
+                $skipped[$type] = $skippedTypes[$type];
                 continue;
             }
-            elseif( $type == 'securityprofilegroup' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'app' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }elseif( $type == 'application' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'interface' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'virtualwire' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'routing' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'device' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'threat' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'dhcp' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'certificate' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'static-route' )
-            {
-                PH::print_stdout( "******* SKIPPED for now *******" );
-                continue;
-            }
-            elseif( $type == 'edl' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'threat-log' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'threat-rule' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'dns-rule' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'gp-gateway' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'gp-portal' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'ike-gateway' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'ike-profile' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'ipsec-tunnel' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'ipsec-profile' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'gre-tunnel' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            elseif( $type == 'zone-protection-profile' )
-            {
-                PH::print_stdout("******* SKIPPED for now *******");
-                continue;
-            }
-            else
-            {
-                derr('unsupported type: '.$type);
-            }
-
-            $location = 'any';
-            $output = '/dev/null';
-            $ruletype = 'any';
 
             if( isset(PH::$args['in']) )
             {
-                $input = PH::$args['in'];
-
-                if( strpos( $filterString, "location" ) !== false )
+                // the CLI runs in a folder of its own: a relative path is one of the folder the test is started in
+                $input = realpath(PH::$args['in']) !== FALSE ? realpath(PH::$args['in']) : PH::$args['in'];
+                if( strpos($filterString, "location") !== FALSE )
                     continue;
             }
-
             else
-                $input = $ci['input'];
-            $path = dirname(__FILE__)."/";
-            $cli = "php ".$path.$util." in=".$path.$input." out=".$output." location={$location} actions=display 'filter={$filterString}'";
+                $input = $path . $ci['input'];
 
+            $cliType = isset($cliTypeOf[$type]) ? $cliTypeOf[$type] : $type;
+
+            $cli = escapeshellarg(PHP_BINARY) . " " . escapeshellarg($path . "../utils/pan-os-php.php") . " type=" . escapeshellarg($cliType)
+                . " in=" . escapeshellarg($input) . " out=/dev/null location=any actions=display " . escapeshellarg("filter=" . $filterString);
             if( $type == 'rule' )
-                $cli .= " ruletype={$ruletype}";
-
+                $cli .= " ruletype=any";
             $cli .= ' shadow-ignoreinvalidaddressobjects';
             $cli .= ' 2>&1';
 
-            PH::print_stdout( " * Executing CLI: {$cli}" );
-
-            $output = array();
-            $retValue = 0;
-
-            exec($cli, $output, $retValue);
-
-            foreach( $output as $line )
-            {
-                $string = '   ##  ';
-                $string .= $line;
-                PH::print_stdout( $string );
-            }
-
-            if( $retValue != 0 )
-                derr("CLI exit with error code '{$retValue}'");
-
-            PH::print_stdout();
-
+            $queue[] = array('title' => $title, 'cli' => $cli);
         }
     }
 }
 
+$failed = cliTestRun($queue, $jobs, $verbose, $stopOnError, $timeout);
+$totalRun = count($queue);
+
 PH::print_stdout( "\n*****  *****" );
 PH::print_stdout( " - Processed {$totalFilterCount} filters" );
 PH::print_stdout( " - Found {$totalFilterWithCiCount} that are CI enabled" );
+PH::print_stdout( " - Run: {$totalRun}, failed: " . count($failed) );
+
+if( count($skipped) > 0 )
+{
+    PH::print_stdout( "\n - types not run:" );
+    foreach( $skipped as $type => $reason )
+        PH::print_stdout( "    {$type}: {$reason}" );
+}
 
 PH::print_stdout( "\n" );
 PH::print_stdout( " - the following filters has no test argument:" );
 print_r($missing_filters);
 
+if( count($failed) > 0 )
+{
+    PH::print_stdout( "\n - FAILED filters:" );
+    foreach( $failed as $line )
+        PH::print_stdout( "    " . $line );
+}
+
 PH::print_stdout();
 PH::print_stdout( "\n*********** FINISHED TESTING FILTERS ************" );
 PH::print_stdout( "*************************************************\n" );
 
-
-
-
+exit( count($failed) > 0 ? 1 : 0 );
