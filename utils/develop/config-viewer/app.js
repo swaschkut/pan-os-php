@@ -2487,15 +2487,17 @@ async function showViewer(config, preset) {
     function drawLocationOptions() {
         if (!locData || !locData.locations.length) return;
         const r = locData, was = location.value, tl = networkTemplates();
-        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'container': 'containers (folders)', 'cloud': 'Prisma Access folders', 'on-prem': 'firewalls (on-prem)', 'snippet': 'snippets' };
+        // SCM: the locations come with a group ('all', 'prisma-access', …) and in the order of the choice - All (the
+        // global folder, as shared of Panorama), the Prisma Access folders, the containers, the firewalls, the snippets
+        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'all': 'All (global folder)', 'prisma-access': 'Prisma Access folders', 'container': 'containers (folders)', 'cloud': 'Prisma Access folders', 'on-prem': 'firewalls (on-prem)', 'snippet': 'snippets' };
         let groups;
         if (tl) {
             const vs = [...new Set(tl.filter(t => tplSel.value === 'any' || t.name === tplSel.value).flatMap(t => t.vsys || []))];
             groups = [el('optgroup', { label: 'template' }, el('option', { value: 'shared', text: 'shared (the template itself)' })),
                 ...(vs.length ? [el('optgroup', { label: 'vsys (imported)' }, vs.map(v => el('option', { value: v, text: v })))] : [])];
         } else
-            groups = [...new Set(r.locations.map(l => l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
-                r.locations.filter(l => l.kind === k).map(l => el('option', { value: l.name, text: l.name }))));
+            groups = [...new Set(r.locations.map(l => l.group || l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
+                r.locations.filter(l => (l.group || l.kind) === k).map(l => el('option', { value: l.name, text: l.name }))));
         location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
         drawPredefined();
         location.value = [...location.options].some(o => o.value === was) ? was : location.options[0].value;
@@ -2551,7 +2553,9 @@ async function showViewer(config, preset) {
         const o = [...location.options].find(x => x.value === name);
         const group = o && o.parentElement && o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : '';
         if (group === 'device groups') return 'dg';
-        if (group === 'containers (folders)') return 'container';
+        // an SCM container, in whatever group of the choice it is listed (All, Prisma Access folders, containers)
+        const info = !networkTemplates() && locData ? locData.locations.find(l => l.name === name) : null;
+        if (group === 'containers (folders)' || (info && info.kind === 'container')) return 'container';
         if (name === 'shared' && [...location.querySelectorAll('optgroup')].some(g => g.label === 'device groups')) return 'shared';
         if (group === 'vsys' || group === 'shared gateways') return 'vsys';
         return null;

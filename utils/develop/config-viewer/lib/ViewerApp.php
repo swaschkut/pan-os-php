@@ -6155,7 +6155,13 @@ class ViewerApp
         $list = array();
         foreach( is_array( $r['locations'] ?? null ) ? $r['locations'] : array() as $l )
             if( is_array( $l ) && is_string( $l['name'] ?? null ) && is_string( $l['kind'] ?? null ) )
-                $list[] = array( 'name' => $l['name'], 'kind' => $l['kind'], 'levels' => is_array( $l['levels'] ?? null ) ? array_values( array_filter( $l['levels'], 'is_string' ) ) : array( $l['name'] ) );
+            {
+                $one = array( 'name' => $l['name'], 'kind' => $l['kind'], 'levels' => is_array( $l['levels'] ?? null ) ? array_values( array_filter( $l['levels'], 'is_string' ) ) : array( $l['name'] ) );
+                // SCM: the group of the choice (All / Prisma Access folders / containers / …), the list comes in that order
+                if( in_array( $l['group'] ?? null, array( 'all', 'prisma-access', 'container', 'on-prem', 'snippet' ), TRUE ) )
+                    $one['group'] = $l['group'];
+                $list[] = $one;
+            }
         if( $p['scope'] !== null )
         {
             $scope = array_map( 'strtolower', $p['scope'] );

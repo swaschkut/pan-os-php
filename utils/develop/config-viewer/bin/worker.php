@@ -153,6 +153,41 @@ function viewerLocations()
         if( method_exists( $pan, 'getDeviceOnPrems' ) )
             $add( 'on-prem', $pan->getDeviceOnPrems() );
         $add( 'snippet', $pan->getSnippets() );
+
+        // 'group': how the page groups and orders the choice - "All" on its own first (the global folder, as shared
+        // of Panorama), then the Prisma Access folders (the folder Prisma Access, the folders below it and the
+        // clouds), then the other containers, the firewalls and the snippets. 'kind' stays what the location is.
+        $prismaNames = array( 'prisma access', 'mobile users container', 'context-collectors', 'context collectors' );
+        $inPrisma = array();
+        foreach( $pan->getContainers() as $container )
+        {
+            $c = $container;
+            for( $i = 0; $i < 50 && is_object( $c ); $i++ )
+            {
+                if( in_array( strtolower( $c->name() ), $prismaNames, TRUE ) )
+                {
+                    $inPrisma[$container->name()] = TRUE;
+                    break;
+                }
+                $c = isset( $c->parentContainer ) ? $c->parentContainer : null;
+            }
+        }
+        $order = array( 'all' => 0, 'prisma-access' => 1, 'container' => 2, 'on-prem' => 3, 'snippet' => 4 );
+        foreach( $out as $i => $l )
+        {
+            if( $l['kind'] == 'container' && strtolower( $l['name'] ) == 'all' )
+                $group = 'all';
+            elseif( $l['kind'] == 'cloud' || ( $l['kind'] == 'container' && isset( $inPrisma[$l['name']] ) ) )
+                $group = 'prisma-access';
+            else
+                $group = $l['kind'];
+            $out[$i]['group'] = $group;
+            // inside a group the order of the configuration stays ( containers before the clouds )
+            $out[$i]['_sort'] = ( $order[$group] ?? 9 ) * 100000 + $i;
+        }
+        usort( $out, function( $a, $b ) { return $a['_sort'] <=> $b['_sort']; } );
+        foreach( $out as $i => $l )
+            unset( $out[$i]['_sort'] );
         return array( 'config' => 'scm', 'locations' => $out, 'ancestor' => FALSE, 'predefined' => UTIL::predefinedTypes( $pan ) );
     }
     return array( 'config' => 'unknown', 'locations' => $out, 'ancestor' => FALSE );

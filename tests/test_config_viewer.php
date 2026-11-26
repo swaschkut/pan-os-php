@@ -1361,6 +1361,20 @@ eq( array( $r[1]['config'] ?? null, $kinds, in_array( 'All', $scmNames, TRUE ),
         count( array_intersect( array( 'Mobile Users', 'Mobile Users Explicit Proxy', 'Remote Networks', 'Service Connections' ), $scmNames ) ) ),
     array( 'scm', array( 'cloud', 'container', 'on-prem', 'snippet' ), TRUE, 4 ),
     'locations: SCM - containers (folders), Prisma Access folders (clouds: Mobile Users, Remote Networks, …), on-prem firewalls and snippets' );
+// the order and the groups of the location choice: All on its own, the Prisma Access folders (the folder Prisma Access, the
+// folders below it, the clouds), then the other containers, the firewalls, the snippets - 'kind' stays what the location is
+$byGroup = array(); $kindOf = array();
+foreach( $r[1]['locations'] ?? array() as $l )
+{
+    $byGroup[$l['group'] ?? '-'][] = $l['name'];
+    $kindOf[$l['name']] = $l['kind'];
+}
+eq( array( array_keys( $byGroup ), $byGroup['all'] ?? null, array_slice( $byGroup['prisma-access'] ?? array(), 0, 3 ),
+        count( array_intersect( array( 'Prisma Access', 'Mobile Users Container', 'All' ), $byGroup['container'] ?? array() ) ),
+        array( $kindOf['All'] ?? null, $kindOf['Prisma Access'] ?? null, $kindOf['Mobile Users Container'] ?? null, $kindOf['Mobile Users'] ?? null ) ),
+    array( array( 'all', 'prisma-access', 'container', 'on-prem', 'snippet' ), array( 'All' ), array( 'Prisma Access', 'Mobile Users Container', 'Service Connections' ), 0,
+        array( 'container', 'container', 'container', 'cloud' ) ),
+    'locations: SCM - order All, Prisma Access folders (Prisma Access, Mobile Users Container, clouds), containers, firewalls, snippets' );
 $rn = $alice->call( 'GET', $R . '/configs/' . $scmc . '/objects?type=address&location=' . rawurlencode( 'Remote Networks' ) );
 eq( status( $rn ), 200, 'SCM: objects of a Prisma Access folder (Remote Networks)' );
 foreach( array( $fwc, $scmc ) as $x )
