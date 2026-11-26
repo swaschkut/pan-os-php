@@ -120,6 +120,34 @@ $eq( array_values( preg_grep( '/SKIPPED/', $l ) ), array_fill( 0, 3, "*** SKIPPE
 list( $f, ) = $run( 'region', $in, 'shared', '(name eq shared-region)', 'address-add:203.0.114.1' );
 $eq( $xp( $f, "/config/shared/region/entry[@name='shared-region']/address/member" ), array( '203.0.113.0/24', '203.0.114.1' ), 'shared region of a firewall: changed in /config/shared' );
 
+// ---- a region in a rule: added / removed like an address (the rule container takes Address, AddressGroup, EDL and Region)
+$r = "$v/rulebase/security/rules/entry[@name='r-country']";
+list( $f, $l ) = $run( 'rule', $in, 'vsys1', '(name eq r-country)', 'src-add:DE/dst-add:geo-only' );
+$eq( array( $xp( $f, "$r/source/member" ), $xp( $f, "$r/destination/member" ) ), array( array( 'FR', 'DE' ), array( 'hq-region', 'geo-only' ) ),
+    'rule: src-add of a predefined region (country code), dst-add of a custom region' );
+list( $f, $l ) = $run( 'rule', $in, 'vsys1', '(name eq r-country)', 'src-remove-force-any:FR/dst-remove-force-any:hq-region' );
+$eq( array( $xp( $f, "$r/source/member" ), $xp( $f, "$r/destination/member" ) ), array( array( 'any' ), array( 'any' ) ), 'rule: region removed from source / destination' );
+
+// the way the SCM import fills a rule: findOrCreate() of the name, then addObject()
+require_once $repo . '/lib/pan_php_framework.php';
+$pan = new PANConf();
+$pan->load_from_domxml( $doc = ( function() use ( $in ) { $d = new DOMDocument(); $d->load( $in ); return $d; } )() );
+$vsys = $pan->findVirtualSystem( 'vsys1' );
+$rule = $vsys->securityRules->find( 'r-country' );
+$found = array();
+foreach( array( 'DE', 'geo-only', 'h-1' ) as $name )
+{
+    $object = $vsys->addressStore->findOrCreate( $name, null, TRUE );
+    $found[] = get_class( $object );
+    $rule->source->addObject( $object );
+}
+$names = array();
+foreach( $rule->source->members() as $member )
+    $names[] = $member->name();
+$eq( array( $found, $names, $rule->source->hasObjectRecursive( $vsys->addressStore->find( 'DE' ) ) ),
+    array( array( 'Region', 'Region', 'Address' ), array( 'FR', 'DE', 'geo-only', 'h-1' ), TRUE ),
+    'findOrCreate + addObject: regions and an address in the source of a rule' );
+
 // ---- filters
 list( , , $o ) = $run( 'region', $in, 'any', '(geo-location is.set)', 'display' );
 $eq( $objects( $o ), array( 'hq-region', 'geo-only' ), 'filter geo-location is.set' );

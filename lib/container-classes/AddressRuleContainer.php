@@ -45,10 +45,10 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup|EDL $Obj
+     * @param Address|AddressGroup|EDL|Region $Obj
      * @return bool
      */
-    public function addObject(Address|AddressGroup|EDL $Obj): bool
+    public function addObject(Address|AddressGroup|EDL|Region $Obj): bool
     {
         $this->fasthashcomp = null;
 
@@ -89,11 +89,11 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param Address|AddressGroup|EDL $Obj
+     * @param Address|AddressGroup|EDL|Region $Obj
      * @return bool
      * @throws Exception
      */
-    public function API_add(Address|AddressGroup|EDL $Obj): bool
+    public function API_add(Address|AddressGroup|EDL|Region $Obj): bool
     {
         if( $this->addObject($Obj) )
         {
@@ -128,7 +128,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup|EDL $Obj
+     * @param Address|AddressGroup|EDL|Region $Obj
      * @param bool $rewriteXml
      * @param bool $forceAny
      * @param null $context
@@ -161,13 +161,13 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param Address|AddressGroup|EDL $Obj
+     * @param Address|AddressGroup|EDL|Region $Obj
      * @param bool $forceAny
      * @param null $context
      * @return bool
      * @throws Exception
      */
-    public function API_remove(Address|AddressGroup|EDL $Obj, bool $forceAny = FALSE, $context = null): bool
+    public function API_remove(Address|AddressGroup|EDL|Region $Obj, bool $forceAny = FALSE, $context = null): bool
     {
         if( $this->remove($Obj, TRUE, $forceAny, $context) )
         {
@@ -646,12 +646,12 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup|EDL $object
+     * @param Address|AddressGroup|EDL|Region $object
      * @param bool $anyIsAcceptable
      * @return bool
      * @throws Exception
      */
-    public function hasObjectRecursive(Address|AddressGroup|EDL $object, bool $anyIsAcceptable = FALSE): bool
+    public function hasObjectRecursive(Address|AddressGroup|EDL|Region $object, bool $anyIsAcceptable = FALSE): bool
     {
         if( $object === null )
             derr('cannot work with null objects');
