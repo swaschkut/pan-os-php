@@ -819,6 +819,15 @@ $regionsAt = function( string $loc ) use ( $alice, $SC ) {
         $locs[$x['name']] = $x['location'] ?? null;
     return array( $locs['DE'] ?? null, count( $locs ) );
 };
+// SCM: location predefined as on firewall / Panorama - services, applications, …; a type without predefined objects: an empty list
+$preAt = function( string $type ) use ( $alice, $SC ) {
+    $r = $alice->call( 'GET', $SC . '/objects?type=' . $type . '&location=predefined' );
+    $rows = $r[1]['rows'] ?? array();
+    return array( status( $r ), count( $rows ), array_values( array_unique( array_column( $rows, 'location' ) ) ) );
+};
+eq( array( $preAt( 'service' ), $preAt( 'address' ), in_array( 'service', $alice->call( 'GET', $SC . '/locations' )[1]['predefined'] ?? array(), TRUE ) ),
+    array( array( 200, 2, array( 'predefined' ) ), array( 200, 0, array() ), TRUE ),
+    'SCM: location predefined lists the predefined services; for addresses an empty list, no error' );
 eq( array( $regionsAt( 'any' ), $regionsAt( 'predefined' ), $regionsAt( 'All' ) ), array( array( 'predefined', 260 ), array( 'predefined', 260 ), array( null, 0 ) ),
     'SCM: predefined regions listed with location predefined at any and at predefined, not at a folder' );
 $c = array();

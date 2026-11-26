@@ -1841,9 +1841,10 @@ class UTIL
             {
                 $this->sub = $this->pan;
             }
-            elseif( $this->location == 'any' || ( $this->location == 'predefined' && $this->predefinedObjectSets() !== array() ) )
+            elseif( $this->location == 'any' || ( $this->location == 'predefined' && $this->utilType != 'rule' ) )
             {
-                # predefined: the predefined objects of the type (location_filter_object)
+                # predefined: the predefined objects of the type (location_filter_object) - a type without predefined
+                # objects lists nothing
             }
             else
             {
@@ -2032,12 +2033,12 @@ class UTIL
      * the predefined objects of the type (they belong to shared, listed before it; read only - CallContext::readOnlyReason):
      * services (service-http, service-https), applications, log forwarding profiles, threats, security profiles / URL
      * categories (securityprofiletype). Also location=predefined.
-     * SCM: its predefined objects are in the predefined snippet (a location of its own) - none here.
      */
     /**
      * the types with predefined objects in a configuration (location=predefined, predefinedObjectSets()) - the one list
-     * the config viewer offers the location "predefined (read only)" for. SCM: only the regions (the other predefined
-     * objects of SCM are in the predefined snippet, a location of its own).
+     * the config viewer marks. Firewall, Panorama and SCM alike: what pan-os-php knows as predefined (predefined.xml) -
+     * this is not the predefined snippet of SCM, which is a location of its own. location=predefined of another type
+     * ( address, tag, … ) lists nothing.
      * @param object|null $pan
      * @return string[]
      */
@@ -2045,8 +2046,6 @@ class UTIL
     {
         if( !is_object( $pan ) )
             return array();
-        if( $pan instanceof BuckbeakConf || $pan instanceof FawkesConf )
-            return array( 'region' );
         return array( 'service', 'application', 'log-profile', 'threat', 'securityprofile', 'region', 'edl' );
     }
 
@@ -2061,7 +2060,7 @@ class UTIL
             $pre = AddressStore::getPredefinedRegionStore( $this->pan );
             return array( array( 'store' => $pre, 'objects' => $pre->regions() ) );
         }
-        if( !is_object( $this->pan ) || $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf )
+        if( !is_object( $this->pan ) )
             return array();
         if( $this->utilType == 'edl' )
         {
@@ -2116,15 +2115,17 @@ class UTIL
                 foreach( $sets as $set )
                     $this->objectsToProcess[] = $set;
                 if( $sets === array() )
-                    $this->locationNotFound( $location );
+                    // a type without predefined objects ( address, tag, … ): nothing to list - no error, the config
+                    // viewer offers location "predefined" for every object type
+                    PH::print_stdout( " - type=" . $this->utilType . " has no predefined objects" );
                 else
                     // the global init of the actions (e.g. application display: its counters) - as for every location
                     self::GlobalInitAction( $this->pan );
                 continue;
             }
 
-            // SCM has no shared the predefined objects could be listed with: location=any lists them first ( only the
-            // types of predefinedTypes() - the regions; firewall / Panorama: with shared, below )
+            // SCM has no shared the predefined objects could be listed with: location=any lists them first ( the
+            // types of predefinedTypes(); firewall / Panorama: with shared, below )
             if( $location == 'any' && ( $this->pan instanceof BuckbeakConf || $this->pan instanceof FawkesConf ) )
                 foreach( $this->predefinedObjectSets() as $set )
                     $this->objectsToProcess[] = $set;

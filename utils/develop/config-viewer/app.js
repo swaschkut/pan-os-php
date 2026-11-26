@@ -2618,8 +2618,10 @@ async function showViewer(config, preset) {
     // (predefined objects belong to no location). SCM: the predefined snippet is a location of its own (regions: here)
     function drawPredefined() {
         const pre = location.querySelector('option[value="predefined"]');
-        if (locationInfo.predefined.includes(type.value)) {
-            // hierarchy: after "any", before shared (predefined objects are above shared)
+        // offered for every object type, on firewall, Panorama and SCM - a type without predefined objects (address,
+        // tag, …) lists nothing there; not for the templates of Panorama (network types)
+        if ((cur.section === 'Objects' || locationInfo.predefined.includes(type.value)) && !networkTemplates()) {
+            // hierarchy: after "any", before shared / All (predefined objects are above them)
             if (!pre) {
                 const opt = el('option', { value: 'predefined', text: 'predefined (read only)' });
                 const any = location.querySelector('option[value="any"]');

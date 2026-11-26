@@ -70,5 +70,24 @@ $before = PH::isPredefinedObject( $a );
 $snippet->setPredefined( TRUE );
 $eq( array( $before, PH::isPredefinedObject( $a ), CallContext::readOnlyReason( $a ) ), array( FALSE, TRUE, 'predefined' ), 'SCM: an object of the predefined snippet is predefined' );
 
+// ---- location=predefined: firewall, Panorama and SCM alike - the predefined objects of the type; a type without
+// predefined objects lists nothing (no error), a rule base has no such location
+$at = function( string $type, string $in ) use ( $repo ) {
+    $o = array(); $rc = 0;
+    exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $repo . '/utils/pan-os-php.php' ) . ' type=' . $type . ' in=' . escapeshellarg( $in ) .
+        ' location=predefined actions=display 2>&1', $o, $rc );
+    return $rc === 0 ? count( preg_grep( "/passing through Action='display'/", $o ) ) : -1;
+};
+$got = array();
+foreach( array( 'firewall' => 'applications.xml', 'panorama' => 'panorama-8.0.xml', 'scm' => 'SCM-import.xml' ) as $kind => $file )
+    foreach( array( 'service', 'application', 'edl', 'region', 'log-profile', 'address', 'tag', 'rule' ) as $t )
+    {
+        $n = $at( $t, $repo . '/tests/input/' . $file );
+        $got[$kind][$t] = $n > 1000 ? 'many' : $n;
+    }
+$one = array( 'service' => 2, 'application' => 'many', 'edl' => 11, 'region' => 260, 'log-profile' => 1, 'address' => 0, 'tag' => 0, 'rule' => -1 );
+$eq( $got, array( 'firewall' => $one, 'panorama' => $one, 'scm' => $one ),
+    'location=predefined on firewall, Panorama and SCM: the same predefined objects; address / tag: nothing, no error; rule: no such location' );
+
 print "\n" . $checks . " checks, " . count( $failed ) . " failed\n";
 exit( count( $failed ) ? 1 : 0 );
