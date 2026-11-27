@@ -145,6 +145,15 @@ foreach( $a as $i => $o )
     if( $o === '--entrypoint' )
         $rest = array_slice( $a, $i + 4 );
 }
+// as a container: only the mounted folders exist - an argument with a folder of the viewer's data ( datadir, written
+// by the test ) is a file the tool does not find ( "Failed to open stream: No such file or directory" )
+$hostData = trim( (string)@file_get_contents( __DIR__ . '/datadir' ) );
+foreach( $rest as $r )
+    if( $hostData !== '' && preg_match( '#(?<==|^|//)' . preg_quote( $hostData, '#' ) . '(?=/|$)#', $r ) )
+    {
+        fwrite( STDERR, "argument with a path of the host, not of the container: " . $r . "\n" );
+        exit( 1 );
+    }
 // longest target first: /project/files before /project
 foreach( $rest as $i => $r )
     $rest[$i] = preg_replace_callback( '#(?<==|^)/(project|job)(?=/|$)#', function( $m ) use ( $map ) { return $map['/' . $m[1]]; }, $r );
@@ -237,6 +246,8 @@ pcntl_exec( PHP_BINARY, array_merge( array( trim( file_get_contents( __DIR__ . '
 FAKE
 );
 chmod( $bin . '/docker', 0755 );
+// for the stand-in: the data folder of the viewer - a path below it does not exist inside of a container
+file_put_contents( $bin . '/datadir', $data );
 file_put_contents( $bin . '/tool', $repo . '/utils/pan-os-php.php' );
 copy( $repo . '/tests/input/panorama-10.0-merger.xml', $bin . '/import-upload.xml' );
 copy( $repo . '/tests/input/SCM-import.xml', $bin . '/import-scm-export-xml.xml' );

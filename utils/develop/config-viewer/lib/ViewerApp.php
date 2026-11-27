@@ -4033,7 +4033,9 @@ class ViewerApp
         {
             try
             {
-                $steps = $this->importSteps( $j, $args, $jobDir );
+                // with the arguments as they were queued ( %JOB% / %FILES% / %PROJECT% ): a step keeps them as 'rawArgs'
+                // for a run in a container, where the folders have other paths, and resolves them for this computer
+                $steps = $this->importSteps( $j, $rawArgs, $jobDir );
             }
             catch( ViewerException $e )
             {
@@ -4093,9 +4095,11 @@ class ViewerApp
         foreach( $args as $a )
             if( preg_match( '/^x-[a-z-]+?-(key|target|source|zip|resume|areas|egress|cscope)=(.*)$/', $a, $m ) )
                 $x[$m[1]] = $m[2];
-        $step = function( string $tool, array $raw, bool $network, array $rawEnv = array() ) use ( $jobDir, $j ) {
+        $projectDir = $this->dataDir . '/projects/' . $j['pid'];
+        $step = function( string $tool, array $raw, bool $network, array $rawEnv = array() ) use ( $jobDir, $projectDir, $j ) {
             return array( 'tool' => $tool, 'rawArgs' => $raw, 'network' => $network, 'rawEnv' => $rawEnv, 'env' => $this->resolveEnv( $rawEnv, $j['pid'], $jobDir ),
-                'args' => array_map( function( $a ) use ( $jobDir ) { return str_replace( '%JOB%', $jobDir, $a ); }, $raw ) );
+                'args' => array_map( function( $a ) use ( $jobDir, $projectDir ) {
+                    return str_replace( array( '%FILES%', '%JOB%', '%PROJECT%' ), array( $projectDir . '/files', $jobDir, $projectDir ), $a ); }, $raw ) );
         };
         // the PSK list: first the version (offline - the first step gets in=), then with a key the firewalls managed by SCM
         // (network), compared with the version
