@@ -1879,6 +1879,14 @@ preg_match( '/:root \{([^}]*)\}/', (string)file_get_contents( dirname( __DIR__ )
 eq( array( $look, strpos( preg_replace( '/\s+/', ' ', $editorRoot[1] ?? '' ), trim( preg_replace( '/\s+/', ' ', $viewerRoot[1] ?? 'x' ) ) ) !== FALSE ),
     array( array( 'playbook' => array( FALSE, TRUE ), 'bp' => array( FALSE, TRUE ) ), TRUE ),
     'editors: the look of the viewer inline; viewer-look.css has the colours of style.css' );
+// playbook editor: steps collapse, action / filter field are searched, checks at the fields, a step is moved by dragging;
+// what is only for the page is not written to the file
+$raw = (string)file_get_contents( dirname( __DIR__ ) . '/utils/common/html/editor/playbook/playbook-editor.html' );
+eq( array( strpos( $raw, 'function toggleCollapse(' ) !== FALSE, strpos( $raw, 'function stepSummary(' ) !== FALSE, strpos( $raw, 'list="dl-action-' ) !== FALSE,
+        strpos( $raw, 'list="dl-field-' ) !== FALSE, strpos( $raw, 'function checkCard(' ) !== FALSE, strpos( $raw, 'function dropStep(' ) !== FALSE,
+        strpos( $raw, 'delete out._collapsed; delete out._problems;' ) !== FALSE ),
+    array( TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE ),
+    'playbook editor: collapse with the line of a step, search for action and filter field, checks, move by dragging' );
 @file_get_contents( $base . 'editor.php?e=../../etc', FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
 eq( strpos( implode( "\n", $http_response_header ?? array() ), ' 404' ) !== FALSE, TRUE, 'editor: only the two editors' );
 $r = $alice->call( 'GET', 'bp-default' );

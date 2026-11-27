@@ -54,6 +54,19 @@
         .arg-toggle { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-size: 0.65rem; color: #2d3748; white-space: nowrap; }
         .arg-toggle input { width: auto !important; }
         .multi-select-box { height: 120px; font-size: 0.8rem; }
+        /* collapse, move by dragging, checks */
+        .card-header .step-label { display: flex; align-items: baseline; gap: 12px; min-width: 0; text-align: left; cursor: pointer; }
+        .step-number { flex: 0 0 auto; }
+        .step-summary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; text-transform: none; color: var(--fg, #2d3748); }
+        .command-card.collapsed .step-body { display: none; }
+        .command-card.collapsed .card-header { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+        .drag-handle { cursor: grab; user-select: none; color: var(--muted, #718096); font-size: 1.1rem; padding: 2px 4px; }
+        .drag-handle:active { cursor: grabbing; }
+        .command-card.dragging { opacity: 0.5; }
+        .command-card.drop-before { box-shadow: 0 -3px 0 0 var(--accent, #3182ce); }
+        .command-card.drop-after { box-shadow: 0 3px 0 0 var(--accent, #3182ce); }
+        .step-problems { flex: 0 0 auto; font-size: 12px; color: var(--warn, #b3261e); background: #fdecea; border: 1px solid #f1b8b2; border-radius: 10px; padding: 1px 8px; white-space: nowrap; }
+        input.invalid, select.invalid, textarea.invalid { border-color: var(--warn, #b3261e) !important; background: #fff8f7; }
     </style>
     <!-- the look of the config viewer (colours, font, buttons): after the styles above -->
     <link rel="stylesheet" href="../viewer-look.css">
@@ -70,6 +83,11 @@
                 <label><input type="checkbox" id="global-show-json" onchange="toggleAllJson(this.checked)"> JSON</label>
                 <label><input type="checkbox" id="global-show-unhandled" onchange="toggleAllUnhandled(this.checked)"> Unhandled Fields</label>
                 <label class="lock" style="color: #e53e3e;"><input type="checkbox" id="global-disable-ui" onchange="toggleUiDisabled(this.checked)"> Lock UI</label>
+            </div>
+            <span class="step-problems" id="problems-total" hidden></span>
+            <div>
+                <button class="btn" onclick="collapseAll(true)" title="collapse every step">Collapse all</button>
+                <button class="btn" onclick="collapseAll(false)" title="expand every step">Expand all</button>
             </div>
             <div>
                 <input type="file" id="filePicker" accept=".json" style="display:none">
@@ -224,7 +242,7 @@
         const fStr = buildFilterString(obj, typeLib);
         if(fStr && fStr.trim() !== "") out.filter = "filter=" + fStr; else delete out.filter;
 
-        delete out._uiActions; delete out._uiFilters;
+        delete out._uiActions; delete out._uiFilters; delete out._collapsed; delete out._problems;
         Object.keys(out).forEach(k => { if(k.startsWith('_show_')) delete out[k]; });
         return out;
     }
@@ -270,13 +288,134 @@
         return `pan-os-php type=${typeLib.name || cmd.type} ${subPart} ${locPart} ${actionPart} ${filterPart}`.replace(/\s+/g, ' ').trim();
     }
 
+    // text of the playbook inside the page: never markup
+    function esc(text) {
+        return String(text === undefined || text === null ? '' : text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // the line of a step: what it does, readable while the step is collapsed
+    function stepSummary(cmd) {
+        const typeLib = subjectObject[cmd.type] || {};
+        const parts = [typeLib.name || cmd.type];
+        if (subTypeConfig[cmd.type]) parts.push(cmd[subTypeConfig[cmd.type].field] || subTypeConfig[cmd.type].default);
+        parts.push(cmd.location ? cmd.location : 'no location');
+        const acts = (cmd._uiActions || []).filter(a => a.name).map(a => typeLib.action?.[a.name]?.name || a.name);
+        parts.push(acts.length ? acts.join(' / ') : 'no action');
+        const filter = buildFilterString(cmd, typeLib);
+        if (filter) parts.push(filter);
+        return parts.join('  ·  ');
+    }
+
+    // the choices of a searchable field (actions / filter fields of a type): one list per type, used by every step
+    function choiceLists() {
+        const used = [...new Set(playbook.command.map(c => c.type))];
+        return used.map(type => {
+            const lib = subjectObject[type] || {};
+            const options = obj => Object.keys(obj || {}).map(k => `<option value="${esc(obj[k].name || k)}"></option>`).join('');
+            return `<datalist id="dl-action-${esc(type)}">${options(lib.action)}</datalist><datalist id="dl-field-${esc(type)}">${options(lib.filter)}</datalist>`;
+        }).join('');
+    }
+    // the key of what was typed / picked in a searchable field: the name or the key, upper / lower case does not matter
+    function keyOfChoice(lib, typed) {
+        const text = String(typed).trim().toLowerCase();
+        if (text === '') return '';
+        return Object.keys(lib || {}).find(k => k.toLowerCase() === text || String(lib[k].name || '').toLowerCase() === text) || null;
+    }
+    function pickAction(cIdx, aIdx, typed) {
+        const key = keyOfChoice(subjectObject[playbook.command[cIdx].type]?.action, typed);
+        if (key) { updateAction(cIdx, aIdx, key); return; }
+        // nothing or something unknown: kept as typed, marked, not written to the playbook
+        playbook.command[cIdx]._uiActions[aIdx] = { name: '', args: {}, _typed: String(typed).trim() };
+        render();
+    }
+    function pickField(cIdx, fIdx, typed) {
+        const f = playbook.command[cIdx]._uiFilters[fIdx];
+        const key = keyOfChoice(subjectObject[playbook.command[cIdx].type]?.filter, typed);
+        f.mainType = key || '';
+        f._typed = key ? '' : String(typed).trim();
+        // the operator stays when the new field has it as well
+        const ops = key ? (subjectObject[playbook.command[cIdx].type].filter[key].operators || {}) : {};
+        const math = Object.keys(ops).some(k => triggerSymbols.includes(k) || triggerSymbols.includes(ops[k].name));
+        if (!(math ? mathSet.includes(f.subFilter) || (ops[f.subFilter] && !triggerSymbols.includes(f.subFilter)) : ops[f.subFilter])) f.subFilter = '';
+        render();
+    }
+
+    // ---- checks while typing: what is missing or can not work is marked at its field, counted at the step and at the
+    // top. Nothing is blocked - SAVE writes the playbook as it is.
+    function fieldProblem(el) {
+        const value = String(el.value).trim();
+        const checks = (el.dataset.check || '').split(' ');
+        if (checks.includes('required') && value === '') return 'a value is needed';
+        if (checks.includes('number') && value !== '' && !/^-?\d+(\.\d+)?$/.test(value)) return 'has to be a number';
+        if (checks.includes('bool') && value !== '' && !/^(true|false)$/i.test(value)) return 'true or false';
+        if (checks.includes('choice') && value !== '' && !(el.dataset.choices || '').split('|').includes(value)) return 'not one of: ' + (el.dataset.choices || '').split('|').join(', ');
+        return '';
+    }
+    function checkCard(idx) {
+        const card = document.getElementById('step-' + idx);
+        if (!card) return 0;
+        let count = 0;
+        card.querySelectorAll('[data-check], [data-fixed-problem]').forEach(el => {
+            const problem = el.dataset.fixedProblem || fieldProblem(el);
+            el.classList.toggle('invalid', problem !== '');
+            if (problem !== '') { el.title = problem; count++; }
+            else if (el.dataset.help) el.title = el.dataset.help;
+            else el.removeAttribute('title');
+        });
+        const badge = document.getElementById('problems-' + idx);
+        if (badge) { badge.textContent = count ? count + (count === 1 ? ' problem' : ' problems') : ''; badge.hidden = count === 0; }
+        playbook.command[idx]._problems = count;
+        const total = playbook.command.reduce((n, c) => n + (c._problems || 0), 0);
+        const steps = playbook.command.filter(c => (c._problems || 0) > 0).length;
+        const all = document.getElementById('problems-total');
+        if (all) { all.textContent = total ? total + (total === 1 ? ' problem' : ' problems') + ' in ' + steps + (steps === 1 ? ' step' : ' steps') : ''; all.hidden = total === 0; }
+        return count;
+    }
+
+    // ---- collapse / expand
+    function toggleCollapse(idx) { playbook.command[idx]._collapsed = !playbook.command[idx]._collapsed; render(); }
+    function collapseAll(collapsed) { playbook.command.forEach(c => c._collapsed = collapsed); render(); }
+
+    // ---- move a step by dragging its handle (the arrows stay)
+    let dragFrom = null;
+    function dragStart(e, idx) {
+        dragFrom = idx;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(idx));
+        const card = document.getElementById('step-' + idx);
+        if (card) { e.dataTransfer.setDragImage(card, 20, 20); card.classList.add('dragging'); }
+    }
+    function dragOver(e, idx) {
+        if (dragFrom === null || dragFrom === idx) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        document.querySelectorAll('.command-card').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+        e.currentTarget.classList.add(dragFrom < idx ? 'drop-after' : 'drop-before');
+    }
+    function dragEnd() {
+        dragFrom = null;
+        document.querySelectorAll('.command-card').forEach(c => c.classList.remove('drop-before', 'drop-after', 'dragging'));
+    }
+    function dropStep(e, idx) {
+        e.preventDefault();
+        const from = dragFrom;
+        dragEnd();
+        if (from === null || from === idx) return;
+        const moved = playbook.command.splice(from, 1)[0];
+        playbook.command.splice(idx, 0, moved);
+        render();
+    }
+
     function render() {
         document.getElementById('global-comment-section').style.display = globalShowComments ? 'block' : 'none';
-        const container = document.getElementById('editor'); container.innerHTML = '';
+        const container = document.getElementById('editor'); container.innerHTML = choiceLists();
 
         playbook.command.forEach((cmd, cIdx) => {
             const typeLib = subjectObject[cmd.type] || {};
-            const card = document.createElement('div'); card.className = 'command-card';
+            const card = document.createElement('div'); card.className = 'command-card' + (cmd._collapsed ? ' collapsed' : '');
+            card.id = 'step-' + cIdx;
+            card.ondragover = (e) => dragOver(e, cIdx);
+            card.ondrop = (e) => dropStep(e, cIdx);
             const hasActions = typeLib.action && Object.keys(typeLib.action).length > 0;
             const hasFilters = typeLib.filter && Object.keys(typeLib.filter).length > 0;
 
@@ -286,32 +425,63 @@
                 subTypeDropdown = `<div class="input-group input-group-subtype"><label>${cfg.field}</label><select onchange="playbook.command[${cIdx}]['${cfg.field}']=this.value; updatePreviews(${cIdx});">${cfg.choices.map(c => `<option value="${c}" ${c === cmd[cfg.field] ? 'selected' : ''}>${c}</option>`).join('')}</select></div>`;
             }
 
+            // one argument of an action: a list of values, true / false, a choice or a text - with what is checked
+            const argField = (act, aIdx, k, def) => {
+                const value = act.args[k] || '';
+                const set = `playbook.command[${cIdx}]._uiActions[${aIdx}].args['${k}']=this.value; updatePreviews(${cIdx});`;
+                const mandatory = def.default === "*nodefault*";
+                const help = def.help ? ` data-help="${esc(def.help)}"` : '';
+                if (def.type === 'pipeSeparatedList')
+                    return `<select class="multi-select-box" multiple${help} onchange="updateMultiArg(${cIdx}, ${aIdx}, '${k}', this)">${(def.choices || []).map(c => `<option value="${esc(c)}" ${value.split('|').includes(c)?'selected':''}>${esc(c)}</option>`).join('')}</select>`;
+                if (def.type === 'bool') {
+                    const known = ['', 'true', 'false'].includes(value.toLowerCase());
+                    return `<select${help} data-check="bool${mandatory ? ' required' : ''}" onchange="${set}">`
+                        + `<option value="" ${value === '' ? 'selected' : ''}>${mandatory ? '-- select --' : 'default (' + esc(def.default) + ')'}</option>`
+                        + ['true', 'false'].map(c => `<option value="${c}" ${value.toLowerCase() === c ? 'selected' : ''}>${c}</option>`).join('')
+                        + (known ? '' : `<option value="${esc(value)}" selected>${esc(value)}</option>`) + `</select>`;
+                }
+                if (Array.isArray(def.choices) && def.choices.length) {
+                    const known = value === '' || def.choices.includes(value);
+                    return `<select${help} data-check="choice${mandatory ? ' required' : ''}" data-choices="${esc(def.choices.join('|'))}" onchange="${set}">`
+                        + `<option value="" ${value === '' ? 'selected' : ''}>${mandatory ? '-- select --' : 'default' + (def.default !== undefined && def.default !== '*nodefault*' ? ' (' + esc(def.default) + ')' : '')}</option>`
+                        + def.choices.map(c => `<option value="${esc(c)}" ${value === c ? 'selected' : ''}>${esc(c)}</option>`).join('')
+                        + (known ? '' : `<option value="${esc(value)}" selected>${esc(value)}</option>`) + `</select>`;
+                }
+                return `<input type="text" value="${esc(value)}"${help}${mandatory ? ' data-check="required"' : ''} oninput="${set} checkCard(${cIdx});">`;
+            };
+
             card.innerHTML = `
         <div class="card-header">
+            <span class="drag-handle" draggable="true" title="drag to move the step" ondragstart="dragStart(event, ${cIdx})" ondragend="dragEnd()">⠿</span>
+            <button class="btn btn-nav" title="${cmd._collapsed ? 'expand' : 'collapse'} the step" aria-expanded="${cmd._collapsed ? 'false' : 'true'}" onclick="toggleCollapse(${cIdx})">${cmd._collapsed ? '▸' : '▾'}</button>
             <button class="btn btn-nav" onclick="moveStep(${cIdx}, -1)" ${cIdx === 0 ? 'disabled' : ''}>↑</button>
             <button class="btn btn-nav" onclick="moveStep(${cIdx}, 1)" ${cIdx === playbook.command.length - 1 ? 'disabled' : ''}>↓</button>
-            <div class="step-label">STEP ${cIdx + 1} of ${playbook.command.length}</div>
+            <div class="step-label" onclick="toggleCollapse(${cIdx})" title="${esc(stepSummary(cmd))}"><span class="step-number">STEP ${cIdx + 1} of ${playbook.command.length}</span><span class="step-summary" id="summary-${cIdx}">${esc(stepSummary(cmd))}</span></div>
+            <span class="step-problems" id="problems-${cIdx}" hidden></span>
             <button class="btn btn-add" onclick="insertStep(${cIdx})">+ Insert</button>
             <button class="btn danger" onclick="removeStep(${cIdx})">Delete</button>
         </div>
-        ${globalShowComments ? `<div class="comment-field-area"><label>Step Comment</label><textarea oninput="playbook.command[${cIdx}].comment=this.value; updatePreviews(${cIdx});">${cmd.comment || ''}</textarea></div>` : ''}
+        <div class="step-body">
+        ${globalShowComments ? `<div class="comment-field-area"><label>Step Comment</label><textarea oninput="playbook.command[${cIdx}].comment=this.value; updatePreviews(${cIdx});">${esc(cmd.comment || '')}</textarea></div>` : ''}
         <div style="display: ${globalUiDisabled ? 'none' : 'block'}">
             <div class="row">
                 <div class="input-group input-group-type"><label>Type</label><select onchange="updateType(${cIdx}, this.value)">${Object.keys(subjectObject).map(t => `<option value="${t}" ${t === cmd.type ? 'selected' : ''}>${subjectObject[t].name || t}</option>`).join('')}</select></div>
                 ${subTypeDropdown}
-                <div class="input-group input-group-loc"><label>Location</label><input type="text" value="${cmd.location || ''}" oninput="playbook.command[${cIdx}].location=this.value; updatePreviews(${cIdx});"></div>
+                <div class="input-group input-group-loc"><label>Location</label><input type="text" value="${esc(cmd.location || '')}" oninput="playbook.command[${cIdx}].location=this.value; updatePreviews(${cIdx});"></div>
             </div>
             ${hasActions ? `<div class="sub-section">
                 <label style="color:#2b6cb0; font-weight:bold;">Actions</label>
                 <div id="actions-${cIdx}">${cmd._uiActions.map((act, aIdx) => {
                 const actionLib = typeLib.action || {}, argDefs = actionLib[act.name]?.args || {};
+                const shownName = act.name ? (actionLib[act.name]?.name || act.name) : (act._typed || '');
+                const actionProblem = act.name ? '' : (act._typed ? 'no action "' + act._typed + '" for type ' + (typeLib.name || cmd.type) : 'choose an action or remove the line');
                 return `<div class="action-grid">
-                        <div style="min-width:240px"><label>Action</label><select onchange="updateAction(${cIdx}, ${aIdx}, this.value)"><option value="">-- select --</option>${Object.keys(actionLib).map(k => `<option value="${k}" ${k===act.name?'selected':''}>${actionLib[k].name||k}</option>`).join('')}</select></div>
+                        <div style="min-width:240px"><label>Action</label><input type="text" class="search-select" list="dl-action-${esc(cmd.type)}" value="${esc(shownName)}" placeholder="type to search (${Object.keys(actionLib).length} actions)" autocomplete="off" ${actionProblem ? `data-fixed-problem="${esc(actionProblem)}"` : ''} onfocus="this.select()" onchange="pickAction(${cIdx}, ${aIdx}, this.value)"></div>
                         <div class="arg-inputs-container">${Object.keys(argDefs).map(k => {
                     const def = argDefs[k], isMandatory = def.default === "*nodefault*", isHidden = !isMandatory && act.args[k] === "" && !act[`_show_${k}`];
                     return `<div class="arg-field">
                                 ${isMandatory ? `<label>${k}*</label>` : `<div class="arg-toggle"><input type="checkbox" ${!isHidden ? 'checked' : ''} onchange="toggleArgVisibility(${cIdx}, ${aIdx}, '${k}', this.checked)"> <span>Show ${k}</span></div>`}
-                                <div style="display: ${isHidden ? 'none' : 'block'}">${def.type === 'pipeSeparatedList' ? `<select class="multi-select-box" multiple onchange="updateMultiArg(${cIdx}, ${aIdx}, '${k}', this)">${def.choices.map(c => `<option value="${c}" ${act.args[k].split('|').includes(c)?'selected':''}>${c}</option>`).join('')}</select>` : `<input type="text" value="${act.args[k]||''}" oninput="playbook.command[${cIdx}]._uiActions[${aIdx}].args['${k}']=this.value; updatePreviews(${cIdx});">`}</div>
+                                ${isHidden ? '' : `<div>${argField(act, aIdx, k, def)}</div>`}
                             </div>`;
                 }).join('')}</div>
                         <button class="btn btn-remove-small" onclick="playbook.command[${cIdx}]._uiActions.splice(${aIdx},1); render();">&times;</button>
@@ -332,30 +502,42 @@
                 } else { finalOps = Object.keys(libOps); }
                 const currentOpObj = libOps[f.subFilter] || {};
                 const showValueField = currentOpObj.arg !== false;
+                const shownField = f.mainType ? (filterLib[f.mainType]?.name || f.mainType) : (f._typed || '');
+                const fieldProblemText = f.mainType ? '' : (f._typed ? 'no filter field "' + f._typed + '" for type ' + (typeLib.name || cmd.type) : 'choose a field or remove the line');
+                const opProblem = f.mainType && !f.subFilter ? 'choose an operator' : '';
+                // a value where the operator takes one; a number for the math operators ( > < = != >= <= )
+                const valueCheck = !f.mainType || !f.subFilter || !showValueField ? '' : 'required' + (mathSet.includes(f.subFilter) ? ' number' : '');
+                const opHelp = currentOpObj.help || (currentOpObj.ci && currentOpObj.ci.fString ? 'example: ' + String(currentOpObj.ci.fString).replace('%PROP%', (filterLib[f.mainType]?.name || f.mainType) + ' ' + (currentOpObj.name || f.subFilter)) : '');
                 return `<div class="filter-grid">
-                        <button class="btn-group-toggle ${f.isGrouped ? 'active' : ''}" onclick="playbook.command[${cIdx}]._uiFilters[${fIdx}].isGrouped = !playbook.command[${cIdx}]._uiFilters[${fIdx}].isGrouped; render();">+</button>
+                        <button class="btn-group-toggle ${f.isGrouped ? 'active' : ''}" title="group this filter with its neighbours in brackets" onclick="playbook.command[${cIdx}]._uiFilters[${fIdx}].isGrouped = !playbook.command[${cIdx}]._uiFilters[${fIdx}].isGrouped; render();">+</button>
                         <div class="input-group" style="min-width: 90px;"><label>Logic</label><select onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].operator=this.value; render();">${fIdx===0?`<option value="none" ${!f.operator.includes('!')?'selected':''}>START</option><option value="!" ${f.operator.includes('!')?'selected':''}>NOT (!)</option>`:`<option value="and" ${f.operator==='and'?'selected':''}>AND</option><option value="and !" ${f.operator==='and !'?'selected':''}>AND NOT</option><option value="or" ${f.operator==='or'?'selected':''}>OR</option>`}</select></div>
-                        <div class="input-group"><label>Field</label><select onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].mainType=this.value; render();"><option value="">-- Field --</option>${Object.keys(filterLib).map(k=>(`<option value="${k}" ${k===f.mainType?'selected':''}>${filterLib[k].name||k}</option>`)).join('')}</select></div>
-                        <div class="input-group" style="min-width: 120px;"><label>Op</label><select onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].subFilter=this.value; render();"><option value="">-- Op --</option>${finalOps.map(k=>(`<option value="${k}" ${k===f.subFilter?'selected':''}>${libOps[k]?.name||k}</option>`)).join('')}</select></div>
-                        <div class="input-group" style="visibility: ${showValueField ? 'visible' : 'hidden'}"><label>Value</label><input type="text" value="${f.manualValue}" oninput="playbook.command[${cIdx}]._uiFilters[${fIdx}].manualValue=this.value; updatePreviews(${cIdx});"></div>
+                        <div class="input-group"><label>Field</label><input type="text" class="search-select" list="dl-field-${esc(cmd.type)}" value="${esc(shownField)}" placeholder="type to search (${Object.keys(filterLib).length} fields)" autocomplete="off" ${fieldProblemText ? `data-fixed-problem="${esc(fieldProblemText)}"` : ''} onfocus="this.select()" onchange="pickField(${cIdx}, ${fIdx}, this.value)"></div>
+                        <div class="input-group" style="min-width: 120px;"><label>Op</label><select ${opProblem ? `data-fixed-problem="${opProblem}"` : ''} ${opHelp ? `data-help="${esc(opHelp)}"` : ''} onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].subFilter=this.value; render();"><option value="">-- Op --</option>${finalOps.map(k=>(`<option value="${esc(k)}" ${k===f.subFilter?'selected':''}>${esc(libOps[k]?.name||k)}</option>`)).join('')}</select></div>
+                        <div class="input-group" style="visibility: ${showValueField ? 'visible' : 'hidden'}"><label>Value</label><input type="text" value="${esc(f.manualValue)}" ${valueCheck ? `data-check="${valueCheck}"` : ''} ${opHelp ? `data-help="${esc(opHelp)}"` : ''} oninput="playbook.command[${cIdx}]._uiFilters[${fIdx}].manualValue=this.value; updatePreviews(${cIdx});"></div>
                         <button class="btn btn-remove-small" onclick="playbook.command[${cIdx}]._uiFilters.splice(${fIdx},1); render();">&times;</button>
                     </div>`;
             }).join('')}</div>
                 <button class="btn btn-add" onclick="playbook.command[${cIdx}]._uiFilters.push({operator:'and', mainType:'', subFilter:'', manualValue:'', isGrouped: false}); render();">+ Add Filter</button>
             </div>` : ''}
         </div>
-        <div class="cli-preview-container" style="display: ${globalShowCli ? 'flex' : 'none'}"><input type="text" id="cli-${cIdx}" class="cli-input" value="${generateFullCli(cmd)}" onchange="handleCliEdit(${cIdx}, this.value)"><button class="btn" onclick="copyCli(${cIdx}, this)">COPY</button></div>
-        <div class="json-preview-container" style="display: ${globalShowJson ? 'block' : 'none'}"><textarea id="json-val-${cIdx}" class="json-input" onchange="handleJsonEdit(${cIdx}, this.value)">${generateStepJson(cmd)}</textarea></div>
-        <div class="unhandled-container" style="display: ${globalShowUnhandled ? 'block' : 'none'}"><label style="color:#c53030">Unhandled Arguments (JSON Only)</label><textarea id="unhandled-val-${cIdx}" class="unhandled-input" onchange="handleUnhandledEdit(${cIdx}, this.value)">${JSON.stringify(getUnhandledFields(cmd, cmd.type), null, 2)}</textarea></div>`;
+        <div class="cli-preview-container" style="display: ${globalShowCli ? 'flex' : 'none'}"><input type="text" id="cli-${cIdx}" class="cli-input" value="${esc(generateFullCli(cmd))}" onchange="handleCliEdit(${cIdx}, this.value)"><button class="btn" onclick="copyCli(${cIdx}, this)">COPY</button></div>
+        <div class="json-preview-container" style="display: ${globalShowJson ? 'block' : 'none'}"><textarea id="json-val-${cIdx}" class="json-input" onchange="handleJsonEdit(${cIdx}, this.value)">${esc(generateStepJson(cmd))}</textarea></div>
+        <div class="unhandled-container" style="display: ${globalShowUnhandled ? 'block' : 'none'}"><label style="color:#c53030">Unhandled Arguments (JSON Only)</label><textarea id="unhandled-val-${cIdx}" class="unhandled-input" onchange="handleUnhandledEdit(${cIdx}, this.value)">${esc(JSON.stringify(getUnhandledFields(cmd, cmd.type), null, 2))}</textarea></div>
+        </div>`;
             container.appendChild(card);
         });
+        playbook.command.forEach((cmd, cIdx) => checkCard(cIdx));
+        if (!playbook.command.length) { const all = document.getElementById('problems-total'); if (all) all.hidden = true; }
     }
 
     function loadPlaybook(raw) {
         playbook.stagename = raw.stagename || "";
         playbook['header-comment'] = raw['header-comment'] || "";
         playbook['footer-comment'] = raw['footer-comment'] || "";
-        playbook.command = (raw.command || []).map(cmd => parseSingleCommand(cmd)); render();
+        playbook.command = (raw.command || []).map(cmd => parseSingleCommand(cmd));
+        // a long playbook opens collapsed: the overview first, a click on a step opens it
+        if (playbook.command.length > 3) playbook.command.forEach(c => c._collapsed = true);
+        render();
     }
     document.getElementById('filePicker').addEventListener('change', function(e) {
         const reader = new FileReader();
@@ -379,6 +561,8 @@
         const cli = document.getElementById(`cli-${idx}`); if(cli) cli.value = generateFullCli(playbook.command[idx]);
         const jsn = document.getElementById(`json-val-${idx}`); if(jsn) jsn.value = generateStepJson(playbook.command[idx]);
         const unh = document.getElementById(`unhandled-val-${idx}`); if(unh) unh.value = JSON.stringify(getUnhandledFields(playbook.command[idx], playbook.command[idx].type), null, 2);
+        const sum = document.getElementById(`summary-${idx}`); if(sum) { sum.textContent = stepSummary(playbook.command[idx]); sum.parentNode.title = sum.textContent; }
+        checkCard(idx);
     }
     function toggleArgVisibility(cIdx, aIdx, key, isVisible) { playbook.command[cIdx]._uiActions[aIdx][`_show_${key}`] = isVisible; render(); }
     function updateAction(cIdx, aIdx, actionKey) { const argDefs = subjectObject[playbook.command[cIdx].type]?.action[actionKey]?.args || {}; let newArgs = {}; Object.keys(argDefs).forEach(k => newArgs[k] = ""); playbook.command[cIdx]._uiActions[aIdx] = { name: actionKey, args: newArgs }; render(); }
