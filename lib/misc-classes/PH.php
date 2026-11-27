@@ -3265,6 +3265,10 @@ class PH
         return $ret;
     }
 
+    /**
+     * Removes the components of the BPA diagram ( $stdoutarray['percentage'][adoption|visibility|best-practice] ) that
+     * the BP JSON does not include: 'included-in-bpa' false, or not named there at all.
+     */
     public static function validateIncludedInBPA( &$stdoutarray )
     {
         PH::getBPjsonFile();
