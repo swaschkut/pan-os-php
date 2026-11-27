@@ -121,6 +121,53 @@ function resetChart() {
     document.getElementById('error').textContent = '';
 }
 
+// The places of the labels around the chart when the default places overlap, else null (the chart stays as it is):
+// the labels of the right and of the left half are put one below the other with a minimum distance, each as near to
+// its segment as possible, on the circle of the labels; near the top and the bottom they keep a distance to the
+// middle so that the two halves do not meet.
+function spreadExternalLabels(data, angleScale, radius, widthOf) {
+    const LABEL_HEIGHT = 31;        // category line + percentage line
+    const BOTTOM_SHIFT = 15;        // BottomGapCategoryPercentage: a label below the middle is drawn lower
+    const MIN_X = 58;               // more than 50: the label is aligned to its side, not centred
+
+    const labels = data.map(d => {
+        const angle = angleScale(d.name) + angleScale.bandwidth() / 2;
+        const x = Math.sin(angle) * radius, y = -Math.cos(angle) * radius;
+        const width = widthOf(d);
+        // the box the default layout draws the label into
+        const left = x < -50 ? x - width : (x > 50 ? x : x - width / 2);
+        const top = y - 24 + (y > 50 ? BOTTOM_SHIFT : 0);
+        return { name: d.name, x: x, y: y, side: x >= 0 ? 1 : -1, left: left, right: left + width, top: top, bottom: top + LABEL_HEIGHT };
+    });
+
+    let overlap = false;
+    for (let i = 0; i < labels.length && !overlap; i++)
+        for (let j = i + 1; j < labels.length && !overlap; j++)
+            overlap = labels[i].left < labels[j].right && labels[j].left < labels[i].right
+                && labels[i].top < labels[j].bottom && labels[j].top < labels[i].bottom;
+    if (!overlap) return null;
+
+    const placed = {};
+    [1, -1].forEach(side => {
+        const half = labels.filter(l => l.side === side).sort((a, b) => a.y - b.y);
+        // where the label is drawn: with the shift of the lower half
+        const drawn = half.map(l => l.y + (l.y > 50 ? BOTTOM_SHIFT : 0));
+        const limit = radius + BOTTOM_SHIFT + 10;
+        for (let i = 1; i < drawn.length; i++) drawn[i] = Math.max(drawn[i], drawn[i - 1] + LABEL_HEIGHT);
+        if (drawn.length && drawn[drawn.length - 1] > limit) {
+            drawn[drawn.length - 1] = limit;
+            for (let i = drawn.length - 2; i >= 0; i--) drawn[i] = Math.min(drawn[i], drawn[i + 1] - LABEL_HEIGHT);
+        }
+        half.forEach((l, i) => {
+            // back to the y the chart is given (it adds the shift of the lower half itself)
+            let y = drawn[i] > 50 + BOTTOM_SHIFT ? drawn[i] - BOTTOM_SHIFT : Math.min(drawn[i], 50);
+            const onCircle = Math.sqrt(Math.max(0, radius * radius - y * y));
+            placed[l.name] = { x: side * Math.max(MIN_X, onCircle), y: y };
+        });
+    });
+    return placed;
+}
+
 // Helper function to estimate text width (approximate)
 function estimateTextWidth(text, fontSize) {
     // Approximate character width based on font size for Lato font
@@ -494,11 +541,31 @@ function createCoxcombChart(data) {
         .append('g')
         .attr('class', 'external-label-group');
 
+    // Many categories (25 and more): the labels of neighbours overlap at the top and at the bottom of the circle.
+    // Then - and only then - the labels of each half are spread out vertically along the circle, see spreadExternalLabels
+    const spreadLabels = spreadExternalLabels(data, angleScale, externalLabelRadius, (d) => Math.max(
+        estimateTextWidth(d.shortName, LabelcontainerCategoryFontSize),
+        estimateTextWidth(d.value + '%', LabelcontainerPercentageFontSize) + CONSISTENT_GAP + estimateTextWidth(adoptedText, LabelcontainerAdoptedFontSize)));
+
     externalLabelGroups.each(function (d, i) {
         const group = d3.select(this);
         const angle = angleScale(d.name) + angleScale.bandwidth() / 2;
-        const x = Math.sin(angle) * externalLabelRadius;
-        const y = -Math.cos(angle) * externalLabelRadius;
+        let x = Math.sin(angle) * externalLabelRadius;
+        let y = -Math.cos(angle) * externalLabelRadius;
+        if (spreadLabels !== null) {
+            // a thin line from the group band to a label that had to move away from its segment
+            const moved = spreadLabels[d.name];
+            if (Math.hypot(moved.x - x, moved.y - y) > 14) {
+                const from = labelRadius + groupLabelOuterRadius + 3;
+                group.append('line')
+                    .attr('x1', Math.sin(angle) * from).attr('y1', -Math.cos(angle) * from)
+                    .attr('x2', moved.x - Math.sign(moved.x) * 4).attr('y2', moved.y - 4)
+                    .style('stroke', groupLabelBorderColor)
+                    .style('stroke-width', 0.75);
+            }
+            x = moved.x;
+            y = moved.y;
+        }
 
         // Determine position relative to circle (left, right, top, bottom)
         const isLeft = x < -50;
