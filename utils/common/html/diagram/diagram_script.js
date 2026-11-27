@@ -218,7 +218,7 @@ function createCoxcombChart(data) {
 
     //outside labeling around the diagramm
     const LabelcontainerCategoryFontSize = '9'; //10
-    const LabelcontainerCategoryFontWeight = '400'; //400
+    const LabelcontainerCategoryFontWeight = '600'; //400
 
     const LabelcontainerPercentageFontSize = '18'; //20
     const LabelcontainerPercentageFontWeight = '400'; //300

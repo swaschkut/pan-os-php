@@ -1,0 +1,6 @@
+/* Lato - the font files of this folder, for use without a network (licence: OFL.txt) */
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 100; font-display: swap; src: url(Lato-Thin.ttf) format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 300; font-display: swap; src: url(Lato-Light.ttf) format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap; src: url(Lato-Regular.ttf) format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url(Lato-Bold.ttf) format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 900; font-display: swap; src: url(Lato-Black.ttf) format('truetype'); }

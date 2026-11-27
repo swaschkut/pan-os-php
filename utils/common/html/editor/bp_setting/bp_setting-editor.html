@@ -6,6 +6,9 @@
     <title>BPA Master Configurator & Editor</title>
     <script src="d3.v7.min.js"></script>
     <script src="validation.js"></script>
+    <!-- the diagram: the chart of pan-os-php (utils/common/html/diagram) and its font Lato (licence: fonts/Lato/OFL.txt) -->
+    <link rel="stylesheet" href="../../diagram/fonts/Lato/lato-local.css">
+    <script src="../../diagram/diagram_script.js"></script>
     <style>
         :root {
             --excellent: #25B197; --poor: #E8121C; --bg: #ffffff;
@@ -37,7 +40,16 @@
         .btn-plus { background: #25B197; } .btn-minus { background: #E8121C; }
         .btn-save { background: #25B197; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .item { display: flex; align-items: center; padding: 5px; font-size: 0.75rem; border-bottom: 1px solid #f1f1f1; }
-        .label-text { font-size: 10px; fill: #4a5568; font-weight: 600; pointer-events: none; }
+        /* the diagram (utils/common/html/diagram): the chart is drawn into #chart, its tooltip is #tooltip - the two
+           rules of the tooltip are the ones of diagram_styles.css (light mode) */
+        .diagram-pane { overflow: auto; }
+        #chart { display: flex; justify-content: center; align-items: center; }
+        #chart .segment { cursor: pointer; }
+        #chart .segment:focus { outline: none; }
+        #chart .segment:focus-visible path { stroke: #1a202c !important; stroke-width: 2px !important; }
+        .tooltip { position: absolute; background: rgba(0, 0, 0, 0.9); color: white; padding: 12px; border-radius: 6px; font-family: 'Lato', sans-serif;
+            font-size: 13px; font-weight: 400; pointer-events: none; opacity: 0; border: 1px solid #444; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 1000; }
+        body.light-mode .tooltip { background: rgba(255, 255, 255, 0.95); color: #333; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .validation-option { display: inline-flex; align-items: center; margin-right: 12px; font-size: 0.75rem; cursor: pointer; }
         .validation-option input { margin-right: 4px; }
         .disabled-option { opacity: 0.4; pointer-events: none; }
@@ -46,10 +58,130 @@
         .custom-add-container { display: flex; align-items: center; gap: 8px; margin-top: 8px; border-top: 1px dashed #cbd5e0; padding-top: 8px; }
         .custom-add-input { padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.75rem; width: 150px; }
         .btn-custom-add { background: var(--accent); color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+
+        /* Sub-Tab Navigation innerhalb der Settings */
+        .sub-tab-container {
+            display: flex;
+            gap: 5px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+            padding-bottom: 0;
+        }
+        .sub-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #718096;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .sub-tab:hover {
+            color: var(--accent);
+        }
+        .sub-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Modernisiertes Settings-Layout */
+        .settings-pane h2 {
+            font-size: 1.4rem;
+            color: #1a202c;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .json-card {
+            background: white;
+            border: none;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 100%;
+        }
+        .settings-group {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-left: 4px solid #cbd5e0;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .settings-group:focus-within {
+            border-left-color: var(--accent);
+            background: #f0f7ff;
+        }
+        .json-key {
+            color: #4a5568;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .edit-input {
+            width: 100%;
+            max-width: 500px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+        .edit-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+        }
+
+        /* Array-Boxen Verschönerung */
+        .array-item-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 20px 20px 20px 45px;
+            margin: 12px 0;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+        }
+        .array-controls {
+            left: 10px;
+            top: 15px;
+        }
+
+        /* Sub-Sub-Tab Navigation (Visibility vs. BP) */
+        .sub-sub-tab-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            background: #edf2f7;
+            padding: 4px;
+            border-radius: 6px;
+            width: fit-content;
+        }
+        .sub-sub-tab {
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #4a5568;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .sub-sub-tab:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .sub-sub-tab.active {
+            background: white;
+            color: var(--accent);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
-<body>
+<body class="light-mode">
 
+<div class="tooltip" id="tooltip"></div>
 <div class="mode-sidebar">
     <div class="sidebar-header">BPA ANALYZER</div>
     <div class="mode-item active" id="mode-diagram" onclick="setMode('diagram')">📊 Diagram View</div>
@@ -72,6 +204,9 @@
     let appMode = 'diagram';
     let currentTab = '';
 
+    let currentSubTab = '';
+    let currentSubSubTab = 'visibility'; // Standardmäßig 'visibility' zuerst
+
     const profileToRules = {
         "Wildfire Analysis Profiles": ["Wildfire Analysis Rules", "Wildfire Analysis InLine ML"],
         "Antivirus Profiles": ["Antivirus Actions", "Antivirus InLine ML"],
@@ -83,6 +218,8 @@
     for (const [p, children] of Object.entries(profileToRules)) {
         children.forEach(c => rulesToProfile[c] = p);
     }
+
+    window.addEventListener('resize', () => { if (jsonData && appMode === 'diagram') refreshUI(); });
 
     document.getElementById('fileInput').addEventListener('change', (e) => {
         const reader = new FileReader();
@@ -102,7 +239,7 @@
         const topMenu = document.getElementById('topMenu');
         topMenu.innerHTML = '';
         if (mode === 'diagram') {
-            const tabs = ['adoption', 'visibility', 'best-practice'];
+            const tabs = ['visibility', 'best-practice', 'adoption'];
             currentTab = tabs.includes(currentTab) ? currentTab : tabs[0];
             tabs.forEach(t => createMenuItem(t, t));
             renderDiagramLayout();
@@ -132,7 +269,7 @@
                     <div id="descContent" style="padding:10px">Select a rule to see coverage details.</div>
                 </div>
             </div>
-            <div class="diagram-pane" id="diagramContainer"></div>
+            <div class="diagram-pane" id="diagramContainer"><div id="chart"></div></div>
         `;
     }
 
@@ -172,36 +309,108 @@
         renderD3(Object.entries(data));
     }
 
+    // ---- the diagram: the chart of pan-os-php (utils/common/html/diagram/diagram_script.js, createCoxcombChart) - the
+    // same code and look as the BPA diagrams. A component that is included is drawn as 100 %, one that is not included
+    // as 0 %. Only what the chart does on a click is replaced: a click (Enter / Space) on a sector switches the
+    // component, as its checkbox does.
+
+    // diagram_script.js starts its own page on load (sample buttons, first sample): not here
+    window.onload = null;
+    isLightMode = true;
+
+    // the group of a component, as get_bp_percentageArray of pan-os-php names it ("/" of a name is "_" in the file)
+    const DIAGRAM_GROUP = {
+        'Logging': 'Logging', 'Log Forwarding Profiles': 'Logging',
+        'Wildfire Analysis Profiles': 'Wildfire', 'Wildfire Analysis Rules': 'Wildfire', 'Wildfire Analysis InLine ML': 'Wildfire',
+        'VirusAndWildfire Analysis Profiles': 'Wildfire',
+        'Zone Protection': 'Zone Protection',
+        'App-ID': 'Apps, Users, Ports', 'User-ID': 'Apps, Users, Ports', 'Service/Port': 'Apps, Users, Ports',
+        'Antivirus Profiles': 'Threat Prevention', 'Antivirus Actions': 'Threat Prevention', 'Antivirus InLine ML': 'Threat Prevention',
+        'Anti-Spyware Profiles': 'Threat Prevention', 'Anti-Spyware Rules': 'Threat Prevention', 'Anti-Spyware InLine ML': 'Threat Prevention',
+        'Vulnerability Profiles': 'Threat Prevention', 'Vulnerability Rules': 'Threat Prevention', 'Vulnerability InLine ML': 'Threat Prevention',
+        'File Blocking Profiles': 'Data Loss Prevention', 'Data Filtering': 'Data Loss Prevention',
+        'URL Filtering Profiles': 'URL Filtering', 'Credential Theft Prevention': 'URL Filtering', 'URL InLine ML': 'URL Filtering',
+        'DNS Security': 'DNS Security', 'DNS List': 'DNS Security', 'DNSSEC Profiles': 'DNS Security'
+    };
+    // the sector that had the focus when it was switched with the keyboard: it gets the focus again after the redraw
+    let diagramFocus = null;
+    // the list of components the chart was drawn for last (a tab of a file)
+    let diagramShown = null;
+
     function renderD3(entries) {
-        const pane = d3.select("#diagramContainer");
-        pane.selectAll("*").remove();
-        const w = pane.node().getBoundingClientRect().width, h = pane.node().getBoundingClientRect().height;
-        const radius = Math.min(w, h) / 3.2;
-        const svg = pane.append("svg").attr("width", w).attr("height", h).append("g").attr("transform", `translate(${w/2}, ${h/2})`);
-        const angle = d3.scaleBand().range([0, 2 * Math.PI]).domain(entries.map(d => d[0]));
+        const pane = document.getElementById('diagramContainer');
+        if (!entries.length) { d3.select('#chart').selectAll('*').remove(); return; }
 
-        svg.selectAll("path").data(entries).enter().append("path")
-            .attr("fill", d => d[1] ? "#25B197" : "#E8121C")
-            /* OPACITY LOGIC: Faded red (0.3) for disabled, solid (1.0) for active */
-            .attr("fill-opacity", d => d[1] ? 1.0 : 0.3)
-            .attr("stroke", "#fff")
-            .attr("stroke-width", 2)
-            .attr("stroke-opacity", d => d[1] ? 1.0 : 0.5)
-            .attr("d", d3.arc().innerRadius(60).outerRadius(radius).startAngle(d => angle(d[0])).endAngle(d => angle(d[0]) + angle.bandwidth()).padAngle(0.02).padRadius(60))
-            .style("cursor", "pointer")
-            .on("click", (e, d) => toggleBpa(d[0], !d[1]));
+        // the data as the diagram of pan-os-php gets it; the components of a group next to each other
+        const groupOrder = [];
+        const categories = entries.map(([key, on]) => {
+            const shown = key.replace(/_/g, '/');
+            const group = DIAGRAM_GROUP[shown] || shown;
+            if (!groupOrder.includes(group)) groupOrder.push(group);
+            return { name: key, shortName: shown, value: on === true ? 100 : 0, group: group };
+        }).sort((x, y) => groupOrder.indexOf(x.group) - groupOrder.indexOf(y.group));
 
-        svg.selectAll(".label-text").data(entries).enter().append("text").attr("class", "label-text")
-            .each(function(d) {
-                const a = angle(d[0]) + angle.bandwidth() / 2;
-                const deg = (a * 180 / Math.PI) - 90;
-                const flip = (deg > 90 && deg < 270);
-                d3.select(this).attr("text-anchor", flip ? "end" : "start")
-                    .attr("transform", `rotate(${deg}) translate(${radius + 15}) rotate(${flip ? 180 : 0})`)
-                    /* TEXT OPACITY LOGIC: Dimmed labels for disabled items */
-                    .style("opacity", d[1] ? 1.0 : 0.5)
-                    .text(d[0].length > 20 ? d[0].substring(0, 18) + '...' : d[0]);
+        // the words of the diagram, as generateChart of diagram_script.js chooses them by the title
+        if (currentTab === 'best-practice') { adoptedText = 'in BP Mode'; notAdoptedText = 'Not in BP Mode'; }
+        else if (currentTab === 'visibility') { adoptedText = 'Visible'; notAdoptedText = 'Not Visible'; }
+        else { adoptedText = 'Adopted'; notAdoptedText = 'Not Adopted'; }
+        currentData = { title: currentTab, categories: categories };
+        createCoxcombChart(categories);
+
+        // the chart fades in (about two seconds): shown when a file or a tab is opened - not again for every switch
+        if (diagramShown === jsonData["included-in-bpa"][currentTab]) {
+            d3.select('#chart').selectAll('*').interrupt().each(function () {
+                if (this.style.opacity === '0') this.style.opacity = this.tagName === 'path' && this.parentNode.classList.contains('segment') ? '0.9' : '1';
             });
+        }
+        diagramShown = jsonData["included-in-bpa"][currentTab];
+
+        // the chart has a fixed size: it is scaled to the room of the pane
+        const svg = d3.select('#chart svg');
+        const size = +svg.attr('width');
+        const box = pane.getBoundingClientRect();
+        const shownSize = Math.max(360, Math.min(size, Math.min(box.width, box.height) - 16));
+        svg.attr('viewBox', `0 0 ${size} ${+svg.attr('height')}`).attr('width', shownSize).attr('height', shownSize);
+
+        // a click on a sector switches the component (the chart itself only shows a message there)
+        const data = jsonData["included-in-bpa"][currentTab];
+        const tooltip = d3.select('#tooltip');
+        // the sectors are new: the tooltip of the sector that was switched does not stay with the old state
+        tooltip.style('opacity', 0);
+        const segments = d3.selectAll('#chart .segment');
+        segments.selectAll('path').on('click', null).on('mouseover', null).on('mouseout', null);
+        segments.attr('tabindex', 0).attr('role', 'switch')
+            .attr('aria-checked', d => d.value === 100 ? 'true' : 'false').attr('aria-label', d => d.shortName)
+            .on('click', (e, d) => toggleBpa(d.name, d.value !== 100))
+            .on('keydown', (e, d) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                diagramFocus = d.name;
+                toggleBpa(d.name, d.value !== 100);
+            })
+            .on('mousemove', function (e, d) {
+                const on = d.value === 100;
+                // what the click changes besides the component itself (toggleBpa): a profile and its rules exclude each other
+                const also = [];
+                (profileToRules[d.name] || []).forEach(child => { if (data.hasOwnProperty(child) && data[child] === !on) also.push(child + (on ? ' on' : ' off')); });
+                if (rulesToProfile[d.name] && !on && data[rulesToProfile[d.name]] === true) also.push(rulesToProfile[d.name] + ' off');
+                d3.select(this).selectAll('path').style('filter', 'brightness(1.05)');
+                tooltip.style('opacity', 1)
+                    .html(`<strong>${d.shortName}</strong><br/>
+                               <span style="color: ${on ? '#24A385' : '#E20019'};">${on ? adoptedText : notAdoptedText}</span><br/>
+                               <span style="color: #666;">Click to ${on ? 'exclude' : 'include'}${also.length ? '<br/>also: ' + also.join(', ') : ''}</span>`)
+                    .style('left', (e.pageX + 15) + 'px')
+                    .style('top', (e.pageY - 15) + 'px');
+            })
+            .on('mouseleave', function () {
+                d3.select(this).selectAll('path').style('filter', 'none');
+                tooltip.style('opacity', 0);
+            });
+        if (diagramFocus !== null) {
+            const again = segments.filter(d => d.name === diagramFocus).node();
+            diagramFocus = null;
+            if (again) again.focus();
+        }
     }
 
     function getRuleByPath(path) {
@@ -214,7 +423,7 @@
         return (curr && curr.options) ? curr : null;
     }
 
-    function updateSettingsView() {
+    function updateSettingsView_old() {
         const container = document.getElementById('settingsContainer');
         container.innerHTML = `<h2>Best Practice Editor: ${currentTab.toUpperCase()}</h2>`;
         const card = document.createElement('div');
@@ -223,7 +432,135 @@
         container.appendChild(card);
     }
 
-    function buildEditor(data, container, path = []) {
+    function updateSettingsView_new1() {
+        const container = document.getElementById('settingsContainer');
+        container.innerHTML = `<h2>Best Practice Editor: ${currentTab.toUpperCase()}</h2>`;
+
+        const sectionData = jsonData[currentTab];
+        if (!sectionData || typeof sectionData !== 'object') return;
+
+        // Sub-Tabs generieren basierend auf den Keys der ersten Ebene
+        const subKeys = Object.keys(sectionData);
+
+        if (subKeys.length > 0) {
+            // Fallback falls der aktuelle Sub-Tab nicht mehr existiert
+            if (!subKeys.includes(currentSubTab)) {
+                currentSubTab = subKeys[0];
+            }
+
+            // Sub-Tab Leere rendern
+            const tabContainer = document.createElement('div');
+            tabContainer.className = 'sub-tab-container';
+
+            subKeys.forEach(key => {
+                const tab = document.createElement('div');
+                tab.className = `sub-tab ${currentSubTab === key ? 'active' : ''}`;
+                tab.textContent = key;
+                tab.onclick = () => {
+                    currentSubTab = key;
+                    refreshUI();
+                };
+                tabContainer.appendChild(tab);
+            });
+            container.appendChild(tabContainer);
+
+            // Content-Card für den aktiven Sub-Tab rendern
+            const card = document.createElement('div');
+            card.className = 'json-card';
+
+            // Starte den Editor eine Ebene tiefer beim ausgewählten Sub-Tab
+            const activeData = sectionData[currentSubTab];
+
+            if (typeof activeData === 'object' && activeData !== null) {
+                buildEditor(activeData, card, [currentTab, currentSubTab]);
+            } else {
+                // Falls der Key direkt einen flachen Wert hält
+                const fallbackObj = {};
+                fallbackObj[currentSubTab] = activeData;
+                buildEditor(fallbackObj, card, [currentTab]);
+            }
+
+            container.appendChild(card);
+        }
+    }
+
+    function updateSettingsView() {
+        const container = document.getElementById('settingsContainer');
+        container.innerHTML = `<h2>Best Practice Editor: ${currentTab.toUpperCase()}</h2>`;
+
+        const sectionData = jsonData[currentTab];
+        if (!sectionData || typeof sectionData !== 'object') return;
+
+        // 1. Ebene: Sub-Tabs generieren (z.B. die einzelnen Profil-Namen)
+        const subKeys = Object.keys(sectionData);
+
+        if (subKeys.length > 0) {
+            if (!subKeys.includes(currentSubTab)) {
+                currentSubTab = subKeys[0];
+            }
+
+            const tabContainer = document.createElement('div');
+            tabContainer.className = 'sub-tab-container';
+
+            subKeys.forEach(key => {
+                const tab = document.createElement('div');
+                tab.className = `sub-tab ${currentSubTab === key ? 'active' : ''}`;
+                tab.textContent = key;
+                tab.onclick = () => {
+                    currentSubTab = key;
+                    // Beim Wechsel des Haupt-Profils setzen wir den Sub-Sub-Tab zurück auf Visibility
+                    currentSubSubTab = 'visibility';
+                    refreshUI();
+                };
+                tabContainer.appendChild(tab);
+            });
+            container.appendChild(tabContainer);
+
+            // Daten des aktuell ausgewählten Profils holen
+            const activeData = sectionData[currentSubTab];
+
+            // 2. Ebene: Sub-Sub-Tabs generieren (Unterscheidung Visibility vs. Best Practice)
+            // Wir prüfen, ob die Struktur diese Unterscheidung anbietet
+            const subSubTabContainer = document.createElement('div');
+            subSubTabContainer.className = 'sub-sub-tab-container';
+
+            // 'visibility' wird explizit als erstes Element definiert
+            const availableSubSubTabs = ['visibility', 'bp'];
+
+            availableSubSubTabs.forEach(type => {
+                const subSubTab = document.createElement('div');
+                subSubTab.className = `sub-sub-tab ${currentSubSubTab === type ? 'active' : ''}`;
+                subSubTab.textContent = type === 'visibility' ? '👁️ Visibility' : '🛡️ Best Practice';
+                subSubTab.onclick = () => {
+                    currentSubSubTab = type;
+                    refreshUI();
+                };
+                subSubTabContainer.appendChild(subSubTab);
+            });
+            container.appendChild(subSubTabContainer);
+
+            // Inhalts-Card für die Formularfelder rendern
+            const card = document.createElement('div');
+            card.className = 'json-card';
+
+            // Prüfen, ob das JSON die Struktur direkt unterteilt (z.B. activeData.visibility oder activeData['best-practice'])
+            if (activeData && typeof activeData === 'object') {
+                if (activeData[currentSubSubTab] !== undefined) {
+                    // Wenn der Knoten existiert (z.B. activeData.visibility), rendern wir dessen Inhalt
+                    buildEditor(activeData[currentSubSubTab], card, [currentTab, currentSubTab, currentSubSubTab]);
+                } else {
+                    // Fallback: Falls die Daten nicht tiefer unterteilt sind, zeigen wir einen Hinweis
+                    card.innerHTML = `<div style="color: #718096; font-style: italic; text-align: center; padding: 20px;">
+                                    Keine spezifischen Daten für "${currentSubSubTab}" in diesem Profil vorhanden.
+                                  </div>`;
+                }
+            }
+
+            container.appendChild(card);
+        }
+    }
+
+    function buildEditor_old(data, container, path = []) {
         for (const key in data) {
             const val = data[key];
             const currentPath = [...path, key];
@@ -320,6 +657,227 @@
                         optDiv.appendChild(addContainer);
                     }
 
+                    group.appendChild(optDiv);
+                } else {
+                    const input = document.createElement('input');
+                    input.className = 'edit-input';
+                    input.value = Array.isArray(val) ? val.join(', ') : val;
+                    input.onchange = (e) => { data[key] = Array.isArray(val) ? e.target.value.split(',').map(s => s.trim()) : e.target.value; };
+                    group.appendChild(input);
+                }
+            }
+            container.appendChild(group);
+        }
+    }
+
+    function buildEditor_new1(data, container, path = []) {
+        for (const key in data) {
+            const val = data[key];
+            const currentPath = [...path, key];
+            const group = document.createElement('div');
+            group.className = 'settings-group';
+
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
+                group.innerHTML = `<span class="json-key">${key}</span>`;
+                const arrayContainer = document.createElement('div');
+                val.forEach((item, idx) => {
+                    const itemBox = document.createElement('div');
+                    itemBox.className = 'array-item-box';
+                    const ctrl = document.createElement('div');
+                    ctrl.className = 'array-controls';
+
+                    const plus = document.createElement('button'); plus.className='btn-action btn-plus'; plus.innerText='+';
+                    plus.onclick = () => { data[key].splice(idx+1, 0, JSON.parse(JSON.stringify(item))); refreshUI(); };
+
+                    const minus = document.createElement('button'); minus.className='btn-action btn-minus'; minus.innerText='-';
+                    minus.onclick = () => { if(data[key].length > 1) { data[key].splice(idx, 1); refreshUI(); } };
+
+                    ctrl.appendChild(plus); ctrl.appendChild(minus);
+                    itemBox.appendChild(ctrl);
+                    buildEditor(item, itemBox, currentPath);
+                    arrayContainer.appendChild(itemBox);
+                });
+                group.appendChild(arrayContainer);
+            } else if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
+                group.innerHTML = `<span class="json-key" style="color:var(--accent); font-weight:700;">${key}</span>`;
+                const subGroupContainer = document.createElement('div');
+                subGroupContainer.style.paddingLeft = "15px";
+                subGroupContainer.style.borderLeft = "2px dashed #e2e8f0";
+                buildEditor(val, subGroupContainer, currentPath);
+                group.appendChild(subGroupContainer);
+            } else {
+                group.innerHTML = `<span class="json-key">${key}:</span>`;
+                const rule = getRuleByPath(currentPath);
+                if (rule) {
+                    const optDiv = document.createElement('div');
+                    const curArr = Array.isArray(val) ? val : [val];
+                    const hasAny = curArr.includes("any");
+                    const isInclusive = rule.behavior === "inclusive";
+                    const displayOptions = Array.from(new Set([...rule.options, ...curArr]));
+
+                    displayOptions.forEach(opt => {
+                        const label = document.createElement('label');
+                        label.className = 'validation-option';
+                        if (hasAny && opt !== "any" && !isInclusive) label.classList.add('disabled-option');
+                        const input = document.createElement('input');
+                        input.type = rule.multi ? "checkbox" : "radio";
+                        input.checked = curArr.includes(opt);
+                        if (hasAny && opt !== "any" && !isInclusive) input.disabled = true;
+
+                        input.onchange = () => {
+                            if (rule.multi) {
+                                let selection = Array.isArray(data[key]) ? [...data[key]] : [data[key]];
+                                if (opt === "any") {
+                                    if (input.checked) isInclusive ? selection.push("any") : selection = ["any"];
+                                    else selection = selection.filter(v => v !== "any");
+                                } else {
+                                    if (!isInclusive) selection = selection.filter(v => v !== "any");
+                                    if (input.checked) { if (!selection.includes(opt)) selection.push(opt); }
+                                    else selection = selection.filter(v => v !== opt);
+                                }
+                                data[key] = selection;
+                            } else {
+                                data[key] = opt;
+                            }
+                            refreshUI();
+                        };
+                        label.appendChild(input); label.appendChild(document.createTextNode(opt));
+                        optDiv.appendChild(label);
+                    });
+
+                    if (rule.multi && rule.allowCustom) {
+                        const addContainer = document.createElement('div');
+                        addContainer.className = 'custom-add-container';
+                        const customInput = document.createElement('input');
+                        customInput.type = 'text';
+                        customInput.className = 'custom-add-input';
+                        customInput.placeholder = 'Add custom option...';
+                        const addBtn = document.createElement('button');
+                        addBtn.className = 'btn-custom-add';
+                        addBtn.innerText = 'Add';
+                        addBtn.onclick = () => {
+                            const newVal = customInput.value.trim();
+                            if (newVal && !curArr.includes(newVal)) {
+                                if (Array.isArray(data[key])) data[key].push(newVal);
+                                else data[key] = [data[key], newVal];
+                                refreshUI();
+                            }
+                        };
+                        addContainer.appendChild(customInput); addContainer.appendChild(addBtn);
+                        optDiv.appendChild(addContainer);
+                    }
+                    group.appendChild(optDiv);
+                } else {
+                    const input = document.createElement('input');
+                    input.className = 'edit-input';
+                    input.value = Array.isArray(val) ? val.join(', ') : val;
+                    input.onchange = (e) => { data[key] = Array.isArray(val) ? e.target.value.split(',').map(s => s.trim()) : e.target.value; };
+                    group.appendChild(input);
+                }
+            }
+            container.appendChild(group);
+        }
+    }
+
+    function buildEditor(data, container, path = []) {
+        // Falls die Daten kein Objekt/Array sind, direkt abbrechen
+        if (typeof data !== 'object' || data === null) return;
+
+        for (const key in data) {
+            const val = data[key];
+            const currentPath = [...path, key];
+            const group = document.createElement('div');
+            group.className = 'settings-group';
+
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
+                group.innerHTML = `<span class="json-key">${key}</span>`;
+                const arrayContainer = document.createElement('div');
+                val.forEach((item, idx) => {
+                    const itemBox = document.createElement('div');
+                    itemBox.className = 'array-item-box';
+                    const ctrl = document.createElement('div');
+                    ctrl.className = 'array-controls';
+
+                    const plus = document.createElement('button'); plus.className='btn-action btn-plus'; plus.innerText='+';
+                    plus.onclick = () => { data[key].splice(idx+1, 0, JSON.parse(JSON.stringify(item))); refreshUI(); };
+
+                    const minus = document.createElement('button'); minus.className='btn-action btn-minus'; minus.innerText='-';
+                    minus.onclick = () => { if(data[key].length > 1) { data[key].splice(idx, 1); refreshUI(); } };
+
+                    ctrl.appendChild(plus); ctrl.appendChild(minus);
+                    itemBox.appendChild(ctrl);
+                    buildEditor(item, itemBox, currentPath);
+                    arrayContainer.appendChild(itemBox);
+                });
+                group.appendChild(arrayContainer);
+            } else if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
+                group.innerHTML = `<span class="json-key" style="color:var(--accent); font-weight:700;">${key}</span>`;
+                const subGroupContainer = document.createElement('div');
+                subGroupContainer.style.paddingLeft = "15px";
+                subGroupContainer.style.borderLeft = "2px dashed #e2e8f0";
+                buildEditor(val, subGroupContainer, currentPath);
+                group.appendChild(subGroupContainer);
+            } else {
+                group.innerHTML = `<span class="json-key">${key}:</span>`;
+                const rule = getRuleByPath(currentPath);
+                if (rule) {
+                    const optDiv = document.createElement('div');
+                    const curArr = Array.isArray(val) ? val : [val];
+                    const hasAny = curArr.includes("any");
+                    const isInclusive = rule.behavior === "inclusive";
+                    const displayOptions = Array.from(new Set([...rule.options, ...curArr]));
+
+                    displayOptions.forEach(opt => {
+                        const label = document.createElement('label');
+                        label.className = 'validation-option';
+                        if (hasAny && opt !== "any" && !isInclusive) label.classList.add('disabled-option');
+                        const input = document.createElement('input');
+                        input.type = rule.multi ? "checkbox" : "radio";
+                        input.checked = curArr.includes(opt);
+                        if (hasAny && opt !== "any" && !isInclusive) input.disabled = true;
+
+                        input.onchange = () => {
+                            if (rule.multi) {
+                                let selection = Array.isArray(data[key]) ? [...data[key]] : [data[key]];
+                                if (opt === "any") {
+                                    if (input.checked) isInclusive ? selection.push("any") : selection = ["any"];
+                                    else selection = selection.filter(v => v !== "any");
+                                } else {
+                                    if (!isInclusive) selection = selection.filter(v => v !== "any");
+                                    if (input.checked) { if (!selection.includes(opt)) selection.push(opt); }
+                                    else selection = selection.filter(v => v !== opt);
+                                }
+                                data[key] = selection;
+                            } else {
+                                data[key] = opt;
+                            }
+                            refreshUI();
+                        };
+                        label.appendChild(input); label.appendChild(document.createTextNode(opt));
+                        optDiv.appendChild(label);
+                    });
+
+                    if (rule.multi && rule.allowCustom) {
+                        const addContainer = document.createElement('div');
+                        addContainer.className = 'custom-add-container';
+                        const customInput = document.createElement('input');
+                        customInput.type = 'text';
+                        customInput.className = 'custom-add-input';
+                        customInput.placeholder = 'Add custom option...';
+                        const addBtn = document.createElement('button');
+                        addBtn.className = 'btn-custom-add';
+                        addBtn.innerText = 'Add';
+                        addBtn.onclick = () => {
+                            const newVal = customInput.value.trim();
+                            if (newVal && !curArr.includes(newVal)) {
+                                if (Array.isArray(data[key])) data[key].push(newVal);
+                                else data[key] = [data[key], newVal];
+                                refreshUI();
+                            }
+                        };
+                        addContainer.appendChild(customInput); addContainer.appendChild(addBtn);
+                        optDiv.appendChild(addContainer);
+                    }
                     group.appendChild(optDiv);
                 } else {
                     const input = document.createElement('input');
