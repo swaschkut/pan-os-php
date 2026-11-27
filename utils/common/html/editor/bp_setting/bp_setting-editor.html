@@ -40,6 +40,35 @@
         .btn-plus { background: #25B197; } .btn-minus { background: #E8121C; }
         .btn-save { background: #25B197; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .item { display: flex; align-items: center; padding: 5px; font-size: 0.75rem; border-bottom: 1px solid #f1f1f1; }
+        /* the list of the components next to the diagram */
+        .list-head { padding: 12px 15px 10px; border-bottom: 1px solid #e2e8f0; background: #f8f9fa; }
+        .list-title { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 0.95rem; color: #1a202c; }
+        .list-count { font-weight: 400; font-size: 0.75rem; color: #4a5568; }
+        .list-search { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 6px 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.8rem; }
+        .list-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15); }
+        .list-all { display: flex; gap: 6px; margin-top: 8px; }
+        .list-btn { border: 1px solid #cbd5e0; background: #fff; color: #2d3748; border-radius: 4px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; }
+        .list-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .list-group { margin-bottom: 10px; }
+        .list-group-head { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: #4a5568; border-bottom: 1px solid #e2e8f0; }
+        .list-group-head .list-group-name { flex: 1; }
+        .list-group-head .list-count { text-transform: none; letter-spacing: 0; }
+        .item { align-items: flex-start; border-left: 3px solid transparent; }
+        .item.off { border-left-color: #F8C4C8; }
+        .item.on { border-left-color: #24A385; }
+        .item.hover { background: #edf2f7; }
+        .item input { margin: 2px 6px 0 4px; }
+        .item-name { flex: 1; cursor: pointer; }
+        .item.off .item-name { color: #718096; }
+        .item-hint { display: block; font-size: 0.68rem; color: #718096; margin-top: 1px; }
+        .list-empty { font-size: 0.8rem; color: #718096; padding: 10px 0; }
+        .unsaved { display: none; font-size: 0.7rem; color: #F7A633; font-weight: 700; }
+        .unsaved.shown { display: inline; }
+        .desc-table { border-collapse: collapse; margin-top: 6px; }
+        .desc-table td { padding: 2px 10px 2px 0; font-size: 0.8rem; }
+        .desc-on { color: #24A385; font-weight: 600; } .desc-off { color: #E20019; font-weight: 600; } .desc-none { color: #a0aec0; }
+
         /* the diagram (utils/common/html/diagram): the chart is drawn into #chart, its tooltip is #tooltip - the two
            rules of the tooltip are the ones of diagram_styles.css (light mode) */
         .diagram-pane { overflow: auto; }
@@ -193,6 +222,7 @@
         <div class="menu" id="topMenu"></div>
         <div style="display:flex; gap:10px; align-items: center;">
             <input type="file" id="fileInput" accept=".json" style="font-size:0.7rem;">
+            <span id="unsavedMark" class="unsaved" title="the file was changed since it was loaded / exported">● unsaved changes</span>
             <button id="downloadBtn" class="btn-save" style="display:none">Export JSON</button>
         </div>
     </div>
@@ -226,6 +256,7 @@
         reader.onload = (event) => {
             jsonData = JSON.parse(event.target.result);
             document.getElementById('downloadBtn').style.display = 'block';
+            markSaved();
             setMode(appMode);
         };
         reader.readAsText(e.target.files[0]);
@@ -263,14 +294,27 @@
     function renderDiagramLayout() {
         document.getElementById('mainContent').innerHTML = `
             <div class="checkbox-sidebar">
+                <div class="list-head">
+                    <div class="list-title"><span>Components</span><span class="list-count" id="listCount"></span></div>
+                    <input type="search" class="list-search" id="listSearch" placeholder="Search a component or a group" aria-label="Search a component or a group">
+                    <div class="list-all">
+                        <button type="button" class="list-btn" id="listAllOn" title="every component on - where a profile and its rules exclude each other, the profile">all on</button>
+                        <button type="button" class="list-btn" id="listAllOff" title="every component off">all off</button>
+                    </div>
+                </div>
                 <div class="scroll-area" id="checkboxContainer"></div>
                 <div class="description-panel" id="descPanel">
                     <div style="font-weight:bold; padding:10px; border-bottom:1px solid #eee">Details</div>
-                    <div id="descContent" style="padding:10px">Select a rule to see coverage details.</div>
+                    <div id="descContent" style="padding:10px">Point at a component in the list or in the diagram.</div>
                 </div>
             </div>
             <div class="diagram-pane" id="diagramContainer"><div id="chart"></div></div>
         `;
+        const search = document.getElementById('listSearch');
+        search.value = listFilter;
+        search.oninput = () => { listFilter = search.value; renderList(); };
+        document.getElementById('listAllOn').onclick = () => setAll(null, true);
+        document.getElementById('listAllOff').onclick = () => setAll(null, false);
     }
 
     function renderSettingsLayout() {
@@ -280,7 +324,10 @@
     function refreshUI() {
         if (!jsonData) return;
         appMode === 'diagram' ? updateDiagramView() : updateSettingsView();
+        markUnsaved();
     }
+    // a field of the settings changes the file without a redraw
+    document.addEventListener('change', () => setTimeout(() => { if (jsonData) markUnsaved(); }, 0));
 
     function toggleBpa(key, isChecked) {
         const sectionData = jsonData["included-in-bpa"][currentTab];
@@ -296,17 +343,139 @@
     }
 
     function updateDiagramView() {
+        renderList();
+        renderD3(Object.entries(jsonData["included-in-bpa"][currentTab]));
+        markUnsaved();
+    }
+
+    // ---- the list of the components: in the groups and the order of the diagram, with a search, the count, "all on /
+    // off" (all and per group) and what a switch changes besides the component itself
+    let listFilter = '';
+
+    // how a key of the file is shown ("/" of a name is "_" in the file) and the group it is in
+    function componentName(key) { return key.replace(/_/g, '/'); }
+    function componentGroup(key) { return DIAGRAM_GROUP[componentName(key)] || componentName(key); }
+    // the components of the tab, the ones of a group next to each other (the groups in the order of the file)
+    function componentsByGroup(data) {
+        const groups = [];
+        Object.keys(data).forEach(key => {
+            const name = componentGroup(key);
+            let group = groups.find(g => g.name === name);
+            if (!group) groups.push(group = { name: name, keys: [] });
+            group.keys.push(key);
+        });
+        return groups;
+    }
+    // what switching the component changes besides itself (toggleBpa): a profile and its rules exclude each other
+    function switchesAlso(key, data, turnOn) {
+        const also = [];
+        (profileToRules[key] || []).forEach(child => { if (data.hasOwnProperty(child) && data[child] === turnOn) also.push([child, !turnOn]); });
+        const parent = rulesToProfile[key];
+        if (parent && turnOn && data[parent] === true) also.push([parent, false]);
+        return also;
+    }
+    // every component of the tab (group null) or of a group on / off. On: where a profile and its rules exclude each
+    // other the profile is switched on and its rules off - both on is a state the switches do not allow
+    function setAll(group, on) {
+        const data = jsonData["included-in-bpa"][currentTab];
+        Object.keys(data).forEach(key => { if (group === null || componentGroup(key) === group) data[key] = on; });
+        if (on)
+            Object.keys(data).forEach(key => {
+                if (rulesToProfile[key] && data[rulesToProfile[key]] === true && (group === null || componentGroup(key) === group)) data[key] = false;
+            });
+        refreshUI();
+    }
+    function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function renderList() {
         const data = jsonData["included-in-bpa"][currentTab];
         const container = document.getElementById('checkboxContainer');
-        container.innerHTML = `<h4 style="margin:0 0 10px 0">Active Components</h4>`;
-        Object.entries(data).forEach(([key, val]) => {
-            const div = document.createElement('div');
-            div.className = 'item';
-            div.innerHTML = `<input type="checkbox" id="c-${key}" ${val?'checked':''}><label for="c-${key}" style="flex:1; cursor:pointer">${key}</label>`;
-            div.querySelector('input').onchange = (e) => toggleBpa(key, e.target.checked);
-            container.appendChild(div);
+        const keys = Object.keys(data);
+        document.getElementById('listCount').textContent = keys.filter(k => data[k] === true).length + ' of ' + keys.length + ' included';
+        container.innerHTML = '';
+        const filter = listFilter.trim().toLowerCase();
+        let shown = 0;
+        componentsByGroup(data).forEach(group => {
+            const mine = group.keys.filter(key => filter === '' || componentName(key).toLowerCase().includes(filter) || group.name.toLowerCase().includes(filter));
+            if (!mine.length) return;
+            shown += mine.length;
+            const box = document.createElement('div');
+            box.className = 'list-group';
+            const head = document.createElement('div');
+            head.className = 'list-group-head';
+            head.innerHTML = `<span class="list-group-name">${escapeHtml(group.name)}</span>`
+                + `<span class="list-count">${group.keys.filter(k => data[k] === true).length}/${group.keys.length}</span>`;
+            [['on', true], ['off', false]].forEach(([text, on]) => {
+                const button = document.createElement('button');
+                button.type = 'button'; button.className = 'list-btn'; button.textContent = text;
+                button.title = 'group ' + group.name + ': all ' + text;
+                button.onclick = () => setAll(group.name, on);
+                head.appendChild(button);
+            });
+            box.appendChild(head);
+            mine.forEach(key => {
+                const on = data[key] === true;
+                const also = switchesAlso(key, data, !on);
+                const div = document.createElement('div');
+                div.className = 'item ' + (on ? 'on' : 'off');
+                div.dataset.key = key;
+                const input = document.createElement('input');
+                input.type = 'checkbox'; input.id = 'c-' + key; input.checked = on;
+                input.onchange = (e) => { listFocus = key; toggleBpa(key, e.target.checked); };
+                const label = document.createElement('label');
+                label.htmlFor = input.id; label.className = 'item-name';
+                label.innerHTML = escapeHtml(componentName(key))
+                    + (also.length ? `<span class="item-hint">${on ? 'off' : 'on'} also switches: ${also.map(x => escapeHtml(componentName(x[0])) + ' ' + (x[1] ? 'on' : 'off')).join(', ')}</span>` : '');
+                div.appendChild(input); div.appendChild(label);
+                div.onmouseenter = () => { showDetails(key); highlightSector(key, true); };
+                div.onmouseleave = () => highlightSector(key, false);
+                input.onfocus = () => showDetails(key);
+                box.appendChild(div);
+            });
+            container.appendChild(box);
         });
-        renderD3(Object.entries(data));
+        if (!shown) container.innerHTML = `<div class="list-empty">No component matches "${escapeHtml(listFilter)}".</div>`;
+        // the checkbox that was switched keeps the focus (the list is drawn again)
+        if (listFocus !== null) {
+            const again = document.getElementById('c-' + listFocus);
+            listFocus = null;
+            if (again) again.focus();
+        }
+    }
+    let listFocus = null;
+
+    // the sector of the diagram that belongs to a line of the list (and the line that belongs to a sector)
+    function highlightSector(key, on) {
+        d3.selectAll('#chart .segment').filter(d => d.name === key).selectAll('path').style('filter', on ? 'brightness(1.08)' : 'none');
+    }
+    function highlightItem(key, on) {
+        document.querySelectorAll('#checkboxContainer .item').forEach(el => el.classList.toggle('hover', on && el.dataset.key === key));
+    }
+
+    // the panel "Details": the component in the three diagrams and what a switch changes
+    function showDetails(key) {
+        const included = jsonData["included-in-bpa"];
+        const data = included[currentTab];
+        const on = data[key] === true;
+        const also = switchesAlso(key, data, !on);
+        const state = part => !included[part] || !included[part].hasOwnProperty(key) ? '<span class="desc-none">not in this diagram</span>'
+            : (included[part][key] === true ? '<span class="desc-on">included</span>' : '<span class="desc-off">not included</span>');
+        document.getElementById('descContent').innerHTML = `<strong>${escapeHtml(componentName(key))}</strong><br>`
+            + `<span style="color:#718096">group: ${escapeHtml(componentGroup(key))}</span>`
+            + `<table class="desc-table">` + ['visibility', 'best-practice', 'adoption'].map(part =>
+                `<tr><td>${part}${part === currentTab ? ' (shown)' : ''}</td><td>${state(part)}</td></tr>`).join('') + `</table>`
+            + (also.length ? `<div style="margin-top:6px">Switching it ${on ? 'off' : 'on'} also switches: `
+                + also.map(x => escapeHtml(componentName(x[0])) + ' ' + (x[1] ? 'on' : 'off')).join(', ') + `</div>` : '')
+            + (profileToRules[key] || rulesToProfile[key] ? `<div style="margin-top:6px; color:#718096">A profile and its rules / inline ML exclude each other.</div>` : '');
+    }
+
+    // "unsaved changes": the file differs from what was loaded or exported last
+    let savedJson = null;
+    function markSaved() { savedJson = JSON.stringify(jsonData); markUnsaved(); }
+    function markUnsaved() {
+        document.getElementById('unsavedMark').classList.toggle('shown', savedJson !== null && JSON.stringify(jsonData) !== savedJson);
     }
 
     // ---- the diagram: the chart of pan-os-php (utils/common/html/diagram/diagram_script.js, createCoxcombChart) - the
@@ -336,6 +505,8 @@
     let diagramFocus = null;
     // the list of components the chart was drawn for last (a tab of a file)
     let diagramShown = null;
+    // the component the panel "Details" shows for the sector under the mouse
+    let diagramDetails = null;
 
     function renderD3(entries) {
         const pane = document.getElementById('diagramContainer');
@@ -344,10 +515,9 @@
         // the data as the diagram of pan-os-php gets it; the components of a group next to each other
         const groupOrder = [];
         const categories = entries.map(([key, on]) => {
-            const shown = key.replace(/_/g, '/');
-            const group = DIAGRAM_GROUP[shown] || shown;
+            const group = componentGroup(key);
             if (!groupOrder.includes(group)) groupOrder.push(group);
-            return { name: key, shortName: shown, value: on === true ? 100 : 0, group: group };
+            return { name: key, shortName: componentName(key), value: on === true ? 100 : 0, group: group };
         }).sort((x, y) => groupOrder.indexOf(x.group) - groupOrder.indexOf(y.group));
 
         // the words of the diagram, as generateChart of diagram_script.js chooses them by the title
@@ -390,10 +560,9 @@
             })
             .on('mousemove', function (e, d) {
                 const on = d.value === 100;
-                // what the click changes besides the component itself (toggleBpa): a profile and its rules exclude each other
-                const also = [];
-                (profileToRules[d.name] || []).forEach(child => { if (data.hasOwnProperty(child) && data[child] === !on) also.push(child + (on ? ' on' : ' off')); });
-                if (rulesToProfile[d.name] && !on && data[rulesToProfile[d.name]] === true) also.push(rulesToProfile[d.name] + ' off');
+                const also = switchesAlso(d.name, data, !on).map(x => componentName(x[0]) + (x[1] ? ' on' : ' off'));
+                highlightItem(d.name, true);
+                if (diagramDetails !== d.name) { diagramDetails = d.name; showDetails(d.name); }
                 d3.select(this).selectAll('path').style('filter', 'brightness(1.05)');
                 tooltip.style('opacity', 1)
                     .html(`<strong>${d.shortName}</strong><br/>
@@ -402,10 +571,13 @@
                     .style('left', (e.pageX + 15) + 'px')
                     .style('top', (e.pageY - 15) + 'px');
             })
-            .on('mouseleave', function () {
+            .on('mouseleave', function (e, d) {
                 d3.select(this).selectAll('path').style('filter', 'none');
                 tooltip.style('opacity', 0);
-            });
+                highlightItem(d.name, false);
+                diagramDetails = null;
+            })
+            .on('focus', (e, d) => showDetails(d.name));
         if (diagramFocus !== null) {
             const again = segments.filter(d => d.name === diagramFocus).node();
             diagramFocus = null;
@@ -899,12 +1071,14 @@
         try {
             jsonData = typeof e.data.json === 'string' ? JSON.parse(e.data.json) : e.data.json;
             document.getElementById('downloadBtn').style.display = 'block';
+            markSaved();
             setMode(appMode);
         } catch (err) { }
     });
     if (inViewer) window.parent.postMessage({ type: 'panosphp-editor-ready' }, '*');
 
     document.getElementById('downloadBtn').onclick = () => {
+        markSaved();
         if (inViewer) { window.parent.postMessage({ type: 'panosphp-editor-save', json: JSON.stringify(jsonData, null, 4) }, '*'); return; }
         const blob = new Blob([JSON.stringify(jsonData, null, 4)], {type: "application/json"});
         const a = document.createElement('a');

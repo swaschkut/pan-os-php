@@ -1850,6 +1850,8 @@ eq( array( strpos( (string)$raw, '<link rel="stylesheet"' ), strpos( (string)$ra
         preg_match_all( "~font-family: 'Lato';[^}]*url\\(data:font/ttf;base64,[A-Za-z0-9+/=]{20000,}\\)~", (string)$raw ), (bool)preg_match( '/url\\(\\s*Lato-/', (string)$raw ),
         strpos( (string)$raw, 'createCoxcombChart(categories)' ) !== FALSE ),
     array( FALSE, TRUE, 5, FALSE, TRUE ), 'BP JSON editor: the chart of pan-os-php and the five Lato fonts inline (no file is loaded)' );
+eq( array( strpos( (string)$raw, 'id="listSearch"' ) !== FALSE, strpos( (string)$raw, 'function setAll(' ) !== FALSE, strpos( (string)$raw, 'id="unsavedMark"' ) !== FALSE ),
+    array( TRUE, TRUE, TRUE ), 'BP JSON editor: the list of the components with search, all on / off and the mark of unsaved changes' );
 @file_get_contents( $base . 'editor.php?e=../../etc', FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
 eq( strpos( implode( "\n", $http_response_header ?? array() ), ' 404' ) !== FALSE, TRUE, 'editor: only the two editors' );
 $r = $alice->call( 'GET', 'bp-default' );
