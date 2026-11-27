@@ -134,15 +134,26 @@ class EDLStore extends ObjStore
         $file = PH::predefinedXmlPath();
         if( !is_string( $file ) || !is_file( $file ) )
             return self::$predefinedEDLNames;
+        // from the small sections of predefined.xml, which are read once per process (no pass over the file of its own)
+        $xmlDoc = PH::getPredefinedXmlDoc( null, array( 'ip-block-list-v2', 'url-predefined' ) );
         foreach( array( 'ip-block-list-v2' => 'predefined-ip', 'url-predefined' => 'predefined-url' ) as $section => $type )
-            PH::eachPredefinedEntry( array( $section ), function( $name, $node ) use ( $type ) {
+        {
+            $cursor = DH::findFirstElement( $section, $xmlDoc->documentElement );
+            if( $cursor === FALSE )
+                continue;
+            foreach( $cursor->childNodes as $node )
+            {
+                if( $node->nodeType != XML_ELEMENT_NODE || $node->nodeName != 'entry' )
+                    continue;
+                $name = $node->getAttribute( 'name' );
                 if( !is_string( $name ) || $name === '' )
-                    return;
-                $d = $node === null ? FALSE : DH::findFirstElement( 'display-name', $node );
-                $t = $node === null ? FALSE : DH::findFirstElement( 'description', $node );
+                    continue;
+                $d = DH::findFirstElement( 'display-name', $node );
+                $t = DH::findFirstElement( 'description', $node );
                 self::$predefinedEDLNames[$name] = array( 'type' => $type, 'display' => $d === FALSE ? '' : trim( $d->textContent ),
                     'description' => $t === FALSE ? '' : trim( $t->textContent ) );
-            } );
+            }
+        }
         return self::$predefinedEDLNames;
     }
 

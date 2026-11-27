@@ -398,7 +398,7 @@ class AddressStore
             return self::$predefinedRegionNames;
 
         self::$predefinedRegionNames = array();
-        $filename = dirname(__FILE__) . '/predefined.xml';
+        $filename = PH::predefinedXmlPath();
         if( !file_exists( $filename ) )
             return self::$predefinedRegionNames;
 

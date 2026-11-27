@@ -263,35 +263,41 @@ class AppStore extends ObjStore
 
     public function load_predefined_app_details( App $app, DOMElement $appx ): void
     {
+        // the first child element per tag name, indexed in one walk: ~35 properties are read per app and DOM child
+        // lists are slow to walk - this is most of the time of loading the predefined apps
+        $first = array();
+        foreach( $appx->childNodes as $child )
+            if( $child->nodeType == XML_ELEMENT_NODE && !isset( $first[$child->nodeName] ) )
+                $first[$child->nodeName] = $child;
 
         #xpath /predefined/default
-        $timeoutcur = DH::findFirstElement('timeout', $appx);
+        $timeoutcur = ( $first['timeout'] ?? FALSE );
         if( $timeoutcur !== FALSE )
         {
             $app->timeout = $timeoutcur->textContent;
         }
-        $tcptimeoutcur = DH::findFirstElement('tcp-timeout', $appx);
+        $tcptimeoutcur = ( $first['tcp-timeout'] ?? FALSE );
         if( $tcptimeoutcur !== FALSE )
         {
             $app->tcp_timeout = $tcptimeoutcur->textContent;
         }
-        $udptimeoutcur = DH::findFirstElement('udp-timeout', $appx);
+        $udptimeoutcur = ( $first['udp-timeout'] ?? FALSE );
         if( $udptimeoutcur !== FALSE )
         {
             $app->udp_timeout = $udptimeoutcur->textContent;
         }
-        $tcp_half_timeoutcur = DH::findFirstElement('tcp-half-closed-timeout', $appx);
+        $tcp_half_timeoutcur = ( $first['tcp-half-closed-timeout'] ?? FALSE );
         if( $tcp_half_timeoutcur !== FALSE )
         {
             $app->tcp_half_closed_timeout = $tcp_half_timeoutcur->textContent;
         }
-        $tcp_wait_timeoutcur = DH::findFirstElement('tcp-time-wait-timeout', $appx);
+        $tcp_wait_timeoutcur = ( $first['tcp-time-wait-timeout'] ?? FALSE );
         if( $tcp_wait_timeoutcur !== FALSE )
         {
             $app->tcp_time_wait_timeout = $tcp_wait_timeoutcur->textContent;
         }
 
-        $obsolete = DH::findFirstElement('obsolete', $appx);
+        $obsolete = ( $first['obsolete'] ?? FALSE );
         if( $obsolete !== FALSE )
         {
             $app->obsolete = $obsolete->textContent;
@@ -306,26 +312,26 @@ class AppStore extends ObjStore
 
 
         #xpath /predefined
-        $tmp = DH::findFirstElement('category', $appx);
+        $tmp = ( $first['category'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             $app->category = $tmp->textContent;
         }
 
-        $tmp = DH::findFirstElement('subcategory', $appx);
+        $tmp = ( $first['subcategory'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             $app->subCategory = $tmp->textContent;
         }
 
-        $tmp = DH::findFirstElement('technology', $appx);
+        $tmp = ( $first['technology'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             $app->technology = $tmp->textContent;
         }
 
 
-        $tmp = DH::findFirstElement('tag', $appx);
+        $tmp = ( $first['tag'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             $tag_array = array();
@@ -344,59 +350,59 @@ class AppStore extends ObjStore
         }
 
         // <parent-app>writesonic-base</parent-app>
-        $tmp = DH::findFirstElement('parent-app', $appx);
+        $tmp = ( $first['parent-app'] ?? FALSE );
         if( $tmp !== FALSE )
             $app->parent_app = $tmp->textContent;
 
-        $tmp = DH::findFirstElement('evasive-behavior', $appx);
+        $tmp = ( $first['evasive-behavior'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['evasive'] = TRUE;
         }
-        $tmp = DH::findFirstElement('consume-big-bandwidth', $appx);
+        $tmp = ( $first['consume-big-bandwidth'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['excessive-bandwidth'] = TRUE;
         }
-        $tmp = DH::findFirstElement('used-by-malware', $appx);
+        $tmp = ( $first['used-by-malware'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['used-by-malware'] = TRUE;
         }
-        $tmp = DH::findFirstElement('able-to-transfer-file', $appx);
+        $tmp = ( $first['able-to-transfer-file'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['transfers-files'] = TRUE;
         }
-        $tmp = DH::findFirstElement('has-known-vulnerability', $appx);
+        $tmp = ( $first['has-known-vulnerability'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['vulnerabilities'] = TRUE;
         }
-        $tmp = DH::findFirstElement('tunnel-other-application', $appx);
+        $tmp = ( $first['tunnel-other-application'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['tunnels-other-apps'] = TRUE;
         }
-        $tmp = DH::findFirstElement('prone-to-misuse', $appx);
+        $tmp = ( $first['prone-to-misuse'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['prone-to-misuse'] = TRUE;
         }
-        $tmp = DH::findFirstElement('is-saas', $appx);
+        $tmp = ( $first['is-saas'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->_characteristics['saas'] = TRUE;
         }
-        $tmp = DH::findFirstElement('pervasive-use', $appx);
+        $tmp = ( $first['pervasive-use'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
@@ -404,24 +410,24 @@ class AppStore extends ObjStore
         }
 
 
-        $tmp = DH::findFirstElement('risk', $appx);
+        $tmp = ( $first['risk'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             $app->risk = $tmp->textContent;
         }
-        $tmp = DH::findFirstElement('virusident-ident', $appx);
+        $tmp = ( $first['virusident-ident'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->virusident = TRUE;
         }
-        $tmp = DH::findFirstElement('filetype-ident', $appx);
+        $tmp = ( $first['filetype-ident'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
                 $app->filetypeident = TRUE;
         }
-        $tmp = DH::findFirstElement('file-forward', $appx);
+        $tmp = ( $first['file-forward'] ?? FALSE );
         if( $tmp !== FALSE )
         {
             if( $tmp->textContent == 'yes' )
@@ -429,7 +435,7 @@ class AppStore extends ObjStore
         }
 
 
-        $cursor = DH::findFirstElement('use-applications', $appx);
+        $cursor = ( $first['use-applications'] ?? FALSE );
         if( $cursor !== FALSE )
         {
             foreach( $cursor->childNodes as $depNode )
@@ -445,7 +451,7 @@ class AppStore extends ObjStore
             }
         }
 
-        $cursor = DH::findFirstElement('implicit-use-applications', $appx);
+        $cursor = ( $first['implicit-use-applications'] ?? FALSE );
         if( $cursor !== FALSE )
         {
             foreach( $cursor->childNodes as $depNode )
@@ -461,7 +467,7 @@ class AppStore extends ObjStore
             }
         }
 
-        $cursor = DH::findFirstElement('tunnel-applications', $appx);
+        $cursor = ( $first['tunnel-applications'] ?? FALSE );
         if( $cursor !== FALSE )
         {
             foreach( $cursor->childNodes as $depNode )
@@ -477,7 +483,7 @@ class AppStore extends ObjStore
             }
         }
 
-        $cursor = DH::findFirstElement('applicable-decoders', $appx);
+        $cursor = ( $first['applicable-decoders'] ?? FALSE );
         if( $cursor !== FALSE )
         {
             foreach( $cursor->childNodes as $depNode )
@@ -492,7 +498,7 @@ class AppStore extends ObjStore
                 $app->decoder[$depName] = $depName;
             }
         }
-        $cursor = DH::findFirstElement('default', $appx);
+        $cursor = ( $first['default'] ?? FALSE );
         if( $cursor === FALSE )
             return;
 
@@ -883,10 +889,10 @@ class AppStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
-        $isDefaultFile = realpath($filename) === realpath(dirname(__FILE__) . '/predefined.xml');
+        $isDefaultFile = realpath($filename) === realpath(PH::predefinedXmlPath());
 
         if( $isDefaultFile )
         {

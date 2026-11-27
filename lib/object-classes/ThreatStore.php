@@ -164,10 +164,10 @@ class ThreatStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
-        if( realpath($filename) === realpath(dirname(__FILE__) . '/predefined.xml') )
+        if( realpath($filename) === realpath(PH::predefinedXmlPath()) )
         {
             // streamed entry by entry: the 'threats' section (~15 MB XML, ~130 MB as DOM) is never held as a whole
             $store = $this;

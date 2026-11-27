@@ -591,10 +591,17 @@ class PH
      * ~240 MB as DOM). They are parsed on request only, not cached; the stores build their objects from them and then
      * drop their node pointers, so the DOM is freed again.
      */
-    private static $predefinedLargeSections = array('application', 'application-container', 'application-version', 'threats');
+    private static $predefinedLargeSections = array('application', 'threats');
 
-    /** sections of predefined.xml read by pan-os-php besides the large ones (together < 0.1 MB) */
-    private static $predefinedSmallSections = array('profiles', 'pan-url-categories', 'log-settings', 'region');
+    /** @var int how often predefined.xml was read from its start in this process (each time ~0.25 s) - see tests/test_predefined_load.php */
+    public static $predefinedFilePasses = 0;
+
+    /**
+     * sections of predefined.xml read by pan-os-php besides the large ones (together ~0.5 MB): read in ONE pass over
+     * the file and shared by every store - each pass over the 31 MB costs ~0.25 s, whatever is read from it
+     */
+    private static $predefinedSmallSections = array('profiles', 'pan-url-categories', 'log-settings', 'region',
+        'application-container', 'application-version', 'ip-block-list-v2', 'url-predefined');
 
     /**
      * Returns predefined.xml as DOM, limited to the top-level $sections (e.g. array('threats')). Paths stay the same
@@ -640,6 +647,7 @@ class PH
 
         if( !$isDefault || $sections === null )
         {
+            self::$predefinedFilePasses++;
             $xmlDoc = new DOMDocument();
             if( $xmlDoc->load($filename, XML_PARSE_BIG_LINES) !== TRUE )
                 derr( "cannot load predefined file '".$filename."'", null, FALSE );
@@ -667,6 +675,7 @@ class PH
         if( $filename === null )
             $filename = self::predefinedXmlPath();
 
+        self::$predefinedFilePasses++;
         $reader = new XMLReader();
         if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
             derr( "cannot load predefined file '".$filename."'", null, FALSE );
@@ -746,6 +755,7 @@ class PH
         $xmlDoc = new DOMDocument();
         $root = $xmlDoc->appendChild( $xmlDoc->createElement('predefined') );
 
+        self::$predefinedFilePasses++;
         $reader = new XMLReader();
         if( !$reader->open($filename, null, LIBXML_PARSEHUGE | XML_PARSE_BIG_LINES) )
             derr( "cannot load predefined file '".$filename."'", null, FALSE );

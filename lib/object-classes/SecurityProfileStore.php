@@ -364,7 +364,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -380,7 +380,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -421,7 +421,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -437,7 +437,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -453,7 +453,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -469,7 +469,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -485,7 +485,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
@@ -501,7 +501,7 @@ class SecurityProfileStore extends ObjStore
     {
         if( $filename === null )
         {
-            $filename = dirname(__FILE__) . '/predefined.xml';
+            $filename = PH::predefinedXmlPath();
         }
 
         //predefined.xml is parsed once per process and shared by all predefined stores (~280 MB per parse)
