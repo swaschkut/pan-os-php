@@ -1888,6 +1888,21 @@ sort( $parts );
 $usedParts = array_values( class_uses( 'ViewerApp' ) );
 sort( $usedParts );
 eq( array( count( $parts ) > 0, $usedParts ), array( TRUE, $parts ), 'ViewerApp: every part lib/ViewerApp<Part>.php is a trait used by ViewerApp' );
+// app.js in several files: every part js/<part>.js is loaded by index.html before app.js (the parts hold declarations
+// only, app.js starts the page), each in strict mode
+$html = (string)file_get_contents( $viewer . '/index.html' );
+preg_match_all( '#<script src="([^"]+)"></script>#', $html, $m );
+$jsParts = array();
+foreach( glob( $viewer . '/js/*.js' ) as $file )
+    $jsParts[] = 'js/' . basename( $file );
+$loaded = $m[1];
+$last = array_pop( $loaded );
+sort( $jsParts ); $sortedLoaded = $loaded; sort( $sortedLoaded );
+$strict = TRUE;
+foreach( $jsParts as $file )
+    $strict = $strict && preg_match( "#^/\\*.*?\\*/\\s*'use strict';#s", (string)file_get_contents( $viewer . '/' . $file ) ) === 1;
+eq( array( $last, $sortedLoaded, count( $jsParts ) > 0, $strict ), array( 'app.js', $jsParts, TRUE, TRUE ),
+    'app.js: every part js/<part>.js is loaded by index.html before app.js, in strict mode' );
 // playbook editor: steps collapse, action / filter field are searched, checks at the fields, a step is moved by dragging;
 // what is only for the page is not written to the file
 $raw = (string)file_get_contents( dirname( __DIR__ ) . '/utils/common/html/editor/playbook/playbook-editor.html' );

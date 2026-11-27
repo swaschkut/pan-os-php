@@ -10,7 +10,7 @@ Open points of the viewer, all in one list: [TODO.md](TODO.md). Background: [tod
 
 | Part | File | Function |
 |---|---|---|
-| browser | `index.html`, `app.js`, `style.css` | login, projects, members, versions, object table, change box. Every loaded list is kept in the browser (cache per query); sort, paging and the quick filter run there |
+| browser | `index.html`, `app.js` (helpers, viewer / editor, start), `js/*.js` (the other pages: declarations only, loaded before `app.js`), `style.css` | login, projects, members, versions, object table, change box. Every loaded list is kept in the browser (cache per query); sort, paging and the quick filter run there |
 | API | `api.php` → `lib/ViewerApp.php` (parts of the class in `lib/ViewerApp<Part>.php`, traits) | JSON API; users / projects / members / versions in SQLite; every request is checked against the project permission |
 | service | `bin/service.php` | the one long running process; starts a worker when a version is opened |
 | worker | `bin/worker.php` | one per opened version: loads the configuration **once** and keeps it in memory (`UTIL::$sharedConfig`); reads and changes run on that memory |
