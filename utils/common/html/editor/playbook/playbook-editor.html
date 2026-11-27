@@ -55,8 +55,10 @@
         .arg-toggle input { width: auto !important; }
         .multi-select-box { height: 120px; font-size: 0.8rem; }
     </style>
+    <!-- the look of the config viewer (colours, font, buttons): after the styles above -->
+    <link rel="stylesheet" href="../viewer-look.css">
 </head>
-<body>
+<body class="playbook-editor">
 
 <div class="container">
     <div class="header">
@@ -67,12 +69,12 @@
                 <label><input type="checkbox" id="global-show-cli" onchange="toggleAllCli(this.checked)"> CLI</label>
                 <label><input type="checkbox" id="global-show-json" onchange="toggleAllJson(this.checked)"> JSON</label>
                 <label><input type="checkbox" id="global-show-unhandled" onchange="toggleAllUnhandled(this.checked)"> Unhandled Fields</label>
-                <label style="color: #e53e3e;"><input type="checkbox" id="global-disable-ui" onchange="toggleUiDisabled(this.checked)"> Lock UI</label>
+                <label class="lock" style="color: #e53e3e;"><input type="checkbox" id="global-disable-ui" onchange="toggleUiDisabled(this.checked)"> Lock UI</label>
             </div>
             <div>
                 <input type="file" id="filePicker" accept=".json" style="display:none">
-                <button class="btn" style="background:#3182ce; color:white" onclick="document.getElementById('filePicker').click()">📂 LOAD</button>
-                <button class="btn" style="background:#2d3748; color:white" onclick="exportJSON()">💾 SAVE</button>
+                <button class="btn" onclick="document.getElementById('filePicker').click()">📂 LOAD</button>
+                <button class="btn primary" onclick="exportJSON()">💾 SAVE</button>
             </div>
         </div>
     </div>
@@ -86,7 +88,7 @@
     </div>
 
     <div id="editor"></div>
-    <button class="btn btn-add" style="width:100%; padding:15px; margin-top:10px;" onclick="addNewStepAtEnd()">+ Add New Command at End</button>
+    <button class="btn btn-add wide" style="width:100%; padding:10px; margin-top:10px;" onclick="addNewStepAtEnd()">+ Add New Command at End</button>
 </div>
 
 <script src="json_array.js"></script>
@@ -290,7 +292,7 @@
             <button class="btn btn-nav" onclick="moveStep(${cIdx}, 1)" ${cIdx === playbook.command.length - 1 ? 'disabled' : ''}>↓</button>
             <div class="step-label">STEP ${cIdx + 1} of ${playbook.command.length}</div>
             <button class="btn btn-add" onclick="insertStep(${cIdx})">+ Insert</button>
-            <button class="btn" style="background:#e53e3e; color:white" onclick="removeStep(${cIdx})">Delete</button>
+            <button class="btn danger" onclick="removeStep(${cIdx})">Delete</button>
         </div>
         ${globalShowComments ? `<div class="comment-field-area"><label>Step Comment</label><textarea oninput="playbook.command[${cIdx}].comment=this.value; updatePreviews(${cIdx});">${cmd.comment || ''}</textarea></div>` : ''}
         <div style="display: ${globalUiDisabled ? 'none' : 'block'}">
@@ -315,7 +317,7 @@
                         <button class="btn btn-remove-small" onclick="playbook.command[${cIdx}]._uiActions.splice(${aIdx},1); render();">&times;</button>
                     </div>`;
             }).join('')}</div>
-                <button class="btn btn-add" style="background:#a0aec0" onclick="playbook.command[${cIdx}]._uiActions.push({name:'', args:{}}); render();">+ Add Action</button>
+                <button class="btn btn-add" onclick="playbook.command[${cIdx}]._uiActions.push({name:'', args:{}}); render();">+ Add Action</button>
             </div>` : ''}
             ${hasFilters ? `<div class="sub-section">
                 <label style="color:#2b6cb0; font-weight:bold;">Filters</label>
@@ -339,10 +341,10 @@
                         <button class="btn btn-remove-small" onclick="playbook.command[${cIdx}]._uiFilters.splice(${fIdx},1); render();">&times;</button>
                     </div>`;
             }).join('')}</div>
-                <button class="btn btn-add" style="background:#a0aec0" onclick="playbook.command[${cIdx}]._uiFilters.push({operator:'and', mainType:'', subFilter:'', manualValue:'', isGrouped: false}); render();">+ Add Filter</button>
+                <button class="btn btn-add" onclick="playbook.command[${cIdx}]._uiFilters.push({operator:'and', mainType:'', subFilter:'', manualValue:'', isGrouped: false}); render();">+ Add Filter</button>
             </div>` : ''}
         </div>
-        <div class="cli-preview-container" style="display: ${globalShowCli ? 'flex' : 'none'}"><input type="text" id="cli-${cIdx}" class="cli-input" value="${generateFullCli(cmd)}" onchange="handleCliEdit(${cIdx}, this.value)"><button class="btn" style="background:#4a5568; color:white;" onclick="copyCli(${cIdx}, this)">COPY</button></div>
+        <div class="cli-preview-container" style="display: ${globalShowCli ? 'flex' : 'none'}"><input type="text" id="cli-${cIdx}" class="cli-input" value="${generateFullCli(cmd)}" onchange="handleCliEdit(${cIdx}, this.value)"><button class="btn" onclick="copyCli(${cIdx}, this)">COPY</button></div>
         <div class="json-preview-container" style="display: ${globalShowJson ? 'block' : 'none'}"><textarea id="json-val-${cIdx}" class="json-input" onchange="handleJsonEdit(${cIdx}, this.value)">${generateStepJson(cmd)}</textarea></div>
         <div class="unhandled-container" style="display: ${globalShowUnhandled ? 'block' : 'none'}"><label style="color:#c53030">Unhandled Arguments (JSON Only)</label><textarea id="unhandled-val-${cIdx}" class="unhandled-input" onchange="handleUnhandledEdit(${cIdx}, this.value)">${JSON.stringify(getUnhandledFields(cmd, cmd.type), null, 2)}</textarea></div>`;
             container.appendChild(card);

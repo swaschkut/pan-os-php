@@ -1867,6 +1867,18 @@ eq( array( strpos( (string)$raw, '<link rel="stylesheet"' ), strpos( (string)$ra
     array( FALSE, TRUE, 5, FALSE, TRUE ), 'BP JSON editor: the chart of pan-os-php and the five Lato fonts inline (no file is loaded)' );
 eq( array( strpos( (string)$raw, 'id="listSearch"' ) !== FALSE, strpos( (string)$raw, 'function setAll(' ) !== FALSE, strpos( (string)$raw, 'id="unsavedMark"' ) !== FALSE ),
     array( TRUE, TRUE, TRUE ), 'BP JSON editor: the list of the components with search, all on / off and the mark of unsaved changes' );
+// both editors in the look of the viewer: the stylesheet viewer-look.css inline, with the colours of style.css
+$look = array();
+foreach( array( 'playbook', 'bp' ) as $which )
+{
+    $page = (string)@file_get_contents( $base . 'editor.php?e=' . $which, FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
+    $look[$which] = array( strpos( $page, '<link rel="stylesheet"' ), strpos( $page, '--accent: #0b62a8' ) !== FALSE );
+}
+preg_match( '/:root \{([^}]*)\}/', (string)file_get_contents( dirname( __DIR__ ) . '/utils/develop/config-viewer/style.css' ), $viewerRoot );
+preg_match( '/:root \{([^}]*)\}/', (string)file_get_contents( dirname( __DIR__ ) . '/utils/common/html/editor/viewer-look.css' ), $editorRoot );
+eq( array( $look, strpos( preg_replace( '/\s+/', ' ', $editorRoot[1] ?? '' ), trim( preg_replace( '/\s+/', ' ', $viewerRoot[1] ?? 'x' ) ) ) !== FALSE ),
+    array( array( 'playbook' => array( FALSE, TRUE ), 'bp' => array( FALSE, TRUE ) ), TRUE ),
+    'editors: the look of the viewer inline; viewer-look.css has the colours of style.css' );
 @file_get_contents( $base . 'editor.php?e=../../etc', FALSE, stream_context_create( array( 'http' => array( 'ignore_errors' => TRUE ) ) ) );
 eq( strpos( implode( "\n", $http_response_header ?? array() ), ' 404' ) !== FALSE, TRUE, 'editor: only the two editors' );
 $r = $alice->call( 'GET', 'bp-default' );

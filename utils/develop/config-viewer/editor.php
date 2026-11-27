@@ -27,12 +27,14 @@
  */
 $editors = array(
     // the actions / filters of the playbook editor: util_action_filter.json of this pan-os-php (instead of its copy json_array.js)
-    'playbook' => array( 'dir' => 'playbook', 'html' => 'playbook-editor.html', 'scripts' => array( 'json_array.js' => 'util_action_filter' ) ),
+    // '../viewer-look.css': the look of the viewer for the editors (inlined as the scripts)
+    'playbook' => array( 'dir' => 'playbook', 'html' => 'playbook-editor.html', 'scripts' => array( 'json_array.js' => 'util_action_filter' ),
+        'styles' => array( '../viewer-look.css' ) ),
     // the diagram of the BP editor is the chart of pan-os-php (utils/common/html/diagram) with its font Lato: script and
     // stylesheet are inlined as well, the font files of the stylesheet as data: URLs (the policy below allows no file)
     'bp' => array( 'dir' => 'bp_setting', 'html' => 'bp_setting-editor.html',
         'scripts' => array( 'd3.v7.min.js' => null, 'validation.js' => null, '../../diagram/diagram_script.js' => null ),
-        'styles' => array( '../../diagram/fonts/Lato/lato-local.css' ) ),
+        'styles' => array( '../../diagram/fonts/Lato/lato-local.css', '../viewer-look.css' ) ),
 );
 $e = isset( $_GET['e'] ) && is_string( $_GET['e'] ) ? $_GET['e'] : '';
 if( !isset( $editors[$e] ) || PHP_SAPI === 'cli' )

@@ -1,0 +1,97 @@
+/*
+ * The look of the pan-os-php config viewer for the editors (BP JSON, playbook): its colours, font, buttons and fields
+ * (utils/develop/config-viewer/style.css - the values of :root are the ones of that file). Loaded after the styles of an
+ * editor: it only changes how the editor looks, nothing of what it does. The colours of the diagram stay the ones of
+ * the BPA charts.
+ */
+:root { --fg: #1c2530; --muted: #5d6b7a; --line: #d5dbe1; --bg: #f6f8fa; --accent: #0b62a8; --warn: #b3261e; --ok: #1b6e3c;
+    --excellent: #25B197; --poor: #E8121C; --nav-bg: #f6f8fa; --sidebar-bg: #f6f8fa; }
+body { font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: #fff; }
+button, input, select, textarea { font: inherit; }
+input[type=text], input[type=search], input:not([type]), select, textarea { border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--fg); }
+input[type=text]:focus, input[type=search]:focus, input:not([type]):focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(11, 98, 168, 0.15); }
+
+/* ---- BP JSON editor */
+.mode-sidebar { background: var(--bg); color: var(--fg); border-right: 1px solid var(--line); }
+.sidebar-header { color: var(--fg); border-bottom: 1px solid var(--line); font-weight: 600; font-size: 14px; padding: 14px 20px; }
+.mode-item { color: var(--fg); font-size: 14px; padding: 10px 20px; border-left: 3px solid transparent; }
+.mode-item:hover { background: #eef2f6; }
+.mode-item.active { background: #fff; border-left: 3px solid var(--accent); color: var(--accent); font-weight: 600; }
+.header { background: var(--bg); color: var(--fg); border-bottom: 1px solid var(--line); height: 46px; }
+.menu { gap: 4px; }
+.menu-item { color: var(--muted); text-transform: none; font-size: 14px; font-weight: 400; padding: 0 12px; border-bottom: 2px solid transparent; }
+.menu-item:hover { color: var(--fg); }
+.menu-item.active { color: var(--accent); background: transparent; border-bottom-color: var(--accent); font-weight: 600; }
+.btn-save { background: var(--accent); border: 1px solid var(--accent); color: #fff; border-radius: 4px; padding: 5px 11px; font-weight: 400; }
+.btn-save:hover { filter: brightness(1.08); }
+.unsaved { color: #8a6100; background: #fff4ce; border: 1px solid #e0b400; border-radius: 10px; padding: 1px 8px; font-weight: 400; font-size: 12px; }
+.checkbox-sidebar { background: #fff; border-right: 1px solid var(--line); }
+.list-head { background: var(--bg); border-bottom: 1px solid var(--line); }
+.list-title { color: var(--fg); font-size: 14px; font-weight: 600; }
+.list-count, .item-hint, .list-empty { color: var(--muted); }
+.list-search { font-size: 13px; padding: 5px 7px; }
+.list-btn { border: 1px solid var(--line); border-radius: 4px; color: var(--fg); font-size: 12px; padding: 2px 8px; }
+.list-btn:hover { border-color: var(--accent); color: var(--fg); }
+.list-group-head { color: var(--muted); border-bottom: 1px solid var(--line); text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+.item { font-size: 13px; border-bottom: 1px solid #eef1f4; }
+.item.hover { background: #e8f0fa; }
+.item.off .item-name { color: var(--muted); }
+.item-hint { font-size: 11.5px; }
+.description-panel { border-top: 1px solid var(--line); color: var(--fg); font-size: 13px; }
+.desc-table td { font-size: 13px; }
+.settings-pane { background: #fff; padding: 20px; }
+.settings-pane h2 { font-size: 16px; color: var(--fg); margin: 0 0 10px; }
+.json-card { box-shadow: none; border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+.settings-group { background: var(--bg); border-left: 3px solid var(--line); border-radius: 0 4px 4px 0; padding: 8px 12px; margin-bottom: 10px; }
+.settings-group:focus-within { border-left-color: var(--accent); background: #f4f8fc; }
+.json-key { color: var(--muted); text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+.edit-input { border: 1px solid var(--line); border-radius: 4px; padding: 5px 7px; font-size: 14px; }
+.sub-tab-container { border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.sub-tab { color: var(--muted); font-size: 14px; font-weight: 400; padding: 8px 12px; border-bottom: 2px solid transparent; }
+.sub-tab:hover { color: var(--fg); }
+.sub-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.sub-sub-tab-container { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 3px; }
+.sub-sub-tab { color: var(--muted); text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 400; padding: 4px 12px; }
+.sub-sub-tab.active { background: #fff; color: var(--accent); font-weight: 600; box-shadow: none; border: 1px solid var(--line); }
+.array-item-box { border: 1px solid var(--line); border-radius: 6px; box-shadow: none; }
+.btn-action { border-radius: 4px; }
+.btn-plus { background: var(--ok); } .btn-minus { background: var(--warn); }
+.validation-option { font-size: 13px; }
+.custom-add-container { border-top: 1px dashed var(--line); }
+.custom-add-input { border: 1px solid var(--line); font-size: 13px; }
+.btn-custom-add { background: var(--accent); border-radius: 4px; font-weight: 400; font-size: 13px; }
+
+/* ---- playbook editor */
+body.playbook-editor { padding: 0; }
+.playbook-editor .container { max-width: 1500px; padding: 20px; border-radius: 0; box-shadow: none; }
+.playbook-editor .header { background: transparent; height: auto; border-bottom: 1px solid var(--line); margin-bottom: 16px; padding-bottom: 10px; }
+.playbook-editor h2 { font-size: 16px; margin: 0; }
+.playbook-editor label { color: var(--muted); text-transform: none; font-size: 12px; font-weight: 400; margin-bottom: 3px; }
+.playbook-editor input, .playbook-editor select, .playbook-editor textarea { padding: 5px 7px; font-size: 14px; border: 1px solid var(--line); }
+.playbook-editor .global-toggle-group { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+.playbook-editor input[type=checkbox] { width: auto; padding: 0; }
+.playbook-editor .global-toggle-group label { color: var(--fg); font-weight: 400; font-size: 13px; white-space: nowrap; }
+.playbook-editor .global-toggle-group label.lock { color: var(--warn); }
+.playbook-editor .global-comments { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.playbook-editor .command-card { background: #fff; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 14px 16px; margin-bottom: 16px; }
+.playbook-editor .card-header { border-bottom: 1px solid var(--line); }
+.playbook-editor .step-label { color: var(--muted); text-transform: none; font-size: 13px; font-weight: 600; }
+.playbook-editor .btn { background: #fff; color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 11px; font-size: 14px; font-weight: 400; }
+.playbook-editor .btn:hover { border-color: var(--accent); }
+.playbook-editor .btn.primary, .playbook-editor .btn.btn-add.wide { background: var(--accent); border-color: var(--accent); color: #fff; }
+.playbook-editor .btn.btn-add { color: var(--ok); }
+.playbook-editor .btn.btn-add.wide { color: #fff; }
+.playbook-editor .btn.danger, .playbook-editor .btn-remove-small { color: var(--warn); background: #fff; border: 1px solid var(--line); }
+.playbook-editor .btn-nav:disabled { opacity: .5; cursor: default; }
+.playbook-editor .btn-group-toggle { background: #fff; color: var(--muted); border: 1px solid var(--line); }
+.playbook-editor .btn-group-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.playbook-editor .filter-grid, .playbook-editor .action-grid { border-bottom: 1px dashed var(--line); }
+.playbook-editor .sub-section { border-left: 2px solid var(--line); }
+.playbook-editor .cli-preview-container { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.playbook-editor .cli-input { font-family: monospace; font-size: 12.5px; border: 1px solid var(--line); color: var(--fg); }
+.playbook-editor .json-preview-container { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.playbook-editor .json-input { font-family: monospace; font-size: 12.5px; color: var(--fg); border: 1px solid var(--line); }
+.playbook-editor .unhandled-container { background: #fdecea; border: 1px solid #f1b8b2; border-radius: 6px; }
+.playbook-editor .unhandled-input { font-family: monospace; font-size: 12.5px; color: var(--warn); border: 1px solid #f1b8b2; }
+.playbook-editor .comment-field-area { background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; }
+.playbook-editor .arg-toggle { color: var(--muted); font-size: 12px; }
