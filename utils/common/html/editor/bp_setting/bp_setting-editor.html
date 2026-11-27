@@ -693,18 +693,28 @@
             // Daten des aktuell ausgewählten Profils holen
             const activeData = sectionData[currentSubTab];
 
-            // 2. Ebene: Sub-Sub-Tabs generieren (Unterscheidung Visibility vs. Best Practice)
-            // Wir prüfen, ob die Struktur diese Unterscheidung anbietet
+            // the value sits directly below the tab (data-filtering: "visibility": true): one field, no parts
+            if (!activeData || typeof activeData !== 'object' || Array.isArray(activeData)) {
+                const card = document.createElement('div');
+                card.className = 'json-card';
+                buildEditor(sectionData, card, [currentTab], currentSubTab);
+                container.appendChild(card);
+                return;
+            }
+
+            // 2nd level: the parts the file has for this entry - visibility and bp first, then every other part
+            // (spyware / dns: bp_custom, bp_panw), so that nothing of the file is hidden
+            const partLabels = { 'visibility': '👁️ Visibility', 'bp': '🛡️ Best Practice' };
+            const present = Object.keys(activeData);
+            const availableSubSubTabs = ['visibility', 'bp'].filter(k => present.includes(k)).concat(present.filter(k => k !== 'visibility' && k !== 'bp'));
+            if (!availableSubSubTabs.includes(currentSubSubTab)) currentSubSubTab = availableSubSubTabs[0];
+
             const subSubTabContainer = document.createElement('div');
             subSubTabContainer.className = 'sub-sub-tab-container';
-
-            // 'visibility' wird explizit als erstes Element definiert
-            const availableSubSubTabs = ['visibility', 'bp'];
-
             availableSubSubTabs.forEach(type => {
                 const subSubTab = document.createElement('div');
                 subSubTab.className = `sub-sub-tab ${currentSubSubTab === type ? 'active' : ''}`;
-                subSubTab.textContent = type === 'visibility' ? '👁️ Visibility' : '🛡️ Best Practice';
+                subSubTab.textContent = partLabels[type] || type;
                 subSubTab.onclick = () => {
                     currentSubSubTab = type;
                     refreshUI();
@@ -713,23 +723,17 @@
             });
             container.appendChild(subSubTabContainer);
 
-            // Inhalts-Card für die Formularfelder rendern
             const card = document.createElement('div');
             card.className = 'json-card';
-
-            // Prüfen, ob das JSON die Struktur direkt unterteilt (z.B. activeData.visibility oder activeData['best-practice'])
-            if (activeData && typeof activeData === 'object') {
-                if (activeData[currentSubSubTab] !== undefined) {
-                    // Wenn der Knoten existiert (z.B. activeData.visibility), rendern wir dessen Inhalt
-                    buildEditor(activeData[currentSubSubTab], card, [currentTab, currentSubTab, currentSubSubTab]);
-                } else {
-                    // Fallback: Falls die Daten nicht tiefer unterteilt sind, zeigen wir einen Hinweis
-                    card.innerHTML = `<div style="color: #718096; font-style: italic; text-align: center; padding: 20px;">
-                                    Keine spezifischen Daten für "${currentSubSubTab}" in diesem Profil vorhanden.
-                                  </div>`;
-                }
+            const part = activeData[currentSubSubTab];
+            if (part !== null && typeof part === 'object' && !Array.isArray(part)) {
+                // an object: its fields
+                buildEditor(part, card, [currentTab, currentSubTab, currentSubSubTab]);
+            } else if (part !== undefined) {
+                // a single value (url / site_access: "visibility": "!allow") or a list (url / site_access: bp, wildfire /
+                // rule): the field itself, edited in the entry it belongs to
+                buildEditor(activeData, card, [currentTab, currentSubTab], currentSubSubTab);
             }
-
             container.appendChild(card);
         }
     }
@@ -953,11 +957,12 @@
         }
     }
 
-    function buildEditor(data, container, path = []) {
-        // Falls die Daten kein Objekt/Array sind, direkt abbrechen
+    // the fields of an object; onlyKey: only this one field of it
+    function buildEditor(data, container, path = [], onlyKey = null) {
         if (typeof data !== 'object' || data === null) return;
 
         for (const key in data) {
+            if (onlyKey !== null && key !== onlyKey) continue;
             const val = data[key];
             const currentPath = [...path, key];
             const group = document.createElement('div');
@@ -1053,11 +1058,26 @@
                         optDiv.appendChild(addContainer);
                     }
                     group.appendChild(optDiv);
+                } else if (typeof val === 'boolean') {
+                    // true / false stays true / false in the file (a text field would write the text "true")
+                    const label = document.createElement('label');
+                    label.className = 'validation-option';
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.checked = val;
+                    input.onchange = () => { data[key] = input.checked; refreshUI(); };
+                    label.appendChild(input); label.appendChild(document.createTextNode(val ? 'true' : 'false'));
+                    group.appendChild(label);
                 } else {
                     const input = document.createElement('input');
                     input.className = 'edit-input';
                     input.value = Array.isArray(val) ? val.join(', ') : val;
-                    input.onchange = (e) => { data[key] = Array.isArray(val) ? e.target.value.split(',').map(s => s.trim()) : e.target.value; };
+                    // a number stays a number in the file
+                    input.onchange = (e) => {
+                        if (Array.isArray(val)) data[key] = e.target.value.split(',').map(s => s.trim());
+                        else if (typeof val === 'number' && e.target.value.trim() !== '' && isFinite(Number(e.target.value))) data[key] = Number(e.target.value);
+                        else data[key] = e.target.value;
+                    };
                     group.appendChild(input);
                 }
             }
