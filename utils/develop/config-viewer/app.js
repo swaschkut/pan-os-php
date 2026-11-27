@@ -2550,7 +2550,11 @@ async function showViewer(config, preset) {
         el('option', { value: 'includechilddgs', text: '+ all child device groups (includechilddgs)' }),
         el('option', { value: 'excludemaindg', text: 'only the child device groups (excludemaindg)' }),
         // the effective view (viewer): the location and all levels above it, the copy that wins per name marked
-        el('option', { value: 'effective', text: '+ parents (effective view)' }));
+        el('option', { value: 'effective', text: '+ parents (effective view)' }),
+        // the effective view with the predefined objects of the type as the level above all (object types)
+        el('option', { value: 'effective-predefined', text: '+ parents + predefined (effective view + predefined)' }));
+    // the effective view, with or without the predefined objects
+    const effectiveView = () => (dgScope.value === 'effective' || dgScope.value === 'effective-predefined') && !dgScopeField.hidden;
     const dgScopeField = field('Device groups', dgScope);
     // same name on other levels (pan-os-php filters is.overriden / is.overriding - as object-merger sees it): the copy
     // that hides another one and the hidden one; the list shows both in the columns "overrides" / "overridden in"
@@ -2582,11 +2586,15 @@ async function showViewer(config, preset) {
         const kind = scopeKind(location.value);
         dgScopeField.hidden = !!p.scope || kind === null;
         if (dgScopeField.hidden) { dgScope.value = ''; return; }
-        const t = { dg: ['only this device group', '+ all child device groups', 'only the child device groups', '+ parents up to shared (effective view)'],
-            shared: ['only shared', '+ all device groups', 'only the device groups', null],
-            container: ['only this container', '+ all child containers / devices', 'only the child containers / devices', '+ snippets and parents up to All (effective view)'],
-            vsys: ['only this vsys', null, null, '+ shared (effective view)'] }[kind];
-        [...dgScope.options].forEach((o, i) => { o.hidden = t[i] === null; if (t[i] !== null) o.text = t[i] + (o.value && o.value !== 'effective' ? ' (' + o.value + ')' : ''); });
+        // the last entry (… + predefined): only for the object types - rules and network types have no predefined objects
+        const pre = cur.section === 'Objects' && !networkTemplates();
+        const t = { dg: ['only this device group', '+ all child device groups', 'only the child device groups', '+ parents up to shared (effective view)',
+                pre ? '+ parents up to shared + predefined (effective view + predefined)' : null],
+            shared: ['only shared', '+ all device groups', 'only the device groups', null, pre ? '+ predefined (effective view + predefined)' : null],
+            container: ['only this container', '+ all child containers / devices', 'only the child containers / devices', '+ snippets and parents up to All (effective view)',
+                pre ? '+ snippets and parents up to All + predefined (effective view + predefined)' : null],
+            vsys: ['only this vsys', null, null, '+ shared (effective view)', pre ? '+ shared + predefined (effective view + predefined)' : null] }[kind];
+        [...dgScope.options].forEach((o, i) => { o.hidden = t[i] === null; if (t[i] !== null) o.text = t[i] + (o.value && !/^effective/.test(o.value) ? ' (' + o.value + ')' : ''); });
         if (dgScope.selectedOptions[0] && dgScope.selectedOptions[0].hidden) dgScope.value = '';
         dgScopeField.firstChild.textContent = kind === 'container' ? 'Containers' : (kind === 'vsys' ? 'Scope' : 'Device groups');
     }
@@ -2669,7 +2677,7 @@ async function showViewer(config, preset) {
         const own0 = filter.value.trim();
         // the effective view of a location: same name as the firewalls of THIS location see it (is.overriden.for /
         // is.overriding.for <location> - its levels only); else the whole hierarchy (is.overriden / is.overriding)
-        const eff = dgScope.value === 'effective' && !dgScopeField.hidden && location.value && location.value !== 'any';
+        const eff = effectiveView() && location.value && location.value !== 'any';
         const sfx = eff ? '.for ' + location.value : '';
         const sn = sameNameField.hidden ? '' : { both: '(object is.overriden' + sfx + ') or (object is.overriding' + sfx + ')', overridden: '(object is.overriden' + sfx + ')',
             overriding: '(object is.overriding' + sfx + ')' }[sameName.value] || '';
@@ -2738,7 +2746,7 @@ async function showViewer(config, preset) {
         info.textContent = data.total + ' objects' + (data.truncated ? ' (first ' + data.rows.length + ' shown)' : '') + (fromCache ? ' - from browser cache' : ' - ' + data.ms + ' ms')
             + (view.template ? ' - only template ' + view.template + ' (another type shows all)' : '')
             // the effective view: which copy of a name wins (Panorama setting "ancestor objects take precedence")
-            + (dgScope.value === 'effective' && !dgScopeField.hidden ? ' - effective view: ' + (locationInfo.config === 'panorama'
+            + (effectiveView() ? ' - effective view' + (dgScope.value === 'effective-predefined' ? ' + predefined' : '') + ': ' + (locationInfo.config === 'panorama'
                 ? (locationInfo.ancestor ? 'ancestor objects take precedence (the highest copy wins)' : 'the nearest copy wins (ancestor precedence off)')
                 : 'the nearest copy wins') : '');
         draw();
@@ -4494,7 +4502,7 @@ async function showViewer(config, preset) {
         // a link "Open ↗": the window of that object opens when the list is there
         if (preset.open) view.openAfterLoad = { name: preset.open, location: preset.at || (preset.location === 'any' ? '' : preset.location), template: preset.template || '', profile: preset.profile || '' };
         // a location with the device groups below (<DG>:includechilddgs / :excludemaindg)
-        const pl = /^(.+):(includechilddgs|excludemaindg|effective)$/i.exec(preset.location || '');
+        const pl = /^(.+):(includechilddgs|excludemaindg|effective-predefined|effective)$/i.exec(preset.location || '');
         if (pl) { preset.location = pl[1]; dgScope.value = pl[2].toLowerCase(); }
         if (preset.location) {
             if (![...location.options].some(o => o.value === preset.location)) location.append(el('option', { value: preset.location, text: preset.location }));

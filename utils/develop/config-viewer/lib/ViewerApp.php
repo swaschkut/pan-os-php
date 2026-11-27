@@ -5546,7 +5546,8 @@ class ViewerApp
         // (Panorama: parent device groups, shared; SCM: snippets, parent folders with their snippets); each row is
         // marked: the copy that wins for this location, or the one it is hidden by (same name, other level)
         $effective = null;
-        if( is_string( $in['location'] ?? null ) && preg_match( '/^(.+):effective$/', $in['location'], $m ) )
+        // "<location>:effective-predefined": the same with the predefined objects of the type as the level above all
+        if( is_string( $in['location'] ?? null ) && preg_match( '/^(.+):effective(-predefined)?$/', $in['location'], $m ) )
         {
             if( $p['scope'] !== null )
                 throw new ViewerException( 'not allowed: the effective view reads the levels above your locations', 403 );
@@ -5556,6 +5557,8 @@ class ViewerApp
                     $effective = array( 'levels' => $l['levels'], 'ancestor' => $locs['ancestor'] && $locs['config'] === 'panorama', 'at' => $m[1] );
             if( $effective === null )
                 throw new ViewerException( 'location ' . $m[1] . ' not found', 400 );
+            if( ( $m[2] ?? '' ) !== '' )
+                $effective['levels'][] = 'predefined';
             $in['location'] = implode( ',', $effective['levels'] );
         }
         // several levels in one list (any, a device group / folder with the ones below or above, a list): which object
@@ -5577,6 +5580,19 @@ class ViewerApp
         $asked = array_map( function( $l ) { return strtolower( trim( preg_replace( '/:.*$/', '', $l ) ) ); }, explode( ',', $locArg === '' ? 'any' : $locArg ) );
         if( !in_array( 'any', $asked, TRUE ) && !in_array( 'predefined', $asked, TRUE ) )
             $rows = array_values( array_filter( $rows, function( $row ) { return ( $row['location'] ?? null ) !== 'predefined'; } ) );
+        elseif( count( $asked ) > 1 && in_array( 'predefined', $asked, TRUE ) )
+        {
+            // predefined next to shared in one list (the effective view + predefined): a predefined object only once
+            $seen = array();
+            $rows = array_values( array_filter( $rows, function( $row ) use ( &$seen ) {
+                if( ( $row['location'] ?? null ) !== 'predefined' )
+                    return TRUE;
+                $key = ( $row['type'] ?? '' ) . '|' . ( $row['name'] ?? '' );
+                if( isset( $seen[$key] ) )
+                    return FALSE;
+                return $seen[$key] = TRUE;
+            } ) );
+        }
         // "Extra columns" of the list: additional fields of exportToExcel (e.g. NestedMembers, ResolveIP), by name
         $extra = $in['columns'] ?? '';
         if( $extra !== '' && $extra !== null && $max !== PHP_INT_MAX )
@@ -5662,12 +5678,17 @@ class ViewerApp
     private static function effectiveRows( array $rows, array $levels, bool $ancestor, array $marks = array() ): array
     {
         $pos = array_flip( $levels );
+        // "predefined" as the level above all (effective view + predefined): a predefined object is used only when
+        // no level of the configuration has the name - also with ancestor precedence, which is about the device groups
+        $pre = $pos['predefined'] ?? null;
         $win = array();
         foreach( $rows as $row )
         {
             $n = (string)( $row['name'] ?? '' );
             $l = $pos[$row['location'] ?? ''] ?? PHP_INT_MAX;
-            if( !isset( $win[$n] ) || ( $ancestor ? $l > $win[$n] : $l < $win[$n] ) )
+            if( !isset( $win[$n] ) || $win[$n] === $pre )
+                $win[$n] = $l;
+            elseif( $l !== $pre && ( $ancestor ? $l > $win[$n] : $l < $win[$n] ) )
                 $win[$n] = $l;
         }
         $out = array();

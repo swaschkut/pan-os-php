@@ -2415,6 +2415,27 @@ class UTIL
                 $this->locationNotFound($location);
             }
         }
+
+        // a list of locations with "predefined" next to shared ( location=<DG>,shared,predefined ): shared of a
+        // firewall / Panorama lists the predefined objects as well - each object only once, where it is listed first
+        if( count( $this->objectsLocation ) > 1 && in_array( 'predefined', $this->objectsLocation, TRUE ) )
+        {
+            $seen = array();
+            foreach( $this->objectsToProcess as $index => $set )
+            {
+                if( !isset( $set['objects'] ) || !is_array( $set['objects'] ) )
+                    continue;
+                foreach( $set['objects'] as $key => $object )
+                {
+                    if( !is_object( $object ) )
+                        continue;
+                    $id = spl_object_id( $object );
+                    if( isset( $seen[$id] ) )
+                        unset( $this->objectsToProcess[$index]['objects'][$key] );
+                    $seen[$id] = TRUE;
+                }
+            }
+        }
     }
 
     /**

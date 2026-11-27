@@ -946,6 +946,24 @@ eq( $eff( $ED, 'DG2:effective' )[1][2] ?? null, 'DG1:A2:overridden by shared (ED
 $locs = $alice->call( 'GET', $AN . '/locations' )[1] ?? array();
 eq( array( $locs['ancestor'] ?? null, $eff( $AN, 'DG2:effective' )[1][1] ?? null, $eff( $AN, 'DG2:effective' )[1][5] ?? null ),
     array( TRUE, 'shared:dup:used:1', 'DG2:dup:overridden by shared:3' ), 'effective view: with ancestor precedence the highest copy wins' );
+// effective view + predefined (<location>:effective-predefined): the same, with the predefined objects of the type as the
+// level above all - each once, 'used' unless a level of the configuration has the name (also with ancestor precedence)
+$effp = function( $base, $loc, $type ) use ( $alice ) {
+    $r = $alice->call( 'GET', $base . '/objects?type=' . $type . '&location=' . urlencode( $loc ) );
+    return array( status( $r ), array_map( function( $x ) { return $x['location'] . ':' . $x['name'] . ':' . $x['effective'] . ':' . $x['level']; }, $r[1]['rows'] ?? array() ) );
+};
+eq( array( $eff( $EF, 'DG2:effective-predefined' ), $effp( $EF, 'DG2:effective-predefined', 'service' ), $effp( $EF, 'DG2:effective', 'service' ),
+        $effp( $AN, 'DG2:effective-predefined', 'service' )[1], $effp( $EF, 'shared:effective-predefined', 'service' )[1] ),
+    array( array( 200, array( 'shared:A1:used:2', 'shared:dup:overridden by DG2:2', 'DG1:A2:used:3', 'DG1:dup:overridden by DG2:3', 'DG2:A3:used:4', 'DG2:dup:used:4' ) ),
+        array( 200, array( 'predefined:service-http:used:1', 'predefined:service-https:used:1' ) ), array( 200, array() ),
+        array( 'predefined:service-http:used:1', 'predefined:service-https:used:1' ), array( 'predefined:service-http:used:1', 'predefined:service-https:used:1' ) ),
+    'effective view + predefined: addresses as in the effective view (no predefined ones), services with the predefined ones on top, each once; also at shared' );
+$r = $alice->call( 'GET', $SC . '/objects?type=service&location=' . urlencode( 'DE-Berlin Office:effective-predefined' ) );
+$pre = array_values( array_filter( $r[1]['rows'] ?? array(), function( $x ) { return ( $x['location'] ?? '' ) === 'predefined'; } ) );
+eq( array( status( $r ), array_column( $pre, 'name' ), array_values( array_unique( array_column( $pre, 'effective' ) ) ),
+        status( $alice->call( 'GET', $SC . '/objects?type=rule&ruletype=security&location=' . urlencode( 'DE-Berlin Office:effective-predefined' ) ) ) >= 400 ),
+    array( 200, array( 'service-http', 'service-https' ), array( 'used' ), TRUE ),
+    'effective view + predefined on SCM: the predefined services on top of the folders; not for rules' );
 // SCM tab, Prisma Access egress IP: import (92_egress-ip.json of an export, a zip of the export, a snapshot), states,
 // compare, delete; live only with an egress-IP key of the user
 $EG = 'projects/' . $pid;
