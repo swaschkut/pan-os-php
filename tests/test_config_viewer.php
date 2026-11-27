@@ -964,6 +964,21 @@ eq( array( status( $r ), array_column( $pre, 'name' ), array_values( array_uniqu
         status( $alice->call( 'GET', $SC . '/objects?type=rule&ruletype=security&location=' . urlencode( 'DE-Berlin Office:effective-predefined' ) ) ) >= 400 ),
     array( 200, array( 'service-http', 'service-https' ), array( 'used' ), TRUE ),
     'effective view + predefined on SCM: the predefined services on top of the folders; not for rules' );
+// the effective view also from a cloud folder of Prisma Access, from a firewall and (with predefined) from a snippet - the
+// page offers the choice for every location of SCM, not only for the containers
+$got = array();
+foreach( array( 'Mobile Users', 'Remote Networks', '000007777', 'Panorama-Shared' ) as $loc )
+    foreach( array( 'effective', 'effective-predefined' ) as $view )
+    {
+        $r = $alice->call( 'GET', $SC . '/objects?type=service&location=' . urlencode( $loc . ':' . $view ) );
+        $rows = $r[1]['rows'] ?? array();
+        $got[$loc][$view] = array( status( $r ), count( array_filter( $rows, function( $x ) { return ( $x['location'] ?? '' ) === 'predefined'; } ) ),
+            count( array_filter( $rows, function( $x ) { return !isset( $x['level'] ) || !isset( $x['effective'] ); } ) ) );
+    }
+$both = array( 'effective' => array( 200, 0, 0 ), 'effective-predefined' => array( 200, 2, 0 ) );
+eq( array( $got, status( $alice->call( 'GET', $SC . '/objects?type=rule&ruletype=security&location=' . urlencode( 'Mobile Users:effective' ) ) ) ),
+    array( array( 'Mobile Users' => $both, 'Remote Networks' => $both, '000007777' => $both, 'Panorama-Shared' => $both ), 200 ),
+    'effective view (+ predefined) on SCM from a cloud folder, a firewall and a snippet: every row with its level, the predefined services only with "+ predefined"' );
 // … for every object type of SCM, also the regions (the name lookup of a folder reaches the predefined regions of the
 // configuration, which have no EDL store next to them)
 $got = array();

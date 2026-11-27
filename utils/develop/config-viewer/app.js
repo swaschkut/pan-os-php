@@ -2569,8 +2569,9 @@ async function showViewer(config, preset) {
         if (sameNameField.hidden) sameName.value = '';
     }
     dgScopeField.hidden = true;
-    // the kind of a location for the choice: a device group, shared of Panorama (all device groups are below it) or an
-    // SCM container (folder: containers, cloud / on-prem devices below it); null: no choice (vsys, snippet, any)
+    // the kind of a location for the choice: a device group, shared of Panorama (all device groups are below it), an
+    // SCM container (folder: containers, cloud / on-prem devices below it), a cloud folder / firewall of SCM, a snippet,
+    // a vsys; null: no choice (any, predefined)
     function scopeKind(name) {
         const o = [...location.options].find(x => x.value === name);
         const group = o && o.parentElement && o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : '';
@@ -2578,6 +2579,10 @@ async function showViewer(config, preset) {
         // an SCM container, in whatever group of the choice it is listed (All, Prisma Access folders, containers)
         const info = !networkTemplates() && locData ? locData.locations.find(l => l.name === name) : null;
         if (info && info.kind === 'container') return 'container';
+        // the other locations of SCM have nothing below them, but levels above: a cloud folder of Prisma Access (Mobile
+        // Users, Remote Networks, …) and a firewall have the effective view, a snippet the predefined objects
+        if (info && (info.kind === 'cloud' || info.kind === 'on-prem')) return 'device';
+        if (info && info.kind === 'snippet') return 'snippet';
         if (name === 'shared' && [...location.querySelectorAll('optgroup')].some(g => g.label === 'device groups')) return 'shared';
         if (group === 'vsys' || group === 'shared gateways') return 'vsys';
         return null;
@@ -2593,10 +2598,15 @@ async function showViewer(config, preset) {
             shared: ['only shared', '+ all device groups', 'only the device groups', null, pre ? '+ predefined (effective view + predefined)' : null],
             container: ['only this container', '+ all child containers / devices', 'only the child containers / devices', '+ snippets and parents up to All (effective view)',
                 pre ? '+ snippets and parents up to All + predefined (effective view + predefined)' : null],
+            device: ['only this folder / firewall', null, null, '+ snippets and parents up to All (effective view)',
+                pre ? '+ snippets and parents up to All + predefined (effective view + predefined)' : null],
+            snippet: ['only this snippet', null, null, null, pre ? '+ predefined (effective view + predefined)' : null],
             vsys: ['only this vsys', null, null, '+ shared (effective view)', pre ? '+ shared + predefined (effective view + predefined)' : null] }[kind];
+        // a snippet outside of the object types has only "only this snippet": no choice to show
+        if (t.filter(x => x !== null).length < 2) { dgScopeField.hidden = true; dgScope.value = ''; return; }
         [...dgScope.options].forEach((o, i) => { o.hidden = t[i] === null; if (t[i] !== null) o.text = t[i] + (o.value && !/^effective/.test(o.value) ? ' (' + o.value + ')' : ''); });
         if (dgScope.selectedOptions[0] && dgScope.selectedOptions[0].hidden) dgScope.value = '';
-        dgScopeField.firstChild.textContent = kind === 'container' ? 'Containers' : (kind === 'vsys' ? 'Scope' : 'Device groups');
+        dgScopeField.firstChild.textContent = kind === 'container' ? 'Containers' : (kind === 'vsys' || kind === 'device' || kind === 'snippet' ? 'Scope' : 'Device groups');
     }
     location.addEventListener('change', drawDgScope);
     const filter = el('input', { placeholder: '(name contains web) and (object is.unused) - type for fields and operators', maxlength: 2000, autocomplete: 'off', spellcheck: false });
