@@ -148,6 +148,18 @@ $eq( array( $found, $names, $rule->source->hasObjectRecursive( $vsys->addressSto
     array( array( 'Region', 'Region', 'Address' ), array( 'FR', 'DE', 'geo-only', 'h-1' ), TRUE ),
     'findOrCreate + addObject: regions and an address in the source of a rule' );
 
+// SCM: the name of a country is found from a folder (its store asks the levels above, at the end the predefined regions of the
+// configuration - a store of the configuration itself has no EDL store next to it: before "Undefined property: BuckbeakConf::$EDLStore")
+$scm = new BuckbeakConf();
+$scmDoc = new DOMDocument();
+$scmDoc->load( $repo . '/tests/input/SCM-import.xml' );
+$scm->load_from_domxml( $scmDoc );
+$folder = $scm->findContainer( 'ngfw-shared' );
+$de = $folder->addressStore->find( 'DE' );
+$eq( array( is_object( $de ) ? get_class( $de ) : null, is_object( $de ) && $de->isPredefined(), $de === AddressStore::getPredefinedRegionStore( $scm )->find( 'DE' ),
+        $folder->addressStore->find( 'no-such-name-here' ) ),
+    array( 'Region', TRUE, TRUE, null ), 'SCM: a folder finds a predefined region by its name' );
+
 // ---- filters
 list( , , $o ) = $run( 'region', $in, 'any', '(geo-location is.set)', 'display' );
 $eq( $objects( $o ), array( 'hq-region', 'geo-only' ), 'filter geo-location is.set' );

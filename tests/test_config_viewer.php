@@ -964,6 +964,18 @@ eq( array( status( $r ), array_column( $pre, 'name' ), array_values( array_uniqu
         status( $alice->call( 'GET', $SC . '/objects?type=rule&ruletype=security&location=' . urlencode( 'DE-Berlin Office:effective-predefined' ) ) ) >= 400 ),
     array( 200, array( 'service-http', 'service-https' ), array( 'used' ), TRUE ),
     'effective view + predefined on SCM: the predefined services on top of the folders; not for rules' );
+// … for every object type of SCM, also the regions (the name lookup of a folder reaches the predefined regions of the
+// configuration, which have no EDL store next to them)
+$got = array();
+foreach( array( 'region', 'edl', 'application', 'securityprofile', 'log-profile', 'address', 'tag', 'schedule', 'securityprofilegroup' ) as $t )
+{
+    $r = $alice->call( 'GET', $SC . '/objects?type=' . $t . '&location=' . urlencode( 'DE-Berlin Office:effective-predefined' ) . ( $t === 'securityprofile' ? '&securityprofiletype=any' : '' ) );
+    $pre = array_values( array_filter( $r[1]['rows'] ?? array(), function( $x ) { return ( $x['location'] ?? '' ) === 'predefined'; } ) );
+    $got[$t] = array( status( $r ), count( $pre ) > 0, array_values( array_unique( array_column( $pre, 'effective' ) ) ) );
+}
+$with = array( 200, TRUE, array( 'used' ) ); $none = array( 200, FALSE, array() );
+eq( $got, array( 'region' => $with, 'edl' => $with, 'application' => $with, 'securityprofile' => $with, 'log-profile' => $with, 'address' => $none, 'tag' => $none,
+    'schedule' => $none, 'securityprofilegroup' => $none ), 'effective view + predefined on SCM: every object type, the predefined ones "used"' );
 // SCM tab, Prisma Access egress IP: import (92_egress-ip.json of an export, a zip of the export, a snapshot), states,
 // compare, delete; live only with an egress-IP key of the user
 $EG = 'projects/' . $pid;

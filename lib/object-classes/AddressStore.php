@@ -538,9 +538,14 @@ class AddressStore
     {
         $f = null;
 
-        $foundObject = $this->owner->EDLStore->find($objectName, $ref, $nested);
-        if( $foundObject !== null )
-            return $foundObject;
+        // an EDL of the name comes first; a store of an SCM configuration itself ( BuckbeakConf / FawkesConf - e.g. the
+        // predefined regions ) has no EDL store next to it
+        if( isset($this->owner->EDLStore) && is_object($this->owner->EDLStore) )
+        {
+            $foundObject = $this->owner->EDLStore->find($objectName, $ref, $nested);
+            if( $foundObject !== null )
+                return $foundObject;
+        }
 
         if( isset($this->_all[$objectName]) )
         {
