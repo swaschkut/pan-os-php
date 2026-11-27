@@ -1348,8 +1348,11 @@ eq( count( $meta ) > 25, TRUE, 'REST: all types with objects are offered (' . co
 // locations of a version (choice in the page) and the filters with operators (suggestions in the page)
 $r = $alice->call( 'GET', $RC . '/locations' );
 eq( array( status( $r ), $r[1]['config'] ?? null, $r[1]['any'] ?? null, array_column( $r[1]['locations'] ?? array(), 'name' ), array_values( array_unique( array_column( $r[1]['locations'] ?? array(), 'kind' ) ) ) ),
-    array( 200, 'panorama', TRUE, array( 'shared', 'Perimeter-FWs', 'Datacenter-Firewalls', 'testDG', 'DE-Berlin Office', 'FR Datacenter' ), array( 'shared', 'device-group' ) ),
-    'locations: Panorama - shared and every device group' );
+    array( 200, 'panorama', TRUE, array( 'shared', 'Perimeter-FWs', 'DE-Berlin Office', 'Datacenter-Firewalls', 'FR Datacenter', 'testDG' ), array( 'shared', 'device-group' ) ),
+    'locations: Panorama - shared and every device group, a child device group right below its parent' );
+eq( array_map( function( $l ) { return str_repeat( '>', $l['depth'] ?? 0 ) . $l['name'] . ( isset( $l['parent'] ) ? '<' . $l['parent'] : '' ); }, $r[1]['locations'] ?? array() ),
+    array( 'shared', 'Perimeter-FWs', '>DE-Berlin Office<Perimeter-FWs', 'Datacenter-Firewalls', '>FR Datacenter<Datacenter-Firewalls', 'testDG' ),
+    'locations: Panorama - the hierarchy of the device groups (depth, parent)' );
 $tk = array_values( array_unique( array_column( $r[1]['templates'] ?? array(), 'kind' ) ) );
 eq( array( is_array( $r[1]['templates'] ?? null ), array_diff( $tk, array( 'template', 'template-stack' ) ),
         count( array_filter( $r[1]['templates'] ?? array(), function( $t ) { return !is_array( $t['vsys'] ?? null ); } ) ) ),
@@ -1371,19 +1374,27 @@ eq( array( $r[1]['config'] ?? null, $kinds, in_array( 'All', $scmNames, TRUE ),
     array( 'scm', array( 'cloud', 'container', 'on-prem', 'snippet' ), TRUE, 4 ),
     'locations: SCM - containers (folders), Prisma Access folders (clouds: Mobile Users, Remote Networks, …), on-prem firewalls and snippets' );
 // the order and the groups of the location choice: All on its own, the Prisma Access folders (the folder Prisma Access, the
-// folders below it, the clouds), then the other containers, the firewalls, the snippets - 'kind' stays what the location is
-$byGroup = array(); $kindOf = array();
+// folders below it, the clouds), then the other containers with their firewalls, the snippets - 'kind' stays what the
+// location is. Inside a group the hierarchy: a child right below its parent, with depth and parent
+$byGroup = array(); $kindOf = array(); $tree = array();
 foreach( $r[1]['locations'] ?? array() as $l )
 {
     $byGroup[$l['group'] ?? '-'][] = $l['name'];
     $kindOf[$l['name']] = $l['kind'];
+    $tree[$l['group'] ?? '-'][] = str_repeat( '>', $l['depth'] ?? 0 ) . $l['name'] . ( isset( $l['parent'] ) ? '<' . $l['parent'] : '' );
 }
-eq( array( array_keys( $byGroup ), $byGroup['all'] ?? null, array_slice( $byGroup['prisma-access'] ?? array(), 0, 3 ),
+eq( array( array_keys( $byGroup ), $byGroup['all'] ?? null,
         count( array_intersect( array( 'Prisma Access', 'Mobile Users Container', 'All' ), $byGroup['container'] ?? array() ) ),
-        array( $kindOf['All'] ?? null, $kindOf['Prisma Access'] ?? null, $kindOf['Mobile Users Container'] ?? null, $kindOf['Mobile Users'] ?? null ) ),
-    array( array( 'all', 'prisma-access', 'container', 'on-prem', 'snippet' ), array( 'All' ), array( 'Prisma Access', 'Mobile Users Container', 'Service Connections' ), 0,
-        array( 'container', 'container', 'container', 'cloud' ) ),
-    'locations: SCM - order All, Prisma Access folders (Prisma Access, Mobile Users Container, clouds), containers, firewalls, snippets' );
+        array( $kindOf['All'] ?? null, $kindOf['Prisma Access'] ?? null, $kindOf['Mobile Users Container'] ?? null, $kindOf['Mobile Users'] ?? null, $kindOf['000007777'] ?? null ) ),
+    array( array( 'all', 'prisma-access', 'container', 'snippet' ), array( 'All' ), 0,
+        array( 'container', 'container', 'container', 'cloud', 'on-prem' ) ),
+    'locations: SCM - order All, Prisma Access folders, containers with their firewalls, snippets' );
+eq( array( $tree['prisma-access'] ?? null, $tree['container'] ?? null ),
+    array( array( 'Prisma Access', '>Mobile Users Container<Prisma Access', '>>Mobile Users Explicit Proxy<Mobile Users Container', '>>Mobile Users<Mobile Users Container',
+            '>Service Connections<Prisma Access', '>Remote Networks<Prisma Access' ),
+        array( 'ngfw-shared', '>Perimeter-FWs<ngfw-shared', '>>DE-Berlin Office<Perimeter-FWs', '>Datacenter-Firewalls<ngfw-shared', '>>FR Datacenter<Datacenter-Firewalls',
+            '>>>000007777<FR Datacenter', '>testDG<ngfw-shared', '>>007100000290<testDG', '>007200006721<ngfw-shared' ) ),
+    'locations: SCM - the hierarchy inside a group: child folders, clouds and firewalls below their parent (depth, parent)' );
 $rn = $alice->call( 'GET', $R . '/configs/' . $scmc . '/objects?type=address&location=' . rawurlencode( 'Remote Networks' ) );
 eq( status( $rn ), 200, 'SCM: objects of a Prisma Access folder (Remote Networks)' );
 foreach( array( $fwc, $scmc ) as $x )

@@ -6160,12 +6160,35 @@ class ViewerApp
                 // SCM: the group of the choice (All / Prisma Access folders / containers / …), the list comes in that order
                 if( in_array( $l['group'] ?? null, array( 'all', 'prisma-access', 'container', 'on-prem', 'snippet' ), TRUE ) )
                     $one['group'] = $l['group'];
+                // the hierarchy of the choice: a child device group / folder / firewall below its parent
+                if( is_int( $l['depth'] ?? null ) && $l['depth'] > 0 && $l['depth'] <= 50 && is_string( $l['parent'] ?? null ) )
+                {
+                    $one['depth'] = $l['depth'];
+                    $one['parent'] = $l['parent'];
+                }
                 $list[] = $one;
             }
         if( $p['scope'] !== null )
         {
             $scope = array_map( 'strtolower', $p['scope'] );
             $list = array_values( array_filter( $list, function( $l ) use ( $scope ) { return in_array( strtolower( $l['name'] ), $scope, TRUE ); } ) );
+            // the hierarchy among the locations that are left: a parent outside of the scope is not shown, its child
+            // moves up
+            $parentOf = array();
+            foreach( $list as $l )
+                $parentOf[$l['name']] = $l['parent'] ?? null;
+            foreach( $list as $i => $l )
+            {
+                $depth = 0;
+                for( $up = $l['parent'] ?? null; $up !== null && array_key_exists( $up, $parentOf ) && $depth < 50; $up = $parentOf[$up] )
+                    $depth++;
+                unset( $list[$i]['depth'], $list[$i]['parent'] );
+                if( $depth > 0 )
+                {
+                    $list[$i]['depth'] = $depth;
+                    $list[$i]['parent'] = $l['parent'];
+                }
+            }
         }
         // Panorama, network types: templates / template stacks with their vsys (not for a member limited to locations)
         $templates = array();

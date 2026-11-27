@@ -132,7 +132,7 @@ function viewerLocations()
                         $vsys[] = $v->name();
                 $templates[] = array( 'name' => $t->name(), 'kind' => $kind, 'vsys' => $vsys );
             }
-        return array( 'config' => 'panorama', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => $out, 'templates' => $templates,
+        return array( 'config' => 'panorama', 'version' => is_numeric( $pan->version ?? null ) ? (int)$pan->version : null, 'locations' => viewerLocationTree( $out ), 'templates' => $templates,
             'ancestor' => $pan->ancestorObjectsTakePrecedence(), 'predefined' => UTIL::predefinedTypes( $pan ) );
     }
     if( $pan instanceof PANConf )
@@ -156,7 +156,8 @@ function viewerLocations()
 
         // 'group': how the page groups and orders the choice - "All" on its own first (the global folder, as shared
         // of Panorama), then the Prisma Access folders (the folder Prisma Access, the folders below it and the
-        // clouds), then the other containers, the firewalls and the snippets. 'kind' stays what the location is.
+        // clouds), then the other containers with their firewalls, and the snippets. 'kind' stays what the location
+        // is. Inside a group: the hierarchy (viewerLocationTree).
         $prismaNames = array( 'prisma access', 'mobile users container', 'context-collectors', 'context collectors' );
         $inPrisma = array();
         foreach( $pan->getContainers() as $container )
@@ -173,6 +174,7 @@ function viewerLocations()
             }
         }
         $order = array( 'all' => 0, 'prisma-access' => 1, 'container' => 2, 'on-prem' => 3, 'snippet' => 4 );
+        $groupOf = array();
         foreach( $out as $i => $l )
         {
             if( $l['kind'] == 'container' && strtolower( $l['name'] ) == 'all' )
@@ -182,12 +184,28 @@ function viewerLocations()
             else
                 $group = $l['kind'];
             $out[$i]['group'] = $group;
-            // inside a group the order of the configuration stays ( containers before the clouds )
-            $out[$i]['_sort'] = ( $order[$group] ?? 9 ) * 100000 + $i;
+            if( $l['kind'] == 'container' )
+                $groupOf[$l['name']] = $group;
         }
+        // a firewall is listed below its folder: in the group of the nearest folder above it ( directly below All:
+        // with the containers ); without a folder it stays in the group of the firewalls
+        foreach( $out as $i => $l )
+        {
+            if( $l['kind'] != 'on-prem' )
+                continue;
+            foreach( array_slice( $l['levels'], 1 ) as $above )
+                if( isset( $groupOf[$above] ) )
+                {
+                    $out[$i]['group'] = $groupOf[$above] == 'all' ? 'container' : $groupOf[$above];
+                    break;
+                }
+        }
+        foreach( $out as $i => $l )
+            $out[$i]['_sort'] = ( $order[$out[$i]['group']] ?? 9 ) * 100000 + $i;
         usort( $out, function( $a, $b ) { return $a['_sort'] <=> $b['_sort']; } );
         foreach( $out as $i => $l )
             unset( $out[$i]['_sort'] );
+        $out = viewerLocationTree( $out );
         return array( 'config' => 'scm', 'locations' => $out, 'ancestor' => FALSE, 'predefined' => UTIL::predefinedTypes( $pan ) );
     }
     return array( 'config' => 'unknown', 'locations' => $out, 'ancestor' => FALSE );
@@ -330,6 +348,60 @@ function viewerEffective( $util, string $at ): array
  *   SCM:      the folder, its snippets (the first attached wins), the parent folder, its snippets, … up to All (and its
  *             snippets: predefined ones too) - the nearest wins (SCM has no ancestor precedence)
  */
+/**
+ * The locations in the order of their hierarchy, for the location choice: a child device group / folder / firewall
+ * right below its parent, with 'depth' ( 0 = top of its group ) and 'parent'. The parent is the nearest location
+ * above ( 'levels' ) that is in the same group of the choice ( 'group', else 'kind' ); the groups keep their order,
+ * and the locations of one level the order they came in.
+ */
+function viewerLocationTree( array $out ): array
+{
+    $groupKey = function( $l ) { return isset( $l['group'] ) ? $l['group'] : $l['kind']; };
+    $groups = array();
+    foreach( $out as $l )
+        $groups[$groupKey( $l )][$l['name']] = $l;
+
+    $sorted = array();
+    foreach( $groups as $members )
+    {
+        $children = array();
+        $roots = array();
+        foreach( $members as $name => $l )
+        {
+            $parent = null;
+            foreach( array_slice( is_array( $l['levels'] ?? null ) ? $l['levels'] : array(), 1 ) as $above )
+                if( $above !== $name && isset( $members[$above] ) )
+                {
+                    $parent = $above;
+                    break;
+                }
+            if( $parent === null )
+                $roots[] = $name;
+            else
+                $children[$parent][] = $name;
+        }
+        $done = array();
+        $walk = function( $name, $depth, $parent ) use ( &$walk, &$sorted, &$done, $members, $children ) {
+            if( isset( $done[$name] ) || $depth > 50 )
+                return;
+            $done[$name] = TRUE;
+            $l = $members[$name];
+            $l['depth'] = $depth;
+            if( $parent !== null )
+                $l['parent'] = $parent;
+            $sorted[] = $l;
+            foreach( isset( $children[$name] ) ? $children[$name] : array() as $child )
+                $walk( $child, $depth + 1, $name );
+        };
+        foreach( $roots as $name )
+            $walk( $name, 0, null );
+        // nothing is lost ( a loop in the parents ): the rest at the top level
+        foreach( $members as $name => $l )
+            $walk( $name, 0, null );
+    }
+    return $sorted;
+}
+
 function viewerLevels( $pan, $o ): array
 {
     // the levels of pan-os-php itself (PH::firewallResolutionLevels - the same as the filters is.overriden.for and the

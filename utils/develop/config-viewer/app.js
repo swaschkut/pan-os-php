@@ -2447,6 +2447,12 @@ async function showViewer(config, preset) {
             o.hidden = q !== '' && !o.text.toLowerCase().includes(q) && o.value !== location.value;
             if (!o.hidden) shown++;
         }
+        // a hit stays below its parents: the parents of a shown location are shown as well (not counted as hits)
+        if (q !== '') {
+            const byName = new Map([...location.querySelectorAll('option')].map(o => [o.value, o]));
+            for (const o of [...byName.values()].filter(o => !o.hidden))
+                for (let up = byName.get(o.dataset.parent), i = 0; up && i < 50; up = byName.get(up.dataset.parent), i++) up.hidden = false;
+        }
         for (const g of location.querySelectorAll('optgroup')) g.hidden = [...g.children].every(o => o.hidden);
         locCount.textContent = q ? shown + ' of ' + all : '';
         locFilter.hidden = all < 8 && q === '';
@@ -2489,15 +2495,27 @@ async function showViewer(config, preset) {
         const r = locData, was = location.value, tl = networkTemplates();
         // SCM: the locations come with a group ('all', 'prisma-access', …) and in the order of the choice - All (the
         // global folder, as shared of Panorama), the Prisma Access folders, the containers, the firewalls, the snippets
-        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'all': 'All (global folder)', 'prisma-access': 'Prisma Access folders', 'container': 'containers (folders)', 'cloud': 'Prisma Access folders', 'on-prem': 'firewalls (on-prem)', 'snippet': 'snippets' };
+        const kinds = { 'shared': 'shared', 'device-group': 'device groups', 'vsys': 'vsys', 'shared-gateway': 'shared gateways', 'all': 'All (global folder)', 'prisma-access': 'Prisma Access folders', 'container': 'containers (folders) and their firewalls', 'cloud': 'Prisma Access folders', 'on-prem': 'firewalls (on-prem)', 'snippet': 'snippets' };
         let groups;
         if (tl) {
             const vs = [...new Set(tl.filter(t => tplSel.value === 'any' || t.name === tplSel.value).flatMap(t => t.vsys || []))];
             groups = [el('optgroup', { label: 'template' }, el('option', { value: 'shared', text: 'shared (the template itself)' })),
                 ...(vs.length ? [el('optgroup', { label: 'vsys (imported)' }, vs.map(v => el('option', { value: v, text: v })))] : [])];
         } else
+            // the hierarchy: the locations come in the order of the tree, a child device group / folder / firewall with
+            // its depth - indented (a select keeps only non-breaking spaces); the value stays the name, the whole path
+            // is the tooltip
             groups = [...new Set(r.locations.map(l => l.group || l.kind))].map(k => el('optgroup', { label: kinds[k] || k },
-                r.locations.filter(l => (l.group || l.kind) === k).map(l => el('option', { value: l.name, text: l.name }))));
+                r.locations.filter(l => (l.group || l.kind) === k).map(l => {
+                    const o = el('option', { value: l.name, text: l.depth > 0 ? '\u00a0'.repeat(l.depth * 3 - 2) + '\u2514\u00a0' + l.name : l.name });
+                    if (l.parent) o.dataset.parent = l.parent;
+                    if (l.parent) {
+                        const path = [l.name];
+                        for (let up = r.locations.find(x => x.name === l.parent), i = 0; up && i < 50; up = up.parent ? r.locations.find(x => x.name === up.parent) : null, i++) path.unshift(up.name);
+                        o.title = path.join(' / ');
+                    }
+                    return o;
+                })));
         location.replaceChildren(...(r.any ? [el('option', { value: 'any', text: 'any (all locations)' })] : []), ...groups);
         drawPredefined();
         location.value = [...location.options].some(o => o.value === was) ? was : location.options[0].value;
@@ -2555,7 +2573,7 @@ async function showViewer(config, preset) {
         if (group === 'device groups') return 'dg';
         // an SCM container, in whatever group of the choice it is listed (All, Prisma Access folders, containers)
         const info = !networkTemplates() && locData ? locData.locations.find(l => l.name === name) : null;
-        if (group === 'containers (folders)' || (info && info.kind === 'container')) return 'container';
+        if (info && info.kind === 'container') return 'container';
         if (name === 'shared' && [...location.querySelectorAll('optgroup')].some(g => g.label === 'device groups')) return 'shared';
         if (group === 'vsys' || group === 'shared gateways') return 'vsys';
         return null;
