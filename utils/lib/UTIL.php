@@ -431,88 +431,69 @@ class UTIL
         }
     }
 
+    /**
+     * the types with actions and filters ( type=<name> actions=… filter=… ): type => class of its actions
+     * (utils/common/<class>.php, the actions in utils/common/actions/). THE one place for it - supportedActions(),
+     * extracting_actions() and loadplugin() read it; a new type is one line here (plus PH::$supportedUTILTypes and its
+     * UTIL class)
+     */
+    public static $typeCallContext = array(
+        'tag'                          => 'TagCallContext',
+        'address'                      => 'AddressCallContext',
+        'service'                      => 'ServiceCallContext',
+        'rule'                         => 'RuleCallContext',
+        'zone'                         => 'ZoneCallContext',
+        'securityprofile'              => 'SecurityProfileCallContext',
+        'securityprofilegroup'         => 'SecurityProfileGroupCallContext',
+        'schedule'                     => 'ScheduleCallContext',
+        'edl'                          => 'EDLCallContext',
+        'region'                       => 'RegionCallContext',
+        'application'                  => 'ApplicationCallContext',
+        'threat'                       => 'ThreatCallContext',
+        'threat-rule'                  => 'ThreatRuleCallContext',
+        'dns-rule'                     => 'DNSRuleCallContext',
+        'device'                       => 'DeviceCallContext',
+        'vsys'                         => 'VsysCallContext',
+        'virtualwire'                  => 'VirtualWireCallContext',
+        'routing'                      => 'RoutingCallContext',
+        'interface'                    => 'InterfaceCallContext',
+        'dhcp'                         => 'DHCPCallContext',
+        'certificate'                  => 'CertificateCallContext',
+        'ssl-tls-service-profile'      => 'SSL_TLSServiceProfileCallContext',
+        'certificate-profile'          => 'CertificateProfileCallContext',
+        'static-route'                 => 'StaticRouteCallContext',
+        'gp-gateway'                   => 'GPGatewayCallContext',
+        'gp-portal'                    => 'GPPortalCallContext',
+        'ike-profile'                  => 'IKEprofileCallContext',
+        'ike-gateway'                  => 'IKEgatewayCallContext',
+        'ipsec-profile'                => 'IPsecprofileCallContext',
+        'ipsec-tunnel'                 => 'IPsectunnelCallContext',
+        'gre-tunnel'                   => 'GREtunnelCallContext',
+        'gpgateway-tunnel'             => 'GPGatewaytunnelCallContext',
+        'zone-protection-profile'      => 'ZoneProtectionProfileCallContext',
+        'interface-management-profile' => 'InterfaceManagementProfileCallContext',
+        'log-profile'                  => 'LogProfileCallContext',
+        'profile'                      => 'ProfileCallContext',
+    );
+
+    /**
+     * @param string|null $utilType
+     * @return string|null the class of the actions of a type, null: the type has no actions
+     */
+    public static function callContextClass( $utilType )
+    {
+        if( !is_string( $utilType ) || !isset( self::$typeCallContext[$utilType] ) )
+            return null;
+        return self::$typeCallContext[$utilType];
+    }
+
     public function supportedActions()
     {
-        $tmp_array = array();
+        $class = self::callContextClass( $this->utilType );
+        if( $class === null )
+            return array();
 
-        if( $this->utilType == 'tag' )
-            $tmp_array = &TagCallContext::$supportedActions;
-        elseif( $this->utilType == 'address' )
-            $tmp_array = &AddressCallContext::$supportedActions;
-        elseif( $this->utilType == 'service' )
-            $tmp_array = &ServiceCallContext::$supportedActions;
-        elseif( $this->utilType == 'rule' )
-            $tmp_array = &RuleCallContext::$supportedActions;
-        elseif( $this->utilType == 'zone' )
-            $tmp_array = &ZoneCallContext::$supportedActions;
-        elseif( $this->utilType == 'securityprofile' )
-            $tmp_array = &SecurityProfileCallContext::$supportedActions;
-        elseif( $this->utilType == 'securityprofilegroup' )
-            $tmp_array = &SecurityProfileGroupCallContext::$supportedActions;
-        elseif( $this->utilType == 'schedule' )
-            $tmp_array = &ScheduleCallContext::$supportedActions;
-        elseif( $this->utilType == 'edl' )
-            $tmp_array = &EDLCallContext::$supportedActions;
-        elseif( $this->utilType == 'region' )
-            $tmp_array = &RegionCallContext::$supportedActions;
-        elseif( $this->utilType == 'application' )
-            $tmp_array = &ApplicationCallContext::$supportedActions;
-        elseif( $this->utilType == 'threat' )
-            $tmp_array = &ThreatCallContext::$supportedActions;
-        elseif( $this->utilType == 'threat-rule' )
-            $tmp_array = &ThreatRuleCallContext::$supportedActions;
-        elseif( $this->utilType == 'dns-rule' )
-            $tmp_array = &DNSRuleCallContext::$supportedActions;
-
-        elseif( $this->utilType == 'device' )
-            $tmp_array = &DeviceCallContext::$supportedActions;
-        elseif( $this->utilType == 'vsys' )
-            $tmp_array = &VsysCallContext::$supportedActions;
-
-        elseif( $this->utilType == 'virtualwire' )
-            $tmp_array = &VirtualWireCallContext::$supportedActions;
-        elseif( $this->utilType == 'routing' )
-            $tmp_array = &RoutingCallContext::$supportedActions;
-        elseif( $this->utilType == 'interface' )
-            $tmp_array = &InterfaceCallContext::$supportedActions;
-        elseif( $this->utilType == 'dhcp' )
-            $tmp_array = &DHCPCallContext::$supportedActions;
-        elseif( $this->utilType == 'certificate' )
-            $tmp_array = &CertificateCallContext::$supportedActions;
-        elseif( $this->utilType == 'ssl-tls-service-profile' )
-            $tmp_array = &SSL_TLSServiceProfileCallContext::$supportedActions;
-        elseif( $this->utilType == 'certificate-profile' )
-            $tmp_array = &CertificateProfileCallContext::$supportedActions;
-        elseif( $this->utilType == 'static-route' )
-            $tmp_array = &StaticRouteCallContext::$supportedActions;
-
-        elseif( $this->utilType == 'gp-gateway' )
-            $tmp_array = &GPGatewayCallContext::$supportedActions;
-        elseif( $this->utilType == 'gp-portal' )
-            $tmp_array = &GPPortalCallContext::$supportedActions;
-
-        elseif( $this->utilType == 'ike-profile' )
-            $tmp_array = &IKEprofileCallContext::$supportedActions;
-        elseif( $this->utilType == 'ike-gateway' )
-            $tmp_array = &IKEgatewayCallContext::$supportedActions;
-        elseif( $this->utilType == 'ipsec-profile' )
-            $tmp_array = &IPsecprofileCallContext::$supportedActions;
-        elseif( $this->utilType == 'ipsec-tunnel' )
-            $tmp_array = &IPsectunnelCallContext::$supportedActions;
-        elseif( $this->utilType == 'gre-tunnel' )
-            $tmp_array = &GREtunnelCallContext::$supportedActions;
-        elseif( $this->utilType == 'gpgateway-tunnel' )
-            $tmp_array = &GPGatewaytunnelCallContext::$supportedActions;
-        elseif( $this->utilType == 'zone-protection-profile' )
-            $tmp_array = &ZoneProtectionProfileCallContext::$supportedActions;
-        elseif( $this->utilType == 'interface-management-profile' )
-            $tmp_array = &InterfaceManagementProfileCallContext::$supportedActions;
-        elseif( $this->utilType == 'log-profile' )
-            $tmp_array = &LogProfileCallContext::$supportedActions;
-        elseif( $this->utilType == 'profile' )
-            $tmp_array = &ProfileCallContext::$supportedActions;
-
-        return $tmp_array;
+        return $class::$supportedActions;
     }
 
     public function listactions()
@@ -595,46 +576,11 @@ class UTIL
 
             require_once $pluginFile;
 
-            if( $this->utilType == 'tag' )
-                TagCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'address' )
-                AddressCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'service' )
-                ServiceCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'rule' )
-                RuleCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'zone' )
-                ZoneCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'vsys' )
-                VsysCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'securityprofile' )
-                SecurityProfileCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'securityprofilegroup' )
-                SecurityProfileGroupCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'schedule' )
-                ScheduleCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'edl' )
-                EDLCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'region' )
-                RegionCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'application' )
-                ApplicationCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'threat' )
-                ThreatCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'threat-rule' )
-                ThreatRuleCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'dns-rule' )
-                DNSRuleCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'device' )
-                DeviceCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'certificate' )
-                CertificateCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'ssl-tls-service-profile' )
-                SSL_TLSServiceProfileCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'certificate-profile' )
-                CertificateProfileCallContext::prepareSupportedActions();
-            elseif( $this->utilType == 'log-profile' )
-                LogProfileCallContext::prepareSupportedActions();
+            // every type with actions (before: 20 of the 36 types - a plugin with actions of another type was loaded
+            // but its actions were not prepared)
+            $class = self::callContextClass( $this->utilType );
+            if( $class !== null && method_exists( $class, 'prepareSupportedActions' ) )
+                $class::prepareSupportedActions();
 
         }
     }
@@ -1450,82 +1396,11 @@ class UTIL
             if( count($explodedAction) == 1 )
                 $explodedAction[1] = '';
 
-            //variable based on which util script is calling the method
-            if( $this->utilType == 'tag' )
-                $context = new TagCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'address' )
-                $context = new AddressCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'service' )
-                $context = new ServiceCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'rule' )
-                $context = new RuleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-
-            elseif( $this->utilType == 'securityprofile' )
-                $context = new SecurityProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'securityprofilegroup' )
-                $context = new SecurityProfileGroupCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'schedule' )
-                $context = new ScheduleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'edl' )
-                $context = new EDLCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'region' )
-                $context = new RegionCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'application' )
-                $context = new ApplicationCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'threat' )
-                $context = new ThreatCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'threat-rule' )
-                $context = new ThreatRuleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'dns-rule' )
-                $context = new DNSRuleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-
-            elseif( $this->utilType == 'device' )
-                $context = new DeviceCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'vsys' )
-                $context = new VsysCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-
-            elseif( $this->utilType == 'zone' )
-                $context = new ZoneCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'virtualwire' )
-                $context = new VirtualWireCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'routing' )
-                $context = new RoutingCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'interface' )
-                $context = new InterfaceCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'dhcp' )
-                $context = new DHCPCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'certificate' )
-                $context = new CertificateCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'ssl-tls-service-profile' )
-                $context = new SSL_TLSServiceProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'certificate-profile' )
-                $context = new CertificateProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'static-route' )
-                $context = new StaticRouteCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'gp-gateway' )
-                $context = new GPGatewayCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'gp-portal' )
-                $context = new GPPortalCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'ike-profile' )
-                $context = new IKEprofileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'ike-gateway' )
-                $context = new IKEgatewayCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'ipsec-profile' )
-                $context = new IPsecprofileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'ipsec-tunnel' )
-                $context = new IPsectunnelCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'gre-tunnel' )
-                $context = new GREtunnelCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'gpgateway-tunnel' )
-                $context = new GPGatewaytunnelCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'zone-protection-profile' )
-                $context = new ZoneProtectionProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'interface-management-profile' )
-                $context = new InterfaceManagementProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'log-profile' )
-                $context = new LogProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'profile' )
-                $context = new ProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            // the class of the actions of this type: UTIL::$typeCallContext
+            $class = self::callContextClass( $this->utilType );
+            if( $class === null )
+                derr( "type '" . $this->utilType . "' has no actions", null, FALSE );
+            $context = new $class($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             if( $this->debugAPI )
                 $context->debug = true;

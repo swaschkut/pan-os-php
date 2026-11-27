@@ -1,6 +1,6 @@
 # `UTIL.php`: structure review and refactoring
 
-**Status:** review done (2026-11-18), nothing implemented
+**Status:** review done (2026-11-18); item 1 (type table) implemented 2026-11-27, the rest open
 **Code reference:** `alpha` `93a0187`, `utils/lib/UTIL.php` (2828 lines, 41 methods, 56 public properties)
 **Related:** `lib/misc-classes/PH.php` (`$supportedUTILTypes`, dispatcher), `utils/lib/UTIL_GET_ACTION_FILTER.php`,
 [shell-autocompletion.md](shell-autocompletion.md), [api-rest.md](api-rest.md),
@@ -17,10 +17,14 @@ points are structure and maintainability. Ordered by benefit:
 types (176 comparisons on `utilType` in the whole file). Both chains are consistent today, but every new type has to be
 added in several places (plus `PH::$supportedUTILTypes` and the dispatcher in `PH.php`).
 
-* [ ] one table `type => CallContext class` (static array or small registry class), used by `supportedActions()`,
-  `extracting_actions()`, `listactions()`, `listfilters()`
-* [ ] `extracting_actions()`: `new $class( … )` from the table instead of the chain
+* [x] one table `type => CallContext class`: `UTIL::$typeCallContext` / `UTIL::callContextClass()`, used by
+  `supportedActions()` (and through it `listactions()`), `extracting_actions()` and `loadplugin()` (2.1.64,
+  `tests/test_type_table.php`). `loadplugin()` had a third chain with 20 of the 36 types: the actions of a plugin for the
+  other 16 types were never found - fixed by the table
+* [x] `extracting_actions()`: `new $class( … )` from the table instead of the chain
 * [ ] check whether the dispatcher in `PH.php` (`type => util class`) can use the same registry
+* [ ] the remaining comparisons on `utilType` in `UTIL.php` (93): which of them are per-type data for the table (store
+  of a type, location handling) and which are real special cases
 
 ### 2. Everything is loaded on every call
 
