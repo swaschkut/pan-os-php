@@ -1394,6 +1394,13 @@ class PanoramaMove
             }
     }
 
+    /**
+     * config sections (utils/common/config_sections.json, "references": true) that panorama-move checks on its own:
+     * access-domains - checkOtherReferences() (finding "access domain", plan.json access_domains with the
+     * administrators, MIGRATION_FOLLOWUP.md, moved names removed in file1)
+     */
+    const CONFIG_SECTIONS_OWN_CHECK = array( 'access-domains' );
+
     /** Panorama settings with entries that reference moved names / firewalls (concept 7 / 11.3), e.g. deployment-update-schedule */
     private function checkConfigSections()
     {
@@ -1401,6 +1408,10 @@ class PanoramaMove
         foreach( ConfigSection::registry() as $name => $def )
         {
             if( empty($def['references']) || !in_array('panorama', $def['scope'], TRUE) )
+                continue;
+            // sections with a check of their own (finding, plan.json, follow-up text, clean-up of file1): not reported a
+            // second time as "Panorama setting" with another proposal
+            if( in_array( $name, self::CONFIG_SECTIONS_OWN_CHECK, TRUE ) )
                 continue;
             $section = ConfigSection::section( $name );
             foreach( ConfigSection::entries( ConfigSection::container( $this->A->xmldoc, $section ) ) as $en => $e )

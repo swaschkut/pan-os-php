@@ -453,6 +453,11 @@ $scenarios['panorama-settings'] = function() use ( $A, $Bclean, $work ) {
     eq( $rc, 0, 'check run - exit code' );
     $s = findings( $p, 'info', 'Panorama setting' );
     eq( count($s), 2, 'two Panorama setting findings (unrelated entry not reported)' );
+    // the access domain of the fixture references the moved device group / stack / firewall too: it has its own finding
+    // ("access domain") and is not listed a second time as Panorama setting (config section access-domains)
+    eq( array( array_column($s, 'name'), count( findings($p, 'info', 'access domain') ) > 0, array_column($p['panorama_settings_referencing_moved'], 'section') ),
+        array( array( 'deployment-update-schedule AppAndThreats', 'deployment-update-schedule AV' ), TRUE, array( 'deployment-update-schedule', 'deployment-update-schedule' ) ),
+        'access domain: reported once, by its own check' );
     eq( isset($s[0]) ? $s[0]['name'] : null, 'deployment-update-schedule AppAndThreats', 'finding names section and entry' );
     $refs = isset($p['panorama_settings_referencing_moved'][0]) ? $p['panorama_settings_referencing_moved'][0]['references'] : array();
     eq( $refs, array( 'firewall 007100000290' ), 'plan.json references (only the moved firewall)' );
