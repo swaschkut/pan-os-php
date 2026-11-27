@@ -303,6 +303,61 @@ Todo: [todo/config-viewer-panw-data-and-live.md](../../../todo/config-viewer-pan
   - later maybe generic OIDC / SAML (Okta, ADFS, …)
 * API tokens and the personal API keys (key store) stay as they are - they are not replaced by the directory login.
 
+## 8d. Entra ID queries of a user, as the LDAP queries (wish 2026-11-27)
+
+The LDAP tab asks the customer's directory with the personal LDAP account of the user. The same is wanted for
+**Microsoft Entra ID** (Microsoft Graph) - many customers have their users and groups only there. Not built.
+
+* **What the user can do - as with LDAP:**
+  - saved queries per user, project tab next to LDAP, result in the page and as JSON / CSV
+  - the modes of `type=ldap-query`: validation (do these users exist, are they enabled), user-groups, common-groups,
+    group-members (also nested: `transitiveMemberOf` / `transitiveMembers`)
+  - the check of the users of the rules (as `user-check-ldap`): users / groups of the security rules that do not
+    exist or are disabled in Entra ID, with the optional remove into a new version
+* **pan-os-php:** one implementation for CLI and viewer - `type=entra-query` (and a rule action as
+  `user-check-ldap`), read only (GET): `/users/<upn>`, `/users/<id>/memberOf`, `/users/<id>/transitiveMemberOf`,
+  `/groups/<id>/members`, `/groups/<id>/transitiveMembers`, `accountEnabled`; paging (`@odata.nextLink`), throttling
+  (HTTP 429, `Retry-After`); values in `$filter` escaped
+* **Login: device code flow, with the user's own account** - no password of the user in the viewer, MFA and
+  conditional access stay with Entra ID:
+  1. the run asks `https://login.microsoftonline.com/<tenant>/oauth2/v2.0/devicecode` for a code
+  2. the page shows the code and the address `https://microsoft.com/devicelogin` to the user who started the run
+     (only to him); he signs in in his browser
+  3. the run polls `https://login.microsoftonline.com/<tenant>/oauth2/v2.0/token` (interval and expiry as the answer
+     says, about 15 minutes) and then asks `https://graph.microsoft.com/v1.0/…`
+  - `<tenant>`: the tenant ID / domain of the customer, or `organizations`
+* **Which client ID:**
+  - without an app registration: the public client of Microsoft "Microsoft Graph Command Line Tools"
+    (`14d82eec-204b-4c2f-b7e8-296a70dab67e`, the one of the Graph PowerShell SDK) - works in a tenant as long as the
+    administrator has not blocked it; good for a first test
+  - with an app registration of the customer (public client, device code flow allowed): client ID per installation
+    or per project - the way for regular use, the Entra administrator can limit and review it
+  - both selectable; the viewer says in the page which one a query uses
+* **Permissions (delegated, least privilege - to check on a real tenant, e.g. with the Graph Explorer):**
+  - own groups: `User.Read` (`/me/memberOf`)
+  - other users and group members: `User.ReadBasic.All` / `User.Read.All`, `GroupMember.Read.All` - these usually
+    need the consent of an administrator; the page must say clearly "consent of the administrator is missing"
+    (error `AADSTS65001` and friends) instead of a plain failure
+  - never a write permission
+* **Secrets:** the refresh token (`offline_access`) is a personal key of the user (new key kind, e.g. `entra`, target
+  = tenant), stored encrypted, never returned to the browser, never in the audit log or in run.log; the access token
+  lives only in the run; "sign out" deletes the stored token; without a stored token every query starts with the
+  device code
+* **Network:** a run with network, as the LDAP runs - admin switch, project switch, allow list; the targets are
+  `login.microsoftonline.com` and `graph.microsoft.com` (national clouds: `login.microsoftonline.us` /
+  `graph.microsoft.us`, `login.partner.microsoftonline.cn` / `microsoftgraph.chinacloudapi.cn`) and nothing else
+* **Names:** the rules of a firewall name users and groups as the group mapping / Cloud Identity Engine writes them
+  (`domain\user`, UPN, group DN or CIE group name) - which Entra attribute fits (`userPrincipalName`,
+  `onPremisesSamAccountName`, `onPremisesDistinguishedName`, `displayName`) is a choice of the query, as the
+  attribute of an LDAP query
+* **Not the same as the login to the viewer** with Entra ID (8c, OpenID Connect): that one signs the user in to the
+  viewer; this one asks the customer's directory, which can be another tenant. An app registration can serve both.
+* **Tests:** a stand-in for the two Microsoft servers with synthetic answers (device code, token, Graph pages,
+  429, missing consent); no data of a real tenant in the repository
+* **Open:** how long a stored refresh token may be used (Entra: 90 days sliding by default, the customer's policy
+  can be shorter); whether the device code flow is blocked by conditional access at customers (Microsoft recommends
+  to restrict it) - then only the customer's own app registration with another flow helps
+
 ## 9. Other
 
 * **IronSkillet 12.2** ([todo/ironskillet-url-http-header-logging-12.2.md](../../../todo/ironskillet-url-http-header-logging-12.2.md)):
