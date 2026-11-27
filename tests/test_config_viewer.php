@@ -1879,6 +1879,15 @@ preg_match( '/:root \{([^}]*)\}/', (string)file_get_contents( dirname( __DIR__ )
 eq( array( $look, strpos( preg_replace( '/\s+/', ' ', $editorRoot[1] ?? '' ), trim( preg_replace( '/\s+/', ' ', $viewerRoot[1] ?? 'x' ) ) ) !== FALSE ),
     array( array( 'playbook' => array( FALSE, TRUE ), 'bp' => array( FALSE, TRUE ) ), TRUE ),
     'editors: the look of the viewer inline; viewer-look.css has the colours of style.css' );
+// ViewerApp in several files: every part lib/ViewerApp<Part>.php is a trait of the same name, loaded and used by
+// ViewerApp (a part that is not used would be methods nobody can call)
+$parts = array();
+foreach( glob( $viewer . '/lib/ViewerApp?*.php' ) as $file )
+    $parts[] = basename( $file, '.php' );
+sort( $parts );
+$usedParts = array_values( class_uses( 'ViewerApp' ) );
+sort( $usedParts );
+eq( array( count( $parts ) > 0, $usedParts ), array( TRUE, $parts ), 'ViewerApp: every part lib/ViewerApp<Part>.php is a trait used by ViewerApp' );
 // playbook editor: steps collapse, action / filter field are searched, checks at the fields, a step is moved by dragging;
 // what is only for the page is not written to the file
 $raw = (string)file_get_contents( dirname( __DIR__ ) . '/utils/common/html/editor/playbook/playbook-editor.html' );
